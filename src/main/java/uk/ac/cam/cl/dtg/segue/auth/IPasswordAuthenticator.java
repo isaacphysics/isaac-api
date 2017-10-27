@@ -102,6 +102,15 @@ public interface IPasswordAuthenticator extends IAuthenticator {
     boolean isValidResetToken(final String token) throws SegueDatabaseException;
 
     /**
+     * This method will throw an exception for invalid passwords.
+     *
+     * @param password
+     *            - Password to validate.
+     * @throws InvalidPasswordException - if the password is invalid
+     */
+    void ensureValidPassword(final String password) throws InvalidPasswordException;
+
+    /**
      * This method will test if the user's reset token is valid reset token for a given user.
      *
      * @param token

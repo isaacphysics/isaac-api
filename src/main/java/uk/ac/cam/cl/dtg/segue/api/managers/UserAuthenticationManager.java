@@ -36,6 +36,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.HttpMethod;
 
 import com.google.common.collect.Maps;
 import ma.glasnost.orika.MapperFacade;
@@ -45,6 +46,7 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
@@ -79,6 +81,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 
 /**
@@ -88,6 +91,7 @@ import com.google.inject.Inject;
 public class UserAuthenticationManager {
     private static final Logger log = LoggerFactory.getLogger(UserAuthenticationManager.class);
     private static final String HMAC_SHA_ALGORITHM = "HmacSHA256";
+    private static final List<String> ORIGIN_HEADER_REQUEST_METHODS = ImmutableList.of(HttpMethod.POST, HttpMethod.DELETE, HttpMethod.PUT);
 
     private final PropertiesLoader properties;
     private final IUserDataManager database;
@@ -318,6 +322,27 @@ public class UserAuthenticationManager {
             log.debug("We cannot read the session information. It probably doesn't exist");
             // assuming that no user is logged in.
             return null;
+        }
+
+        if (properties.getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(EnvironmentType.PROD.name())) {
+            // If in production, check if the request originated from Isaac:
+            String referrer = request.getHeader("Referer");  // Note HTTP Header misspelling!
+            if (null == referrer) {
+                log.warn("Authenticated request had no 'Referer' information set! Attempted to access: "
+                        + request.getPathInfo());
+            } else if (!referrer.startsWith("https://" + properties.getProperty(HOST_NAME) + "/")) {
+                log.warn("Authenticated request had unexpected Referer: '" + referrer + "'. Attempted to access: "
+                        + request.getPathInfo());
+            }
+            // If the client sends an Origin header, we should afford them better security. If they do not send the header,
+            // we can draw no conclusions and must allow the request through.
+            String origin = request.getHeader("Origin");
+            boolean expectOriginHeader = ORIGIN_HEADER_REQUEST_METHODS.contains(request.getMethod());
+            if (expectOriginHeader && null != origin && !origin.equals("https://" + properties.getProperty(HOST_NAME))) {
+                log.error("Authenticated request had unexpected Origin: '" + origin + "'. Blocked access to: "
+                        + request.getMethod() + " " + request.getPathInfo());
+                return null;
+            }
         }
 
         // check if the users session is valid.
