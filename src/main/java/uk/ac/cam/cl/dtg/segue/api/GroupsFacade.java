@@ -25,13 +25,7 @@ import java.util.Comparator;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
@@ -104,16 +98,18 @@ public class GroupsFacade extends AbstractSegueFacade {
      *            - so we can identify the current user.
      * @param cacheRequest
      *            - so that we can control caching of this endpoint
+     * @param archivedGroupsOnly
+     *            - include archived groups in response - default is false - i.e. show only unarchived
      * @return List of groups for the current user.
      */
     @GET
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getGroupsForCurrentUser(@Context final HttpServletRequest request,
-            @Context final Request cacheRequest) {
+            @Context final Request cacheRequest, @QueryParam("archived_groups_Only") final boolean archivedGroupsOnly) {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
-            List<UserGroupDTO> groups = groupManager.getGroupsByOwner(user);
+            List<UserGroupDTO> groups = groupManager.getGroupsByOwner(user, archivedGroupsOnly);
 
             // Calculate the ETag based user id and groups they own
             EntityTag etag = new EntityTag(user.getId().hashCode() + groups.toString().hashCode() + "");
@@ -132,6 +128,8 @@ public class GroupsFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
         }
     }
+
+
 
     /**
      * Get all groups owned by the user id provided.
