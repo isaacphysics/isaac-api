@@ -712,7 +712,7 @@ public class EventBookingManager {
 
         try {
             // note this library will go out to a third part to get a sensible timezone value.
-            TimezoneAssignment london = TimezoneAssignment.download(TimeZone.getTimeZone(DEFAULT_TIME_LOCALITY), true);
+            TimezoneAssignment london = TimezoneAssignment.download(TimeZone.getTimeZone(DEFAULT_TIME_LOCALITY), false);
 
             ICalendar ical = new ICalendar();
             ical.getTimezoneInfo().setDefaultTimezone(london);
