@@ -177,9 +177,10 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
             pst = conn.prepareStatement(pstString);
             pst.setLong(1, ownerUserId);
 
-            if (archivedGroupsOnly != null)
+            if (archivedGroupsOnly != null) {
                 pst.setBoolean(2, archivedGroupsOnly);
-
+            }
+            
             ResultSet results = pst.executeQuery();
             List<UserGroup> listOfResults = Lists.newArrayList();
             while (results.next()) {
