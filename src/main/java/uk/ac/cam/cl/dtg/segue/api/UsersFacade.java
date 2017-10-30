@@ -45,6 +45,7 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.Validate;
 import org.jboss.resteasy.annotations.GZIP;
 import org.joda.time.LocalDate;
@@ -115,6 +116,10 @@ public class UsersFacade extends AbstractSegueFacade {
     private final AbstractUserPreferenceManager userPreferenceManager;
     private final SchoolListReader schoolListReader;
     private final Supplier<Set<School>> schoolOtherSupplier;
+
+    private enum AllowedUserPreferences {
+        EMAIL_PREFERENCE, SUBJECT_INTEREST
+    }
 
     /**
      * Construct an instance of the UsersFacade.
@@ -249,7 +254,14 @@ public class UsersFacade extends AbstractSegueFacade {
 
         RegisteredUser registeredUser = userSettingsObjectFromClient.getRegisteredUser();
 
-        Map<String, Map<String, Boolean>> userPreferences = userSettingsObjectFromClient.getUserPreferences();
+        Map<String, Map<String, Boolean>> userPreferences = Maps.newHashMap();
+
+        for (String preferenceType: userSettingsObjectFromClient.getUserPreferences().keySet()
+             ) {
+            if (EnumUtils.isValidEnum(AllowedUserPreferences.class, preferenceType)) {
+                userPreferences.put(preferenceType, userSettingsObjectFromClient.getUserPreferences().get(preferenceType));
+            }
+        }
 
         if (null != registeredUser.getId()) {
 
@@ -289,17 +301,19 @@ public class UsersFacade extends AbstractSegueFacade {
             List<UserPreference> allUserPreferences = userPreferenceManager.getAllUserPreferences(currentUser.getId());
 
             Map <String, Map<String, Boolean>> userPreferences = Maps.newHashMap();
+            for (AllowedUserPreferences userPreference: AllowedUserPreferences.values()) {
+                Map<String, Boolean> typePreferences = Maps.newHashMap();
+                userPreferences.put(userPreference.name(), typePreferences);
+            }
 
             for (UserPreference preference : allUserPreferences) {
 
-                if (!userPreferences.containsKey(preference.getPreferenceType())) {
-                    Map<String, Boolean> typePreferences = Maps.newHashMap();
-                    userPreferences.put(preference.getPreferenceType(), typePreferences);
+                if (EnumUtils.isValidEnum(AllowedUserPreferences.class, preference.getPreferenceType())) {
+                    userPreferences.get(preference.getPreferenceType())
+                            .put(preference.getPreferenceName(), preference.getPreferenceValue());
                 }
-
-                userPreferences.get(preference.getPreferenceType())
-                        .put(preference.getPreferenceName(), preference.getPreferenceValue());
             }
+
 
             return Response.ok(userPreferences).build();
         } catch (NoUserLoggedInException e) {
