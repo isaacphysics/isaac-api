@@ -158,7 +158,7 @@ public class SiteStatsStreamsServiceTest {
             testData.put(fields[0], userRecord);
         }
 
-        ReadOnlyKeyValueStore<String, JsonNode> store = driver.getKeyValueStore("store_user_data");
+        ReadOnlyKeyValueStore<String, JsonNode> store = driver.getKeyValueStore("localstore_user_data");
         KeyValueIterator<String, JsonNode> iter = store.all();
 
         while (iter.hasNext()) {
@@ -190,7 +190,7 @@ public class SiteStatsStreamsServiceTest {
             testData.put(fields[0], Long.parseLong(fields[1]));
         }
 
-        ReadOnlyKeyValueStore<String, Long> store = driver.getKeyValueStore("store_log_event_counts");
+        ReadOnlyKeyValueStore<String, Long> store = driver.getKeyValueStore("localstore_log_event_counts");
         KeyValueIterator<String, Long> iter = store.all();
 
         while (iter.hasNext()) {
@@ -208,13 +208,14 @@ public class SiteStatsStreamsServiceTest {
 
         String filePath = new File("").getAbsolutePath();
         br = new BufferedReader(new FileReader(filePath.concat("/src/test/resources/test_data/kafka-streams-user-last-seen.test")));
+
         while ((line = br.readLine()) != null) {
 
             String[] fields = line.split(csvSplitBy);
             testData.put(fields[0], objectMapper.readTree(fields[1]));
         }
 
-        ReadOnlyKeyValueStore<String, JsonNode> store = driver.getKeyValueStore("store_user_last_seen");
+        ReadOnlyKeyValueStore<String, JsonNode> store = driver.getKeyValueStore("localstore_user_last_seen");
         KeyValueIterator<String, JsonNode> iter = store.all();
 
         while (iter.hasNext()) {
@@ -241,7 +242,7 @@ public class SiteStatsStreamsServiceTest {
 
     @Test
     public void streamsClassVersions_Test() throws Exception {
-        assertClassUnchanged(SiteStatisticsStreamsApplication.class,"3c4f22c5d76d7832666d4a262bd49e2d2d195a340118fe77840dd3024b493a92");
+        assertClassUnchanged(SiteStatisticsStreamsApplication.class,"d2ac9254ac62d0fd5bc2be61a4245d7a8d7c8d36b000f3874322161b1eb2572d");
     }
 
 

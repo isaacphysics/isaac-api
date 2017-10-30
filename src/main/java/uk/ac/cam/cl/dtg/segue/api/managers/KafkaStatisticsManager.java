@@ -107,12 +107,12 @@ public class KafkaStatisticsManager implements IStatisticsManager {
 
         // get user records from local kafka store
         // this is much faster than accessing postgres
-        ReadOnlyKeyValueStore<String, JsonNode> userStore = waitUntilStoreIsQueryable("store_user_data",
+        ReadOnlyKeyValueStore<String, JsonNode> userStore = waitUntilStoreIsQueryable("globalstore_user_data",
                     QueryableStoreTypes.<String, JsonNode>keyValueStore(),
                 statisticsStreamsApplication.getStream());
 
         // get user activity data from local kafka store
-        ReadOnlyKeyValueStore<String, JsonNode> userLastSeenStore = waitUntilStoreIsQueryable("store_user_last_seen",
+        ReadOnlyKeyValueStore<String, JsonNode> userLastSeenStore = waitUntilStoreIsQueryable("globalstore_user_last_seen",
                 QueryableStoreTypes.<String, JsonNode>keyValueStore(),
                 statisticsStreamsApplication.getStream());
 
@@ -352,7 +352,7 @@ public class KafkaStatisticsManager implements IStatisticsManager {
     @Override
     public Long getLogCount(final String logTypeOfInterest) throws InvalidStateStoreException {
 
-        ReadOnlyKeyValueStore<String, Long> logEventCounts = waitUntilStoreIsQueryable("store_log_event_counts",
+        ReadOnlyKeyValueStore<String, Long> logEventCounts = waitUntilStoreIsQueryable("globalstore_log_event_counts",
                 QueryableStoreTypes.<String, Long>keyValueStore(),
                 statisticsStreamsApplication.getStream());
 
@@ -456,12 +456,12 @@ public class KafkaStatisticsManager implements IStatisticsManager {
         try {
 
             // get user data from local kafka store
-            ReadOnlyKeyValueStore<String, JsonNode> userStore = waitUntilStoreIsQueryable("store_user_data",
+            ReadOnlyKeyValueStore<String, JsonNode> userStore = waitUntilStoreIsQueryable("globalstore_user_data",
                     QueryableStoreTypes.<String, JsonNode>keyValueStore(),
                     statisticsStreamsApplication.getStream());
 
             // get user activity data from local kafka store
-            ReadOnlyKeyValueStore<String, JsonNode> userLastSeenStore = waitUntilStoreIsQueryable("store_user_last_seen",
+            ReadOnlyKeyValueStore<String, JsonNode> userLastSeenStore = waitUntilStoreIsQueryable("globalstore_user_last_seen",
                     QueryableStoreTypes.<String, JsonNode>keyValueStore(),
                     statisticsStreamsApplication.getStream());
 
@@ -528,12 +528,12 @@ public class KafkaStatisticsManager implements IStatisticsManager {
         List<RegisteredUserDTO> users = Lists.newArrayList();
 
         // get user data from local kafka store
-        ReadOnlyKeyValueStore<String, JsonNode> userStore = waitUntilStoreIsQueryable("store_user_data",
+        ReadOnlyKeyValueStore<String, JsonNode> userStore = waitUntilStoreIsQueryable("globalstore_user_data",
                 QueryableStoreTypes.<String, JsonNode>keyValueStore(),
                 statisticsStreamsApplication.getStream());
 
         // get user activity data from local kafka store
-        ReadOnlyKeyValueStore<String, JsonNode> userLastSeenStore = waitUntilStoreIsQueryable("store_user_last_seen",
+        ReadOnlyKeyValueStore<String, JsonNode> userLastSeenStore = waitUntilStoreIsQueryable("globalstore_user_last_seen",
                 QueryableStoreTypes.<String, JsonNode>keyValueStore(),
                 statisticsStreamsApplication.getStream());
 
@@ -586,7 +586,7 @@ public class KafkaStatisticsManager implements IStatisticsManager {
 
         Map<String, Date> userMap = Maps.newHashMap();
 
-        ReadOnlyKeyValueStore<String, JsonNode> userLastSeenStore = waitUntilStoreIsQueryable("store_user_last_seen",
+        ReadOnlyKeyValueStore<String, JsonNode> userLastSeenStore = waitUntilStoreIsQueryable("globalstore_user_last_seen",
                 QueryableStoreTypes.<String, JsonNode>keyValueStore(),
                 statisticsStreamsApplication.getStream());
 
