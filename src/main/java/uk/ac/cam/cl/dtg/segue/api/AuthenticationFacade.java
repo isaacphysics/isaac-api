@@ -251,8 +251,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
             return error.toResponse();
         } catch (DuplicateAccountException e) {
             log.debug("Duplicate user already exists in the database.", e);
-            return new SegueErrorResponse(Status.BAD_REQUEST,
-                    "A user already exists with the e-mail address specified.").toResponse();
+            return new SegueErrorResponse(Status.FORBIDDEN, e.getMessage()).toResponse();
         } catch (AccountAlreadyLinkedException e) {
             log.error("Internal Database error during authentication", e);
             return new SegueErrorResponse(Status.BAD_REQUEST,

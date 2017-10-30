@@ -128,7 +128,7 @@ public class KafkaLoggingManager extends LoggingEventHandler {
         ArrayList<String> topics = Lists.newArrayList();
         topics.add("topic_anonymous_logged_events_test");
 
-        log.info(String.format("Kafka Test Transfer Log Events - OldUser (%s) NewUser (%s) - About to poll", oldUserId, newUserId));
+        log.debug(String.format("Kafka Test Transfer Log Events - OldUser (%s) NewUser (%s) - About to poll", oldUserId, newUserId));
         int totalRecordCount = 0;
         try (KafkaConsumer<String, JsonNode> loggedEventsConsumer = new KafkaConsumer<String, JsonNode>(props)) {
             loggedEventsConsumer.subscribe(topics);
@@ -142,7 +142,7 @@ public class KafkaLoggingManager extends LoggingEventHandler {
 
                 if (records.count() == 0) {
                     running = false;
-                    log.info(String.format("Kafka Test Transfer Log Events - exiting after reaching end of topic. Read %s records", totalRecordCount));
+                    log.debug(String.format("Kafka Test Transfer Log Events - exiting after reaching end of topic. Read %s records", totalRecordCount));
                 }
 
                 for (ConsumerRecord<String, JsonNode> record : records) {

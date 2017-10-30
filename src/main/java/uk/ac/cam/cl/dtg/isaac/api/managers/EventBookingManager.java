@@ -28,6 +28,7 @@ import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
+import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailAttachment;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
@@ -37,8 +38,10 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
+import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
@@ -61,6 +64,7 @@ public class EventBookingManager {
     private final EmailManager emailManager;
     private final UserAssociationManager userAssociationManager;
     private final PropertiesLoader propertiesLoader;
+    private final GroupManager groupManager;
 
     /**
      * EventBookingManager.
@@ -73,11 +77,13 @@ public class EventBookingManager {
     public EventBookingManager(final EventBookingPersistenceManager bookingPersistenceManager,
                                final EmailManager emailManager,
                                final UserAssociationManager userAssociationManager,
-                               final PropertiesLoader propertiesLoader) {
+                               final PropertiesLoader propertiesLoader,
+                               final GroupManager groupManager) {
         this.bookingPersistenceManager = bookingPersistenceManager;
         this.emailManager = emailManager;
         this.userAssociationManager = userAssociationManager;
         this.propertiesLoader = propertiesLoader;
+        this.groupManager = groupManager;
     }
 
     /**
@@ -164,18 +170,37 @@ public class EventBookingManager {
                     + " booked on to it.", event.getId(), user.getEmail()));
         }
 
+        EventBookingDTO booking = null;
         try {
             // Obtain an exclusive database lock to lock the booking
             this.bookingPersistenceManager.acquireDistributedLock(event.getId());
 
             this.ensureCapacity(event, user);
 
-            return this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), BookingStatus.CONFIRMED,
+            booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), BookingStatus.CONFIRMED,
                     additionalEventInformation);
+
+            emailManager.sendTemplatedEmailToUser(user,
+                    emailManager.getEmailTemplateDTO("email-event-booking-confirmed"),
+                    new ImmutableMap.Builder<String, Object>()
+                            .put("contactUsURL", generateEventContactUsURL(event))
+                            .put("authorizationLink", String.format("https://%s/account?authToken=%s",
+                                    propertiesLoader.getProperty(HOST_NAME), event.getIsaacGroupToken()))
+                            .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
+                            .put("event", event)
+                            .build(),
+                    EmailType.SYSTEM,
+                    Arrays.asList(generateEventICSFile(event, booking)));
+        
+        } catch (ContentManagerException e) {
+            log.error(String.format("Unable to send booking confirmation email (%s) to user (%s)", event.getId(), user
+                    .getEmail()), e);
+
         } finally {
             // release lock.
             this.bookingPersistenceManager.releaseDistributedLock(event.getId());
         }
+        return booking;
     }
 
     /**
@@ -338,7 +363,6 @@ public class EventBookingManager {
      *
      * @param event                 - The event in question.
      * @param userDTO               - The user whose booking should be updated
-     * @param additionalInformation additional information to be stored with this booking e.g. dietary requirements.
      * @return the updated booking.
      * @throws SegueDatabaseException       - if there is a database error
      * @throws EmailMustBeVerifiedException - if this method requires a validated e-mail address.
@@ -347,7 +371,7 @@ public class EventBookingManager {
      * @throws EventBookingUpdateException  - Unable to update the event booking.
      */
     public EventBookingDTO promoteFromWaitingListOrCancelled(final IsaacEventPageDTO event, final RegisteredUserDTO
-            userDTO, final Map<String, String> additionalInformation)
+            userDTO)
             throws SegueDatabaseException, EmailMustBeVerifiedException,
             DuplicateBookingException, EventBookingUpdateException, EventIsFullException {
 
@@ -374,7 +398,7 @@ public class EventBookingManager {
         // probably want to send a waiting list promotion email.
         try {
             updatedStatus = this.bookingPersistenceManager.updateBookingStatus(eventBooking.getEventId(), userDTO
-                    .getId(), BookingStatus.CONFIRMED, additionalInformation);
+                    .getId(), BookingStatus.CONFIRMED, eventBooking.getAdditionalInformation());
 
             emailManager.sendTemplatedEmailToUser(userDTO,
                     emailManager.getEmailTemplateDTO("email-event-booking-waiting-list-promotion-confirmed"),
@@ -532,6 +556,9 @@ public class EventBookingManager {
                             .build(),
                     EmailType.SYSTEM);
 
+            // auto remove them from the group
+            this.removeUserFromEventGroup(event, user);
+
         } finally {
             this.bookingPersistenceManager.releaseDistributedLock(event.getId());
         }
@@ -540,17 +567,20 @@ public class EventBookingManager {
     /**
      * Delete a booking permanently.
      *
-     * @param eventId - event id
-     * @param userId  - user id to unbook
+     * @param event - event context
+     * @param user  - user to unbook
      * @throws SegueDatabaseException - if an error occurs.
      */
-    public void deleteBooking(final String eventId, final Long userId) throws SegueDatabaseException {
+    public void deleteBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user) throws SegueDatabaseException {
         try {
             // Obtain an exclusive database lock to lock the booking
-            this.bookingPersistenceManager.acquireDistributedLock(eventId);
-            this.bookingPersistenceManager.deleteBooking(eventId, userId);
+            this.bookingPersistenceManager.acquireDistributedLock(event.getId());
+            this.bookingPersistenceManager.deleteBooking(event.getId(), user.getId());
+
+            this.removeUserFromEventGroup(event, user);
+
         } finally {
-            this.bookingPersistenceManager.releaseDistributedLock(eventId);
+            this.bookingPersistenceManager.releaseDistributedLock(event.getId());
         }
     }
 
@@ -671,34 +701,44 @@ public class EventBookingManager {
 
     /**
      * Helper method to generate an ics file for emailing to users who have booked on to an event.
+     *
+     * Note: This method may return null in the event we cannot communicate with a third party service.
+     *
      * @param event - the event booked on
      * @param bookingDetails - the booking details.
      * @return email attachment containing an ics file.
      */
     private EmailAttachment generateEventICSFile(IsaacEventPageDTO event, EventBookingDTO bookingDetails) {
-        TimezoneAssignment london = TimezoneAssignment.download(TimeZone.getTimeZone(DEFAULT_TIME_LOCALITY), true);
 
-        ICalendar ical = new ICalendar();
-        ical.getTimezoneInfo().setDefaultTimezone(london);
+        try {
+            // note this library will go out to a third part to get a sensible timezone value.
+            TimezoneAssignment london = TimezoneAssignment.download(TimeZone.getTimeZone(DEFAULT_TIME_LOCALITY), false);
 
-        VEvent icalEvent = new VEvent();
-        icalEvent.setSummary(event.getTitle());
-        icalEvent.setDateStart(event.getDate(), true);
-        icalEvent.setDateEnd(event.getEndDate(), true);
-        icalEvent.setDescription(event.getSubtitle());
+            ICalendar ical = new ICalendar();
+            ical.getTimezoneInfo().setDefaultTimezone(london);
 
-        icalEvent.setOrganizer(new Organizer("Isaac Physics", "events@isaacphysics.org"));
-        icalEvent.setUid(String.format("%s@%s.isaacphysics.org", bookingDetails.getUserBooked().getId(), event.getId()));
-        icalEvent.setUrl(String.format("https://%s/events/%s",
-                propertiesLoader.getProperty(HOST_NAME), event.getId()));
+            VEvent icalEvent = new VEvent();
+            icalEvent.setSummary(event.getTitle());
+            icalEvent.setDateStart(event.getDate(), true);
+            icalEvent.setDateEnd(event.getEndDate(), true);
+            icalEvent.setDescription(event.getSubtitle());
 
-        if (event.getLocation() != null && event.getAddress() != null) {
-            icalEvent.setLocation(event.getLocation().getAddress().toString());
+            icalEvent.setOrganizer(new Organizer("Isaac Physics", "events@isaacphysics.org"));
+            icalEvent.setUid(String.format("%s@%s.isaacphysics.org", bookingDetails.getUserBooked().getId(), event.getId()));
+            icalEvent.setUrl(String.format("https://%s/events/%s",
+                    propertiesLoader.getProperty(HOST_NAME), event.getId()));
+
+            if (event.getLocation() != null && event.getAddress() != null) {
+                icalEvent.setLocation(event.getLocation().getAddress().toString());
+            }
+
+            ical.addEvent(icalEvent);
+            return new EmailAttachment("event.ics",
+                    "text/calendar; charset=\"utf-8\"; method=PUBLISH", Biweekly.write(ical).go());
+        } catch (IllegalArgumentException e) {
+            log.error("Unable to generate ics file for event email", e);
+            return null;
         }
-
-        ical.addEvent(icalEvent);
-        return new EmailAttachment("event.ics",
-                "text/calendar; charset=\"utf-8\"; method=PUBLISH", Biweekly.write(ical).go());
     }
 
     /**
@@ -729,6 +769,29 @@ public class EventBookingManager {
         } catch (UnsupportedEncodingException e) {
             log.error("Unable to encode url for contact us link, using default url instead", e);
             return defaultURL;
+        }
+    }
+
+    /**
+     * Helper method to undo the group association made when a user books on an event.
+     * @param event context
+     * @param user to remove
+     * @throws SegueDatabaseException if there is a database error.
+     */
+    private void removeUserFromEventGroup(final IsaacEventPageDTO event, final RegisteredUserDTO user)
+            throws SegueDatabaseException{
+        try {
+            // auto remove them from the group
+            if (event.getIsaacGroupToken() != null) {
+                AssociationToken associationToken = this.userAssociationManager.lookupTokenDetails(user, event.getIsaacGroupToken());
+                UserGroupDTO group = this.groupManager.getGroupById(associationToken.getGroupId());
+                if (group != null) {
+                    this.groupManager.removeUserFromGroup(group, user);
+                }
+            }
+        } catch (InvalidUserAssociationTokenException e) {
+            log.error(String.format("Unable to auto remove user (%s) using token (%s) as the token is invalid.",
+                    user.getEmail(), event.getIsaacGroupToken()));
         }
     }
 }

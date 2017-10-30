@@ -141,6 +141,10 @@ public class Mailer {
 
 		if (attachments != null) {
 			for (EmailAttachment attachment : attachments) {
+				if (null == attachment) {
+					continue;
+				}
+
 				MimeBodyPart attachmentBodyPart = new MimeBodyPart();
 				DataHandler dataHandler = new DataHandler(attachment.getAttachment(), attachment.getMimeType());
 				attachmentBodyPart.setDataHandler(dataHandler);
