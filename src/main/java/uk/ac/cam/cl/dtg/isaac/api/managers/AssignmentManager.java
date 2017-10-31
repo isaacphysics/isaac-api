@@ -178,7 +178,7 @@ public class AssignmentManager implements IGroupObserver {
 
 		// inform all members of the group that there is now an assignment for them.
         try {
-            final String gameboardURL = String.format("https://%s/#%s", properties.getProperty(HOST_NAME),
+            final String gameboardURL = String.format("https://%s/assignment/%s", properties.getProperty(HOST_NAME),
                     gameboard.getId());
 
             String gameboardName = gameboard.getId();
@@ -384,7 +384,7 @@ public class AssignmentManager implements IGroupObserver {
                     gameboardName = gameboard.getTitle();
                 }
 
-                String gameboardUrl = String.format("https://%s/#%s",
+                String gameboardUrl = String.format("https://%s/assignment/%s",
                         properties.getProperty(HOST_NAME),
                         existingAssignments.get(i).getGameboardId());
 
