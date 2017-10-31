@@ -256,11 +256,27 @@ public class UsersFacade extends AbstractSegueFacade {
 
         Map<String, Map<String, Boolean>> userPreferences = Maps.newHashMap();
 
-        for (String preferenceType: userSettingsObjectFromClient.getUserPreferences().keySet()
-             ) {
-            if (EnumUtils.isValidEnum(AllowedUserPreferences.class, preferenceType)) {
-                userPreferences.put(preferenceType, userSettingsObjectFromClient.getUserPreferences().get(preferenceType));
+        for (String preferenceType: userSettingsObjectFromClient.getUserPreferences().keySet()) {
+
+            // check if the given preference type is one we support
+            if (!EnumUtils.isValidEnum(AllowedUserPreferences.class, preferenceType)) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid user preference provided.").toResponse();
             }
+
+            // get the list of accepted values for the given preference type
+            List<String> acceptedPreferenceValues = Arrays.asList(getProperties().getProperty(preferenceType).split(","));
+            Map<String, Boolean> preferenceRecords = Maps.newHashMap();
+
+            for (String preferenceValue : userSettingsObjectFromClient.getUserPreferences().get(preferenceType).keySet()) {
+
+                if (!acceptedPreferenceValues.contains(preferenceValue)) {
+                    return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid user preference value provided.").toResponse();
+                }
+
+                preferenceRecords.put(preferenceValue, userSettingsObjectFromClient.getUserPreferences().get(preferenceType).get(preferenceValue));
+            }
+
+            userPreferences.put(preferenceType, preferenceRecords);
         }
 
         if (null != registeredUser.getId()) {
