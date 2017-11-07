@@ -70,6 +70,8 @@ public class ChoiceDeserializer extends JsonDeserializer<Choice> {
                 return getSingletonChoiceMapper().readValue(root.toString(), Formula.class);
             case "chemicalFormula":
                 return getSingletonChoiceMapper().readValue(root.toString(), ChemicalFormula.class);
+            case "stringChoice":
+                return getSingletonChoiceMapper().readValue(root.toString(), StringChoice.class);
             default:
                 return getSingletonChoiceMapper().readValue(root.toString(), Choice.class);
         }
