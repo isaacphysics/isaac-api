@@ -23,6 +23,7 @@ import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
+import uk.ac.cam.cl.dtg.segue.dos.content.StringChoice;
 import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 
 import java.util.Date;
@@ -42,6 +43,12 @@ public class IsaacStringMatchValidator implements IValidator {
             throw new IllegalArgumentException(String.format(
                     "This validator only works with Isaac String Match Questions... (%s is not string match)",
                     question.getId()));
+        }
+
+        if (!(answer instanceof StringChoice)) {
+            throw new IllegalArgumentException(String.format(
+                    "Expected StringChoice for IsaacStringMatchQuestion: %s. Received (%s) ", question.getId(),
+                    answer.getClass()));
         }
 
         IsaacStringMatchQuestion stringMatchQuestion = (IsaacStringMatchQuestion) question;
@@ -70,16 +77,34 @@ public class IsaacStringMatchValidator implements IValidator {
             // For all the choices on this question...
             for (Choice c : stringMatchQuestion.getChoices()) {
 
-                if (null == c.getValue() || c.getValue().isEmpty()) {
+                // ... that are of the StringChoice type, ...
+                if (!(c instanceof StringChoice)) {
+                    log.error("Isaac StringMatch Validator for questionId: " + stringMatchQuestion.getId()
+                            + " expected there to be a StringChoice. Instead it found a Choice.");
+                    continue;
+                }
+                StringChoice stringChoice = (StringChoice) c;
+
+                if (null == stringChoice.getValue() || stringChoice.getValue().isEmpty()) {
                     log.error("Expected a string to match, but none found in choice for question id: "
                             + stringMatchQuestion.getId());
                     continue;
                 }
 
-                // ... look for an exact string match to the submitted answer.
-                if (c.getValue().equals(answer.getValue())) {
-                    feedback = (Content) c.getExplanation();
-                    responseCorrect = c.isCorrect();
+                // ... check if they match the choice, ...
+                if (stringChoice.isCaseInsensitive()) {
+                    // ... allowing case-insensitive matching only if haven't already matched a correct answer ...
+                    if (stringChoice.getValue().toLowerCase().equals(answer.getValue().toLowerCase()) && !responseCorrect) {
+                        feedback = (Content) stringChoice.getExplanation();
+                        responseCorrect = stringChoice.isCorrect();
+                    }
+                } else {
+                    if (stringChoice.getValue().equals(answer.getValue())) {
+                        feedback = (Content) stringChoice.getExplanation();
+                        responseCorrect = stringChoice.isCorrect();
+                        // ... and taking exact case-sensitive matches to be the best possible and stopping if found.
+                        break;
+                    }
                 }
             }
         }
