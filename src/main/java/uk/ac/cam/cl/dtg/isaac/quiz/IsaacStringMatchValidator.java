@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
+import com.google.common.collect.Lists;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +28,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.StringChoice;
 import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * Validator that only provides functionality to validate String Match questions.
@@ -74,8 +76,16 @@ public class IsaacStringMatchValidator implements IValidator {
 
         if (null == feedback) {
 
+            // Sort the choices so that we match incorrect choices last, taking precedence over correct ones.
+            List<Choice> orderedChoices = Lists.newArrayList(stringMatchQuestion.getChoices());
+            orderedChoices.sort((o1, o2) -> {
+                int o1Val = o1.isCorrect() ? 0 : 1;
+                int o2Val = o2.isCorrect() ? 0 : 1;
+                return o1Val - o2Val;
+            });
+
             // For all the choices on this question...
-            for (Choice c : stringMatchQuestion.getChoices()) {
+            for (Choice c : orderedChoices) {
 
                 // ... that are of the StringChoice type, ...
                 if (!(c instanceof StringChoice)) {
