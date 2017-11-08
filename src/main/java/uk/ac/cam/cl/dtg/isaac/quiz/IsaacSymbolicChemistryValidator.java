@@ -386,9 +386,11 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                         // Measure the 'weakness' level. (0 is the weakest)
                         int counter = 0;
 
-                        if (response.get("sameCoefficient").equals(true)) {
-                            counter++;
-                        }
+                        // FIXME: Nuclear Equations and Expressions don't have 'sameCoefficient' property?!
+                        // So ignore this for now!
+//                        if (response.get("sameCoefficient").equals(true)) {
+//                            counter++;
+//                        }
 
                         matchType = MatchType.valueOf("WEAK" + counter);
 
