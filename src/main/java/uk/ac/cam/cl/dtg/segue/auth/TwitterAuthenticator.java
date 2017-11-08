@@ -200,6 +200,7 @@ public class TwitterAuthenticator implements IOAuth1Authenticator {
                 if (null == email) {
                     email = userInfo.getId() + "-twitter";
                     emailStatus = EmailVerificationStatus.DELIVERY_FAILED;
+                    log.warn("No email address provided by Twitter! Using (" + email + ") instead");
                 }
 
                 return new UserFromAuthProvider(String.valueOf(userInfo.getId()), givenName, familyName, email,

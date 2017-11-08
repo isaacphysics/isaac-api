@@ -239,9 +239,16 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
             log.error("An IO error occurred while trying to retrieve user information: " + e);
         }
         if (userInfo != null && userInfo.getId() != null) {
+            EmailVerificationStatus emailStatus = userInfo.isVerifiedEmail() ? EmailVerificationStatus.VERIFIED : EmailVerificationStatus.NOT_VERIFIED;
+            String email = userInfo.getEmail();
+            if (null == email) {
+                email = userInfo.getId() + "-google";
+                emailStatus = EmailVerificationStatus.DELIVERY_FAILED;
+                log.warn("No email address provided by Google! Using (" + email + ") instead");
+            }
+
             return new UserFromAuthProvider(userInfo.getId(), userInfo.getGivenName(), userInfo.getFamilyName(),
-                    userInfo.getEmail(), userInfo.isVerifiedEmail() ? EmailVerificationStatus.VERIFIED
-                            : EmailVerificationStatus.NOT_VERIFIED, null, null, null);
+                    email, emailStatus, null, null, null);
 
         } else {
             throw new NoUserException("No user could be created from provider details!");
