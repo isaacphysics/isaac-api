@@ -244,7 +244,7 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
             if (null == email) {
                 email = userInfo.getId() + "-google";
                 emailStatus = EmailVerificationStatus.DELIVERY_FAILED;
-                log.warn("No email address provided by Facebook! Using (" + email + ") instead");
+                log.warn("No email address provided by Google! Using (" + email + ") instead");
             }
 
             return new UserFromAuthProvider(userInfo.getId(), userInfo.getGivenName(), userInfo.getFamilyName(),
