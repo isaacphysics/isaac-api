@@ -19,8 +19,11 @@ package uk.ac.cam.cl.dtg.segue.dao.kafkaStreams;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.Lists;
+import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.config.TopicConfig;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
@@ -35,15 +38,10 @@ import org.apache.kafka.streams.kstream.KStreamBuilder;
 import org.apache.kafka.streams.kstream.KTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
-import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.sql.Timestamp;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -51,18 +49,21 @@ import java.util.Properties;
  *  @author Dan Underwood
  */
 public class SiteStatisticsStreamsApplication {
-    private static final Logger log = LoggerFactory.getLogger(SiteStatisticsStreamsApplication.class);
+
+    private final Logger log = LoggerFactory.getLogger(SiteStatisticsStreamsApplication.class);
+
+    private static final Serializer<JsonNode> JsonSerializer = new JsonSerializer();
+    private static final Deserializer<JsonNode> JsonDeserializer = new JsonDeserializer();
+    private static final Serde<String> StringSerde = Serdes.String();
+    private static final Serde<JsonNode> JsonSerde = Serdes.serdeFrom(JsonSerializer, JsonDeserializer);
+    private static final Serde<Long> LongSerde = Serdes.Long();
 
     private KafkaTopicManager kafkaTopicManager;
     private KafkaStreams streams;
-    //private static UserAccountManager userManager;
-    static final Serializer<JsonNode> JsonSerializer = new JsonSerializer();
-    static final Deserializer<JsonNode> JsonDeserializer = new JsonDeserializer();
-    static final Serde<String> StringSerde = Serdes.String();
-    static final Serde<JsonNode> JsonSerde = Serdes.serdeFrom(JsonSerializer, JsonDeserializer);
+    private KStreamBuilder builder = new KStreamBuilder();
+    private Properties streamsConfiguration = new Properties();
 
-    protected KStreamBuilder builder = new KStreamBuilder();
-    protected Properties streamsConfiguration = new Properties();
+    private final String streamsAppNameAndVersion = "streamsapp_site_stats-v1.1";
 
 
     /**
@@ -71,17 +72,13 @@ public class SiteStatisticsStreamsApplication {
      *              - properties object containing global variables
      * @param kafkaTopicManager
      *              - manager for kafka topic administration
-     * @param userManager
-     *              - manager for retrieving user details
      */
     public SiteStatisticsStreamsApplication(final PropertiesLoader globalProperties,
                                             final KafkaTopicManager kafkaTopicManager) {
-                                            //final UserAccountManager userManager) {
 
         this.kafkaTopicManager = kafkaTopicManager;
-        //this.userManager = userManager;|
 
-        streamsConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, "streamsapp_site_stats-v1.0");
+        streamsConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, streamsAppNameAndVersion);
         streamsConfiguration.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG,
                 globalProperties.getProperty("KAFKA_HOSTNAME") + ":" + globalProperties.getProperty("KAFKA_PORT"));
         streamsConfiguration.put(StreamsConfig.STATE_DIR_CONFIG, globalProperties.getProperty("KAFKA_STREAMS_STATE_DIR"));
@@ -103,8 +100,25 @@ public class SiteStatisticsStreamsApplication {
     public void start() {
 
         // ensure topics exist before attempting to consume
-        kafkaTopicManager.ensureTopicExists("topic_logged_events_test", -1);
-        kafkaTopicManager.ensureTopicExists("topic_anonymous_logged_events_test", 7200000);
+
+        // logged events
+        List<ConfigEntry> loggedEventsConfigs = Lists.newLinkedList();
+        loggedEventsConfigs.add(new ConfigEntry(TopicConfig.RETENTION_MS_CONFIG, String.valueOf(-1)));
+        kafkaTopicManager.ensureTopicExists("topic_logged_events_test", loggedEventsConfigs);
+
+        // anonymous logged events
+        List<ConfigEntry> anonLoggedEventsConfigs = Lists.newLinkedList();
+        anonLoggedEventsConfigs.add(new ConfigEntry(TopicConfig.RETENTION_MS_CONFIG, String.valueOf(7200000)));
+        kafkaTopicManager.ensureTopicExists("topic_anonymous_logged_events_test", anonLoggedEventsConfigs);
+
+        // local store changelog topics
+        List<ConfigEntry> changelogConfigs = Lists.newLinkedList();
+        changelogConfigs.add(new ConfigEntry(TopicConfig.CLEANUP_POLICY_CONFIG, TopicConfig.CLEANUP_POLICY_COMPACT));
+
+        kafkaTopicManager.ensureTopicExists(streamsAppNameAndVersion + "-localstore_user_data-changelog", changelogConfigs);
+        kafkaTopicManager.ensureTopicExists(streamsAppNameAndVersion + "-localstore_user_last_seen-changelog", changelogConfigs);
+        kafkaTopicManager.ensureTopicExists(streamsAppNameAndVersion + "-localstore_log_event_counts-changelog", changelogConfigs);
+
 
         // raw logged events incoming data stream from kafka
         KStream<String, JsonNode>[] rawLoggedEvents = builder.stream(StringSerde, JsonSerde, "topic_logged_events_test")
@@ -113,10 +127,17 @@ public class SiteStatisticsStreamsApplication {
                         (k, v) -> v.path("anonymous_user").asBoolean()
                 );
 
-        // parallel log for anonymous events (may want to optimise how we do this later)
+        // parallel log for anonymous events
         rawLoggedEvents[1].to(StringSerde, JsonSerde, "topic_anonymous_logged_events_test");
 
         streamProcess(rawLoggedEvents[0]);
+
+        // need to make state stores queryable globally, as we often have 2 versions of API running concurrently, hence 2 streams app instances
+        // aggregations are saved to a local state store per streams app instance and update a changelog topic in Kafka
+        // we can use this changelog to populate a global state store for all streams app instances
+        builder.globalTable(StringSerde, JsonSerde,streamsAppNameAndVersion + "-localstore_user_data-changelog", "globalstore_user_data");
+        builder.globalTable(StringSerde, JsonSerde,streamsAppNameAndVersion + "-localstore_user_last_seen-changelog", "globalstore_user_last_seen");
+        builder.globalTable(StringSerde, LongSerde,streamsAppNameAndVersion + "-localstore_log_event_counts-changelog", "globalstore_log_event_counts");
 
         // use the builder and the streams configuration we set to setup and start a streams object
         streams = new KafkaStreams(builder, streamsConfiguration);
@@ -125,7 +146,7 @@ public class SiteStatisticsStreamsApplication {
         // return when streams instance is initialized
         while (true) {
 
-            if (streams.state().isRunning())
+            if (streams.state().isCreatedOrRunning())
                 break;
         }
 
@@ -167,9 +188,8 @@ public class SiteStatisticsStreamsApplication {
                             return userRecord;
                         },
                         JsonSerde,
-                        "store_user_data"
+                        "localstore_user_data"
                 );
-
 
         // join user table to incoming event stream to get user data for stats processing
         KStream<String, JsonNode> userEvents = rawStream
@@ -247,7 +267,7 @@ public class SiteStatisticsStreamsApplication {
                             return countRecord;
                         },
                         JsonSerde,
-                        "store_user_last_seen"
+                        "localstore_user_last_seen"
                 );
 
 
@@ -259,7 +279,7 @@ public class SiteStatisticsStreamsApplication {
                         }
                 )
                 .groupByKey(StringSerde, JsonSerde)
-                .count("store_log_event_counts");
+                .count("localstore_log_event_counts");
 
     }
 

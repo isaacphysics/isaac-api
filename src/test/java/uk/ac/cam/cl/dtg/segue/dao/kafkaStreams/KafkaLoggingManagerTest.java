@@ -33,6 +33,7 @@ public class KafkaLoggingManagerTest {
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "tsdrfdffsest");
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        props.put(ConsumerConfig.REQUEST_TIMEOUT_MS_CONFIG, 100);
 
         KafkaConsumer<String, String> loggedEventsConsumer = new KafkaConsumer<String, String>(props);
         ArrayList<String> topics = Lists.newArrayList();
