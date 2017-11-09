@@ -196,12 +196,16 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 
         LocalUserCredential luc = passwordDataManager.getLocalUserCredential(userToAttachToken.getId());
         if (null == luc) {
-            // create a new luc as this user didn't have one before - they won't ever be able to login with this
+            // Create a new luc as this user didn't have one before - they won't ever be able to login with this
+            // because the @ symbol is not a valid Base64 character and the KEY_LENGTH is also shorter than those used
+            // when checking real passwords.
+            // If new password algorithms are implemented that use short keys and/or a larger charset than Base64 does
+            // this may become an issue, although unlikely because short keys are risky and Base64 is an encoding safe charset.
             luc = new LocalUserCredential(userToAttachToken.getId(),
-                    "LOCKED@" + new String(this.preferredAlgorithm.computeHash(UUID.randomUUID().toString(),
-                            UUID.randomUUID().toString(), SHORT_KEY_LENGTH)),
-                    new String(this.preferredAlgorithm.computeHash(UUID.randomUUID().toString(),
-                            UUID.randomUUID().toString(), SHORT_KEY_LENGTH)),
+                    "LOCKED@" + new String(Base64.encodeBase64(this.preferredAlgorithm.computeHash(UUID.randomUUID().toString(),
+                            UUID.randomUUID().toString(), SHORT_KEY_LENGTH))),
+                    new String(Base64.encodeBase64(this.preferredAlgorithm.computeHash(UUID.randomUUID().toString(),
+                            UUID.randomUUID().toString(), SHORT_KEY_LENGTH))),
                     this.preferredAlgorithm.hashingAlgorithmName());
         }
 
