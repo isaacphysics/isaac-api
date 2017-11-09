@@ -51,6 +51,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -289,6 +290,20 @@ public class GameManager {
         return gameboardFound;
     }
 
+    /** TODO MT Document **///.,
+    public final GameboardDTO getFastTrackGameboard(final String gameboardId, final AbstractSegueUserDTO user,
+            final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts)
+            throws SegueDatabaseException, ContentManagerException {
+
+        List<ContentDTO> fastTrackAssociatedQuestions = this.getQuestionsWithTag(gameboardId);
+        GameboardDTO unAugmentedGameboard = this.gameboardPersistenceManager.getGameboardById(gameboardId);
+        GameboardDTO userInfoAugmentedGameboard = this.augmentGameboardWithUserInformation(
+                unAugmentedGameboard, userQuestionAttempts, user);
+        GameboardDTO fastTrackGameboard = this.augmentGameboardWithFastTrackInformation(
+                userInfoAugmentedGameboard, fastTrackAssociatedQuestions, userQuestionAttempts);
+        return fastTrackGameboard;
+    }
+
     /**
      * Lookup gameboards belonging to a current user.
      * 
@@ -450,7 +465,7 @@ public class GameManager {
         }
 
         boolean gameboardStarted = false;
-        List<GameboardItem> questions = gameboardDTO.getQuestions();
+        List<GameboardItem> questions = (List<GameboardItem>) gameboardDTO.getQuestions();
         int totalNumberOfQuestionsParts = 0;
         int totalNumberOfCorrectQuestionParts = 0;
         for (GameboardItem gameItem : questions) {
@@ -477,6 +492,98 @@ public class GameManager {
                     .setSavedToCurrentUser(this.isBoardLinkedToUser((RegisteredUserDTO) user, gameboardDTO.getId()));
         }
         
+        return gameboardDTO;
+    }
+
+    private Map<String, ContentDTO> indexContentOnId(final List<ContentDTO> contents) {
+        Map<String, ContentDTO> idIndexedContent = Maps.newHashMap(); 
+        for (ContentDTO content : contents) {
+            idIndexedContent.put(content.getId(), content);
+        }
+        return idIndexedContent;
+    }
+
+    private boolean questionIsAnsweredCorrectly(final ContentDTO question,
+            final Map<String, List<QuestionValidationResponse>> questionAttempts) {
+        List<ContentDTO> questionParts = Lists.newArrayList();
+        this.depthFirstQuestionSearch(question, questionParts);
+        boolean allQuestionPartsCompleted = true;
+        for (ContentDTO questionPart : this.filterQuestionParts(questionParts)) {
+            if (questionAttempts != null) {
+                List<QuestionValidationResponse> attemptsAtQuestionPart = questionAttempts.get(questionPart.getId());
+                Boolean questionPartCompleted = this.hasCorrectAnsweredCorrectly(attemptsAtQuestionPart);
+                allQuestionPartsCompleted &= questionPartCompleted != null && questionPartCompleted;
+            } else {
+                allQuestionPartsCompleted = false;
+            }
+            if (!allQuestionPartsCompleted) {
+                break; //early exit on incorrect question part
+            }
+        }
+        return allQuestionPartsCompleted;
+    }
+
+    /** TODO MT Document **/
+    private Map<String, QuestionPartConceptDTO> createConceptMapFromQuestions(final List<ContentDTO> conceptQuestions,
+            final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttempts) {
+        // TODO could possibly just ask for upper and lower questions (top ten info comes from the gamebaord)
+        Map<String, QuestionPartConceptDTO> conceptMap = Maps.newHashMap();
+        for (ContentDTO question : conceptQuestions) {
+            String conceptName = question.getTitle();
+            conceptMap.putIfAbsent(conceptName, new QuestionPartConceptDTO(conceptName));
+            QuestionPartConceptDTO previousConcept = conceptMap.get(conceptName);
+            FastTrackConceptState currentConceptLevel = FastTrackConceptState.getStateFromTags(question.getTags());
+            if (currentConceptLevel != null) {
+                if (previousConcept.getBestLevel() == null
+                        || currentConceptLevel.compareTo(previousConcept.getBestLevel()) > 0) {
+                    if (this.questionIsAnsweredCorrectly(question, questionAttempts.get(question.getId()))) {
+                        previousConcept.setBestLevel(currentConceptLevel);
+                    }
+                }
+            }
+        }
+        return conceptMap;
+    }
+
+    /** TODO MT Document **///.,
+    private GameboardDTO augmentGameboardWithFastTrackInformation(final GameboardDTO gameboardDTO,
+            final List<ContentDTO> boardAssociatedQuestions,
+            final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser)
+            throws ContentManagerException, SegueDatabaseException {
+        if (null == gameboardDTO) {
+            return null;
+        }
+        if (gameboardDTO.getQuestions().size() == 0) {
+            return gameboardDTO;
+        }
+
+        Map<String, ContentDTO> idIndexedContent = indexContentOnId(boardAssociatedQuestions);
+        Map<String, QuestionPartConceptDTO> conceptMap = createConceptMapFromQuestions(
+                boardAssociatedQuestions, questionAttemptsFromUser);
+        List<FastTrackGameboardItem> fastTrackQuestions = Lists.newArrayList();
+        for (GameboardItem question : gameboardDTO.getQuestions()) {
+            FastTrackGameboardItem fastTrackQuestion = new FastTrackGameboardItem(question);
+            List<ContentDTO> questionParts = Lists.newArrayList();
+            depthFirstQuestionSearch(idIndexedContent.get(question.getId()), questionParts);
+            List<QuestionPartConceptDTO> questionPartConcepts = Lists.newArrayList();
+            for (ContentDTO questionPart : questionParts) {
+                List<ContentSummaryDTO> relatedContentSummary = questionPart.getRelatedContent();
+                if (relatedContentSummary != null) {
+                    String relatedContentId = relatedContentSummary.get(0).getId();
+                    ContentDTO relatedContent = idIndexedContent.get(relatedContentId);
+                    if (relatedContent != null) {
+                        String conceptTitle = relatedContent.getTitle();
+                        questionPartConcepts.add(conceptMap.get(conceptTitle));
+                    } else {
+                        log.error("FastTrack question " + question.getId()
+                                + " references a related content id which is not correctly tagged " + relatedContentId);
+                    }
+                } // the FastTrack question part has no related content i.e. quick question
+            }
+            fastTrackQuestion.setQuestionPartConcepts(questionPartConcepts);
+            fastTrackQuestions.add(fastTrackQuestion);
+        }
+        gameboardDTO.setQuestions(fastTrackQuestions);
         return gameboardDTO;
     }
 
@@ -902,6 +1009,17 @@ public class GameManager {
         return gameboardReadyQuestions;
     }
 
+    /** TODO MT Document *///.,
+    private List<ContentDTO> getQuestionsWithTag(String tag) throws ContentManagerException {
+        Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
+        fieldsToMap.put(immutableEntry(BooleanOperator.OR, TYPE_FIELDNAME),
+                Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
+        fieldsToMap.put(immutableEntry(BooleanOperator.OR, TAGS_FIELDNAME), Collections.singletonList(tag));
+        ResultsWrapper<ContentDTO> results = this.contentManager.findByFieldNames(
+                this.contentIndex, fieldsToMap, 0, SEARCH_MAX_WINDOW_SIZE);
+        List<ContentDTO> questionsForGameboard = results.getResults();
+        return questionsForGameboard;
+    }
 
     /**
      * Gets you the next set of questions that match the given filter.

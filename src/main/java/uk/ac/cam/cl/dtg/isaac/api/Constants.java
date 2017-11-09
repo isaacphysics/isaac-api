@@ -15,6 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
+import java.util.Set;
+
 /**
  * Utility class to provide common isaac-specific constants.
  *
@@ -51,6 +53,20 @@ public final class Constants {
         PERFECT, PASSED, IN_PROGRESS, NOT_ATTEMPTED, FAILED
     }
 
+    public enum FastTrackConceptState {
+        ft_upper,
+        ft_lower;
+        public static FastTrackConceptState getStateFromTags(Set<String> tags) {
+            if (tags.contains("ft_upper")) {
+                return ft_upper;
+            } else if (tags.contains("ft_lower")) {
+                return ft_lower;
+            } else {
+                return null;
+            }
+        }
+    }
+
     /**
      * GameboardState Represents the potential states of a gameboard.
      */
@@ -70,6 +86,7 @@ public final class Constants {
 
     public static final Integer DEFAULT_GAMEBOARDS_RESULTS_LIMIT = 6;
     public static final Integer MAX_PODS_TO_RETURN = 10;
+    public static final Integer SEARCH_MAX_WINDOW_SIZE = 10000;
 
     // Log events
     public static final String VIEW_QUESTION = "VIEW_QUESTION";

@@ -55,6 +55,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.collect.Maps.immutableEntry;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.SEARCH_MAX_WINDOW_SIZE;
 
 /**
  * A class that works as an adapter for ElasticSearch.
@@ -544,7 +545,8 @@ public class ElasticSearchProvider implements ISearchProvider {
                     continue;
                 }
 
-                this.settingsCache.put(MAX_WINDOW_SIZE_KEY, settings.get(index + ".max_result_window", "10000"));
+                this.settingsCache.put(MAX_WINDOW_SIZE_KEY, settings.get(index + ".max_result_window",
+                        Integer.toString(SEARCH_MAX_WINDOW_SIZE)));
             }
         }
         return Integer.parseInt(this.settingsCache.getIfPresent(MAX_WINDOW_SIZE_KEY));

@@ -30,7 +30,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 public class GameboardDTO {
     private String id;
     private String title;
-    private List<GameboardItem> questions;
+    private List<? extends GameboardItem> questions;
     private IsaacWildcard wildCard;
     private Integer wildCardPosition;
     private Date creationDate;
@@ -134,7 +134,7 @@ public class GameboardDTO {
      * 
      * @return the gameboardItems
      */
-    public List<GameboardItem> getQuestions() {
+    public List<? extends GameboardItem> getQuestions() {
         return questions;
     }
 
@@ -144,7 +144,7 @@ public class GameboardDTO {
      * @param questions
      *            the gameboardItems to set
      */
-    public void setQuestions(final List<GameboardItem> questions) {
+    public void setQuestions(final List<? extends GameboardItem> questions) {
         this.questions = questions;
     }
 
