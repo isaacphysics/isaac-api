@@ -749,8 +749,11 @@ public class AdminFacade extends AbstractSegueFacade {
             }
             
             if (!currentUser.getRole().equals(Role.ADMIN)
-                    && (null != familyName) && familyName.isEmpty() && (null == schoolOther) && (null != email)
-                    && email.isEmpty() && (null == schoolURN) && (null == postcode)) {
+                    && (null == familyName || familyName.isEmpty())
+                    && (null == schoolOther || schoolOther.isEmpty())
+                    && (null == email || email.isEmpty())
+                    && (null == schoolURN || schoolURN.isEmpty())
+                    && (null == postcode || postcode.isEmpty())) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to do wildcard searches.")
                         .toResponse();
 
