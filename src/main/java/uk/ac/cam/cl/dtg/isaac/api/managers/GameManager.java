@@ -583,7 +583,9 @@ public class GameManager {
             fastTrackQuestion.setQuestionPartConcepts(questionPartConcepts);
             fastTrackQuestions.add(fastTrackQuestion);
         }
-        gameboardDTO.setQuestions(fastTrackQuestions);
+        List<GameboardItem> questions = gameboardDTO.getQuestions();
+        questions.clear();
+        questions.addAll(fastTrackQuestions);
         return gameboardDTO;
     }
 
