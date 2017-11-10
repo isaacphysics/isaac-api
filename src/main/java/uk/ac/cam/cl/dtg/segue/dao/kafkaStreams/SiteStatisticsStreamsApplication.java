@@ -63,7 +63,7 @@ public class SiteStatisticsStreamsApplication {
     private KStreamBuilder builder = new KStreamBuilder();
     private Properties streamsConfiguration = new Properties();
 
-    private final String streamsAppNameAndVersion = "streamsapp_site_stats-v1.1";
+    private final String streamsAppNameAndVersion = "streamsapp_site_stats-v1.2";
 
 
     /**
@@ -104,12 +104,12 @@ public class SiteStatisticsStreamsApplication {
         // logged events
         List<ConfigEntry> loggedEventsConfigs = Lists.newLinkedList();
         loggedEventsConfigs.add(new ConfigEntry(TopicConfig.RETENTION_MS_CONFIG, String.valueOf(-1)));
-        kafkaTopicManager.ensureTopicExists("topic_logged_events_test", loggedEventsConfigs);
+        kafkaTopicManager.ensureTopicExists("topic_logged_events", loggedEventsConfigs);
 
         // anonymous logged events
         List<ConfigEntry> anonLoggedEventsConfigs = Lists.newLinkedList();
         anonLoggedEventsConfigs.add(new ConfigEntry(TopicConfig.RETENTION_MS_CONFIG, String.valueOf(7200000)));
-        kafkaTopicManager.ensureTopicExists("topic_anonymous_logged_events_test", anonLoggedEventsConfigs);
+        kafkaTopicManager.ensureTopicExists("topic_anonymous_logged_events", anonLoggedEventsConfigs);
 
         // local store changelog topics
         List<ConfigEntry> changelogConfigs = Lists.newLinkedList();
@@ -121,14 +121,14 @@ public class SiteStatisticsStreamsApplication {
 
 
         // raw logged events incoming data stream from kafka
-        KStream<String, JsonNode>[] rawLoggedEvents = builder.stream(StringSerde, JsonSerde, "topic_logged_events_test")
+        KStream<String, JsonNode>[] rawLoggedEvents = builder.stream(StringSerde, JsonSerde, "topic_logged_events")
                 .branch(
                         (k, v) -> !v.path("anonymous_user").asBoolean(),
                         (k, v) -> v.path("anonymous_user").asBoolean()
                 );
 
         // parallel log for anonymous events
-        rawLoggedEvents[1].to(StringSerde, JsonSerde, "topic_anonymous_logged_events_test");
+        rawLoggedEvents[1].to(StringSerde, JsonSerde, "topic_anonymous_logged_events");
 
         streamProcess(rawLoggedEvents[0]);
 

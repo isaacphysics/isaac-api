@@ -86,12 +86,12 @@ public class KafkaLoggingManager extends LoggingEventHandler {
         // logged events
         List<ConfigEntry> loggedEventsConfigs = Lists.newLinkedList();
         loggedEventsConfigs.add(new ConfigEntry(TopicConfig.RETENTION_MS_CONFIG, String.valueOf(-1)));
-        kafkaTopicManager.ensureTopicExists("topic_logged_events_test", loggedEventsConfigs);
+        kafkaTopicManager.ensureTopicExists("topic_logged_events", loggedEventsConfigs);
 
         // anonymous logged events
         List<ConfigEntry> anonLoggedEventsConfigs = Lists.newLinkedList();
         anonLoggedEventsConfigs.add(new ConfigEntry(TopicConfig.RETENTION_MS_CONFIG, String.valueOf(7200000)));
-        kafkaTopicManager.ensureTopicExists("topic_anonymous_logged_events_test", anonLoggedEventsConfigs);
+        kafkaTopicManager.ensureTopicExists("topic_anonymous_logged_events", anonLoggedEventsConfigs);
     }
 
 
@@ -126,7 +126,7 @@ public class KafkaLoggingManager extends LoggingEventHandler {
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
         ArrayList<String> topics = Lists.newArrayList();
-        topics.add("topic_anonymous_logged_events_test");
+        topics.add("topic_anonymous_logged_events");
 
         log.debug(String.format("Kafka Test Transfer Log Events - OldUser (%s) NewUser (%s) - About to poll", oldUserId, newUserId));
         int totalRecordCount = 0;
@@ -166,7 +166,7 @@ public class KafkaLoggingManager extends LoggingEventHandler {
                                 .build();
 
                         // producerRecord contains the name of the kafka topic we are publishing to, followed by the message to be sent.
-                        ProducerRecord<String, String> producerRecord = new ProducerRecord<String, String>("topic_logged_events_test", newUserId,
+                        ProducerRecord<String, String> producerRecord = new ProducerRecord<String, String>("topic_logged_events", newUserId,
                                 objectMapper.writeValueAsString(kafkaLogRecord));
 
                         kafkaProducer.send(producerRecord);
@@ -215,7 +215,7 @@ public class KafkaLoggingManager extends LoggingEventHandler {
                 .build();
 
         // producerRecord contains the name of the kafka topic we are publishing to, followed by the message to be sent.
-        ProducerRecord producerRecord = new ProducerRecord<String, String>("topic_logged_events_test", logEvent.getUserId(),
+        ProducerRecord producerRecord = new ProducerRecord<String, String>("topic_logged_events", logEvent.getUserId(),
                 objectMapper.writeValueAsString(kafkaLogRecord));
 
         try {
