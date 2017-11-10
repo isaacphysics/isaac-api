@@ -242,7 +242,7 @@ public class SiteStatsStreamsServiceTest {
 
     @Test
     public void streamsClassVersions_Test() throws Exception {
-        assertClassUnchanged(SiteStatisticsStreamsApplication.class,"d2ac9254ac62d0fd5bc2be61a4245d7a8d7c8d36b000f3874322161b1eb2572d");
+        assertClassUnchanged(SiteStatisticsStreamsApplication.class,"ed9f79a92ea63f897b8a4ddc8535c90977a016fb3176beb34fb686c7a47a4b15");
     }
 
 
