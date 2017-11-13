@@ -43,6 +43,8 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Concrete Kafka streams processing application for generating site statistics
@@ -50,7 +52,8 @@ import java.util.Properties;
  */
 public class SiteStatisticsStreamsApplication {
 
-    private final Logger log = LoggerFactory.getLogger(SiteStatisticsStreamsApplication.class);
+    private static final Logger log = LoggerFactory.getLogger(SiteStatisticsStreamsApplication.class);
+    private static final Logger kafkaLog = LoggerFactory.getLogger("kafkaStreamsLogger");
 
     private static final Serializer<JsonNode> JsonSerializer = new JsonSerializer();
     private static final Deserializer<JsonNode> JsonDeserializer = new JsonDeserializer();
@@ -63,7 +66,7 @@ public class SiteStatisticsStreamsApplication {
     private KStreamBuilder builder = new KStreamBuilder();
     private Properties streamsConfiguration = new Properties();
 
-    private final String streamsAppNameAndVersion = "streamsapp_site_stats-v1.41";
+    private final String streamsAppNameAndVersion = "streamsapp_site_stats-v1.42";
 
 
     /**
@@ -143,6 +146,8 @@ public class SiteStatisticsStreamsApplication {
                 break;
         }
 
+        kafkaLog.info("Site statistics streams application started.");
+
     }
 
     /**
@@ -154,8 +159,27 @@ public class SiteStatisticsStreamsApplication {
      */
     public static void streamProcess(KStream<String, JsonNode> rawStream) {
 
+        final AtomicLong lastLagLog = new AtomicLong(0);
+        final AtomicBoolean wasLagging = new AtomicBoolean(true);
+
         // process user data in local data stores, extract user record related events
         KTable<String, JsonNode> userData = rawStream
+                .peek(
+                    (k,v) -> {
+                        long lag = System.currentTimeMillis() - v.get("timestamp").asLong();
+                        if (lag > 1000) {
+
+                            if (System.currentTimeMillis() - lastLagLog.get() > 10000) {
+                                kafkaLog.info(String.format("Site statistics stream lag: %.02f hours (%.03f s).", lag / 3600000.0, lag / 1000.0));
+                                lastLagLog.set(System.currentTimeMillis());
+                            }
+
+                        } else if (wasLagging.get()) {
+                            wasLagging.set(false);
+                            kafkaLog.info("Site statistics stream processing caught up.");
+                        }
+                    }
+                )
                 .filter(
                         (userId, loggedEvent) -> loggedEvent.path("event_type")
                                 .asText()
