@@ -107,11 +107,6 @@ public class SiteStatisticsStreamsApplication {
         loggedEventsConfigs.add(new ConfigEntry(TopicConfig.RETENTION_MS_CONFIG, String.valueOf(-1)));
         kafkaTopicManager.ensureTopicExists("topic_logged_events", loggedEventsConfigs);
 
-        // anonymous logged events
-        List<ConfigEntry> anonLoggedEventsConfigs = Lists.newLinkedList();
-        anonLoggedEventsConfigs.add(new ConfigEntry(TopicConfig.RETENTION_MS_CONFIG, String.valueOf(7200000)));
-        kafkaTopicManager.ensureTopicExists("topic_anonymous_logged_events", anonLoggedEventsConfigs);
-
         // local store changelog topics
         List<ConfigEntry> changelogConfigs = Lists.newLinkedList();
         changelogConfigs.add(new ConfigEntry(TopicConfig.CLEANUP_POLICY_CONFIG, TopicConfig.CLEANUP_POLICY_COMPACT));
@@ -122,16 +117,13 @@ public class SiteStatisticsStreamsApplication {
 
 
         // raw logged events incoming data stream from kafka
-        KStream<String, JsonNode>[] rawLoggedEvents = builder.stream(StringSerde, JsonSerde, "topic_logged_events")
-                .branch(
-                        (k, v) -> !v.path("anonymous_user").asBoolean(),
+        KStream<String, JsonNode> rawLoggedEvents = builder.stream(StringSerde, JsonSerde, "topic_logged_events")
+                .filterNot(
                         (k, v) -> v.path("anonymous_user").asBoolean()
                 );
 
-        // parallel log for anonymous events
-        rawLoggedEvents[1].to(StringSerde, JsonSerde, "topic_anonymous_logged_events");
-
-        streamProcess(rawLoggedEvents[0]);
+        // process raw logged events
+        streamProcess(rawLoggedEvents);
 
         // need to make state stores queryable globally, as we often have 2 versions of API running concurrently, hence 2 streams app instances
         // aggregations are saved to a local state store per streams app instance and update a changelog topic in Kafka
