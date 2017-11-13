@@ -44,6 +44,6 @@ Configutation:
             - ref: Isaac_Appender
 
         - name: uk.ac.cam.cl.dtg.segue.api.monitors.PerformanceMonitor
-          level: debug
+          level: warn
           AppenderRef:
             - ref: Perf_Appender
