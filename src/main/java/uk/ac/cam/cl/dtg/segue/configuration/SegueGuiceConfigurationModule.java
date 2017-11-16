@@ -49,6 +49,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.AnonymousEventsStreamsApplication;
+import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.UserStatisticsStreamsApplication;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.KafkaTopicManager;
 import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.SiteStatisticsStreamsApplication;
@@ -112,6 +113,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 	// kafka streams applications
     private static SiteStatisticsStreamsApplication statisticsStreamsApplication;
     private static AnonymousEventsStreamsApplication anonEventsStreamsApplication;
+    private static UserStatisticsStreamsApplication userStatsStreamsApplication;
 
     private static Collection<Class<? extends ServletContextListener>> contextListeners;
     private static Map<String, Reflections> reflections = com.google.common.collect.Maps.newHashMap();
@@ -716,7 +718,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         if (null == statisticsStreamsApplication) {
 
             log.info("Creating singleton of Site Stats Kafka Streams Application.");
-            statisticsStreamsApplication = new SiteStatisticsStreamsApplication(globalProperties, kafkaTopicManager);
+            statisticsStreamsApplication = new SiteStatisticsStreamsApplication(globalProperties, kafkaTopicManager, questionPersistenceManager);
             statisticsStreamsApplication.start();
         }
         return statisticsStreamsApplication;
@@ -738,6 +740,25 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             anonEventsStreamsApplication = new AnonymousEventsStreamsApplication(globalProperties, kafkaTopicManager);
         }
         return anonEventsStreamsApplication;
+    }
+
+    /**
+     * Gets the instance of the anonymous events kafka stream application
+     * @return Site Statistics Stream App object
+     */
+    @Provides
+    @Singleton
+    @Inject
+    private static UserStatisticsStreamsApplication getUserStatsEventsStreamsApp(final PropertiesLoader globalProperties,
+                                                                            final KafkaTopicManager kafkaTopicManager) {
+
+        if (null == userStatsStreamsApplication) {
+
+            log.info("Creating singleton of User Stats events Kafka Streams Application.");
+            userStatsStreamsApplication = new UserStatisticsStreamsApplication(globalProperties, kafkaTopicManager, questionPersistenceManager);
+            userStatsStreamsApplication.start();
+        }
+        return userStatsStreamsApplication;
     }
 
 

@@ -16,8 +16,6 @@ public class UserAlertsWebSocketServlet extends WebSocketServlet {
     @Override
     public void configure(WebSocketServletFactory factory) {
 
-        //factory.getPolicy().setIdleTimeout(600000);
-
         factory.setCreator((servletUpgradeRequest, servletUpgradeResponse) -> SegueContextNotifier.injector.getInstance(UserAlertsWebSocket.class));
 
     }
