@@ -53,6 +53,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Concrete Kafka streams processing application for generating user statistics
@@ -60,14 +62,13 @@ import java.util.concurrent.TimeUnit;
  */
 public class UserStatisticsStreamsApplication {
 
-    private static final Logger log = LoggerFactory.getLogger(SiteStatisticsStreamsApplication.class);
+    private static final Logger log = LoggerFactory.getLogger(UserStatisticsStreamsApplication.class);
     private static final Logger kafkaLog = LoggerFactory.getLogger("kafkaStreamsLogger");
 
     private static final Serializer<JsonNode> JsonSerializer = new JsonSerializer();
     private static final Deserializer<JsonNode> JsonDeserializer = new JsonDeserializer();
     private static final Serde<String> StringSerde = Serdes.String();
     private static final Serde<JsonNode> JsonSerde = Serdes.serdeFrom(JsonSerializer, JsonDeserializer);
-    private static final Serde<Long> LongSerde = Serdes.Long();
 
     private KafkaTopicManager kafkaTopicManager;
     private KafkaStreams streams;
@@ -152,7 +153,7 @@ public class UserStatisticsStreamsApplication {
                 break;
         }
 
-        kafkaLog.info("Site statistics streams application started.");
+        kafkaLog.info("User statistics streams application started.");
 
     }
 
@@ -166,12 +167,34 @@ public class UserStatisticsStreamsApplication {
     public static void streamProcess(KStream<String, JsonNode> rawStream,
                                      IQuestionAttemptManager questionAttemptManager) {
 
+        final AtomicLong lastLagLog = new AtomicLong(0);
+        final AtomicBoolean wasLagging = new AtomicBoolean(true);
+
         // user question answer streaks
         rawStream
+                .peek(
+                        (k,v) -> {
+                            long lag = System.currentTimeMillis() - v.get("timestamp").asLong();
+                            if (lag > 1000) {
+
+                                if (System.currentTimeMillis() - lastLagLog.get() > 10000) {
+                                    kafkaLog.info(String.format("Site statistics stream lag: %.02f hours (%.03f s).", lag / 3600000.0, lag / 1000.0));
+                                    lastLagLog.set(System.currentTimeMillis());
+                                }
+
+                            } else if (wasLagging.get()) {
+                                wasLagging.set(false);
+                                kafkaLog.info("Site statistics stream processing caught up.");
+                            }
+                        }
+                )
                 .filter(
                         (userId, loggedEvent) -> loggedEvent.path("event_type")
                                 .asText()
                                 .equals("ANSWER_QUESTION")
+                ).filter(
+                        (userId, loggedEvent) -> loggedEvent.path("event_details")
+                                .path("correct").asBoolean()
                 ).groupByKey()
                 .aggregate(
                         // initializer
@@ -180,7 +203,6 @@ public class UserStatisticsStreamsApplication {
 
                             streakRecord.put("streak_start", 0);
                             streakRecord.put("streak_end", 0);
-                            streakRecord.put("current_streak", 0);
                             streakRecord.put("largest_streak", 0);
 
                             return streakRecord;
@@ -188,36 +210,30 @@ public class UserStatisticsStreamsApplication {
                         // aggregator
                         (userId, latestEvent, streakRecord) -> {
 
+
                             // timestamp of streak start
                             Long streakStartTimestamp = streakRecord.path("streak_start").asLong();
 
                             // timestamp of streak end
                             Long streakEndTimestamp = streakRecord.path("streak_end").asLong();
 
-                            // record of largest streak length
-                            Integer largestStreak = streakRecord.path("largest_streak").asInt();
-
                             // timestamp of latest event
                             Long latestEventTimestamp = latestEvent.path("timestamp").asLong();
 
-                            // question id
-                            String questionId = latestEvent.path("event_details").path("questionId").asText();
-
                             // set up calendar objects for date comparisons
                             Calendar latest = Calendar.getInstance();
-                            Calendar previous = Calendar.getInstance();
                             latest.setTimeInMillis(latestEventTimestamp);
-                            previous.setTimeInMillis(streakEndTimestamp);
-
                             latest = roundDownToDay(latest);
-                            previous = roundDownToDay(previous);
+
 
                             // if the latest event has happened on the same day as the previous event, don't continue
-                            if (TimeUnit.MINUTES.convert(latest.getTimeInMillis() - previous.getTimeInMillis(), TimeUnit.MILLISECONDS) < 1) {
+                            if (TimeUnit.DAYS.convert(latest.getTimeInMillis() - streakEndTimestamp, TimeUnit.MILLISECONDS) < 1) {
                                 return streakRecord;
                             }
 
+
                             // if the user has already answered the question correctly, don't continue
+                            String questionId = latestEvent.path("event_details").path("questionId").asText();
                             List<Long> user = Lists.newArrayList();
                             List<String> questionPageId = Lists.newArrayList();
                             user.add(Long.parseLong(userId));
@@ -236,11 +252,12 @@ public class UserStatisticsStreamsApplication {
                                             .get(questionId)
                                             ) {
 
+                                        // there should be no chance of previous attempt timestamps being identical to the current attempt timestamp
+                                        // as we already check for same-day events above
                                         Calendar current = Calendar.getInstance();
                                         current.setTimeInMillis(latestEventTimestamp);
                                         current.set(Calendar.MILLISECOND, 0);
                                         if (response.isCorrect()
-                                                && response.getDateAttempted().getTime() != current.getTimeInMillis()
                                                 && response.getDateAttempted().getTime() < current.getTimeInMillis()) {
                                             return streakRecord;
                                         }
@@ -252,31 +269,31 @@ public class UserStatisticsStreamsApplication {
                                 e.printStackTrace();
                             }
 
-                            Calendar streakStart = Calendar.getInstance();
-                            streakStart.setTimeInMillis(streakStartTimestamp);
 
-                            // if we have just started counting, or if the latest event arrived later than a day then reset
+                            // if we have just started counting or if the latest event arrived later than a day since the previous, reset the streak record
                             if (streakStartTimestamp == 0 ||
-                                    (((streakEndTimestamp != 0 && TimeUnit.MINUTES.convert(latest.getTimeInMillis() - previous.getTimeInMillis(), TimeUnit.MILLISECONDS) > 2)))) {
+                                    (((streakEndTimestamp != 0 && TimeUnit.DAYS.convert(latest.getTimeInMillis() - streakEndTimestamp, TimeUnit.MILLISECONDS) > 1)))) {
 
-                                ((ObjectNode) streakRecord).put("streak_start", latestEventTimestamp);
-                                streakStart.setTimeInMillis(latestEventTimestamp);
+                                ((ObjectNode) streakRecord).put("streak_start", latest.getTimeInMillis());
+                                streakStartTimestamp = latest.getTimeInMillis();
                             }
 
-                            ((ObjectNode) streakRecord).put("streak_end", latestEventTimestamp);
+                            // set the streak end timestamp to the timestamp of the latest event
+                            ((ObjectNode) streakRecord).put("streak_end", latest.getTimeInMillis());
 
-                            streakStart = roundDownToDay(streakStart);
 
-                            Long daysSinceStart = TimeUnit.MINUTES.convert(latest.getTimeInMillis() - streakStart.getTimeInMillis(), TimeUnit.MILLISECONDS);
-                            ((ObjectNode) streakRecord).put("current_streak", daysSinceStart);
-                            if (daysSinceStart > largestStreak) {
+                            // update largest streak count if days since start is greater than the recorded largest streak
+                            Long daysSinceStart = TimeUnit.DAYS.convert(latest.getTimeInMillis() - streakStartTimestamp, TimeUnit.MILLISECONDS);
+
+                            if (daysSinceStart > streakRecord.path("largest_streak").asLong()) {
                                 ((ObjectNode) streakRecord).put("largest_streak", daysSinceStart);
                             }
 
+                            // notify the user of a streak increase
                             IUserAlert alert = new PgUserAlert(null,
                                     Long.parseLong(userId),
                                     "streak:" + daysSinceStart,
-                                    "/streaks",
+                                    "progress",
                                     new Timestamp(System.currentTimeMillis()),
                                     null, null, null);
 
@@ -315,8 +332,12 @@ public class UserStatisticsStreamsApplication {
         tomorrowMidnight.add(Calendar.DAY_OF_YEAR, 1);
 
         if (streakRecord != null) {
-            if (tomorrowMidnight.getTimeInMillis() - streakRecord.path("streak_end").asLong() > (1000 * 60 * 60 * 24)) {
-                userSnapshot.put("dailyStreakRecord", streakRecord.path("current_streak").asInt());
+
+            // if the time difference between the streak end timestamp and the end of today is less that 1 day, send the current streak length
+            if (TimeUnit.DAYS.convert(tomorrowMidnight.getTimeInMillis() - streakRecord.path("streak_end").asLong(), TimeUnit.MILLISECONDS) < 1) {
+
+                userSnapshot.put("dailyStreakRecord", TimeUnit.DAYS.convert(streakRecord.path("streak_end").asLong() - streakRecord.path("streak_start").asLong(),
+                        TimeUnit.MILLISECONDS));
             }
         }
 
@@ -326,6 +347,7 @@ public class UserStatisticsStreamsApplication {
 
     /**
      * Function to take a calendar object and round down the timestamp to midnight
+     * for the same date
      *
      * @param calendar calendar object to modify
      * @return modified calendar object set to midnight
@@ -335,21 +357,9 @@ public class UserStatisticsStreamsApplication {
         calendar.set(Calendar.MILLISECOND, 0);
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.HOUR, 0);
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
 
         return calendar;
-    }
-
-
-    /**
-     * Returns single instance of streams service to dependants.
-     * Useful for accessing state stores etc.
-     *
-     * @return streams
-     *          - the single streams instance
-     */
-    public KafkaStreams getStream() {
-        return streams;
     }
 
 }
