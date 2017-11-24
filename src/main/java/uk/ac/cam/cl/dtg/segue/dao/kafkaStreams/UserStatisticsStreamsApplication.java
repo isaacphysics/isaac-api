@@ -192,7 +192,8 @@ public class UserStatisticsStreamsApplication {
                         (userId, loggedEvent) -> loggedEvent.path("event_type")
                                 .asText()
                                 .equals("ANSWER_QUESTION")
-                ).filter(
+                )
+                .filter(
                         (userId, loggedEvent) -> loggedEvent.path("event_details")
                                 .path("correct").asBoolean()
                 ).groupByKey()
@@ -227,10 +228,10 @@ public class UserStatisticsStreamsApplication {
 
 
                             // if the latest event has happened on the same day as the previous event, don't continue
+                            // this is an optimisation since otherwise the event would continue down the stream and return the same result anyway
                             if (TimeUnit.DAYS.convert(latest.getTimeInMillis() - streakEndTimestamp, TimeUnit.MILLISECONDS) < 1) {
                                 return streakRecord;
                             }
-
 
                             // if the user has already answered the question correctly, don't continue
                             String questionId = latestEvent.path("event_details").path("questionId").asText();
@@ -243,26 +244,28 @@ public class UserStatisticsStreamsApplication {
                                 Map<Long, Map<String, Map<String, List<QuestionValidationResponse>>>> questionAttempts =
                                         questionAttemptManager.getQuestionAttemptsByUsersAndQuestionPrefix(user, questionPageId);
 
+                                // the following assumes that question attempts are always recorded in the question attempt table before they are logged as an event
                                 if (!questionAttempts.get(Long.parseLong(userId)).isEmpty()
                                         && questionAttempts.get(Long.parseLong(userId)).containsKey(questionId.split("\\|")[0])
                                         && questionAttempts.get(Long.parseLong(userId)).get(questionId.split("\\|")[0]).containsKey(questionId)) {
 
+                                    Integer correctCount = 0;
                                     for (QuestionValidationResponse response: questionAttempts.get(Long.parseLong(userId))
                                             .get(questionId.split("\\|")[0])
                                             .get(questionId)
                                             ) {
 
-                                        // there should be no chance of previous attempt timestamps being identical to the current attempt timestamp
-                                        // as we already check for same-day events above
-                                        Calendar current = Calendar.getInstance();
-                                        current.setTimeInMillis(latestEventTimestamp);
-                                        current.set(Calendar.MILLISECOND, 0);
-                                        if (response.isCorrect()
-                                                && response.getDateAttempted().getTime() < current.getTimeInMillis()) {
-                                            return streakRecord;
+                                        // count all the times the user has correctly attempted the question
+                                        if (response.isCorrect()) {
+                                            correctCount++;
                                         }
                                     }
 
+                                    // if the correct count is 1 then the recorded attempt corresponds to the current event
+                                    // otherwise the user has attempted it correctly before, therefore we don't continue
+                                    if (correctCount > 1) {
+                                        return streakRecord;
+                                    }
                                 }
 
                             } catch (SegueDatabaseException e) {
@@ -283,7 +286,7 @@ public class UserStatisticsStreamsApplication {
 
 
                             // update largest streak count if days since start is greater than the recorded largest streak
-                            Long daysSinceStart = TimeUnit.DAYS.convert(latest.getTimeInMillis() - streakStartTimestamp, TimeUnit.MILLISECONDS);
+                            Long daysSinceStart = TimeUnit.DAYS.convert(latest.getTimeInMillis() - streakStartTimestamp, TimeUnit.MILLISECONDS) + 1;
 
                             if (daysSinceStart > streakRecord.path("largest_streak").asLong()) {
                                 ((ObjectNode) streakRecord).put("largest_streak", daysSinceStart);
@@ -333,11 +336,17 @@ public class UserStatisticsStreamsApplication {
 
         if (streakRecord != null) {
 
-            // if the time difference between the streak end timestamp and the end of today is less that 1 day, send the current streak length
-            if (TimeUnit.DAYS.convert(tomorrowMidnight.getTimeInMillis() - streakRecord.path("streak_end").asLong(), TimeUnit.MILLISECONDS) < 1) {
+            Long daysSinceStreakIncrease = TimeUnit.DAYS.convert(tomorrowMidnight.getTimeInMillis() - streakRecord.path("streak_end").asLong(), TimeUnit.MILLISECONDS);
+
+            // if the time difference between the streak end timestamp and the end of today is less that 2 whole days, send the current streak length, otherwise send zero
+            if (daysSinceStreakIncrease <= 2) {
 
                 userSnapshot.put("dailyStreakRecord", TimeUnit.DAYS.convert(streakRecord.path("streak_end").asLong() - streakRecord.path("streak_start").asLong(),
-                        TimeUnit.MILLISECONDS));
+                        TimeUnit.MILLISECONDS) + 1);
+
+                if (daysSinceStreakIncrease > 1) {
+                    userSnapshot.put("dailyStreakMessage", "Answer a question correctly by the end of today to increase your streak!");
+                }
             }
         }
 
