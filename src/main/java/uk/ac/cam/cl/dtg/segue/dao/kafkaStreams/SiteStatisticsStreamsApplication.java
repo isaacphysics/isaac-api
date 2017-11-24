@@ -19,6 +19,7 @@ package uk.ac.cam.cl.dtg.segue.dao.kafkaStreams;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.api.client.util.Maps;
 import com.google.common.collect.Lists;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -33,16 +34,18 @@ import org.apache.kafka.connect.json.JsonSerializer;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsConfig;
+import org.apache.kafka.streams.errors.InvalidStateStoreException;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KStreamBuilder;
 import org.apache.kafka.streams.kstream.KTable;
+import org.apache.kafka.streams.state.KeyValueIterator;
+import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.sql.Timestamp;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -66,7 +69,7 @@ public class SiteStatisticsStreamsApplication {
     private KStreamBuilder builder = new KStreamBuilder();
     private Properties streamsConfiguration = new Properties();
 
-    private final String streamsAppNameAndVersion = "streamsapp_site_stats-v1.42";
+    private final String streamsAppNameAndVersion = "streamsapp_site_stats-v1.5";
 
 
     /**
@@ -91,7 +94,7 @@ public class SiteStatisticsStreamsApplication {
         streamsConfiguration.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 0);
         streamsConfiguration.put(StreamsConfig.METADATA_MAX_AGE_CONFIG, 10 * 1000);
         streamsConfiguration.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 0);
-        streamsConfiguration.put(StreamsConfig.consumerPrefix(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG), "earliest");
+        streamsConfiguration.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         streamsConfiguration.put(StreamsConfig.consumerPrefix(ConsumerConfig.METADATA_MAX_AGE_CONFIG), 60 * 1000);
         streamsConfiguration.put(StreamsConfig.producerPrefix(ProducerConfig.METADATA_MAX_AGE_CONFIG), 60 * 1000);
 
@@ -115,9 +118,7 @@ public class SiteStatisticsStreamsApplication {
         changelogConfigs.add(new ConfigEntry(TopicConfig.CLEANUP_POLICY_CONFIG, TopicConfig.CLEANUP_POLICY_COMPACT));
 
         kafkaTopicManager.ensureTopicExists(streamsAppNameAndVersion + "-localstore_user_data-changelog", changelogConfigs);
-        kafkaTopicManager.ensureTopicExists(streamsAppNameAndVersion + "-localstore_user_last_seen-changelog", changelogConfigs);
         kafkaTopicManager.ensureTopicExists(streamsAppNameAndVersion + "-localstore_log_event_counts-changelog", changelogConfigs);
-
 
         // raw logged events incoming data stream from kafka
         KStream<String, JsonNode> rawLoggedEvents = builder.stream(StringSerde, JsonSerde, "topic_logged_events")
@@ -132,7 +133,6 @@ public class SiteStatisticsStreamsApplication {
         // aggregations are saved to a local state store per streams app instance and update a changelog topic in Kafka
         // we can use this changelog to populate a global state store for all streams app instances
         builder.globalTable(StringSerde, JsonSerde,streamsAppNameAndVersion + "-localstore_user_data-changelog", "globalstore_user_data");
-        builder.globalTable(StringSerde, JsonSerde,streamsAppNameAndVersion + "-localstore_user_last_seen-changelog", "globalstore_user_last_seen");
         builder.globalTable(StringSerde, LongSerde,streamsAppNameAndVersion + "-localstore_log_event_counts-changelog", "globalstore_log_event_counts");
 
         // use the builder and the streams configuration we set to setup and start a streams object
@@ -180,11 +180,7 @@ public class SiteStatisticsStreamsApplication {
                         }
                     }
                 )
-                .filter(
-                        (userId, loggedEvent) -> loggedEvent.path("event_type")
-                                .asText()
-                                .equals("CREATE_UPDATE_USER")
-                )
+
                 // set up a local user data store
                 .groupByKey(StringSerde, JsonSerde)
                 .aggregate(
@@ -192,15 +188,49 @@ public class SiteStatisticsStreamsApplication {
                         () -> {
                             ObjectNode userRecord = JsonNodeFactory.instance.objectNode();
 
+                            // set up user data attributes
                             userRecord.put("user_id", "");
                             userRecord.put("user_data", "");
+
+                            // set up last seen attributes
+                            ObjectNode lastSeenData = JsonNodeFactory.instance.objectNode();
+                            lastSeenData.put("last_seen", 0);
+                            userRecord.put("last_seen_data", lastSeenData);
+
+
                             return userRecord;
                         },
                         // aggregator
                         (userId, userUpdateLogEvent, userRecord) -> {
 
-                            ((ObjectNode) userRecord).put("user_id", userId);
-                            ((ObjectNode) userRecord).put("user_data", userUpdateLogEvent.path("event_details"));
+                            if (userRecord.path("user_id").asText().isEmpty()) {
+                                ((ObjectNode) userRecord).put("user_id", userId);
+                            }
+
+                            String eventType = userUpdateLogEvent.path("event_type").asText();
+                            Timestamp stamp = new Timestamp(userUpdateLogEvent.path("timestamp").asLong());
+
+
+                            // record user last seen data
+                            JsonNode lastSeenData = userRecord.path("last_seen_data");
+
+                            if (!lastSeenData.has(eventType)) {
+                                ObjectNode node = JsonNodeFactory.instance.objectNode();
+                                node.put("count", 0);
+                                node.put("latest", 0);
+                                ((ObjectNode) lastSeenData).put(eventType, node);
+                            }
+
+                            Long count = lastSeenData.path(eventType).path("count").asLong();
+                            ((ObjectNode) lastSeenData.path(eventType)).put("count", count + 1);
+                            ((ObjectNode) lastSeenData.path(eventType)).put("latest", stamp.getTime());
+                            ((ObjectNode) lastSeenData).put("last_seen", stamp.getTime());
+
+
+                            // update user details
+                            if (eventType.equals("CREATE_UPDATE_USER")) {
+                                ((ObjectNode) userRecord).put("user_data", userUpdateLogEvent.path("event_details"));
+                            }
 
                             return userRecord;
                         },
@@ -210,31 +240,6 @@ public class SiteStatisticsStreamsApplication {
 
         // join user table to incoming event stream to get user data for stats processing
         KStream<String, JsonNode> userEvents = rawStream
-                /*.map(
-                        (userId, logEvent) -> {
-
-                            ObjectNode newValueRecord = JsonNodeFactory.instance.objectNode();
-
-                            try {
-
-                                RegisteredUserDTO user = userManager.getUserDTOById(Long.parseLong(userId));
-
-                                newValueRecord.put("user_id", user.getId());
-                                newValueRecord.put("user_role", (user.getRole() != null) ? user.getRole().name() : "");
-                                newValueRecord.put("user_gender", (user.getGender() != null) ? user.getGender().name() : "");
-                            } catch (SegueDatabaseException e) {
-                                log.error("Unable to access database", e);
-                            } catch (NoUserException e) {
-                                log.error("Unable to get user data from database", e);
-                            }
-
-                            newValueRecord.put("event_type", logEvent.path("event_type").asText());
-                            newValueRecord.put("event_details", logEvent.path("event_details"));
-                            newValueRecord.put("timestamp", logEvent.path("timestamp").asLong());
-
-                            return new KeyValue<String, JsonNode>(userId, newValueRecord);
-                        }
-                );*/
                 .join(
                         userData,
                         (logEventVal, userDataVal) -> {
@@ -252,42 +257,6 @@ public class SiteStatisticsStreamsApplication {
                 );
 
 
-        // maintain internal store of users' last seen times by log event type, and counts per event type
-        userEvents
-                .groupByKey(StringSerde, JsonSerde)
-                .aggregate(
-                        // initializer
-                        () -> {
-                            ObjectNode countRecord = JsonNodeFactory.instance.objectNode();
-                            countRecord.put("last_seen", 0);
-                            return countRecord;
-                        },
-                        // aggregator
-                        (userId, logEvent, countRecord) -> {
-
-                            String eventType = logEvent.path("event_type").asText();
-                            Timestamp stamp = new Timestamp(logEvent.path("timestamp").asLong());
-
-                            if (!countRecord.has(eventType)) {
-                                ObjectNode node = JsonNodeFactory.instance.objectNode();
-                                node.put("count", 0);
-                                node.put("latest", 0);
-                                ((ObjectNode) countRecord).put(eventType, node);
-                            }
-
-                            Long count = countRecord.path(eventType).path("count").asLong();
-                            ((ObjectNode) countRecord.path(eventType)).put("count", count + 1);
-                            ((ObjectNode) countRecord.path(eventType)).put("latest", stamp.getTime());
-
-                            ((ObjectNode) countRecord).put("last_seen", stamp.getTime());
-
-                            return countRecord;
-                        },
-                        JsonSerde,
-                        "localstore_user_last_seen"
-                );
-
-
         // maintain internal store of log event type counts
         userEvents
                 .map(
@@ -297,18 +266,69 @@ public class SiteStatisticsStreamsApplication {
                 )
                 .groupByKey(StringSerde, JsonSerde)
                 .count("localstore_log_event_counts");
+    }
 
+
+
+    /**
+     * Method to obtain current count for a particular type of log event.
+     *
+     * @param logEventType the type of event we want to get the count for.
+     * @return the number of times this event has been logged.
+     * @throws InvalidStateStoreException if there is a kafka data store error.
+     */
+    public Long getLogCountByType(String logEventType) throws InvalidStateStoreException {
+
+        Long count = streams
+                .store("globalstore_log_event_counts",
+                        QueryableStoreTypes.<String, Long>keyValueStore())
+                .get(logEventType);
+
+        return (count != null) ? count : Long.valueOf(0);
+    }
+
+
+
+    /**
+     * Method to obtain a map of all the last logged times for each user for a particular log type.
+     *
+     * @param logEventType the string event type that will be looked for.
+     * @return a map of userId's to last event timestamp.
+     * @throws InvalidStateStoreException if there is a kafka data store error.
+     */
+    public Map<String, Date> getLastLogDateForAllUsers(String logEventType) throws InvalidStateStoreException {
+
+        Map<String, Date> userMap = Maps.newHashMap();
+
+        KeyValueIterator<String, JsonNode> allUsers = getAllUsers();
+
+        while (allUsers.hasNext()) {
+            KeyValue<String, JsonNode> record = allUsers.next();
+            userMap.put(record.key,
+                    new Date(record.value
+                            .path("last_seen_data")
+                            .path(logEventType)
+                            .path("count").asLong()
+                    )
+            );
+        }
+
+        return userMap;
     }
 
 
     /**
-     * Returns single instance of streams service to dependants.
-     * Useful for accessing state stores etc.
+     * Method to obtain an iterator over all user data records.
      *
-     * @return streams
-     *          - the single streams instance
+     * @return iterator of the data records
+     * @throws InvalidStateStoreException if there is a kafka data store error.
      */
-    public KafkaStreams getStream() {
-        return streams;
+    public KeyValueIterator<String, JsonNode> getAllUsers() throws InvalidStateStoreException {
+
+        return streams
+                .store("globalstore_user_data",
+                        QueryableStoreTypes.<String, JsonNode>keyValueStore())
+                .all();
     }
+
 }

@@ -45,8 +45,8 @@ public class KafkaUsers implements IUserDataManager {
 
         Map<String, Object> userDetails = new ImmutableMap.Builder<String, Object>()
                 .put("user_id", regUser.getId())
-                //.put("family_name", regUser.getFamilyName())
-                //.put("given_name", regUser.getGivenName())
+                .put("family_name", regUser.getFamilyName())
+                .put("given_name", regUser.getGivenName())
                 .put("role", regUser.getRole())
                 //.put("date_of_birth", (regUser.getDateOfBirth() != null) ? regUser.getDateOfBirth() : "")
                 .put("gender", (regUser.getGender() != null) ? regUser.getGender() : "")
