@@ -485,16 +485,20 @@ public class GitContentManager implements IContentManager {
         for (ContentSummaryDTO summary : contentDTO.getRelatedContent()) {
             relatedContentIds.add(summary.getId());
         }
-
         fieldsToMap.put(
                 Maps.immutableEntry(Constants.BooleanOperator.OR, Constants.ID_FIELDNAME + '.'
                         + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX), relatedContentIds);
 
         ResultsWrapper<ContentDTO> results = this.findByFieldNames(version, fieldsToMap, 0, relatedContentIds.size());
-
         List<ContentSummaryDTO> relatedContentDTOs = Lists.newArrayList();
 
+        Map<String, ContentDTO> resultsMappedByIds = Maps.newHashMap();
         for (ContentDTO relatedContent : results.getResults()) {
+            resultsMappedByIds.put(relatedContent.getId(), relatedContent);
+        }
+        // Iterate over relatedContentIds so that relatedContentDTOs maintain order defined in content not result order
+        for (String contentId : relatedContentIds) {
+            ContentDTO relatedContent = resultsMappedByIds.get(contentId);
             ContentSummaryDTO summary = this.mapper.getAutoMapper().map(relatedContent, ContentSummaryDTO.class);
             GitContentManager.generateDerivedSummaryValues(relatedContent, summary);
             relatedContentDTOs.add(summary);
