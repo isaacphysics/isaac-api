@@ -363,6 +363,9 @@
 					<forkMode>pertest</forkMode>
 					<forkCount>3</forkCount>
 					<reuseForks>false</reuseForks>
+					<systemPropertyVariables>
+						<log.path>${log.path}</log.path>
+					</systemPropertyVariables>
 				</configuration>
 			</plugin>
 
@@ -486,6 +489,10 @@
 								<systemProperty>
 									<name>config.location</name>
 									<value>${config.location}</value>
+								</systemProperty>
+								<systemProperty>
+									<name>log.path</name>
+									<value>${log.path}</value>
 								</systemProperty>
 								<systemProperty>
 									<name>segue.version</name>
