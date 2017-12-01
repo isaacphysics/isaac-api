@@ -44,6 +44,8 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.IUserAlert;
 import uk.ac.cam.cl.dtg.segue.dos.PgUserAlert;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.segue.dos.users.Role;
+import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.quiz.IQuestionAttemptManager;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
@@ -125,22 +127,39 @@ public class UserStatisticsStreamsApplication {
         // local store changelog topics
         List<ConfigEntry> changelogConfigs = Lists.newLinkedList();
         changelogConfigs.add(new ConfigEntry(TopicConfig.CLEANUP_POLICY_CONFIG, TopicConfig.CLEANUP_POLICY_COMPACT));
-        kafkaTopicManager.ensureTopicExists(streamsAppNameAndVersion + "-localstore_user_daily_streaks-changelog", changelogConfigs);
+        kafkaTopicManager.ensureTopicExists(streamsAppNameAndVersion + "-localstore_user_snapshot-changelog", changelogConfigs);
 
+        final AtomicLong lastLagLog = new AtomicLong(0);
+        final AtomicBoolean wasLagging = new AtomicBoolean(true);
 
         // raw logged events incoming data stream from kafka
         KStream<String, JsonNode> rawLoggedEvents = builder.stream(StringSerde, JsonSerde, "topic_logged_events")
                 .filterNot(
                         (k, v) -> v.path("anonymous_user").asBoolean()
+                ).peek(
+                        (k,v) -> {
+                            long lag = System.currentTimeMillis() - v.get("timestamp").asLong();
+                            if (lag > 1000) {
+
+                                if (System.currentTimeMillis() - lastLagLog.get() > 10000) {
+                                    kafkaLog.info(String.format("User statistics stream lag: %.02f hours (%.03f s).", lag / 3600000.0, lag / 1000.0));
+                                    lastLagLog.set(System.currentTimeMillis());
+                                }
+
+                            } else if (wasLagging.get()) {
+                                wasLagging.set(false);
+                                kafkaLog.info("Site statistics stream processing caught up.");
+                            }
+                        }
                 );
 
         // process raw logged events
-        streamProcess(rawLoggedEvents, questionAttemptManager);
+        streamProcess(rawLoggedEvents);
 
         // need to make state stores queryable globally, as we often have 2 versions of API running concurrently, hence 2 streams app instances
         // aggregations are saved to a local state store per streams app instance and update a changelog topic in Kafka
         // we can use this changelog to populate a global state store for all streams app instances
-        builder.globalTable(StringSerde, JsonSerde,streamsAppNameAndVersion + "-localstore_user_daily_streaks-changelog", "globalstore_user_daily_streaks");
+        builder.globalTable(StringSerde, JsonSerde,streamsAppNameAndVersion + "-localstore_user_snapshot-changelog", "globalstore_user_snapshot");
 
         // use the builder and the streams configuration we set to setup and start a streams object
         streams = new KafkaStreams(builder, streamsConfiguration);
@@ -159,35 +178,15 @@ public class UserStatisticsStreamsApplication {
 
     /**
      * This method contains the logic that transforms the incoming stream
-     * We keep this public and static to make it easy to unit test
      *
      * @param rawStream
      *          - the input stream
      */
-    public static void streamProcess(KStream<String, JsonNode> rawStream,
-                                     IQuestionAttemptManager questionAttemptManager) {
+    private void streamProcess(KStream<String, JsonNode> rawStream) {
 
-        final AtomicLong lastLagLog = new AtomicLong(0);
-        final AtomicBoolean wasLagging = new AtomicBoolean(true);
 
         // user question answer streaks
         rawStream
-                .peek(
-                        (k,v) -> {
-                            long lag = System.currentTimeMillis() - v.get("timestamp").asLong();
-                            if (lag > 1000) {
-
-                                if (System.currentTimeMillis() - lastLagLog.get() > 10000) {
-                                    kafkaLog.info(String.format("Site statistics stream lag: %.02f hours (%.03f s).", lag / 3600000.0, lag / 1000.0));
-                                    lastLagLog.set(System.currentTimeMillis());
-                                }
-
-                            } else if (wasLagging.get()) {
-                                wasLagging.set(false);
-                                kafkaLog.info("Site statistics stream processing caught up.");
-                            }
-                        }
-                )
                 .filter(
                         (userId, loggedEvent) -> loggedEvent.path("event_type")
                                 .asText()
@@ -200,154 +199,76 @@ public class UserStatisticsStreamsApplication {
                 .aggregate(
                         // initializer
                         () -> {
-                            ObjectNode streakRecord = JsonNodeFactory.instance.objectNode();
+                            ObjectNode userSnapshot = JsonNodeFactory.instance.objectNode();
 
+                            ObjectNode streakRecord = JsonNodeFactory.instance.objectNode();
                             streakRecord.put("streak_start", 0);
                             streakRecord.put("streak_end", 0);
                             streakRecord.put("largest_streak", 0);
 
-                            return streakRecord;
+                            userSnapshot.put("streak_record", streakRecord);
+
+                            return userSnapshot;
                         },
                         // aggregator
-                        (userId, latestEvent, streakRecord) -> {
+                        (userId, latestEvent, userSnapshot) -> {
 
+                            ((ObjectNode) userSnapshot).put("streak_record", updateStreakRecord(userId, latestEvent, userSnapshot.path("streak_record")));
 
-                            // timestamp of streak start
-                            Long streakStartTimestamp = streakRecord.path("streak_start").asLong();
-
-                            // timestamp of streak end
-                            Long streakEndTimestamp = streakRecord.path("streak_end").asLong();
-
-                            // timestamp of latest event
-                            Long latestEventTimestamp = latestEvent.path("timestamp").asLong();
-
-                            // set up calendar objects for date comparisons
-                            Calendar latest = Calendar.getInstance();
-                            latest.setTimeInMillis(latestEventTimestamp);
-                            latest = roundDownToDay(latest);
-
-
-                            // if the latest event has happened on the same day as the previous event, don't continue
-                            // this is an optimisation since otherwise the event would continue down the stream and return the same result anyway
-                            if (TimeUnit.DAYS.convert(latest.getTimeInMillis() - streakEndTimestamp, TimeUnit.MILLISECONDS) < 1) {
-                                return streakRecord;
-                            }
-
-                            // if the user has already answered the question correctly, don't continue
-                            String questionId = latestEvent.path("event_details").path("questionId").asText();
-                            List<Long> user = Lists.newArrayList();
-                            List<String> questionPageId = Lists.newArrayList();
-                            user.add(Long.parseLong(userId));
-                            questionPageId.add(questionId.split("\\|")[0]);
-
-                            try {
-                                Map<Long, Map<String, Map<String, List<QuestionValidationResponse>>>> questionAttempts =
-                                        questionAttemptManager.getQuestionAttemptsByUsersAndQuestionPrefix(user, questionPageId);
-
-                                // the following assumes that question attempts are always recorded in the question attempt table before they are logged as an event
-                                if (!questionAttempts.get(Long.parseLong(userId)).isEmpty()
-                                        && questionAttempts.get(Long.parseLong(userId)).containsKey(questionId.split("\\|")[0])
-                                        && questionAttempts.get(Long.parseLong(userId)).get(questionId.split("\\|")[0]).containsKey(questionId)) {
-
-                                    Integer correctCount = 0;
-                                    for (QuestionValidationResponse response: questionAttempts.get(Long.parseLong(userId))
-                                            .get(questionId.split("\\|")[0])
-                                            .get(questionId)
-                                            ) {
-
-                                        // count all the times the user has correctly attempted the question
-                                        if (response.isCorrect()) {
-                                            correctCount++;
-                                        }
-                                    }
-
-                                    // if the correct count is 1 then the recorded attempt corresponds to the current event
-                                    // otherwise the user has attempted it correctly before, therefore we don't continue
-                                    if (correctCount > 1) {
-                                        return streakRecord;
-                                    }
-                                }
-
-                            } catch (SegueDatabaseException e) {
-                                e.printStackTrace();
-                            }
-
-
-                            // if we have just started counting or if the latest event arrived later than a day since the previous, reset the streak record
-                            if (streakStartTimestamp == 0 ||
-                                    (((streakEndTimestamp != 0 && TimeUnit.DAYS.convert(latest.getTimeInMillis() - streakEndTimestamp, TimeUnit.MILLISECONDS) > 1)))) {
-
-                                ((ObjectNode) streakRecord).put("streak_start", latest.getTimeInMillis());
-                                streakStartTimestamp = latest.getTimeInMillis();
-                            }
-
-                            // set the streak end timestamp to the timestamp of the latest event
-                            ((ObjectNode) streakRecord).put("streak_end", latest.getTimeInMillis());
-
-
-                            // update largest streak count if days since start is greater than the recorded largest streak
-                            Long daysSinceStart = TimeUnit.DAYS.convert(latest.getTimeInMillis() - streakStartTimestamp, TimeUnit.MILLISECONDS) + 1;
-
-                            if (daysSinceStart > streakRecord.path("largest_streak").asLong()) {
-                                ((ObjectNode) streakRecord).put("largest_streak", daysSinceStart);
-                            }
-
-                            // notify the user of a streak increase
-                            IUserAlert alert = new PgUserAlert(null,
-                                    Long.parseLong(userId),
-                                    "streak:" + daysSinceStart,
-                                    "progress",
-                                    new Timestamp(System.currentTimeMillis()),
-                                    null, null, null);
-
-                            if (null != UserAlertsWebSocket.connectedSockets && UserAlertsWebSocket.connectedSockets.containsKey(Long.parseLong(userId))) {
-                                for(IAlertListener listener : UserAlertsWebSocket.connectedSockets.get(Long.parseLong(userId))) {
-                                    listener.notifyAlert(alert);
-                                }
-                            }
-
-                            return streakRecord;
+                            return userSnapshot;
                         },
                         JsonSerde,
-                        "localstore_user_daily_streaks"
+                        "localstore_user_snapshot"
                 );
 
     }
 
 
+
+
     /**
      * Method to obtain the current user snapshot of activity stats
      *
-     * @param userId id of the user
+     * @param user the user we are interested in
      * @return number of consecutive days a user has answered a question correctly
      */
-    public Map<String, Object> getUserSnapshot(String userId) {
+    public Map<String, Object> getUserSnapshot(RegisteredUserDTO user) {
 
         Map<String, Object> userSnapshot = Maps.newHashMap();
 
         userSnapshot.put("dailyStreakRecord", 0);
 
-        JsonNode streakRecord = streams
-                .store("globalstore_user_daily_streaks", QueryableStoreTypes.<String, JsonNode>keyValueStore())
-                .get(userId);
+        JsonNode snapshotRecord = streams
+                .store("globalstore_user_snapshot", QueryableStoreTypes.<String, JsonNode>keyValueStore())
+                .get(String.valueOf(user.getId()));
 
-        Calendar tomorrowMidnight = roundDownToDay(Calendar.getInstance());
-        tomorrowMidnight.add(Calendar.DAY_OF_YEAR, 1);
+        if (snapshotRecord != null) {
 
-        if (streakRecord != null) {
+            JsonNode streakRecord = snapshotRecord.path("streak_record");
 
-            Long daysSinceStreakIncrease = TimeUnit.DAYS.convert(tomorrowMidnight.getTimeInMillis() - streakRecord.path("streak_end").asLong(), TimeUnit.MILLISECONDS);
+            if (streakRecord.path("streak_end").asInt() != 0) {
 
-            // if the time difference between the streak end timestamp and the end of today is less that 2 whole days, send the current streak length, otherwise send zero
-            if (daysSinceStreakIncrease <= 2) {
+                Calendar tomorrowMidnight = roundDownToDay(Calendar.getInstance());
+                tomorrowMidnight.add(Calendar.DAY_OF_YEAR, 1);
 
-                userSnapshot.put("dailyStreakRecord", TimeUnit.DAYS.convert(streakRecord.path("streak_end").asLong() - streakRecord.path("streak_start").asLong(),
-                        TimeUnit.MILLISECONDS) + 1);
+                Long daysSinceStreakIncrease = TimeUnit.DAYS.convert(tomorrowMidnight.getTimeInMillis() - streakRecord.path("streak_end").asLong(), TimeUnit.MILLISECONDS);
 
-                if (daysSinceStreakIncrease > 1) {
-                    userSnapshot.put("dailyStreakMessage", "Answer a question correctly by the end of today to increase your streak!");
+                // if the time difference between the streak end timestamp and the end of today is less that 2 whole days, send the current streak length, otherwise send zero
+                if (daysSinceStreakIncrease <= 2) {
+
+                    userSnapshot.put("dailyStreakRecord", TimeUnit.DAYS.convert(streakRecord.path("streak_end").asLong() - streakRecord.path("streak_start").asLong(),
+                            TimeUnit.MILLISECONDS) + 1);
+
+                    if (daysSinceStreakIncrease > 1) {
+                        userSnapshot.put("dailyStreakMessage", "Answer a question correctly by the end of today to increase your streak!");
+                    }
                 }
+
             }
+        }
+
+        if (user.getRole().equals(Role.TEACHER)) {
+
         }
 
         return userSnapshot;
@@ -370,5 +291,114 @@ public class UserStatisticsStreamsApplication {
 
         return calendar;
     }
+
+
+    /**
+     *We call this method to update the streak data for the user snapshot record
+     *
+     * @param userId id of the user we want to update
+     * @param latestEvent json object describing the event which triggers the streak update
+     * @param streakRecord the current snapshot of the streak record
+     * @return the new updated streak record
+     */
+    private JsonNode updateStreakRecord(String userId, JsonNode latestEvent, JsonNode streakRecord) {
+
+        // timestamp of streak start
+        Long streakStartTimestamp = streakRecord.path("streak_start").asLong();
+
+        // timestamp of streak end
+        Long streakEndTimestamp = streakRecord.path("streak_end").asLong();
+
+        // timestamp of latest event
+        Long latestEventTimestamp = latestEvent.path("timestamp").asLong();
+
+        // set up calendar objects for date comparisons
+        Calendar latest = Calendar.getInstance();
+        latest.setTimeInMillis(latestEventTimestamp);
+        latest = roundDownToDay(latest);
+
+
+        // if the latest event has happened on the same day as the previous event, don't continue
+        // this is an optimisation since otherwise the event would continue down the stream and return the same result anyway
+        if (TimeUnit.DAYS.convert(latest.getTimeInMillis() - streakEndTimestamp, TimeUnit.MILLISECONDS) < 1) {
+            return streakRecord;
+        }
+
+        // if the user has already answered the question correctly, don't continue
+        String questionId = latestEvent.path("event_details").path("questionId").asText();
+        List<Long> user = Lists.newArrayList();
+        List<String> questionPageId = Lists.newArrayList();
+        user.add(Long.parseLong(userId));
+        questionPageId.add(questionId.split("\\|")[0]);
+
+        try {
+            Map<Long, Map<String, Map<String, List<QuestionValidationResponse>>>> questionAttempts =
+                    questionAttemptManager.getQuestionAttemptsByUsersAndQuestionPrefix(user, questionPageId);
+
+            // the following assumes that question attempts are always recorded in the question attempt table before they are logged as an event
+            if (!questionAttempts.get(Long.parseLong(userId)).isEmpty()
+                    && questionAttempts.get(Long.parseLong(userId)).containsKey(questionId.split("\\|")[0])
+                    && questionAttempts.get(Long.parseLong(userId)).get(questionId.split("\\|")[0]).containsKey(questionId)) {
+
+                Integer correctCount = 0;
+                for (QuestionValidationResponse response: questionAttempts.get(Long.parseLong(userId))
+                        .get(questionId.split("\\|")[0])
+                        .get(questionId)
+                        ) {
+
+                    // count all the times the user has correctly attempted the question
+                    if (response.isCorrect()) {
+                        correctCount++;
+                    }
+                }
+
+                // if the correct count is 1 then the recorded attempt corresponds to the current event
+                // otherwise the user has attempted it correctly before, therefore we don't continue
+                if (correctCount > 1) {
+                    return streakRecord;
+                }
+            }
+
+        } catch (SegueDatabaseException e) {
+            e.printStackTrace();
+        }
+
+
+        // if we have just started counting or if the latest event arrived later than a day since the previous, reset the streak record
+        if (streakStartTimestamp == 0 ||
+                (((streakEndTimestamp != 0 && TimeUnit.DAYS.convert(latest.getTimeInMillis() - streakEndTimestamp, TimeUnit.MILLISECONDS) > 1)))) {
+
+            ((ObjectNode) streakRecord).put("streak_start", latest.getTimeInMillis());
+            streakStartTimestamp = latest.getTimeInMillis();
+        }
+
+        // set the streak end timestamp to the timestamp of the latest event
+        ((ObjectNode) streakRecord).put("streak_end", latest.getTimeInMillis());
+
+
+        // update largest streak count if days since start is greater than the recorded largest streak
+        Long daysSinceStart = TimeUnit.DAYS.convert(latest.getTimeInMillis() - streakStartTimestamp, TimeUnit.MILLISECONDS) + 1;
+
+        if (daysSinceStart > streakRecord.path("largest_streak").asLong()) {
+            ((ObjectNode) streakRecord).put("largest_streak", daysSinceStart);
+        }
+
+        // notify the user of a streak increase
+        IUserAlert alert = new PgUserAlert(null,
+                Long.parseLong(userId),
+                "streak:" + daysSinceStart,
+                "progress",
+                new Timestamp(System.currentTimeMillis()),
+                null, null, null);
+
+        if (null != UserAlertsWebSocket.connectedSockets && UserAlertsWebSocket.connectedSockets.containsKey(Long.parseLong(userId))) {
+            for(IAlertListener listener : UserAlertsWebSocket.connectedSockets.get(Long.parseLong(userId))) {
+                listener.notifyAlert(alert);
+            }
+        }
+
+        return streakRecord;
+    }
+
 
 }

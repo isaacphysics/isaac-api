@@ -39,7 +39,6 @@ public class UserAlertsWebSocket implements IAlertListener {
     private final ILogManager logManager;
     private final UserStatisticsStreamsApplication userStatisticsStreamsApplication;
     private Session session;
-    private String userId;
     private static ObjectMapper objectMapper = new ObjectMapper();
 
     public static HashMap<Long, List<UserAlertsWebSocket>> connectedSockets = new HashMap<>();
@@ -107,8 +106,7 @@ public class UserAlertsWebSocket implements IAlertListener {
 
         if (userManager.isValidUserFromSession(sessionInformation)) {
 
-            userId = sessionInformation.get(SESSION_USER_ID);
-            connectedUser = userManager.getUserDTOById(Long.parseLong(userId));
+            connectedUser = userManager.getUserDTOById(Long.parseLong(sessionInformation.get(SESSION_USER_ID)));
 
             if (!connectedSockets.containsKey(connectedUser.getId())) {
                 connectedSockets.put(connectedUser.getId(), new LinkedList<>());
@@ -169,7 +167,7 @@ public class UserAlertsWebSocket implements IAlertListener {
     private void sendUserSnapshotData() throws IOException {
 
         session.getRemote().sendString(objectMapper.writeValueAsString(ImmutableMap.of("userSnapshot",
-                userStatisticsStreamsApplication.getUserSnapshot(userId))));
+                userStatisticsStreamsApplication.getUserSnapshot(connectedUser))));
     }
 
 

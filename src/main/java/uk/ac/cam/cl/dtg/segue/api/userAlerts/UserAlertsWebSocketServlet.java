@@ -10,7 +10,7 @@ import javax.servlet.annotation.WebServlet;
  * Created by du220 on 17/07/2017.
  */
 
-@WebServlet(name = "UserAlertsWebSocketServlet", urlPatterns = { "/user-alerts/*" })
+@WebServlet(name = "UserAlertsWebSocketServlet", urlPatterns = { "/api/user-alerts/*" })
 public class UserAlertsWebSocketServlet extends WebSocketServlet {
 
     @Override
