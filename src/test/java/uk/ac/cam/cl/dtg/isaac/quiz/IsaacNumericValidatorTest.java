@@ -677,17 +677,21 @@ public class IsaacNumericValidatorTest {
 	public final void isaacNumericValidator_CheckSignificantFiguresRoundingWorks() throws Exception {
 		IsaacNumericValidator test = new IsaacNumericValidator();
 		this.testSigFigRoundingWorks(test, 1.25648, 1, 1.0);
+
 		this.testSigFigRoundingWorks(test, 1.25648, 2, 1.3);
-		
 		this.testSigFigRoundingWorks(test, -1.25648, 2, -1.3);
+
+		// Check that we're using the rounding scheme known as "round half away from zero"
+		this.testSigFigRoundingWorks(test, 17.5, 2, 18);
+		this.testSigFigRoundingWorks(test, -17.5, 2, -18);
 
 		this.testSigFigRoundingWorks(test, 1.25E11, 2, 1.3E11);
 		this.testSigFigRoundingWorks(test, 1.25E1, 2, 1.3E1);
-		
 		this.testSigFigRoundingWorks(test, -4.0E11, 2, -4.0E11);
 		this.testSigFigRoundingWorks(test, -4.0E-11, 2, -4.0E-11);
 
 		this.testSigFigRoundingWorks(test, 0.0, 2, 0.0);
+		this.testSigFigRoundingWorks(test, 0, 2, 0.0);
 	}
 
     /*
@@ -710,8 +714,8 @@ public class IsaacNumericValidatorTest {
 	private void testSigFigRoundingWorks(IsaacNumericValidator classUnderTest, double inputValue, int sigFigToRoundTo, double expectedResult) throws Exception {
 		double result = Whitebox.<Double> invokeMethod(classUnderTest, "roundToSigFigs", inputValue, sigFigToRoundTo);				
 		
-		assertTrue("sigfig rounding failed for value " + inputValue + " to " + sigFigToRoundTo
-				+ " expected: " + expectedResult + " got " + result, result == expectedResult);
+		assertTrue("sigfig rounding failed for value '" + inputValue + "' to " + sigFigToRoundTo
+				+ "sf: expected '" + expectedResult + "', got '" + result + "'", result == expectedResult);
 	}
 
     private void testSigFigExtractionWorks(IsaacNumericValidator classUnderTest, String inputValue, int minAllowedSigFigs,
