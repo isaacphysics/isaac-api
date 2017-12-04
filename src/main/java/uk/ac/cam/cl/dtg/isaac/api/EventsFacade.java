@@ -185,22 +185,21 @@ public class EventsFacade extends AbstractIsaacFacade {
             sortInstructions.put(EVENT_DATE_FIELDNAME, SortOrder.DESC);
         }
 
-        RegisteredUserDTO currentUser = null;
-        if(this.userManager.isRegisteredUserLoggedIn(request)) {
-            try {
-                currentUser = this.userManager.getCurrentRegisteredUser(request);
-            } catch (NoUserLoggedInException e) {
-                if (showMyBookingsOnly) {
-                    return SegueErrorResponse.getNotLoggedInResponse();
-                }
-            }
-        }
-
         try {
             ResultsWrapper<ContentDTO> findByFieldNames = null;
 
-            if (null != showMyBookingsOnly && showMyBookingsOnly) {
-                findByFieldNames = getEventsBookedByUser(request, fieldsToMatch.get(TAGS_FIELDNAME), currentUser);
+            if (showMyBookingsOnly) {
+                RegisteredUserDTO currentUser = null;
+                try {
+                    currentUser = this.userManager.getCurrentRegisteredUser(request);
+                } catch (NoUserLoggedInException e) {
+                    /* Safe to ignore; will just leave currentUser null. */
+                }
+                if (null != currentUser) {
+                    findByFieldNames = getEventsBookedByUser(request, fieldsToMatch.get(TAGS_FIELDNAME), currentUser);
+                } else {
+                    SegueErrorResponse.getNotLoggedInResponse();
+                }
             } else {
                 findByFieldNames = this.contentManager.findByFieldNames(
                     this.contentIndex, SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch),
