@@ -494,10 +494,20 @@ public class GitContentManager implements IContentManager {
 
         List<ContentSummaryDTO> relatedContentDTOs = Lists.newArrayList();
 
+        Map<String, ContentDTO> resultsMappedById = Maps.newHashMap();
         for (ContentDTO relatedContent : results.getResults()) {
-            ContentSummaryDTO summary = this.mapper.getAutoMapper().map(relatedContent, ContentSummaryDTO.class);
-            GitContentManager.generateDerivedSummaryValues(relatedContent, summary);
-            relatedContentDTOs.add(summary);
+            resultsMappedById.put(relatedContent.getId(), relatedContent);
+        }
+        // Iterate over relatedContentIds so that relatedContentDTOs maintain order defined in content not result order
+        for (String contentId : relatedContentIds) {
+            ContentDTO relatedContent = resultsMappedById.get(contentId);
+            if (relatedContent != null) {
+                ContentSummaryDTO summary = this.mapper.getAutoMapper().map(relatedContent, ContentSummaryDTO.class);
+                GitContentManager.generateDerivedSummaryValues(relatedContent, summary);
+                relatedContentDTOs.add(summary);
+            } else {
+                log.error("Related content with ID '" + contentId + "' not returned by elasticsearch query");
+            }
         }
 
         contentDTO.setRelatedContent(relatedContentDTOs);
