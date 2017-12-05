@@ -16,7 +16,9 @@
 
 package uk.ac.cam.cl.dtg.segue.dao.kafkaStreams;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.api.client.util.Maps;
@@ -71,6 +73,7 @@ public class UserStatisticsStreamsApplication {
     private static final Deserializer<JsonNode> JsonDeserializer = new JsonDeserializer();
     private static final Serde<String> StringSerde = Serdes.String();
     private static final Serde<JsonNode> JsonSerde = Serdes.serdeFrom(JsonSerializer, JsonDeserializer);
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private KafkaTopicManager kafkaTopicManager;
     private KafkaStreams streams;
@@ -205,6 +208,7 @@ public class UserStatisticsStreamsApplication {
                             streakRecord.put("streak_start", 0);
                             streakRecord.put("streak_end", 0);
                             streakRecord.put("largest_streak", 0);
+                            streakRecord.put("current_activity", 0);
 
                             userSnapshot.put("streak_record", streakRecord);
 
@@ -237,6 +241,7 @@ public class UserStatisticsStreamsApplication {
         Map<String, Object> userSnapshot = Maps.newHashMap();
 
         userSnapshot.put("dailyStreakRecord", 0);
+        userSnapshot.put("currentActivity", 0);
 
         JsonNode snapshotRecord = streams
                 .store("globalstore_user_snapshot", QueryableStoreTypes.<String, JsonNode>keyValueStore())
@@ -253,22 +258,21 @@ public class UserStatisticsStreamsApplication {
 
                 Long daysSinceStreakIncrease = TimeUnit.DAYS.convert(tomorrowMidnight.getTimeInMillis() - streakRecord.path("streak_end").asLong(), TimeUnit.MILLISECONDS);
 
-                // if the time difference between the streak end timestamp and the end of today is less that 2 whole days, send the current streak length, otherwise send zero
+                // if the time difference between the streak end timestamp and the end of today is less than 2 whole days, send the current streak length, otherwise send zero
                 if (daysSinceStreakIncrease <= 2) {
-
                     userSnapshot.put("dailyStreakRecord", TimeUnit.DAYS.convert(streakRecord.path("streak_end").asLong() - streakRecord.path("streak_start").asLong(),
-                            TimeUnit.MILLISECONDS) + 1);
+                            TimeUnit.MILLISECONDS));
 
                     if (daysSinceStreakIncrease > 1) {
-                        userSnapshot.put("dailyStreakMessage", "Answer a question correctly by the end of today to increase your streak!");
+                        userSnapshot.put("dailyStreakMessage", "Complete your daily question goal by the end of today to increase your streak!");
                     }
                 }
 
+                // if the time difference between the streak end timestamp and the end of today is less than 1 day, send the current activity length for the day
+                if (daysSinceStreakIncrease <= 1) {
+                    userSnapshot.put("currentActivity", streakRecord.path("current_activity").asInt());
+                }
             }
-        }
-
-        if (user.getRole().equals(Role.TEACHER)) {
-
         }
 
         return userSnapshot;
@@ -318,12 +322,6 @@ public class UserStatisticsStreamsApplication {
         latest = roundDownToDay(latest);
 
 
-        // if the latest event has happened on the same day as the previous event, don't continue
-        // this is an optimisation since otherwise the event would continue down the stream and return the same result anyway
-        if (TimeUnit.DAYS.convert(latest.getTimeInMillis() - streakEndTimestamp, TimeUnit.MILLISECONDS) < 1) {
-            return streakRecord;
-        }
-
         // if the user has already answered the question correctly, don't continue
         String questionId = latestEvent.path("event_details").path("questionId").asText();
         List<Long> user = Lists.newArrayList();
@@ -364,6 +362,16 @@ public class UserStatisticsStreamsApplication {
         }
 
 
+        // if we are in the same day then just update the current activity count, otherwise reset it
+        if (TimeUnit.DAYS.convert(latest.getTimeInMillis() - streakEndTimestamp, TimeUnit.MILLISECONDS) < 1) {
+
+            Long currentActivity = streakRecord.path("current_activity").asLong();
+            ((ObjectNode) streakRecord).put("current_activity", currentActivity + 1);
+        } else {
+            ((ObjectNode) streakRecord).put("current_activity", 1);
+        }
+
+
         // if we have just started counting or if the latest event arrived later than a day since the previous, reset the streak record
         if (streakStartTimestamp == 0 ||
                 (((streakEndTimestamp != 0 && TimeUnit.DAYS.convert(latest.getTimeInMillis() - streakEndTimestamp, TimeUnit.MILLISECONDS) > 1)))) {
@@ -377,25 +385,36 @@ public class UserStatisticsStreamsApplication {
 
 
         // update largest streak count if days since start is greater than the recorded largest streak
-        Long daysSinceStart = TimeUnit.DAYS.convert(latest.getTimeInMillis() - streakStartTimestamp, TimeUnit.MILLISECONDS) + 1;
+        Long daysSinceStart = TimeUnit.DAYS.convert(latest.getTimeInMillis() - streakStartTimestamp, TimeUnit.MILLISECONDS);
 
         if (daysSinceStart > streakRecord.path("largest_streak").asLong()) {
             ((ObjectNode) streakRecord).put("largest_streak", daysSinceStart);
         }
 
-        // notify the user of a streak increase
-        IUserAlert alert = new PgUserAlert(null,
-                Long.parseLong(userId),
-                "streak:" + daysSinceStart,
-                "progress",
-                new Timestamp(System.currentTimeMillis()),
-                null, null, null);
+        Map<String, Object> notificationData = Maps.newHashMap();
+        Map<String, Object> streakData = Maps.newHashMap();
+        streakData.put("streak", daysSinceStart);
+        streakData.put("currentActivity", streakRecord.path("current_activity").asInt());
+        notificationData.put("streakData", streakData);
 
-        if (null != UserAlertsWebSocket.connectedSockets && UserAlertsWebSocket.connectedSockets.containsKey(Long.parseLong(userId))) {
-            for(IAlertListener listener : UserAlertsWebSocket.connectedSockets.get(Long.parseLong(userId))) {
-                listener.notifyAlert(alert);
+        try {
+            // notify the user of a streak increase
+            IUserAlert alert = new PgUserAlert(null,
+                    Long.parseLong(userId),
+                    objectMapper.writeValueAsString(notificationData),
+                    "progress",
+                    new Timestamp(System.currentTimeMillis()),
+                    null, null, null);
+
+            if (null != UserAlertsWebSocket.connectedSockets && UserAlertsWebSocket.connectedSockets.containsKey(Long.parseLong(userId))) {
+                for(IAlertListener listener : UserAlertsWebSocket.connectedSockets.get(Long.parseLong(userId))) {
+                    listener.notifyAlert(alert);
+                }
             }
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
         }
+
 
         return streakRecord;
     }
