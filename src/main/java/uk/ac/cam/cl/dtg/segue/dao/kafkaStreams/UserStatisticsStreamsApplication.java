@@ -393,7 +393,7 @@ public class UserStatisticsStreamsApplication {
 
         Map<String, Object> notificationData = Maps.newHashMap();
         Map<String, Object> streakData = Maps.newHashMap();
-        streakData.put("streak", daysSinceStart);
+        streakData.put("dailyStreakRecord", daysSinceStart);
         streakData.put("currentActivity", streakRecord.path("current_activity").asInt());
         notificationData.put("streakData", streakData);
 
