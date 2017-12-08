@@ -243,6 +243,7 @@ CREATE TABLE groups (
     id integer NOT NULL,
     group_name text,
     owner_id integer,
+    archived boolean NOT NULL DEFAULT false,
     created timestamp without time zone
 );
 
