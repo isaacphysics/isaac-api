@@ -106,7 +106,7 @@ public class GroupsFacade extends AbstractSegueFacade {
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getGroupsForCurrentUser(@Context final HttpServletRequest request,
-            @Context final Request cacheRequest, @QueryParam("archived_groups_Only") final boolean archivedGroupsOnly) {
+            @Context final Request cacheRequest, @QueryParam("archived_groups_only") final boolean archivedGroupsOnly) {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
             List<UserGroupDTO> groups = groupManager.getGroupsByOwner(user, archivedGroupsOnly);
