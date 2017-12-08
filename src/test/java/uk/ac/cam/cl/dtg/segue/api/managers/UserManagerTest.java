@@ -369,6 +369,9 @@ public class UserManagerTest {
         expect(dummyMapper.map(mappedUser, RegisteredUserDTO.class)).andReturn(mappedUserDTO).atLeastOnce();
         expect(dummyMapper.map(au, AnonymousUserDTO.class)).andReturn(someAnonymousUserDTO).anyTimes();
 
+        // handle duplicate account check.
+        expect(dummyDatabase.getByEmail(providerUser.getEmail())).andReturn(null).once();
+
         // A main part of the test is to check the below call happens
         expect(
                 dummyDatabase.registerNewUserWithProvider(mappedUser, AuthenticationProvider.TEST,
