@@ -270,6 +270,56 @@ public class GameboardsFacade extends AbstractIsaacFacade {
         }
     }
 
+    /** TODO MT Document **/
+    @GET
+    @Path("gameboards/fasttrack/{gameboard_id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public final Response getFastTrackGameboard(@Context final Request request,
+            @Context final HttpServletRequest httpServletRequest, @PathParam("gameboard_id") final String gameboardId) {
+
+        try {
+            GameboardDTO gameboard;
+
+            AbstractSegueUserDTO randomUser = this.userManager.getCurrentUser(httpServletRequest);
+            Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts = this.questionManager
+                    .getQuestionAttemptsByUser(randomUser);
+
+            GameboardDTO unAugmentedGameboard = gameManager.getGameboard(gameboardId);
+            if (null == unAugmentedGameboard) {
+                return new SegueErrorResponse(Status.NOT_FOUND, "No Gameboard found for the id specified.")
+                        .toResponse();
+            }
+
+            // Calculate the ETag
+            EntityTag etag = new EntityTag(unAugmentedGameboard.toString().hashCode()
+                    + userQuestionAttempts.toString().hashCode() + "");
+
+            Response cachedResponse = generateCachedResponse(request, etag, NEVER_CACHE_WITHOUT_ETAG_CHECK);
+            if (cachedResponse != null) {
+                return cachedResponse;
+            }
+
+            // attempt to augment the gameboard with user information.
+            gameboard = gameManager.getFastTrackGameboard(gameboardId, randomUser, userQuestionAttempts);
+
+            // We decided not to log this on the backend as the front end uses this lots.
+            return Response.ok(gameboard).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).tag(etag)
+                    .build();
+        } catch (IllegalArgumentException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Your FastTrack gameboard filter request is invalid.").toResponse();
+        } catch (SegueDatabaseException e) {
+            String message = "Error whilst trying to access the FastTrack gameboard in the database.";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        } catch (ContentManagerException e1) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Error locating the version requested",
+                    e1);
+            log.error(error.getErrorMessage(), e1);
+            return error.toResponse();
+        }
+    }
+
     /**
      * getBoardPopularityList.
      * 

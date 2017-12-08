@@ -22,6 +22,7 @@ import io.swagger.annotations.Api;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.text.DecimalFormat;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -817,10 +818,12 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             // modifies assignment passed in to include an id.
             AssignmentDTO assignmentWithID = this.assignmentManager.createAssignment(assignmentDTOFromClient);
 
-            this.getLogManager().logEvent(currentlyLoggedInUser, request, SET_NEW_ASSIGNMENT,
-                    ImmutableMap.of(Constants.GAMEBOARD_ID_FKEY, assignmentWithID.getGameboardId(),
-                                    GROUP_FK, assignmentWithID.getGroupId(),
-                                    ASSIGNMENT_FK, assignmentWithID.getId()));
+            LinkedHashMap<String, Object> eventDetails = new LinkedHashMap<>();
+            eventDetails.put(Constants.GAMEBOARD_ID_FKEY, assignmentWithID.getGameboardId());
+            eventDetails.put(GROUP_FK, assignmentWithID.getGroupId());
+            eventDetails.put(ASSIGNMENT_FK, assignmentWithID.getId());
+            eventDetails.put(ASSIGNMENT_DUEDATE_FK, assignmentWithID.getDueDate());
+            this.getLogManager().logEvent(currentlyLoggedInUser, request, SET_NEW_ASSIGNMENT, eventDetails);
 
             return Response.ok(assignmentDTOFromClient).build();
         } catch (NoUserLoggedInException e) {

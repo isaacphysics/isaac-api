@@ -242,10 +242,16 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 		}
 
 		if (userInfo != null && userInfo.getId() != null) {
+			EmailVerificationStatus emailStatus = userInfo.isVerified() ? EmailVerificationStatus.VERIFIED : EmailVerificationStatus.NOT_VERIFIED;
+			String email = userInfo.getEmail();
+			if (null == email) {
+				email = userInfo.getId() + "-facebook";
+				emailStatus = EmailVerificationStatus.DELIVERY_FAILED;
+				log.warn("No email address provided by Facebook! Using (" + email + ") instead");
+			}
+
 			return new UserFromAuthProvider(userInfo.getId(), userInfo.getFirstName(),
-					userInfo.getLastName(), userInfo.getEmail(),
-					userInfo.isVerified() ? EmailVerificationStatus.VERIFIED : EmailVerificationStatus.NOT_VERIFIED, 
-					        null, null, null);
+					userInfo.getLastName(), email, emailStatus, null, null, null);
 		} else {
 			throw new NoUserException("No user could be created from provider details!");
 		}

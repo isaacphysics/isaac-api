@@ -28,12 +28,14 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.apache.commons.lang3.Validate;
+import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.KafkaException;
+import org.apache.kafka.common.config.TopicConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.connect.json.JsonDeserializer;
 import org.slf4j.Logger;
@@ -81,8 +83,15 @@ public class KafkaLoggingManager extends LoggingEventHandler {
         this.kafkaPort = kafkaPort;
 
         // ensure topics exist before attempting to consume
-        kafkaTopicManager.ensureTopicExists("topic_logged_events_test", -1);
-        kafkaTopicManager.ensureTopicExists("topic_anonymous_logged_events_test", 7200000);
+        // logged events
+        List<ConfigEntry> loggedEventsConfigs = Lists.newLinkedList();
+        loggedEventsConfigs.add(new ConfigEntry(TopicConfig.RETENTION_MS_CONFIG, String.valueOf(-1)));
+        kafkaTopicManager.ensureTopicExists("topic_logged_events", loggedEventsConfigs);
+
+        // anonymous logged events
+        List<ConfigEntry> anonLoggedEventsConfigs = Lists.newLinkedList();
+        anonLoggedEventsConfigs.add(new ConfigEntry(TopicConfig.RETENTION_MS_CONFIG, String.valueOf(7200000)));
+        kafkaTopicManager.ensureTopicExists("topic_anonymous_logged_events", anonLoggedEventsConfigs);
     }
 
 
@@ -117,9 +126,9 @@ public class KafkaLoggingManager extends LoggingEventHandler {
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
         ArrayList<String> topics = Lists.newArrayList();
-        topics.add("topic_anonymous_logged_events_test");
+        topics.add("topic_anonymous_logged_events");
 
-        log.info(String.format("Kafka Test Transfer Log Events - OldUser (%s) NewUser (%s) - About to poll", oldUserId, newUserId));
+        log.debug(String.format("Kafka Test Transfer Log Events - OldUser (%s) NewUser (%s) - About to poll", oldUserId, newUserId));
         int totalRecordCount = 0;
         try (KafkaConsumer<String, JsonNode> loggedEventsConsumer = new KafkaConsumer<String, JsonNode>(props)) {
             loggedEventsConsumer.subscribe(topics);
@@ -133,7 +142,7 @@ public class KafkaLoggingManager extends LoggingEventHandler {
 
                 if (records.count() == 0) {
                     running = false;
-                    log.info(String.format("Kafka Test Transfer Log Events - exiting after reaching end of topic. Read %s records", totalRecordCount));
+                    log.debug(String.format("Kafka Test Transfer Log Events - exiting after reaching end of topic. Read %s records", totalRecordCount));
                 }
 
                 for (ConsumerRecord<String, JsonNode> record : records) {
@@ -157,7 +166,7 @@ public class KafkaLoggingManager extends LoggingEventHandler {
                                 .build();
 
                         // producerRecord contains the name of the kafka topic we are publishing to, followed by the message to be sent.
-                        ProducerRecord<String, String> producerRecord = new ProducerRecord<String, String>("topic_logged_events_test", newUserId,
+                        ProducerRecord<String, String> producerRecord = new ProducerRecord<String, String>("topic_logged_events", newUserId,
                                 objectMapper.writeValueAsString(kafkaLogRecord));
 
                         kafkaProducer.send(producerRecord);
@@ -206,7 +215,7 @@ public class KafkaLoggingManager extends LoggingEventHandler {
                 .build();
 
         // producerRecord contains the name of the kafka topic we are publishing to, followed by the message to be sent.
-        ProducerRecord producerRecord = new ProducerRecord<String, String>("topic_logged_events_test", logEvent.getUserId(),
+        ProducerRecord producerRecord = new ProducerRecord<String, String>("topic_logged_events", logEvent.getUserId(),
                 objectMapper.writeValueAsString(kafkaLogRecord));
 
         try {

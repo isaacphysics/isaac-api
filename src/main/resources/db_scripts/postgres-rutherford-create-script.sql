@@ -592,7 +592,6 @@ CREATE TABLE user_alerts
     dismissed TIMESTAMP
 );
 CREATE UNIQUE INDEX user_alerts_id_uindex ON user_alerts (id);
-CREATE UNIQUE INDEX user_alerts_pkey ON user_alerts (id);
 
 
 

@@ -192,7 +192,12 @@ public class UserGroupDTO {
         }
         return true;
     }
-
+  
+    @Override
+    public String toString() {
+        return String.format("UserGroupDTO [id=%s owner_id=%s name=%s]", id, ownerId, groupName);
+    }
+  
     public boolean isArchived() {
         return archived;
     }

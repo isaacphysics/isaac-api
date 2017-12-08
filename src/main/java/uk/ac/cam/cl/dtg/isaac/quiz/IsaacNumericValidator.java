@@ -355,9 +355,11 @@ public class IsaacNumericValidator implements IValidator {
 
         int mag = (int) Math.floor(Math.log10(Math.abs(f)));
 
-        double normalised = f / Math.pow(10, mag);
+        double normalised = Math.abs(f / Math.pow(10, mag));
 
-        return Math.round(normalised * Math.pow(10, sigFigs - 1)) * Math.pow(10, mag) / Math.pow(10, sigFigs - 1);
+        // Round without the sign, in order to efficiently achieve "round half away from zero" when Java's Math.round()
+        // defaults to "round half towards positive infinity", then add the sign back when finished.
+        return Math.signum(f) * Math.round(normalised * Math.pow(10, sigFigs - 1)) * Math.pow(10, mag) / Math.pow(10, sigFigs - 1);
     }
 
     /**
