@@ -15,6 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
+import com.google.common.collect.ImmutableSet;
+
 import java.util.Set;
 
 /**
@@ -45,6 +47,8 @@ public final class Constants {
      * Game specific variables.
      */
     public static final int GAME_BOARD_TARGET_SIZE = 10;
+    public static final Set<String> FASTTRACK_GAMEBOARD_WHITELIST
+            = ImmutableSet.of("ft_core_2017"); // Keep in sync with APP's fastTrackProgressEnabledBoards constant
 
     /**
      * GameboardItemState Represents the potential states of a gameboard item.

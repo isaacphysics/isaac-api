@@ -270,7 +270,18 @@ public class GameboardsFacade extends AbstractIsaacFacade {
         }
     }
 
-    /** TODO MT Document **/
+
+    /**
+     * REST end point to retrieve FastTrack gameboard progress by ID.
+     *
+     * @param request
+     *             - so that we can deal with caching and etags.
+     * @param httpServletRequest
+     *            - so that we can extract the users session information if available.
+     * @param gameboardId
+     *            - the unique ID of the FastTrack gameboard to be requested, checked against a whitelist.
+     * @return a Response containing a gameboard object or a SequeErrorResponse.
+     */
     @GET
     @Path("gameboards/fasttrack/{gameboard_id}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -280,7 +291,10 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
         try {
             GameboardDTO gameboard;
-
+            if (!Constants.FASTTRACK_GAMEBOARD_WHITELIST.contains(gameboardId)) {
+                return new SegueErrorResponse(Status.NOT_FOUND, "Gameboard id not a valid FastTrack gameboard id.")
+                        .toResponse();
+            }
             AbstractSegueUserDTO randomUser = this.userManager.getCurrentUser(httpServletRequest);
             Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts = this.questionManager
                     .getQuestionAttemptsByUser(randomUser);

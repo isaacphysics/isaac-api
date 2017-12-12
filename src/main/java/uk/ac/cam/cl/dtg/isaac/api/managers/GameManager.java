@@ -290,7 +290,22 @@ public class GameManager {
         return gameboardFound;
     }
 
-    /** TODO MT Document **///.,
+    /**
+     * Get a gameboard by its id and augment with user information and FastTrack progress.
+     *
+     * @param gameboardId
+     *            - to look up.
+     * @param user
+     *            - This allows state information to be retrieved.
+     * @param userQuestionAttempts
+     *            - so that we can augment the gameboard.
+     * @return the gameboard or null.
+     * @throws SegueDatabaseException
+     *             - if there is a problem retrieving the gameboard in the database or updating the users gameboard link
+     *             table.
+     * @throws ContentManagerException
+     *             - if there is an error retrieving the content requested.
+     */
     public final GameboardDTO getFastTrackGameboard(final String gameboardId, final AbstractSegueUserDTO user,
             final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts)
             throws SegueDatabaseException, ContentManagerException {
@@ -442,12 +457,12 @@ public class GameManager {
      * Augments the gameboards with user information.
      * 
      * @param gameboardDTO
-     *            - the DTO of the gameboard
+     *            - the DTO of the gameboard.
      * @param questionAttemptsFromUser
      *            - the users question data.
      * @param user
      *            - the users data.
-     * @return Augmented Gameboard
+     * @return Augmented Gameboard.
      * @throws ContentManagerException
      *             - if there is an error retrieving the content requested.
      * @throws SegueDatabaseException if we can't look up gameboard --> user information
@@ -523,10 +538,17 @@ public class GameManager {
         return allQuestionPartsCompleted;
     }
 
-    /** TODO MT Document **/
+    /**
+     * Construct a concept map which is used to evaluate the best level of question completed in the question attempts -
+     * upper, lower or none. This information is used for the FastTrack progress bar.
+     * @param conceptQuestions
+     *            - a list of all the concept questions to be considered.
+     * @param questionAttempts
+     *            - the question attempt history.
+     * @return a concept map from concept title to QuestionPartConceptDTO.
+     */
     private Map<String, QuestionPartConceptDTO> createConceptMapFromQuestions(final List<ContentDTO> conceptQuestions,
             final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttempts) {
-        // TODO could possibly just ask for upper and lower questions (top ten info comes from the gamebaord)
         Map<String, QuestionPartConceptDTO> conceptMap = Maps.newHashMap();
         for (ContentDTO question : conceptQuestions) {
             String conceptName = question.getTitle();
@@ -545,11 +567,20 @@ public class GameManager {
         return conceptMap;
     }
 
-    /** TODO MT Document **///.,
+    /**
+     * Augments the gameboard with FastTrack progress information.
+     *
+     * @param gameboardDTO
+     *            - the gameboardDTO to be modified.
+     * @param boardAssociatedQuestions
+     *            - a list of questions associated with the board.
+     * @param questionAttemptsFromUser
+     *            - the user's question data
+     * @return the augmented gamebaord.
+     */
     private GameboardDTO augmentGameboardWithFastTrackInformation(final GameboardDTO gameboardDTO,
             final List<ContentDTO> boardAssociatedQuestions,
-            final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser)
-            throws ContentManagerException, SegueDatabaseException {
+            final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser) {
         if (null == gameboardDTO) {
             return null;
         }
@@ -1011,7 +1042,15 @@ public class GameManager {
         return gameboardReadyQuestions;
     }
 
-    /** TODO MT Document *///.,
+    /**
+     * Retrieve content which includes a specified tag, up to the SEARCH_MAX_WINDOW_SIZE.
+     *
+     * @param tag
+     *            - the tag string to search for.
+     * @return a list of content with the specified tag
+     * @throws ContentManagerException
+     *            - if there is a problem accessing the content repository.
+     */
     private List<ContentDTO> getQuestionsWithTag(String tag) throws ContentManagerException {
         Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
         fieldsToMap.put(immutableEntry(BooleanOperator.OR, TYPE_FIELDNAME),
