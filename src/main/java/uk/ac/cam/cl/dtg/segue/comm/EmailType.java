@@ -29,47 +29,6 @@ public enum EmailType {
 	EVENTS;
 	
 	/**
-	 * @param emailType the integer representation of email type.
-	 * @return the type of email corresponding to the integer 
-	 */
-	public static EmailType mapIntToPreference(final int emailType) {
-		switch (emailType) {
-			case 0:
-				return ADMIN;
-			case 1:
-				return SYSTEM;
-			case 2:
-				return ASSIGNMENTS;
-			case 3:
-				return NEWS_AND_UPDATES;
-			case 4:
-				return EVENTS;
-			default:
-				return null;
-		}
-	}
-	
-	/**
-	 * @return the integer representation of email type.
-	 */
-	public int mapEmailTypeToInt() {
-		switch (this) {
-			case ADMIN:
-				return 0;
-			case SYSTEM:
-				return 1;
-			case ASSIGNMENTS:
-				return 2;
-			case NEWS_AND_UPDATES:
-				return 3;
-			case EVENTS:
-				return 4;
-			default:
-				return -1;
-		}
-	}
-	
-	/**
 	 * @return integer representation of priority
 	 */
 	public int getPriority() {

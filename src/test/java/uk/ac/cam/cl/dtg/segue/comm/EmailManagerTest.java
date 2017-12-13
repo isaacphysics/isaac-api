@@ -18,7 +18,6 @@ package uk.ac.cam.cl.dtg.segue.comm;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
 import java.util.Date;
 import java.util.List;
@@ -37,16 +36,16 @@ import org.slf4j.LoggerFactory;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 
+import uk.ac.cam.cl.dtg.segue.api.Constants.SegueUserPreferences;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
-import uk.ac.cam.cl.dtg.segue.dos.AbstractEmailPreferenceManager;
-import uk.ac.cam.cl.dtg.segue.dos.PgEmailPreferenceManager;
+import uk.ac.cam.cl.dtg.segue.dos.AbstractUserPreferenceManager;
+import uk.ac.cam.cl.dtg.segue.dos.PgUserPreferenceManager;
+import uk.ac.cam.cl.dtg.segue.dos.UserPreference;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.EmailTemplateDTO;
@@ -71,7 +70,7 @@ public class EmailManagerTest {
     private IContentManager mockContentManager;
     private Capture<EmailCommunicationMessage> capturedArgument;
     private SegueLocalAuthenticator mockAuthenticator;
-    private AbstractEmailPreferenceManager emailPreferenceManager;
+    private AbstractUserPreferenceManager userPreferenceManager;
     private ILogManager logManager;
     private UserAccountManager userManager;
 
@@ -118,7 +117,7 @@ public class EmailManagerTest {
         emailCommunicator = EasyMock.createMock(EmailCommunicator.class);
 
         // Create dummy email preferences
-        emailPreferenceManager = EasyMock.createMock(PgEmailPreferenceManager.class);
+        userPreferenceManager = EasyMock.createMock(PgUserPreferenceManager.class);
 
         mockPropertiesLoader = EasyMock.createMock(PropertiesLoader.class);
         EasyMock.expect(mockPropertiesLoader.getProperty("HOST_NAME")).andReturn("dev.isaacphysics.org").anyTimes();
@@ -241,7 +240,7 @@ public class EmailManagerTest {
             Assert.fail();
         }
 
-        EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
+        EmailManager manager = new EmailManager(emailCommunicator, userPreferenceManager, mockPropertiesLoader,
                 mockContentManager, logManager, generateGlobalTokenMap());
         try {
             ImmutableMap<String, Object> emailTokens = ImmutableMap.of("verificationURL", "https://testUrl.com");
@@ -316,7 +315,7 @@ public class EmailManagerTest {
             Assert.fail();
         }
 
-        EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
+        EmailManager manager = new EmailManager(emailCommunicator, userPreferenceManager, mockPropertiesLoader,
                 mockContentManager, logManager, generateGlobalTokenMap());
         try {
             Map<String, Object> emailTokens = ImmutableMap.of("providerString", "testString", "providerWord", "testWord");
@@ -389,7 +388,7 @@ public class EmailManagerTest {
             Assert.fail();
         }
 
-        EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
+        EmailManager manager = new EmailManager(emailCommunicator, userPreferenceManager, mockPropertiesLoader,
                 mockContentManager, logManager, generateGlobalTokenMap());
         try {
             Map<String, Object> emailValues = ImmutableMap.of("resetURL",
@@ -460,7 +459,7 @@ public class EmailManagerTest {
             Assert.fail();
         }
 
-        EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
+        EmailManager manager = new EmailManager(emailCommunicator, userPreferenceManager, mockPropertiesLoader,
                 mockContentManager, logManager, generateGlobalTokenMap());
         try {
             ImmutableMap<String, Object> emailTokens = ImmutableMap.of("verificationURL", "https://testUrl.com");
@@ -508,7 +507,7 @@ public class EmailManagerTest {
             Assert.fail();
         }
 
-        EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
+        EmailManager manager = new EmailManager(emailCommunicator, userPreferenceManager, mockPropertiesLoader,
                 mockContentManager, logManager, generateGlobalTokenMap());
         try {
             ImmutableMap<String, Object> emailTokens = ImmutableMap.of("verificationURL", "https://testUrl.com");
@@ -563,7 +562,7 @@ public class EmailManagerTest {
             Assert.fail();
         }
 
-        EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
+        EmailManager manager = new EmailManager(emailCommunicator, userPreferenceManager, mockPropertiesLoader,
                 mockContentManager, logManager, generateGlobalTokenMap());
         try {
 
@@ -601,21 +600,21 @@ public class EmailManagerTest {
     @Test
     public void sendCustomEmail_checkNullProperties_replacedWithEmptyString() {
 
-        EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
+        EmailManager manager = new EmailManager(emailCommunicator, userPreferenceManager, mockPropertiesLoader,
                 mockContentManager, logManager, generateGlobalTokenMap());
 
         List<RegisteredUserDTO> allSelectedUsers = Lists.newArrayList();
         allSelectedUsers.add(userDTOWithNulls);
         allSelectedUsers.add(userDTOWithNulls);
 
-        Map<Long, Map<EmailType, Boolean>> preferenceMap = Maps.newHashMap();
+        Map<Long, List<UserPreference>> preferenceMap = Maps.newHashMap();
         try {
-            EasyMock.expect(emailPreferenceManager.getEmailPreferences(allSelectedUsers)).andReturn(preferenceMap);
+            EasyMock.expect(userPreferenceManager.getUserPreferences(SegueUserPreferences.EMAIL_PREFERENCE.name(), allSelectedUsers)).andReturn(preferenceMap);
         } catch (SegueDatabaseException e1) {
             e1.printStackTrace();
             Assert.fail();
         }
-        EasyMock.replay(emailPreferenceManager);
+        EasyMock.replay(userPreferenceManager);
 
         ContentDTO htmlTemplate = createDummyContentTemplate("{{content}}");
         EmailTemplateDTO emailTemplate = createDummyEmailTemplate("Hello {{givenname}}, "
@@ -655,7 +654,7 @@ public class EmailManagerTest {
      */
     @Test
     public void flattenTokenMap_checkTemplateReplacement_successfulReplacement() {
-        EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
+        EmailManager manager = new EmailManager(emailCommunicator, userPreferenceManager, mockPropertiesLoader,
                 mockContentManager, logManager, generateGlobalTokenMap());
         Date someDate = new Date();
 

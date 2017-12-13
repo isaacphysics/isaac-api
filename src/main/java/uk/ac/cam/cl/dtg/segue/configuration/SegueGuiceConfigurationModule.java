@@ -256,8 +256,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         bind(IPasswordDataManager.class).to(PgPasswordDataManager.class);
 
         bind(ICommunicator.class).to(EmailCommunicator.class);
-        
-        bind(AbstractEmailPreferenceManager.class).to(PgEmailPreferenceManager.class);
 
         bind(AbstractUserPreferenceManager.class).to(PgUserPreferenceManager.class);
 
@@ -433,7 +431,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      * 			- the properties so we can generate email
      * @param emailCommunicator
      *            the class the queue will send messages with
-     * @param emailPreferenceManager
+     * @param userPreferenceManager
      * 			- the class providing email preferences
      * @param contentManager
      * 			- the content so we can access email templates
@@ -448,7 +446,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Singleton
     private static EmailManager getMessageCommunicationQueue(final IUserDataManager database,
             final PropertiesLoader properties, final EmailCommunicator emailCommunicator,
-            final AbstractEmailPreferenceManager emailPreferenceManager,
+            final AbstractUserPreferenceManager userPreferenceManager,
             final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final SegueLocalAuthenticator authenticator,
             final ILogManager logManager) {
 
@@ -464,7 +462,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                 properties.getProperty(HOST_NAME)));
 
         if (null == emailCommunicationQueue) {
-            emailCommunicationQueue = new EmailManager(emailCommunicator, emailPreferenceManager, properties,
+            emailCommunicationQueue = new EmailManager(emailCommunicator, userPreferenceManager, properties,
             				contentManager, logManager, globalTokens);
             log.info("Creating singleton of EmailCommunicationQueue");
         }

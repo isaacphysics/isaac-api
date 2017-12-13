@@ -40,7 +40,7 @@ public class UserSettings {
      */
     @JsonCreator
     public UserSettings(@JsonProperty("registeredUser") final RegisteredUser registeredUser,
-						@JsonProperty("userInterests") final Map<String, Map<String, Boolean>> userPreferences) {
+						@JsonProperty("userPreferences") final Map<String, Map<String, Boolean>> userPreferences) {
         this.registeredUser = registeredUser;
 		this.userPreferences = userPreferences;
     }

@@ -21,6 +21,7 @@ import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.Validate;
 import org.eclipse.jgit.util.StringUtils;
 import org.slf4j.Logger;
@@ -31,8 +32,8 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
-import uk.ac.cam.cl.dtg.segue.dos.AbstractEmailPreferenceManager;
-import uk.ac.cam.cl.dtg.segue.dos.IEmailPreference;
+import uk.ac.cam.cl.dtg.segue.dos.AbstractUserPreferenceManager;
+import uk.ac.cam.cl.dtg.segue.dos.UserPreference;
 import uk.ac.cam.cl.dtg.segue.dos.content.ExternalReference;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
@@ -49,6 +50,7 @@ import java.util.regex.Pattern;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_VERSION_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_TIME_LOCALITY;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueUserPreferences;
 
 /**
  * EmailManager
@@ -56,7 +58,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_TIME_LOCALITY;
  *
  */
 public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationMessage> {
-	private final AbstractEmailPreferenceManager emailPreferenceManager;
+	private final AbstractUserPreferenceManager userPreferenceManager;
     private final PropertiesLoader globalProperties;
     private final IContentManager contentManager;
 
@@ -71,8 +73,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     /**
      * @param communicator
      *            class we'll use to send the actual email.
-     * @param emailPreferenceManager
-     *            email preference manager used to check if users want email.
+     * @param userPreferenceManager
+     *            user preference manager used to check if users want email.
      * @param globalProperties
      *            global properties used to get host name
      * @param contentManager
@@ -83,12 +85,12 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      *                           static string.
      */
     @Inject
-    public EmailManager(final EmailCommunicator communicator, final AbstractEmailPreferenceManager 
-		    		emailPreferenceManager, final PropertiesLoader globalProperties,
+    public EmailManager(final EmailCommunicator communicator, final AbstractUserPreferenceManager
+		    		userPreferenceManager, final PropertiesLoader globalProperties,
                         final IContentManager contentManager, final ILogManager logManager,
                         final Map<String, String> globalStringTokens) {
         super(communicator);
-        this.emailPreferenceManager = emailPreferenceManager;
+        this.userPreferenceManager = userPreferenceManager;
         this.globalProperties = globalProperties;
         this.contentManager = contentManager;
         this.logManager = logManager;
@@ -209,18 +211,19 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         EmailTemplateDTO emailContent = getEmailTemplateDTO(contentObjectId);
 
-        Map<Long, Map<EmailType, Boolean>> allUserPreferences = this.emailPreferenceManager
-                .getEmailPreferences(allSelectedUsers);
+        Map<Long, List<UserPreference>> allUserPreferences = this.userPreferenceManager
+                .getUserPreferences(SegueUserPreferences.EMAIL_PREFERENCE.name(), allSelectedUsers);
 
         int numberOfUnfilteredUsers = allSelectedUsers.size();
         Iterator<RegisteredUserDTO> userIterator = allSelectedUsers.iterator();
         while (userIterator.hasNext()) {
             RegisteredUserDTO user = userIterator.next();
 
-            // don't continue if user has preference against this type of email
+            // Don't continue if user has preference against this type of email. If no preference found, send the email.
+            // This is consistent with filterByPreferencesAndAddToQueue(...) below.
             if (allUserPreferences.containsKey(user.getId())) {
-                Map<EmailType, Boolean> userPreferences = allUserPreferences.get(user.getId());
-                if (userPreferences.containsKey(emailType) && !userPreferences.get(emailType)) {
+                Map<EmailType, Boolean> emailPreferences = convertUserPreferencesToEmailPreferences(allUserPreferences.get(user.getId()));
+                if (emailPreferences.containsKey(emailType) && !emailPreferences.get(emailType)) {
                     userIterator.remove();
                     continue;
                 }
@@ -297,9 +300,9 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     	}
 
     	try {
-			IEmailPreference preference = 
-							this.emailPreferenceManager.getEmailPreference(userDTO.getId(), email.getEmailType());
-			if (preference != null && preference.getEmailPreferenceStatus()) {
+			UserPreference preference = userPreferenceManager.getUserPreference(SegueUserPreferences.EMAIL_PREFERENCE.name(), email.getEmailType().name(), userDTO.getId());
+			// If no preference is present, send the email. This is consistent with sendCustomEmail(...) above.
+			if (preference == null || preference.getPreferenceValue()) {
 		        logManager.logInternalEvent(userDTO, Constants.SEND_EMAIL, eventDetails);
 				addToQueue(email);
 			}
@@ -629,5 +632,22 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         }
 
         return emailTemplateDTO;
+    }
+
+    /**
+     * Convert new-style user preference list into old-style EmailType map.
+     *
+     * @param userPreferences
+     *            - the list of user preferences
+     * @return - the old-style EmailType map
+     */
+    private Map<EmailType, Boolean> convertUserPreferencesToEmailPreferences(final List<UserPreference> userPreferences) {
+        Map<EmailType, Boolean> emailPreferences = Maps.newHashMap();
+        for (UserPreference pref : userPreferences) {
+            if (EnumUtils.isValidEnum(EmailType.class, pref.getPreferenceName())) {
+                emailPreferences.put(EmailType.valueOf(pref.getPreferenceName()), pref.getPreferenceValue());
+            }
+        }
+        return emailPreferences;
     }
 }
