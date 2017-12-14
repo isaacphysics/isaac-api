@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.UserStatisticsStreamsApplication;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.SiteStatisticsStreamsApplication;
@@ -43,6 +44,7 @@ public class KafkaStatisticsManager implements IStatisticsManager {
     private GroupManager groupManager;
     private SchoolListReader schoolManager;
     private SiteStatisticsStreamsApplication statisticsStreamsApplication;
+    private UserStatisticsStreamsApplication userStatisticsStreamsApplication;
     private IStatisticsManager oldStatisticsManager;
 
 
@@ -74,11 +76,13 @@ public class KafkaStatisticsManager implements IStatisticsManager {
     public KafkaStatisticsManager(final UserAccountManager userManager, final ILogManager logManager,
                                   final SchoolListReader schoolManager, final GroupManager groupManager,
                                   final SiteStatisticsStreamsApplication statisticsStreamsApplication,
+                                  final UserStatisticsStreamsApplication userStatisticsStreamsApplication,
                                   final StatisticsManager statsManager) {
 
         this.oldStatisticsManager = statsManager;
 
         this.statisticsStreamsApplication = statisticsStreamsApplication;
+        this.userStatisticsStreamsApplication = userStatisticsStreamsApplication;
         this.logManager = logManager;
         this.userManager = userManager;
         this.groupManager = groupManager;
@@ -626,6 +630,11 @@ public class KafkaStatisticsManager implements IStatisticsManager {
     @Override
     public Collection<Location> getLocationInformation(Date fromDate, Date toDate) throws SegueDatabaseException {
         return oldStatisticsManager.getLocationInformation(fromDate, toDate);
+    }
+
+    @Override
+    public Map<String, Object> getDetailedUserStatistics(RegisteredUserDTO userOfInterest) {
+        return userStatisticsStreamsApplication.getUserSnapshot(userOfInterest);
     }
 
 

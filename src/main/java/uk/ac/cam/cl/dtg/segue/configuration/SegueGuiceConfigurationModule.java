@@ -266,6 +266,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         bind(AbstractUserPreferenceManager.class).to(PgUserPreferenceManager.class);
 
         bind(IUserAlerts.class).to(PgUserAlerts.class);
+
+        bind(IStatisticsManager.class).to(KafkaStatisticsManager.class);
     }
 
     /**
@@ -828,10 +830,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static KafkaStatisticsManager getKafkaStatsManager(final UserAccountManager userManager,
                                                      final ILogManager logManager, final SchoolListReader schoolManager,
                                                      final GroupManager groupManager, SiteStatisticsStreamsApplication statisticsStreamsApplication,
+                                                     final UserStatisticsStreamsApplication userStatisticsStreamsApplication,
                                                      final StatisticsManager statsManager) {
 
         if (null == kafkaStatsManager) {
-            kafkaStatsManager = new KafkaStatisticsManager(userManager, logManager, schoolManager, groupManager, statisticsStreamsApplication, statsManager);
+            kafkaStatsManager = new KafkaStatisticsManager(userManager, logManager,
+                    schoolManager, groupManager, statisticsStreamsApplication, userStatisticsStreamsApplication, statsManager);
             log.info("Created Singleton of Kafka Statistics Manager");
         }
 

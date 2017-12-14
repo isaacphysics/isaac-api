@@ -438,7 +438,7 @@ public class UserStatisticsStreamsApplication {
 
         // 3) If we have just started counting, or if the latest event arrived later than a day since the previous, reset the streak record and go no further
         if (streakStartTimestamp == 0 ||
-                (((streakEndTimestamp != 0 && TimeUnit.DAYS.convert(latest.getTimeInMillis() - streakEndTimestamp, TimeUnit.MILLISECONDS) > 1)))) {
+                (((streakEndTimestamp != 0 && TimeUnit.DAYS.convert(latestEventTimestamp - streakEndTimestamp, TimeUnit.MILLISECONDS) > 1)))) {
 
             ((ObjectNode) streakRecord).put("streak_start", latest.getTimeInMillis());
             ((ObjectNode) streakRecord).put("streak_end", latest.getTimeInMillis());
