@@ -755,7 +755,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         if (null == userStatsStreamsApplication) {
 
             log.info("Creating singleton of User Stats events Kafka Streams Application.");
-            userStatsStreamsApplication = new UserStatisticsStreamsApplication(globalProperties, kafkaTopicManager, questionPersistenceManager);
+            userStatsStreamsApplication = new UserStatisticsStreamsApplication(globalProperties, kafkaTopicManager,
+                    questionPersistenceManager, userManager);
             userStatsStreamsApplication.start();
         }
         return userStatsStreamsApplication;

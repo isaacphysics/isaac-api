@@ -40,8 +40,10 @@ import org.apache.kafka.streams.kstream.KStreamBuilder;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.userAlerts.IAlertListener;
 import uk.ac.cam.cl.dtg.segue.api.userAlerts.UserAlertsWebSocket;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.IUserAlert;
 import uk.ac.cam.cl.dtg.segue.dos.PgUserAlert;
@@ -80,6 +82,8 @@ public class UserStatisticsStreamsApplication {
     private KStreamBuilder builder = new KStreamBuilder();
     private Properties streamsConfiguration = new Properties();
     private IQuestionAttemptManager questionAttemptManager;
+    private UserAccountManager userAccountManager;
+
 
     private final String streamsAppNameAndVersion = "streamsapp_user_stats-v1.0";
 
@@ -93,10 +97,14 @@ public class UserStatisticsStreamsApplication {
      */
     public UserStatisticsStreamsApplication(final PropertiesLoader globalProperties,
                                             final KafkaTopicManager kafkaTopicManager,
-                                            final IQuestionAttemptManager questionAttemptManager) {
+                                            final IQuestionAttemptManager questionAttemptManager,
+                                            final UserAccountManager userAccountManager) {
+
 
         this.kafkaTopicManager = kafkaTopicManager;
         this.questionAttemptManager = questionAttemptManager;
+        this.userAccountManager = userAccountManager;
+
 
         streamsConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, streamsAppNameAndVersion);
         streamsConfiguration.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG,
@@ -189,16 +197,7 @@ public class UserStatisticsStreamsApplication {
 
 
         // user question answer streaks
-        rawStream
-                .filter(
-                        (userId, loggedEvent) -> loggedEvent.path("event_type")
-                                .asText()
-                                .equals("ANSWER_QUESTION")
-                )
-                .filter(
-                        (userId, loggedEvent) -> loggedEvent.path("event_details")
-                                .path("correct").asBoolean()
-                ).groupByKey()
+        rawStream.groupByKey()
                 .aggregate(
                         // initializer
                         () -> {
@@ -209,6 +208,7 @@ public class UserStatisticsStreamsApplication {
                             streakRecord.put("streak_end", 0);
                             streakRecord.put("largest_streak", 0);
                             streakRecord.put("current_activity", 0);
+                            streakRecord.put("activity_threshold", 3);
 
                             userSnapshot.put("streak_record", streakRecord);
 
@@ -217,7 +217,45 @@ public class UserStatisticsStreamsApplication {
                         // aggregator
                         (userId, latestEvent, userSnapshot) -> {
 
-                            ((ObjectNode) userSnapshot).put("streak_record", updateStreakRecord(userId, latestEvent, userSnapshot.path("streak_record")));
+                            // first, make sure that if the user is not a student, we augment their snapshot with a teacher sub-record
+                            if (!userSnapshot.has("teacher_record")) {
+                                ObjectNode teacherRecord = JsonNodeFactory.instance.objectNode();
+                                teacherRecord.put("groups_created", 0);
+                                teacherRecord.put("boards_created", 0);
+                                teacherRecord.put("assignments_set", 0);
+                                teacherRecord.put("book_pages_set", 0);
+                                teacherRecord.put("cpd_events_attended", 0);
+                                ((ObjectNode) userSnapshot).put("teacher_record", teacherRecord);
+                            }
+
+
+                            // snapshot updates pertaining to question answer activity
+                            if (latestEvent.path("event_type").asText().equals("ANSWER_QUESTION")) {
+
+                                if (latestEvent.path("event_details").path("correct").asBoolean()) {
+                                    ((ObjectNode) userSnapshot).put("streak_record", updateStreakRecord(userId, latestEvent, userSnapshot.path("streak_record")));
+                                }
+                            }
+
+                            // snapshot updates pertaining to teacher activity
+                            try {
+
+                                if (!userAccountManager.getUserDTOById(Long.parseLong(userId)).getRole().equals(Role.STUDENT)) {
+
+                                    if (latestEvent.path("event_type").asText().equals("CREATE_USER_GROUP")) {
+                                        ((ObjectNode) userSnapshot).put("teacher_record", updateTeacherActivityRecord("groups_created", userSnapshot.path("teacher_record")));
+                                    }
+
+                                    if (latestEvent.path("event_type").asText().equals("SET_NEW_ASSIGNMENT")) {
+                                        ((ObjectNode) userSnapshot).put("teacher_record", updateTeacherActivityRecord("assignments_set", userSnapshot.path("teacher_record")));
+                                    }
+
+                                }
+
+                            } catch (NoUserException | SegueDatabaseException e) {
+                                e.printStackTrace();
+                            }
+
 
                             return userSnapshot;
                         },
@@ -239,39 +277,60 @@ public class UserStatisticsStreamsApplication {
     public Map<String, Object> getUserSnapshot(RegisteredUserDTO user) {
 
         Map<String, Object> userSnapshot = Maps.newHashMap();
+        Map<String, Object> streakRecord = Maps.newHashMap();
+        streakRecord.put("currentStreak", 0);
+        streakRecord.put("largestStreak", 0);
+        streakRecord.put("currentActivity", 0);
 
-        userSnapshot.put("dailyStreakRecord", 0);
-        userSnapshot.put("currentActivity", 0);
-
+        // get the persisted snapshot document
         JsonNode snapshotRecord = streams
                 .store("globalstore_user_snapshot", QueryableStoreTypes.<String, JsonNode>keyValueStore())
                 .get(String.valueOf(user.getId()));
 
+
         if (snapshotRecord != null) {
 
-            JsonNode streakRecord = snapshotRecord.path("streak_record");
+            // get daily streak information
+            JsonNode streakNode = snapshotRecord.path("streak_record");
 
-            if (streakRecord.path("streak_end").asInt() != 0) {
+            Long streakEndTimestamp = streakNode.path("streak_end").asLong();
 
+            if (streakEndTimestamp != 0) {
+
+                // set up a streak increase deadline at midnight for the next day
                 Calendar tomorrowMidnight = roundDownToDay(Calendar.getInstance());
                 tomorrowMidnight.add(Calendar.DAY_OF_YEAR, 1);
 
-                Long daysSinceStreakIncrease = TimeUnit.DAYS.convert(tomorrowMidnight.getTimeInMillis() - streakRecord.path("streak_end").asLong(), TimeUnit.MILLISECONDS);
+                Long daysSinceStreakIncrease = TimeUnit.DAYS.convert(tomorrowMidnight.getTimeInMillis() - streakEndTimestamp, TimeUnit.MILLISECONDS);
 
-                // if the time difference between the streak end timestamp and the end of today is less than 2 whole days, send the current streak length, otherwise send zero
-                if (daysSinceStreakIncrease <= 2) {
-                    userSnapshot.put("dailyStreakRecord", TimeUnit.DAYS.convert(streakRecord.path("streak_end").asLong() - streakRecord.path("streak_start").asLong(),
+                if (daysSinceStreakIncrease == 0) {
+
+                    streakRecord.put("currentActivity", snapshotRecord.path("streak_record").path("current_activity").asInt());
+                    streakRecord.put("currentStreak", TimeUnit.DAYS.convert(streakEndTimestamp - snapshotRecord.path("streak_record").path("streak_start").asLong(),
                             TimeUnit.MILLISECONDS));
 
-                    if (daysSinceStreakIncrease > 1) {
-                        userSnapshot.put("dailyStreakMessage", "Complete your daily question goal by the end of today to increase your streak!");
+
+                } else if (daysSinceStreakIncrease == 1) {
+
+                    Integer curActivity = snapshotRecord.path("streak_record").path("current_activity").asInt();
+
+                    if (curActivity != snapshotRecord.path("streak_record").path("activity_threshold").asInt()) {
+                        streakRecord.put("currentActivity", snapshotRecord.path("streak_record").path("current_activity").asInt());
                     }
+
+                    streakRecord.put("currentStreak", TimeUnit.DAYS.convert(streakEndTimestamp - snapshotRecord.path("streak_record").path("streak_start").asLong(),
+                            TimeUnit.MILLISECONDS));
+
+                    streakRecord.put("dailyStreakMessage", "Complete your daily question goal by the end of today to increase your streak!");
                 }
 
-                // if the time difference between the streak end timestamp and the end of today is less than 1 day, send the current activity length for the day
-                if (daysSinceStreakIncrease <= 1) {
-                    userSnapshot.put("currentActivity", streakRecord.path("current_activity").asInt());
-                }
+                streakRecord.put("largestStreak", snapshotRecord.path("streak_record").path("largest_streak").asLong());
+                userSnapshot.put("streakRecord", streakRecord);
+            }
+
+            // for all users who aren't students, augment the snapshot with additional teacher stats
+            if (!user.getRole().equals(Role.STUDENT) && snapshotRecord.has("teacher_record")) {
+                userSnapshot.put("teacherActivityRecord", snapshotRecord.path("teacher_record"));
             }
         }
 
@@ -279,22 +338,24 @@ public class UserStatisticsStreamsApplication {
     }
 
 
+
     /**
-     * Function to take a calendar object and round down the timestamp to midnight
-     * for the same date
      *
-     * @param calendar calendar object to modify
-     * @return modified calendar object set to midnight
+     * @param activityType
+     * @param teacherRecord
+     * @return
      */
-    private static Calendar roundDownToDay(Calendar calendar) {
+    private JsonNode updateTeacherActivityRecord(String activityType, JsonNode teacherRecord) {
 
-        calendar.set(Calendar.MILLISECOND, 0);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        Integer count = teacherRecord.path(activityType).asInt();
+        ((ObjectNode) teacherRecord).put(activityType, count + 1);
 
-        return calendar;
+        return teacherRecord;
     }
+
+
+
+
 
 
     /**
@@ -322,7 +383,20 @@ public class UserStatisticsStreamsApplication {
         latest = roundDownToDay(latest);
 
 
-        // if the user has already answered the question correctly, don't continue
+        // 1) If the current activity threshold for the day has been reached
+        if (streakRecord.path("current_activity").asLong() == streakRecord.path("activity_threshold").asLong()) {
+
+            // if we are still on the same day, don't continue, otherwise we need to reset the daily activity count
+            if (latest.getTimeInMillis() < streakEndTimestamp) {
+                return streakRecord;
+            } else {
+                ((ObjectNode) streakRecord).put("current_activity", 0);
+            }
+
+        }
+
+
+        // 2) We want to make sure the user hasn't answered the question part correctly before. If they have, don't continue
         String questionId = latestEvent.path("event_details").path("questionId").asText();
         List<Long> user = Lists.newArrayList();
         List<String> questionPageId = Lists.newArrayList();
@@ -362,39 +436,44 @@ public class UserStatisticsStreamsApplication {
         }
 
 
-        // if we are in the same day then just update the current activity count, otherwise reset it
-        if (TimeUnit.DAYS.convert(latest.getTimeInMillis() - streakEndTimestamp, TimeUnit.MILLISECONDS) < 1) {
-
-            Long currentActivity = streakRecord.path("current_activity").asLong();
-            ((ObjectNode) streakRecord).put("current_activity", currentActivity + 1);
-        } else {
-            ((ObjectNode) streakRecord).put("current_activity", 1);
-        }
-
-
-        // if we have just started counting or if the latest event arrived later than a day since the previous, reset the streak record
+        // 3) If we have just started counting, or if the latest event arrived later than a day since the previous, reset the streak record and go no further
         if (streakStartTimestamp == 0 ||
                 (((streakEndTimestamp != 0 && TimeUnit.DAYS.convert(latest.getTimeInMillis() - streakEndTimestamp, TimeUnit.MILLISECONDS) > 1)))) {
 
             ((ObjectNode) streakRecord).put("streak_start", latest.getTimeInMillis());
+            ((ObjectNode) streakRecord).put("streak_end", latest.getTimeInMillis());
             streakStartTimestamp = latest.getTimeInMillis();
         }
 
-        // set the streak end timestamp to the timestamp of the latest event
-        ((ObjectNode) streakRecord).put("streak_end", latest.getTimeInMillis());
+
+        // 4) Increment the daily activity. If we've reached the daily activity threshold, increment the latest event time to the end of the day
+        Long currentActivity = streakRecord.path("current_activity").asLong();
+        ((ObjectNode) streakRecord).put("current_activity", currentActivity + 1);
+
+        if (streakRecord.path("current_activity").asLong() == streakRecord.path("activity_threshold").asLong()) {
+            latest.add(Calendar.DAY_OF_YEAR, 1);
+            ((ObjectNode) streakRecord).put("streak_end", latest.getTimeInMillis());
+        }
 
 
-        // update largest streak count if days since start is greater than the recorded largest streak
+        // 5) Update largest streak count if days since start is greater than the recorded largest streak
         Long daysSinceStart = TimeUnit.DAYS.convert(latest.getTimeInMillis() - streakStartTimestamp, TimeUnit.MILLISECONDS);
 
         if (daysSinceStart > streakRecord.path("largest_streak").asLong()) {
             ((ObjectNode) streakRecord).put("largest_streak", daysSinceStart);
         }
 
+
+        // 6) At this point we want to notify the user that their streak has increased
         Map<String, Object> notificationData = Maps.newHashMap();
         Map<String, Object> streakData = Maps.newHashMap();
-        streakData.put("dailyStreakRecord", daysSinceStart);
+        streakData.put("currentStreak", daysSinceStart);
         streakData.put("currentActivity", streakRecord.path("current_activity").asInt());
+
+        if (streakRecord.path("current_activity").asLong() == streakRecord.path("activity_threshold").asLong()) {
+            streakData.put("streakIncrease", true);
+        }
+
         notificationData.put("streakData", streakData);
 
         try {
@@ -415,9 +494,26 @@ public class UserStatisticsStreamsApplication {
             e.printStackTrace();
         }
 
-
         return streakRecord;
     }
 
+
+
+    /**
+     * Function to take a calendar object and round down the timestamp to midnight
+     * for the same date
+     *
+     * @param calendar calendar object to modify
+     * @return modified calendar object set to midnight
+     */
+    private static Calendar roundDownToDay(Calendar calendar) {
+
+        calendar.set(Calendar.MILLISECOND, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+
+        return calendar;
+    }
 
 }
