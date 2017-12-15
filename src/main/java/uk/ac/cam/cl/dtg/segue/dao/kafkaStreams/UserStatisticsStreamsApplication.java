@@ -137,7 +137,7 @@ public class UserStatisticsStreamsApplication {
         // logged events
         List<ConfigEntry> loggedEventsConfigs = Lists.newLinkedList();
         loggedEventsConfigs.add(new ConfigEntry(TopicConfig.RETENTION_MS_CONFIG, String.valueOf(-1)));
-        kafkaTopicManager.ensureTopicExists("topic_logged_events", loggedEventsConfigs);
+        kafkaTopicManager.ensureTopicExists("topic_logged_events_v1", loggedEventsConfigs);
 
         // local store changelog topics
         List<ConfigEntry> changelogConfigs = Lists.newLinkedList();
@@ -148,7 +148,7 @@ public class UserStatisticsStreamsApplication {
         final AtomicBoolean wasLagging = new AtomicBoolean(true);
 
         // raw logged events incoming data stream from kafka
-        KStream<String, JsonNode> rawLoggedEvents = builder.stream(StringSerde, JsonSerde, "topic_logged_events")
+        KStream<String, JsonNode> rawLoggedEvents = builder.stream(StringSerde, JsonSerde, "topic_logged_events_v1")
                 .filterNot(
                         (k, v) -> v.path("anonymous_user").asBoolean()
                 ).peek(
