@@ -19,6 +19,7 @@ package uk.ac.cam.cl.dtg.segue.dao.kafkaStreams;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -38,10 +39,15 @@ import org.apache.kafka.streams.kstream.KStreamBuilder;
 import org.apache.kafka.streams.kstream.KTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -62,6 +68,7 @@ public class SiteStatisticsStreamsApplication {
     private static final Serde<Long> LongSerde = Serdes.Long();
 
     private KafkaTopicManager kafkaTopicManager;
+    private UserAccountManager userAccountManager;
     private KafkaStreams streams;
     private KStreamBuilder builder = new KStreamBuilder();
     private Properties streamsConfiguration = new Properties();
@@ -77,9 +84,11 @@ public class SiteStatisticsStreamsApplication {
      *              - manager for kafka topic administration
      */
     public SiteStatisticsStreamsApplication(final PropertiesLoader globalProperties,
-                                            final KafkaTopicManager kafkaTopicManager) {
+                                            final KafkaTopicManager kafkaTopicManager,
+                                            final UserAccountManager userAccountManager) {
 
         this.kafkaTopicManager = kafkaTopicManager;
+        this.userAccountManager = userAccountManager;
 
         streamsConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, streamsAppNameAndVersion);
         streamsConfiguration.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG,
@@ -157,7 +166,7 @@ public class SiteStatisticsStreamsApplication {
      * @param rawStream
      *          - the input stream
      */
-    public static void streamProcess(KStream<String, JsonNode> rawStream) {
+    public void streamProcess(KStream<String, JsonNode> rawStream) {
 
         final AtomicLong lastLagLog = new AtomicLong(0);
         final AtomicBoolean wasLagging = new AtomicBoolean(true);
@@ -199,8 +208,26 @@ public class SiteStatisticsStreamsApplication {
                         // aggregator
                         (userId, userUpdateLogEvent, userRecord) -> {
 
-                            ((ObjectNode) userRecord).put("user_id", userId);
-                            ((ObjectNode) userRecord).put("user_data", userUpdateLogEvent.path("event_details"));
+                            try {
+                                RegisteredUserDTO regUser = userAccountManager.getUserDTOById(Long.parseLong(userId));
+
+                                ObjectNode userDetails = JsonNodeFactory.instance.objectNode()
+                                        .put("user_id", regUser.getId())
+                                        .put("family_name", regUser.getFamilyName())
+                                        .put("given_name", regUser.getGivenName())
+                                        .put("role", regUser.getRole().name())
+                                        .put("date_of_birth", (regUser.getDateOfBirth() != null) ? regUser.getDateOfBirth().getTime() : 0)
+                                        .put("gender", (regUser.getGender() != null) ? regUser.getGender().name() : "")
+                                        .put("registration_date", regUser.getRegistrationDate().getTime())
+                                        .put("school_id", (regUser.getSchoolId() != null) ? regUser.getSchoolId() : "")
+                                        .put("school_other", (regUser.getSchoolOther() != null) ? regUser.getSchoolOther() : "");
+
+                                ((ObjectNode) userRecord).put("user_id", userId);
+                                ((ObjectNode) userRecord).put("user_data", userDetails);
+
+                            } catch (NoUserException | SegueDatabaseException e) {
+                                e.printStackTrace();
+                            }
 
                             return userRecord;
                         },
