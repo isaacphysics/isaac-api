@@ -23,7 +23,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -52,6 +54,8 @@ import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 
 import javax.servlet.http.HttpServletRequest;
 
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+
 
 /**
  * Kafka logging listener
@@ -60,6 +64,9 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class KafkaLoggingManager extends LoggingEventHandler {
     private static final Logger log = LoggerFactory.getLogger(KafkaLoggingManager.class);
+
+    private static final Set ignoredEvents = ImmutableSet.of(SEND_EMAIL, CONTACT_US_FORM_USED, EMAIL_VERIFICATION_REQUEST_RECEIVED,
+            PASSWORD_RESET_REQUEST_RECEIVED, PASSWORD_RESET_REQUEST_SUCCESSFUL);
 
     private KafkaStreamsProducer kafkaProducer;
     private LocationManager locationManager;
@@ -201,6 +208,10 @@ public class KafkaLoggingManager extends LoggingEventHandler {
      */
     private void publishLogEvent(final String userId, final String anonymousUserId, final String eventType,
                                  final Object eventDetails, final String ipAddress) throws JsonProcessingException, SegueDatabaseException {
+
+        if (ignoredEvents.contains(eventType)) {
+            return;
+        }
 
         LogEvent logEvent = this.buildLogEvent(userId, anonymousUserId, eventType, eventDetails, ipAddress);
 
