@@ -44,6 +44,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.userAlerts.IAlertListener;
 import uk.ac.cam.cl.dtg.segue.api.userAlerts.UserAlertsWebSocket;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
+import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.IUserAlert;
 import uk.ac.cam.cl.dtg.segue.dos.PgUserAlert;
@@ -83,6 +84,7 @@ public class UserStatisticsStreamsApplication {
     private Properties streamsConfiguration = new Properties();
     private IQuestionAttemptManager questionAttemptManager;
     private UserAccountManager userAccountManager;
+    private ILogManager logManager;
 
 
     private final String streamsAppNameAndVersion = "streamsapp_user_stats-v1.0";
@@ -98,12 +100,14 @@ public class UserStatisticsStreamsApplication {
     public UserStatisticsStreamsApplication(final PropertiesLoader globalProperties,
                                             final KafkaTopicManager kafkaTopicManager,
                                             final IQuestionAttemptManager questionAttemptManager,
-                                            final UserAccountManager userAccountManager) {
+                                            final UserAccountManager userAccountManager,
+                                            final ILogManager logManager) {
 
 
         this.kafkaTopicManager = kafkaTopicManager;
         this.questionAttemptManager = questionAttemptManager;
         this.userAccountManager = userAccountManager;
+        this.logManager = logManager;
 
 
         streamsConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, streamsAppNameAndVersion);
@@ -438,10 +442,11 @@ public class UserStatisticsStreamsApplication {
 
         // 3) If we have just started counting, or if the latest event arrived later than a day since the previous, reset the streak record and go no further
         if (streakStartTimestamp == 0 ||
-                (((streakEndTimestamp != 0 && TimeUnit.DAYS.convert(latestEventTimestamp - streakEndTimestamp, TimeUnit.MILLISECONDS) > 1)))) {
+                (((streakEndTimestamp != 0 && TimeUnit.DAYS.convert(latest.getTimeInMillis() - streakEndTimestamp, TimeUnit.MILLISECONDS) >= 1)))) {
 
             ((ObjectNode) streakRecord).put("streak_start", latest.getTimeInMillis());
             ((ObjectNode) streakRecord).put("streak_end", latest.getTimeInMillis());
+            ((ObjectNode) streakRecord).put("current_activity", 0);
             streakStartTimestamp = latest.getTimeInMillis();
         }
 
@@ -461,6 +466,17 @@ public class UserStatisticsStreamsApplication {
 
         if (daysSinceStart > streakRecord.path("largest_streak").asLong()) {
             ((ObjectNode) streakRecord).put("largest_streak", daysSinceStart);
+
+            // log the new longest streak record
+            Map<String, Object> eventDetails = Maps.newHashMap();
+            eventDetails.put("largest_streak", streakRecord.path("largest_streak").asLong());
+            eventDetails.put("threshold", streakRecord.path("activity_threshold").asLong());
+
+            try {
+                logManager.logInternalEvent(userAccountManager.getUserDTOById(Long.parseLong(userId)), "LONGEST_STREAK_REACHED", eventDetails);
+            } catch (NoUserException | SegueDatabaseException e) {
+                e.printStackTrace();
+            }
         }
 
 
