@@ -1,6 +1,7 @@
 package uk.ac.cam.cl.dtg.segue.api.userAlerts;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -142,9 +143,7 @@ public class UserAlertsWebSocket implements IAlertListener {
         connectedSockets.get(connectedUser.getId()).remove(this);
 
         // if the user has no websocket conenctions open, remove them from the map
-        if (connectedSockets.get(connectedUser.getId()).isEmpty()) {
-            connectedSockets.remove(connectedUser.getId());
-        }
+        connectedSockets.remove(connectedUser.getId(), Lists.newArrayList());
     }
 
 
