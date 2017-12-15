@@ -10,13 +10,11 @@ import javax.servlet.annotation.WebServlet;
  * Created by du220 on 17/07/2017.
  */
 
-@WebServlet(name = "UserAlertsWebSocketServlet", urlPatterns = { "/user-alerts/*" })
+@WebServlet(name = "UserAlertsWebSocketServlet", urlPatterns = { "/api/user-alerts/*" })
 public class UserAlertsWebSocketServlet extends WebSocketServlet {
 
     @Override
     public void configure(WebSocketServletFactory factory) {
-
-        //factory.getPolicy().setIdleTimeout(600000);
 
         factory.setCreator((servletUpgradeRequest, servletUpgradeResponse) -> SegueContextNotifier.injector.getInstance(UserAlertsWebSocket.class));
 

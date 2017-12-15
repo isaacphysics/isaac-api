@@ -57,7 +57,7 @@ public class AnonymousEventsStreamsApplication {
         // logged events
         List<ConfigEntry> loggedEventsConfigs = Lists.newLinkedList();
         loggedEventsConfigs.add(new ConfigEntry(TopicConfig.RETENTION_MS_CONFIG, String.valueOf(-1)));
-        kafkaTopicManager.ensureTopicExists("topic_logged_events", loggedEventsConfigs);
+        kafkaTopicManager.ensureTopicExists("topic_logged_events_v1", loggedEventsConfigs);
 
         // anonymous logged events
         List<ConfigEntry> anonLoggedEventsConfigs = Lists.newLinkedList();
@@ -66,7 +66,7 @@ public class AnonymousEventsStreamsApplication {
 
 
         // raw logged events incoming data stream from kafka
-        builder.stream(StringSerde, JsonSerde, "topic_logged_events")
+        builder.stream(StringSerde, JsonSerde, "topic_logged_events_v1")
                 .filter(
                         (k, v) -> v.path("anonymous_user").asBoolean()
                 ).to(StringSerde, JsonSerde, "topic_anonymous_logged_events");

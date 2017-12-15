@@ -49,6 +49,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.AnonymousEventsStreamsApplication;
+import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.UserStatisticsStreamsApplication;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.KafkaTopicManager;
 import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.SiteStatisticsStreamsApplication;
@@ -112,6 +113,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 	// kafka streams applications
     private static SiteStatisticsStreamsApplication statisticsStreamsApplication;
     private static AnonymousEventsStreamsApplication anonEventsStreamsApplication;
+    private static UserStatisticsStreamsApplication userStatsStreamsApplication;
 
     private static Collection<Class<? extends ServletContextListener>> contextListeners;
     private static Map<String, Reflections> reflections = com.google.common.collect.Maps.newHashMap();
@@ -264,6 +266,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         bind(AbstractUserPreferenceManager.class).to(PgUserPreferenceManager.class);
 
         bind(IUserAlerts.class).to(PgUserAlerts.class);
+
+        bind(IStatisticsManager.class).to(KafkaStatisticsManager.class);
     }
 
     /**
@@ -740,6 +744,27 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         return anonEventsStreamsApplication;
     }
 
+    /**
+     * Gets the instance of the anonymous events kafka stream application
+     * @return Site Statistics Stream App object
+     */
+    @Provides
+    @Singleton
+    @Inject
+    private static UserStatisticsStreamsApplication getUserStatsEventsStreamsApp(final PropertiesLoader globalProperties,
+                                                                            final KafkaTopicManager kafkaTopicManager,
+                                                                                 final ILogManager logManager) {
+
+        if (null == userStatsStreamsApplication) {
+
+            log.info("Creating singleton of User Stats events Kafka Streams Application.");
+            userStatsStreamsApplication = new UserStatisticsStreamsApplication(globalProperties, kafkaTopicManager,
+                    questionPersistenceManager, userManager, logManager);
+            userStatsStreamsApplication.start();
+        }
+        return userStatsStreamsApplication;
+    }
+
 
 
     /**
@@ -806,10 +831,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static KafkaStatisticsManager getKafkaStatsManager(final UserAccountManager userManager,
                                                      final ILogManager logManager, final SchoolListReader schoolManager,
                                                      final GroupManager groupManager, SiteStatisticsStreamsApplication statisticsStreamsApplication,
+                                                     final UserStatisticsStreamsApplication userStatisticsStreamsApplication,
                                                      final StatisticsManager statsManager) {
 
         if (null == kafkaStatsManager) {
-            kafkaStatsManager = new KafkaStatisticsManager(userManager, logManager, schoolManager, groupManager, statisticsStreamsApplication, statsManager);
+            kafkaStatsManager = new KafkaStatisticsManager(userManager, logManager,
+                    schoolManager, groupManager, statisticsStreamsApplication, userStatisticsStreamsApplication, statsManager);
             log.info("Created Singleton of Kafka Statistics Manager");
         }
 
