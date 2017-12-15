@@ -22,6 +22,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import java.io.IOException;
 import java.net.HttpCookie;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
@@ -41,7 +42,7 @@ public class UserAlertsWebSocket implements IAlertListener {
     private Session session;
     private static ObjectMapper objectMapper = new ObjectMapper();
 
-    public static HashMap<Long, List<UserAlertsWebSocket>> connectedSockets = new HashMap<>();
+    public static ConcurrentHashMap<Long, List<UserAlertsWebSocket>> connectedSockets = new ConcurrentHashMap<>();
 
 
     /**
@@ -139,6 +140,11 @@ public class UserAlertsWebSocket implements IAlertListener {
     @OnWebSocketClose
     public void onClose(Session session, int status, String reason) {
         connectedSockets.get(connectedUser.getId()).remove(this);
+
+        // if the user has no websocket conenctions open, remove them from the map
+        if (connectedSockets.get(connectedUser.getId()).isEmpty()) {
+            connectedSockets.remove(connectedUser.getId());
+        }
     }
 
 
