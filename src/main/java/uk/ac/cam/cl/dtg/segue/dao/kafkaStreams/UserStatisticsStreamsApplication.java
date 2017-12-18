@@ -63,6 +63,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static uk.ac.cam.cl.dtg.segue.api.Constants.LONGEST_STREAK_REACHED;
+
 /**
  * Concrete Kafka streams processing application for generating user statistics
  *  @author Dan Underwood
@@ -473,7 +475,7 @@ public class UserStatisticsStreamsApplication {
             eventDetails.put("threshold", streakRecord.path("activity_threshold").asLong());
 
             try {
-                logManager.logInternalEvent(userAccountManager.getUserDTOById(Long.parseLong(userId)), "LONGEST_STREAK_REACHED", eventDetails);
+                logManager.logInternalEvent(userAccountManager.getUserDTOById(Long.parseLong(userId)), LONGEST_STREAK_REACHED, eventDetails);
             } catch (NoUserException | SegueDatabaseException e) {
                 e.printStackTrace();
             }
