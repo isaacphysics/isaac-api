@@ -15,9 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -117,7 +116,7 @@ public final class Constants {
 
     public static final String SUBJECT_INTEREST = "SUBJECT_INTEREST";
 
-    public static final List<String> ISAAC_LOG_EVENT_TYPES = ImmutableList.of(ADD_BOARD_TO_PROFILE, CREATE_GAMEBOARD,
+    public static final Set<String> ISAAC_LOG_EVENT_TYPES = ImmutableSet.of(ADD_BOARD_TO_PROFILE, CREATE_GAMEBOARD,
             DELETE_ASSIGNMENT, DELETE_BOARD_FROM_PROFILE, DOWNLOAD_ASSIGNMENT_PROGRESS_CSV, DOWNLOAD_GROUP_PROGRESS_CSV,
             GLOBAL_SITE_SEARCH, SET_NEW_ASSIGNMENT, VIEW_ASSIGNMENT_PROGRESS, VIEW_CONCEPT, VIEW_GROUPS_ASSIGNMENTS,
             VIEW_MY_BOARDS_PAGE, VIEW_PAGE, VIEW_QUESTION, VIEW_USER_PROGRESS);
