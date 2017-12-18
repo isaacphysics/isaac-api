@@ -28,8 +28,8 @@ import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 public interface IUserGroupPersistenceManager {
 
     /**
-     * Get groups by owner.
-     * 
+     * Get all groups by owner.
+     *
      * @param ownerUserId
      *            the owner Id to find all groups for.
      * @return List of groups belonging to owner user.
@@ -37,6 +37,21 @@ public interface IUserGroupPersistenceManager {
      *             - if we cannot contact the database.
      */
     List<UserGroup> getGroupsByOwner(Long ownerUserId) throws SegueDatabaseException;
+
+    /**
+     * Get groups by owner.
+     * 
+     * @param ownerUserId
+     *            the owner Id to find all groups for.
+     * @param archivedGroupsOnly
+     *            if true then only archived groups will be returned,
+     *            if false then only unarchived groups will be returned.
+     *            if null then we will return all groups.
+     * @return List of groups belonging to owner user.
+     * @throws SegueDatabaseException
+     *             - if we cannot contact the database.
+     */
+    List<UserGroup> getGroupsByOwner(Long ownerUserId, Boolean archivedGroupsOnly) throws SegueDatabaseException;
 
     /**
      * Find User group by Id.

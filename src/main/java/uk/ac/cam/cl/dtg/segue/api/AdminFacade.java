@@ -215,7 +215,7 @@ public class AdminFacade extends AbstractSegueFacade {
             }
 
             return Response.ok(kafkaStatsManager.outputGeneralStatistics())
-                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false)).build();
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (SegueDatabaseException | InvalidStateStoreException e) {
             log.error("Unable to load general statistics.", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
@@ -749,8 +749,11 @@ public class AdminFacade extends AbstractSegueFacade {
             }
             
             if (!currentUser.getRole().equals(Role.ADMIN)
-                    && (null != familyName) && familyName.isEmpty() && (null == schoolOther) && (null != email)
-                    && email.isEmpty() && (null == schoolURN) && (null == postcode)) {
+                    && (null == familyName || familyName.isEmpty())
+                    && (null == schoolOther || schoolOther.isEmpty())
+                    && (null == email || email.isEmpty())
+                    && (null == schoolURN || schoolURN.isEmpty())
+                    && (null == postcode || postcode.isEmpty())) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to do wildcard searches.")
                         .toResponse();
 

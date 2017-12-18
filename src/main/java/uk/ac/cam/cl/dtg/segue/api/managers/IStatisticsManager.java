@@ -192,4 +192,15 @@ public interface IStatisticsManager {
     @SuppressWarnings("unchecked")
     Collection<Location> getLocationInformation(final Date fromDate, final Date toDate) throws SegueDatabaseException;
 
+
+    /**
+     * Gets additional information for a user outlining their progress for teacher-based activity
+     *
+     * @param userOfInterest the user we want infor for
+     * @return a map of teacher activities and the user's progress in each of them
+     */
+    Map<String, Object> getDetailedUserStatistics(final RegisteredUserDTO userOfInterest);
+
+
+
 }

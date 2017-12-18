@@ -8,10 +8,7 @@ import org.apache.kafka.common.config.TopicConfig;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.inject.Inject;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 public class KafkaTopicManager {
@@ -30,26 +27,27 @@ public class KafkaTopicManager {
      * Method to check if a topic exists inside Kafka, and to create it if not
      *
      * @param name name of the topic
-     * @param retentionMillis required retention period if topic requires creation
+     * @param configEntries specified configuration variables if topic requires creation
      */
-    public void ensureTopicExists(final String name, final long retentionMillis) {
+    public void ensureTopicExists(final String name, final Collection<ConfigEntry> configEntries) {
 
         try {
             if (!adminClient.listTopics().names().get().contains(name)) {
                 adminClient.createTopics(ImmutableList.of(new NewTopic(name, 1, Short.parseShort(globalProperties.getProperty("KAFKA_REPLICATION_FACTOR"))))).all().get();
 
-                if (retentionMillis != 0) {
+                if (null != configEntries || !configEntries.isEmpty()) {
 
+                    Map<ConfigResource, Config> updateConfig = new HashMap<ConfigResource, Config>();
                     ConfigResource resource = new ConfigResource(ConfigResource.Type.TOPIC, name);
 
-                    // create a new entry for updating the retention.ms value on the same topic
-                    ConfigEntry retentionEntry = new ConfigEntry(TopicConfig.RETENTION_MS_CONFIG, String.valueOf(retentionMillis));
-                    Map<ConfigResource, Config> updateConfig = new HashMap<ConfigResource, Config>();
-                    updateConfig.put(resource, new Config(Collections.singleton(retentionEntry)));
+                    Iterator<ConfigEntry> entries = configEntries.iterator();
+
+                    while (entries.hasNext()) {
+                        updateConfig.put(resource, new Config(Collections.singleton(entries.next())));
+                    }
 
                     AlterConfigsResult alterConfigsResult = adminClient.alterConfigs(updateConfig);
                     alterConfigsResult.all();
-
                 }
             }
         } catch (InterruptedException e) {

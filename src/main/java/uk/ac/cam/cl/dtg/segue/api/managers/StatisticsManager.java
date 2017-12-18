@@ -638,16 +638,22 @@ public class StatisticsManager implements IStatisticsManager {
             }
         }
 
-        return new ImmutableMap.Builder<String, Object>()
-                .put("totalQuestionsAttempted", totalQuestionsAttempted)
-                .put("totalQuestionsCorrect", questionsAnsweredCorrectly)
-                .put("totalQuestionPartsAttempted", totalQuestionPartsAttempted)
-                .put("totalQuestionPartsCorrect", questionPartsAnsweredCorrectly)
-                .put("attemptsByTag", questionAttemptsByTagStats).put("correctByTag", questionsCorrectByTagStats)
-                .put("attemptsByLevel", questionAttemptsByLevelStats).put("correctByLevel", questionsCorrectByLevelStats)
-                .put("attemptsByType", questionAttemptsByTypeStats).put("correctByType", questionsCorrectByTypeStats)
-                .put("userDetails", this.userManager.convertToUserSummaryObject(userOfInterest))
-                .build();
+        Map<String, Object> questionInfo = Maps.newHashMap();
+
+        questionInfo.put("totalQuestionsAttempted", totalQuestionsAttempted);
+        questionInfo.put("totalQuestionsCorrect", questionsAnsweredCorrectly);
+        questionInfo.put("totalQuestionPartsAttempted", totalQuestionPartsAttempted);
+        questionInfo.put("totalQuestionPartsCorrect", questionPartsAnsweredCorrectly);
+        questionInfo.put("attemptsByTag", questionAttemptsByTagStats);
+        questionInfo.put("correctByTag", questionsCorrectByTagStats);
+        questionInfo.put("attemptsByLevel", questionAttemptsByLevelStats);
+        questionInfo.put("correctByLevel", questionsCorrectByLevelStats);
+        questionInfo.put("attemptsByType", questionAttemptsByTypeStats);
+        questionInfo.put("correctByType", questionsCorrectByTypeStats);
+        questionInfo.put("userDetails", this.userManager.convertToUserSummaryObject(userOfInterest));
+
+        return questionInfo;
+
     }
 
     /**
@@ -753,6 +759,11 @@ public class StatisticsManager implements IStatisticsManager {
         this.longStatsCache.put(LOCATION_STATS + cacheDateTag, result);
 
         return result;
+    }
+
+    @Override
+    public Map<String, Object> getDetailedUserStatistics(RegisteredUserDTO userOfInterest) {
+        return null;
     }
 
     /**
