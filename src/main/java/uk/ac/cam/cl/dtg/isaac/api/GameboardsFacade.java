@@ -583,14 +583,20 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
 
-        Integer gameboardLimit = Constants.DEFAULT_GAMEBOARDS_RESULTS_LIMIT;
+        Integer gameboardLimit;
         if (limit != null) {
             try {
-                gameboardLimit = Integer.parseInt(limit);
+                if (limit.equals(Constants.ALL_BOARDS)) {
+                    gameboardLimit = null;
+                } else {
+                    gameboardLimit = Integer.parseInt(limit);
+                }
             } catch (NumberFormatException e) {
                 return new SegueErrorResponse(Status.BAD_REQUEST,
                         "The number you entered as the results limit is not valid.").toResponse();
             }
+        } else {
+            gameboardLimit = Constants.DEFAULT_GAMEBOARDS_RESULTS_LIMIT;
         }
 
         Integer startIndexAsInteger = 0;
