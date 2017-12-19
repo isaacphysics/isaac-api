@@ -173,7 +173,7 @@ CREATE TABLE event_bookings (
     id integer NOT NULL,
     event_id text NOT NULL,
     created timestamp without time zone NOT NULL,
-    user_id integer,
+    user_id integer NOT NULL,
     status text DEFAULT 'CONFIRMED'::text NOT NULL,
     updated timestamp without time zone,
     additional_booking_information jsonb
