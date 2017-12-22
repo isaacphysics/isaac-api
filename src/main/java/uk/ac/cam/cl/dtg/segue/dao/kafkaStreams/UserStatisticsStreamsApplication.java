@@ -206,32 +206,38 @@ public class UserStatisticsStreamsApplication {
         rawStream.groupByKey()
                 .aggregate(
                         // initializer
-                        () -> {
-                            ObjectNode userSnapshot = JsonNodeFactory.instance.objectNode();
-
-                            ObjectNode streakRecord = JsonNodeFactory.instance.objectNode();
-                            streakRecord.put("streak_start", 0);
-                            streakRecord.put("streak_end", 0);
-                            streakRecord.put("largest_streak", 0);
-                            streakRecord.put("current_activity", 0);
-                            streakRecord.put("activity_threshold", 3);
-
-                            userSnapshot.put("streak_record", streakRecord);
-
-                            return userSnapshot;
-                        },
+                        new UserStatisticsSnapshotInitializer(),
                         // aggregator
                         (userId, latestEvent, userSnapshot) -> {
 
-                            // first, make sure that if the user is not a student, we augment their snapshot with a teacher sub-record
-                            if (!userSnapshot.has("teacher_record")) {
-                                ObjectNode teacherRecord = JsonNodeFactory.instance.objectNode();
-                                teacherRecord.put("groups_created", 0);
-                                teacherRecord.put("boards_created", 0);
-                                teacherRecord.put("assignments_set", 0);
-                                teacherRecord.put("book_pages_set", 0);
-                                teacherRecord.put("cpd_events_attended", 0);
-                                ((ObjectNode) userSnapshot).put("teacher_record", teacherRecord);
+                            try {
+                                RegisteredUserDTO regUser = userAccountManager.getUserDTOById(Long.parseLong(userId));
+
+                                if (!regUser.getRole().equals(Role.STUDENT)) {
+
+                                    // first, lets see if we need to augment the user snapshot with teacher information
+                                    if (!userSnapshot.has("teacher_record")) {
+
+                                        ObjectNode teacherRecord = JsonNodeFactory.instance.objectNode();
+                                        teacherRecord.put("groups_created", 0);
+                                        teacherRecord.put("assignments_set", 0);
+                                        teacherRecord.put("book_pages_set", 0);
+                                        teacherRecord.put("cpd_events_attended", 0);
+                                        ((ObjectNode) userSnapshot).set("teacher_record", teacherRecord);
+                                    }
+
+                                    // other teacher-based event handling
+                                    if (latestEvent.path("event_type").asText().equals("CREATE_USER_GROUP")) {
+                                        ((ObjectNode) userSnapshot).put("teacher_record", updateTeacherActivityRecord("groups_created", userSnapshot.path("teacher_record")));
+                                    }
+
+                                    if (latestEvent.path("event_type").asText().equals("SET_NEW_ASSIGNMENT")) {
+                                        ((ObjectNode) userSnapshot).put("teacher_record", updateTeacherActivityRecord("assignments_set", userSnapshot.path("teacher_record")));
+                                    }
+                                }
+
+                            } catch (NoUserException | SegueDatabaseException e) {
+                                e.printStackTrace();
                             }
 
 
@@ -242,26 +248,6 @@ public class UserStatisticsStreamsApplication {
                                     ((ObjectNode) userSnapshot).put("streak_record", updateStreakRecord(userId, latestEvent, userSnapshot.path("streak_record")));
                                 }
                             }
-
-                            // snapshot updates pertaining to teacher activity
-                            try {
-
-                                if (!userAccountManager.getUserDTOById(Long.parseLong(userId)).getRole().equals(Role.STUDENT)) {
-
-                                    if (latestEvent.path("event_type").asText().equals("CREATE_USER_GROUP")) {
-                                        ((ObjectNode) userSnapshot).put("teacher_record", updateTeacherActivityRecord("groups_created", userSnapshot.path("teacher_record")));
-                                    }
-
-                                    if (latestEvent.path("event_type").asText().equals("SET_NEW_ASSIGNMENT")) {
-                                        ((ObjectNode) userSnapshot).put("teacher_record", updateTeacherActivityRecord("assignments_set", userSnapshot.path("teacher_record")));
-                                    }
-
-                                }
-
-                            } catch (NoUserException | SegueDatabaseException e) {
-                                e.printStackTrace();
-                            }
-
 
                             return userSnapshot;
                         },
