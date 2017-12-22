@@ -380,7 +380,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                                                      @PathParam("user_id") final Long userId, final Map<String, String> additionalInformation) {
         try {
             if (!isUserStaff(userManager, request)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
+                return new SegueErrorResponse(Status.FORBIDDEN, "You must be a staff user to access this endpoint.")
                     .toResponse();
             }
 
@@ -461,7 +461,8 @@ public class EventsFacade extends AbstractIsaacFacade {
 
     /**
      * createBooking for a specific isaac user.
-     * Must be a Staff user.
+     * - Will attempt to create a waiting list booking if the event is already full.
+     * - Must be a Staff user.
      * 
      * @param request
      *            - so we can determine if the user is logged in
@@ -494,7 +495,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                         .toResponse();
             }
 
-            EventBookingDTO booking = bookingManager.createBooking(event, bookedUser, additionalInformation);
+            EventBookingDTO booking = bookingManager.createBookingOrAddToWaitingList(event, bookedUser, additionalInformation);
             this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
                     Constants.ADMIN_EVENT_BOOKING_CONFIRMED, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId(), USER_ID_FKEY_FIELDNAME, userId));
 
@@ -514,10 +515,6 @@ public class EventsFacade extends AbstractIsaacFacade {
         } catch (DuplicateBookingException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST,
                 "User already booked on this event. Unable to create a duplicate booking.")
-                .toResponse();
-        } catch (EventIsFullException e) {
-            return new SegueErrorResponse(Status.CONFLICT,
-                "This event is already full. Unable to book the user on to it.")
                 .toResponse();
         }
     }
