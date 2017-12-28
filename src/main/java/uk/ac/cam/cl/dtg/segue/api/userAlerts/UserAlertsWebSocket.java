@@ -6,10 +6,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.eclipse.jetty.websocket.api.Session;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
-import org.eclipse.jetty.websocket.api.annotations.WebSocket;
+import org.eclipse.jetty.websocket.api.annotations.*;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidSessionException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
@@ -95,36 +92,45 @@ public class UserAlertsWebSocket implements IAlertListener {
      *
      * @param session
      *          - contains information about the session to be started
-     * @throws IOException
-     * @throws SegueDatabaseException
-     * @throws NoUserException
-     * @throws InvalidSessionException
      */
     @OnWebSocketConnect
-    public void onConnect(final Session session) throws IOException, SegueDatabaseException, NoUserException, InvalidSessionException {
-        this.session = session;
+    public void onConnect(final Session session) {
 
-        Map<String, String> sessionInformation = getSessionInformation(session);
+        try {
 
-        if (userManager.isValidUserFromSession(sessionInformation)) {
+            this.session = session;
 
-            connectedUser = userManager.getUserDTOById(Long.parseLong(sessionInformation.get(SESSION_USER_ID)));
+            Map<String, String> sessionInformation = getSessionInformation(session);
 
-            if (!connectedSockets.containsKey(connectedUser.getId())) {
-                connectedSockets.put(connectedUser.getId(), new LinkedList<>());
+            if (userManager.isValidUserFromSession(sessionInformation)) {
+
+                connectedUser = userManager.getUserDTOById(Long.parseLong(sessionInformation.get(SESSION_USER_ID)));
+
+                if (!connectedSockets.containsKey(connectedUser.getId())) {
+                    connectedSockets.put(connectedUser.getId(), new LinkedList<>());
+                }
+                connectedSockets.get(connectedUser.getId()).add(this);
+
+                // For now, we hijack this websocket class to deliver user streak information
+                sendUserSnapshotData();
+
+                // TODO: Send initial set of notifications.
+                List<IUserAlert> persistedAlerts = userAlerts.getUserAlerts(connectedUser.getId());
+                if (!persistedAlerts.isEmpty()) {
+                    session.getRemote().sendString(objectMapper.writeValueAsString(ImmutableMap.of("notifications", persistedAlerts)));
+                }
+
             }
-            connectedSockets.get(connectedUser.getId()).add(this);
 
-            // For now, we hijack this websocket class to deliver user streak information
-            sendUserSnapshotData();
-
-            // TODO: Send initial set of notifications.
-            List<IUserAlert> persistedAlerts = userAlerts.getUserAlerts(connectedUser.getId());
-            if (!persistedAlerts.isEmpty()) {
-                session.getRemote().sendString(objectMapper.writeValueAsString(ImmutableMap.of("notifications", persistedAlerts)));
-            }
-
+        } catch (InvalidSessionException | NoUserException | SegueDatabaseException | IOException e) {
+            e.printStackTrace();
+            session.close();
         }
+    }
+
+    @OnWebSocketError
+    public void onError(Session session, Throwable cause) {
+        cause.printStackTrace();
     }
 
 
@@ -139,11 +145,18 @@ public class UserAlertsWebSocket implements IAlertListener {
      *          - states the cause for closing the connection
      */
     @OnWebSocketClose
-    public void onClose(Session session, int status, String reason) {
-        connectedSockets.get(connectedUser.getId()).remove(this);
+    public void onClose(Session session, int status, String reason) throws IOException {
 
-        // if the user has no websocket conenctions open, remove them from the map
-        connectedSockets.remove(connectedUser.getId(), Lists.newArrayList());
+        if (connectedUser != null) {
+
+            connectedSockets.get(connectedUser.getId()).remove(this);
+
+            // if the user has no websocket conenctions open, remove them from the map
+            connectedSockets.remove(connectedUser.getId(), Lists.newArrayList());
+
+        }
+
+        this.session = null;
     }
 
 
