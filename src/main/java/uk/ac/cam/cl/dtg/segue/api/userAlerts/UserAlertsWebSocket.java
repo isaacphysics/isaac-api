@@ -131,6 +131,7 @@ public class UserAlertsWebSocket implements IAlertListener {
     @OnWebSocketError
     public void onError(Session session, Throwable cause) {
         cause.printStackTrace();
+        session.close();
     }
 
 
@@ -155,8 +156,6 @@ public class UserAlertsWebSocket implements IAlertListener {
             connectedSockets.remove(connectedUser.getId(), Lists.newArrayList());
 
         }
-
-        this.session = null;
     }
 
 
