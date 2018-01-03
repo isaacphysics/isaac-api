@@ -14,6 +14,15 @@ public class UserStatisticsSnapshotInitializer implements Initializer<JsonNode> 
 
         ObjectNode userSnapshot = JsonNodeFactory.instance.objectNode();
 
+        /*GAMEBOARD DATA*/
+        ObjectNode gameboardRecord = JsonNodeFactory.instance.objectNode();
+        ObjectNode gameboardCreationRecord = JsonNodeFactory.instance.objectNode();
+        gameboardCreationRecord.put("builder", 0);
+        gameboardCreationRecord.put("filter", 0);
+
+        userSnapshot.set("creations", gameboardCreationRecord);
+        userSnapshot.set("gameboard_record", gameboardRecord);
+
         /*USER STREAK DATA*/
         ObjectNode streakRecord = JsonNodeFactory.instance.objectNode();
         streakRecord.put("streak_start", 0);
@@ -22,7 +31,7 @@ public class UserStatisticsSnapshotInitializer implements Initializer<JsonNode> 
         streakRecord.put("current_activity", 0);
         streakRecord.put("activity_threshold", 3);
 
-        userSnapshot.put("streak_record", streakRecord);
+        userSnapshot.set("streak_record", streakRecord);
 
         return userSnapshot;
     }
