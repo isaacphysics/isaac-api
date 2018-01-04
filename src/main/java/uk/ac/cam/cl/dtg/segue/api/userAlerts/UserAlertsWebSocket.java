@@ -111,9 +111,8 @@ public class UserAlertsWebSocket implements IAlertListener {
 
             connectedUser = userManager.getUserDTOById(Long.parseLong(sessionInformation.get(SESSION_USER_ID)));
 
-            if (!connectedSockets.containsKey(connectedUser.getId())) {
-                connectedSockets.put(connectedUser.getId(), new ConcurrentLinkedQueue<>());
-            }
+            connectedSockets.putIfAbsent(connectedUser.getId(), new ConcurrentLinkedQueue<>());
+
             connectedSockets.get(connectedUser.getId()).add(this);
             log.info("User " + connectedUser.getId() + " opened new websocket. Total opened: " + connectedSockets.get(connectedUser.getId()).size());
 
