@@ -754,13 +754,14 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     private static UserStatisticsStreamsApplication getUserStatsEventsStreamsApp(final PropertiesLoader globalProperties,
                                                                             final KafkaTopicManager kafkaTopicManager,
+                                                                                 final GameManager gameManager,
                                                                                  final ILogManager logManager) {
 
         if (null == userStatsStreamsApplication) {
 
             log.info("Creating singleton of User Stats events Kafka Streams Application.");
             userStatsStreamsApplication = new UserStatisticsStreamsApplication(globalProperties, kafkaTopicManager,
-                    questionPersistenceManager, userManager, logManager);
+                    questionPersistenceManager, userManager, gameManager, logManager);
             userStatsStreamsApplication.start();
         }
         return userStatsStreamsApplication;

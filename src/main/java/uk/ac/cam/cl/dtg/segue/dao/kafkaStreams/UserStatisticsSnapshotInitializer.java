@@ -20,7 +20,7 @@ public class UserStatisticsSnapshotInitializer implements Initializer<JsonNode> 
         gameboardCreationRecord.put("builder", 0);
         gameboardCreationRecord.put("filter", 0);
 
-        userSnapshot.set("creations", gameboardCreationRecord);
+        gameboardRecord.set("creations", gameboardCreationRecord);
         userSnapshot.set("gameboard_record", gameboardRecord);
 
         /*USER STREAK DATA*/

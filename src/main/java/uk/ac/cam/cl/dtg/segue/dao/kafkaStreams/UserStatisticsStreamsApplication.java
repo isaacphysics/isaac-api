@@ -34,12 +34,16 @@ import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.connect.json.JsonDeserializer;
 import org.apache.kafka.connect.json.JsonSerializer;
 import org.apache.kafka.streams.KafkaStreams;
+import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KStreamBuilder;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
+import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.userAlerts.IAlertListener;
 import uk.ac.cam.cl.dtg.segue.api.userAlerts.UserAlertsWebSocket;
@@ -86,6 +90,7 @@ public class UserStatisticsStreamsApplication {
     private Properties streamsConfiguration = new Properties();
     private IQuestionAttemptManager questionAttemptManager;
     private UserAccountManager userAccountManager;
+    private GameManager gameManager;
     private ILogManager logManager;
 
 
@@ -103,12 +108,14 @@ public class UserStatisticsStreamsApplication {
                                             final KafkaTopicManager kafkaTopicManager,
                                             final IQuestionAttemptManager questionAttemptManager,
                                             final UserAccountManager userAccountManager,
+                                            final GameManager gameManager,
                                             final ILogManager logManager) {
 
 
         this.kafkaTopicManager = kafkaTopicManager;
         this.questionAttemptManager = questionAttemptManager;
         this.userAccountManager = userAccountManager;
+        this.gameManager = gameManager;
         this.logManager = logManager;
 
 
@@ -193,6 +200,7 @@ public class UserStatisticsStreamsApplication {
 
     }
 
+
     /**
      * This method contains the logic that transforms the incoming stream
      *
@@ -201,9 +209,13 @@ public class UserStatisticsStreamsApplication {
      */
     private void streamProcess(KStream<String, JsonNode> rawStream) {
 
+        KStream<String, JsonNode> mappedStream = rawStream
+                .map(
+                        (k, v) -> new KeyValue<>(v.path("user_id").asText(), v)
+                );
 
         // user question answer streaks
-        rawStream.groupByKey()
+        mappedStream.groupByKey(StringSerde, JsonSerde)
                 .aggregate(
                         // initializer
                         new UserStatisticsSnapshotInitializer(),
@@ -228,11 +240,13 @@ public class UserStatisticsStreamsApplication {
 
                                     // other teacher-based event handling
                                     if (latestEvent.path("event_type").asText().equals("CREATE_USER_GROUP")) {
-                                        ((ObjectNode) userSnapshot).put("teacher_record", updateTeacherActivityRecord("groups_created", userSnapshot.path("teacher_record")));
+                                        ((ObjectNode) userSnapshot.path("teacher_record"))
+                                                .put("groups_created", updateActivityRecord("groups_created", userSnapshot.path("teacher_record")));
                                     }
 
                                     if (latestEvent.path("event_type").asText().equals("SET_NEW_ASSIGNMENT")) {
-                                        ((ObjectNode) userSnapshot).put("teacher_record", updateTeacherActivityRecord("assignments_set", userSnapshot.path("teacher_record")));
+                                        ((ObjectNode) userSnapshot.path("teacher_record"))
+                                                .put("assignments_set", updateActivityRecord("assignments_set", userSnapshot.path("teacher_record")));
                                     }
                                 }
 
@@ -245,7 +259,28 @@ public class UserStatisticsStreamsApplication {
                             if (latestEvent.path("event_type").asText().equals("ANSWER_QUESTION")) {
 
                                 if (latestEvent.path("event_details").path("correct").asBoolean()) {
-                                    ((ObjectNode) userSnapshot).put("streak_record", updateStreakRecord(userId, latestEvent, userSnapshot.path("streak_record")));
+                                    ((ObjectNode) userSnapshot).set("streak_record", updateStreakRecord(userId, latestEvent, userSnapshot.path("streak_record")));
+                                }
+                            }
+
+                            // snapshot updates pertaining to gameboard creation activity
+                            if (latestEvent.path("event_type").asText().equals("CREATE_GAMEBOARD")) {
+
+                                String gameboardId = latestEvent.path("event_details").path("gameboardId").asText();
+
+                                try {
+                                    GameboardDTO gameboard = gameManager.getGameboard(gameboardId);
+
+                                    JsonNode gameboardCreationNode = userSnapshot.path("gameboard_record").path("creations");
+
+                                    if (gameboard.getCreationMethod().equals(GameboardCreationMethod.BUILDER)) {
+                                        ((ObjectNode) gameboardCreationNode).put("builder", updateActivityRecord("builder", gameboardCreationNode));
+                                    } else if (gameboard.getCreationMethod().equals(GameboardCreationMethod.FILTER)) {
+                                        ((ObjectNode) gameboardCreationNode).put("filter", updateActivityRecord("filter", gameboardCreationNode));
+                                    }
+
+                                } catch (SegueDatabaseException e) {
+                                    e.printStackTrace();
                                 }
                             }
 
@@ -254,9 +289,7 @@ public class UserStatisticsStreamsApplication {
                         JsonSerde,
                         "localstore_user_snapshot"
                 );
-
     }
-
 
 
 
@@ -324,30 +357,12 @@ public class UserStatisticsStreamsApplication {
             if (!user.getRole().equals(Role.STUDENT) && snapshotRecord.has("teacher_record")) {
                 userSnapshot.put("teacherActivityRecord", snapshotRecord.path("teacher_record"));
             }
+
+            userSnapshot.put("gameboardRecord", snapshotRecord.path("gameboard_record"));
         }
 
         return userSnapshot;
     }
-
-
-
-    /**
-     *
-     * @param activityType
-     * @param teacherRecord
-     * @return
-     */
-    private JsonNode updateTeacherActivityRecord(String activityType, JsonNode teacherRecord) {
-
-        Integer count = teacherRecord.path(activityType).asInt();
-        ((ObjectNode) teacherRecord).put(activityType, count + 1);
-
-        return teacherRecord;
-    }
-
-
-
-
 
 
     /**
@@ -502,6 +517,17 @@ public class UserStatisticsStreamsApplication {
         return streakRecord;
     }
 
+
+    /**
+     * Utility function to increase activity counts
+     *
+     * @param activityType the type of activity that we want to increment
+     * @param record the holding record of the current snapshot
+     * @return the new activity count
+     */
+    private Integer updateActivityRecord(String activityType, JsonNode record) {
+        return record.path(activityType).asInt() + 1;
+    }
 
 
     /**
