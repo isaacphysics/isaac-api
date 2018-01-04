@@ -143,7 +143,7 @@ public class UserAlertsWebSocket implements IAlertListener {
     @OnWebSocketClose
     public void onClose(Session session, int status, String reason) {
         connectedSockets.get(connectedUser.getId()).remove(this);
-        log.info("User " + connectedUser.getId() + " opened new websocket. Total opened: " + connectedSockets.get(connectedUser.getId()).size());
+        log.info("User " + connectedUser.getId() + " closed a websocket. Total opened: " + connectedSockets.get(connectedUser.getId()).size());
 
         // if the user has no websocket conenctions open, remove them from the map
         connectedSockets.remove(connectedUser.getId(), new ConcurrentLinkedQueue<>());
