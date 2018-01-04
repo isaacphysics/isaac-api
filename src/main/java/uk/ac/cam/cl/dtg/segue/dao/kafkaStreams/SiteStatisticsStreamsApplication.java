@@ -73,7 +73,7 @@ public class SiteStatisticsStreamsApplication {
     private KStreamBuilder builder = new KStreamBuilder();
     private Properties streamsConfiguration = new Properties();
 
-    private final String streamsAppNameAndVersion = "streamsapp_site_stats-v1.43";
+    private final String streamsAppNameAndVersion = "streamsapp_site_stats-v1.44";
 
 
     /**
@@ -168,11 +168,16 @@ public class SiteStatisticsStreamsApplication {
      */
     public void streamProcess(KStream<String, JsonNode> rawStream) {
 
+        KStream<String, JsonNode> mappedStream = rawStream
+                .map(
+                        (k, v) -> new KeyValue<>(v.path("user_id").asText(), v)
+                );
+
         final AtomicLong lastLagLog = new AtomicLong(0);
         final AtomicBoolean wasLagging = new AtomicBoolean(true);
 
         // process user data in local data stores, extract user record related events
-        KTable<String, JsonNode> userData = rawStream
+        KTable<String, JsonNode> userData = mappedStream
                 .peek(
                     (k,v) -> {
                         long lag = System.currentTimeMillis() - v.get("timestamp").asLong();
@@ -236,7 +241,7 @@ public class SiteStatisticsStreamsApplication {
                 );
 
         // join user table to incoming event stream to get user data for stats processing
-        KStream<String, JsonNode> userEvents = rawStream
+        KStream<String, JsonNode> userEvents = mappedStream
                 /*.map(
                         (userId, logEvent) -> {
 
@@ -275,7 +280,7 @@ public class SiteStatisticsStreamsApplication {
                             joinedValueRecord.put("timestamp", logEventVal.path("timestamp").asLong());
 
                             return joinedValueRecord;
-                        }
+                        }, StringSerde, JsonSerde
                 );
 
 
