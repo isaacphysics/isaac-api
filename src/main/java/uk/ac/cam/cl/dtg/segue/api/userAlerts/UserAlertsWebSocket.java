@@ -1,15 +1,13 @@
 package uk.ac.cam.cl.dtg.segue.api.userAlerts;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.eclipse.jetty.websocket.api.Session;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
-import org.eclipse.jetty.websocket.api.annotations.WebSocket;
+import org.eclipse.jetty.websocket.api.annotations.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidSessionException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
@@ -24,6 +22,7 @@ import java.io.IOException;
 import java.net.HttpCookie;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
@@ -43,7 +42,9 @@ public class UserAlertsWebSocket implements IAlertListener {
     private Session session;
     private static ObjectMapper objectMapper = new ObjectMapper();
 
-    public static ConcurrentHashMap<Long, List<UserAlertsWebSocket>> connectedSockets = new ConcurrentHashMap<>();
+    public static ConcurrentHashMap<Long, ConcurrentLinkedQueue<UserAlertsWebSocket>> connectedSockets = new ConcurrentHashMap<>();
+
+    private static final Logger log = LoggerFactory.getLogger(UserAlertsWebSocket.class);
 
 
     /**
@@ -111,9 +112,10 @@ public class UserAlertsWebSocket implements IAlertListener {
             connectedUser = userManager.getUserDTOById(Long.parseLong(sessionInformation.get(SESSION_USER_ID)));
 
             if (!connectedSockets.containsKey(connectedUser.getId())) {
-                connectedSockets.put(connectedUser.getId(), new LinkedList<>());
+                connectedSockets.put(connectedUser.getId(), new ConcurrentLinkedQueue<>());
             }
             connectedSockets.get(connectedUser.getId()).add(this);
+            log.info("User " + connectedUser.getId() + " opened new websocket. Total opened: " + connectedSockets.get(connectedUser.getId()).size());
 
             // For now, we hijack this websocket class to deliver user streak information
             sendUserSnapshotData();
@@ -141,9 +143,14 @@ public class UserAlertsWebSocket implements IAlertListener {
     @OnWebSocketClose
     public void onClose(Session session, int status, String reason) {
         connectedSockets.get(connectedUser.getId()).remove(this);
+        log.info("User " + connectedUser.getId() + " opened new websocket. Total opened: " + connectedSockets.get(connectedUser.getId()).size());
 
         // if the user has no websocket conenctions open, remove them from the map
-        connectedSockets.remove(connectedUser.getId(), Lists.newArrayList());
+        connectedSockets.remove(connectedUser.getId(), new ConcurrentLinkedQueue<>());
+
+        if (connectedSockets.containsKey(connectedUser.getId()) && connectedSockets.get(connectedUser.getId()).isEmpty()) {
+            log.info("User " + connectedUser.getId() + " has no websocket connections but still contains entry in hashmap!");
+        }
     }
 
 
