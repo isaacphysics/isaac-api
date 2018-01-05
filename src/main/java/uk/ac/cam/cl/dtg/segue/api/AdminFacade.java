@@ -1591,40 +1591,52 @@ public class AdminFacade extends AbstractSegueFacade {
     @GZIP
     public Response getDiagnostics(@Context final Request request, @Context final HttpServletRequest httpServletRequest) {
 
-        ObjectMapper mapper = new ObjectMapper();
-        Map<String, Object> diagnosticReport = Maps.newHashMap();
-        Map<String, Object> websocketReport = Maps.newHashMap();
-        Map<String, Object> runtimeReport = Maps.newHashMap();
-        Integer numCurrentWebSockets = 0;
+        try {
 
-        // websocket reporting
-        websocketReport.put("numUsersOpenedWebsockets", UserAlertsWebSocket.connectedSockets.size());
+            if(isUserAnAdmin(httpServletRequest)) {
 
-        for (ConcurrentLinkedQueue<UserAlertsWebSocket> queue: UserAlertsWebSocket.connectedSockets.values()
-             ) {
-            numCurrentWebSockets += queue.size();
+                ObjectMapper mapper = new ObjectMapper();
+                Map<String, Object> diagnosticReport = Maps.newHashMap();
+                Map<String, Object> websocketReport = Maps.newHashMap();
+                Map<String, Object> runtimeReport = Maps.newHashMap();
+                Integer numCurrentWebSockets = 0;
+
+                // websocket reporting
+                websocketReport.put("numUsersOpenedWebsockets", UserAlertsWebSocket.connectedSockets.size());
+
+                for (ConcurrentLinkedQueue<UserAlertsWebSocket> queue : UserAlertsWebSocket.connectedSockets.values()
+                        ) {
+                    numCurrentWebSockets += queue.size();
+                }
+
+                websocketReport.put("numWebsocketsOpenedCurrently", numCurrentWebSockets);
+                websocketReport.put("numWebsocketsOpenedOverTime", UserAlertsWebSocket.getWebsocketCounts().get("numWebsocketsOpenedOverTime"));
+                websocketReport.put("numWebsocketsClosedOverTime", UserAlertsWebSocket.getWebsocketCounts().get("numWebsocketsClosedOverTime"));
+
+                diagnosticReport.put("websockets", websocketReport);
+
+                // runtime reporting
+                runtimeReport.put("availableProcessors", Runtime.getRuntime().availableProcessors());
+                runtimeReport.put("freeMemory", Runtime.getRuntime().freeMemory());
+                runtimeReport.put("maxMemory", Runtime.getRuntime().maxMemory());
+                runtimeReport.put("totalMemory", Runtime.getRuntime().totalMemory());
+                runtimeReport.put("threadCount", Thread.activeCount());
+
+                diagnosticReport.put("runtime", runtimeReport);
+
+                // other reporting
+                diagnosticReport.put("numAnonymousUsers", userManager.getNumberOfAnonymousUsers());
+
+                return Response.ok(diagnosticReport).build();
+
+            } else {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "You must be logged in as an admin to access this function.").toResponse();
+            }
+
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
         }
-
-        websocketReport.put("numWebsocketsOpenedCurrently", numCurrentWebSockets);
-        websocketReport.put("numWebsocketsOpenedOverTime", UserAlertsWebSocket.getWebsocketCounts().get("numWebsocketsOpenedOverTime"));
-        websocketReport.put("numWebsocketsClosedOverTime", UserAlertsWebSocket.getWebsocketCounts().get("numWebsocketsClosedOverTime"));
-
-        diagnosticReport.put("websockets", websocketReport);
-
-        // runtime reporting
-        runtimeReport.put("availableProcessors", Runtime.getRuntime().availableProcessors());
-        runtimeReport.put("freeMemory", Runtime.getRuntime().freeMemory());
-        runtimeReport.put("maxMemory", Runtime.getRuntime().maxMemory());
-        runtimeReport.put("totalMemory", Runtime.getRuntime().totalMemory());
-        runtimeReport.put("threadCount", Thread.activeCount());
-
-        diagnosticReport.put("runtime", runtimeReport);
-
-        // other reporting
-        diagnosticReport.put("numAnonymousUsers", userManager.getNumberOfAnonymousUsers());
-
-        return Response.ok(diagnosticReport).build();
-
     }
 
 }
