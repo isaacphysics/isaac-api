@@ -171,27 +171,18 @@ public class EventBookingManager {
         }
 
         EventBookingDTO booking;
+        // attempt to create a confirmed booking for the user.
         try {
-            // Obtain an exclusive database lock to lock the booking
-            this.bookingPersistenceManager.acquireDistributedLock(event.getId());
+            booking = this.createBooking(event, user, additionalEventInformation, BookingStatus.CONFIRMED);
 
-            // attempt to create a confirmed booking for the user.
+        } catch (EventIsFullException e) {
+            // book the user on the waiting list instead as the event is full
             try {
-                booking = this.createBooking(event, user, additionalEventInformation, BookingStatus.CONFIRMED);
-
-            } catch (EventIsFullException e) {
-                // book the user on the waiting list instead as the event is full
-                try {
-                    booking =  this.createBooking(event, user, additionalEventInformation, BookingStatus.WAITING_LIST);
-                } catch (EventIsFullException e1) {
-                    throw new RuntimeException("Creating a waiting list booking should never throw an event is full exception " +
-                            "- something went terribly wrong for this to have happened", e1);
-                }
+                booking =  this.createBooking(event, user, additionalEventInformation, BookingStatus.WAITING_LIST);
+            } catch (EventIsFullException e1) {
+                throw new RuntimeException("Creating a waiting list booking should never throw an event is full exception " +
+                        "- something went terribly wrong for this to have happened", e1);
             }
-
-        } finally {
-            // release lock.
-            this.bookingPersistenceManager.releaseDistributedLock(event.getId());
         }
 
         return booking;
