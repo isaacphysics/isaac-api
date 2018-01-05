@@ -45,8 +45,8 @@ public class UserAlertsWebSocket implements IAlertListener {
     private static ObjectMapper objectMapper = new ObjectMapper();
 
     public static ConcurrentHashMap<Long, ConcurrentLinkedQueue<UserAlertsWebSocket>> connectedSockets = new ConcurrentHashMap<>();
-    public static Integer websocketsOpened = 0;
-    public static Integer websocketsClosed = 0;
+    private static Long websocketsOpened = 0L;
+    private static Long websocketsClosed = 0L;
 
     private static final Logger log = LoggerFactory.getLogger(UserAlertsWebSocket.class);
 
@@ -233,6 +233,11 @@ public class UserAlertsWebSocket implements IAlertListener {
                 HashMap.class);
 
         return sessionInformation;
+
+    }
+
+    public static Map<String, Long> getWebsocketCounts() {
+        return ImmutableMap.of("numWebsocketsOpenedOverTime", websocketsOpened, "numWebsocketsClosedOverTime", websocketsClosed);
 
     }
 
