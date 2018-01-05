@@ -3,10 +3,9 @@ package uk.ac.cam.cl.dtg.segue.api.userAlerts;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import org.eclipse.jetty.websocket.api.CloseStatus;
 import org.eclipse.jetty.websocket.api.Session;
+import org.eclipse.jetty.websocket.api.StatusCode;
 import org.eclipse.jetty.websocket.api.annotations.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -83,14 +82,16 @@ public class UserAlertsWebSocket implements IAlertListener {
      *          - contains information about the currently connected session
      * @param message
      *          - text-based message from client
-     * @throws IOException
-     * @throws SegueDatabaseException
      */
     @OnWebSocketMessage
-    public void onText(Session session, String message) throws IOException, SegueDatabaseException {
-
-        if (message.equals("user-snapshot-nudge")) {
-            sendUserSnapshotData();
+    public void onText(final Session session, final String message) {
+        try {
+            if (message.equals("user-snapshot-nudge")) {
+                sendUserSnapshotData();
+            }
+        } catch (IOException e) {
+            log.warn("WebSocket connection failed! " + e.getClass().getSimpleName() + ": " + e.getMessage());
+            session.close(StatusCode.SERVER_ERROR, "onText IOException");
         }
     }
 
@@ -129,10 +130,15 @@ public class UserAlertsWebSocket implements IAlertListener {
                 websocketsOpened++;
             }
 
-        } catch (IOException | SegueDatabaseException | NoUserException | InvalidSessionException e) {
-            log.warn("Websocket connection failed: " + e.getClass().getSimpleName() + " " + e.getMessage());
-            // need to close with error
-            session.close();
+        } catch (IOException e) {
+            log.warn("WebSocket connection failed! " + e.getClass().getSimpleName() + ": " + e.getMessage());
+            session.close(StatusCode.SERVER_ERROR, "onConnect IOException");
+        } catch (InvalidSessionException | NoUserException e) {
+            log.warn("WebSocket connection failed! " + e.getClass().getSimpleName() + ": " + e.getMessage());
+            session.close(StatusCode.POLICY_VIOLATION, e.getClass().getSimpleName());
+        } catch (SegueDatabaseException e) {
+            log.warn("WebSocket connection failed! " + e.getClass().getSimpleName() + ": " + e.getMessage());
+            session.close(StatusCode.SERVER_ERROR, "onConnect Database Error");
         }
 
 
