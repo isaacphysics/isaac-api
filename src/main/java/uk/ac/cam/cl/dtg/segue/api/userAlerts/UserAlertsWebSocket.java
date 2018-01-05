@@ -3,7 +3,9 @@ package uk.ac.cam.cl.dtg.segue.api.userAlerts;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import com.google.inject.Inject;
+import org.eclipse.jetty.websocket.api.CloseStatus;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.*;
 import org.slf4j.Logger;
@@ -43,6 +45,8 @@ public class UserAlertsWebSocket implements IAlertListener {
     private static ObjectMapper objectMapper = new ObjectMapper();
 
     public static ConcurrentHashMap<Long, ConcurrentLinkedQueue<UserAlertsWebSocket>> connectedSockets = new ConcurrentHashMap<>();
+    public static Integer websocketsOpened = 0;
+    public static Integer websocketsClosed = 0;
 
     private static final Logger log = LoggerFactory.getLogger(UserAlertsWebSocket.class);
 
@@ -96,36 +100,42 @@ public class UserAlertsWebSocket implements IAlertListener {
      *
      * @param session
      *          - contains information about the session to be started
-     * @throws IOException
-     * @throws SegueDatabaseException
-     * @throws NoUserException
-     * @throws InvalidSessionException
      */
     @OnWebSocketConnect
-    public void onConnect(final Session session) throws IOException, SegueDatabaseException, NoUserException, InvalidSessionException {
-        this.session = session;
+    public void onConnect(final Session session) {
+        try {
+            this.session = session;
 
-        Map<String, String> sessionInformation = getSessionInformation(session);
+            Map<String, String> sessionInformation = getSessionInformation(session);
 
-        if (userManager.isValidUserFromSession(sessionInformation)) {
+            if (userManager.isValidUserFromSession(sessionInformation)) {
 
-            connectedUser = userManager.getUserDTOById(Long.parseLong(sessionInformation.get(SESSION_USER_ID)));
+                connectedUser = userManager.getUserDTOById(Long.parseLong(sessionInformation.get(SESSION_USER_ID)));
 
-            connectedSockets.putIfAbsent(connectedUser.getId(), new ConcurrentLinkedQueue<>());
+                connectedSockets.putIfAbsent(connectedUser.getId(), new ConcurrentLinkedQueue<>());
 
-            connectedSockets.get(connectedUser.getId()).add(this);
-            log.info("User " + connectedUser.getId() + " opened new websocket. Total opened: " + connectedSockets.get(connectedUser.getId()).size());
+                connectedSockets.get(connectedUser.getId()).add(this);
+                log.info("User " + connectedUser.getId() + " opened new websocket. Total opened: " + connectedSockets.get(connectedUser.getId()).size());
 
-            // For now, we hijack this websocket class to deliver user streak information
-            sendUserSnapshotData();
+                // For now, we hijack this websocket class to deliver user streak information
+                sendUserSnapshotData();
 
-            // TODO: Send initial set of notifications.
-            List<IUserAlert> persistedAlerts = userAlerts.getUserAlerts(connectedUser.getId());
-            if (!persistedAlerts.isEmpty()) {
-                session.getRemote().sendString(objectMapper.writeValueAsString(ImmutableMap.of("notifications", persistedAlerts)));
+                // TODO: Send initial set of notifications.
+                List<IUserAlert> persistedAlerts = userAlerts.getUserAlerts(connectedUser.getId());
+                if (!persistedAlerts.isEmpty()) {
+                    session.getRemote().sendString(objectMapper.writeValueAsString(ImmutableMap.of("notifications", persistedAlerts)));
+                }
+
+                websocketsOpened++;
             }
 
+        } catch (IOException | SegueDatabaseException | NoUserException | InvalidSessionException e) {
+            log.warn("Websocket connection failed: " + e.getClass().getSimpleName() + " " + e.getMessage());
+            // need to close with error
+            session.close();
         }
+
+
     }
 
 
@@ -145,11 +155,17 @@ public class UserAlertsWebSocket implements IAlertListener {
         log.info("User " + connectedUser.getId() + " closed a websocket. Total opened: " + connectedSockets.get(connectedUser.getId()).size());
 
         // if the user has no websocket conenctions open, remove them from the map
-        connectedSockets.remove(connectedUser.getId(), new ConcurrentLinkedQueue<>());
+        /*synchronized (connectedSockets) {
+            if (connectedSockets.containsKey(connectedUser.getId()) && connectedSockets.get(connectedUser.getId()).isEmpty()) {
+                connectedSockets.remove(connectedUser.getId(), connectedSockets.get(connectedUser.getId()));
+            }
+        }
 
         if (connectedSockets.containsKey(connectedUser.getId()) && connectedSockets.get(connectedUser.getId()).isEmpty()) {
             log.info("User " + connectedUser.getId() + " has no websocket connections but still contains entry in hashmap!");
-        }
+        }*/
+
+        websocketsClosed++;
     }
 
 
