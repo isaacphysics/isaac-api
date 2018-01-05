@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.eclipse.jetty.websocket.api.Session;
+import org.eclipse.jetty.websocket.api.StatusCode;
 import org.eclipse.jetty.websocket.api.annotations.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +44,8 @@ public class UserAlertsWebSocket implements IAlertListener {
     private static ObjectMapper objectMapper = new ObjectMapper();
 
     public static ConcurrentHashMap<Long, ConcurrentLinkedQueue<UserAlertsWebSocket>> connectedSockets = new ConcurrentHashMap<>();
+    private static Long websocketsOpened = 0L;
+    private static Long websocketsClosed = 0L;
 
     private static final Logger log = LoggerFactory.getLogger(UserAlertsWebSocket.class);
 
@@ -79,14 +82,16 @@ public class UserAlertsWebSocket implements IAlertListener {
      *          - contains information about the currently connected session
      * @param message
      *          - text-based message from client
-     * @throws IOException
-     * @throws SegueDatabaseException
      */
     @OnWebSocketMessage
-    public void onText(Session session, String message) throws IOException, SegueDatabaseException {
-
-        if (message.equals("user-snapshot-nudge")) {
-            sendUserSnapshotData();
+    public void onText(final Session session, final String message) {
+        try {
+            if (message.equals("user-snapshot-nudge")) {
+                sendUserSnapshotData();
+            }
+        } catch (IOException e) {
+            log.warn("WebSocket connection failed! " + e.getClass().getSimpleName() + ": " + e.getMessage());
+            session.close(StatusCode.SERVER_ERROR, "onText IOException");
         }
     }
 
@@ -96,36 +101,47 @@ public class UserAlertsWebSocket implements IAlertListener {
      *
      * @param session
      *          - contains information about the session to be started
-     * @throws IOException
-     * @throws SegueDatabaseException
-     * @throws NoUserException
-     * @throws InvalidSessionException
      */
     @OnWebSocketConnect
-    public void onConnect(final Session session) throws IOException, SegueDatabaseException, NoUserException, InvalidSessionException {
-        this.session = session;
+    public void onConnect(final Session session) {
+        try {
+            this.session = session;
 
-        Map<String, String> sessionInformation = getSessionInformation(session);
+            Map<String, String> sessionInformation = getSessionInformation(session);
 
-        if (userManager.isValidUserFromSession(sessionInformation)) {
+            if (userManager.isValidUserFromSession(sessionInformation)) {
 
-            connectedUser = userManager.getUserDTOById(Long.parseLong(sessionInformation.get(SESSION_USER_ID)));
+                connectedUser = userManager.getUserDTOById(Long.parseLong(sessionInformation.get(SESSION_USER_ID)));
 
-            connectedSockets.putIfAbsent(connectedUser.getId(), new ConcurrentLinkedQueue<>());
+                connectedSockets.putIfAbsent(connectedUser.getId(), new ConcurrentLinkedQueue<>());
 
-            connectedSockets.get(connectedUser.getId()).add(this);
-            log.info("User " + connectedUser.getId() + " opened new websocket. Total opened: " + connectedSockets.get(connectedUser.getId()).size());
+                connectedSockets.get(connectedUser.getId()).add(this);
+                log.info("User " + connectedUser.getId() + " opened new websocket. Total opened: " + connectedSockets.get(connectedUser.getId()).size());
 
-            // For now, we hijack this websocket class to deliver user streak information
-            sendUserSnapshotData();
+                // For now, we hijack this websocket class to deliver user streak information
+                sendUserSnapshotData();
 
-            // TODO: Send initial set of notifications.
-            List<IUserAlert> persistedAlerts = userAlerts.getUserAlerts(connectedUser.getId());
-            if (!persistedAlerts.isEmpty()) {
-                session.getRemote().sendString(objectMapper.writeValueAsString(ImmutableMap.of("notifications", persistedAlerts)));
+                // TODO: Send initial set of notifications.
+                List<IUserAlert> persistedAlerts = userAlerts.getUserAlerts(connectedUser.getId());
+                if (!persistedAlerts.isEmpty()) {
+                    session.getRemote().sendString(objectMapper.writeValueAsString(ImmutableMap.of("notifications", persistedAlerts)));
+                }
+
+                websocketsOpened++;
             }
 
+        } catch (IOException e) {
+            log.warn("WebSocket connection failed! " + e.getClass().getSimpleName() + ": " + e.getMessage());
+            session.close(StatusCode.SERVER_ERROR, "onConnect IOException");
+        } catch (InvalidSessionException | NoUserException e) {
+            log.warn("WebSocket connection failed! " + e.getClass().getSimpleName() + ": " + e.getMessage());
+            session.close(StatusCode.POLICY_VIOLATION, e.getClass().getSimpleName());
+        } catch (SegueDatabaseException e) {
+            log.warn("WebSocket connection failed! " + e.getClass().getSimpleName() + ": " + e.getMessage());
+            session.close(StatusCode.SERVER_ERROR, "onConnect Database Error");
         }
+
+
     }
 
 
@@ -145,11 +161,17 @@ public class UserAlertsWebSocket implements IAlertListener {
         log.info("User " + connectedUser.getId() + " closed a websocket. Total opened: " + connectedSockets.get(connectedUser.getId()).size());
 
         // if the user has no websocket conenctions open, remove them from the map
-        connectedSockets.remove(connectedUser.getId(), new ConcurrentLinkedQueue<>());
+        /*synchronized (connectedSockets) {
+            if (connectedSockets.containsKey(connectedUser.getId()) && connectedSockets.get(connectedUser.getId()).isEmpty()) {
+                connectedSockets.remove(connectedUser.getId(), connectedSockets.get(connectedUser.getId()));
+            }
+        }
 
         if (connectedSockets.containsKey(connectedUser.getId()) && connectedSockets.get(connectedUser.getId()).isEmpty()) {
             log.info("User " + connectedUser.getId() + " has no websocket connections but still contains entry in hashmap!");
-        }
+        }*/
+
+        websocketsClosed++;
     }
 
 
@@ -217,6 +239,11 @@ public class UserAlertsWebSocket implements IAlertListener {
                 HashMap.class);
 
         return sessionInformation;
+
+    }
+
+    public static Map<String, Long> getWebsocketCounts() {
+        return ImmutableMap.of("numWebsocketsOpenedOverTime", websocketsOpened, "numWebsocketsClosedOverTime", websocketsClosed);
 
     }
 

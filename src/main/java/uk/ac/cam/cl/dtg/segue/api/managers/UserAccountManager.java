@@ -1505,4 +1505,9 @@ public class UserAccountManager {
     }
 
 
+    public Long getNumberOfAnonymousUsers() {
+        return temporaryUserCache.size();
+    }
+
+
 }
