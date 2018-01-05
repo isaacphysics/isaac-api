@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.api.client.util.Maps;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -44,6 +45,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.userAlerts.IAlertListener;
 import uk.ac.cam.cl.dtg.segue.api.userAlerts.UserAlertsWebSocket;
@@ -59,10 +61,7 @@ import uk.ac.cam.cl.dtg.segue.quiz.IQuestionAttemptManager;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.sql.Timestamp;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -92,6 +91,7 @@ public class UserStatisticsStreamsApplication {
     private UserAccountManager userAccountManager;
     private GameManager gameManager;
     private ILogManager logManager;
+    private List<String> bookTags = ImmutableList.of("phys_book_gcse", "physics_skills_14", "chemistry_16");
 
 
     private final String streamsAppNameAndVersion = "streamsapp_user_stats-v1.0";
@@ -209,6 +209,7 @@ public class UserStatisticsStreamsApplication {
      */
     private void streamProcess(KStream<String, JsonNode> rawStream) {
 
+        // mapping the stream to have non-null keys
         KStream<String, JsonNode> mappedStream = rawStream
                 .map(
                         (k, v) -> new KeyValue<>(v.path("user_id").asText(), v)
@@ -223,6 +224,7 @@ public class UserStatisticsStreamsApplication {
                         (userId, latestEvent, userSnapshot) -> {
 
                             try {
+
                                 RegisteredUserDTO regUser = userAccountManager.getUserDTOById(Long.parseLong(userId));
 
                                 if (!regUser.getRole().equals(Role.STUDENT)) {
@@ -235,12 +237,27 @@ public class UserStatisticsStreamsApplication {
                                     // non-student based event handling
                                     if (latestEvent.path("event_type").asText().equals("CREATE_USER_GROUP")) {
                                         ((ObjectNode) userSnapshot.path("teacher_record"))
-                                                .put("groups_created", updateActivityRecord("groups_created", userSnapshot.path("teacher_record")));
+                                                .put("groups_created", updateActivityCount("groups_created", userSnapshot.path("teacher_record")));
                                     }
 
                                     if (latestEvent.path("event_type").asText().equals("SET_NEW_ASSIGNMENT")) {
                                         ((ObjectNode) userSnapshot.path("teacher_record"))
-                                                .put("assignments_set", updateActivityRecord("assignments_set", userSnapshot.path("teacher_record")));
+                                                .put("assignments_set", updateActivityCount("assignments_set", userSnapshot.path("teacher_record")));
+
+                                        // check if the assignment set contains book pages
+                                        GameboardDTO gameboard = gameManager.getGameboard(latestEvent.path("event_details").path("gameboardId").asText());
+
+                                        for (GameboardItem item: gameboard.getQuestions()
+                                                ) {
+                                            for (String tag: item.getTags()
+                                                    ) {
+                                                if (bookTags.contains(tag)) {
+                                                    ((ObjectNode) userSnapshot.path("teacher_record"))
+                                                            .put("book_pages_set", updateActivityCount("book_pages_set", userSnapshot.path("teacher_record")));
+                                                    break;
+                                                }
+                                            }
+                                        }
                                     }
                                 }
 
@@ -257,6 +274,7 @@ public class UserStatisticsStreamsApplication {
                                 }
                             }
 
+
                             // snapshot updates pertaining to gameboard creation activity
                             if (latestEvent.path("event_type").asText().equals("CREATE_GAMEBOARD")) {
 
@@ -268,9 +286,9 @@ public class UserStatisticsStreamsApplication {
                                     JsonNode gameboardCreationNode = userSnapshot.path("gameboard_record").path("creations");
 
                                     if (gameboard.getCreationMethod().equals(GameboardCreationMethod.BUILDER)) {
-                                        ((ObjectNode) gameboardCreationNode).put("builder", updateActivityRecord("builder", gameboardCreationNode));
+                                        ((ObjectNode) gameboardCreationNode).put("builder", updateActivityCount("builder", gameboardCreationNode));
                                     } else if (gameboard.getCreationMethod().equals(GameboardCreationMethod.FILTER)) {
-                                        ((ObjectNode) gameboardCreationNode).put("filter", updateActivityRecord("filter", gameboardCreationNode));
+                                        ((ObjectNode) gameboardCreationNode).put("filter", updateActivityCount("filter", gameboardCreationNode));
                                     }
 
                                 } catch (SegueDatabaseException e) {
@@ -360,7 +378,7 @@ public class UserStatisticsStreamsApplication {
 
 
     /**
-     *We call this method to update the streak data for the user snapshot record
+     * We call this method to update the streak data for the user snapshot record
      *
      * @param userId id of the user we want to update
      * @param latestEvent json object describing the event which triggers the streak update
@@ -513,13 +531,13 @@ public class UserStatisticsStreamsApplication {
 
 
     /**
-     * Utility function to increase activity counts
+     * Utility function to increase generic activity counts
      *
      * @param activityType the type of activity that we want to increment
      * @param record the holding record of the current snapshot
      * @return the new activity count
      */
-    private Integer updateActivityRecord(String activityType, JsonNode record) {
+    private Integer updateActivityCount(String activityType, JsonNode record) {
         return record.path(activityType).asInt() + 1;
     }
 
