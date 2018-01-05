@@ -1593,7 +1593,7 @@ public class AdminFacade extends AbstractSegueFacade {
 
         try {
 
-            if(isUserAnAdmin(httpServletRequest)) {
+            if (isUserAnAdmin(httpServletRequest)) {
 
                 ObjectMapper mapper = new ObjectMapper();
                 Map<String, Object> diagnosticReport = Maps.newHashMap();
@@ -1604,8 +1604,7 @@ public class AdminFacade extends AbstractSegueFacade {
                 // websocket reporting
                 websocketReport.put("numUsersOpenedWebsockets", UserAlertsWebSocket.connectedSockets.size());
 
-                for (ConcurrentLinkedQueue<UserAlertsWebSocket> queue : UserAlertsWebSocket.connectedSockets.values()
-                        ) {
+                for (ConcurrentLinkedQueue<UserAlertsWebSocket> queue : UserAlertsWebSocket.connectedSockets.values()) {
                     numCurrentWebSockets += queue.size();
                 }
 
