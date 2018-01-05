@@ -229,16 +229,10 @@ public class UserStatisticsStreamsApplication {
 
                                     // first, lets see if we need to augment the user snapshot with teacher information
                                     if (!userSnapshot.has("teacher_record")) {
-
-                                        ObjectNode teacherRecord = JsonNodeFactory.instance.objectNode();
-                                        teacherRecord.put("groups_created", 0);
-                                        teacherRecord.put("assignments_set", 0);
-                                        teacherRecord.put("book_pages_set", 0);
-                                        teacherRecord.put("cpd_events_attended", 0);
-                                        ((ObjectNode) userSnapshot).set("teacher_record", teacherRecord);
+                                        ((ObjectNode) userSnapshot).set("teacher_record", getInitializedNonStudentRecord());
                                     }
 
-                                    // other teacher-based event handling
+                                    // non-student based event handling
                                     if (latestEvent.path("event_type").asText().equals("CREATE_USER_GROUP")) {
                                         ((ObjectNode) userSnapshot.path("teacher_record"))
                                                 .put("groups_created", updateActivityRecord("groups_created", userSnapshot.path("teacher_record")));
@@ -527,6 +521,21 @@ public class UserStatisticsStreamsApplication {
      */
     private Integer updateActivityRecord(String activityType, JsonNode record) {
         return record.path(activityType).asInt() + 1;
+    }
+
+
+    /**
+     * Function to supply an initialized JsonNode record for storing non-student activity
+     *
+     * @return the initialized JsonNode record
+     */
+    private JsonNode getInitializedNonStudentRecord() {
+
+        return JsonNodeFactory.instance.objectNode()
+                .put("groups_created", 0)
+                .put("assignments_set", 0)
+                .put("book_pages_set", 0)
+                .put("cpd_events_attended", 0);
     }
 
 
