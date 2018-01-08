@@ -247,17 +247,18 @@ public class UserStatisticsStreamsApplication {
                                         // check if the assignment set contains book pages
                                         GameboardDTO gameboard = gameManager.getGameboard(latestEvent.path("event_details").path("gameboardId").asText());
 
-                                        for (GameboardItem item: gameboard.getQuestions()
-                                                ) {
-                                            for (String tag: item.getTags()
-                                                    ) {
-                                                if (bookTags.contains(tag)) {
-                                                    ((ObjectNode) userSnapshot.path("teacher_record"))
-                                                            .put("book_pages_set", updateActivityCount("book_pages_set", userSnapshot.path("teacher_record")));
-                                                    break;
+                                        tagsLoop:
+                                            for (GameboardItem item: gameboard.getQuestions()) {
+
+                                                for (String tag: item.getTags()
+                                                        ) {
+                                                    if (bookTags.contains(tag)) {
+                                                        ((ObjectNode) userSnapshot.path("teacher_record"))
+                                                                .put("book_pages_set", updateActivityCount("book_pages_set", userSnapshot.path("teacher_record")));
+                                                        break tagsLoop;
+                                                    }
                                                 }
                                             }
-                                        }
                                     }
                                 }
 
