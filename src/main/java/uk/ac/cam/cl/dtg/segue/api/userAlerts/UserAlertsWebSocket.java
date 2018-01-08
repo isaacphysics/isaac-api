@@ -156,7 +156,7 @@ public class UserAlertsWebSocket implements IAlertListener {
      *          - states the cause for closing the connection
      */
     @OnWebSocketClose
-    public void onClose(Session session, int status, String reason) {
+    public void onClose(final Session session, final int status, final String reason) {
         connectedSockets.get(connectedUser.getId()).remove(this);
         log.info("User " + connectedUser.getId() + " closed a websocket. Total opened: " + connectedSockets.get(connectedUser.getId()).size());
 
@@ -182,7 +182,7 @@ public class UserAlertsWebSocket implements IAlertListener {
      *          - user alert instance containg details about the event
      */
     @Override
-    public void notifyAlert(IUserAlert alert) {
+    public void notifyAlert(final IUserAlert alert) {
         try {
             this.session.getRemote().sendString(objectMapper.writeValueAsString(ImmutableMap.of("notifications", ImmutableList.of(alert))));
         } catch (IOException e) {
@@ -216,7 +216,7 @@ public class UserAlertsWebSocket implements IAlertListener {
      * @throws InvalidSessionException
      *             - if there is no session set or if it is not valid.
      */
-    private Map<String, String> getSessionInformation(Session session) throws IOException, InvalidSessionException {
+    private Map<String, String> getSessionInformation(final Session session) throws IOException, InvalidSessionException {
 
         HttpCookie segueAuthCookie = null;
         if (session.getUpgradeRequest().getCookies() == null) {
@@ -235,7 +235,7 @@ public class UserAlertsWebSocket implements IAlertListener {
         }
 
         @SuppressWarnings("unchecked")
-        Map<String, String> sessionInformation = this.objectMapper.readValue(segueAuthCookie.getValue(),
+        Map<String, String> sessionInformation = objectMapper.readValue(segueAuthCookie.getValue(),
                 HashMap.class);
 
         return sessionInformation;
