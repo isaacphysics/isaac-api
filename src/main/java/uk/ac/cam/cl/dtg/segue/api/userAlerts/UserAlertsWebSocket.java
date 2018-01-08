@@ -116,7 +116,7 @@ public class UserAlertsWebSocket implements IAlertListener {
                 // Do not let one user open too many WebSockets:
                 if (connectedSockets.containsKey(connectedUser.getId())
                         && (connectedSockets.get(connectedUser.getId()).size() >= MaxConcurrentWebSocketsPerUser)) {
-                    log.warn("User attempted to open too many simultaneous WebSockets; sending TRY_AGAIN_LATER.");
+                    log.warn("User " + connectedUser.getId() + " attempted to open too many simultaneous WebSockets; sending TRY_AGAIN_LATER.");
                     session.close(StatusCode.NORMAL, "TRY_AGAIN_LATER");
                     return;
                 }
