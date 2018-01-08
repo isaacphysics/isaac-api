@@ -136,6 +136,9 @@ public class UserAlertsWebSocket implements IAlertListener {
                 }
 
                 websocketsOpened++;
+            } else {
+                log.debug("WebSocket connection failed! Expired or invalid session.");
+                session.close(StatusCode.POLICY_VIOLATION, "Expired or invalid session!");
             }
 
         } catch (IOException e) {
