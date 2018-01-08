@@ -48,7 +48,7 @@ public class UserAlertsWebSocket implements IAlertListener {
     private static Long websocketsClosed = 0L;
 
     private static final Logger log = LoggerFactory.getLogger(UserAlertsWebSocket.class);
-
+    private static final int MaxConcurrentWebSocketsPerUser = 10;
 
     /**
      * Injectable constructor
@@ -112,6 +112,14 @@ public class UserAlertsWebSocket implements IAlertListener {
             if (userManager.isValidUserFromSession(sessionInformation)) {
 
                 connectedUser = userManager.getUserDTOById(Long.parseLong(sessionInformation.get(SESSION_USER_ID)));
+
+                // Do not let one user open too many WebSockets:
+                if (connectedSockets.containsKey(connectedUser.getId())
+                        && (connectedSockets.get(connectedUser.getId()).size() >= MaxConcurrentWebSocketsPerUser)) {
+                    log.debug("User attempted to open too many simultaneous WebSockets; sending TRY_AGAIN_LATER.");
+                    session.close(StatusCode.NORMAL, "TRY_AGAIN_LATER");
+                    return;
+                }
 
                 connectedSockets.putIfAbsent(connectedUser.getId(), new ConcurrentLinkedQueue<>());
 
