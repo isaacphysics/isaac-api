@@ -124,7 +124,7 @@ public class UserAlertsWebSocket implements IAlertListener {
                 connectedSockets.putIfAbsent(connectedUser.getId(), new ConcurrentLinkedQueue<>());
 
                 connectedSockets.get(connectedUser.getId()).add(this);
-                log.info("User " + connectedUser.getId() + " opened new websocket. Total opened: " + connectedSockets.get(connectedUser.getId()).size());
+                log.debug("User " + connectedUser.getId() + " opened new websocket. Total open: " + connectedSockets.get(connectedUser.getId()).size());
 
                 // For now, we hijack this websocket class to deliver user streak information
                 sendUserSnapshotData();
@@ -142,7 +142,7 @@ public class UserAlertsWebSocket implements IAlertListener {
             log.warn("WebSocket connection failed! " + e.getClass().getSimpleName() + ": " + e.getMessage());
             session.close(StatusCode.SERVER_ERROR, "onConnect IOException");
         } catch (InvalidSessionException | NoUserException e) {
-            log.warn("WebSocket connection failed! " + e.getClass().getSimpleName() + ": " + e.getMessage());
+            log.debug("WebSocket connection failed! " + e.getClass().getSimpleName() + ": " + e.getMessage());
             session.close(StatusCode.POLICY_VIOLATION, e.getClass().getSimpleName());
         } catch (SegueDatabaseException e) {
             log.warn("WebSocket connection failed! " + e.getClass().getSimpleName() + ": " + e.getMessage());
@@ -166,7 +166,7 @@ public class UserAlertsWebSocket implements IAlertListener {
     @OnWebSocketClose
     public void onClose(final Session session, final int status, final String reason) {
         connectedSockets.get(connectedUser.getId()).remove(this);
-        log.info("User " + connectedUser.getId() + " closed a websocket. Total opened: " + connectedSockets.get(connectedUser.getId()).size());
+        log.debug("User " + connectedUser.getId() + " closed a websocket. Total still open: " + connectedSockets.get(connectedUser.getId()).size());
 
         // if the user has no websocket conenctions open, remove them from the map
         /*synchronized (connectedSockets) {
