@@ -305,7 +305,6 @@ public class UserStatisticsStreamsApplication {
     }
 
 
-
     /**
      * Method to obtain the current user snapshot of activity stats
      *
@@ -565,7 +564,7 @@ public class UserStatisticsStreamsApplication {
      * @param calendar calendar object to modify
      * @return modified calendar object set to midnight
      */
-    private static Calendar roundDownToDay(Calendar calendar) {
+    private Calendar roundDownToDay(Calendar calendar) {
 
         calendar.set(Calendar.MILLISECOND, 0);
         calendar.set(Calendar.SECOND, 0);
@@ -574,5 +573,8 @@ public class UserStatisticsStreamsApplication {
 
         return calendar;
     }
+
+
+
 
 }
