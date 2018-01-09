@@ -7,4 +7,5 @@ SELECT user_email_preferences.user_id,
         WHEN email_preference = 4 THEN 'EVENTS'
     END as preference_name,
     email_preference_status as preference_value
-FROM user_email_preferences WHERE email_preference_status=FALSE;
+FROM user_email_preferences WHERE email_preference_status=FALSE
+ON CONFLICT DO NOTHING;
