@@ -87,7 +87,7 @@ public class GroupManager {
         Validate.notBlank(groupName);
         Validate.notNull(groupOwner);
 
-        UserGroup group = new UserGroup(null, groupName, groupOwner.getId(), new Date());
+        UserGroup group = new UserGroup(null, groupName, groupOwner.getId(), new Date(), false);
 
         return this.convertGroupToDTO(groupDatabase.createGroup(group));
     }
@@ -141,16 +141,32 @@ public class GroupManager {
     }
 
     /**
-     * getGroupsByOwner.
-     * 
+     * get all groups by owner.
+     *
      * @param ownerUser
      *            - the owner of the groups to search for.
      * @return List of groups or empty list.
-     * @throws SegueDatabaseException 
+     * @throws SegueDatabaseException
      */
     public List<UserGroupDTO> getGroupsByOwner(final RegisteredUserDTO ownerUser) throws SegueDatabaseException {
         Validate.notNull(ownerUser);
         return convertGroupToDTOs(groupDatabase.getGroupsByOwner(ownerUser.getId()));
+    }
+
+    /**
+     * getGroupsByOwner.
+     * 
+     * @param ownerUser
+     *            - the owner of the groups to search for.
+     * @param archivedGroupsOnly
+     *            if true then only archived groups will be returned,
+     *            if false then only unarchived groups will be returned.
+     * @return List of groups or empty list.
+     * @throws SegueDatabaseException 
+     */
+    public List<UserGroupDTO> getGroupsByOwner(final RegisteredUserDTO ownerUser, boolean archivedGroupsOnly) throws SegueDatabaseException {
+        Validate.notNull(ownerUser);
+        return convertGroupToDTOs(groupDatabase.getGroupsByOwner(ownerUser.getId(), archivedGroupsOnly));
     }
 
     /**

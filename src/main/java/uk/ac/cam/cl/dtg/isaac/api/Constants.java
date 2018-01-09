@@ -15,6 +15,10 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
+import com.google.common.collect.ImmutableSet;
+
+import java.util.Set;
+
 /**
  * Utility class to provide common isaac-specific constants.
  *
@@ -51,6 +55,20 @@ public final class Constants {
         PERFECT, PASSED, IN_PROGRESS, NOT_ATTEMPTED, FAILED
     }
 
+    public enum FastTrackConceptState {
+        ft_upper,
+        ft_lower;
+        public static FastTrackConceptState getStateFromTags(Set<String> tags) {
+            if (tags.contains("ft_upper")) {
+                return ft_upper;
+            } else if (tags.contains("ft_lower")) {
+                return ft_lower;
+            } else {
+                return null;
+            }
+        }
+    }
+
     /**
      * GameboardState Represents the potential states of a gameboard.
      */
@@ -67,9 +85,10 @@ public final class Constants {
     public static final String EVENT_DATE_FIELDNAME = "date";
     public static final String EVENT_ENDDATE_FIELDNAME = "endDate";
 
-
+    public static final String ALL_BOARDS = "ALL";
     public static final Integer DEFAULT_GAMEBOARDS_RESULTS_LIMIT = 6;
     public static final Integer MAX_PODS_TO_RETURN = 10;
+    public static final Integer SEARCH_MAX_WINDOW_SIZE = 10000;
 
     // Log events
     public static final String VIEW_QUESTION = "VIEW_QUESTION";
@@ -82,7 +101,6 @@ public final class Constants {
     public static final String VIEW_PAGE = "VIEW_PAGE";
     public static final String PAGE_ID_LOG_FIELDNAME = "pageId";
 
-    public static final String VIEW_MY_ASSIGNMENTS = "VIEW_MY_ASSIGNMENTS";
     public static final String VIEW_GROUPS_ASSIGNMENTS = "VIEW_GROUPS_ASSIGNMENTS";
     public static final String VIEW_ASSIGNMENT_PROGRESS = "VIEW_ASSIGNMENT_PROGRESS";
     public static final String DOWNLOAD_ASSIGNMENT_PROGRESS_CSV = "DOWNLOAD_ASSIGNMENT_PROGRESS_CSV";
@@ -99,6 +117,11 @@ public final class Constants {
     public enum IsaacUserPreferences {
         SUBJECT_INTEREST
     }
+
+    public static final Set<String> ISAAC_LOG_EVENT_TYPES = ImmutableSet.of(ADD_BOARD_TO_PROFILE, CREATE_GAMEBOARD,
+            DELETE_ASSIGNMENT, DELETE_BOARD_FROM_PROFILE, DOWNLOAD_ASSIGNMENT_PROGRESS_CSV, DOWNLOAD_GROUP_PROGRESS_CSV,
+            GLOBAL_SITE_SEARCH, SET_NEW_ASSIGNMENT, VIEW_ASSIGNMENT_PROGRESS, VIEW_CONCEPT, VIEW_GROUPS_ASSIGNMENTS,
+            VIEW_MY_BOARDS_PAGE, VIEW_PAGE, VIEW_QUESTION, VIEW_USER_PROGRESS);
 
     /**
      * Private constructor to prevent this class being created.

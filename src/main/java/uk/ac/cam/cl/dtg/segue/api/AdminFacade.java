@@ -15,6 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
@@ -33,6 +35,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.ArrayList;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
@@ -76,6 +79,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType;
 import uk.ac.cam.cl.dtg.segue.api.managers.KafkaStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.userAlerts.UserAlertsWebSocket;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -213,7 +217,7 @@ public class AdminFacade extends AbstractSegueFacade {
             }
 
             return Response.ok(kafkaStatsManager.outputGeneralStatistics())
-                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false)).build();
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (SegueDatabaseException | InvalidStateStoreException e) {
             log.error("Unable to load general statistics.", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
@@ -747,8 +751,11 @@ public class AdminFacade extends AbstractSegueFacade {
             }
             
             if (!currentUser.getRole().equals(Role.ADMIN)
-                    && (null != familyName) && familyName.isEmpty() && (null == schoolOther) && (null != email)
-                    && email.isEmpty() && (null == schoolURN) && (null == postcode)) {
+                    && (null == familyName || familyName.isEmpty())
+                    && (null == schoolOther || schoolOther.isEmpty())
+                    && (null == email || email.isEmpty())
+                    && (null == schoolURN || schoolURN.isEmpty())
+                    && (null == postcode || postcode.isEmpty())) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to do wildcard searches.")
                         .toResponse();
 
@@ -1573,6 +1580,60 @@ public class AdminFacade extends AbstractSegueFacade {
                     e.getMessage()).toResponse();
         }
         return Response.ok().build();
+    }
+
+
+    @GET
+    @Path("/diagnostics")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public Response getDiagnostics(@Context final Request request, @Context final HttpServletRequest httpServletRequest) {
+
+        try {
+
+            if (isUserAnAdmin(httpServletRequest)) {
+
+                ObjectMapper mapper = new ObjectMapper();
+                Map<String, Object> diagnosticReport = Maps.newHashMap();
+                Map<String, Object> websocketReport = Maps.newHashMap();
+                Map<String, Object> runtimeReport = Maps.newHashMap();
+                Integer numCurrentWebSockets = 0;
+
+                // websocket reporting
+                websocketReport.put("numUsersOpenedWebsockets", UserAlertsWebSocket.connectedSockets.size());
+
+                for (ConcurrentLinkedQueue<UserAlertsWebSocket> queue : UserAlertsWebSocket.connectedSockets.values()) {
+                    numCurrentWebSockets += queue.size();
+                }
+
+                websocketReport.put("numWebsocketsOpenedCurrently", numCurrentWebSockets);
+                websocketReport.put("numWebsocketsOpenedOverTime", UserAlertsWebSocket.getWebsocketCounts().get("numWebsocketsOpenedOverTime"));
+                websocketReport.put("numWebsocketsClosedOverTime", UserAlertsWebSocket.getWebsocketCounts().get("numWebsocketsClosedOverTime"));
+
+                diagnosticReport.put("websockets", websocketReport);
+
+                // runtime reporting
+                runtimeReport.put("availableProcessors", Runtime.getRuntime().availableProcessors());
+                runtimeReport.put("freeMemory", Runtime.getRuntime().freeMemory());
+                runtimeReport.put("maxMemory", Runtime.getRuntime().maxMemory());
+                runtimeReport.put("totalMemory", Runtime.getRuntime().totalMemory());
+                runtimeReport.put("threadCount", Thread.activeCount());
+
+                diagnosticReport.put("runtime", runtimeReport);
+
+                // other reporting
+                diagnosticReport.put("numAnonymousUsers", userManager.getNumberOfAnonymousUsers());
+
+                return Response.ok(diagnosticReport).build();
+
+            } else {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "You must be logged in as an admin to access this function.").toResponse();
+            }
+
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
     }
 
 }

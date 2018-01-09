@@ -35,4 +35,9 @@
         <listener-class>uk.ac.cam.cl.dtg.segue.api.managers.SegueContextNotifier</listener-class>
     </listener>
 
+    <context-param>
+        <param-name>resteasy.providers</param-name>
+        <param-value>uk.ac.cam.cl.dtg.isaac.configuration.exceptionMappers.MethodNotAllowedExceptionMapper</param-value>
+    </context-param>
+
 </web-app>

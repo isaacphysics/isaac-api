@@ -8,6 +8,7 @@ import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
+import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
@@ -37,6 +38,7 @@ public class EventBookingManagerTest {
     private UserAssociationManager userAssociationManager;
     private Map<String, String> someAdditionalInformation;
     private PropertiesLoader dummyPropertiesLoader;
+    private GroupManager groupManager;
 
     /**
      * Initial configuration of tests.
@@ -48,6 +50,7 @@ public class EventBookingManagerTest {
         this.dummyEmailManager = createMock(EmailManager.class);
         this.dummyEventBookingPersistenceManager = createMock(EventBookingPersistenceManager.class);
         this.userAssociationManager = createMock(UserAssociationManager.class);
+        this.groupManager = createMock(GroupManager.class);
         this.dummyPropertiesLoader = createMock(PropertiesLoader.class);
         expect(this.dummyPropertiesLoader.getProperty(HOST_NAME)).andReturn("hostname.com").anyTimes();
         this.someAdditionalInformation = Maps.newHashMap();
@@ -421,6 +424,7 @@ public class EventBookingManagerTest {
         firstUser.setRole(Role.TEACHER);
         firstBooking.setUserBooked(firstUser);
         firstBooking.setBookingStatus(BookingStatus.WAITING_LIST);
+        firstBooking.setAdditionalInformation(someAdditionalInformation);
 
         EventBookingDTO secondBooking = new EventBookingDTO();
         UserSummaryDTO secondUser = new UserSummaryDTO();
@@ -429,6 +433,7 @@ public class EventBookingManagerTest {
         secondBooking.setEventId(testEvent.getId());
         secondBooking.setUserBooked(firstUser);
         secondBooking.setBookingStatus(BookingStatus.CANCELLED);
+        secondBooking.setAdditionalInformation(someAdditionalInformation);
 
         List<EventBookingDTO> currentBookings = Arrays.asList(firstBooking, secondBooking);
 
@@ -455,7 +460,7 @@ public class EventBookingManagerTest {
         replay(dummyEventBookingPersistenceManager, dummyPropertiesLoader, dummyEmailManager);
 
         try {
-            ebm.promoteFromWaitingListOrCancelled(testEvent, someUser, someAdditionalInformation);
+            ebm.promoteFromWaitingListOrCancelled(testEvent, someUser);
             // success
         } catch (EventIsFullException e) {
             fail("Expected successful booking as no waiting list bookings.");
@@ -509,7 +514,7 @@ public class EventBookingManagerTest {
         replay(dummyEventBookingPersistenceManager);
 
         try {
-            ebm.promoteFromWaitingListOrCancelled(testEvent, someUser, someAdditionalInformation);
+            ebm.promoteFromWaitingListOrCancelled(testEvent, someUser);
             fail("Expected failure booking as no space for this event.");
         } catch (EventIsFullException e) {
             // success
@@ -517,6 +522,6 @@ public class EventBookingManagerTest {
     }
 
     private EventBookingManager buildEventBookingManager() {
-        return new EventBookingManager(dummyEventBookingPersistenceManager, dummyEmailManager, userAssociationManager, dummyPropertiesLoader);
+        return new EventBookingManager(dummyEventBookingPersistenceManager, dummyEmailManager, userAssociationManager, dummyPropertiesLoader, groupManager);
     }
 }

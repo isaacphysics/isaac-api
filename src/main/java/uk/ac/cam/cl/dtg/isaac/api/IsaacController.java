@@ -54,6 +54,7 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
+import uk.ac.cam.cl.dtg.segue.api.managers.IStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -91,7 +92,7 @@ public class IsaacController extends AbstractIsaacFacade {
 
     private final SegueContentFacade api;
     private final MapperFacade mapper;
-    private final StatisticsManager statsManager;
+    private final IStatisticsManager statsManager;
     private final UserAccountManager userManager;
     private final UserAssociationManager associationManager;
     private final URIManager uriManager;
@@ -145,7 +146,7 @@ public class IsaacController extends AbstractIsaacFacade {
      */
     @Inject
     public IsaacController(final SegueContentFacade api, final PropertiesLoader propertiesLoader,
-                           final ILogManager logManager, final MapperFacade mapper, final StatisticsManager statsManager,
+                           final ILogManager logManager, final MapperFacade mapper, final IStatisticsManager statsManager,
                            final UserAccountManager userManager, final IContentManager contentManager,
                            final UserAssociationManager associationManager, final URIManager uriManager,
                            @Named(CONTENT_INDEX) final String contentIndex) {
@@ -300,13 +301,16 @@ public class IsaacController extends AbstractIsaacFacade {
             userOfInterestSummary = userManager.convertToUserSummaryObject(userOfInterestFull);
 
             if (associationManager.hasPermission(user, userOfInterestSummary)) {
-                Map<String, Object> userQuestionInformation = statsManager
+                Map<String, Object> userProgressInformation = statsManager
                         .getUserQuestionInformation(userOfInterestFull);
+
+                // augment details with kafka streams user snapshot data (perhaps one day we will replace the entire endpoint with this call)
+                userProgressInformation.put("userSnapshot", statsManager.getDetailedUserStatistics(userOfInterestFull));
 
                 this.getLogManager().logEvent(user, request, VIEW_USER_PROGRESS,
                         ImmutableMap.of(USER_ID_FKEY_FIELDNAME, userOfInterestFull.getId()));
 
-                return Response.ok(userQuestionInformation).build();
+                return Response.ok(userProgressInformation).build();
             } else {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to view this users data.")
                         .toResponse();

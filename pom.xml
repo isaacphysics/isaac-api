@@ -10,7 +10,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<segue.version>2.2.2-SNAPSHOT</segue.version>
+		<segue.version>2.3.2-SNAPSHOT</segue.version>
 		<resteasy.version>3.0.11.Final</resteasy.version>
 		<powermock.version>1.5.2</powermock.version>
 		<postgresql.version>9.3-1102-jdbc41</postgresql.version>
@@ -18,6 +18,7 @@
         <jetty.port.api>8080</jetty.port.api>
         <jetty.port.etl>8090</jetty.port.etl>
         <config.location>/local/data/rutherford/conf/segue-config.properties</config.location>
+		<log.path>/isaac-logs</log.path>
 	</properties>
 
 	<repositories>
@@ -209,7 +210,21 @@
 			<artifactId>log4j-slf4j-impl</artifactId>
 			<version>2.6.2</version>
 		</dependency>
-
+		<dependency>
+			<groupId>com.fasterxml.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-yaml</artifactId>
+			<version>2.8.3</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.8.3</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-annotations</artifactId>
+			<version>2.8.3</version>
+		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
@@ -348,6 +363,9 @@
 					<forkMode>pertest</forkMode>
 					<forkCount>3</forkCount>
 					<reuseForks>false</reuseForks>
+					<systemPropertyVariables>
+						<log.path>${log.path}</log.path>
+					</systemPropertyVariables>
 				</configuration>
 			</plugin>
 
@@ -392,6 +410,10 @@
 						<systemProperty>
 							<name>config.location</name>
 							<value>${config.location}</value>
+						</systemProperty>
+						<systemProperty>
+							<name>log.path</name>
+							<value>${log.path}</value>
 						</systemProperty>
 						<systemProperty>
 							<name>segue.version</name>
@@ -467,6 +489,10 @@
 								<systemProperty>
 									<name>config.location</name>
 									<value>${config.location}</value>
+								</systemProperty>
+								<systemProperty>
+									<name>log.path</name>
+									<value>${log.path}</value>
 								</systemProperty>
 								<systemProperty>
 									<name>segue.version</name>

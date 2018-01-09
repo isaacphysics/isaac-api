@@ -243,4 +243,14 @@ public class SegueErrorResponse implements Serializable {
     public static Response getServiceUnavailableResponse(final String message) {
         return new SegueErrorResponse(Status.SERVICE_UNAVAILABLE, message).toResponse();
     }
+
+    /**
+     * @param message - inform the user how long they will be throttled for.
+     * @return error response.
+     */
+    public static Response getMethodNotAllowedReponse(final String message) {
+        return new SegueErrorResponse(Status.METHOD_NOT_ALLOWED, message)
+                .toResponse();
+    }
+
 }

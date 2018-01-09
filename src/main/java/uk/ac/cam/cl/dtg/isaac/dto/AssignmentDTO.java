@@ -36,6 +36,7 @@ public class AssignmentDTO {
     private Long ownerUserId;
     private UserSummaryDTO assignerSummary;
     private Date creationDate;
+    private Date dueDate;
 
     /**
      * Complete AssignmentDTO constructor with all dependencies.
@@ -50,14 +51,17 @@ public class AssignmentDTO {
      *            - Group id who should be assigned the game board.
      * @param creationDate
      *            - the date the assignment was created.
+     * @param dueDate
+     *            - the date the assignment should be completed by
      */
     public AssignmentDTO(final Long id, final String gameboardId, final Long ownerUserId, final Long groupId,
-            final Date creationDate) {
+            final Date creationDate, final Date dueDate) {
         this.id = id;
         this.gameboardId = gameboardId;
         this.ownerUserId = ownerUserId;
         this.groupId = groupId;
         this.creationDate = creationDate;
+        this.dueDate = dueDate;
     }
 
     /**
@@ -199,5 +203,21 @@ public class AssignmentDTO {
      */
     public void setCreationDate(final Date creationDate) {
         this.creationDate = creationDate;
+    }
+
+    /**
+     * get the due date of the assignment
+     * @return
+     */
+    public Date getDueDate() {
+        return dueDate;
+    }
+
+    /**
+     * set the due date of an assignment
+     * @param dueDate
+     */
+    public void setDueDate(Date dueDate) {
+        this.dueDate = dueDate;
     }
 }

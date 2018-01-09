@@ -137,7 +137,8 @@ CREATE TABLE assignments (
     gameboard_id character varying(255) NOT NULL,
     group_id integer NOT NULL,
     owner_user_id integer,
-    creation_date timestamp without time zone
+    creation_date timestamp without time zone,
+    due_date timestamp with time zone
 );
 
 
@@ -172,7 +173,7 @@ CREATE TABLE event_bookings (
     id integer NOT NULL,
     event_id text NOT NULL,
     created timestamp without time zone NOT NULL,
-    user_id integer,
+    user_id integer NOT NULL,
     status text DEFAULT 'CONFIRMED'::text NOT NULL,
     updated timestamp without time zone,
     additional_booking_information jsonb
@@ -242,6 +243,7 @@ CREATE TABLE groups (
     id integer NOT NULL,
     group_name text,
     owner_id integer,
+    archived boolean NOT NULL DEFAULT false,
     created timestamp without time zone
 );
 
@@ -590,7 +592,6 @@ CREATE TABLE user_alerts
     dismissed TIMESTAMP
 );
 CREATE UNIQUE INDEX user_alerts_id_uindex ON user_alerts (id);
-CREATE UNIQUE INDEX user_alerts_pkey ON user_alerts (id);
 
 
 

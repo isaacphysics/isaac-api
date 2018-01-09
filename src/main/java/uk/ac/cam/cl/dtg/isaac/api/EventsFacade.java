@@ -185,22 +185,21 @@ public class EventsFacade extends AbstractIsaacFacade {
             sortInstructions.put(EVENT_DATE_FIELDNAME, SortOrder.DESC);
         }
 
-        RegisteredUserDTO currentUser = null;
-        if(this.userManager.isRegisteredUserLoggedIn(request)) {
-            try {
-                currentUser = this.userManager.getCurrentRegisteredUser(request);
-            } catch (NoUserLoggedInException e) {
-                if (showMyBookingsOnly) {
-                    return SegueErrorResponse.getNotLoggedInResponse();
-                }
-            }
-        }
-
         try {
             ResultsWrapper<ContentDTO> findByFieldNames = null;
 
-            if (null != showMyBookingsOnly && showMyBookingsOnly) {
-                findByFieldNames = getEventsBookedByUser(request, fieldsToMatch.get(TAGS_FIELDNAME), currentUser);
+            if (showMyBookingsOnly) {
+                RegisteredUserDTO currentUser = null;
+                try {
+                    currentUser = this.userManager.getCurrentRegisteredUser(request);
+                } catch (NoUserLoggedInException e) {
+                    /* Safe to ignore; will just leave currentUser null. */
+                }
+                if (null != currentUser) {
+                    findByFieldNames = getEventsBookedByUser(request, fieldsToMatch.get(TAGS_FIELDNAME), currentUser);
+                } else {
+                    SegueErrorResponse.getNotLoggedInResponse();
+                }
             } else {
                 findByFieldNames = this.contentManager.findByFieldNames(
                     this.contentIndex, SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch),
@@ -390,7 +389,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
 
             EventBookingDTO eventBookingDTO
-                    = this.bookingManager.promoteFromWaitingListOrCancelled(event, userOfInterest, additionalInformation);
+                    = this.bookingManager.promoteFromWaitingListOrCancelled(event, userOfInterest);
 
             this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
                     Constants.ADMIN_EVENT_WAITING_LIST_PROMOTION, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId(),
@@ -811,7 +810,10 @@ public class EventsFacade extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "User is not booked on this event.").toResponse();
             }
 
-            bookingManager.deleteBooking(eventId, userId);
+            IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
+            RegisteredUserDTO user = this.userManager.getUserDTOById(userId);
+
+            bookingManager.deleteBooking(event, user);
 
             this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
                     Constants.ADMIN_EVENT_BOOKING_DELETED, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, eventId, USER_ID_FKEY_FIELDNAME, userId));
@@ -823,6 +825,12 @@ public class EventsFacade extends AbstractIsaacFacade {
             String errorMsg = "Database error occurred while trying to delete an event booking.";
             log.error(errorMsg, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
+        } catch (NoUserException e) {
+            return SegueErrorResponse.getResourceNotFoundResponse("Unable to locate user specified.");
+        } catch (ContentManagerException e) {
+            log.error("Error during event request", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content you requested.")
+                    .toResponse();
         }
     }
 

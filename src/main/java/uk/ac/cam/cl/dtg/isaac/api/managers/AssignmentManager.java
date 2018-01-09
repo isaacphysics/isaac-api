@@ -178,8 +178,14 @@ public class AssignmentManager implements IGroupObserver {
 
 		// inform all members of the group that there is now an assignment for them.
         try {
-            final String gameboardURL = String.format("https://%s/#%s", properties.getProperty(HOST_NAME),
+            final DateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yy");
+            final String gameboardURL = String.format("https://%s/assignment/%s", properties.getProperty(HOST_NAME),
                     gameboard.getId());
+
+            String dueDate = "";
+            if (newAssignment.getDueDate() != null) {
+                dueDate = String.format(" (due on %s)", DATE_FORMAT.format(newAssignment.getDueDate()));
+            }
 
             String gameboardName = gameboard.getId();
             if (gameboard.getTitle() != null) {
@@ -190,7 +196,8 @@ public class AssignmentManager implements IGroupObserver {
                 emailManager.sendTemplatedEmailToUser(userDTO,
                         emailManager.getEmailTemplateDTO("email-template-group-assignment"),
                         ImmutableMap.of("gameboardURL", gameboardURL,
-                                "gameboardName", gameboardName),
+                                "gameboardName", gameboardName,
+                                "assignmentDueDate", dueDate),
                         EmailType.ASSIGNMENTS);
             }
 
@@ -368,7 +375,7 @@ public class AssignmentManager implements IGroupObserver {
             Collections.sort(existingAssignments, Comparator.comparing(AssignmentDTO::getCreationDate));
         }
 
-        final DateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yy HH:mm");
+        final DateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yyyy");
         StringBuilder htmlSB = new StringBuilder();
         StringBuilder plainTextSB = new StringBuilder();
         final String accountURL = String.format("https://%s/account", properties.getProperty(HOST_NAME));
@@ -384,15 +391,20 @@ public class AssignmentManager implements IGroupObserver {
                     gameboardName = gameboard.getTitle();
                 }
 
-                String gameboardUrl = String.format("https://%s/#%s",
+                String gameboardUrl = String.format("https://%s/assignment/%s",
                         properties.getProperty(HOST_NAME),
                         existingAssignments.get(i).getGameboardId());
 
-                htmlSB.append(String.format("%d. <a href='%s'>%s</a> (set on %s)<br>", i + 1, gameboardUrl,
-                        gameboardName, DATE_FORMAT.format(existingAssignments.get(i).getCreationDate())));
+                String dueDate = "";
+                if (existingAssignments.get(i).getDueDate() != null) {
+                    dueDate = String.format(", due on %s", DATE_FORMAT.format(existingAssignments.get(i).getDueDate()));
+                }
 
-                plainTextSB.append(String.format("%d. %s (set on %s)\n", i + 1, gameboardName,
-                        DATE_FORMAT.format(existingAssignments.get(i).getCreationDate())));
+                htmlSB.append(String.format("%d. <a href='%s'>%s</a> (set on %s%s)<br>", i + 1, gameboardUrl,
+                        gameboardName, DATE_FORMAT.format(existingAssignments.get(i).getCreationDate()), dueDate));
+
+                plainTextSB.append(String.format("%d. %s (set on %s%s)\n", i + 1, gameboardName,
+                        DATE_FORMAT.format(existingAssignments.get(i).getCreationDate()), dueDate));
             }
         } else if (existingAssignments != null && existingAssignments.size() == 0) {
             htmlSB.append("No assignments have been set yet.<br>");

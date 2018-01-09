@@ -66,7 +66,7 @@ public class KafkaStreamsProducer implements Closeable {
         Validate.notBlank(record.key());
 
         if (!topicListCache.contains(record.topic())) {
-            topicManager.ensureTopicExists(record.topic(), 0);
+            topicManager.ensureTopicExists(record.topic(), null);
             topicListCache = topicManager.listTopics();
         }
         producer.send(record);
