@@ -43,46 +43,37 @@ public final class RequestIPExtractor {
      * @return string representation of the client's ip address, or 0.0.0.0 in case of failure.
      */
     public static String getClientIpAddr(final HttpServletRequest request) {
-        log.info("Extracting incoming request IP address:");
         String ip = request.getHeader("X-Forwarded-For");
-        log.info("x-Forwarded-For IP Address: " + ip);
         if (ip != null && ip.contains(",")) {
             // If X-Forwarded-For contains multiple comma-separated IP addresses, we want only the last one.
-            log.info("X-Forwarded-For contained multiple IP addresses, extracting last: '" + ip + "'");
+            log.debug("X-Forwarded-For contained multiple IP addresses, extracting last: '" + ip + "'");
             ip = ip.substring(ip.lastIndexOf(',') + 1).trim();
         }
         if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
             // Isaac adds this custom header which could be used:
             ip = request.getHeader("X-Real-IP");
-            log.info("X-Real-IP IP Address: " + ip);
         }
         if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getHeader("Proxy-Client-IP");
-            log.info("Proxy-Client-IP IP Address: " + ip);
         }
         if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getHeader("WL-Proxy-Client-IP");
-            log.info("WL-Proxy-Client-IP IP Address: " + ip);
         }
         if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getHeader("HTTP_CLIENT_IP");
-            log.info("HTTP_CLIENT_IP IP Address: " + ip);
         }
         if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getHeader("HTTP_X_FORWARDED_FOR");
-            log.info("HTTP_X_FORWARDED_FOR IP Address: " + ip);
         }
         if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
             // In production, this will usually be the router address which may be unhelpful.
             ip = request.getRemoteAddr();
-            log.info("remoteAddr IP Address: " + ip);
         }
         if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
             // We *must* return a *valid* inet field for postgres! Null would be
             // acceptable, but is used for internal log events; 'unknown' is not allowed!
             // So if all else fails, use the impossible source address '0.0.0.0' to mark this.
             ip = "0.0.0.0";
-            log.info("No IP Address: " + ip);
         }
         return ip;
     }
