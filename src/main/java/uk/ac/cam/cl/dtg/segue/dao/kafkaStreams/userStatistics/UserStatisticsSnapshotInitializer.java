@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.segue.dao.kafkaStreams;
+package uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.userStatistics;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;

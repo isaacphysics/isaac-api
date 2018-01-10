@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.ac.cam.cl.dtg.segue.dao.kafkaStreams;
+package uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.userStatistics;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -52,6 +52,7 @@ import uk.ac.cam.cl.dtg.segue.api.userAlerts.UserAlertsWebSocket;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.KafkaTopicManager;
 import uk.ac.cam.cl.dtg.segue.dos.IUserAlert;
 import uk.ac.cam.cl.dtg.segue.dos.PgUserAlert;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
@@ -209,7 +210,7 @@ public class UserStatisticsStreamsApplication {
      */
     private void streamProcess(KStream<String, JsonNode> rawStream) {
 
-        // mapping the stream to have non-null keys
+        // map the key-value pair to one where the key is always the user id
         KStream<String, JsonNode> mappedStream = rawStream
                 .map(
                         (k, v) -> new KeyValue<>(v.path("user_id").asText(), v)
@@ -262,9 +263,14 @@ public class UserStatisticsStreamsApplication {
                                     }
                                 }
 
-                            } catch (NoUserException | SegueDatabaseException e) {
+                            } catch (SegueDatabaseException e) {
                                 e.printStackTrace();
+                            } catch (NoUserException e) {
+                                log.error("User " + userId + " not found in Postgres DB while processing streams data!");
+                            } catch (NumberFormatException e) {
+                                log.error("Could not process user with id = " + userId + " in streams application.");
                             }
+
 
 
                             // snapshot updates pertaining to question answer activity
