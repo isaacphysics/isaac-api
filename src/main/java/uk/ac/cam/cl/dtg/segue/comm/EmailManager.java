@@ -21,6 +21,7 @@ import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.Validate;
 import org.eclipse.jgit.util.StringUtils;
 import org.slf4j.Logger;
@@ -31,8 +32,8 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
-import uk.ac.cam.cl.dtg.segue.dos.AbstractEmailPreferenceManager;
-import uk.ac.cam.cl.dtg.segue.dos.IEmailPreference;
+import uk.ac.cam.cl.dtg.segue.dos.AbstractUserPreferenceManager;
+import uk.ac.cam.cl.dtg.segue.dos.UserPreference;
 import uk.ac.cam.cl.dtg.segue.dos.content.ExternalReference;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
@@ -50,6 +51,7 @@ import java.util.regex.Pattern;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_VERSION_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_TIME_LOCALITY;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SENT_MASS_EMAIL;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueUserPreferences;
 
 /**
  * EmailManager
@@ -57,7 +59,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.SENT_MASS_EMAIL;
  *
  */
 public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationMessage> {
-	private final AbstractEmailPreferenceManager emailPreferenceManager;
+    private final AbstractUserPreferenceManager userPreferenceManager;
     private final PropertiesLoader globalProperties;
     private final IContentManager contentManager;
 
@@ -72,8 +74,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     /**
      * @param communicator
      *            class we'll use to send the actual email.
-     * @param emailPreferenceManager
-     *            email preference manager used to check if users want email.
+     * @param userPreferenceManager
+     *            user preference manager used to check if users want email.
      * @param globalProperties
      *            global properties used to get host name
      * @param contentManager
@@ -84,12 +86,11 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      *                           static string.
      */
     @Inject
-    public EmailManager(final EmailCommunicator communicator, final AbstractEmailPreferenceManager 
-		    		emailPreferenceManager, final PropertiesLoader globalProperties,
-                        final IContentManager contentManager, final ILogManager logManager,
-                        final Map<String, String> globalStringTokens) {
+    public EmailManager(final EmailCommunicator communicator, final AbstractUserPreferenceManager userPreferenceManager,
+                        final PropertiesLoader globalProperties, final IContentManager contentManager,
+                        final ILogManager logManager, final Map<String, String> globalStringTokens) {
         super(communicator);
-        this.emailPreferenceManager = emailPreferenceManager;
+        this.userPreferenceManager = userPreferenceManager;
         this.globalProperties = globalProperties;
         this.contentManager = contentManager;
         this.logManager = logManager;
@@ -127,8 +128,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * @throws SegueDatabaseException if we cannot contact the database for logging.
      */
     public void sendTemplatedEmailToUser(final RegisteredUserDTO userDTO, final EmailTemplateDTO emailContentTemplate,
-                                                   final Map<String, Object> tokenToValueMapping, final EmailType emailType,
-                                         @Nullable List<EmailAttachment> attachments)
+                                         final Map<String, Object> tokenToValueMapping, final EmailType emailType,
+                                         final @Nullable List<EmailAttachment> attachments)
             throws ContentManagerException, SegueDatabaseException {
 
         // generate properties from hashMap for token replacement process
@@ -188,19 +189,19 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     }
     
     /**
-	 * @param sendingUser
-	 * 				- the user object for the user sending the email
-	 * @param contentObjectId
-	 * 				- the id of the email template being used
-	 * @param allSelectedUsers
-	 * 				- the users to send email to
-	 * @param emailType
-	 * 				- the type of email to send (affects who receives it)
-	 * @throws SegueDatabaseException
-	 * 				- a segue database exception
-	 * @throws ContentManagerException
-	 * 				- a content management exception
-	 */
+     * @param sendingUser
+     * 				- the user object for the user sending the email
+     * @param contentObjectId
+     * 				- the id of the email template being used
+     * @param allSelectedUsers
+     * 				- the users to send email to
+     * @param emailType
+     * 				- the type of email to send (affects who receives it)
+     * @throws SegueDatabaseException
+     * 				- a segue database exception
+     * @throws ContentManagerException
+     * 				- a content management exception
+     */
     public void sendCustomEmail(final RegisteredUserDTO sendingUser, final String contentObjectId,
             final List<RegisteredUserDTO> allSelectedUsers, final EmailType emailType) throws SegueDatabaseException,
             ContentManagerException {
@@ -210,18 +211,19 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         EmailTemplateDTO emailContent = getEmailTemplateDTO(contentObjectId);
 
-        Map<Long, Map<EmailType, Boolean>> allUserPreferences = this.emailPreferenceManager
-                .getEmailPreferences(allSelectedUsers);
+        Map<Long, List<UserPreference>> allUserPreferences = this.userPreferenceManager
+                .getUserPreferences(SegueUserPreferences.EMAIL_PREFERENCE.name(), allSelectedUsers);
 
         int numberOfUnfilteredUsers = allSelectedUsers.size();
         Iterator<RegisteredUserDTO> userIterator = allSelectedUsers.iterator();
         while (userIterator.hasNext()) {
             RegisteredUserDTO user = userIterator.next();
 
-            // don't continue if user has preference against this type of email
+            // Don't continue if user has preference against this type of email. If no preference found, send the email.
+            // This is consistent with filterByPreferencesAndAddToQueue(...) below.
             if (allUserPreferences.containsKey(user.getId())) {
-                Map<EmailType, Boolean> userPreferences = allUserPreferences.get(user.getId());
-                if (userPreferences.containsKey(emailType) && !userPreferences.get(emailType)) {
+                Map<EmailType, Boolean> emailPreferences = convertUserPreferencesToEmailPreferences(allUserPreferences.get(user.getId()));
+                if (emailPreferences.containsKey(emailType) && !emailPreferences.get(emailType)) {
                     userIterator.remove();
                     continue;
                 }
@@ -274,40 +276,40 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      *             - the content was of incorrect type
      */
     private void filterByPreferencesAndAddToQueue(final RegisteredUserDTO userDTO,
-    				final EmailCommunicationMessage email) throws SegueDatabaseException {
-    	Validate.notNull(email);
-    	Validate.notNull(userDTO);
-    	
-    	ImmutableMap<String, Object> eventDetails = new ImmutableMap.Builder<String, Object>()
-		           .put("userId", userDTO.getId())
-		           .put("email", email.getRecipientAddress())
-		           .put("type", email.getEmailType())
-		           .build();
-    	
-    	// don't send an email if we know it has failed before
-    	if (userDTO.getEmailVerificationStatus() == EmailVerificationStatus.DELIVERY_FAILED) {
-            log.info("Email sending abandoned - verification status is DELIVERY_FAILED");
-    		return;
-    	}
-    	
-    	// if this is an email type that cannot have a preference, send it and log as appropriate
-    	if (!email.getEmailType().isValidEmailPreference()) {
-	        logManager.logInternalEvent(userDTO, Constants.SEND_EMAIL, eventDetails);
-    		addToQueue(email);
-    		return;
-    	}
+                    final EmailCommunicationMessage email) throws SegueDatabaseException {
+        Validate.notNull(email);
+        Validate.notNull(userDTO);
 
-    	try {
-			IEmailPreference preference = 
-							this.emailPreferenceManager.getEmailPreference(userDTO.getId(), email.getEmailType());
-			if (preference != null && preference.getEmailPreferenceStatus()) {
-		        logManager.logInternalEvent(userDTO, Constants.SEND_EMAIL, eventDetails);
-				addToQueue(email);
-			}
-		} catch (SegueDatabaseException e1) {
-			throw new SegueDatabaseException(String.format("Email of type %s cannot be sent - "
-					+ "error accessing preferences in database", email.getEmailType().toString()));
-		}
+        ImmutableMap<String, Object> eventDetails = new ImmutableMap.Builder<String, Object>()
+                   .put("userId", userDTO.getId())
+                   .put("email", email.getRecipientAddress())
+                   .put("type", email.getEmailType())
+                   .build();
+
+        // don't send an email if we know it has failed before
+        if (userDTO.getEmailVerificationStatus() == EmailVerificationStatus.DELIVERY_FAILED) {
+            log.info("Email sending abandoned - verification status is DELIVERY_FAILED");
+            return;
+        }
+
+        // if this is an email type that cannot have a preference, send it and log as appropriate
+        if (!email.getEmailType().isValidEmailPreference()) {
+            logManager.logInternalEvent(userDTO, Constants.SEND_EMAIL, eventDetails);
+            addToQueue(email);
+            return;
+        }
+
+        try {
+            UserPreference preference = userPreferenceManager.getUserPreference(SegueUserPreferences.EMAIL_PREFERENCE.name(), email.getEmailType().name(), userDTO.getId());
+            // If no preference is present, send the email. This is consistent with sendCustomEmail(...) above.
+            if (preference == null || preference.getPreferenceValue()) {
+                logManager.logInternalEvent(userDTO, Constants.SEND_EMAIL, eventDetails);
+                addToQueue(email);
+            }
+        } catch (SegueDatabaseException e1) {
+            throw new SegueDatabaseException(String.format("Email of type %s cannot be sent - "
+                    + "error accessing preferences in database", email.getEmailType().toString()));
+        }
     }
     
     /**
@@ -319,11 +321,9 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * @throws SegueDatabaseException
      *             - the content was of incorrect type
      */
-    public void addSystemEmailToQueue(final EmailCommunicationMessage email)
-            throws SegueDatabaseException {
-
+    public void addSystemEmailToQueue(final EmailCommunicationMessage email) throws SegueDatabaseException {
         addToQueue(email);
-		log.info(String.format("Added system email to the queue with subject: %s", email.getSubject()));
+        log.info(String.format("Added system email to the queue with subject: %s", email.getSubject()));
     }
 
     /**
@@ -337,12 +337,13 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * @param keyPrefix - the key prefix - used for recursively creating the map key.
      * @return a flattened map for containing strings that can be used in email template replacement.
      */
-     public Map<String, String> flattenTokenMap(final Map <String, Object> inputMap, final Map <String, String> outputMap, String keyPrefix) {
+     public Map<String, String> flattenTokenMap(final Map<String, Object> inputMap, final Map<String, String> outputMap,
+                                                String keyPrefix) {
         if (null == keyPrefix) {
             keyPrefix = "";
         }
 
-        for(Map.Entry<String, Object> mapEntry : inputMap.entrySet()){
+        for (Map.Entry<String, Object> mapEntry : inputMap.entrySet()) {
             String valueToStore = "";
 
             if (mapEntry.getValue() == null) {
@@ -400,12 +401,11 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             valueToStore = FULL_DATE_FORMAT.format((Date) o);
         } else if (o instanceof Number || o instanceof Boolean) {
             valueToStore = o.toString();
-        } else if (o instanceof Enum){
+        } else if (o instanceof Enum) {
             valueToStore = ((Enum) o).name();
         } else if (o instanceof ExternalReference) {
             ExternalReference er = (ExternalReference) o;
-            valueToStore = String.format("<a href='%s'>%s</a>", er.getUrl(), er.getTitle()) +
-                    "\n";
+            valueToStore = String.format("<a href='%s'>%s</a>", er.getUrl(), er.getTitle()) + "\n";
         } else if (o instanceof Collection) {
             List<String> sl = Lists.newArrayList();
 
@@ -466,8 +466,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                     template += end;
 
                     offset += templateProperties.getProperty(strippedTag + "_HTML").length() - tag.length();
-                }
-                else if (templateProperties.containsKey(strippedTag)) {
+                } else if (templateProperties.containsKey(strippedTag)) {
                     String start = template.substring(0, m.start() + offset);
                     String end = template.substring(m.end() + offset, template.length());
 
@@ -536,11 +535,11 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * 	
      */
     public EmailCommunicationMessage constructMultiPartEmail(@Nullable final Long userId, final String userEmail,
-            EmailTemplateDTO emailContent, Properties contentProperties, final EmailType emailType,
-                                                             @Nullable final List<EmailAttachment> attachments)
-					throws ContentManagerException, ResourceNotFoundException {
-    	Validate.notNull(userEmail);
-    	Validate.notEmpty(userEmail);
+                                         EmailTemplateDTO emailContent, Properties contentProperties,
+                                         final EmailType emailType, @Nullable final List<EmailAttachment> attachments)
+                    throws ContentManagerException, ResourceNotFoundException {
+        Validate.notNull(userEmail);
+        Validate.notEmpty(userEmail);
 
         // Ensure global properties are included, but in a safe manner (allow contentProperties to override globals!)
         Properties contentPropertiesToUse = new Properties();
@@ -630,5 +629,22 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         }
 
         return emailTemplateDTO;
+    }
+
+    /**
+     * Convert new-style user preference list into old-style EmailType map.
+     *
+     * @param userPreferences
+     *            - the list of user preferences
+     * @return - the old-style EmailType map
+     */
+    private Map<EmailType, Boolean> convertUserPreferencesToEmailPreferences(final List<UserPreference> userPreferences) {
+        Map<EmailType, Boolean> emailPreferences = Maps.newHashMap();
+        for (UserPreference pref : userPreferences) {
+            if (EnumUtils.isValidEnum(EmailType.class, pref.getPreferenceName())) {
+                emailPreferences.put(EmailType.valueOf(pref.getPreferenceName()), pref.getPreferenceValue());
+            }
+        }
+        return emailPreferences;
     }
 }

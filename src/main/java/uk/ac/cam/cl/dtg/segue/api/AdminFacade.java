@@ -76,7 +76,6 @@ import com.google.common.collect.ImmutableMap.Builder;
 import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType;
-import uk.ac.cam.cl.dtg.segue.api.managers.IStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.KafkaStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -101,7 +100,6 @@ import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.etl.GithubPushEventPayload;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
@@ -110,7 +108,7 @@ import uk.ac.cam.cl.dtg.util.locations.Location;
 import uk.ac.cam.cl.dtg.util.locations.LocationServerException;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeRadius;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.SUBJECT_INTEREST;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacUserPreferences; // FIXME: Isaac class in Segue!
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
@@ -877,7 +875,7 @@ public class AdminFacade extends AbstractSegueFacade {
             // FIXME - this shouldn't really be in a segue class!
             if (subjectOfInterest != null && !subjectOfInterest.isEmpty()) {
                 List<RegisteredUserDTO> subjectFilteredUsers = new ArrayList<>();
-                Map<Long, List<UserPreference>> userPreferences = userPreferenceManager.getUserPreferences(SUBJECT_INTEREST, findUsers);
+                Map<Long, List<UserPreference>> userPreferences = userPreferenceManager.getUserPreferences(IsaacUserPreferences.SUBJECT_INTEREST.name(), findUsers);
 
                 for (RegisteredUserDTO userToFilter: findUsers) {
                     if (userPreferences.containsKey(userToFilter.getId())) {
