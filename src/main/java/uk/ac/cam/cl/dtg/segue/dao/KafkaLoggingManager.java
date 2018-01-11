@@ -73,6 +73,7 @@ public class KafkaLoggingManager extends LoggingEventHandler {
     private final ObjectMapper objectMapper;
     private final String kafkaHost;
     private final String kafkaPort;
+    private final String kafkaTopic;
 
 
     @Inject
@@ -81,6 +82,7 @@ public class KafkaLoggingManager extends LoggingEventHandler {
                                final ObjectMapper objectMapper,
                                @Named(Constants.KAFKA_HOSTNAME) final String kafkaHost,
                                @Named(Constants.KAFKA_PORT) final String kafkaPort,
+                               @Named(Constants.KAFKA_TOPIC_LOGGED_EVENTS) final String kafkaTopic,
                                KafkaTopicManager kafkaTopicManager) {
 
         this.kafkaProducer = kafkaProducer;
@@ -88,12 +90,13 @@ public class KafkaLoggingManager extends LoggingEventHandler {
         this.objectMapper = objectMapper;
         this.kafkaHost = kafkaHost;
         this.kafkaPort = kafkaPort;
+        this.kafkaTopic = kafkaTopic;
 
         // ensure topics exist before attempting to consume
         // logged events
         List<ConfigEntry> loggedEventsConfigs = Lists.newLinkedList();
         loggedEventsConfigs.add(new ConfigEntry(TopicConfig.RETENTION_MS_CONFIG, String.valueOf(-1)));
-        kafkaTopicManager.ensureTopicExists("topic_logged_events_v1", loggedEventsConfigs);
+        kafkaTopicManager.ensureTopicExists(kafkaTopic, loggedEventsConfigs);
 
         // anonymous logged events
         List<ConfigEntry> anonLoggedEventsConfigs = Lists.newLinkedList();
@@ -173,7 +176,7 @@ public class KafkaLoggingManager extends LoggingEventHandler {
                                 .build();
 
                         // producerRecord contains the name of the kafka topic we are publishing to, followed by the message to be sent.
-                        ProducerRecord<String, String> producerRecord = new ProducerRecord<String, String>("topic_logged_events_v1", newUserId,
+                        ProducerRecord<String, String> producerRecord = new ProducerRecord<String, String>(kafkaTopic, newUserId,
                                 objectMapper.writeValueAsString(kafkaLogRecord));
 
                         kafkaProducer.send(producerRecord);
@@ -226,7 +229,7 @@ public class KafkaLoggingManager extends LoggingEventHandler {
                 .build();
 
         // producerRecord contains the name of the kafka topic we are publishing to, followed by the message to be sent.
-        ProducerRecord producerRecord = new ProducerRecord<String, String>("topic_logged_events_v1", logEvent.getUserId(),
+        ProducerRecord producerRecord = new ProducerRecord<String, String>(kafkaTopic, logEvent.getUserId(),
                 objectMapper.writeValueAsString(kafkaLogRecord));
 
         try {

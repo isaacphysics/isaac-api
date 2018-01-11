@@ -87,6 +87,7 @@ public class UserStatisticsStreamsApplication {
     private IQuestionAttemptManager questionAttemptManager;
     private UserAccountManager userAccountManager;
     private ILogManager logManager;
+    private String kafkaTopic;
 
 
     private final String streamsAppNameAndVersion = "streamsapp_user_stats-v1.0";
@@ -110,6 +111,7 @@ public class UserStatisticsStreamsApplication {
         this.questionAttemptManager = questionAttemptManager;
         this.userAccountManager = userAccountManager;
         this.logManager = logManager;
+        this.kafkaTopic = globalProperties.getProperty("KAFKA_TOPIC_LOGGED_EVENTS");
 
 
         streamsConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, streamsAppNameAndVersion);
@@ -139,7 +141,7 @@ public class UserStatisticsStreamsApplication {
         // logged events
         List<ConfigEntry> loggedEventsConfigs = Lists.newLinkedList();
         loggedEventsConfigs.add(new ConfigEntry(TopicConfig.RETENTION_MS_CONFIG, String.valueOf(-1)));
-        kafkaTopicManager.ensureTopicExists("topic_logged_events_v1", loggedEventsConfigs);
+        kafkaTopicManager.ensureTopicExists(kafkaTopic, loggedEventsConfigs);
 
         // local store changelog topics
         List<ConfigEntry> changelogConfigs = Lists.newLinkedList();
@@ -150,7 +152,7 @@ public class UserStatisticsStreamsApplication {
         final AtomicBoolean wasLagging = new AtomicBoolean(true);
 
         // raw logged events incoming data stream from kafka
-        KStream<String, JsonNode> rawLoggedEvents = builder.stream(StringSerde, JsonSerde, "topic_logged_events_v1")
+        KStream<String, JsonNode> rawLoggedEvents = builder.stream(StringSerde, JsonSerde, kafkaTopic)
                 .filterNot(
                         (k, v) -> v.path("anonymous_user").asBoolean()
                 ).peek(

@@ -72,6 +72,7 @@ public class SiteStatisticsStreamsApplication {
     private KafkaStreams streams;
     private KStreamBuilder builder = new KStreamBuilder();
     private Properties streamsConfiguration = new Properties();
+    private String kafkaTopic;
 
     private final String streamsAppNameAndVersion = "streamsapp_site_stats-v1.43";
 
@@ -89,6 +90,7 @@ public class SiteStatisticsStreamsApplication {
 
         this.kafkaTopicManager = kafkaTopicManager;
         this.userAccountManager = userAccountManager;
+        this.kafkaTopic = globalProperties.getProperty("KAFKA_TOPIC_LOGGED_EVENTS");
 
         streamsConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, streamsAppNameAndVersion);
         streamsConfiguration.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG,
@@ -117,7 +119,7 @@ public class SiteStatisticsStreamsApplication {
         // logged events
         List<ConfigEntry> loggedEventsConfigs = Lists.newLinkedList();
         loggedEventsConfigs.add(new ConfigEntry(TopicConfig.RETENTION_MS_CONFIG, String.valueOf(-1)));
-        kafkaTopicManager.ensureTopicExists("topic_logged_events_v1", loggedEventsConfigs);
+        kafkaTopicManager.ensureTopicExists(kafkaTopic, loggedEventsConfigs);
 
         // local store changelog topics
         List<ConfigEntry> changelogConfigs = Lists.newLinkedList();
@@ -129,7 +131,7 @@ public class SiteStatisticsStreamsApplication {
 
 
         // raw logged events incoming data stream from kafka
-        KStream<String, JsonNode> rawLoggedEvents = builder.stream(StringSerde, JsonSerde, "topic_logged_events_v1")
+        KStream<String, JsonNode> rawLoggedEvents = builder.stream(StringSerde, JsonSerde, kafkaTopic)
                 .filterNot(
                         (k, v) -> v.path("anonymous_user").asBoolean()
                 );
