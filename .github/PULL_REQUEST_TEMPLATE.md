@@ -15,5 +15,3 @@
 - [ ] DB schema changes - upgrade script created matching create script
 - [ ] Updated Release Procedure & Documentation (& Considered Implications to Previous Versions)
 - [ ] Peer-Reviewed
-
-Signed Off By: @
