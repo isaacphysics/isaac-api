@@ -791,8 +791,10 @@ public class GameboardPersistenceManager {
         gameboardDO.setWildCardPosition(results.getInt("wildcard_position"));
         gameboardDO.setGameFilter(objectMapper
                 .readValue(results.getObject("game_filter").toString(), GameFilter.class));
-        gameboardDO.setOwnerUserId(results.getLong("owner_user_id"));
-        
+        Long ownerUserId = results.getLong("owner_user_id");
+        // by default getLong (primitive) sets null to 0, where 0 is a distinct value from null for user IDs
+        gameboardDO.setOwnerUserId(!results.wasNull() ? ownerUserId : null);
+
         if (results.getString("creation_method") != null) {
             gameboardDO.setCreationMethod(GameboardCreationMethod.valueOf(results.getString("creation_method")));    
         }

@@ -141,7 +141,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public final Response generateTemporaryGameboard(@Context final HttpServletRequest request,
-            @QueryParam("title") String title, @QueryParam("subjects") final String subjects,
+            @QueryParam("title") final String title, @QueryParam("subjects") final String subjects,
             @QueryParam("fields") final String fields, @QueryParam("topics") final String topics,
             @QueryParam("levels") final String levels, @QueryParam("concepts") final String concepts) {
         List<String> subjectsList = null;
@@ -304,17 +304,18 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             gameboard = gameManager.getFastTrackGameboard(gameboardId, randomUser, userQuestionAttempts);
 
             // We decided not to log this on the backend as the front end uses this lots.
-            return Response.ok(gameboard).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).tag(etag)
-                    .build();
+            return Response.ok(gameboard).cacheControl(
+                    getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).tag(etag).build();
         } catch (IllegalArgumentException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Your FastTrack gameboard filter request is invalid.").toResponse();
+            return new SegueErrorResponse(
+                    Status.BAD_REQUEST, "Your FastTrack gameboard filter request is invalid.").toResponse();
         } catch (SegueDatabaseException e) {
             String message = "Error whilst trying to access the FastTrack gameboard in the database.";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (ContentManagerException e1) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Error locating the version requested",
-                    e1);
+            SegueErrorResponse error = new SegueErrorResponse(
+                    Status.NOT_FOUND, "Error locating the version requested", e1);
             log.error(error.getErrorMessage(), e1);
             return error.toResponse();
         }
@@ -349,8 +350,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                 if (e.getValue() > 1) {
                     GameboardDTO liteGameboard = this.gameManager.getLiteGameboard(e.getKey());
 
-                    RegisteredUserDTO ownerUser = userManager.getUserDTOById(liteGameboard.getOwnerUserId());
-                    if (ownerUser != null) {
+                    if (liteGameboard.getOwnerUserId() != null) {
+                        RegisteredUserDTO ownerUser = userManager.getUserDTOById(liteGameboard.getOwnerUserId());
                         liteGameboard.setOwnerUserInformation(associationManager.enforceAuthorisationPrivacy(
                                 currentUser, userManager.convertToUserSummaryObject(ownerUser)));
                     }
@@ -519,7 +520,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
             // go ahead and persist the gameboard (if it is only temporary) / link it to the users my boards account
             gameManager.linkUserToGameboard(existingGameboard, user);
-            getLogManager().logEvent(user, request, ADD_BOARD_TO_PROFILE, ImmutableMap.of(GAMEBOARD_ID_FKEY, existingGameboard.getId()));
+            getLogManager().logEvent(user, request, ADD_BOARD_TO_PROFILE,
+                    ImmutableMap.of(GAMEBOARD_ID_FKEY, existingGameboard.getId()));
 
         } catch (SegueDatabaseException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
@@ -717,7 +719,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
             // go ahead and persist the gameboard (if it is only temporary) / link it to the users my boards account
             gameManager.linkUserToGameboard(existingGameboard, user);
-            getLogManager().logEvent(user, request, ADD_BOARD_TO_PROFILE, ImmutableMap.of(GAMEBOARD_ID_FKEY, existingGameboard.getId()));
+            getLogManager().logEvent(user, request, ADD_BOARD_TO_PROFILE,
+                    ImmutableMap.of(GAMEBOARD_ID_FKEY, existingGameboard.getId()));
 
         } catch (SegueDatabaseException e) {
             log.error("Database error while trying to save gameboard to user link.", e);
