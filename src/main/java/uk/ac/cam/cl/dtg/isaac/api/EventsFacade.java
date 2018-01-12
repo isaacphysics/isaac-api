@@ -497,7 +497,11 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             EventBookingDTO booking = bookingManager.createBookingOrAddToWaitingList(event, bookedUser, additionalInformation);
             this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
-                    Constants.ADMIN_EVENT_BOOKING_CONFIRMED, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId(), USER_ID_FKEY_FIELDNAME, userId));
+                    Constants.ADMIN_EVENT_BOOKING_CREATED,
+                    ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId(),
+                            USER_ID_FKEY_FIELDNAME, userId,
+                            BOOKING_STATUS_FIELDNAME, booking.getBookingStatus().toString(),
+                            ADMIN_BOOKING_REASON_FIELDNAME, additionalInformation.get("authorisation") == null ? "NOT_PROVIDED" : additionalInformation.get("authorisation")));
 
             return Response.ok(booking).build();
         } catch (NoUserLoggedInException e) {
