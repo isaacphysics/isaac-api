@@ -215,13 +215,13 @@ public class SiteStatsStreamsServiceTest {
             testData.put(fields[0], objectMapper.readTree(fields[1]));
         }
 
-        ReadOnlyKeyValueStore<String, JsonNode> store = driver.getKeyValueStore("localstore_user_last_seen");
+        ReadOnlyKeyValueStore<String, JsonNode> store = driver.getKeyValueStore("localstore_user_data");
         KeyValueIterator<String, JsonNode> iter = store.all();
 
         while (iter.hasNext()) {
 
             KeyValue<String, JsonNode> entry = iter.next();
-            Iterator<Map.Entry<String, JsonNode>> innerIter = entry.value.fields();
+            Iterator<Map.Entry<String, JsonNode>> innerIter = entry.value.path("last_seen_data").fields();
 
             assertTrue(testData.containsKey(entry.key));
 
@@ -242,7 +242,7 @@ public class SiteStatsStreamsServiceTest {
 
     @Test
     public void streamsClassVersions_Test() throws Exception {
-        assertClassUnchanged(SiteStatisticsStreamsApplication.class,"01db626fc378e67ca561b9dcd95231a0648473c35dd44b86a7d352e20db0387b");
+        assertClassUnchanged(SiteStatisticsStreamsApplication.class,"393cf2d00c7ef2a1d9d3e454c69b931760acffccea8c5529d185ed9957b6e1da");
     }
 
 
