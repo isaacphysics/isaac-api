@@ -40,6 +40,7 @@ import org.apache.kafka.streams.kstream.KStreamBuilder;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.userAlerts.IAlertListener;
 import uk.ac.cam.cl.dtg.segue.api.userAlerts.UserAlertsWebSocket;
@@ -87,7 +88,6 @@ public class UserStatisticsStreamsApplication {
     private IQuestionAttemptManager questionAttemptManager;
     private UserAccountManager userAccountManager;
     private ILogManager logManager;
-    private String kafkaTopic;
 
 
     private final String streamsAppNameAndVersion = "streamsapp_user_stats-v1.0";
@@ -111,7 +111,6 @@ public class UserStatisticsStreamsApplication {
         this.questionAttemptManager = questionAttemptManager;
         this.userAccountManager = userAccountManager;
         this.logManager = logManager;
-        this.kafkaTopic = globalProperties.getProperty("KAFKA_TOPIC_LOGGED_EVENTS");
 
 
         streamsConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, streamsAppNameAndVersion);
@@ -141,7 +140,7 @@ public class UserStatisticsStreamsApplication {
         // logged events
         List<ConfigEntry> loggedEventsConfigs = Lists.newLinkedList();
         loggedEventsConfigs.add(new ConfigEntry(TopicConfig.RETENTION_MS_CONFIG, String.valueOf(-1)));
-        kafkaTopicManager.ensureTopicExists(kafkaTopic, loggedEventsConfigs);
+        kafkaTopicManager.ensureTopicExists(Constants.KAFKA_TOPIC_LOGGED_EVENTS, loggedEventsConfigs);
 
         // local store changelog topics
         List<ConfigEntry> changelogConfigs = Lists.newLinkedList();
@@ -152,7 +151,7 @@ public class UserStatisticsStreamsApplication {
         final AtomicBoolean wasLagging = new AtomicBoolean(true);
 
         // raw logged events incoming data stream from kafka
-        KStream<String, JsonNode> rawLoggedEvents = builder.stream(StringSerde, JsonSerde, kafkaTopic)
+        KStream<String, JsonNode> rawLoggedEvents = builder.stream(StringSerde, JsonSerde, Constants.KAFKA_TOPIC_LOGGED_EVENTS)
                 .filterNot(
                         (k, v) -> v.path("anonymous_user").asBoolean()
                 ).peek(

@@ -220,7 +220,7 @@ public final class Constants {
     // Kafka Properties
     public static final String KAFKA_HOSTNAME = "KAFKA_HOSTNAME";
     public static final String KAFKA_PORT = "KAFKA_PORT";
-    public static final String KAFKA_TOPIC_LOGGED_EVENTS = "KAFKA_TOPIC_LOGGED_EVENTS";
+    public static final String KAFKA_TOPIC_LOGGED_EVENTS = "topic_logged_events_v1";
 
     // Logging component
     public static final String LOGGING_ENABLED = "LOGGING_ENABLED";

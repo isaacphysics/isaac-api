@@ -190,7 +190,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         // Kafka
         this.bindConstantToProperty(Constants.KAFKA_HOSTNAME, globalProperties);
         this.bindConstantToProperty(Constants.KAFKA_PORT, globalProperties);
-        this.bindConstantToProperty(Constants.KAFKA_TOPIC_LOGGED_EVENTS, globalProperties);
 
         // GitDb
         bind(GitDb.class).toInstance(
@@ -362,7 +361,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                                              @Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled, final LocationManager lhm,
                                              @Named(Constants.KAFKA_HOSTNAME) final String kafkaHost,
                                              @Named(Constants.KAFKA_PORT) final String kafkaPort,
-                                             @Named(Constants.KAFKA_TOPIC_LOGGED_EVENTS) final String kafkaTopic,
                                              final KafkaStreamsProducer kafkaProducer) {
 
         if (null == logManager) {
@@ -373,7 +371,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             //logManager = new PgLogManager(database, objectMapper, loggingEnabled, lhm);
 
             logManager = new PgLogManagerEventListener(new PgLogManager(database, objectMapper, loggingEnabled, lhm));
-            logManager.addListener(new KafkaLoggingManager(kafkaProducer, lhm, objectMapper, kafkaHost, kafkaPort, kafkaTopic, kafkaTopicManager));
+            logManager.addListener(new KafkaLoggingManager(kafkaProducer, lhm, objectMapper, kafkaHost, kafkaPort, kafkaTopicManager));
 
             log.info("Creating singleton of LogManager");
             if (loggingEnabled) {
@@ -699,7 +697,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     private static KafkaStreamsProducer getKafkaProducer(@Named(Constants.KAFKA_HOSTNAME) final String kafkaHost,
                                                          @Named(Constants.KAFKA_PORT) final String kafkaPort,
-                                                         @Named(Constants.KAFKA_TOPIC_LOGGED_EVENTS) final String kafkaTopic,
                                                          final KafkaTopicManager topicManager) {
 
         if (null == kafkaProducer) {
