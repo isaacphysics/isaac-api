@@ -291,7 +291,7 @@ public class UserStatisticsStreamsApplication {
 
                             } catch (Exception e) {
 
-                                if( e instanceof NoUserException) {
+                                if (e instanceof NoUserException) {
                                     log.error("User " + userId + " not found in Postgres DB while processing streams data!");
                                 } else if (e instanceof NumberFormatException) {
                                     log.error("Could not process user with id = " + userId + " in streams application.");
