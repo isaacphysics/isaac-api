@@ -96,7 +96,7 @@ public class UserStatisticsStreamsApplication {
     private List<String> bookTags = ImmutableList.of("phys_book_gcse", "physics_skills_14", "chemistry_16");
 
 
-    private final String streamsAppNameAndVersion = "streamsapp_user_stats-v2.0";
+    private final String streamsAppNameAndVersion = "streamsapp_user_stats-v1.0";
 
 
     /**
@@ -464,66 +464,64 @@ public class UserStatisticsStreamsApplication {
         Long currentActivity = streakRecord.path("current_activity").asLong();
         ((ObjectNode) streakRecord).put("current_activity", currentActivity + 1);
 
-        Long daysSinceStart = TimeUnit.DAYS.convert(latest.getTimeInMillis() - streakStartTimestamp, TimeUnit.MILLISECONDS);
-
         if (streakRecord.path("current_activity").asLong() == streakRecord.path("activity_threshold").asLong()) {
             latest.add(Calendar.DAY_OF_YEAR, 1);
             ((ObjectNode) streakRecord).put("streak_end", latest.getTimeInMillis());
 
+            Long daysSinceStart = TimeUnit.DAYS.convert(latest.getTimeInMillis() - streakStartTimestamp, TimeUnit.MILLISECONDS);
+
             // log when the streak count has been updated
-            Map<String, Object> eventDetails = Maps.newHashMap();
-            eventDetails.put("currentStreak", daysSinceStart);
-            eventDetails.put("threshold", streakRecord.path("activity_threshold").asLong());
-            eventDetails.put("streakType", "correctQuestionPartsPerDay");
+            Map<String, Object> eventDetailsStreakUpdate = Maps.newHashMap();
+            eventDetailsStreakUpdate.put("currentStreak", daysSinceStart);
+            eventDetailsStreakUpdate.put("threshold", streakRecord.path("activity_threshold").asLong());
+            eventDetailsStreakUpdate.put("streakType", "correctQuestionPartsPerDay");
 
-            logManager.logInternalEvent(userAccountManager.getUserDTOById(Long.parseLong(userId)), STREAK_UPDATED, eventDetails);
-        }
+            logManager.logInternalEvent(userAccountManager.getUserDTOById(Long.parseLong(userId)), STREAK_UPDATED, eventDetailsStreakUpdate);
 
+            // 5) Update largest streak count if days since start is greater than the recorded largest streak
+            if (daysSinceStart > streakRecord.path("largest_streak").asLong()) {
+                ((ObjectNode) streakRecord).put("largest_streak", daysSinceStart);
 
-        // 5) Update largest streak count if days since start is greater than the recorded largest streak
-        if (daysSinceStart > streakRecord.path("largest_streak").asLong()) {
-            ((ObjectNode) streakRecord).put("largest_streak", daysSinceStart);
+                // log the new longest streak record
+                Map<String, Object> eventDetailsLongestStreak = Maps.newHashMap();
+                eventDetailsLongestStreak.put("longestStreak", streakRecord.path("largest_streak").asLong());
+                eventDetailsLongestStreak.put("threshold", streakRecord.path("activity_threshold").asLong());
+                eventDetailsLongestStreak.put("streakType", "correctQuestionPartsPerDay");
 
-            // log the new longest streak record
-            Map<String, Object> eventDetails = Maps.newHashMap();
-            eventDetails.put("longestStreak", streakRecord.path("largest_streak").asLong());
-            eventDetails.put("threshold", streakRecord.path("activity_threshold").asLong());
-            eventDetails.put("streakType", "correctQuestionPartsPerDay");
-
-            logManager.logInternalEvent(userAccountManager.getUserDTOById(Long.parseLong(userId)), LONGEST_STREAK_REACHED, eventDetails);
-        }
-
-
-        // 6) At this point we want to notify the user that their streak has increased
-        Map<String, Object> notificationData = Maps.newHashMap();
-        Map<String, Object> streakData = Maps.newHashMap();
-        streakData.put("currentStreak", daysSinceStart);
-        streakData.put("currentActivity", streakRecord.path("current_activity").asInt());
-
-        if (streakRecord.path("current_activity").asLong() == streakRecord.path("activity_threshold").asLong()) {
-            streakData.put("streakIncrease", true);
-        }
-
-        notificationData.put("streakData", streakData);
-
-        try {
-            // notify the user of a streak increase
-            IUserAlert alert = new PgUserAlert(null,
-                    Long.parseLong(userId),
-                    objectMapper.writeValueAsString(notificationData),
-                    "progress",
-                    new Timestamp(System.currentTimeMillis()),
-                    null, null, null);
-
-            if (null != UserAlertsWebSocket.connectedSockets && UserAlertsWebSocket.connectedSockets.containsKey(Long.parseLong(userId))) {
-                for(IAlertListener listener : UserAlertsWebSocket.connectedSockets.get(Long.parseLong(userId))) {
-                    listener.notifyAlert(alert);
-                }
+                logManager.logInternalEvent(userAccountManager.getUserDTOById(Long.parseLong(userId)), LONGEST_STREAK_REACHED, eventDetailsLongestStreak);
             }
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
 
+
+            // 6) At this point we want to notify the user that their streak has increased
+            Map<String, Object> notificationData = Maps.newHashMap();
+            Map<String, Object> streakData = Maps.newHashMap();
+            streakData.put("currentStreak", daysSinceStart);
+            streakData.put("currentActivity", streakRecord.path("current_activity").asInt());
+
+            if (streakRecord.path("current_activity").asLong() == streakRecord.path("activity_threshold").asLong()) {
+                streakData.put("streakIncrease", true);
+            }
+
+            notificationData.put("streakData", streakData);
+
+            try {
+                // notify the user of a streak increase
+                IUserAlert alert = new PgUserAlert(null,
+                        Long.parseLong(userId),
+                        objectMapper.writeValueAsString(notificationData),
+                        "progress",
+                        new Timestamp(System.currentTimeMillis()),
+                        null, null, null);
+
+                if (null != UserAlertsWebSocket.connectedSockets && UserAlertsWebSocket.connectedSockets.containsKey(Long.parseLong(userId))) {
+                    for(IAlertListener listener : UserAlertsWebSocket.connectedSockets.get(Long.parseLong(userId))) {
+                        listener.notifyAlert(alert);
+                    }
+                }
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+        }
         return streakRecord;
     }
 
