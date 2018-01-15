@@ -805,13 +805,12 @@ public class ContentIndexer {
             if (refTarget != null) {
                 for (Content refSrc : incomingReferences.get(refTargetId)) {
                     if (refSrc.getPublished() && !refTarget.getPublished()) {
-                        this.registerContentProblem(refSrc, "Content with id '" + refSrc.getId() + "' is published, "
+                        this.registerContentProblem(refSrc, "Content is published, "
                                 + "but references unpublished content '" + refTargetId + "'.", indexProblemCache);
                     }
                 }
             }
         }
-
 
         log.info(String.format("Validation processing (%s) complete. There are %s files with content problems", sha,
                 indexProblemCache.size()));
