@@ -529,6 +529,25 @@ public class EventBookingManager {
     }
 
     /**
+     * Find out if a user has a booking with any of the given statuses.
+     *
+     * @param eventId       - of interest
+     * @param userId        - of interest.
+     * @param bookingStatuses - the statuses of the booking.
+     * @return true if a waiting list booking exists false if not
+     * @throws SegueDatabaseException - if an error occurs.
+     */
+    public boolean hasBookingWithAnyOfStatuses(final String eventId, final Long userId, final Set<BookingStatus> bookingStatuses)
+            throws SegueDatabaseException {
+        try {
+            EventBookingDTO eb = this.bookingPersistenceManager.getBookingByEventIdAndUserId(eventId, userId);
+            return null != eb && bookingStatuses.contains(eb.getBookingStatus());
+        } catch (ResourceNotFoundException e) {
+            return false;
+        }
+    }
+
+    /**
      * Cancel a booking.
      * <p>
      * Note: cancelled bookings no longer occupy space on an events capacity calculations.
