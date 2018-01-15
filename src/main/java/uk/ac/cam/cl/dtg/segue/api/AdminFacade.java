@@ -1599,25 +1599,29 @@ public class AdminFacade extends AbstractSegueFacade {
                 Map<String, Object> websocketReport = Maps.newHashMap();
                 Map<String, Object> runtimeReport = Maps.newHashMap();
                 Integer numCurrentWebSockets = 0;
+                Integer numCurrentWebSocketUsers = 0;
 
                 // websocket reporting
-                websocketReport.put("numUsersOpenedWebsockets", UserAlertsWebSocket.connectedSockets.size());
-
                 for (ConcurrentLinkedQueue<UserAlertsWebSocket> queue : UserAlertsWebSocket.connectedSockets.values()) {
                     numCurrentWebSockets += queue.size();
+                    if (queue.size() > 0) {
+                        numCurrentWebSocketUsers++;
+                    }
                 }
 
-                websocketReport.put("numWebsocketsOpenedCurrently", numCurrentWebSockets);
-                websocketReport.put("numWebsocketsOpenedOverTime", UserAlertsWebSocket.getWebsocketCounts().get("numWebsocketsOpenedOverTime"));
-                websocketReport.put("numWebsocketsClosedOverTime", UserAlertsWebSocket.getWebsocketCounts().get("numWebsocketsClosedOverTime"));
+                websocketReport.put("currentWebsocketsOpen", numCurrentWebSockets);
+                websocketReport.put("usersCurrent", numCurrentWebSocketUsers);
+                websocketReport.put("usersTotal", UserAlertsWebSocket.connectedSockets.size());
+                websocketReport.put("totalWebsocketsOpened", UserAlertsWebSocket.getWebsocketCounts().get("numWebsocketsOpenedOverTime"));
+                websocketReport.put("totalWebsocketsClosed", UserAlertsWebSocket.getWebsocketCounts().get("numWebsocketsClosedOverTime"));
 
                 diagnosticReport.put("websockets", websocketReport);
 
                 // runtime reporting
-                runtimeReport.put("availableProcessors", Runtime.getRuntime().availableProcessors());
-                runtimeReport.put("freeMemory", Runtime.getRuntime().freeMemory());
-                runtimeReport.put("maxMemory", Runtime.getRuntime().maxMemory());
-                runtimeReport.put("totalMemory", Runtime.getRuntime().totalMemory());
+                runtimeReport.put("processors", Runtime.getRuntime().availableProcessors());
+                runtimeReport.put("memoryFree", Runtime.getRuntime().freeMemory());
+                runtimeReport.put("memoryMax", Runtime.getRuntime().maxMemory());
+                runtimeReport.put("memoryTotal", Runtime.getRuntime().totalMemory());
                 runtimeReport.put("threadCount", Thread.activeCount());
 
                 diagnosticReport.put("runtime", runtimeReport);
