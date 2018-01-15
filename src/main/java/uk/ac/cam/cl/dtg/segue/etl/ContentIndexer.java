@@ -92,13 +92,14 @@ public class ContentIndexer {
             Map<String, Content> contentCache = new HashMap<>();
             Set<String> tagsList = new HashSet<>();
             Map<String, String> allUnits = new HashMap<>();
+            Map<String, String> publishedUnits = new HashMap<>();
             Map<Content, List<String>> indexProblemCache = new HashMap<>();
 
-            buildGitContentIndex(version, true, contentCache, tagsList, allUnits, indexProblemCache);
+            buildGitContentIndex(version, true, contentCache, tagsList, allUnits, publishedUnits, indexProblemCache);
 
             checkForContentErrors(version, contentCache, indexProblemCache);
 
-            buildElasticSearchIndex(version, contentCache, tagsList, allUnits, indexProblemCache);
+            buildElasticSearchIndex(version, contentCache, tagsList, allUnits, publishedUnits, indexProblemCache);
 
             // Verify the version requested is now available
             if (!es.hasIndex(version)) {
@@ -135,6 +136,7 @@ public class ContentIndexer {
                                                    Map<String, Content> contentCache,
                                                    Set<String> tagsList,
                                                    Map<String, String> allUnits,
+                                                   Map<String, String> publishedUnits,
                                                    Map<Content, List<String>> indexProblemCache)
             throws ContentManagerException {
 
@@ -217,7 +219,7 @@ public class ContentIndexer {
                                 // units from its answers.
 
                                 if (flattenedContent instanceof IsaacNumericQuestion) {
-                                    registerUnits((IsaacNumericQuestion) flattenedContent, allUnits);
+                                    registerUnits((IsaacNumericQuestion) flattenedContent, allUnits, publishedUnits);
                                 }
 
                                 continue; // our work here is done
@@ -491,7 +493,7 @@ public class ContentIndexer {
      * @param q
      *            - numeric question from which to extract units.
      */
-    private synchronized void registerUnits(final IsaacNumericQuestion q, Map<String, String> allUnits) {
+    private synchronized void registerUnits(final IsaacNumericQuestion q, Map<String, String> allUnits, Map<String, String> publishedUnits) {
 
         HashMap<String, String> newUnits = Maps.newHashMap();
 
@@ -516,6 +518,9 @@ public class ContentIndexer {
         }
 
         allUnits.putAll(newUnits);
+        if (q.getPublished()) {
+            publishedUnits.putAll(newUnits);
+        }
     }
 
 
@@ -533,6 +538,7 @@ public class ContentIndexer {
                                                       final Map<String, Content> gitCache,
                                                       Set<String> tagsList,
                                                       Map<String, String> allUnits,
+                                                      Map<String, String> publishedUnits,
                                                       Map<Content, List<String>> indexProblemCache) {
         if (es.hasIndex(sha)) {
             log.info("Deleting existing index for version " + sha);
@@ -564,6 +570,9 @@ public class ContentIndexer {
             // TODO: Should probably bulk index these
             for (String k : allUnits.keySet()) {
                 es.indexObject(sha, "unit", objectMapper.writeValueAsString(ImmutableMap.of("cleanKey", k, "unit", allUnits.get(k))));
+            }
+            for (String k : publishedUnits.keySet()) {
+                es.indexObject(sha, "publishedUnit", objectMapper.writeValueAsString(ImmutableMap.of("cleanKey", k, "unit", publishedUnits.get(k))));
             }
 
             for (Content c: indexProblemCache.keySet()) {

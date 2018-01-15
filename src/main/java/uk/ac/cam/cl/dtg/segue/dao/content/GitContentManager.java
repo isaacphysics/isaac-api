@@ -424,7 +424,11 @@ public class GitContentManager implements IContentManager {
     public final Collection<String> getAllUnits(final String version) throws ContentManagerException {
         Validate.notBlank(version);
 
-        SearchResponse r =  searchProvider.getAllByType(globalProperties.getProperty(Constants.CONTENT_INDEX), "unit");
+        String unitType = "unit";
+        if (globalProperties.getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(Constants.EnvironmentType.PROD.name())) {
+            unitType = "publishedUnit";
+        }
+        SearchResponse r =  searchProvider.getAllByType(globalProperties.getProperty(Constants.CONTENT_INDEX), unitType);
         SearchHits hits = r.getHits();
         ArrayList<String> units = new ArrayList<>((int) hits.getTotalHits());
         for (SearchHit hit : hits) {
