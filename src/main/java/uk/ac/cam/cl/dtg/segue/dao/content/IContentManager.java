@@ -56,6 +56,7 @@ public interface IContentManager {
      *             - if there is an error retrieving the content requested.
      */
     Content getContentDOById(String version, String id) throws ContentManagerException;
+    Content getContentDOById(String version, String id, boolean failQuietly) throws ContentManagerException;
 
     /**
      * Goes to the configured Database and attempts to find a content item with the specified ID. This returns the
@@ -71,6 +72,7 @@ public interface IContentManager {
      *             - if there is an error retrieving the content requested.
      */
     ContentDTO getContentById(String version, String id) throws ContentManagerException;
+    ContentDTO getContentById(String version, String id, boolean failQuietly) throws ContentManagerException;
 
     /**
      * GetByIdPrefix Returns results that match a given id prefix for a specified version number.
