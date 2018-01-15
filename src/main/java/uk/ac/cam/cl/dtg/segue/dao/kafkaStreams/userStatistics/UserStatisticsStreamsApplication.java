@@ -289,12 +289,15 @@ public class UserStatisticsStreamsApplication {
                                     }
                                 }
 
-                            } catch (SegueDatabaseException e) {
-                                e.printStackTrace();
-                            } catch (NoUserException e) {
-                                log.error("User " + userId + " not found in Postgres DB while processing streams data!");
-                            } catch (NumberFormatException e) {
-                                log.error("Could not process user with id = " + userId + " in streams application.");
+                            } catch (Exception e) {
+
+                                if( e instanceof NoUserException) {
+                                    log.error("User " + userId + " not found in Postgres DB while processing streams data!");
+                                } else if (e instanceof NumberFormatException) {
+                                    log.error("Could not process user with id = " + userId + " in streams application.");
+                                } else {
+                                    e.printStackTrace();
+                                }
                             }
 
                             return userSnapshot;
