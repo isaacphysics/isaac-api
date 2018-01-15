@@ -127,9 +127,14 @@ public class GitContentManager implements IContentManager {
 
     @Override
     public final ContentDTO getContentById(final String version, final String id) throws ContentManagerException {
+        return getContentById(version, id, false);
+    }
+
+    @Override
+    public final ContentDTO getContentById(final String version, final String id, boolean failQuietly) throws ContentManagerException {
         String k = "getContentById~" + version + "~" + id;
         if (!cache.asMap().containsKey(k)) {
-            ContentDTO c = this.mapper.getDTOByDO(this.getContentDOById(version, id));
+            ContentDTO c = this.mapper.getDTOByDO(this.getContentDOById(version, id, failQuietly));
             if (c != null) {
                 cache.put(k, c);
             }
@@ -140,6 +145,11 @@ public class GitContentManager implements IContentManager {
 
     @Override
     public final Content getContentDOById(final String version, final String id) throws ContentManagerException {
+        return getContentDOById(version, id, false);
+    }
+
+    @Override
+    public final Content getContentDOById(final String version, final String id, boolean failQuietly) throws ContentManagerException {
         if (null == id || id.equals("")) {
             return null;
         }
@@ -153,8 +163,10 @@ public class GitContentManager implements IContentManager {
                     this.getUnpublishedFilter()).getResults());
 
             if (null == searchResults || searchResults.isEmpty()) {
-                log.error("Failed to locate the content (" + id + ") in the cache for version "
-                        + getCurrentContentSHA() + " (" + version + ")");
+                if (!failQuietly) {
+                    log.error("Failed to locate the content (" + id + ") in the cache for version "
+                            + getCurrentContentSHA() + " (" + version + ")");
+                }
                 return null;
             }
 

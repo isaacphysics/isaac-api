@@ -458,6 +458,7 @@ public class ContentIndexer {
             indexProblemCache.put(c, new ArrayList<String>());
         }
 
+        log.debug(message);
         indexProblemCache.get(c).add(message);//.replace("_", "\\_"));
     }
 
@@ -606,9 +607,8 @@ public class ContentIndexer {
 
         Set<Content> allObjectsSeen = new HashSet<>();
         Set<String> expectedIds = new HashSet<>();
-        Set<String> definedIds = new HashSet<>();
-        Set<String> missingContent = new HashSet<>();
-        Map<String, Content> whoAmI = new HashMap<>();
+        Map<String, Content> contentById = new HashMap<>();
+        Map<String, Set<Content>> incomingReferences = new HashMap<>(); // my id -> set of who references me
 
         // Build up a set of all content (and content fragments for validation)
         for (Content c : gitCache.values()) {
@@ -619,7 +619,7 @@ public class ContentIndexer {
         for (Content c : allObjectsSeen) {
             // add the id to the list of defined ids
             if (c.getId() != null) {
-                definedIds.add(c.getId());
+                contentById.put(c.getId(), c);
             }
 
             // add the ids to the list of expected ids
@@ -627,7 +627,10 @@ public class ContentIndexer {
                 expectedIds.addAll(c.getRelatedContent());
                 // record which content object was referencing which ID
                 for (String id : c.getRelatedContent()) {
-                    whoAmI.put(id, c);
+                    if (!incomingReferences.containsKey(id)) {
+                        incomingReferences.put(id, new HashSet<>());
+                    }
+                    incomingReferences.get(id).add(c);
                 }
             }
 
@@ -780,22 +783,36 @@ public class ContentIndexer {
             }
         }
 
-        if (expectedIds.equals(definedIds) && missingContent.isEmpty()) {
-            return true;
-        } else {
-            expectedIds.removeAll(definedIds);
-            missingContent.addAll(expectedIds);
+        // Find all references to missing content.
+        Set<String> missingContent = new HashSet<>(expectedIds);
+        missingContent.removeAll(contentById.keySet());
 
-            for (String id : missingContent) {
-                this.registerContentProblem(whoAmI.get(id), "This id (" + id + ") was referenced by "
-                        + whoAmI.get(id).getCanonicalSourceFile() + " but the content with that "
+        for (String id : missingContent) {
+            for (Content src : incomingReferences.get(id)) {
+                this.registerContentProblem(src, "The id '" + id + "' was referenced by "
+                        + src.getCanonicalSourceFile() + " but the content with that "
                         + "ID cannot be found.", indexProblemCache);
             }
-            if (missingContent.size() > 0) {
-                log.debug("Referential integrity broken for (" + missingContent.size() + ") related Content items. "
-                        + "The following ids are referenced but do not exist: " + expectedIds.toString());
+        }
+        if (missingContent.size() > 0) {
+            log.debug("Referential integrity broken for (" + missingContent.size() + ") related Content items. "
+                    + "The following ids are referenced but do not exist: " + expectedIds.toString());
+        }
+
+        // Find all references from published content to unpublished content.
+        for (String refTargetId : incomingReferences.keySet()) {
+            Content refTarget = contentById.get(refTargetId);
+            if (refTarget != null) {
+                for (Content refSrc : incomingReferences.get(refTargetId)) {
+                    if (refSrc.getPublished() && !refTarget.getPublished()) {
+                        this.registerContentProblem(refSrc, "Content with id '" + refSrc.getId() + "' is published, "
+                                + "but references unpublished content '" + refTargetId + "'.", indexProblemCache);
+                    }
+                }
             }
         }
+
+
         log.info(String.format("Validation processing (%s) complete. There are %s files with content problems", sha,
                 indexProblemCache.size()));
 
