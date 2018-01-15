@@ -68,6 +68,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.LONGEST_STREAK_REACHED;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.STREAK_UPDATED;
 
 /**
  * Concrete Kafka streams processing application for generating user statistics
@@ -95,7 +96,7 @@ public class UserStatisticsStreamsApplication {
     private List<String> bookTags = ImmutableList.of("phys_book_gcse", "physics_skills_14", "chemistry_16");
 
 
-    private final String streamsAppNameAndVersion = "streamsapp_user_stats-v1.0";
+    private final String streamsAppNameAndVersion = "streamsapp_user_stats-v2.0";
 
 
     /**
@@ -228,6 +229,7 @@ public class UserStatisticsStreamsApplication {
 
                                 RegisteredUserDTO regUser = userAccountManager.getUserDTOById(Long.parseLong(userId));
 
+                                // see if we need to augment the user record
                                 if (!regUser.getRole().equals(Role.STUDENT)) {
 
                                     // first, lets see if we need to augment the user snapshot with teacher information
@@ -263,31 +265,19 @@ public class UserStatisticsStreamsApplication {
                                     }
                                 }
 
-                            } catch (SegueDatabaseException e) {
-                                e.printStackTrace();
-                            } catch (NoUserException e) {
-                                log.error("User " + userId + " not found in Postgres DB while processing streams data!");
-                            } catch (NumberFormatException e) {
-                                log.error("Could not process user with id = " + userId + " in streams application.");
-                            }
+                                // snapshot updates pertaining to question answer activity
+                                if (latestEvent.path("event_type").asText().equals("ANSWER_QUESTION")) {
 
-
-
-                            // snapshot updates pertaining to question answer activity
-                            if (latestEvent.path("event_type").asText().equals("ANSWER_QUESTION")) {
-
-                                if (latestEvent.path("event_details").path("correct").asBoolean()) {
-                                    ((ObjectNode) userSnapshot).set("streak_record", updateStreakRecord(userId, latestEvent, userSnapshot.path("streak_record")));
+                                    if (latestEvent.path("event_details").path("correct").asBoolean()) {
+                                        ((ObjectNode) userSnapshot).set("streak_record", updateStreakRecord(userId, latestEvent, userSnapshot.path("streak_record")));
+                                    }
                                 }
-                            }
 
+                                // snapshot updates pertaining to gameboard creation activity
+                                if (latestEvent.path("event_type").asText().equals("CREATE_GAMEBOARD")) {
 
-                            // snapshot updates pertaining to gameboard creation activity
-                            if (latestEvent.path("event_type").asText().equals("CREATE_GAMEBOARD")) {
+                                    String gameboardId = latestEvent.path("event_details").path("gameboardId").asText();
 
-                                String gameboardId = latestEvent.path("event_details").path("gameboardId").asText();
-
-                                try {
                                     GameboardDTO gameboard = gameManager.getGameboard(gameboardId);
 
                                     JsonNode gameboardCreationNode = userSnapshot.path("gameboard_record").path("creations");
@@ -297,10 +287,14 @@ public class UserStatisticsStreamsApplication {
                                     } else if (gameboard.getCreationMethod().equals(GameboardCreationMethod.FILTER)) {
                                         ((ObjectNode) gameboardCreationNode).put("filter", updateActivityCount("filter", gameboardCreationNode));
                                     }
-
-                                } catch (SegueDatabaseException e) {
-                                    e.printStackTrace();
                                 }
+
+                            } catch (SegueDatabaseException e) {
+                                e.printStackTrace();
+                            } catch (NoUserException e) {
+                                log.error("User " + userId + " not found in Postgres DB while processing streams data!");
+                            } catch (NumberFormatException e) {
+                                log.error("Could not process user with id = " + userId + " in streams application.");
                             }
 
                             return userSnapshot;
@@ -391,7 +385,7 @@ public class UserStatisticsStreamsApplication {
      * @param streakRecord the current snapshot of the streak record
      * @return the new updated streak record
      */
-    private JsonNode updateStreakRecord(String userId, JsonNode latestEvent, JsonNode streakRecord) {
+    private JsonNode updateStreakRecord(String userId, JsonNode latestEvent, JsonNode streakRecord) throws NoUserException, SegueDatabaseException {
 
         // timestamp of streak start
         Long streakStartTimestamp = streakRecord.path("streak_start").asLong();
@@ -417,7 +411,6 @@ public class UserStatisticsStreamsApplication {
             } else {
                 ((ObjectNode) streakRecord).put("current_activity", 0);
             }
-
         }
 
 
@@ -428,36 +421,31 @@ public class UserStatisticsStreamsApplication {
         user.add(Long.parseLong(userId));
         questionPageId.add(questionId.split("\\|")[0]);
 
-        try {
-            Map<Long, Map<String, Map<String, List<QuestionValidationResponse>>>> questionAttempts =
-                    questionAttemptManager.getQuestionAttemptsByUsersAndQuestionPrefix(user, questionPageId);
+        Map<Long, Map<String, Map<String, List<QuestionValidationResponse>>>> questionAttempts =
+                questionAttemptManager.getQuestionAttemptsByUsersAndQuestionPrefix(user, questionPageId);
 
-            // the following assumes that question attempts are always recorded in the question attempt table before they are logged as an event
-            if (!questionAttempts.get(Long.parseLong(userId)).isEmpty()
-                    && questionAttempts.get(Long.parseLong(userId)).containsKey(questionId.split("\\|")[0])
-                    && questionAttempts.get(Long.parseLong(userId)).get(questionId.split("\\|")[0]).containsKey(questionId)) {
+        // the following assumes that question attempts are always recorded in the question attempt table before they are logged as an event
+        if (!questionAttempts.get(Long.parseLong(userId)).isEmpty()
+                && questionAttempts.get(Long.parseLong(userId)).containsKey(questionId.split("\\|")[0])
+                && questionAttempts.get(Long.parseLong(userId)).get(questionId.split("\\|")[0]).containsKey(questionId)) {
 
-                Integer correctCount = 0;
-                for (QuestionValidationResponse response: questionAttempts.get(Long.parseLong(userId))
-                        .get(questionId.split("\\|")[0])
-                        .get(questionId)
-                        ) {
+            Integer correctCount = 0;
+            for (QuestionValidationResponse response: questionAttempts.get(Long.parseLong(userId))
+                    .get(questionId.split("\\|")[0])
+                    .get(questionId)
+                    ) {
 
-                    // count all the times the user has correctly attempted the question
-                    if (response.isCorrect()) {
-                        correctCount++;
-                    }
-                }
-
-                // if the correct count is 1 then the recorded attempt corresponds to the current event
-                // otherwise the user has attempted it correctly before, therefore we don't continue
-                if (correctCount > 1) {
-                    return streakRecord;
+                // count all the times the user has correctly attempted the question
+                if (response.isCorrect()) {
+                    correctCount++;
                 }
             }
 
-        } catch (SegueDatabaseException e) {
-            e.printStackTrace();
+            // if the correct count is 1 then the recorded attempt corresponds to the current event
+            // otherwise the user has attempted it correctly before, therefore we don't continue
+            if (correctCount > 1) {
+                return streakRecord;
+            }
         }
 
 
@@ -476,15 +464,23 @@ public class UserStatisticsStreamsApplication {
         Long currentActivity = streakRecord.path("current_activity").asLong();
         ((ObjectNode) streakRecord).put("current_activity", currentActivity + 1);
 
+        Long daysSinceStart = TimeUnit.DAYS.convert(latest.getTimeInMillis() - streakStartTimestamp, TimeUnit.MILLISECONDS);
+
         if (streakRecord.path("current_activity").asLong() == streakRecord.path("activity_threshold").asLong()) {
             latest.add(Calendar.DAY_OF_YEAR, 1);
             ((ObjectNode) streakRecord).put("streak_end", latest.getTimeInMillis());
+
+            // log when the streak count has been updated
+            Map<String, Object> eventDetails = Maps.newHashMap();
+            eventDetails.put("currentStreak", daysSinceStart);
+            eventDetails.put("threshold", streakRecord.path("activity_threshold").asLong());
+            eventDetails.put("streakType", "correctQuestionPartsPerDay");
+
+            logManager.logInternalEvent(userAccountManager.getUserDTOById(Long.parseLong(userId)), STREAK_UPDATED, eventDetails);
         }
 
 
         // 5) Update largest streak count if days since start is greater than the recorded largest streak
-        Long daysSinceStart = TimeUnit.DAYS.convert(latest.getTimeInMillis() - streakStartTimestamp, TimeUnit.MILLISECONDS);
-
         if (daysSinceStart > streakRecord.path("largest_streak").asLong()) {
             ((ObjectNode) streakRecord).put("largest_streak", daysSinceStart);
 
@@ -494,11 +490,7 @@ public class UserStatisticsStreamsApplication {
             eventDetails.put("threshold", streakRecord.path("activity_threshold").asLong());
             eventDetails.put("streakType", "correctQuestionPartsPerDay");
 
-            try {
-                logManager.logInternalEvent(userAccountManager.getUserDTOById(Long.parseLong(userId)), LONGEST_STREAK_REACHED, eventDetails);
-            } catch (NoUserException | SegueDatabaseException e) {
-                e.printStackTrace();
-            }
+            logManager.logInternalEvent(userAccountManager.getUserDTOById(Long.parseLong(userId)), LONGEST_STREAK_REACHED, eventDetails);
         }
 
 
@@ -579,8 +571,4 @@ public class UserStatisticsStreamsApplication {
 
         return calendar;
     }
-
-
-
-
 }
