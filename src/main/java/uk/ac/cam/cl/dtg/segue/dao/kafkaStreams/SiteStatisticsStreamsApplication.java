@@ -76,6 +76,7 @@ public class SiteStatisticsStreamsApplication {
     private KafkaStreams streams;
     private KStreamBuilder builder = new KStreamBuilder();
     private Properties streamsConfiguration = new Properties();
+    private Long streamAppStartTime = System.currentTimeMillis();
 
     private final String streamsAppNameAndVersion = "streamsapp_site_stats-v1.44";
 
