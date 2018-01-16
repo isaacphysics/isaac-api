@@ -241,11 +241,16 @@ public class SiteStatisticsStreamsApplication {
                                 } catch (SegueDatabaseException e) {
                                     e.printStackTrace();
                                 } catch (NoUserException e) {
-                                    log.error("User " + userId + " not found in Postgres DB while processing streams data!");
+                                    // don't want to clog up the logs with historical processing if we are ever doing a backfill
+                                    if (userUpdateLogEvent.path("timestamp").asLong() > streamAppStartTime) {
+                                        log.error("User " + userId + " not found in Postgres DB while processing streams data!");
+                                    }
                                     // returning a null record will ensure that it will be removed from the internal rocksDB store
                                     return null;
                                 } catch (NumberFormatException e) {
-                                    log.error("Could not process user with id = " + userId + " in streams application.");
+                                    if (userUpdateLogEvent.path("timestamp").asLong() > streamAppStartTime) {
+                                        log.error("Could not process user with id = " + userId + " in streams application.");
+                                    }
                                     return null;
                                 }
                             }
