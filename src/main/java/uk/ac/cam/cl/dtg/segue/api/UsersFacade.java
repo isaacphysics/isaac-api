@@ -875,7 +875,7 @@ public class UsersFacade extends AbstractSegueFacade {
                 List<String> acceptedPreferenceNames = Arrays.asList(acceptedPreferenceNamesProperty.split(","));
                 for (String preferenceName : userPreferenceObject.get(preferenceType).keySet()) {
                     if (!acceptedPreferenceNames.contains(preferenceName)) {
-                        log.warn("Invalid email preference name '" + preferenceName + "' provided for '" + preferenceType + "'! Skipping.");
+                        log.warn("Invalid user preference name '" + preferenceName + "' provided for type '" + preferenceType + "'! Skipping.");
                         continue;
                     }
                     boolean preferenceValue = userPreferenceObject.get(preferenceType).get(preferenceName);
