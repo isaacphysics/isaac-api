@@ -78,7 +78,8 @@ public class SiteStatisticsStreamsApplication {
     private Properties streamsConfiguration = new Properties();
     private Long streamAppStartTime = System.currentTimeMillis();
 
-    private final String streamsAppNameAndVersion = "streamsapp_site_stats-v1.44";
+    private final String streamsAppName = "streamsapp_site_stats";
+    private final String streamsAppVersion = "v1.45";
 
 
     /**
@@ -95,7 +96,7 @@ public class SiteStatisticsStreamsApplication {
         this.kafkaTopicManager = kafkaTopicManager;
         this.userAccountManager = userAccountManager;
 
-        streamsConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, streamsAppNameAndVersion);
+        streamsConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, streamsAppName + "-" + streamsAppVersion);
         streamsConfiguration.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG,
                 globalProperties.getProperty("KAFKA_HOSTNAME") + ":" + globalProperties.getProperty("KAFKA_PORT"));
         streamsConfiguration.put(StreamsConfig.STATE_DIR_CONFIG, globalProperties.getProperty("KAFKA_STREAMS_STATE_DIR"));
@@ -128,8 +129,8 @@ public class SiteStatisticsStreamsApplication {
         List<ConfigEntry> changelogConfigs = Lists.newLinkedList();
         changelogConfigs.add(new ConfigEntry(TopicConfig.CLEANUP_POLICY_CONFIG, TopicConfig.CLEANUP_POLICY_COMPACT));
 
-        kafkaTopicManager.ensureTopicExists(streamsAppNameAndVersion + "-localstore_user_data-changelog", changelogConfigs);
-        kafkaTopicManager.ensureTopicExists(streamsAppNameAndVersion + "-localstore_log_event_counts-changelog", changelogConfigs);
+        kafkaTopicManager.ensureTopicExists(streamsAppName + "-" + streamsAppVersion + "-localstore_user_data-changelog", changelogConfigs);
+        kafkaTopicManager.ensureTopicExists(streamsAppName + "-" + streamsAppVersion + "-localstore_log_event_counts-changelog", changelogConfigs);
 
         final AtomicLong lastLagLog = new AtomicLong(0);
         final AtomicBoolean wasLagging = new AtomicBoolean(true);
@@ -161,8 +162,10 @@ public class SiteStatisticsStreamsApplication {
         // need to make state stores queryable globally, as we often have 2 versions of API running concurrently, hence 2 streams app instances
         // aggregations are saved to a local state store per streams app instance and update a changelog topic in Kafka
         // we can use this changelog to populate a global state store for all streams app instances
-        builder.globalTable(StringSerde, JsonSerde,streamsAppNameAndVersion + "-localstore_user_data-changelog", "globalstore_user_data");
-        builder.globalTable(StringSerde, LongSerde,streamsAppNameAndVersion + "-localstore_log_event_counts-changelog", "globalstore_log_event_counts");
+        builder.globalTable(StringSerde, JsonSerde,streamsAppName + "-" + streamsAppVersion + "-localstore_user_data-changelog",
+                "globalstore_user_data-" + streamsAppVersion);
+        builder.globalTable(StringSerde, LongSerde,streamsAppName + "-" + streamsAppVersion + "-localstore_log_event_counts-changelog",
+                "globalstore_log_event_counts-" + streamsAppVersion);
 
         // use the builder and the streams configuration we set to setup and start a streams object
         streams = new KafkaStreams(builder, streamsConfiguration);
@@ -321,7 +324,7 @@ public class SiteStatisticsStreamsApplication {
     public Long getLogCountByType(String logEventType) throws InvalidStateStoreException {
 
         Long count = streams
-                .store("globalstore_log_event_counts",
+                .store("globalstore_log_event_counts-" + streamsAppVersion,
                         QueryableStoreTypes.<String, Long>keyValueStore())
                 .get(logEventType);
 
@@ -367,7 +370,7 @@ public class SiteStatisticsStreamsApplication {
     public KeyValueIterator<String, JsonNode> getAllUsers() throws InvalidStateStoreException {
 
         return streams
-                .store("globalstore_user_data",
+                .store("globalstore_user_data-" + streamsAppVersion,
                         QueryableStoreTypes.<String, JsonNode>keyValueStore())
                 .all();
     }
