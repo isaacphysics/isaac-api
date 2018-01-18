@@ -34,6 +34,12 @@ import org.apache.kafka.test.ProcessorTopologyTestDriver;
 import org.junit.Before;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import uk.ac.cam.cl.dtg.segue.api.managers.IUserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
+import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
+import uk.ac.cam.cl.dtg.segue.dos.users.Role;
+import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.ClassVersionHash;
 
 
@@ -42,11 +48,15 @@ import java.io.File;
 import java.io.FileReader;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 
+import static org.easymock.EasyMock.createMock;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -67,6 +77,8 @@ public class SiteStatsStreamsServiceTest {
     private final Serde<String> StringSerde = Serdes.String();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    private IUserAccountManager dummyUserDb;
+
 
     /**
      * Initial configuration of tests.
@@ -74,8 +86,11 @@ public class SiteStatsStreamsServiceTest {
      * @throws Exception
      *             - test exception
      */
-    /*@Before
+    @Before
     public final void setUp() throws Exception {
+
+        this.dummyUserDb = createMock(IUserAccountManager.class);
+
         KStreamBuilder builder = new KStreamBuilder();
         Properties streamsConfiguration = new Properties();
 
@@ -97,9 +112,26 @@ public class SiteStatsStreamsServiceTest {
         // parallel log for anonymous events (may want to optimise how we do this later)
         rawLoggedEvents[1].to(StringSerde, JsonSerde, "topic_anonymous_logged_events");
 
+        // initialise the mock DB for the user data
+        Long testUser1Id = 1L;
+        Long testUser2Id = 2L;
+        RegisteredUserDTO testUser1 = new RegisteredUserDTO("TestingOne", "Test1", null,
+                null, new Date(), Gender.MALE, new Date(),"");
+        testUser1.setId(testUser1Id);
+        testUser1.setRole(Role.STUDENT);
+        RegisteredUserDTO testUser2 = new RegisteredUserDTO("TestingTwo", "Test2", null,
+                null, new Date(), Gender.FEMALE, new Date(),"");
+        testUser2.setId(testUser2Id);
+        testUser2.setRole(Role.TEACHER);
+
+        expect(dummyUserDb.getUserDTOById(testUser1Id)).andReturn(testUser1);
+        expect(dummyUserDb.getUserDTOById(testUser2Id)).andReturn(testUser2);
+        expect(dummyUserDb.getUserDTOById(testUser2Id)).andReturn(testUser2);
+        replay(dummyUserDb);
+
 
         // SITE STATISTICS
-        //SiteStatisticsStreamsApplication.streamProcess(rawLoggedEvents[0]);
+        SiteStatisticsStreamsApplication.streamProcess(rawLoggedEvents[0], dummyUserDb);
 
         driver = new ProcessorTopologyTestDriver(config, builder);
 
@@ -126,8 +158,6 @@ public class SiteStatsStreamsServiceTest {
                     objectMapper.writeValueAsString(kafkaLogRecord).getBytes());
         }
     }
-
-
 
 
     @Test
@@ -172,7 +202,6 @@ public class SiteStatsStreamsServiceTest {
                     && (testData.get(entry.key).get("role").toString().equals(entry.value.path("user_data").path("role").asText()))
             );
         }
-
     }
 
 
@@ -237,12 +266,12 @@ public class SiteStatsStreamsServiceTest {
             }
         }
 
-    }*/
+    }
 
 
     @Test
     public void streamsClassVersions_Test() throws Exception {
-        assertClassUnchanged(SiteStatisticsStreamsApplication.class,"393cf2d00c7ef2a1d9d3e454c69b931760acffccea8c5529d185ed9957b6e1da");
+        assertClassUnchanged(SiteStatisticsStreamsApplication.class,"bb385eaf6cf51dcf9589ebe725c0e3d36f13e8e33af05d05394325af9f014a11");
     }
 
 

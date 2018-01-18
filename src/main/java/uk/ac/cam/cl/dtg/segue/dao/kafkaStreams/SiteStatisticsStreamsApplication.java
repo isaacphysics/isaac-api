@@ -42,6 +42,7 @@ import org.apache.kafka.streams.state.KeyValueIterator;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.segue.api.managers.IUserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -155,7 +156,7 @@ public class SiteStatisticsStreamsApplication {
                 );
 
         // process raw logged events
-        streamProcess(rawLoggedEvents);
+        streamProcess(rawLoggedEvents, userAccountManager);
 
         // need to make state stores queryable globally, as we often have 2 versions of API running concurrently, hence 2 streams app instances
         // aggregations are saved to a local state store per streams app instance and update a changelog topic in Kafka
@@ -185,7 +186,8 @@ public class SiteStatisticsStreamsApplication {
      * @param rawStream
      *          - the input stream
      */
-    public void streamProcess(KStream<String, JsonNode> rawStream) {
+    public static void streamProcess(KStream<String, JsonNode> rawStream,
+                                     IUserAccountManager userAccountManager) {
 
         // map the key-value pair to one where the key is always the user id
         KStream<String, JsonNode> mappedStream = rawStream
@@ -293,7 +295,7 @@ public class SiteStatisticsStreamsApplication {
 
 
         // maintain internal store of log event type counts
-        userEvents
+        rawStream
                 .map(
                         (k, v) -> {
                             return new KeyValue<String, JsonNode>(v.path("event_type").asText(), v);
