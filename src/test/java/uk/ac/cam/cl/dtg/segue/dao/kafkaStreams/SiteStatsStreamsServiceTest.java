@@ -77,8 +77,6 @@ public class SiteStatsStreamsServiceTest {
     private final Serde<String> StringSerde = Serdes.String();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private IUserAccountManager dummyUserDb;
-
 
     /**
      * Initial configuration of tests.
@@ -89,7 +87,7 @@ public class SiteStatsStreamsServiceTest {
     @Before
     public final void setUp() throws Exception {
 
-        this.dummyUserDb = createMock(IUserAccountManager.class);
+        IUserAccountManager dummyUserDb = createMock(IUserAccountManager.class);
 
         KStreamBuilder builder = new KStreamBuilder();
         Properties streamsConfiguration = new Properties();
@@ -120,13 +118,18 @@ public class SiteStatsStreamsServiceTest {
         testUser1.setId(testUser1Id);
         testUser1.setRole(Role.STUDENT);
         RegisteredUserDTO testUser2 = new RegisteredUserDTO("TestingTwo", "Test2", null,
-                null, new Date(), Gender.FEMALE, new Date(),"");
+                null, new Date(), Gender.MALE, new Date(),"");
         testUser2.setId(testUser2Id);
-        testUser2.setRole(Role.TEACHER);
+        testUser2.setRole(Role.STUDENT);
+
+        RegisteredUserDTO testUser2change = new RegisteredUserDTO("TestingTwoChange", "Test2", null,
+                null, new Date(), Gender.FEMALE, new Date(),"");
+        testUser2change.setId(testUser2Id);
+        testUser2change.setRole(Role.TEACHER);
 
         expect(dummyUserDb.getUserDTOById(testUser1Id)).andReturn(testUser1);
         expect(dummyUserDb.getUserDTOById(testUser2Id)).andReturn(testUser2);
-        expect(dummyUserDb.getUserDTOById(testUser2Id)).andReturn(testUser2);
+        expect(dummyUserDb.getUserDTOById(testUser2Id)).andReturn(testUser2change);
         replay(dummyUserDb);
 
 
@@ -173,16 +176,12 @@ public class SiteStatsStreamsServiceTest {
 
             Map<String, Object> userRecord = new ImmutableMap.Builder<String, Object>()
                     .put("user_id", fields[0])
-                    //.put("family_name", fields[1])
-                    //.put("given_name", fields[2])
+                    .put("family_name", fields[1])
+                    .put("given_name", fields[2])
                     .put("role", fields[3])
-                    //.put("date_of_birth", fields[4])
                     .put("gender", fields[5])
-                    //.put("registration_date", fields[6])
                     .put("school_id", fields[7])
                     .put("school_other", fields[8])
-                    //.put("default_level", fields[9])
-                    //.put("email_verification_status", fields[10])
                     .build();
 
             testData.put(fields[0], userRecord);
@@ -196,14 +195,13 @@ public class SiteStatsStreamsServiceTest {
             KeyValue<String, JsonNode> entry = iter.next();
 
             assertTrue(testData.containsKey(entry.key)
-                    //&& (testData.get(entry.key).get("family_name").toString().equals(entry.value.path("user_data").path("family_name").asText()))
-                    //&& (testData.get(entry.key).get("given_name").toString().equals(entry.value.path("user_data").path("given_name").asText()))
+                    && (testData.get(entry.key).get("family_name").toString().equals(entry.value.path("user_data").path("family_name").asText()))
+                    && (testData.get(entry.key).get("given_name").toString().equals(entry.value.path("user_data").path("given_name").asText()))
                     && (testData.get(entry.key).get("gender").toString().equals(entry.value.path("user_data").path("gender").asText()))
                     && (testData.get(entry.key).get("role").toString().equals(entry.value.path("user_data").path("role").asText()))
             );
         }
     }
-
 
 
     @Test
@@ -265,7 +263,6 @@ public class SiteStatsStreamsServiceTest {
                 }
             }
         }
-
     }
 
 
@@ -273,8 +270,6 @@ public class SiteStatsStreamsServiceTest {
     public void streamsClassVersions_Test() throws Exception {
         assertClassUnchanged(SiteStatisticsStreamsApplication.class,"bb385eaf6cf51dcf9589ebe725c0e3d36f13e8e33af05d05394325af9f014a11");
     }
-
-
 
 
     private void assertClassUnchanged(Class c, String hash) {
