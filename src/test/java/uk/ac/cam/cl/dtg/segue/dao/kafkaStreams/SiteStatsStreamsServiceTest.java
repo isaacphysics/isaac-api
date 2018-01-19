@@ -128,8 +128,7 @@ public class SiteStatsStreamsServiceTest {
         testUser2change.setRole(Role.TEACHER);
 
         expect(dummyUserDb.getUserDTOById(testUser1Id)).andReturn(testUser1);
-        expect(dummyUserDb.getUserDTOById(testUser2Id)).andReturn(testUser2);
-        expect(dummyUserDb.getUserDTOById(testUser2Id)).andReturn(testUser2change);
+        expect(dummyUserDb.getUserDTOById(testUser2Id)).andReturn(testUser2).andReturn(testUser2change);
         replay(dummyUserDb);
 
 

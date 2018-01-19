@@ -40,6 +40,7 @@ import org.apache.kafka.streams.kstream.KStreamBuilder;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.segue.api.managers.IUserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.userAlerts.IAlertListener;
 import uk.ac.cam.cl.dtg.segue.api.userAlerts.UserAlertsWebSocket;
@@ -85,7 +86,7 @@ public class UserStatisticsStreamsApplication {
     private KStreamBuilder builder = new KStreamBuilder();
     private Properties streamsConfiguration = new Properties();
     private IQuestionAttemptManager questionAttemptManager;
-    private UserAccountManager userAccountManager;
+    private IUserAccountManager userAccountManager;
     private ILogManager logManager;
 
 
@@ -102,7 +103,7 @@ public class UserStatisticsStreamsApplication {
     public UserStatisticsStreamsApplication(final PropertiesLoader globalProperties,
                                             final KafkaTopicManager kafkaTopicManager,
                                             final IQuestionAttemptManager questionAttemptManager,
-                                            final UserAccountManager userAccountManager,
+                                            final IUserAccountManager userAccountManager,
                                             final ILogManager logManager) {
 
 
@@ -171,7 +172,7 @@ public class UserStatisticsStreamsApplication {
                 );
 
         // process raw logged events
-        streamProcess(rawLoggedEvents);
+        streamProcess(rawLoggedEvents, userAccountManager, questionAttemptManager, logManager);
 
         // need to make state stores queryable globally, as we often have 2 versions of API running concurrently, hence 2 streams app instances
         // aggregations are saved to a local state store per streams app instance and update a changelog topic in Kafka
@@ -199,7 +200,10 @@ public class UserStatisticsStreamsApplication {
      * @param rawStream
      *          - the input stream
      */
-    private void streamProcess(KStream<String, JsonNode> rawStream) {
+    public static void streamProcess(KStream<String, JsonNode> rawStream,
+                                      IUserAccountManager userAccountManager,
+                                      IQuestionAttemptManager questionAttemptManager,
+                                      ILogManager logManager) {
 
 
         // user question answer streaks
@@ -239,7 +243,9 @@ public class UserStatisticsStreamsApplication {
                             if (latestEvent.path("event_type").asText().equals("ANSWER_QUESTION")) {
 
                                 if (latestEvent.path("event_details").path("correct").asBoolean()) {
-                                    ((ObjectNode) userSnapshot).put("streak_record", updateStreakRecord(userId, latestEvent, userSnapshot.path("streak_record")));
+                                    ((ObjectNode) userSnapshot).put("streak_record",
+                                            updateStreakRecord(userId, latestEvent, userSnapshot.path("streak_record"),
+                                                    userAccountManager, questionAttemptManager, logManager));
                                 }
                             }
 
@@ -351,7 +357,7 @@ public class UserStatisticsStreamsApplication {
      * @param teacherRecord
      * @return
      */
-    private JsonNode updateTeacherActivityRecord(String activityType, JsonNode teacherRecord) {
+    private static JsonNode updateTeacherActivityRecord(String activityType, JsonNode teacherRecord) {
 
         Integer count = teacherRecord.path(activityType).asInt();
         ((ObjectNode) teacherRecord).put(activityType, count + 1);
@@ -372,7 +378,10 @@ public class UserStatisticsStreamsApplication {
      * @param streakRecord the current snapshot of the streak record
      * @return the new updated streak record
      */
-    private JsonNode updateStreakRecord(String userId, JsonNode latestEvent, JsonNode streakRecord) {
+    private static JsonNode updateStreakRecord(String userId, JsonNode latestEvent, JsonNode streakRecord,
+                                               IUserAccountManager userAccountManager,
+                                               IQuestionAttemptManager questionAttemptManager,
+                                               ILogManager logManager) {
 
         // timestamp of streak start
         Long streakStartTimestamp = streakRecord.path("streak_start").asLong();
@@ -414,7 +423,7 @@ public class UserStatisticsStreamsApplication {
                     questionAttemptManager.getQuestionAttemptsByUsersAndQuestionPrefix(user, questionPageId);
 
             // the following assumes that question attempts are always recorded in the question attempt table before they are logged as an event
-            if (!questionAttempts.get(Long.parseLong(userId)).isEmpty()
+            if (!questionAttempts.get(Long.parseLong(userId)) .isEmpty()
                     && questionAttempts.get(Long.parseLong(userId)).containsKey(questionId.split("\\|")[0])
                     && questionAttempts.get(Long.parseLong(userId)).get(questionId.split("\\|")[0]).containsKey(questionId)) {
 
