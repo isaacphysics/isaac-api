@@ -8,6 +8,10 @@
             <param-name>allowedMethods</param-name>
             <param-value>GET,POST,DELETE,PUT,HEAD</param-value>
         </init-param>
+        <init-param>
+            <param-name>allowedOrigins</param-name>
+            <param-value>https://*.isaacphysics.org</param-value>
+        </init-param>
     </filter>
     <filter-mapping>
         <filter-name>cross-origin</filter-name>
