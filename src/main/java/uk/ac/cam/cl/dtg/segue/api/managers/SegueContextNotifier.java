@@ -24,9 +24,10 @@ import com.google.inject.Injector;
  * @author Stephen Cummins
  *
  */
-@WebListener
 public class SegueContextNotifier implements ServletContextListener {
     private static final Logger log = LoggerFactory.getLogger(SegueContextNotifier.class);
+
+    public static Injector injector;
 
     private final List<ServletContextListener> listeners;
 
@@ -35,7 +36,7 @@ public class SegueContextNotifier implements ServletContextListener {
      * of any context messages.
      */
     public SegueContextNotifier() {
-        Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
+        injector = Guice.createInjector(new SegueGuiceConfigurationModule());
 
         listeners = Lists.newArrayList();
         Collection<Class<? extends ServletContextListener>> registeredContextListenerClasses 

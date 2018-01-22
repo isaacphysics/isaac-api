@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.dao;
 import static com.google.common.collect.Maps.immutableEntry;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.FAST_TRACK_QUESTION_TYPE;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_TYPE;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 
 import java.io.IOException;
 import java.sql.Array;
@@ -34,10 +35,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import com.google.common.collect.Maps;
+import com.google.inject.name.Named;
 import ma.glasnost.orika.MapperFacade;
 
 import org.apache.commons.lang3.Validate;
-import org.elasticsearch.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,9 +51,9 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
@@ -61,7 +63,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.api.client.util.Lists;
+import com.google.common.collect.Lists;
 import com.google.api.client.util.Sets;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -74,6 +76,7 @@ public class GameboardPersistenceManager {
 
 	private static final Logger log = LoggerFactory.getLogger(GameboardPersistenceManager.class);
 	private static final Long GAMEBOARD_TTL_MINUTES = 30L;
+	private static final int GAMEBOARD_ITEM_MAP_BATCH_SIZE = 1000;
 
 	private final PostgresSqlDb database;
     private final Cache<String, GameboardDO> gameboardNonPersistentStorage;
@@ -81,7 +84,8 @@ public class GameboardPersistenceManager {
 	private final MapperFacade mapper; // used for content object mapping.
 	private final ObjectMapper objectMapper; // used for json serialisation
 	
-	private final ContentVersionController versionManager;
+	private final IContentManager contentManager;
+    private final String contentIndex;
 
     private final URIManager uriManager;
 
@@ -90,7 +94,7 @@ public class GameboardPersistenceManager {
      * 
      * @param database
      *            - the database reference used for persistence.
-     * @param versionManager
+     * @param contentManager
      *            - allows us to lookup gameboard content.
      * @param mapper
      *            - An instance of an automapper that can be used for mapping to and from GameboardDOs and DTOs.
@@ -101,11 +105,12 @@ public class GameboardPersistenceManager {
      *            - so we can generate appropriate content URIs.
      */
 	@Inject
-    public GameboardPersistenceManager(final PostgresSqlDb database, final ContentVersionController versionManager,
-            final MapperFacade mapper, final ObjectMapper objectMapper, final URIManager uriManager) {
+    public GameboardPersistenceManager(final PostgresSqlDb database, final IContentManager contentManager,
+                                       final MapperFacade mapper, final ObjectMapper objectMapper, final URIManager uriManager, @Named(CONTENT_INDEX) final String contentIndex) {
 		this.database = database;
 		this.mapper = mapper;
-		this.versionManager = versionManager;
+		this.contentManager = contentManager;
+        this.contentIndex = contentIndex;
         this.objectMapper = objectMapper;
         this.uriManager = uriManager;		
         this.gameboardNonPersistentStorage = CacheBuilder.newBuilder()
@@ -403,7 +408,7 @@ public class GameboardPersistenceManager {
         // Search for questions that match the ids.       
         ResultsWrapper<ContentDTO> results;
         try {
-            results = this.versionManager.getContentManager().findByFieldNames(versionManager.getLiveVersion(),
+            results = this.contentManager.findByFieldNames(this.contentIndex,
                     fieldsToMap, 0, gameboardDO.getQuestions().size());
         } catch (ContentManagerException e) {
             results = new ResultsWrapper<ContentDTO>();
@@ -459,8 +464,9 @@ public class GameboardPersistenceManager {
 			log.info("No question ids found; returning original gameboard without augmenting.");
 			return gameboards;
 		}
-		
+
 		Map<String, GameboardItem> gameboardReadyQuestions = getGameboardItemMap(Lists.newArrayList(qids));
+
 		for (GameboardDTO game : gameboards) {
 			// empty and re-populate the gameboard dto with fully augmented gameboard items.
 			game.setQuestions(new ArrayList<GameboardItem>());
@@ -683,40 +689,36 @@ public class GameboardPersistenceManager {
 	 * @return a map of question id to fully populated gameboard item.
 	 */
 	private Map<String, GameboardItem> getGameboardItemMap(final List<String> questionIds) {
-		// build query the db to get full question information
-		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
+		Map<String, GameboardItem> gameboardReadyQuestions = Maps.newHashMap();
+		// Batch the queries to the db to avoid the elasticsearch query clause limit of 1024
+		List<List<String>> questionIdBatches = Lists.partition(questionIds, GAMEBOARD_ITEM_MAP_BATCH_SIZE);
+		for (List<String> questionIdBatch : questionIdBatches) {
+			// build query the db to get full question information
+			Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
+			fieldsToMap.put(
+					immutableEntry(Constants.BooleanOperator.OR, Constants.ID_FIELDNAME + '.'
+							+ Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX), questionIdBatch);
 
-		fieldsToMap.put(
-                immutableEntry(Constants.BooleanOperator.OR, Constants.ID_FIELDNAME + '.'
-						+ Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX), questionIds);
+			fieldsToMap.put(immutableEntry(Constants.BooleanOperator.OR, Constants.TYPE_FIELDNAME),
+					Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
 
-		fieldsToMap.put(immutableEntry(Constants.BooleanOperator.OR, Constants.TYPE_FIELDNAME),
-                Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
+			// Search for questions that match the ids.
+			ResultsWrapper<ContentDTO> results;
+			try {
+				results = this.contentManager.findByFieldNames(this.contentIndex,
+						fieldsToMap, 0, questionIds.size());
+			} catch (ContentManagerException e) {
+				results = new ResultsWrapper<ContentDTO>();
+				log.error("Unable to locate questions for gameboard. Using empty results", e);
+			}
 
-		// Search for questions that match the ids.
-		ResultsWrapper<ContentDTO> results;
-        try {
-            results = this.versionManager.getContentManager().findByFieldNames(this.versionManager.getLiveVersion(),
-                    fieldsToMap, 0, questionIds.size());
-        } catch (ContentManagerException e) {
-            results = new ResultsWrapper<ContentDTO>();
-            log.error("Unable to locate questions for gameboard. Using empty results", e);
-        }
-        
-	    Map<String, GameboardItem> gameboardReadyQuestions = Maps.newHashMap();
-		
-	    if (null == results) {
-	        return gameboardReadyQuestions;
+			// Map each Content object into an GameboardItem object
+			List<ContentDTO> questionsForGameboard = results.getResults();
+			for (ContentDTO c : questionsForGameboard) {
+				GameboardItem questionInfo = this.convertToGameboardItem(c);
+				gameboardReadyQuestions.put(c.getId(), questionInfo);
+			}
 		}
-		
-	    List<ContentDTO> questionsForGameboard = results.getResults();
-
-		// Map each Content object into an GameboardItem object
-		for (ContentDTO c : questionsForGameboard) {
-			GameboardItem questionInfo = this.convertToGameboardItem(c);
-			gameboardReadyQuestions.put(c.getId(), questionInfo);
-		}
-		
 		return gameboardReadyQuestions;
 	}
 	
@@ -789,8 +791,10 @@ public class GameboardPersistenceManager {
         gameboardDO.setWildCardPosition(results.getInt("wildcard_position"));
         gameboardDO.setGameFilter(objectMapper
                 .readValue(results.getObject("game_filter").toString(), GameFilter.class));
-        gameboardDO.setOwnerUserId(results.getLong("owner_user_id"));
-        
+        Long ownerUserId = results.getLong("owner_user_id");
+        // by default getLong (primitive) sets null to 0, where 0 is a distinct value from null for user IDs
+        gameboardDO.setOwnerUserId(!results.wasNull() ? ownerUserId : null);
+
         if (results.getString("creation_method") != null) {
             gameboardDO.setCreationMethod(GameboardCreationMethod.valueOf(results.getString("creation_method")));    
         }

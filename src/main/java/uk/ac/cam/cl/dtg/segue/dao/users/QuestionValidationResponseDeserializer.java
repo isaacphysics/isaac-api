@@ -37,13 +37,8 @@ import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
 /**
  * QuestionValidationResponse deserializer
  * 
-<<<<<<< HEAD
- * This class requires the primary content base deserializer as a constructor
- * arguement.
-=======
- * This class requires the primary content bas deserializer as a constructor arguement.
->>>>>>> e3d5bfdb07b499af637cb1f3ebf9d7bbf816349d
- * 
+ * This class requires the primary content base deserializer as a constructor argument.
+ *
  * It is to allow subclasses of the choices object to be detected correctly.
  */
 public class QuestionValidationResponseDeserializer extends JsonDeserializer<QuestionValidationResponse> {

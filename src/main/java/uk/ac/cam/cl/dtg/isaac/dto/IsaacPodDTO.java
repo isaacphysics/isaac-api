@@ -37,7 +37,7 @@ public class IsaacPodDTO extends ContentDTO {
 	private String url;
 
 	@JsonCreator
-	public IsaacPodDTO(@JsonProperty("_id") String _id,
+	public IsaacPodDTO(
 			@JsonProperty("id") String id, @JsonProperty("title") String title,
 			@JsonProperty("subtitle") String subtitle,
 			@JsonProperty("type") String type,
@@ -54,7 +54,7 @@ public class IsaacPodDTO extends ContentDTO {
 			@JsonProperty("level") Integer level,
 			@JsonProperty("image") ImageDTO image,
 			@JsonProperty("url") String url) {
-		super(_id, id, title, subtitle, type, author, encoding,
+		super(id, title, subtitle, type, author, encoding,
 				canonicalSourceFile, layout, children, value, attribution,
 				relatedContent, published, tags, level);
 

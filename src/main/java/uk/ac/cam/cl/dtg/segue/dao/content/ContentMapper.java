@@ -22,13 +22,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.google.common.collect.Maps;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.converter.ConverterFactory;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
 
 import org.apache.commons.lang3.Validate;
-import org.elasticsearch.common.collect.Maps;
 import org.mongojack.internal.MongoJackModule;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
@@ -45,6 +45,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.segue.dos.users.AnonymousUser;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
@@ -134,8 +135,6 @@ public class ContentMapper {
      * @param docJson
      *            - to load
      * @return A Content object or one of its registered sub classes
-     * @throws JsonParseException
-     * @throws JsonMappingException
      * @throws IOException
      *             - if there is a problem with IO
      */
@@ -292,8 +291,41 @@ public class ContentMapper {
     }
 
     /**
+     * Populate relatedContent fields on the result and its children with IDs recursively.
+     * Only recurses to children of type Content, but this is currently the only possibility.
+     * When another subclass of ContentBase is introduced which also has relatedContent,
+     * we can decide whether we want to move relatedContent up to the abstract base class etc.
+     * @param content
+     *            - DO class.
+     * @param result
+     *            - target DTO class.
+     */
+    private void populateRelatedContentWithIDs(final Content content, final ContentDTO result) {
+        List<ContentBase> contentChildren = content.getChildren();
+        if (contentChildren != null) {
+            List<ContentBaseDTO> resultChildren = result.getChildren();
+            for (int i = 0; i < contentChildren.size(); i++) {
+                ContentBase contentChild = contentChildren.get(i);
+                ContentBaseDTO resultChild = resultChildren.get(i);
+                if (contentChild instanceof Content && resultChild instanceof ContentDTO) {
+                    this.populateRelatedContentWithIDs((Content) contentChild, (ContentDTO) resultChild);
+                }
+            }
+        }
+        if (result.getRelatedContent() != null) {
+            List<ContentSummaryDTO> relatedContent = Lists.newArrayList();
+            for (String relatedId : content.getRelatedContent()) {
+                ContentSummaryDTO contentSummary = new ContentSummaryDTO();
+                contentSummary.setId(relatedId);
+                relatedContent.add(contentSummary);
+            }
+            result.setRelatedContent(relatedContent);
+        }
+    }
+
+    /**
      * Find the default DTO class from a given Domain object.
-     * 
+     *
      * @param content
      *            - Content DO to map to DTO.
      * @return DTO that can be used for mapping.
@@ -304,17 +336,7 @@ public class ContentMapper {
         }
 
         ContentDTO result = getAutoMapper().map(content, this.mapOfDOsToDTOs.get(content.getClass()));
-        if (result.getRelatedContent() != null) {
-            List<ContentSummaryDTO> relatedContent = Lists.newArrayList();
-
-            for (String relatedId : content.getRelatedContent()) {
-                ContentSummaryDTO contentSummary = new ContentSummaryDTO();
-                contentSummary.setId(relatedId);
-                relatedContent.add(contentSummary);
-            }
-            result.setRelatedContent(relatedContent);
-        }
-
+        this.populateRelatedContentWithIDs(content, result);
         return result;
     }
 

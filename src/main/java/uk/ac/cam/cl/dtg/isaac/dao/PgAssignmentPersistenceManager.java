@@ -15,12 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dao;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -71,8 +66,8 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
         try (Connection conn = database.getDatabaseConnection()) {
             pst = conn
                     .prepareStatement(
-                            "INSERT INTO assignments(gameboard_id, group_id, owner_user_id, creation_date)"
-                            + " VALUES (?, ?, ?, ?);",
+                            "INSERT INTO assignments(gameboard_id, group_id, owner_user_id, creation_date, due_date)"
+                            + " VALUES (?, ?, ?, ?, ?);",
                             Statement.RETURN_GENERATED_KEYS);
 
             pst.setString(1, assignmentToSave.getGameboardId());
@@ -83,6 +78,12 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
                 pst.setTimestamp(4, new java.sql.Timestamp(assignmentToSave.getCreationDate().getTime()));
             } else {
                 pst.setTimestamp(4, new java.sql.Timestamp(new Date().getTime()));
+            }
+
+            if (assignment.getDueDate() != null) {
+                pst.setTimestamp(5, new java.sql.Timestamp(assignmentToSave.getDueDate().getTime()));
+            } else {
+                pst.setNull(5, Types.TIMESTAMP);
             }
 
             if (pst.executeUpdate() == 0) {
@@ -170,7 +171,8 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
 
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM assignments WHERE owner_user_id = ? AND group_id = ?");
+            pst = conn.prepareStatement("SELECT * FROM assignments WHERE owner_user_id = ? AND group_id = ?"
+                    + " ORDER BY creation_date");
 
             pst.setLong(1, assignmentOwnerId);
             pst.setLong(2, groupId);
@@ -275,7 +277,14 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
      */
     private AssignmentDO convertFromSQLToAssignmentDO(final ResultSet sqlResults) throws SQLException {
         java.util.Date preciseDate = new java.util.Date(sqlResults.getTimestamp("creation_date").getTime());
+
+        java.util.Date preciseDueDate = null;
+        if (sqlResults.getTimestamp("due_date") != null) {
+            preciseDueDate = new java.util.Date(sqlResults.getTimestamp("due_date").getTime());
+        }
+
         return new AssignmentDO(sqlResults.getLong("id"), sqlResults.getString("gameboard_id"),
-                sqlResults.getLong("owner_user_id"), sqlResults.getLong("group_id"), preciseDate);
+                sqlResults.getLong("owner_user_id"), sqlResults.getLong("group_id"), preciseDate,
+                preciseDueDate);
     }
 }

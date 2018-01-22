@@ -21,14 +21,9 @@ import javax.servlet.annotation.WebServlet;
 import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
 
 /**
- * Isaac servlet dispatcher - replaces web.xml routes.
+ * Isaac servlet dispatcher - we need this to initialise RestEasy. Probably.
  *
  */
-@WebServlet(urlPatterns = { "/api/*" }, initParams = {
-        @WebInitParam(name = "javax.ws.rs.Application",
-                value = "uk.ac.cam.cl.dtg.isaac.configuration.IsaacApplicationRegister"),
-        @WebInitParam(name = "resteasy.servlet.mapping.prefix", value = "/api") })
 public class IsaacHttpServletDispatcher extends HttpServletDispatcher {
     private static final long serialVersionUID = -4757864378012588474L;
-
 }

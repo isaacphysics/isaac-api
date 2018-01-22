@@ -60,6 +60,14 @@ public class IsaacSymbolicValidator implements IValidator {
         EXACT
     }
 
+    private final String hostname;
+    private final String port;
+
+    public IsaacSymbolicValidator(final String hostname, final String port) {
+        this.hostname = hostname;
+        this.port = port;
+    }
+
     @Override
     public QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer)
             throws ValidatorUnavailableException {
@@ -199,11 +207,10 @@ public class IsaacSymbolicValidator implements IValidator {
                     g.close();
                     String requestString = sw.toString();
 
-                    // TODO: Factor this URL out into a property
                     HttpClient httpClient = new DefaultHttpClient();
-                    HttpPost httpPost = new HttpPost("http://equality-checker:5000/check");
+                    HttpPost httpPost = new HttpPost("http://" + hostname + ":" + port + "/check");
 
-                    httpPost.setEntity(new StringEntity(requestString));
+                    httpPost.setEntity(new StringEntity(requestString, "UTF-8"));
                     httpPost.addHeader("Content-Type", "application/json");
 
                     HttpResponse httpResponse = httpClient.execute(httpPost);

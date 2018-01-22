@@ -17,25 +17,31 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
-import org.elasticsearch.common.collect.Lists;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.AnonQuestionAttemptMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
+import uk.ac.cam.cl.dtg.segue.api.monitors.IPQuestionAttemptMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.QuestionAttemptMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dos.IUserAlert;
+import uk.ac.cam.cl.dtg.segue.dos.IUserAlerts;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
+import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
@@ -43,6 +49,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
@@ -54,6 +61,7 @@ import java.io.IOException;
 import java.util.List;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ANSWER_QUESTION;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.QUESTION_ATTEMPT_RATE_LIMITED;
 
 /**
@@ -69,7 +77,8 @@ public class QuestionFacade extends AbstractSegueFacade {
 
     private final ContentMapper mapper;
 
-    private final ContentVersionController contentVersionController;
+    private final IContentManager contentManager;
+    private final String contentIndex;
     private final UserAccountManager userManager;
     private final QuestionManager questionManager;
     private IMisuseMonitor misuseMonitor;
@@ -80,7 +89,7 @@ public class QuestionFacade extends AbstractSegueFacade {
      *            - the fully configured properties loader for the api.
      * @param mapper
      *            - The Content mapper object used for polymorphic mapping of content objects.
-     * @param contentVersionController
+     * @param contentManager
      *            - The content version controller used by the api.
      * @param userManager
      *            - The manager object responsible for users.
@@ -93,14 +102,15 @@ public class QuestionFacade extends AbstractSegueFacade {
      */
     @Inject
     public QuestionFacade(final PropertiesLoader properties, final ContentMapper mapper,
-            final ContentVersionController contentVersionController, final UserAccountManager userManager,
-            final QuestionManager questionManager, 
-            final ILogManager logManager, final IMisuseMonitor misuseMonitor) {
+                          final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final UserAccountManager userManager,
+                          final QuestionManager questionManager,
+                          final ILogManager logManager, final IMisuseMonitor misuseMonitor) {
         super(properties, logManager);
 
         this.questionManager = questionManager;
         this.mapper = mapper;
-        this.contentVersionController = contentVersionController;
+        this.contentManager = contentManager;
+        this.contentIndex = contentIndex;
         this.userManager = userManager;
         this.misuseMonitor = misuseMonitor;
     }
@@ -131,8 +141,8 @@ public class QuestionFacade extends AbstractSegueFacade {
 
         Content contentBasedOnId;
         try {
-            contentBasedOnId = contentVersionController.getContentManager().getContentDOById(
-                    contentVersionController.getLiveVersion(), questionId);
+            contentBasedOnId = this.contentManager.getContentDOById(
+                    this.contentManager.getCurrentContentSHA(), questionId);
         } catch (ContentManagerException e1) {
             SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Error locating the version requested",
                     e1);
@@ -183,6 +193,7 @@ public class QuestionFacade extends AbstractSegueFacade {
             // We store response.getEntity() in either case so that we can treat them the same in later analysis.
             if (currentUser instanceof RegisteredUserDTO) {
                 try {
+                    // Monitor misuse on a per-question per-registered user basis, with higher limits:
                     misuseMonitor.notifyEvent(((RegisteredUserDTO) currentUser).getId().toString() + "|" + questionId,
                             QuestionAttemptMisuseHandler.class.toString());
                 } catch (SegueResourceMisuseException e) {
@@ -192,11 +203,24 @@ public class QuestionFacade extends AbstractSegueFacade {
                 }
             } else {
                 try {
+                    // Monitor misuse on a per-question per-anonymous user basis:
                     misuseMonitor.notifyEvent(((AnonymousUserDTO) currentUser).getSessionId() + "|" + questionId,
                             AnonQuestionAttemptMisuseHandler.class.toString());
                 } catch (SegueResourceMisuseException e) {
                     this.getLogManager().logEvent(currentUser, request, QUESTION_ATTEMPT_RATE_LIMITED, response.getEntity());
                     String message = "You have made too many attempts at this question part. Please log in or try again later.";
+                    return SegueErrorResponse.getRateThrottledResponse(message);
+                }
+                try {
+                    // And monitor on a blanket per IP Address basis for non-logged in users.
+                    // If we see serious misuse, this could be moved to *before* the attempt validation and checking,
+                    // to save server load. Since this occurs after the anon user notify event, that will catch most
+                    // misuse and this will catch misuse ignoring cookies or with repeated new anon accounts.
+                    misuseMonitor.notifyEvent(RequestIPExtractor.getClientIpAddr(request),
+                            IPQuestionAttemptMisuseHandler.class.toString());
+                } catch (SegueResourceMisuseException e) {
+                    this.getLogManager().logEvent(currentUser, request, QUESTION_ATTEMPT_RATE_LIMITED, response.getEntity());
+                    String message = "Too many question attempts! Please log in or try again later.";
                     return SegueErrorResponse.getRateThrottledResponse(message);
                 }
             }

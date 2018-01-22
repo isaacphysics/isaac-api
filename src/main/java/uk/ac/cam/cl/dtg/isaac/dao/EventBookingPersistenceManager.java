@@ -1,28 +1,31 @@
 package uk.ac.cam.cl.dtg.isaac.dao;
 
 import java.util.List;
+import java.util.Map;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.name.Named;
+import ma.glasnost.orika.MapperFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 
-import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.EventBooking;
-import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.EventBookings;
-import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.PgEventBooking;
-import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.PgEventBookings;
+import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.*;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
-import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.DetailedUserSummaryDTO;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 
 /**
  * EventBookingPersistenceManager.
@@ -34,25 +37,31 @@ public class EventBookingPersistenceManager {
     private final PostgresSqlDb database;
     private final EventBookings dao;
     private final UserAccountManager userManager;
-    private final ContentVersionController versionManager;
+    private final IContentManager contentManager;
+    private final String contentIndex;
 
     /**
      * EventBookingPersistenceManager.
      * 
      * @param database
      *            - live connection
-     * @param versionManager
+     * @param contentManager
      *            - for retrieving event content.
      * @param userManager
      *            - Instance of User Manager
+     * @param objectMapper
+     *            - Instance of objectmapper so we can deal with jsonb
+     * @param dtoMapper
+     *            - Instance of dtoMapper so we can deal with jsonb
      */
     @Inject
     public EventBookingPersistenceManager(final PostgresSqlDb database, final UserAccountManager userManager,
-            final ContentVersionController versionManager) {
+                                          final IContentManager contentManager, final ObjectMapper objectMapper, final MapperFacade dtoMapper, @Named(CONTENT_INDEX) final String contentIndex) {
         this.database = database;
         this.userManager = userManager;
-        this.versionManager = versionManager;
-        this.dao = new PgEventBookings(database);
+        this.contentManager = contentManager;
+        this.contentIndex = contentIndex;
+        this.dao = new PgEventBookings(database, objectMapper);
     }
 
     /**
@@ -78,6 +87,40 @@ public class EventBookingPersistenceManager {
     }
 
     /**
+     * Gets a specific event booking
+     * @param eventId
+     *            - of interest
+     * @param userId
+     *            - of interest
+     * @return event booking or null if we can't find one.
+     * @throws SegueDatabaseException
+     *             - if an error occurs.
+     */
+    public EventBookingDTO getBookingByEventIdAndUserId(final String eventId, final Long userId) throws SegueDatabaseException {
+        return this.convertToDTO(dao.findBookingByEventAndUser(eventId, userId));
+    }
+
+	/**
+     * Modify an existing event booking's status
+     *
+     * @param eventId - the id of the event
+     * @param userId = the user who is registered against the event
+     * @param bookingStatus - the new booking status for this booking.
+     * @return The newly updated event booking
+     * @throws SegueDatabaseException
+     *             - if an error occurs.
+     */
+    public EventBookingDTO updateBookingStatus(final String eventId, final Long userId, final BookingStatus bookingStatus, final Map additionalEventInformation) throws SegueDatabaseException {
+        dao.updateStatus(eventId, userId, bookingStatus, additionalEventInformation);
+
+        return this.getBookingByEventIdAndUserId(eventId, userId);
+    }
+
+    /**
+     * Get all bookings in the database..
+     *
+     * Warning, this is likely to be slow.
+     *
      * @return event bookings
      * @throws SegueDatabaseException
      *             - if an error occurs.
@@ -87,6 +130,9 @@ public class EventBookingPersistenceManager {
     }
 
     /**
+     * Get event bookings by an event id.
+     * TODO - if an event disappears (either by being unpublished or being deleted, then this method will not pull back the event.
+     *
      * @param eventId
      *            - of interest
      * @return event bookings
@@ -95,7 +141,12 @@ public class EventBookingPersistenceManager {
      */
     public List<EventBookingDTO> getBookingByEventId(final String eventId) throws SegueDatabaseException {
         try {
-            ContentDTO c = versionManager.getContentManager().getContentById(versionManager.getLiveVersion(), eventId);
+            ContentDTO c = this.contentManager.getContentById(this.contentManager.getCurrentContentSHA(), eventId);
+
+            if (null == c) {
+                return Lists.newArrayList();
+            }
+
             if (c instanceof IsaacEventPageDTO) {
                 return this.convertToDTO(Lists.newArrayList(dao.findAllByEventId(eventId)), (IsaacEventPageDTO) c);
             } else {
@@ -113,26 +164,31 @@ public class EventBookingPersistenceManager {
      *            - of interest
      * @param userId
      *            - user to book on to the event.
+     * @param status
+     *            - The status of the booking to create.
      * @return the newly created booking.
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    public EventBookingDTO createBooking(final String eventId, final Long userId) throws SegueDatabaseException {
-        return this.convertToDTO(dao.add(eventId, userId));
+    public EventBookingDTO createBooking(final String eventId, final Long userId, final BookingStatus status, final Map<String,String> additionalInformation) throws SegueDatabaseException {
+        return this.convertToDTO(dao.add(eventId, userId, status, additionalInformation));
     }
 
     /**
+     * This method only counts bookings that are confirmed.
+     *
      * @param eventId
      *            - of interest
      * @param userId
      *            - of interest.
-     * @return true if a booking exists false if not
+     * @return true if a booking exists and is in the confirmed state, false if not
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
     public boolean isUserBooked(final String eventId, final Long userId) throws SegueDatabaseException {
         try {
-            return dao.findBookingByEventAndUser(eventId, userId) != null;
+            final EventBooking bookingByEventAndUser = dao.findBookingByEventAndUser(eventId, userId);
+            return bookingByEventAndUser != null && bookingByEventAndUser.getBookingStatus() == BookingStatus.CONFIRMED;
         } catch (ResourceNotFoundException e) {
             return false;
         }
@@ -151,6 +207,26 @@ public class EventBookingPersistenceManager {
     }
 
     /**
+     * Acquire a globally unique database lock.
+     * This lock must be released manually.
+     * @param resourceId - the unique id for the object to be locked.
+     * @throws SegueDatabaseException if there is a problem acquiring the lock
+     */
+    public void acquireDistributedLock(final String resourceId) throws SegueDatabaseException {
+        dao.acquireDistributedLock(resourceId);
+    }
+
+    /**
+     * Release a globally unique database lock.
+     * This lock must be released manually.
+     * @param resourceId - the unique id for the object to be locked.
+     * @throws SegueDatabaseException if there is a problem releasing the lock
+     */
+    public void releaseDistributedLock(final String resourceId) throws SegueDatabaseException {
+        dao.releaseDistributedLock(resourceId);
+    }
+
+    /**
      * @param eb
      *            - raw booking do
      * @param eventInformation
@@ -164,7 +240,7 @@ public class EventBookingPersistenceManager {
         EventBookingDTO result = new EventBookingDTO();
 
         try {
-            UserSummaryDTO user = userManager.convertToUserSummaryObject(userManager.getUserDTOById(eb
+            DetailedUserSummaryDTO user = userManager.convertToDetailedUserSummaryObject(userManager.getUserDTOById(eb
                     .getUserId()));
 
             result.setBookingId(eb.getId());
@@ -172,9 +248,12 @@ public class EventBookingPersistenceManager {
             result.setEventId(eventInformation.getId());
             result.setEventTitle(eventInformation.getTitle());
             result.setBookingDate(eb.getCreationDate());
+            result.setUpdated(eb.getUpdateDate());
+            result.setBookingStatus(eb.getBookingStatus());
             result.setUserBooked(user);
-            return result;
+            result.setAdditionalInformation(eb.getAdditionalInformation());
 
+            return result;
         } catch (NoUserException e) {
             log.error("Unable to create event booking dto as user is unavailable");
             throw new SegueDatabaseException("Unable to create event booking dto as user is unavailable", e);
@@ -190,7 +269,7 @@ public class EventBookingPersistenceManager {
      */
     private EventBookingDTO convertToDTO(final EventBooking eb) throws SegueDatabaseException {
         try {
-            ContentDTO c = versionManager.getContentManager().getContentById(versionManager.getLiveVersion(),
+            ContentDTO c = this.contentManager.getContentById(this.contentManager.getCurrentContentSHA(),
                     eb.getEventId());
 
             if (null == c) {

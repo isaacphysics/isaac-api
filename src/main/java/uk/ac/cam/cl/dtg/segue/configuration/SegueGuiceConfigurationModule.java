@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.configuration;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Map;
@@ -24,6 +25,8 @@ import java.util.Set;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
+import com.google.api.client.util.Maps;
+import com.google.common.collect.ImmutableMap;
 import ma.glasnost.orika.MapperFacade;
 
 import org.elasticsearch.client.Client;
@@ -31,63 +34,42 @@ import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
-import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
-import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisusehandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationRequestMisusehandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
-import uk.ac.cam.cl.dtg.segue.api.monitors.InMemoryMisuseMonitor;
-import uk.ac.cam.cl.dtg.segue.api.monitors.LogEventMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetRequestMisusehandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.TokenOwnerLookupMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.QuestionAttemptMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.AnonQuestionAttemptMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
-import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
-import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
-import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
-import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
-import uk.ac.cam.cl.dtg.segue.auth.TwitterAuthenticator;
+import uk.ac.cam.cl.dtg.segue.api.managers.*;
+import uk.ac.cam.cl.dtg.segue.api.monitors.*;
+import uk.ac.cam.cl.dtg.segue.auth.*;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
-import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.LocationManager;
-import uk.ac.cam.cl.dtg.segue.dao.PgLogManager;
+import uk.ac.cam.cl.dtg.segue.dao.*;
 import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.associations.PgAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.AnonymousEventsStreamsApplication;
+import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.UserStatisticsStreamsApplication;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
-import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
-import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupPersistenceManager;
-import uk.ac.cam.cl.dtg.segue.dao.users.PgUserGroupPersistenceManager;
-import uk.ac.cam.cl.dtg.segue.dao.users.PgUsers;
+import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.KafkaTopicManager;
+import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.SiteStatisticsStreamsApplication;
+import uk.ac.cam.cl.dtg.segue.dao.users.*;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
+import uk.ac.cam.cl.dtg.segue.database.KafkaStreamsProducer;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
-import uk.ac.cam.cl.dtg.segue.dos.AbstractEmailPreferenceManager;
-import uk.ac.cam.cl.dtg.segue.dos.LocationHistory;
-import uk.ac.cam.cl.dtg.segue.dos.PgEmailPreferenceManager;
-import uk.ac.cam.cl.dtg.segue.dos.PgLocationHistory;
+import uk.ac.cam.cl.dtg.segue.dos.*;
 import uk.ac.cam.cl.dtg.segue.quiz.IQuestionAttemptManager;
 import uk.ac.cam.cl.dtg.segue.quiz.PgQuestionAttempts;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
-import uk.ac.cam.cl.dtg.util.PropertiesManager;
 import uk.ac.cam.cl.dtg.util.locations.IPLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.IPInfoDBLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeIOLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeLocationResolver;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.api.client.util.Lists;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -97,6 +79,9 @@ import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
+
 /**
  * This class is responsible for injecting configuration values for persistence related classes.
  * 
@@ -104,41 +89,42 @@ import com.google.inject.name.Names;
 public class SegueGuiceConfigurationModule extends AbstractModule implements ServletContextListener {
     private static final Logger log = LoggerFactory.getLogger(SegueGuiceConfigurationModule.class);
 
-    private static PropertiesLoader configLocationProperties = null;
     private static PropertiesLoader globalProperties = null;
     
     // Singletons - we only ever want there to be one instance of each of these.
     private static PostgresSqlDb postgresDB;
+    private static KafkaStreamsProducer kafkaProducer;
     private static ContentMapper mapper = null;
-    private static ContentVersionController contentVersionController = null;
     private static GitContentManager contentManager = null;
     private static Client elasticSearchClient = null;
     private static UserAccountManager userManager = null;
     private static IQuestionAttemptManager questionPersistenceManager = null;
-    private static ILogManager logManager;
+    //private static ILogManager logManager;
+    private static LogManagerEventPublisher logManager;
     private static EmailManager emailCommunicationQueue = null;
     private static IMisuseMonitor misuseMonitor = null;
     private static StatisticsManager statsManager = null;
+    private static KafkaStatisticsManager kafkaStatsManager = null;
+    private static KafkaTopicManager kafkaTopicManager = null;
+    //private static IStatisticsManager statsManager = null;
 	private static GroupManager groupManager = null;
+	private static IUserAlerts userAlerts = null;
+
+	// kafka streams applications
+    private static SiteStatisticsStreamsApplication statisticsStreamsApplication;
+    private static AnonymousEventsStreamsApplication anonEventsStreamsApplication;
+    private static UserStatisticsStreamsApplication userStatsStreamsApplication;
 
     private static Collection<Class<? extends ServletContextListener>> contextListeners;
-    private static Reflections reflections = null;
+    private static Map<String, Reflections> reflections = com.google.common.collect.Maps.newHashMap();
     
     /**
      * Create a SegueGuiceConfigurationModule.
      */
     public SegueGuiceConfigurationModule() {
-        if (globalProperties == null || configLocationProperties == null) {
+        if (globalProperties == null) {
             try {
-                if (null == configLocationProperties) {
-                    configLocationProperties = new PropertiesLoader("/config/segue-config-location.properties");
-
-                }
-
-                if (null == globalProperties) {
-                    globalProperties = new PropertiesLoader(
-                            configLocationProperties.getProperty(Constants.GENERAL_CONFIG_LOCATION));
-                }
+                globalProperties = new PropertiesLoader(System.getProperty("config.location"));
             } catch (IOException e) {
                 log.error("Error loading properties file.", e);
             }
@@ -183,7 +169,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         this.bindConstantToProperty(Constants.IP_INFO_DB_API_KEY, globalProperties);
         
         this.bindConstantToProperty(Constants.SCHOOL_CSV_LIST_PATH, globalProperties);
-        
+
+        this.bindConstantToProperty(CONTENT_INDEX, globalProperties);
     }
 
     /**
@@ -193,20 +180,16 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *             - when we cannot load the database.
      */
     private void configureDataPersistence() throws IOException {
-        // Setup different persistence bindings
-        // MongoDb - currently not used.
-        this.bindConstantToProperty(Constants.MONGO_DB_HOSTNAME, globalProperties);
-        this.bindConstantToProperty(Constants.MONGO_DB_PORT, globalProperties);
-        this.bindConstantToProperty(Constants.MONGO_CONNECTIONS_PER_HOST, globalProperties);
-        this.bindConstantToProperty(Constants.MONGO_CONNECTION_TIMEOUT, globalProperties);
-        this.bindConstantToProperty(Constants.MONGO_SOCKET_TIMEOUT, globalProperties);
-
         this.bindConstantToProperty(Constants.SEGUE_DB_NAME, globalProperties);
 
         // postgres
         this.bindConstantToProperty(Constants.POSTGRES_DB_URL, globalProperties);
         this.bindConstantToProperty(Constants.POSTGRES_DB_USER, globalProperties);
         this.bindConstantToProperty(Constants.POSTGRES_DB_PASSWORD, globalProperties);
+
+        // Kafka
+        this.bindConstantToProperty(Constants.KAFKA_HOSTNAME, globalProperties);
+        this.bindConstantToProperty(Constants.KAFKA_PORT, globalProperties);
 
         // GitDb
         bind(GitDb.class).toInstance(
@@ -243,6 +226,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         this.bindConstantToProperty(Constants.FACEBOOK_CLIENT_ID, globalProperties);
         this.bindConstantToProperty(Constants.FACEBOOK_CALLBACK_URI, globalProperties);
         this.bindConstantToProperty(Constants.FACEBOOK_OAUTH_SCOPES, globalProperties);
+        this.bindConstantToProperty(Constants.FACEBOOK_USER_FIELDS, globalProperties);
 
         // Twitter
         this.bindConstantToProperty(Constants.TWITTER_SECRET, globalProperties);
@@ -270,11 +254,18 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         
         bind(PostCodeLocationResolver.class).to(PostCodeIOLocationResolver.class);
 
-        bind(IUserDataManager.class).to(PgUsers.class);
-        
+        //bind(IUserDataManager.class).to(PgUsers.class);
+        bind(IUserDataManager.class).to(KafkaUsers.class);
+
+        bind(IPasswordDataManager.class).to(PgPasswordDataManager.class);
+
         bind(ICommunicator.class).to(EmailCommunicator.class);
-        
-        bind(AbstractEmailPreferenceManager.class).to(PgEmailPreferenceManager.class);
+
+        bind(AbstractUserPreferenceManager.class).to(PgUserPreferenceManager.class);
+
+        bind(IUserAlerts.class).to(PgUserAlerts.class);
+
+        bind(IStatisticsManager.class).to(KafkaStatisticsManager.class);
     }
 
     /**
@@ -298,9 +289,14 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             @Named(Constants.SEARCH_CLUSTER_ADDRESS) final String address,
             @Named(Constants.SEARCH_CLUSTER_PORT) final int port) {
         if (null == elasticSearchClient) {
-            elasticSearchClient = ElasticSearchProvider.getTransportClient(clusterName, address, port);
-            log.info("Creating singleton of ElasticSearchProvider");
-        } 
+            try {
+                elasticSearchClient = ElasticSearchProvider.getTransportClient(clusterName, address, port);
+                log.info("Creating singleton of ElasticSearchProvider");
+            } catch (UnknownHostException e) {
+                log.error("Could not create ElasticSearchProvider");
+                return null;
+            }
+        }
         // eventually we want to do something like the below to make sure we get updated clients        
 //        if (elasticSearchClient instanceof TransportClient) {
 //            TransportClient tc = (TransportClient) elasticSearchClient;
@@ -313,34 +309,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 //        }
 
         return elasticSearchClient;
-    }
-    
-    /**
-     * This provides a singleton of the contentVersionController for the segue facade.
-     * 
-     * @param generalProperties
-     *            - properties loader
-     * @param contentManager
-     *            - content manager (with associated persistence links).
-     * @return Content version controller with associated dependencies.
-     * @throws IOException
-     *             - if we can't load the properties file for live version.
-     */
-    @Inject
-    @Provides
-    @Singleton
-    private static ContentVersionController getContentVersionController(final PropertiesLoader generalProperties,
-            final IContentManager contentManager) throws IOException {
-
-        PropertiesManager versionPropertiesLoader = new PropertiesManager(
-                configLocationProperties.getProperty(Constants.LIVE_VERSION_CONFIG_LOCATION));
-
-        if (null == contentVersionController) {
-            contentVersionController = new ContentVersionController(generalProperties, versionPropertiesLoader,
-                    contentManager);
-            log.info("Creating singleton of ContentVersionController");
-        }
-        return contentVersionController;
     }
 
     /**
@@ -361,9 +329,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     private static GitContentManager getContentManager(final GitDb database, final ISearchProvider searchProvider,
-            final ContentMapper contentMapper) {
+            final ContentMapper contentMapper, final PropertiesLoader globalProperties) {
         if (null == contentManager) {
-            contentManager = new GitContentManager(database, searchProvider, contentMapper);
+            contentManager = new GitContentManager(database, searchProvider, contentMapper, globalProperties);
             log.info("Creating singleton of ContentManager");
         }
 
@@ -388,12 +356,21 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     private static ILogManager getLogManager(final PostgresSqlDb database,
-            @Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled, final LocationManager lhm) {
+                                             @Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled, final LocationManager lhm,
+                                             @Named(Constants.KAFKA_HOSTNAME) final String kafkaHost,
+                                             @Named(Constants.KAFKA_PORT) final String kafkaPort,
+                                             final KafkaStreamsProducer kafkaProducer) {
+
         if (null == logManager) {
             //logManager = new MongoLogManager(database, new ObjectMapper(), loggingEnabled, lhm);
             
-            logManager = new PgLogManager(database, new ObjectMapper(), loggingEnabled, lhm);
-            
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+            //logManager = new PgLogManager(database, objectMapper, loggingEnabled, lhm);
+
+            logManager = new PgLogManagerEventListener(new PgLogManager(database, objectMapper, loggingEnabled, lhm));
+            logManager.addListener(new KafkaLoggingManager(kafkaProducer, lhm, objectMapper, kafkaHost, kafkaPort, kafkaTopicManager));
+
             log.info("Creating singleton of LogManager");
             if (loggingEnabled) {
                 log.info("Log manager configured to record logging.");
@@ -416,11 +393,37 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Singleton
     private static ContentMapper getContentMapper() {
         if (null == mapper) {
-            mapper = new ContentMapper(getReflectionsClass());
+            mapper = new ContentMapper(getReflectionsClass("uk.ac.cam.cl.dtg.segue"));
             log.info("Creating Singleton of the Content Mapper");
         }
 
         return mapper;
+    }
+
+    /**
+     * This provides an instance of the SegueLocalAuthenticator.
+     *
+     *
+     * @param database
+     * 			- the database to access userInformation
+     * @param passwordDataManager
+     * 			- the database to access passwords
+     * @param properties
+     * 			- the global system properties
+     * @return an instance of the queue
+     */
+    @Inject
+    @Provides
+    private static SegueLocalAuthenticator getSegueLocalAuthenticator(final IUserDataManager database, final IPasswordDataManager passwordDataManager,
+                                                             final PropertiesLoader properties) {
+        ISegueHashingAlgorithm preferredAlgorithm = new SeguePBKDF2v2();
+        ISegueHashingAlgorithm oldAlgorithm = new SeguePBKDF2v1();
+
+        Map<String, ISegueHashingAlgorithm> possibleAlgorithms
+                = ImmutableMap.of(preferredAlgorithm.hashingAlgorithmName(), preferredAlgorithm,
+                oldAlgorithm.hashingAlgorithmName(), oldAlgorithm);
+
+        return new SegueLocalAuthenticator(database, passwordDataManager, properties, possibleAlgorithms, preferredAlgorithm);
     }
 
     /**
@@ -434,9 +437,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      * 			- the properties so we can generate email
      * @param emailCommunicator
      *            the class the queue will send messages with
-     * @param emailPreferenceManager
+     * @param userPreferenceManager
      * 			- the class providing email preferences
-     * @param contentVersionController
+     * @param contentManager
      * 			- the content so we can access email templates
      * @param authenticator
      * 			- the authenticator
@@ -449,12 +452,24 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Singleton
     private static EmailManager getMessageCommunicationQueue(final IUserDataManager database,
             final PropertiesLoader properties, final EmailCommunicator emailCommunicator,
-            final AbstractEmailPreferenceManager emailPreferenceManager,
-            final ContentVersionController contentVersionController, final SegueLocalAuthenticator authenticator,
+            final AbstractUserPreferenceManager userPreferenceManager,
+            final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final SegueLocalAuthenticator authenticator,
             final ILogManager logManager) {
+
+        Map<String, String> globalTokens = Maps.newHashMap();
+        globalTokens.put("sig", "Isaac Physics Project");
+        globalTokens.put("emailPreferencesURL", String.format("https://%s/account#emailpreferences",
+                properties.getProperty(HOST_NAME)));
+        globalTokens.put("myAssignmentsURL", String.format("https://%s/assignments",
+                properties.getProperty(HOST_NAME)));
+        globalTokens.put("myBookedEventsURL", String.format("https://%s/events?show_booked_only=true",
+                properties.getProperty(HOST_NAME)));
+        globalTokens.put("contactUsURL", String.format("https://%s/contact",
+                properties.getProperty(HOST_NAME)));
+
         if (null == emailCommunicationQueue) {
-            emailCommunicationQueue = new EmailManager(emailCommunicator, emailPreferenceManager, properties,
-            				contentVersionController, logManager);
+            emailCommunicationQueue = new EmailManager(emailCommunicator, userPreferenceManager, properties,
+            				contentManager, logManager, globalTokens);
             log.info("Creating singleton of EmailCommunicationQueue");
         }
         return emailCommunicationQueue;
@@ -572,14 +587,17 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             misuseMonitor.registerHandler(TokenOwnerLookupMisuseHandler.class.toString(),
                     new TokenOwnerLookupMisuseHandler(emailManager, properties));
 
-            misuseMonitor.registerHandler(EmailVerificationMisusehandler.class.toString(),
-                    new EmailVerificationMisusehandler());
+            misuseMonitor.registerHandler(EmailVerificationMisuseHandler.class.toString(),
+                    new EmailVerificationMisuseHandler());
 
-            misuseMonitor.registerHandler(EmailVerificationRequestMisusehandler.class.toString(),
-                    new EmailVerificationRequestMisusehandler());
+            misuseMonitor.registerHandler(EmailVerificationRequestMisuseHandler.class.toString(),
+                    new EmailVerificationRequestMisuseHandler());
 
-            misuseMonitor.registerHandler(PasswordResetRequestMisusehandler.class.toString(),
-                    new PasswordResetRequestMisusehandler());
+            misuseMonitor.registerHandler(PasswordResetRequestMisuseHandler.class.toString(),
+                    new PasswordResetRequestMisuseHandler());
+
+            misuseMonitor.registerHandler(RegistrationMisuseHandler.class.toString(),
+                    new RegistrationMisuseHandler(emailManager, properties));
 
             misuseMonitor.registerHandler(SegueLoginMisuseHandler.class.toString(),
                     new SegueLoginMisuseHandler(emailManager, properties));
@@ -592,6 +610,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
             misuseMonitor.registerHandler(AnonQuestionAttemptMisuseHandler.class.toString(),
                     new AnonQuestionAttemptMisuseHandler());
+
+            misuseMonitor.registerHandler(IPQuestionAttemptMisuseHandler.class.toString(),
+                    new IPQuestionAttemptMisuseHandler(emailManager, properties));
         }
 
         return misuseMonitor;
@@ -613,11 +634,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      * @return segue version currently running.
      */
     public static String getSegueVersion() {
-        if (configLocationProperties != null) {
-            return configLocationProperties.getProperty(Constants.SEGUE_APP_VERSION);
-        }
-        log.warn("Unable to read segue version property");
-        return "UNKNOWN";
+        return System.getProperty("segue.version");
     }
 
     /**
@@ -654,6 +671,101 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         return postgresDB;
     }
 
+    @Provides
+    @Singleton
+    @Inject
+    private static KafkaTopicManager getKafkaTopicManager() {
+        if (null == kafkaTopicManager) {
+            kafkaTopicManager = new KafkaTopicManager(globalProperties);
+        }
+        return kafkaTopicManager;
+    }
+
+    /**
+     * Gets the instance of the kafka connection wrapper.
+     *
+     * @param kafkaHost
+     *            - host to connect to.
+     * @param kafkaPort
+     *            - port that the kafka service is running on.
+     * @return KafkaProducer object.
+     */
+    @Provides
+    @Singleton
+    @Inject
+    private static KafkaStreamsProducer getKafkaProducer(@Named(Constants.KAFKA_HOSTNAME) final String kafkaHost,
+                                         @Named(Constants.KAFKA_PORT) final String kafkaPort,
+                                         final KafkaTopicManager topicManager) {
+
+        if (null == kafkaProducer) {
+            kafkaProducer = new KafkaStreamsProducer(kafkaHost, kafkaPort, topicManager);
+            log.info("Creating singleton of KafkaProducer.");
+        }
+        return kafkaProducer;
+    }
+
+
+    /**
+     * Gets the instance of the site statistics kafka stream application
+     * @return Site Statistics Stream App object
+     */
+    @Provides
+    @Singleton
+    @Inject
+    private static SiteStatisticsStreamsApplication getSiteStatsStreamsApp(final PropertiesLoader globalProperties,
+                                                                           final KafkaTopicManager kafkaTopicManager,
+                                                                           UserAccountManager userManager) {
+
+        if (null == statisticsStreamsApplication) {
+
+            log.info("Creating singleton of Site Stats Kafka Streams Application.");
+            statisticsStreamsApplication = new SiteStatisticsStreamsApplication(globalProperties, kafkaTopicManager, userManager);
+            statisticsStreamsApplication.start();
+        }
+        return statisticsStreamsApplication;
+    }
+
+    /**
+     * Gets the instance of the anonymous events kafka stream application
+     * @return Site Statistics Stream App object
+     */
+    @Provides
+    @Singleton
+    @Inject
+    private static AnonymousEventsStreamsApplication getAnonEventsStreamsApp(final PropertiesLoader globalProperties,
+                                                                             final KafkaTopicManager kafkaTopicManager) {
+
+        if (null == anonEventsStreamsApplication) {
+
+            log.info("Creating singleton of Anonymous events Kafka Streams Application.");
+            anonEventsStreamsApplication = new AnonymousEventsStreamsApplication(globalProperties, kafkaTopicManager);
+        }
+        return anonEventsStreamsApplication;
+    }
+
+    /**
+     * Gets the instance of the anonymous events kafka stream application
+     * @return Site Statistics Stream App object
+     */
+    @Provides
+    @Singleton
+    @Inject
+    private static UserStatisticsStreamsApplication getUserStatsEventsStreamsApp(final PropertiesLoader globalProperties,
+                                                                            final KafkaTopicManager kafkaTopicManager,
+                                                                                 final ILogManager logManager) {
+
+        if (null == userStatsStreamsApplication) {
+
+            log.info("Creating singleton of User Stats events Kafka Streams Application.");
+            userStatsStreamsApplication = new UserStatisticsStreamsApplication(globalProperties, kafkaTopicManager,
+                    questionPersistenceManager, userManager, logManager);
+            userStatsStreamsApplication.start();
+        }
+        return userStatsStreamsApplication;
+    }
+
+
+
     /**
      * Gets the instance of the StatisticsManager. Note: this class is a hack and needs to be refactored.... It is
      * currently only a singleton as it keeps a cache.
@@ -664,7 +776,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *            - dependency
      * @param schoolManager
      *            - dependency
-     * @param versionManager
+     * @param contentManager
      *            - dependency
      * @param locationHistoryManager
      *            - dependency
@@ -672,24 +784,62 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *            - dependency
      * @param questionManager
      *            - dependency
+     * @param gameManager
+     *            - dependency
      * @return stats manager
      */
     @Provides
     @Singleton
     @Inject
     private static StatisticsManager getStatsManager(final UserAccountManager userManager,
-            final ILogManager logManager, final SchoolListReader schoolManager,
-            final ContentVersionController versionManager, final LocationManager locationHistoryManager,
-            final GroupManager groupManager, final QuestionManager questionManager) {
+                                                      final ILogManager logManager, final SchoolListReader schoolManager,
+                                                      final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final LocationManager locationHistoryManager,
+                                                      final GroupManager groupManager, final QuestionManager questionManager, final GameManager gameManager) {
 
         if (null == statsManager) {
-            statsManager = new StatisticsManager(userManager, logManager, schoolManager, versionManager,
-                    locationHistoryManager, groupManager, questionManager);
-            log.info("Created Singleton of Statistics Manager");
+            statsManager = new StatisticsManager(userManager, logManager, schoolManager, contentManager, contentIndex,
+                    locationHistoryManager, groupManager, questionManager, gameManager);
+
 
         }
 
         return statsManager;
+    }
+
+
+    /**
+     * TEMPORARY: This "kafkaesque" stats manager will eventually replace the postgres based manager
+     * Gets the instance of the kafka StatisticsManager. Note: this class is a hack and needs to be refactored.... It is
+     * currently only a singleton as it keeps a cache.
+     *
+     * @param userManager
+     *            - dependency
+     * @param logManager
+     *            - dependency
+     * @param schoolManager
+     *            - dependency
+     * @param groupManager
+     *            - dependency
+     * @param statsManager
+     *            - dependency
+     * @return kafka stats manager
+     */
+    @Provides
+    @Singleton
+    @Inject
+    private static KafkaStatisticsManager getKafkaStatsManager(final UserAccountManager userManager,
+                                                     final ILogManager logManager, final SchoolListReader schoolManager,
+                                                     final GroupManager groupManager, SiteStatisticsStreamsApplication statisticsStreamsApplication,
+                                                     final UserStatisticsStreamsApplication userStatisticsStreamsApplication,
+                                                     final StatisticsManager statsManager) {
+
+        if (null == kafkaStatsManager) {
+            kafkaStatsManager = new KafkaStatisticsManager(userManager, logManager,
+                    schoolManager, groupManager, statisticsStreamsApplication, userStatisticsStreamsApplication, statsManager);
+            log.info("Created Singleton of Kafka Statistics Manager");
+        }
+
+        return kafkaStatsManager;
     }
     
     /**
@@ -722,12 +872,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *
      * @return reflections.
      */
-    public static Reflections getReflectionsClass() {
-        if (null == reflections) {
+    public static Reflections getReflectionsClass(String pkg) {
+        if (!reflections.containsKey(pkg)) {
             log.info("Caching reflections scan on uk.ac.cam.cl.dtg.segue....");
-            reflections = new Reflections("uk.ac.cam.cl.dtg.segue");
+            reflections.put(pkg, new Reflections(pkg));
         }
-        return reflections;
+        return reflections.get(pkg);
     }
 
     /**
@@ -740,10 +890,16 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         if (null == contextListeners) {
             contextListeners = Lists.newArrayList();
 
-            Set<Class<? extends ServletContextListener>> subTypes = getReflectionsClass()
+            Set<Class<? extends ServletContextListener>> subTypes = getReflectionsClass("uk.ac.cam.cl.dtg.segue")
                     .getSubTypesOf(ServletContextListener.class);
 
+            Set<Class<? extends ServletContextListener>> etlSubTypes = getReflectionsClass("uk.ac.cam.cl.dtg.segue.etl")
+                    .getSubTypesOf(ServletContextListener.class);
+
+            subTypes.removeAll(etlSubTypes);
+
             for (Class<? extends ServletContextListener> contextListener : subTypes) {
+
                 contextListeners.add(contextListener);
             }
         }

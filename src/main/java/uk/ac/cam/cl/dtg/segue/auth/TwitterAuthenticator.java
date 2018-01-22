@@ -28,6 +28,7 @@ import twitter4j.TwitterException;
 import twitter4j.TwitterFactory;
 import twitter4j.auth.AccessToken;
 import twitter4j.auth.RequestToken;
+import twitter4j.conf.ConfigurationBuilder;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
@@ -86,9 +87,12 @@ public class TwitterAuthenticator implements IOAuth1Authenticator {
             @Named(Constants.TWITTER_CALLBACK_URI) final String callbackUri) {
         this.jsonFactory = new JacksonFactory();
         this.httpTransport = new NetHttpTransport();
-        this.twitter = new TwitterFactory().getInstance();
-        this.twitter.setOAuthConsumer(clientId, clientSecret);
 
+        ConfigurationBuilder cb = new ConfigurationBuilder();
+        cb.setIncludeEmailEnabled(true);
+
+        this.twitter = new TwitterFactory(cb.build()).getInstance();
+        this.twitter.setOAuthConsumer(clientId, clientSecret);
         this.clientSecret = clientSecret;
         this.clientId = clientId;
         this.callbackUri = callbackUri;
@@ -183,20 +187,26 @@ public class TwitterAuthenticator implements IOAuth1Authenticator {
                 String familyName = null;
                 if (userInfo.getName() != null) {
                     String[] names = userInfo.getName().split(" ");
-                    if (names != null) {
-                        if (names.length > 0) {
-                            givenName = names[0];
-                        }
-                        if (names.length > 1) {
-                            familyName = names[1];
-                        }
+                    if (names.length > 0) {
+                        givenName = names[0];
+                    }
+                    if (names.length > 1) {
+                        familyName = names[1];
                     }
                 }
 
-                return new UserFromAuthProvider(String.valueOf(userInfo.getId()), givenName, familyName,
-                        userInfo.getId() + "-twitter", EmailVerificationStatus.NOT_VERIFIED, null, null, null);
+                EmailVerificationStatus emailStatus = EmailVerificationStatus.NOT_VERIFIED;
+                String email = userInfo.getEmail();
+                if (null == email) {
+                    email = userInfo.getId() + "-twitter";
+                    emailStatus = EmailVerificationStatus.DELIVERY_FAILED;
+                    log.warn("No email address provided by Twitter! Using (" + email + ") instead");
+                }
+
+                return new UserFromAuthProvider(String.valueOf(userInfo.getId()), givenName, familyName, email,
+                        emailStatus, null, null, null);
             } else {
-                throw new NoUserException();
+                throw new NoUserException("No user could be created from provider details!");
             }
         } catch (TwitterException e) {
             throw new IOException(e.getMessage());
@@ -219,7 +229,7 @@ public class TwitterAuthenticator implements IOAuth1Authenticator {
             ArrayList<Object> arr = (ArrayList<Object>) url.get(param);
             return (String) arr.get(0);
         } catch (ClassCastException | NullPointerException e) {
-            throw new IOException("Could not read paramater value.");
+            throw new IOException("Could not read parameter value.");
         }
     }
 }

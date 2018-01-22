@@ -15,10 +15,9 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
+import java.security.SecureRandom;
 import java.util.List;
-import java.util.UUID;
 
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +26,6 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.UserGroupNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
-import uk.ac.cam.cl.dtg.segue.dao.associations.UserAssociationException;
 import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.segue.dos.UserAssociation;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
@@ -43,9 +41,10 @@ import com.google.inject.Inject;
  */
 public class UserAssociationManager {
     private static final Logger log = LoggerFactory.getLogger(UserAssociationManager.class);
+    private static final SecureRandom secureRandom = new SecureRandom();
+    private static final int tokenLength = 6;
     
     private final IAssociationDataManager associationDatabase;
-    private final int tokenLength = 6;
     private final GroupManager userGroupManager;
 
     /**
@@ -65,7 +64,7 @@ public class UserAssociationManager {
     }
 
     /**
-     * generate token that other users can use to grant access to their data.
+     * generate and save a token that other users can use to grant access to their data.
      * 
      * @param registeredUser
      *            - the user who will ultimately receive access to someone else's data.
@@ -93,13 +92,49 @@ public class UserAssociationManager {
         }
 
         // create some kind of random token and remove ambiguous characters.
-        String token = new String(Base64.encodeBase64(UUID.randomUUID().toString().getBytes())).replace("=", "")
-                .substring(0, tokenLength).toUpperCase().replace("0", "ZR").replace("O", "QR");
+        String token = newToken();
 
         AssociationToken associationToken = new AssociationToken(token, registeredUser.getId(),
                 associatedGroupId);
 
         return associationDatabase.saveAssociationToken(associationToken);
+    }
+
+    /**
+     * Generate a new string value for a token.
+     *
+     * There are 30 non-ambiguous uppercase alphanumeric characters. We use a 5 bit encoding system to generate the
+     * number for which character to choose, skipping in the 1/16 chance it is outside the allowed range. Loop until we
+     * generate all tokenLength required characters.
+     *
+     * @return String - the authentication token in string form.
+     *
+     */
+    private static String newToken() {
+        // Allow the following character to appear in tokens, removing ambiguous ones:
+        String tokenCharMap = "ABCDEFGHJKLMNPQRTUVWXYZ2346789";
+
+        char[] authToken = new char[tokenLength];
+
+        int index = 0;  // Where we are in the token.
+        int shift = 0;  // Where we are in the random 32 bit integer.
+        int randomBits = secureRandom.nextInt();
+
+        // Use 5 bit ints extracted from randomBits, to generate tokenLength random characters from sample space.
+        while (index < tokenLength) {
+            if (shift >= 32/5) {  // If we've expired the 32/5 values in this random int, get a new one, reset shift.
+                randomBits = secureRandom.nextInt();
+                shift = 0;
+            }
+            int chr = (randomBits >> (5*shift)) & 0x1f;  // Extract next 5 bit int from randomBits.
+            shift++;  // Ensure we don't reuse any of randomBits.
+            if (chr < tokenCharMap.length()) {
+                // If we're in the valid range, use that character and advance in authToken, else try again.
+                authToken[index] = tokenCharMap.charAt(chr);
+                index++;
+            }
+        }
+        return String.valueOf(authToken);
     }
 
     /**
@@ -177,15 +212,14 @@ public class UserAssociationManager {
      *            - The token which links to a user (receiving permission) and possibly a group.
      * @param userGrantingPermission
      *            - the user who wishes to grant permissions to another.
+     * @return The association token object
      * @throws SegueDatabaseException
      *             - If an error occurred while interacting with the database.
-     * @throws UserAssociationException
-     *             - if we cannot create the association because it is invalid.
      * @throws InvalidUserAssociationTokenException
      *             - If the token provided is invalid.
      */
-    public void createAssociationWithToken(final String token, final RegisteredUserDTO userGrantingPermission)
-            throws SegueDatabaseException, UserAssociationException, InvalidUserAssociationTokenException {
+    public AssociationToken createAssociationWithToken(final String token, final RegisteredUserDTO userGrantingPermission)
+            throws SegueDatabaseException, InvalidUserAssociationTokenException {
         Validate.notBlank(token);
         Validate.notNull(userGrantingPermission);
 
@@ -209,6 +243,7 @@ public class UserAssociationManager {
                     lookedupToken.getGroupId()));
 
         }
+        return lookedupToken;
     }
 
     /**
@@ -245,7 +280,6 @@ public class UserAssociationManager {
             userRequested.setAuthorisedFullAccess(true);
         } else {
             userRequested.setAuthorisedFullAccess(false);
-            userRequested.setEmail(null);
         }
         return userRequested;
     }

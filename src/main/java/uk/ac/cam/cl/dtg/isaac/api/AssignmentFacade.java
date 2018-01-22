@@ -15,15 +15,22 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
+import com.google.common.collect.ImmutableMap;
+import com.opencsv.CSVWriter;
 import io.swagger.annotations.Api;
 
+import java.io.IOException;
+import java.io.StringWriter;
 import java.text.DecimalFormat;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Map.Entry;
 
 import javax.servlet.http.HttpServletRequest;
@@ -40,7 +47,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
-import org.elasticsearch.common.collect.ImmutableMap;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,11 +62,13 @@ import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
@@ -156,6 +164,20 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             for (AssignmentDTO assignment : assignments) {
                 assignment.setGameboard(this.gameManager.getGameboard(assignment.getGameboardId(),
                         currentlyLoggedInUser, questionAttemptsByUser));
+
+                if (assignment.getOwnerUserId() != null) {
+                    try {
+                        RegisteredUserDTO user = userManager.getUserDTOById(assignment.getOwnerUserId());
+                        if (user == null) {
+                            throw new NoUserException("No user found with this ID.");
+                        }
+                        UserSummaryDTO userSummary = userManager.convertToUserSummaryObject(user);
+                        assignment.setAssignerSummary(userSummary);
+                    } catch (NoUserException e) {
+                        log.warn("Assignment (" + assignment.getId() + ") exists with owner user ID ("
+                                + assignment.getOwnerUserId() + ") that does not exist!");
+                    }
+                }
             }
 
             // if they have filtered the list we should only send out the things they wanted.
@@ -211,7 +233,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
 
             if (null == groupIdOfInterest) {
-                return Response.ok(this.assignmentManager.getAllAssignmentsSetByUser(currentlyLoggedInUser)).build();
+                return Response.ok(this.assignmentManager.getAllAssignmentsSetByUser(currentlyLoggedInUser))
+                        .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
             } else {
                 UserGroupDTO group = this.groupManager.getGroupById(groupIdOfInterest);
 
@@ -267,7 +290,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             }
 
             if (!assignment.getOwnerUserId().equals(currentlyLoggedInUser.getId()) 
-                    && !super.isUserAnAdmin(userManager, request)) {
+                    && !isUserAnAdmin(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
             }
@@ -279,40 +302,64 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             List<ImmutableMap<String, Object>> result = Lists.newArrayList();
             final String userString = "user";
             final String resultsString = "results";
+            final String correctPartString = "correctPartResults";
+            final String incorrectPartString = "incorrectPartResults";
 
-            for (Entry<RegisteredUserDTO, List<GameboardItemState>> e : this.gameManager.gatherGameProgressData(
+            for (Entry<RegisteredUserDTO, List<GameboardItem>> e : this.gameManager.gatherGameProgressData(
                     groupMembers, gameboard).entrySet()) {
                 UserSummaryDTO userSummary = associationManager.enforceAuthorisationPrivacy(currentlyLoggedInUser,
                         userManager.convertToUserSummaryObject(e.getKey()));
 
                 // can the user access the data?
                 if (userSummary.isAuthorisedFullAccess()) {
-                    result.add(ImmutableMap.of(userString, userSummary, resultsString, e.getValue()));
+                    ArrayList<GameboardItemState> states = Lists.newArrayList();
+                    ArrayList<Integer> correctQuestionParts = Lists.newArrayList();
+                    ArrayList<Integer> incorrectQuestionParts = Lists.newArrayList();
+                    for (GameboardItem questionResult : e.getValue()) {
+                        states.add(questionResult.getState());
+                        correctQuestionParts.add(questionResult.getQuestionPartsCorrect());
+                        incorrectQuestionParts.add(questionResult.getQuestionPartsIncorrect());
+                    }
+                    result.add(ImmutableMap.of(userString, userSummary, resultsString, states,
+                            correctPartString, correctQuestionParts, incorrectPartString, incorrectQuestionParts));
                 } else {
-                    result.add(ImmutableMap.of(userString, userSummary, resultsString, Lists.newArrayList()));
+                    result.add(ImmutableMap.of(userString, userSummary, resultsString, Lists.newArrayList(),
+                            correctPartString, Lists.newArrayList(), incorrectPartString, Lists.newArrayList()));
                 }
             }
 
-            // quick fix to sort list by user last name
-            Collections.sort(result, new Comparator<ImmutableMap<String, Object>>() {
-                @Override
-                public int compare(final ImmutableMap<String, Object> o1, final ImmutableMap<String, Object> o2) {
-                    UserSummaryDTO user1 = (UserSummaryDTO) o1.get(userString);
-                    UserSummaryDTO user2 = (UserSummaryDTO) o2.get(userString);
+            // quick fix to sort list by user last name, first name
+            result.sort((result1, result2) -> {
+                UserSummaryDTO user1 = (UserSummaryDTO) result1.get(userString);
+                UserSummaryDTO user2 = (UserSummaryDTO) result2.get(userString);
 
-                    if (user1.getFamilyName() == null && user2.getFamilyName() != null) {
-                        return -1;
-                    } else if (user1.getFamilyName() != null && user2.getFamilyName() == null) {
-                        return 1;
-                    } else if (user1.getFamilyName() == null && user2.getFamilyName() == null) {
-                        return 0;
-                    }
-                    
-                    return user1.getFamilyName().compareTo(user2.getFamilyName());
+                if (user1.getGivenName() == null && user2.getGivenName() != null) {
+                    return -1;
+                } else if (user1.getGivenName() != null && user2.getGivenName() == null) {
+                    return 1;
+                } else if (user1.getGivenName() == null && user2.getGivenName() == null) {
+                    return 0;
                 }
+
+                return user1.getGivenName().toLowerCase().compareTo(user2.getGivenName().toLowerCase());
+            });
+            result.sort((result1, result2) -> {
+                UserSummaryDTO user1 = (UserSummaryDTO) result1.get(userString);
+                UserSummaryDTO user2 = (UserSummaryDTO) result2.get(userString);
+
+                if (user1.getFamilyName() == null && user2.getFamilyName() != null) {
+                    return -1;
+                } else if (user1.getFamilyName() != null && user2.getFamilyName() == null) {
+                    return 1;
+                } else if (user1.getFamilyName() == null && user2.getFamilyName() == null) {
+                    return 0;
+                }
+
+                return user1.getFamilyName().toLowerCase().compareTo(user2.getFamilyName().toLowerCase());
             });
 
-            this.getLogManager().logEvent(currentlyLoggedInUser, request, VIEW_ASSIGNMENT_PROGRESS, Maps.newHashMap());
+            this.getLogManager().logEvent(currentlyLoggedInUser, request, VIEW_ASSIGNMENT_PROGRESS,
+                    ImmutableMap.of(ASSIGNMENT_FK, assignment.getId()));
 
             // get game manager completion information for this assignment.
             return Response.ok(result).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
@@ -364,34 +411,40 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group);
             List<String> questionIds = Lists.newArrayList();
             
-            // quick hack to sort list by user last name
-            Collections.sort(groupMembers, new Comparator<RegisteredUserDTO>() {
-                @Override
-                public int compare(final RegisteredUserDTO user1, final RegisteredUserDTO user2) {
-                    
-                    if (user1.getFamilyName() == null && user2.getFamilyName() != null) {
-                        return -1;
-                    } else if (user1.getFamilyName() != null && user2.getFamilyName() == null) {
-                        return 1;
-                    } else if (user1.getFamilyName() == null && user2.getFamilyName() == null) {
-                        return 0;
-                    }
-
-                    return user1.getFamilyName().compareTo(user2.getFamilyName());
+            // quick hack to sort list by user last name, first name
+            groupMembers.sort((user1, user2) -> {
+                if (user1.getGivenName() == null && user2.getGivenName() != null) {
+                    return -1;
+                } else if (user1.getGivenName() != null && user2.getGivenName() == null) {
+                    return 1;
+                } else if (user1.getGivenName() == null && user2.getGivenName() == null) {
+                    return 0;
                 }
+                return user1.getGivenName().toLowerCase().compareTo(user2.getGivenName().toLowerCase());
             });
-            
+            groupMembers.sort((user1, user2) -> {
+                if (user1.getFamilyName() == null && user2.getFamilyName() != null) {
+                    return -1;
+                } else if (user1.getFamilyName() != null && user2.getFamilyName() == null) {
+                    return 1;
+                } else if (user1.getFamilyName() == null && user2.getFamilyName() == null) {
+                    return 0;
+                }
+                return user1.getFamilyName().toLowerCase().compareTo(user2.getFamilyName().toLowerCase());
+            });
+
+            List<String[]> rows = Lists.newArrayList();
+            StringWriter stringWriter = new StringWriter();
+            CSVWriter csvWriter = new CSVWriter(stringWriter);
             StringBuilder headerBuilder = new StringBuilder();
-            StringBuilder resultBuilder = new StringBuilder();
-            headerBuilder.append(String.format("Assignment (%s) Results: Downloaded on %s \nGenerated by: %s %s \n",
+            headerBuilder.append(String.format("Assignment (%s) Results: Downloaded on %s \nGenerated by: %s %s \n\n",
                     assignmentId, new Date(), currentlyLoggedInUser.getGivenName(),
                     currentlyLoggedInUser.getFamilyName()));
-            
-            headerBuilder.append("\n");
-            headerBuilder.append(",,");
+
+            List<String> headerRow = Lists.newArrayList(Arrays.asList("", ""));
 
             DecimalFormat percentageFormat = new DecimalFormat("###");
-            
+
             for (GameboardItem questionPage : gameboard.getQuestions()) {
                 int index = 0;
                 
@@ -399,40 +452,44 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     //int newCharIndex = 'A' + index; // decided not to try and match the front end.
                     int newCharIndex = index + 1;
                     if (question.getTitle() != null) {
-                        headerBuilder.append("\"" + questionPage.getTitle() + " - " + question.getTitle() + "\",");
+                        headerRow.add(question.getTitle() + " - " + questionPage.getTitle());
                     } else {
-                        headerBuilder.append("\"" + questionPage.getTitle() + " - Q" + newCharIndex + "\",");
+                        headerRow.add("Q" + newCharIndex + " - " + questionPage.getTitle());
                     }
 
                     questionIds.add(question.getId());
                     index++;
                 }
             }
-            headerBuilder.append("% Correct,");
-            headerBuilder.append("\n");
-            headerBuilder.append(",% Correct,");
-            
+            headerRow.add("% Correct");
+            rows.add(headerRow.toArray(new String[0]));
+
+            List<String> totalsRow = Lists.newArrayList();
+            Collections.addAll(totalsRow, ",Correct %".split(","));
+
             Map<RegisteredUserDTO, Map<String, Integer>> userQuestionDataMap = this.gameManager
                     .getDetailedGameProgressData(groupMembers, gameboard);
 
+            List<String[]> resultRows = Lists.newArrayList();
             int[] columnTotals = new int[questionIds.size()];
             for (RegisteredUserDTO user : groupMembers) {
-
+                ArrayList<String> resultRow = Lists.newArrayList();
                 UserSummaryDTO userSummary = associationManager.enforceAuthorisationPrivacy(currentlyLoggedInUser,
                         userManager.convertToUserSummaryObject(user));
 
                 // can the user access the data?
                 if (userSummary.isAuthorisedFullAccess()) {
-                    resultBuilder.append(userSummary.getFamilyName() + "," + userSummary.getGivenName() + ",");
+                    resultRow.add(userSummary.getFamilyName());
+                    resultRow.add(userSummary.getGivenName());
                     int totalCorrect = 0;
                     int columnNumber = 0;
                     for (String questionId : questionIds) {
                         Integer resultForQuestion = userQuestionDataMap.get(user).get(questionId);
                         
                         if (null == resultForQuestion) {
-                            resultBuilder.append(",");
+                            resultRow.add("");
                         } else {
-                            resultBuilder.append(resultForQuestion + ",");    
+                            resultRow.add(String.format("%d", resultForQuestion));
                         }
                         
                         if (resultForQuestion != null && resultForQuestion == 1) {
@@ -442,16 +499,17 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                         columnNumber++;
                     }
                     
-                    Double percentageCorrect = (new Double(totalCorrect) / questionIds.size()) * 100F;
-                    resultBuilder.append(percentageFormat.format(percentageCorrect) + ",");
+                    double percentageCorrect = ((double) totalCorrect / questionIds.size()) * 100F;
+                    resultRow.add(percentageFormat.format(percentageCorrect));
                     
                 } else {
-                    resultBuilder.append(userSummary.getFamilyName() + "," + userSummary.getGivenName() + ",");
+                    resultRow.add(userSummary.getFamilyName());
+                    resultRow.add(userSummary.getGivenName());
                     for (@SuppressWarnings("unused") String questionId : questionIds) {
-                        resultBuilder.append("ACCESS_REVOKED,");
+                        resultRow.add("ACCESS_REVOKED");
                     }
                 }
-                resultBuilder.append("\n");
+                Collections.addAll(resultRows, resultRow.toArray(new String[0]));
             }
 
             this.getLogManager().logEvent(currentlyLoggedInUser, request, DOWNLOAD_ASSIGNMENT_PROGRESS_CSV,
@@ -460,18 +518,20 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             // ignore name columns
 
             for (int i = 0; i < questionIds.size(); i++) {
-                Double percentageCorrect = (new Double(columnTotals[i]) / groupMembers.size()) * 100F;
-                headerBuilder.append(percentageFormat.format(percentageCorrect) + ",");
+                double percentageCorrect = ((double) columnTotals[i] / groupMembers.size()) * 100F;
+                totalsRow.add(percentageFormat.format(percentageCorrect));
             }
-            headerBuilder.append("\n");
-            
-            headerBuilder.append("Last Name,First Name\n");
 
-            headerBuilder.append(resultBuilder);
-            
+            rows.add(totalsRow.toArray(new String[0]));
+            rows.add("Last Name,First Name".split(","));
+            rows.addAll(resultRows);
+            csvWriter.writeAll(rows);
+            csvWriter.close();
+
+            headerBuilder.append(stringWriter.toString());
             // get game manager completion information for this assignment.
             return Response.ok(headerBuilder.toString())
-                    .header("Content-Disposition", "attachment; filename=export.csv")
+                    .header("Content-Disposition", "attachment; filename=assignment_progress.csv")
                     .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
 
         } catch (NoUserLoggedInException e) {
@@ -481,9 +541,215 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unknown database error.").toResponse();
         } catch (ContentManagerException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unknown content database error.").toResponse();
+        } catch (IOException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while building the CSV file.").toResponse();
         }
     }
-    
+
+    /**
+     * Allows the user to download the results of the assignments they have set to a group as a detailed csv file.
+     *
+     * @param groupId
+     *            - the id of the group to be looked up.
+     * @param request
+     *            - so that we can identify the current user.
+     * @return the assignment object.
+     */
+    @GET
+    @Path("/assign/group/{group_id}/progress/download")
+    @Produces("text/plain")
+    @GZIP
+    @Consumes(MediaType.WILDCARD)
+    public Response getGroupAssignmentsProgressDownloadCSV(@Context final HttpServletRequest request,
+            @PathParam("group_id") final Long groupId) {
+
+        try {
+            // Fetch the currently logged in user
+            RegisteredUserDTO currentlyLoggedInUser;
+            currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
+
+            if (!isUserAnAdmin(userManager, request) && !isUserStaff(userManager, request)
+                    && currentlyLoggedInUser.getRole() != Role.TEACHER) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "You are not a teacher, a member of staff, nor an admin.").toResponse();
+            }
+
+            // Fetch the requested group
+            UserGroupDTO group;
+            group = this.groupManager.getGroupById(groupId);
+
+            // Fetch the assignments owned by the currently logged in user that are assigned to the requested group
+            List<AssignmentDTO> assignments;
+            assignments = this.assignmentManager.getAllAssignmentsSetByUserToGroup(currentlyLoggedInUser, group);
+
+            // Fetch the members of the requested group
+            List<RegisteredUserDTO> groupMembers;
+            groupMembers = this.groupManager.getUsersInGroup(group);
+            // quick hack to sort list by user last name
+            groupMembers.sort((user1, user2) -> {
+                if (user1.getFamilyName() == null && user2.getFamilyName() != null) {
+                    return -1;
+                } else if (user1.getFamilyName() != null && user2.getFamilyName() == null) {
+                    return 1;
+                } else if (user1.getFamilyName() == null && user2.getFamilyName() == null) {
+                    return 0;
+                } else {
+                    return user1.getFamilyName().compareTo(user2.getFamilyName());
+                }
+            });
+
+            // String: question part id
+            // Integer: question part result
+            Map<RegisteredUserDTO, Map<GameboardDTO, Map<String, Integer>>> grandTable = Maps.newHashMap();
+            // Retrieve each user's progress data and cram everything into a Grand Table for later consumption
+            for (AssignmentDTO assignment : assignments) {
+                GameboardDTO gameboard = gameManager.getGameboard(assignment.getGameboardId());
+
+                Map<RegisteredUserDTO, Map<String, Integer>> userQuestionDataMap;
+                userQuestionDataMap = this.gameManager.getDetailedGameProgressData(groupMembers, gameboard);
+                for (RegisteredUserDTO student : userQuestionDataMap.keySet()) {
+                    Map<GameboardDTO, Map<String, Integer>> entry = grandTable.get(student);
+                    if (null == entry) {
+                        entry = Maps.newHashMap();
+                    }
+                    entry.put(gameboard, userQuestionDataMap.get(student));
+                    grandTable.put(student, entry);
+                }
+            }
+
+            ArrayList<String> headerRow = Lists.newArrayList();
+            Collections.addAll(headerRow, "Last Name,First Name,% Correct Overall".split(","));
+            List<String> gameboardTitles = Lists.newArrayList();
+            for (AssignmentDTO assignment : assignments) {
+                GameboardDTO gameboard = gameManager.getGameboard(assignment.getGameboardId());
+                String gameboardTitle = gameboard.getTitle();
+                if (null != gameboardTitle) {
+                    gameboardTitles.add(gameboardTitle);
+                } else {
+                    gameboardTitles.add(gameboard.getId());
+                }
+            }
+            for (String gameboardTitle : gameboardTitles) {
+                headerRow.add("% Correct for '" + gameboardTitle + "'");
+            }
+            headerRow.add("");
+            Map<GameboardDTO, List<String>> gameboardQuestionIds = Maps.newHashMap();
+            for (AssignmentDTO assignment : assignments) {
+                GameboardDTO gameboard = gameManager.getGameboard(assignment.getGameboardId());
+                for (GameboardItem questionPage : gameboard.getQuestions()) {
+                    int b = 1;
+                    for (QuestionDTO question : gameManager.getAllMarkableQuestionPartsDFSOrder(questionPage.getId())) {
+                        List<String> questionIds = gameboardQuestionIds.get(gameboard);
+                        if (null == questionIds) {
+                            questionIds = Lists.newArrayList();
+                        }
+                        questionIds.add(question.getId());
+                        gameboardQuestionIds.put(gameboard, questionIds);
+
+                        StringBuilder s = new StringBuilder();
+                        if (question.getTitle() != null) {
+                            s.append(question.getTitle());
+                        } else {
+                            s.append("Q").append(b);
+                        }
+                        s.append(" - ").append(questionPage.getTitle()).append(" - ");
+                        if (gameboard.getTitle() != null) {
+                            s.append(gameboard.getTitle());
+                        } else {
+                            s.append(gameboard.getId());
+                        }
+                        b++;
+                        headerRow.add(s.toString());
+                    }
+                }
+            }
+
+            // Moving on to actual rows...
+            ArrayList<String[]> rows = Lists.newArrayList();
+            rows.add(headerRow.toArray(new String[0]));
+
+            for (RegisteredUserDTO groupMember : groupMembers) {
+                ArrayList<String> row = Lists.newArrayList();
+                Map<GameboardDTO, Map<String, Integer>> userAssignments = grandTable.get(groupMember);
+                List<Double> totals = Lists.newArrayList();
+                List<Integer> marks = Lists.newArrayList();
+                for (AssignmentDTO assignment : assignments) {
+                    GameboardDTO gameboard = gameManager.getGameboard(assignment.getGameboardId());
+                    int total = 0;
+                    int outOf = 0;
+                    List<String> questionIds = gameboardQuestionIds.get(gameboard);
+                    List<GameboardItem> questions = gameboard.getQuestions();
+                    Map<String, Integer> gameboardPartials = Maps.newHashMap();
+                    for (GameboardItem question : questions) {
+                        gameboardPartials.put(question.getId(), 0);
+                    }
+                    HashMap<String, Integer> questionParts = new HashMap<>(gameboardPartials);
+                    for (String s : questionIds) {
+                        Integer mark = userAssignments.get(gameboard).get(s);
+                        String[] tokens = s.split("\\|");
+                        questionParts.put(tokens[0], questionParts.get(tokens[0]) + 1);
+                        marks.add(mark);
+                        if (null != mark) {
+                            gameboardPartials.put(tokens[0], gameboardPartials.get(tokens[0]) + mark);
+                        }
+                    }
+                    for (Entry<String, Integer> entry : gameboardPartials.entrySet()) {
+                        total += entry.getValue();
+                        outOf += questionParts.get(entry.getKey());
+                    }
+                    totals.add(100 * new Double(total) / outOf);
+                }
+                Double overallTotal = totals.stream()
+                        .map(boardTotal -> boardTotal / assignments.size())
+                        .reduce(0d, (a, b) -> a + b);
+
+                // The next three lines could be a little better if I were not this sleepy...
+                row.add(groupMember.getFamilyName());
+                row.add(groupMember.getGivenName());
+                row.add(String.format("%.0f", overallTotal));
+                for (Double total : totals) {
+                    row.add(String.format("%.0f", total));
+                }
+                row.add("");
+                for (Integer mark : marks) {
+                    if (null != mark) {
+                        row.add(String.format("%d", mark));
+                    } else {
+                        row.add("");
+                    }
+                }
+                rows.add(row.toArray(new String[0]));
+            }
+
+            StringWriter stringWriter = new StringWriter();
+            CSVWriter csvWriter = new CSVWriter(stringWriter);
+            csvWriter.writeAll(rows);
+            csvWriter.close();
+
+            String headerBuilder = String.format("Assignments for '%s' (%s)\nDownloaded on %s\nGenerated by: %s %s\n\n",
+                    group.getGroupName(), group.getId(), new Date(), currentlyLoggedInUser.getGivenName(),
+                    currentlyLoggedInUser.getFamilyName()) + stringWriter.toString()
+                    + "\n\nN.B.\n\"The percentages are for question parts completed, not question pages.\"\n";
+
+            this.getLogManager().logEvent(currentlyLoggedInUser, request, DOWNLOAD_GROUP_PROGRESS_CSV,
+                    ImmutableMap.of("groupId", groupId));
+
+            return Response.ok(headerBuilder)
+                    .header("Content-Disposition", "attachment; filename=group_progress.csv")
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
+
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            log.error("Database error while trying to view assignment progress", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unknown database error.").toResponse();
+        } catch (ContentManagerException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unknown content database error.").toResponse();
+        } catch (IOException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while building the CSV file.").toResponse();
+        }
+    }
+
     /**
      * Allows a user to get all groups that have been assigned to a given board.
      * 
@@ -517,43 +783,49 @@ public class AssignmentFacade extends AbstractIsaacFacade {
      * 
      * @param request
      *            - so that we can identify the current user.
-     * @param gameboardId
-     *            - board to assign
-     * @param groupId
-     *            - assignee group
+     * @param assignmentDTOFromClient a partially completed DTO for the assignment.
      * @return the assignment object.
      */
     @POST
-    @Path("/assign/{gameboard_id}/{group_id}")
+    @Path("/assign/")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public Response assignGameBoard(@Context final HttpServletRequest request,
-            @PathParam("gameboard_id") final String gameboardId, @PathParam("group_id") final Long groupId) {
+            final AssignmentDTO assignmentDTOFromClient) {
+
+        if (assignmentDTOFromClient.getGameboardId() == null || assignmentDTOFromClient.getGroupId() == null) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "A required field was missing. Must provide group and gameboard ids").toResponse();
+        }
+
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
-            UserGroupDTO assigneeGroup = groupManager.getGroupById(groupId);
+            UserGroupDTO assigneeGroup = groupManager.getGroupById(assignmentDTOFromClient.getGroupId());
             if (null == assigneeGroup) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "The group id specified does not exist.")
                         .toResponse();
             }
 
-            GameboardDTO gameboard = this.gameManager.getGameboard(gameboardId);
+            GameboardDTO gameboard = this.gameManager.getGameboard(assignmentDTOFromClient.getGameboardId());
             if (null == gameboard) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "The gameboard id specified does not exist.")
                         .toResponse();
             }
 
-            AssignmentDTO newAssignment = new AssignmentDTO();
-            newAssignment.setGameboardId(gameboard.getId());
-            newAssignment.setOwnerUserId(currentlyLoggedInUser.getId());
-            newAssignment.setGroupId(groupId);
+            assignmentDTOFromClient.setOwnerUserId(currentlyLoggedInUser.getId());
+            assignmentDTOFromClient.setCreationDate(null);
+            assignmentDTOFromClient.setId(null);
 
             // modifies assignment passed in to include an id.
-            this.assignmentManager.createAssignment(newAssignment);
+            AssignmentDTO assignmentWithID = this.assignmentManager.createAssignment(assignmentDTOFromClient);
 
-            this.getLogManager().logEvent(currentlyLoggedInUser, request, SET_NEW_ASSIGNMENT, Maps.newHashMap());
+            LinkedHashMap<String, Object> eventDetails = new LinkedHashMap<>();
+            eventDetails.put(Constants.GAMEBOARD_ID_FKEY, assignmentWithID.getGameboardId());
+            eventDetails.put(GROUP_FK, assignmentWithID.getGroupId());
+            eventDetails.put(ASSIGNMENT_FK, assignmentWithID.getId());
+            eventDetails.put(ASSIGNMENT_DUEDATE_FK, assignmentWithID.getDueDate());
+            this.getLogManager().logEvent(currentlyLoggedInUser, request, SET_NEW_ASSIGNMENT, eventDetails);
 
-            return Response.ok(newAssignment).build();
+            return Response.ok(assignmentDTOFromClient).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (DuplicateAssignmentException e) {
@@ -609,7 +881,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             this.assignmentManager.deleteAssignment(assignmentToDelete);
 
-            this.getLogManager().logEvent(currentlyLoggedInUser, request, DELETE_ASSIGNMENT, Maps.newHashMap());
+            this.getLogManager().logEvent(currentlyLoggedInUser, request, DELETE_ASSIGNMENT,
+                    ImmutableMap.of(ASSIGNMENT_FK, assignmentToDelete.getId()));
 
             return Response.noContent().build();
         } catch (NoUserLoggedInException e) {

@@ -51,6 +51,7 @@ import uk.ac.cam.cl.dtg.segue.dos.LogEvent;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 
 /**
  * @author sac92
@@ -93,10 +94,10 @@ public class PgLogManager implements ILogManager {
         try {
             if (user instanceof RegisteredUserDTO) {
                 this.persistLogEvent(((RegisteredUserDTO) user).getId().toString(), null, eventType, eventDetails,
-                        getClientIpAddr(httpRequest));
+                        RequestIPExtractor.getClientIpAddr(httpRequest));
             } else {
                 this.persistLogEvent(null, ((AnonymousUserDTO) user).getSessionId(), eventType, eventDetails,
-                        getClientIpAddr(httpRequest));
+                        RequestIPExtractor.getClientIpAddr(httpRequest));
             }
 
         } catch (JsonProcessingException e) {
@@ -312,11 +313,7 @@ public class PgLogManager implements ILogManager {
         Validate.notNull(toDate);
 
         StringBuilder queryToBuild = new StringBuilder();
-        queryToBuild.append("SELECT to_char(gen_month, 'YYYY-MM-01'), count(1)"
-                + " FROM generate_series(?, ?, INTERVAL '1' MONTH) m(gen_month)" + " LEFT OUTER JOIN logged_events"
-                + " ON ( date_trunc('month', \"timestamp\") = date_trunc('month', gen_month) )"
-                + " WHERE event_type=?");
-
+        queryToBuild.append("WITH filtered_logs AS (SELECT * FROM logged_events WHERE event_type=?");
         if (userIds != null && !userIds.isEmpty()) {
             StringBuilder inParams = new StringBuilder();
             inParams.append("?");
@@ -327,22 +324,29 @@ public class PgLogManager implements ILogManager {
             queryToBuild.append(String.format(" AND user_id IN (%s)", inParams.toString()));
 
         }
+        queryToBuild.append(") ");
+        // The following LEFT JOIN gives us months with no events in as required, but need count(id) not count(1) to
+        // count actual logged events (where id strictly NOT NULL) in those months, and not count an extra '1' for
+        // empty months where id is NULL by definition of the JOIN.
+        queryToBuild.append("SELECT to_char(gen_month, 'YYYY-MM-01'), count(id)");
+        queryToBuild.append(" FROM generate_series(date_trunc('month', ?::timestamp), ?, INTERVAL '1' MONTH) m(gen_month)");
+        queryToBuild.append(" LEFT OUTER JOIN filtered_logs ON ( date_trunc('month', \"timestamp\") = date_trunc('month', gen_month) )");
         queryToBuild.append(" GROUP BY gen_month ORDER BY gen_month ASC;");
 
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
             pst = conn.prepareStatement(queryToBuild.toString());
-            pst.setTimestamp(1, new java.sql.Timestamp(fromDate.getTime()));
-            pst.setTimestamp(2, new java.sql.Timestamp(toDate.getTime()));
 
-            pst.setString(3, type);
+            pst.setString(1, type);
 
-            int index = 4;
+            int index = 2;
             if (userIds != null) {
                 for (String userId : userIds) {
                     pst.setString(index++, userId);
                 }
             }
+            pst.setTimestamp(index++, new java.sql.Timestamp(fromDate.getTime()));
+            pst.setTimestamp(index++, new java.sql.Timestamp(toDate.getTime()));
 
             ResultSet results = pst.executeQuery();
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
@@ -491,36 +495,6 @@ public class PgLogManager implements ILogManager {
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
-    }
-
-    /**
-     * Extract client ip address.
-     * 
-     * Solution retrieved from:
-     * http://stackoverflow.com/questions/4678797/how-do-i-get-the-remote-address-of-a-client-in-servlet
-     * 
-     * @param request
-     *            - to attempt to extract a valid Ip from.
-     * @return string representation of the client's ip address.
-     */
-    private static String getClientIpAddr(final HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("Proxy-Client-IP");
-        }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("WL-Proxy-Client-IP");
-        }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("HTTP_CLIENT_IP");
-        }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("HTTP_X_FORWARDED_FOR");
-        }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getRemoteAddr();
-        }
-        return ip;
     }
 
     /**

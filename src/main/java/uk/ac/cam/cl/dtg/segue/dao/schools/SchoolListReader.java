@@ -15,38 +15,22 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.schools;
 
-import static com.google.common.collect.Maps.immutableEntry;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOLS_SEARCH_INDEX;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOLS_SEARCH_TYPE;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOL_URN_FIELDNAME;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.dos.users.School;
-import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
-import uk.ac.cam.cl.dtg.segue.search.SegueSearchOperationException;
-
 import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.dos.users.School;
+import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
+import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
+
+import java.io.IOException;
+import java.util.List;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Class responsible for reading the local school list csv file.
@@ -58,31 +42,24 @@ import com.google.inject.name.Named;
 public class SchoolListReader {
     private static final Logger log = LoggerFactory.getLogger(SchoolListReader.class);
 
-    private final String fileToLoad;
     private final ISearchProvider searchProvider;
 
     private final ObjectMapper mapper = new ObjectMapper();
 
-    private final Date dataSourceModificationDate;
-    
+    private final String dataSourceModificationDate;
+
     /**
      * SchoolListReader constructor.
      * 
-     * @param filename
-     *            - csv file containing the list of schools.
      * @param searchProvider
      *            - search provider that can be used to put and retrieve school data.
      */
     @Inject
-    public SchoolListReader(@Named(Constants.SCHOOL_CSV_LIST_PATH) final String filename,
-            final ISearchProvider searchProvider) {
-        this.fileToLoad = filename;
+    public SchoolListReader(final ISearchProvider searchProvider) {
         this.searchProvider = searchProvider;
-        
-        searchProvider.registerRawStringFields(Arrays.asList(SCHOOL_URN_FIELDNAME.toLowerCase()));
-        
-        File dataSource = new File(fileToLoad);
-        dataSourceModificationDate = new Date(dataSource.lastModified());
+
+        dataSourceModificationDate = searchProvider.getById(Constants.SCHOOLS_SEARCH_INDEX, "metadata", "sourceFile")
+                .getSource().get("lastModified").toString();
     }
 
     /**
@@ -94,14 +71,14 @@ public class SchoolListReader {
      * @throws UnableToIndexSchoolsException
      *             - if there is an error access the index of schools.
      */
-    public List<School> findSchoolByNameOrPostCode(final String searchQuery) throws UnableToIndexSchoolsException {
+    public List<School> findSchoolByNameOrPostCode(final String searchQuery) throws UnableToIndexSchoolsException, SegueSearchException {
         if (!this.ensureSchoolList()) {
             log.error("Unable to ensure school search cache.");
             throw new UnableToIndexSchoolsException("unable to ensure the cache has been populated");
         }
 
         List<String> schoolSearchResults = searchProvider.fuzzySearch(SCHOOLS_SEARCH_INDEX, SCHOOLS_SEARCH_TYPE,
-                searchQuery, 0, DEFAULT_RESULTS_LIMIT, null, Constants.SCHOOL_URN_FIELDNAME_POJO,
+                searchQuery, 0, DEFAULT_RESULTS_LIMIT, null, null, Constants.SCHOOL_URN_FIELDNAME_POJO,
                 Constants.SCHOOL_ESTABLISHMENT_NAME_FIELDNAME_POJO, Constants.SCHOOL_POSTCODE_FIELDNAME_POJO)
                 .getResults();
 
@@ -133,8 +110,8 @@ public class SchoolListReader {
      * @throws JsonParseException
      *             - if the school data is malformed
      */
-    public School findSchoolById(final Long schoolURN) throws UnableToIndexSchoolsException, JsonParseException,
-            JsonMappingException, IOException {
+    public School findSchoolById(final String schoolURN) throws UnableToIndexSchoolsException, JsonParseException,
+            JsonMappingException, IOException, SegueSearchException {
 
         if (!this.ensureSchoolList()) {
             log.error("Unable to ensure school search cache.");
@@ -145,7 +122,7 @@ public class SchoolListReader {
         
         matchingSchoolList = searchProvider.findByPrefix(SCHOOLS_SEARCH_INDEX, SCHOOLS_SEARCH_TYPE,
                 SCHOOL_URN_FIELDNAME.toLowerCase() + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
-                schoolURN.toString(), 0, DEFAULT_RESULTS_LIMIT).getResults();
+                schoolURN, 0, DEFAULT_RESULTS_LIMIT, null).getResults();
 
         if (matchingSchoolList.isEmpty()) {
             return null;
@@ -159,27 +136,6 @@ public class SchoolListReader {
         return mapper.readValue(matchingSchoolList.get(0), School.class);
     }
 
-    /**
-     * Trigger a thread to index the schools list. If needed.
-     */
-    public synchronized void prepareSchoolList() {
-
-        // We mustn't throw any exceptions here, as this is called from the constructor of SchoolLookupServiceFacade,
-        // called by Guice. And if anything dies while Guice is working, we never recover.
-
-        Thread thread = new Thread() {
-            public void run() {
-                log.info("Starting a new thread to index schools list.");
-                try {
-                    indexSchoolsWithSearchProvider();
-                } catch (UnableToIndexSchoolsException e) {
-                    log.error("Unable to index the schools list.");
-                }
-            }
-        };
-        thread.setDaemon(true);
-        thread.start();
-    }
 
     /**
      * Ensure School List has been generated.
@@ -189,117 +145,16 @@ public class SchoolListReader {
      *             - If there is a problem indexing.
      */
     private boolean ensureSchoolList() throws UnableToIndexSchoolsException {
-        if (searchProvider.hasIndex(SCHOOLS_SEARCH_INDEX)) {
-            return true;
-        } else {
-            this.indexSchoolsWithSearchProvider();
-        }
-
         return searchProvider.hasIndex(SCHOOLS_SEARCH_INDEX);
     }
 
-    /**
-     * Build the index for the search schools provider.
-     * 
-     * @throws UnableToIndexSchoolsException
-     *             - when there is a problem building the index of schools.
-     */
-    private synchronized void indexSchoolsWithSearchProvider() throws UnableToIndexSchoolsException {
-        if (!searchProvider.hasIndex(SCHOOLS_SEARCH_INDEX)) {
-            log.info("Creating schools index with search provider.");
-            List<School> schoolList = this.loadAndBuildSchoolList();
-            List<Map.Entry<String, String>> indexList = Lists.newArrayList();
 
-            for (School school : schoolList) {
-                try {
-                    indexList.add(immutableEntry(school.getUrn().toString(), mapper.writeValueAsString(school)));
-                } catch (JsonProcessingException e) {
-                    log.error("Unable to serialize the school object into json.", e);
-                }
-            }
 
-            try {
-                searchProvider.bulkIndex(SCHOOLS_SEARCH_INDEX, SCHOOLS_SEARCH_TYPE, indexList);
-                log.info("School list index request complete.");
-            } catch (SegueSearchOperationException e) {
-                log.error("Unable to complete bulk index operation for schools list.", e);
-            }
-        } else {
-            log.info("Cancelling school search index operation as another thread has already done it.");
-        }
-    }
-
-    /**
-     * Loads the school list from the preconfigured filename.
-     * 
-     * @return the list of schools.
-     * @throws UnableToIndexSchoolsException
-     *             - when there is a problem indexing.
-     */
-    private synchronized List<School> loadAndBuildSchoolList() throws UnableToIndexSchoolsException {
-        // otherwise we need to generate it.
-        List<School> schools = Lists.newArrayList();
-
-        try {
-            BufferedReader reader = new BufferedReader(new FileReader(fileToLoad));
-            String line = null;
-
-            // use first line to determine field names.
-            String[] columns = reader.readLine().split(",");
-
-            Map<String, Integer> fieldNameMapping = new TreeMap<String, Integer>();
-
-            for (int i = 0; i < columns.length; i++) {
-                fieldNameMapping.put(columns[i].trim().replace("\"", ""), i);
-            }
-
-            // we expect the columns to have the followings:
-            // SCHOOL URN | EstablishmentNumber | EstablishmentName | Town
-            // Postcode
-            line = reader.readLine();
-            while (line != null && !line.isEmpty()) {
-                // we have to remove the quotes from the string as the source
-                // file is ugly.
-                line = line.replace("\"", "");
-                String[] schoolArray = line.split(",");
-                try {
-                    School schoolToSave = new School(Long.parseLong(schoolArray[fieldNameMapping
-                            .get(Constants.SCHOOL_URN_FIELDNAME)]),
-                            schoolArray[fieldNameMapping.get(Constants.SCHOOL_ESTABLISHMENT_NUMBER_FIELDNAME)],
-                            schoolArray[fieldNameMapping.get(Constants.SCHOOL_ESTABLISHMENT_NAME_FIELDNAME)], null,
-                            School.SchoolDataSource.GOVERNMENT);
-
-                    // check if school has a post code as some of them do not.
-                    if (schoolArray.length - 1 == fieldNameMapping.get(Constants.SCHOOL_POSTCODE_FIELDNAME)) {
-                        schoolToSave
-                                .setPostcode(schoolArray[fieldNameMapping.get(Constants.SCHOOL_POSTCODE_FIELDNAME)]);
-                    }
-
-                    schools.add(schoolToSave);
-                } catch (IndexOutOfBoundsException e) {
-                    // this happens when the school does not have the required
-                    // data
-                    log.warn("Unable to load the following school into the school list due to missing required fields. "
-                            + line);
-                }
-                line = reader.readLine();
-            }
-            reader.close();
-        } catch (FileNotFoundException e) {
-            log.error("Unable to locate the file requested", e);
-            throw new UnableToIndexSchoolsException("Unable to locate the file requested", e);
-        } catch (IOException e) {
-            throw new UnableToIndexSchoolsException("Unable to load the file requested", e);
-        }
-
-        return schools;
-    }
-    
     /**
      * Method to help determine freshness of data.
      * @return date when the data source was last modified.
      */
-    public Date getDataLastModifiedDate() {
+    public String getDataLastModifiedDate() {
         
         return this.dataSourceModificationDate;
     }

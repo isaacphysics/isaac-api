@@ -15,16 +15,16 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
+import com.google.common.collect.ImmutableSet;
+
+import java.util.Set;
+
 /**
  * Utility class to provide common isaac-specific constants.
  *
  */
 public final class Constants {
-    public static final String MAILER_SMTP_SERVER = "MAILER_SMTP_SERVER";
-    public static final String MAIL_FROM_ADDRESS = "MAIL_FROM_ADDRESS";
-    public static final String MAIL_RECEIVERS = "MAIL_RECEIVERS";
     public static final String PROXY_PATH = "PROXY_PATH";
-    public static final String ANALYTICS_TRACKING_ID = "ANALYTICS_TRACKING_ID";
 
     /*
      * Subject specific constants.
@@ -37,12 +37,13 @@ public final class Constants {
     public static final String POD_FRAGMENT_TYPE = "isaacPod";
     public static final String PAGE_TYPE = "page";
     public static final String QUESTIONS_PAGE_TYPE = "questionsPage";
-    public static final String QUESTION_SUMMARY_PAGE_TYPE = "isaacQuestionSummaryPage";
     public static final String EVENT_TYPE = "isaacEventPage";
 
     public static final String RELATED_CONTENT_FIELDNAME = "relatedContent";
 
-    /**
+    public static final int NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES = 2;
+
+    /*
      * Game specific variables.
      */
     public static final int GAME_BOARD_TARGET_SIZE = 10;
@@ -52,6 +53,20 @@ public final class Constants {
      */
     public enum GameboardItemState {
         PERFECT, PASSED, IN_PROGRESS, NOT_ATTEMPTED, FAILED
+    }
+
+    public enum FastTrackConceptState {
+        ft_upper,
+        ft_lower;
+        public static FastTrackConceptState getStateFromTags(Set<String> tags) {
+            if (tags.contains("ft_upper")) {
+                return ft_upper;
+            } else if (tags.contains("ft_lower")) {
+                return ft_lower;
+            } else {
+                return null;
+            }
+        }
     }
 
     /**
@@ -70,9 +85,10 @@ public final class Constants {
     public static final String EVENT_DATE_FIELDNAME = "date";
     public static final String EVENT_ENDDATE_FIELDNAME = "endDate";
 
-
+    public static final String ALL_BOARDS = "ALL";
     public static final Integer DEFAULT_GAMEBOARDS_RESULTS_LIMIT = 6;
     public static final Integer MAX_PODS_TO_RETURN = 10;
+    public static final Integer SEARCH_MAX_WINDOW_SIZE = 10000;
 
     // Log events
     public static final String VIEW_QUESTION = "VIEW_QUESTION";
@@ -83,23 +99,29 @@ public final class Constants {
     public static final String VIEW_CONCEPT = "VIEW_CONCEPT";
     public static final String CONCEPT_ID_LOG_FIELDNAME = "conceptId";
     public static final String VIEW_PAGE = "VIEW_PAGE";
-    public static final String PAGE_ID_FIELDNAME = "CONCEPT_ID";
     public static final String PAGE_ID_LOG_FIELDNAME = "pageId";
 
-    public static final String VIEW_MY_ASSIGNMENTS = "VIEW_MY_ASSIGNMENTS";
     public static final String VIEW_GROUPS_ASSIGNMENTS = "VIEW_GROUPS_ASSIGNMENTS";
     public static final String VIEW_ASSIGNMENT_PROGRESS = "VIEW_ASSIGNMENT_PROGRESS";
     public static final String DOWNLOAD_ASSIGNMENT_PROGRESS_CSV = "DOWNLOAD_ASSIGNMENT_PROGRESS_CSV";
+    public static final String DOWNLOAD_GROUP_PROGRESS_CSV = "DOWNLOAD_GROUP_PROGRESS_CSV";
     public static final String SET_NEW_ASSIGNMENT = "SET_NEW_ASSIGNMENT";
     public static final String DELETE_ASSIGNMENT = "DELETE_ASSIGNMENT";
 
-    public static final String GENERATE_RANDOM_GAMEBOARD = "GENERATE_RANDOM_GAMEBOARD";
-    public static final String GAMEBOARD_LOG_FIELDNAME = "GAMEBOARD_LOG_FIELDNAME";
     public static final String VIEW_MY_BOARDS_PAGE = "VIEW_MY_BOARDS_PAGE";
 
     public static final String VIEW_USER_PROGRESS = "VIEW_USER_PROGRESS";
 
     public static final String CREATE_GAMEBOARD = "CREATE_GAMEBOARD";
+
+    public enum IsaacUserPreferences {
+        SUBJECT_INTEREST, BETA_FEATURE
+    }
+
+    public static final Set<String> ISAAC_LOG_EVENT_TYPES = ImmutableSet.of(ADD_BOARD_TO_PROFILE, CREATE_GAMEBOARD,
+            DELETE_ASSIGNMENT, DELETE_BOARD_FROM_PROFILE, DOWNLOAD_ASSIGNMENT_PROGRESS_CSV, DOWNLOAD_GROUP_PROGRESS_CSV,
+            GLOBAL_SITE_SEARCH, SET_NEW_ASSIGNMENT, VIEW_ASSIGNMENT_PROGRESS, VIEW_CONCEPT, VIEW_GROUPS_ASSIGNMENTS,
+            VIEW_MY_BOARDS_PAGE, VIEW_PAGE, VIEW_QUESTION, VIEW_USER_PROGRESS);
 
     /**
      * Private constructor to prevent this class being created.

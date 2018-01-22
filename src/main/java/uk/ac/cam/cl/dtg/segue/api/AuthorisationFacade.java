@@ -16,6 +16,8 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+
+import com.google.common.collect.ImmutableMap;
 import io.swagger.annotations.Api;
 
 import java.util.List;
@@ -33,7 +35,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
-import org.elasticsearch.common.collect.ImmutableMap;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +53,6 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.UserGroupNotFoundException;
-import uk.ac.cam.cl.dtg.segue.dao.associations.UserAssociationException;
 import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.segue.dos.UserAssociation;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
@@ -117,7 +117,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
                 userIdsWithAccess.add(a.getUserIdReceivingPermission());
             }
 
-            return Response.ok(userManager.convertToUserSummaryObjectList(userManager.findUsers(userIdsWithAccess)))
+            return Response.ok(userManager.convertToDetailedUserSummaryObjectList(userManager.findUsers(userIdsWithAccess)))
                     .cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
@@ -263,15 +263,15 @@ public class AuthorisationFacade extends AbstractSegueFacade {
             RegisteredUserDTO userDTO = userManager.getUserDTOById(associationManager.lookupTokenDetails(
                     currentRegisteredUser, token).getOwnerUserId());
 
-            return Response.ok(userManager.convertToUserSummaryObject(userDTO))
+            return Response.ok(userManager.convertToDetailedUserSummaryObject(userDTO))
                     .cacheControl(getCacheControl(Constants.NUMBER_SECONDS_IN_FIVE_MINUTES, false)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (InvalidUserAssociationTokenException e) {
             log.info(String.format("User (%s) attempted to use token (%s) but it is invalid or no longer exists.",
-                    currentRegisteredUser, token));
+                    currentRegisteredUser.getId(), token));
 
-            return new SegueErrorResponse(Status.BAD_REQUEST, "The token provided is Invalid or no longer exists.")
+            return new SegueErrorResponse(Status.BAD_REQUEST, "The token provided is invalid or no longer exists.")
                     .toResponse();
         } catch (SegueDatabaseException e) {
             log.error("Database error while trying to get association token. ", e);
@@ -307,10 +307,12 @@ public class AuthorisationFacade extends AbstractSegueFacade {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
-            associationManager.createAssociationWithToken(token, user);
+            AssociationToken associationToken = associationManager.createAssociationWithToken(token, user);
 
             this.getLogManager().logEvent(user, request, CREATE_USER_ASSOCIATION,
-                    ImmutableMap.of(ASSOCIATION_TOKEN_FIELDNAME, token));
+                    ImmutableMap.of(ASSOCIATION_TOKEN_FIELDNAME, associationToken.getToken(),
+                                    GROUP_FK, associationToken.getGroupId(),
+                                    USER_ID_FKEY_FIELDNAME, associationToken.getOwnerUserId()));
 
             return Response.ok(new ImmutableMap.Builder<String, String>().put("result", "success").build()).build();
         } catch (SegueDatabaseException e) {
@@ -318,10 +320,8 @@ public class AuthorisationFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (UserAssociationException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to create association", e).toResponse();
         } catch (InvalidUserAssociationTokenException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "The token provided is Invalid or no longer exists.")
+            return new SegueErrorResponse(Status.BAD_REQUEST, "The token provided is invalid or no longer exists.")
                     .toResponse();
         }
     }

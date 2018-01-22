@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.dos.content;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import uk.ac.cam.cl.dtg.segue.dto.content.FormulaDTO;
 
 /**

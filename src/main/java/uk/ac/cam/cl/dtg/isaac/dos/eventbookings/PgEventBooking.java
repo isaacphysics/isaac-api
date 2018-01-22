@@ -15,26 +15,39 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dos.eventbookings;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.util.Maps;
+import org.postgresql.util.PGobject;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 /**
- * @author sac92
+ * Postgres specific implementation for event booking.
  *
  */
 public class PgEventBooking implements EventBooking {
     private PostgresSqlDb ds;
+
     private Long bookingId;
     private Long userId;
     private String eventId;
+    private BookingStatus bookingStatus;
     private Date created;
+    private Date updated;
+    private Map<String, String> additionalInformation;
 
     /**
      * Partial Constructor - the remaining fields will be populated.
@@ -67,17 +80,27 @@ public class PgEventBooking implements EventBooking {
      *            - the date the booking was made.
      */
     public PgEventBooking(final PostgresSqlDb ds, final Long bookingId, final Long userId, final String eventId,
-            final Date created) {
+            final BookingStatus bookingStatus, final Date created, final Date updated, final Object additionalInformation) throws SegueDatabaseException {
         this.ds = ds;
         this.bookingId = bookingId;
         this.userId = userId;
         this.eventId = eventId;
+        this.bookingStatus = bookingStatus;
+        this.updated = updated;
         this.created = created;
+        if (additionalInformation != null) {
+            ObjectMapper mapper = new ObjectMapper();
+            try {
+                this.additionalInformation = this.convertFromJsonbToMap(additionalInformation);
+            } catch (IOException e) {
+                throw new SegueDatabaseException("Unable to convert object additionalInformation to Map.", e);
+            }
+        }
+
     }
 
     @Override
     public Long getId() {
-
         return bookingId;
     }
 
@@ -92,8 +115,26 @@ public class PgEventBooking implements EventBooking {
     }
 
     @Override
+    public BookingStatus getBookingStatus() { return bookingStatus; }
+
+    @Override
     public Date getCreationDate() {
         return created;
+    }
+
+    @Override
+    public Date getUpdateDate() {
+        return updated;
+    }
+
+    @Override
+    public Map<String, String> getAdditionalInformation() {
+        return additionalInformation;
+    }
+
+    @Override
+    public void setAdditionalInformation(Map<String, String> additionalInformation) {
+        this.additionalInformation = additionalInformation;
     }
 
     /**
@@ -133,15 +174,21 @@ public class PgEventBooking implements EventBooking {
                 this.bookingId = results.getLong("id");
                 this.eventId = results.getString("event_id");
                 this.userId = results.getLong("user_id");
+                this.bookingStatus = BookingStatus.valueOf(results.getString("booking_status"));
                 this.created = results.getDate("created");
+                this.updated = results.getDate("updated");
+
+                Map<String, String> additionalInfoObject = this.convertFromJsonbToMap(results.getObject("additionalEventInformation"));
+
+                this.additionalInformation = additionalInfoObject;
             }
 
             if (count == 0) {
                 throw new ResourceNotFoundException("Unable to locate the Event booking you requested");
             }
 
-        } catch (SQLException e) {
-            throw new SegueDatabaseException("Unable to fully populate the Booking Details object.");
+        } catch (SQLException | IOException e) {
+            throw new SegueDatabaseException("Unable to fully populate the Booking Details object.", e);
         }
     }
 
@@ -158,4 +205,17 @@ public class PgEventBooking implements EventBooking {
         return false;
     }
 
+    private Map<String, String> convertFromJsonbToMap(Object objectToConvert) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        final String stringVersion = mapper.writeValueAsString(objectToConvert);
+        Map<String, String> iterimResult = mapper.readValue(stringVersion, HashMap.class);
+
+        // this check is here to see if the map coming in is actually a jsonb map, if not assume it doesn't need to be
+        // unpacked
+        if (iterimResult.containsKey("type") && iterimResult.get("type").equals("jsonb")) {
+            return mapper.readValue(iterimResult.get("value"), HashMap.class);
+        }
+
+        return iterimResult;
+    }
 }

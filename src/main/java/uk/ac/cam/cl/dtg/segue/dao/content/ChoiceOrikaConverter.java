@@ -21,10 +21,12 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Formula;
 import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
 import uk.ac.cam.cl.dtg.segue.dto.content.GraphChoiceDTO;
+import uk.ac.cam.cl.dtg.segue.dos.content.StringChoice;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChemicalFormulaDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.FormulaDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuantityDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.StringChoiceDTO;
 import ma.glasnost.orika.converter.BidirectionalConverter;
 import ma.glasnost.orika.metadata.Type;
 
@@ -58,6 +60,8 @@ public class ChoiceOrikaConverter extends BidirectionalConverter<Choice, ChoiceD
             return super.mapperFacade.map(source, ChemicalFormulaDTO.class);
         } else if (source instanceof GraphChoice) {
             return super.mapperFacade.map(source, GraphChoiceDTO.class);
+        } else if (source instanceof StringChoice) {
+            return super.mapperFacade.map(source, StringChoiceDTO.class);
         } else {
             // I would have expected this to cause an infinite loop / stack
             // overflow but apparently it doesn't.
@@ -81,6 +85,8 @@ public class ChoiceOrikaConverter extends BidirectionalConverter<Choice, ChoiceD
             return super.mapperFacade.map(source, ChemicalFormula.class);
         } else if (source instanceof GraphChoiceDTO) {
             return super.mapperFacade.map(source, GraphChoice.class);
+        } else if (source instanceof StringChoiceDTO) {
+            return super.mapperFacade.map(source, StringChoice.class);
         } else {
             // I would have expected this to cause an infinite loop / stack
             // overflow but apparently it doesn't.

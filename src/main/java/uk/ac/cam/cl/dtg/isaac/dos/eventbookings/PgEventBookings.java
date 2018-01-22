@@ -22,8 +22,13 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.zip.CRC32;
 
-import org.elasticsearch.common.lang3.Validate;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.util.Maps;
+import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,6 +37,8 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 import com.google.api.client.util.Lists;
+
+import javax.annotation.Nullable;
 
 /**
  * PgEventBookings.
@@ -43,13 +50,17 @@ public class PgEventBookings implements EventBookings {
     private static final Logger log = LoggerFactory.getLogger(PgEventBookings.class);
     private PostgresSqlDb ds;
 
+    private ObjectMapper objectMapper;
+    private static final String TABLE_NAME = "event_bookings";
+
     /**
      * 
      * @param ds
      *            connection to the database.
      */
-    public PgEventBookings(final PostgresSqlDb ds) {
+    public PgEventBookings(final PostgresSqlDb ds, final ObjectMapper mapper) {
         this.ds = ds;
+        this.objectMapper = mapper;
     }
 
     /*
@@ -59,17 +70,24 @@ public class PgEventBookings implements EventBookings {
      * cl.dtg.isaac.dos.eventbookings.EventBooking)
      */
     @Override
-    public EventBooking add(final String eventId, final Long userId) throws SegueDatabaseException {
+    public EventBooking add(final String eventId, final Long userId, final BookingStatus status, Map<String, String> additionalEventInformation) throws SegueDatabaseException {
         PreparedStatement pst;
+
+        if (null == additionalEventInformation) {
+            additionalEventInformation = Maps.newHashMap();
+        }
+
         try (Connection conn = ds.getDatabaseConnection()) {
             Date creationDate = new Date();
             pst = conn.prepareStatement(
-                    "INSERT INTO event_bookings (id, user_id, event_id, created) VALUES (DEFAULT, ?, ?, ?)",
+                    "INSERT INTO event_bookings (id, user_id, event_id, status, created, updated, additional_booking_information) VALUES (DEFAULT, ?, ?, ?, ?, ?, ?::text::jsonb)",
                     Statement.RETURN_GENERATED_KEYS);
             pst.setLong(1, userId);
             pst.setString(2, eventId);
-            pst.setTimestamp(3, new java.sql.Timestamp(creationDate.getTime()));
-
+            pst.setString(3, status.name());
+            pst.setTimestamp(4, new java.sql.Timestamp(creationDate.getTime()));
+            pst.setTimestamp(5, new java.sql.Timestamp(creationDate.getTime()));
+            pst.setString(6, objectMapper.writeValueAsString(additionalEventInformation));
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save event booking.");
             }
@@ -77,7 +95,7 @@ public class PgEventBookings implements EventBookings {
             try (ResultSet generatedKeys = pst.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
                     Long id = generatedKeys.getLong(1);
-                    return new PgEventBooking(ds, id, userId, eventId, creationDate);
+                    return new PgEventBooking(ds, id, userId, eventId, status, creationDate, creationDate, additionalEventInformation);
                 } else {
                     throw new SQLException("Creating event booking failed, no ID obtained.");
                 }
@@ -85,6 +103,46 @@ public class PgEventBookings implements EventBookings {
 
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
+        } catch (JsonProcessingException e) {
+            throw new SegueDatabaseException("Unable to convert json to string for persistence.", e);
+        }
+    }
+
+    @Override
+    public void updateStatus(final String eventId, final Long userId, final BookingStatus status, final Map<String, String> additionalEventInformation) throws SegueDatabaseException {
+        PreparedStatement pst;
+
+        try (Connection conn = ds.getDatabaseConnection()) {
+
+            if (additionalEventInformation != null) {
+                pst = conn.prepareStatement("UPDATE event_bookings " +
+                    "SET status = ?, updated = ?, additional_booking_information = ?::text::jsonb " +
+                    "WHERE event_id = ? AND user_id = ?;");
+                pst.setString(1, status.name());
+                pst.setTimestamp(2, new java.sql.Timestamp(new Date().getTime()));
+                pst.setString(3, objectMapper.writeValueAsString(additionalEventInformation));
+                pst.setString(4, eventId);
+                pst.setLong(5, userId);
+            } else {
+                pst = conn.prepareStatement("UPDATE event_bookings " +
+                    "SET status = ?, updated = ? " +
+                    "WHERE event_id = ? AND user_id = ?;");
+                pst.setString(1, status.name());
+                pst.setTimestamp(2, new java.sql.Timestamp(new Date().getTime()));
+                pst.setString(3, eventId);
+                pst.setLong(4, userId);
+            }
+
+            int executeUpdate = pst.executeUpdate();
+
+            if (executeUpdate == 0) {
+                throw new ResourceNotFoundException("Could not delete the requested booking.");
+            }
+
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception while trying to update event booking", e);
+        } catch (JsonProcessingException e) {
+            throw new SegueDatabaseException("Unable to convert json to string for persistence.", e);
         }
     }
 
@@ -104,6 +162,64 @@ public class PgEventBookings implements EventBookings {
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception while trying to delete event booking", e);
         }
+    }
+
+    /**
+     * Acquire a globally unique database lock.
+     * This method will block until the lock is released.
+     * Any locks must be released manually.
+     *
+     * @param resourceId - the unique id for the object to be locked.
+     */
+    @Override
+    public void acquireDistributedLock(final String resourceId) throws SegueDatabaseException {
+        // generate 32 bit CRC based on table id and resource id so that is is more likely to be unique globally.
+        CRC32 crc = new CRC32();
+        crc.update((TABLE_NAME + resourceId).getBytes());
+
+        // acquire lock
+        try (Connection conn = ds.getDatabaseConnection()) {
+            PreparedStatement pst;
+            pst = conn.prepareStatement("SELECT pg_advisory_lock(?)");
+            pst.setLong(1, crc.getValue());
+            log.debug(String.format("Acquiring advisory lock on %s (%s)", TABLE_NAME + resourceId, crc.getValue()));
+            pst.executeQuery();
+        } catch (SQLException e) {
+            String msg = String.format(
+                "Unable to acquire lock for event (%s).", resourceId);
+            log.error(msg);
+            throw new SegueDatabaseException(msg);
+        }
+        log.debug(String.format("Acquired advisory lock on %s (%s)", TABLE_NAME + resourceId, crc.getValue()));
+    }
+
+    /**
+     * Release a globally unique database lock.
+     * This method will release a previously acquired lock.
+     *
+     * @param resourceId - the unique id for the object to be locked.
+     */
+    @Override
+    public void releaseDistributedLock(final String resourceId) throws SegueDatabaseException {
+
+        // generate 32 bit CRC based on table id and resource id so that is is more likely to be unique globally.
+        CRC32 crc = new CRC32();
+        crc.update((TABLE_NAME + resourceId).getBytes());
+
+        // acquire lock
+        try (Connection conn = ds.getDatabaseConnection()) {
+            PreparedStatement pst;
+            pst = conn.prepareStatement("SELECT pg_advisory_unlock(?)");
+            pst.setLong(1, crc.getValue());
+            log.debug(String.format("Releasing advisory lock on %s (%s)", TABLE_NAME + resourceId, crc.getValue()));
+            pst.executeQuery();
+        } catch (SQLException e) {
+            String msg = String.format(
+                "Unable to release lock for event (%s).", resourceId);
+            log.error(msg);
+            throw new SegueDatabaseException(msg);
+        }
+        log.debug(String.format("Released advisory lock on %s (%s)", TABLE_NAME + resourceId, crc.getValue()));
     }
 
     /*
@@ -162,7 +278,6 @@ public class PgEventBookings implements EventBookings {
             List<EventBooking> returnResult = Lists.newArrayList();
             while (results.next()) {
                 returnResult.add(buildPgEventBooking(results));
-
             }
             return returnResult;
         } catch (SQLException e) {
@@ -177,18 +292,45 @@ public class PgEventBookings implements EventBookings {
      */
     @Override
     public Iterable<EventBooking> findAllByEventId(final String eventId) throws SegueDatabaseException {
+        return this.findAllByEventIdAndStatus(eventId, (BookingStatus) null);
+    }
+
+    /**
+     * Find all bookings for a given event with a given status.
+     * <p>
+     * Useful for finding all on a waiting list or confirmed.
+     *
+     * @param eventId - the event of interest.
+     * @param status  - The event status that should match in the bookings returned. Can be null
+     * @return an iterable with all the events matching the criteria.
+     * @throws SegueDatabaseException - if an error occurs.
+     */
+    @Override
+    public Iterable<EventBooking> findAllByEventIdAndStatus(final String eventId, @Nullable final BookingStatus status) throws SegueDatabaseException {
         Validate.notBlank(eventId);
 
         try (Connection conn = ds.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("Select * FROM event_bookings WHERE event_id = ?");
+            StringBuilder sb = new StringBuilder();
+            sb.append("Select * FROM event_bookings WHERE event_id = ?");
+
+            if (status != null) {
+                sb.append(" AND status = ?");
+            }
+
+            pst = conn.prepareStatement(sb.toString());
             pst.setString(1, eventId);
+            if (status != null) {
+                pst.setString(2, status.name());
+            }
+
             ResultSet results = pst.executeQuery();
+
             List<EventBooking> returnResult = Lists.newArrayList();
             while (results.next()) {
                 returnResult.add(buildPgEventBooking(results));
-
             }
+
             return returnResult;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
@@ -227,9 +369,8 @@ public class PgEventBookings implements EventBookings {
      * @throws SQLException
      *             - if an error occurs.
      */
-    private PgEventBooking buildPgEventBooking(final ResultSet results) throws SQLException {
+    private PgEventBooking buildPgEventBooking(final ResultSet results) throws SQLException, SegueDatabaseException {
         return new PgEventBooking(ds, results.getLong("id"), results.getLong("user_id"),
-                results.getString("event_id"), results.getTimestamp("created"));
-
+                results.getString("event_id"), BookingStatus.valueOf(results.getString("status")), results.getTimestamp("created"), results.getTimestamp("updated"), results.getObject("additional_booking_information"));
     }
 }

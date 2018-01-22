@@ -15,19 +15,20 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_AUTH_EMAIL_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.PASSWORD_RESET_REQUEST_RECEIVED;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.PASSWORD_RESET_REQUEST_SUCCESSFUL;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacUserPreferences; // FIXME: Isaac class in Segue!
+
+import com.google.api.client.util.Maps;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
+import com.google.common.collect.Lists;
 import io.swagger.annotations.Api;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -45,8 +46,8 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.Validate;
-import org.elasticsearch.common.collect.Lists;
 import org.jboss.resteasy.annotations.GZIP;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
@@ -57,7 +58,8 @@ import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
-import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetRequestMisusehandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetRequestMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.RegistrationMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
@@ -71,10 +73,14 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
+import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
+import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dos.AbstractEmailPreferenceManager;
-import uk.ac.cam.cl.dtg.segue.dos.IEmailPreference;
+import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
+import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
+import uk.ac.cam.cl.dtg.segue.dos.AbstractUserPreferenceManager;
+import uk.ac.cam.cl.dtg.segue.dos.UserPreference;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
@@ -82,6 +88,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.UserSettings;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -89,12 +96,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Sets;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 
 /**
  * User facade.
- * 
+ *
  * @author Stephen Cummins
- * 
+ *
  */
 @Path("/")
 @Api(value = "/users")
@@ -104,11 +112,13 @@ public class UsersFacade extends AbstractSegueFacade {
     private final StatisticsManager statsManager;
     private final UserAssociationManager userAssociationManager;
     private final IMisuseMonitor misuseMonitor;
-    private final AbstractEmailPreferenceManager emailPreferenceManager;
+    private final AbstractUserPreferenceManager userPreferenceManager;
+    private final SchoolListReader schoolListReader;
+    private final Supplier<Set<School>> schoolOtherSupplier;
 
     /**
      * Construct an instance of the UsersFacade.
-     * 
+     *
      * @param properties
      *            - properties loader for the application
      * @param userManager
@@ -121,25 +131,52 @@ public class UsersFacade extends AbstractSegueFacade {
      *            - so we can check permissions..
      * @param misuseMonitor
      *            - so we can check for misuse
-     * @param emailPreferenceManager
-     *            - so we can provide email preferences
+     * @param userPreferenceManager
+     *            - so we can provide user preferences
+     * @param schoolListReader
+     *            - so we can augment school info
      */
     @Inject
     public UsersFacade(final PropertiesLoader properties, final UserAccountManager userManager,
-            final ILogManager logManager, final StatisticsManager statsManager,
-            final UserAssociationManager userAssociationManager, final IMisuseMonitor misuseMonitor,
-            final AbstractEmailPreferenceManager emailPreferenceManager) {
+                       final ILogManager logManager, final StatisticsManager statsManager,
+                       final UserAssociationManager userAssociationManager, final IMisuseMonitor misuseMonitor,
+                       final AbstractUserPreferenceManager userPreferenceManager, final SchoolListReader schoolListReader) {
         super(properties, logManager);
         this.userManager = userManager;
         this.statsManager = statsManager;
         this.userAssociationManager = userAssociationManager;
         this.misuseMonitor = misuseMonitor;
-        this.emailPreferenceManager = emailPreferenceManager;
+        this.userPreferenceManager = userPreferenceManager;
+        this.schoolListReader = schoolListReader;
+
+        this.schoolOtherSupplier = Suppliers.memoizeWithExpiration(new Supplier<Set<School>>() {
+            @Override
+            public Set<School> get() {
+                try {
+                    List<RegisteredUserDTO> users = userManager.findUsers(new RegisteredUserDTO());
+
+                    Set<School> schoolOthers = Sets.newHashSet();
+
+                    for (RegisteredUserDTO user : users) {
+                        if (user.getSchoolOther() != null) {
+                            School pseudoSchool = new School();
+                            pseudoSchool.setUrn(Integer.toString(user.getSchoolOther().hashCode()));
+                            pseudoSchool.setName(user.getSchoolOther());
+                            pseudoSchool.setDataSource(School.SchoolDataSource.USER_ENTERED);
+                            schoolOthers.add(pseudoSchool);
+                        }
+                    }
+                    return schoolOthers;
+                } catch (SegueDatabaseException e) {
+                    return null;
+                }
+            }
+        }, 1, TimeUnit.DAYS);
     }
-    
+
     /**
      * Get the details of the currently logged in user.
-     * 
+     *
      * @param request
      *            - request information used for caching.
      * @param httpServletRequest
@@ -151,7 +188,7 @@ public class UsersFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public Response getCurrentUserEndpoint(@Context final Request request,
-            @Context final HttpServletRequest httpServletRequest) {
+                                           @Context final HttpServletRequest httpServletRequest) {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
 
@@ -171,9 +208,9 @@ public class UsersFacade extends AbstractSegueFacade {
 
     /**
      * This method allows users to create a local account or update their settings.
-     * 
+     *
      * It will also allow administrators to change any user settings.
-     * 
+     *
      * @param request
      *            - the http request of the user wishing to authenticate
      * @param response
@@ -188,53 +225,94 @@ public class UsersFacade extends AbstractSegueFacade {
     @Consumes(MediaType.APPLICATION_JSON)
     @GZIP
     public Response createOrUpdateUserSettings(@Context final HttpServletRequest request,
-            @Context final HttpServletResponse response, final String userObjectString) {
-    	
-    	UserSettings userSettingsObjectFromClient;
-    	try {
-    		ObjectMapper tmpObjectMapper = new ObjectMapper();
-    		tmpObjectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    		userSettingsObjectFromClient = tmpObjectMapper.readValue(userObjectString, UserSettings.class);
-    		
-    		if (null == userSettingsObjectFromClient) {
-    			return new SegueErrorResponse(Status.BAD_REQUEST,  "No user settings provided.").toResponse();
-    		}
-    	} catch (IOException e) {
+                                               @Context final HttpServletResponse response, final String userObjectString) {
+
+        UserSettings userSettingsObjectFromClient;
+        String newPassword;
+        try {
+            ObjectMapper tmpObjectMapper = new ObjectMapper();
+            tmpObjectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+            //TODO: We need to change the way the frontend sends passwords to reduce complexity
+            Map<String, Object> mapRepresentation = tmpObjectMapper.readValue(userObjectString, HashMap.class);
+            newPassword = (String) ((Map)mapRepresentation.get("registeredUser")).get("password");
+            ((Map)mapRepresentation.get("registeredUser")).remove("password");
+            userSettingsObjectFromClient = tmpObjectMapper.convertValue(mapRepresentation, UserSettings.class);
+            
+            if (null == userSettingsObjectFromClient) {
+                return new SegueErrorResponse(Status.BAD_REQUEST,  "No user settings provided.").toResponse();
+            }
+        } catch (IOException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to parse the user object you provided.", e)
-            .toResponse();
-    	}
-    	
-    	RegisteredUser registeredUser = userSettingsObjectFromClient.getRegisteredUser();
-    	
-    	Map<String, Boolean> emailPreferences = userSettingsObjectFromClient.getEmailPreferences();
-    	
-    	if (null != registeredUser.getId()) {
-    		
-    		// Update email preferences within the same request
-        	List<IEmailPreference> userEmailPreferences = emailPreferenceManager.mapToEmailPreferenceList(
-    									registeredUser.getId(), emailPreferences);
-        	
-    		try {
-				return this.updateUserObject(request, response, registeredUser, 
-								userSettingsObjectFromClient.getPasswordCurrent(), userEmailPreferences);
-			} catch (IncorrectCredentialsProvidedException e) {
-	            return new SegueErrorResponse(Status.BAD_REQUEST, "Incorrect credentials provided.", e)
-	            .toResponse();
-			} catch (NoCredentialsAvailableException e) {
-	            return new SegueErrorResponse(Status.BAD_REQUEST, "No credentials available.", e)
-	            .toResponse();
-			}
-    	} else {
-    		return this.createUserObjectAndLogIn(request, response, registeredUser, emailPreferences);
-		}
+                    .toResponse();
+        }
+
+        RegisteredUser registeredUser = userSettingsObjectFromClient.getRegisteredUser();
+
+        // Extract the user preferences, which are validated before saving by userPreferenceObjectToList(...).
+        Map<String, Map<String, Boolean>> userPreferences = userSettingsObjectFromClient.getUserPreferences();
+
+        if (null != registeredUser.getId()) {
+
+            try {
+                return this.updateUserObject(request, response, registeredUser,
+                        userSettingsObjectFromClient.getPasswordCurrent(), newPassword, userPreferences);
+            } catch (IncorrectCredentialsProvidedException e) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "Incorrect credentials provided.", e)
+                        .toResponse();
+            } catch (NoCredentialsAvailableException e) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "No credentials available.", e)
+                        .toResponse();
+            }
+        } else {
+            try {
+                misuseMonitor.notifyEvent(RequestIPExtractor.getClientIpAddr(request), RegistrationMisuseHandler.class.toString());
+                return this.createUserObjectAndLogIn(request, response, registeredUser, newPassword, userPreferences);
+            } catch (SegueResourceMisuseException e) {
+                return SegueErrorResponse.getRateThrottledResponse("Too many registration requests. Please try again later ot contact us!");
+            }
+        }
 
     }
 
     /**
+     * Provides access to user preferences, mapping preference types to an inner map of preference names and values
+     * @param httpServletRequest - the request, to work ou the current user
+     * @return user preference map
+     */
+    @GET
+    @Path("users/user_preferences")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public Response getUserPreferences(@Context final HttpServletRequest httpServletRequest) {
+        try {
+            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
+            List<UserPreference> allUserPreferences = userPreferenceManager.getAllUserPreferences(currentUser.getId());
+
+            Map <String, Map<String, Boolean>> userPreferences = Maps.newHashMap();
+            for (UserPreference pref : allUserPreferences) {
+                if (!userPreferences.containsKey(pref.getPreferenceType())) {
+                    userPreferences.put(pref.getPreferenceType(), Maps.newHashMap());
+                }
+                userPreferences.get(pref.getPreferenceType()).put(pref.getPreferenceName(), pref.getPreferenceValue());
+            }
+
+            return Response.ok(userPreferences).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Can't load user preferences!", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        }
+    }
+
+    /**
      * End point that allows a local user to generate a password reset request.
-     * 
+     *
      * Step 1 of password reset process - send user an e-mail
-     * 
+     *
      * @param userObject
      *            - A user object containing the email of the user requesting a reset
      * @param request
@@ -247,14 +325,14 @@ public class UsersFacade extends AbstractSegueFacade {
     @Consumes(MediaType.APPLICATION_JSON)
     @GZIP
     public Response generatePasswordResetToken(final RegisteredUserDTO userObject,
-            @Context final HttpServletRequest request) {
+                                               @Context final HttpServletRequest request) {
         if (null == userObject) {
             log.debug("User is null");
             return new SegueErrorResponse(Status.BAD_REQUEST, "No user settings provided.").toResponse();
         }
 
         try {
-            misuseMonitor.notifyEvent(userObject.getEmail(), PasswordResetRequestMisusehandler.class.toString());
+            misuseMonitor.notifyEvent(userObject.getEmail(), PasswordResetRequestMisuseHandler.class.toString());
             userManager.resetPasswordRequest(userObject);
 
             this.getLogManager()
@@ -279,16 +357,16 @@ public class UsersFacade extends AbstractSegueFacade {
         } catch (SegueResourceMisuseException e) {
             String message = "You have exceeded the number of requests allowed for this endpoint. "
                     + "Please try again later.";
-            log.error(message, e.toString());
+            log.error("Too many password resets requested by: (" + userObject.getEmail() + ")", e.toString());
             return SegueErrorResponse.getRateThrottledResponse(message);
         }
     }
 
     /**
      * End point that verifies whether or not a password reset token is valid.
-     * 
+     *
      * Optional Step 2 - validate token is correct
-     * 
+     *
      * @param token
      *            - A password reset token
      * @return Success if the token is valid, otherwise returns not found
@@ -316,10 +394,10 @@ public class UsersFacade extends AbstractSegueFacade {
 
     /**
      * Final step of password reset process. Change password.
-     * 
+     *
      * @param token
      *            - A password reset token
-     * @param userObject
+     * @param clientResponse
      *            - A user object containing password information.
      * @param request
      *            - For logging purposes.
@@ -329,23 +407,24 @@ public class UsersFacade extends AbstractSegueFacade {
     @Path("users/resetpassword/{token}")
     @Consumes(MediaType.APPLICATION_JSON)
     @GZIP
-    public Response resetPassword(@PathParam("token") final String token, final RegisteredUser userObject,
-            @Context final HttpServletRequest request) {
+    public Response resetPassword(@PathParam("token") final String token, final Map<String, String> clientResponse,
+                                  @Context final HttpServletRequest request) {
         try {
-
-            RegisteredUserDTO userDTO = userManager.resetPassword(token, userObject);
+            String newPassword = clientResponse.get("password");
+            RegisteredUserDTO userDTO = userManager.resetPassword(token, newPassword);
 
             this.getLogManager().logEvent(userDTO, request, PASSWORD_RESET_REQUEST_SUCCESSFUL,
                     ImmutableMap.of(LOCAL_AUTH_EMAIL_FIELDNAME, userDTO.getEmail()));
+
             // we can reset the misuse monitor for incorrect logins now.
             misuseMonitor.resetMisuseCount(userDTO.getEmail().toLowerCase(), SegueLoginMisuseHandler.class.toString());
-            
+
         } catch (InvalidTokenException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid password reset token.");
             log.error("Invalid password reset token supplied: " + token);
             return error.toResponse();
         } catch (InvalidPasswordException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "No password supplied.");
+            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage());
             return error.toResponse();
         } catch (SegueDatabaseException e) {
             String errorMsg = "Database error has occurred during reset password process. Please try again later";
@@ -359,7 +438,7 @@ public class UsersFacade extends AbstractSegueFacade {
 
     /**
      * Get the event data for a specified user.
-     * 
+     *
      * @param request
      *            - request information used for caching.
      * @param httpServletRequest
@@ -381,9 +460,9 @@ public class UsersFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public Response getEventDataForUser(@Context final Request request,
-            @Context final HttpServletRequest httpServletRequest, @PathParam("user_id") final Long userIdOfInterest,
-            @QueryParam("from_date") final Long fromDate, @QueryParam("to_date") final Long toDate,
-            @QueryParam("events") final String events, @QueryParam("bin_data") final Boolean bin) {
+                                        @Context final HttpServletRequest httpServletRequest, @PathParam("user_id") final Long userIdOfInterest,
+                                        @QueryParam("from_date") final Long fromDate, @QueryParam("to_date") final Long toDate,
+                                        @QueryParam("events") final String events, @QueryParam("bin_data") final Boolean bin) {
         final boolean binData;
         if (null == bin || !bin) {
             binData = false;
@@ -401,12 +480,25 @@ public class UsersFacade extends AbstractSegueFacade {
                     "You must specify the from_date and to_date you are interested in.").toResponse();
         }
 
+        if (fromDate > toDate) {
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                    "The from_date must be before the to_date!").toResponse();
+        }
+
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
 
             RegisteredUserDTO userOfInterest = userManager.getUserDTOById(userIdOfInterest);
+            if (userOfInterest == null) {
+                throw new NoUserException("No user found with this ID.");
+            }
 
             UserSummaryDTO userOfInterestSummaryObject = userManager.convertToUserSummaryObject(userOfInterest);
+
+            if (!events.equals(ANSWER_QUESTION) && currentUser.getRole() != Role.ADMIN) {
+                // Non-admins should not be able to choose random log events.
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
 
             // decide if the user is allowed to view this data.
             if (!currentUser.getId().equals(userIdOfInterest)
@@ -414,8 +506,15 @@ public class UsersFacade extends AbstractSegueFacade {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
+            // No point looking for stats from before the user registered (except for merged logs at registration and
+            // these will only be ANONYMOUS_SESSION_DURATION_IN_MINUTES before registration anyway: less than 1 month):
+            Date fromDateObject = new Date(fromDate);
+            if (fromDateObject.before(userOfInterest.getRegistrationDate())) {
+                fromDateObject = userOfInterest.getRegistrationDate();
+            }
+
             Map<String, Map<LocalDate, Long>> eventLogsByDate = this.statsManager.getEventLogsByDateAndUserList(
-                    Lists.newArrayList(events.split(",")), new Date(fromDate), new Date(toDate),
+                    Lists.newArrayList(events.split(",")), fromDateObject, new Date(toDate),
                     Arrays.asList(userOfInterest), binData);
 
             return Response.ok(eventLogsByDate).build();
@@ -431,12 +530,74 @@ public class UsersFacade extends AbstractSegueFacade {
     }
 
 
+    /**
+     * This method allows the requester to provide a list of user ids and get back a mapping of the user
+     * id to the school information. This is useful for building up tables of users school information.
+     *
+     * @param httpServletRequest
+     *            Authentication and authorisation
+     * @param userIdsQueryParam
+     *            The comma seperated list of user ids to try and find schools for.
+     * @return A map mapping the userId to a school if we found one for it.
+     */
+    @GET
+    @Path("users/school_lookup")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public Response getUserIdToSchoolMap(@Context final HttpServletRequest httpServletRequest,
+                                         @QueryParam("user_ids") final String userIdsQueryParam) {
+        try {
+            if (!isUserStaff(this.userManager, httpServletRequest)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You must be a staff member to access this endpoint.")
+                        .toResponse();
+            }
 
+            if (null == userIdsQueryParam || userIdsQueryParam.isEmpty() ) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a comma separated list of user_ids in the query param")
+                        .toResponse();
+            }
+
+            String[] userIdsAsList = userIdsQueryParam.split(",");
+            List<Long> userLongIds = Lists.newArrayList();
+
+            for(int i = 0; i < userIdsAsList.length; i++) {
+                userLongIds.add(Long.parseLong(userIdsAsList[i]));
+            }
+
+            final List<RegisteredUserDTO> users = this.userManager.findUsers(userLongIds);
+            final ImmutableMap.Builder<String, Object> builder = ImmutableMap.builder();
+            for (RegisteredUserDTO user : users) {
+                if (user.getSchoolId() != null) {
+                    builder.put(user.getId().toString(), schoolListReader.findSchoolById(user.getSchoolId()));
+                } else if (user.getSchoolOther() != null && !user.getSchoolOther().isEmpty()) {
+                    Map<String, String> schoolOtherResult = Maps.newHashMap();
+                    schoolOtherResult.put("name", user.getSchoolOther());
+                    builder.put(user.getId().toString(), schoolOtherResult);
+                }
+            }
+
+            return Response.ok(builder.build()).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (NumberFormatException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to parse all parameters as integers.")
+                    .toResponse();
+        } catch (SegueDatabaseException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while looking up users", e)
+                    .toResponse();
+        } catch (IOException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while looking up schools", e)
+                    .toResponse();
+        } catch (UnableToIndexSchoolsException | SegueSearchException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while looking up schools", e)
+                    .toResponse();
+        }
+    }
 
 
     /**
      * Get a Set of all schools reported by users in the school other field.
-     * 
+     *
      * @param request
      *            for caching purposes.
      * @return list of strings.
@@ -446,21 +607,9 @@ public class UsersFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public Response getAllSchoolOtherResponses(@Context final Request request) {
-        try {
-            List<RegisteredUserDTO> users = userManager.findUsers(new RegisteredUserDTO());
 
-            Set<School> schoolOthers = Sets.newHashSet();
-
-            for (RegisteredUserDTO user : users) {
-                if (user.getSchoolOther() != null) {
-                    School pseudoSchool = new School();
-                    pseudoSchool.setUrn(user.getSchoolOther().hashCode() * -1L);
-                    pseudoSchool.setName(user.getSchoolOther());
-                    pseudoSchool.setDataSource(School.SchoolDataSource.USER_ENTERED);
-                    schoolOthers.add(pseudoSchool);
-                }
-            }
-
+        Set<School> schoolOthers = schoolOtherSupplier.get();
+        if (null != schoolOthers) {
             EntityTag etag = new EntityTag(schoolOthers.toString().hashCode() + "");
             Response cachedResponse = generateCachedResponse(request, etag, Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK);
             if (cachedResponse != null) {
@@ -469,20 +618,21 @@ public class UsersFacade extends AbstractSegueFacade {
 
             return Response.ok(schoolOthers).tag(etag)
                     .cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
-        } catch (SegueDatabaseException e) {
-            log.error("Unable to contact the database", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while looking up event information")
+
+        } else {
+            log.error("Unable to get school list");
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while looking up schools")
                     .toResponse();
         }
     }
-    
+
 
 
     /**
      * Update a user object.
-     * 
+     *
      * This method does all of the necessary security checks to determine who is allowed to edit what.
-     * 
+     *
      * @param request
      *            - so that we can identify the user
      * @param response
@@ -491,60 +641,66 @@ public class UsersFacade extends AbstractSegueFacade {
      *            - the new user object from the clients perspective.
      * @param passwordCurrent
      * 			  - the current password, used if the password has changed
-     * @param emailPreferences
-     * 			  - the email preferences for this user
+     * @param newPassword
+     * 			  - the new password, used if the password has changed
+     * @param userPreferenceObject
+     * 			  - the preferences for this user
      * @return the updated user object.
-     * @throws NoCredentialsAvailableException 
-     * @throws IncorrectCredentialsProvidedException 
+     * @throws NoCredentialsAvailableException
+     * @throws IncorrectCredentialsProvidedException
      */
     private Response updateUserObject(final HttpServletRequest request, final HttpServletResponse response,
-            final RegisteredUser userObjectFromClient, final String passwordCurrent,
-            final List<IEmailPreference> emailPreferences) throws IncorrectCredentialsProvidedException,
-            NoCredentialsAvailableException {
+                                      final RegisteredUser userObjectFromClient, final String passwordCurrent, final String newPassword,
+                                      final Map<String, Map<String, Boolean>> userPreferenceObject)
+                                throws IncorrectCredentialsProvidedException, NoCredentialsAvailableException {
         Validate.notNull(userObjectFromClient.getId());
 
         // this is an update as the user has an id
         // security checks
         try {
-            // check that the current user has permissions to change this users
-            // details.
+            // check that the current user has permissions to change this users details.
             RegisteredUserDTO currentlyLoggedInUser = this.userManager.getCurrentRegisteredUser(request);
             if (!currentlyLoggedInUser.getId().equals(userObjectFromClient.getId())
-                    && currentlyLoggedInUser.getRole() != Role.ADMIN 
+                    && currentlyLoggedInUser.getRole() != Role.ADMIN
                     && currentlyLoggedInUser.getRole() != Role.EVENT_MANAGER) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You cannot change someone elses' user settings.")
+                return new SegueErrorResponse(Status.FORBIDDEN, "You cannot change someone else's user settings.")
                         .toResponse();
             }
-            
+
             // check if they are trying to change a password
-            if (userObjectFromClient.getPassword() != null && !userObjectFromClient.getPassword().isEmpty()) {
+            if (newPassword != null && !newPassword.isEmpty()) {
                 // only admins and the account owner can change passwords 
                 if (!currentlyLoggedInUser.getId().equals(userObjectFromClient.getId())
                         && currentlyLoggedInUser.getRole() != Role.ADMIN) {
-                    return new SegueErrorResponse(Status.FORBIDDEN, "You cannot change someone elses' password.")
+                    return new SegueErrorResponse(Status.FORBIDDEN, "You cannot change someone else's password.")
                             .toResponse();
                 }
-                
+
                 // Password change requires auth check unless admin is modifying non-admin user account
                 if (!(currentlyLoggedInUser.getRole() == Role.ADMIN && userObjectFromClient.getRole() != Role.ADMIN)) {
                     // authenticate the user to check they are allowed to change the password
+
+                    if (null == passwordCurrent) {
+                        return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide your current password"
+                            + " to change your password!").toResponse();
+                    }
+
                     this.userManager.ensureCorrectPassword(AuthenticationProvider.SEGUE.name(),
                             userObjectFromClient.getEmail(), passwordCurrent);
                 }
             }
-            
-            // check that any changes to protected fields being made are
-            // allowed.
+
+            // check that any changes to protected fields being made are allowed.
             RegisteredUserDTO existingUserFromDb = this.userManager.getUserDTOById(userObjectFromClient
                     .getId());
-            
+
             if (Role.EVENT_MANAGER.equals(currentlyLoggedInUser.getRole())) {
                 if (Role.ADMIN.equals(existingUserFromDb.getRole())
                         || Role.ADMIN.equals(userObjectFromClient.getRole())) {
                     return new SegueErrorResponse(Status.FORBIDDEN, "You cannot modify admin roles.").toResponse();
                 }
             }
-            
+
             // check that the user is allowed to change the role of another user
             // if that is what they are doing.
             if ((currentlyLoggedInUser.getRole() != Role.ADMIN && currentlyLoggedInUser.getRole() != Role.EVENT_MANAGER)
@@ -552,19 +708,45 @@ public class UsersFacade extends AbstractSegueFacade {
                     && !userObjectFromClient.getRole().equals(existingUserFromDb.getRole())) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to change a users role.")
                         .toResponse();
-            } else if ((userObjectFromClient.getRole() != null && !userObjectFromClient.getRole().equals(
-                    existingUserFromDb.getRole()))
-                    || existingUserFromDb.getRole() != null
-                    && !existingUserFromDb.getRole().equals(userObjectFromClient.getRole())) {
-                log.info("ADMIN user " + currentlyLoggedInUser.getEmail() + " has modified the role of "
-                        + userObjectFromClient.getEmail() + "[" + userObjectFromClient.getId() + "]" + " to "
-                        + userObjectFromClient.getRole());
             }
-            
-            RegisteredUserDTO updatedUser = userManager.updateUserObject(userObjectFromClient);
-            
-            //Now update the email preferences
-			emailPreferenceManager.saveEmailPreferences(userObjectFromClient.getId(), emailPreferences);
+
+            RegisteredUserDTO updatedUser = userManager.updateUserObject(userObjectFromClient, newPassword);
+
+            // If the user's role has changed, record it. Check this using Objects.equals() to be null safe!
+            if (!Objects.equals(updatedUser.getRole(), existingUserFromDb.getRole())) {
+                log.info("ADMIN user " + currentlyLoggedInUser.getEmail() + " has modified the role of "
+                        + updatedUser.getEmail() + "[" + updatedUser.getId() + "]" + " to "
+                        + updatedUser.getRole());
+                this.getLogManager().logEvent(currentlyLoggedInUser, request, Constants.CHANGE_USER_ROLE,
+                        ImmutableMap.of(USER_ID_FKEY_FIELDNAME, updatedUser.getId(),
+                                        "oldRole", existingUserFromDb.getRole(),
+                                        "newRole", updatedUser.getRole()));
+            }
+
+            // If the user's school has changed, record it. Check this using Objects.equals() to be null safe!
+            if (!Objects.equals(updatedUser.getSchoolId(), existingUserFromDb.getSchoolId())
+                    || !Objects.equals(updatedUser.getSchoolOther(), existingUserFromDb.getSchoolOther())) {
+                LinkedHashMap<String, Object> eventDetails = new LinkedHashMap<>();
+                eventDetails.put("oldSchoolId", existingUserFromDb.getSchoolId());
+                eventDetails.put("newSchoolId", updatedUser.getSchoolId());
+                eventDetails.put("oldSchoolOther", existingUserFromDb.getSchoolOther());
+                eventDetails.put("newSchoolOther", updatedUser.getSchoolOther());
+
+                if (!Objects.equals(currentlyLoggedInUser.getId(), updatedUser.getId())) {
+                    // This is an ADMIN user changing another user's school:
+                    eventDetails.put(USER_ID_FKEY_FIELDNAME, updatedUser.getId());
+                    this.getLogManager().logEvent(currentlyLoggedInUser, request, Constants.ADMIN_CHANGE_USER_SCHOOL,
+                            eventDetails);
+                } else {
+                    this.getLogManager().logEvent(currentlyLoggedInUser, request, Constants.USER_SCHOOL_CHANGE,
+                            eventDetails);
+                }
+            }
+
+            if (userPreferenceObject != null) {
+                List<UserPreference> userPreferences = userPreferenceObjectToList(userPreferenceObject, updatedUser.getId());
+                userPreferenceManager.saveUserPreferences(userPreferences);
+            }
 
             return Response.ok(updatedUser).build();
         } catch (NoUserLoggedInException e) {
@@ -578,8 +760,7 @@ public class UsersFacade extends AbstractSegueFacade {
             log.error("Unable to modify user", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while modifying the user").toResponse();
         } catch (InvalidPasswordException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid password. You cannot have an empty password.")
-                    .toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
         } catch (MissingRequiredFieldException e) {
             log.warn("Missing field during update operation. ", e);
             return new SegueErrorResponse(Status.BAD_REQUEST, "You are missing a required field. "
@@ -592,34 +773,37 @@ public class UsersFacade extends AbstractSegueFacade {
 
     /**
      * Create a user object. This method allows new user objects to be created.
-     * 
+     *
      * @param request
      *            - so that we can identify the user
      * @param response
      *            to tell the browser to store the session in our own segue cookie.
      * @param userObjectFromClient
      *            - the new user object from the clients perspective.
-     * @param emailPreferences
-     * 			  - the new email preferences for this user
+     * @param newPassword
+     *            - the new password for the user.
+     * @param userPreferenceObject
+     * 			  - the new preferences for this user
      * @return the updated user object.
      */
     private Response createUserObjectAndLogIn(final HttpServletRequest request, final HttpServletResponse response,
-            final RegisteredUser userObjectFromClient, final Map<String, Boolean> emailPreferences) {
+                                              final RegisteredUser userObjectFromClient, final String newPassword,
+                                              final Map<String, Map<String, Boolean>> userPreferenceObject) {
         try {
             RegisteredUserDTO savedUser = userManager.createUserObjectAndSession(request, response,
-                    userObjectFromClient);
-            
-            List<IEmailPreference> userEmailPreferences = emailPreferenceManager.mapToEmailPreferenceList(
-                    savedUser.getId(), emailPreferences);
-            
-            //Now update the email preferences
-			emailPreferenceManager.saveEmailPreferences(savedUser.getId(), userEmailPreferences);
-            
+                    userObjectFromClient, newPassword);
+
+            if (userPreferenceObject != null) {
+                List<UserPreference> userPreferences = userPreferenceObjectToList(userPreferenceObject, savedUser.getId());
+                userPreferenceManager.saveUserPreferences(userPreferences);
+            }
+
             return Response.ok(savedUser).build();
         } catch (InvalidPasswordException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid password. You cannot have an empty password.")
-                    .toResponse();
+            log.warn("Invalid password exception occurred during registration!");
+            return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
         } catch (FailedToHashPasswordException e) {
+            log.error("Failed to hash password during user registration!");
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to set a password.").toResponse();
         } catch (MissingRequiredFieldException e) {
             log.warn("Missing field during update operation. ", e);
@@ -633,8 +817,74 @@ public class UsersFacade extends AbstractSegueFacade {
             log.error(errorMsg, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
         } catch (AuthenticationProviderMappingException e) {
+            log.warn("Unable to map to a known authenticator during registration. The provider is unknown!");
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Unable to map to a known authenticator. The provider: is unknown").toResponse();
+        } catch (EmailMustBeVerifiedException e) {
+            log.warn("Someone attempted to register with an Isaac email address: " + userObjectFromClient.getEmail());
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                    "You cannot register with an Isaac email address.").toResponse();
         }
+    }
+
+
+    /**
+     * Convert user-provided preference maps to UserPreference lists.
+     *     Contains Isaac classes which ideally should not be here . . .
+     *
+     * @param userPreferenceObject
+     *            - the user-provided preference object
+     * @param userId
+     *            - the userId of the user
+     * @return whether the preference is valid
+     */
+    private List<UserPreference> userPreferenceObjectToList(final Map<String, Map<String, Boolean>> userPreferenceObject, final long userId) {
+        List<UserPreference> userPreferences = Lists.newArrayList();
+        if (null == userPreferenceObject) {
+            return userPreferences;
+        }
+        // FIXME: This entire method is horrible, but required to sanitise what is stored in the database . . .
+        for (String preferenceType: userPreferenceObject.keySet()) {
+
+            // Check if the given preference type is one we support:
+            if (!EnumUtils.isValidEnum(IsaacUserPreferences.class, preferenceType)
+                    && !EnumUtils.isValidEnum(SegueUserPreferences.class, preferenceType)) {
+                log.warn("Unknown user preference type '" + preferenceType + "' provided. Skipping.");
+                continue;
+            }
+
+            if (EnumUtils.isValidEnum(SegueUserPreferences.class, preferenceType)
+                    && SegueUserPreferences.EMAIL_PREFERENCE.equals(SegueUserPreferences.valueOf(preferenceType))) {
+                // This is an email preference, which is treated specially:
+                for (String preferenceName : userPreferenceObject.get(preferenceType).keySet()) {
+                    if (!EnumUtils.isValidEnum(EmailType.class, preferenceName) || !EmailType.valueOf(preferenceName).isValidEmailPreference()) {
+                        log.warn("Invalid email preference name '" + preferenceName + "' provided for '"
+                                + preferenceType + "'! Skipping.");
+                        continue;
+                    }
+                    boolean preferenceValue = userPreferenceObject.get(preferenceType).get(preferenceName);
+                    userPreferences.add(new UserPreference(userId, preferenceType, preferenceName, preferenceValue));
+                }
+            } else if (EnumUtils.isValidEnum(IsaacUserPreferences.class, preferenceType)) {
+                // Isaac user preference names are configured in the config files:
+                String acceptedPreferenceNamesProperty = getProperties().getProperty(preferenceType);
+                if (null == acceptedPreferenceNamesProperty) {
+                    log.error("Failed to find allowed user preferences names for '" + preferenceType + "'! Has it been configured?");
+                    acceptedPreferenceNamesProperty = "";
+                }
+                List<String> acceptedPreferenceNames = Arrays.asList(acceptedPreferenceNamesProperty.split(","));
+                for (String preferenceName : userPreferenceObject.get(preferenceType).keySet()) {
+                    if (!acceptedPreferenceNames.contains(preferenceName)) {
+                        log.warn("Invalid user preference name '" + preferenceName + "' provided for type '" + preferenceType + "'! Skipping.");
+                        continue;
+                    }
+                    boolean preferenceValue = userPreferenceObject.get(preferenceType).get(preferenceName);
+                    userPreferences.add(new UserPreference(userId, preferenceType, preferenceName, preferenceValue));
+                }
+            } else {
+                log.warn("Unexpected user preference type '" + preferenceType + "' provided. Skipping.");
+            }
+        }
+        return userPreferences;
     }
 }

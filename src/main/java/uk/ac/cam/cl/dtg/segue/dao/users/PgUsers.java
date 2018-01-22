@@ -42,7 +42,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.Role;
  *
  */
 public class PgUsers implements IUserDataManager {
-    private static final String MASTER_ID = "_id"; // MONGO DB ID
+    private static final String MASTER_ID = "_id";
     //private static final Logger log = LoggerFactory.getLogger(PgUsers.class);
             
     private final PostgresSqlDb database;
@@ -181,6 +181,7 @@ public class PgUsers implements IUserDataManager {
         }
     }
 
+    // TODO: Remove getByLegacyId altogether? Don't think we have any legacy IDs any more.
     @Override
     public RegisteredUser getByLegacyId(final String id) throws SegueDatabaseException {
         // if the id is null then we won't find anyone so just return null.
@@ -351,21 +352,6 @@ public class PgUsers implements IUserDataManager {
     }
 
     @Override
-    public RegisteredUser getByResetToken(final String token) throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM users WHERE reset_token = ?");
-            pst.setString(1, token);
-
-            ResultSet results = pst.executeQuery();
-            
-            return this.findOneUser(results);
-        } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
-        }
-    }
-
-    @Override
     public RegisteredUser getByEmailVerificationToken(final String token) throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
@@ -472,9 +458,8 @@ public class PgUsers implements IUserDataManager {
                             "INSERT INTO users(family_name, given_name, email, role, "
                             + "date_of_birth, gender, registration_date, school_id, "
                             + "school_other, last_updated, email_verification_status, "
-                            + "last_seen, default_level, password, secure_salt, reset_token, "
-                    + "reset_expiry, email_verification_token) "
-                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
+                            + "last_seen, default_level, email_verification_token) "
+                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
                             Statement.RETURN_GENERATED_KEYS);
             // TODO: Change this to annotations or something to rely exclusively on the pojo.
             setValueHelper(pst, 1, userToCreate.getFamilyName());
@@ -490,11 +475,7 @@ public class PgUsers implements IUserDataManager {
             setValueHelper(pst, 11,  userToCreate.getEmailVerificationStatus());
             setValueHelper(pst, 12, userToCreate.getLastSeen());
             setValueHelper(pst, 13, userToCreate.getDefaultLevel());
-            setValueHelper(pst, 14, userToCreate.getPassword());
-            setValueHelper(pst, 15, userToCreate.getSecureSalt());
-            setValueHelper(pst, 16, userToCreate.getResetToken());
-            setValueHelper(pst, 17, userToCreate.getResetExpiry());
-            setValueHelper(pst, 18, userToCreate.getEmailVerificationToken());
+            setValueHelper(pst, 14, userToCreate.getEmailVerificationToken());
             
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save user.");
@@ -533,8 +514,7 @@ public class PgUsers implements IUserDataManager {
                             "UPDATE users SET family_name = ?, given_name = ?, email = ?, role = ?, "
                             + "date_of_birth = ?, gender = ?, registration_date = ?, school_id = ?, "
                             + "school_other = ?, last_updated = ?, email_verification_status = ?, "
-                            + "last_seen = ?, default_level = ?, password = ?, secure_salt = ?, reset_token = ?, "
-                            + "reset_expiry = ?, email_verification_token = ? "
+                            + "last_seen = ?, default_level = ?, email_verification_token = ? "
                             + "WHERE id = ?;");
             
             setValueHelper(pst, 1, userToCreate.getFamilyName());
@@ -550,12 +530,8 @@ public class PgUsers implements IUserDataManager {
             setValueHelper(pst, 11,  userToCreate.getEmailVerificationStatus());
             setValueHelper(pst, 12, userToCreate.getLastSeen());
             setValueHelper(pst, 13, userToCreate.getDefaultLevel());
-            setValueHelper(pst, 14, userToCreate.getPassword());
-            setValueHelper(pst, 15, userToCreate.getSecureSalt());
-            setValueHelper(pst, 16, userToCreate.getResetToken());
-            setValueHelper(pst, 17, userToCreate.getResetExpiry());
-            setValueHelper(pst, 18, userToCreate.getEmailVerificationToken());
-            setValueHelper(pst, 19, userToCreate.getId());
+            setValueHelper(pst, 14, userToCreate.getEmailVerificationToken());
+            setValueHelper(pst, 15, userToCreate.getId());
             
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save user.");
@@ -595,7 +571,7 @@ public class PgUsers implements IUserDataManager {
         u.setGender(results.getString("gender") != null ? Gender.valueOf(results.getString("gender")) : null);
         u.setRegistrationDate(results.getTimestamp("registration_date"));
         
-        u.setSchoolId(results.getLong("school_id"));
+        u.setSchoolId(results.getString("school_id"));
         if (results.wasNull()) {
             u.setSchoolId(null);
         }
@@ -604,10 +580,6 @@ public class PgUsers implements IUserDataManager {
         u.setLastUpdated(results.getTimestamp("last_updated"));
         u.setLastSeen(results.getTimestamp("last_seen"));
         u.setDefaultLevel(results.getInt("default_level"));
-        u.setPassword(results.getString("password"));
-        u.setSecureSalt(results.getString("secure_salt"));
-        u.setResetToken(results.getString("reset_token"));
-        u.setResetExpiry(results.getTimestamp("reset_expiry"));
         u.setEmailVerificationToken(results.getString("email_verification_token"));
         u.setEmailVerificationStatus(results.getString("email_verification_status") != null ? EmailVerificationStatus
                 .valueOf(results.getString("email_verification_status")) : null);

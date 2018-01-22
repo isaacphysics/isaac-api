@@ -41,7 +41,7 @@ public class IsaacFeaturedProfile extends Content {
 	protected String homepage;
 
 	@JsonCreator
-	public IsaacFeaturedProfile(@JsonProperty("_id") String _id,
+	public IsaacFeaturedProfile(
 			@JsonProperty("id") String id, @JsonProperty("title") String title,
 			@JsonProperty("subtitle") String subtitle,
 			@JsonProperty("type") String type,
@@ -59,7 +59,7 @@ public class IsaacFeaturedProfile extends Content {
 			@JsonProperty("emailAddress") String emailAddress,
 			@JsonProperty("image") Image image,
 			@JsonProperty("homepage") String homepage) {
-		super(_id, id, title, subtitle, type, author, encoding,
+		super(id, title, subtitle, type, author, encoding,
 				canonicalSourceFile, layout, children, value, attribution,
 				relatedContent, published, tags, level);
 

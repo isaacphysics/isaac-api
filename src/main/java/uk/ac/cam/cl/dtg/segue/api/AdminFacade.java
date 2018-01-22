@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,14 +15,27 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
+import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
+
+import com.opencsv.CSVWriter;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.StringWriter;
 import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.ExecutionException;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.ArrayList;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
@@ -34,6 +47,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
@@ -41,7 +56,13 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
-import org.elasticsearch.common.collect.Lists;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.kafka.streams.errors.InvalidStateStoreException;
 import org.jboss.resteasy.annotations.GZIP;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
@@ -55,9 +76,10 @@ import com.google.common.collect.ImmutableMap.Builder;
 import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType;
-import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
+import uk.ac.cam.cl.dtg.segue.api.managers.KafkaStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.userAlerts.UserAlertsWebSocket;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -68,9 +90,10 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
+import uk.ac.cam.cl.dtg.segue.dos.AbstractUserPreferenceManager;
+import uk.ac.cam.cl.dtg.segue.dos.UserPreference;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
-import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
@@ -78,10 +101,14 @@ import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.etl.GithubPushEventPayload;
+import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.locations.Location;
 import uk.ac.cam.cl.dtg.util.locations.LocationServerException;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeRadius;
+
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacUserPreferences; // FIXME: Isaac class in Segue!
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
@@ -96,13 +123,17 @@ public class AdminFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(AdminFacade.class);
 
     private final UserAccountManager userManager;
-    private final ContentVersionController contentVersionController;
+    private final IContentManager contentManager;
+    private final String contentIndex;
 
     private final StatisticsManager statsManager;
+    private final KafkaStatisticsManager kafkaStatsManager;
 
     private final LocationManager locationManager;
 
     private final SchoolListReader schoolReader;
+
+    private final AbstractUserPreferenceManager userPreferenceManager;
 
     /**
      * Create an instance of the administrators facade.
@@ -111,8 +142,8 @@ public class AdminFacade extends AbstractSegueFacade {
      *            - the fully configured properties loader for the api.
      * @param userManager
      *            - The manager object responsible for users.
-     * @param contentVersionController
-     *            - The content version controller used by the api.
+     * @param contentManager
+     *            - The content manager used by the api.
      * @param logManager
      *            - So we can log events of interest.
      * @param statsManager
@@ -124,20 +155,24 @@ public class AdminFacade extends AbstractSegueFacade {
      */
     @Inject
     public AdminFacade(final PropertiesLoader properties, final UserAccountManager userManager,
-            final ContentVersionController contentVersionController, final ILogManager logManager,
-            final StatisticsManager statsManager, final LocationManager locationManager,
-            final SchoolListReader schoolReader) {
+                       final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final ILogManager logManager,
+                       final StatisticsManager statsManager, final LocationManager locationManager,
+                       final SchoolListReader schoolReader, final AbstractUserPreferenceManager userPreferenceManager,
+                       final KafkaStatisticsManager kafkaStatsManager) {
         super(properties, logManager);
         this.userManager = userManager;
-        this.contentVersionController = contentVersionController;
+        this.contentManager = contentManager;
+        this.contentIndex = contentIndex;
         this.statsManager = statsManager;
+        this.kafkaStatsManager = kafkaStatsManager;
         this.locationManager = locationManager;
         this.schoolReader = schoolReader;
+        this.userPreferenceManager = userPreferenceManager;
     }
 
     /**
      * Statistics endpoint.
-     * 
+     *
      * @param request
      *            - to determine access.
      * @return stats
@@ -152,10 +187,38 @@ public class AdminFacade extends AbstractSegueFacade {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin to access this endpoint.")
                         .toResponse();
             }
-            
+
             return Response.ok(statsManager.outputGeneralStatistics())
                     .cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false)).build();
         } catch (SegueDatabaseException e) {
+            log.error("Unable to load general statistics.", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
+    }
+
+    /**
+     * Statistics endpoint.
+     *
+     * @param request
+     *            - to determine access.
+     * @return stats
+     */
+    @GET
+    @Path("/stats/v2/")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public Response getKafkaStatistics(@Context final HttpServletRequest request) {
+        try {
+            if (!isUserStaff(request)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin to access this endpoint.")
+                        .toResponse();
+            }
+
+            return Response.ok(kafkaStatsManager.outputGeneralStatistics())
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
+        } catch (SegueDatabaseException | InvalidStateStoreException e) {
             log.error("Unable to load general statistics.", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
         } catch (NoUserLoggedInException e) {
@@ -202,6 +265,7 @@ public class AdminFacade extends AbstractSegueFacade {
             return Response.ok(locationInformation).cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false))
                     .build();
         } catch (SegueDatabaseException e) {
+            log.error("Database error while trying to get last locations", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
@@ -243,11 +307,61 @@ public class AdminFacade extends AbstractSegueFacade {
                     .cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false))
                     .build();
         } catch (UnableToIndexSchoolsException e) {
+            log.error("Unable to get school statistics", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Unable To Index Schools Exception in admin facade", e).toResponse();
+                    "Unable To Index SchoolIndexer Exception in admin facade", e).toResponse();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (SegueDatabaseException e1) {
+        } catch (SegueDatabaseException | SegueSearchException e1) {
+            log.error("Unable to get school statistics", e1);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error during user lookup")
+                    .toResponse();
+        }
+    }
+
+
+    /**
+     * Statistics endpoint.
+     *
+     * @param request
+     *            - to determine access.
+     * @param requestForCache
+     *            - to determine caching.
+     * @return stats
+     */
+    @GET
+    @Path("/stats/schools/v2")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public Response getKafkaSchoolsStatistics(@Context final HttpServletRequest request,
+                                         @Context final Request requestForCache) {
+        try {
+            if (!isUserStaff(request)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
+                        .toResponse();
+            }
+
+            List<Map<String, Object>> schoolStatistics = kafkaStatsManager.getSchoolStatistics();
+
+            // Calculate the ETag
+            EntityTag etag = new EntityTag(schoolStatistics.toString().hashCode() + "");
+
+            Response cachedResponse = generateCachedResponse(requestForCache, etag);
+            if (cachedResponse != null) {
+                return cachedResponse;
+            }
+
+            return Response.ok(schoolStatistics).tag(etag)
+                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false))
+                    .build();
+        } catch (UnableToIndexSchoolsException e) {
+            log.error("Unable to get school statistics", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Unable To Index SchoolIndexer Exception in admin facade", e).toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (InvalidStateStoreException | SegueSearchException e1) {
+            log.error("Unable to get school statistics", e1);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error during user lookup")
                     .toResponse();
         }
@@ -321,7 +435,7 @@ public class AdminFacade extends AbstractSegueFacade {
                 RegisteredUserDTO user = this.userManager.getUserDTOById(userid);
 
                 if (null == user) {
-                    throw new NoUserException();
+                    throw new NoUserException("No user found with this ID.");
                 }
 
                 // if a user already has this role, abort
@@ -340,7 +454,13 @@ public class AdminFacade extends AbstractSegueFacade {
             }
 
             for (Long userid : userIds) {
+                RegisteredUserDTO user = this.userManager.getUserDTOById(userid);
+                Role oldRole = user.getRole();
                 this.userManager.updateUserRole(userid, requestedRole);
+                this.getLogManager().logEvent(requestingUser, request, Constants.CHANGE_USER_ROLE,
+                        ImmutableMap.of(USER_ID_FKEY_FIELDNAME, user.getId(),
+                                        "oldRole", oldRole,
+                                        "newRole", requestedRole));
             }
 
         } catch (NoUserLoggedInException e) {
@@ -350,6 +470,7 @@ public class AdminFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST, "One or more users could not be found")
                     .toResponse();
         } catch (SegueDatabaseException e) {
+            log.error("Database error while trying to change user role", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Could not save new role to the database").toResponse();
         }
@@ -389,7 +510,7 @@ public class AdminFacade extends AbstractSegueFacade {
                     .valueOf(emailVerificationStatus);
             RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
 
-            if (emails.equals(requestingUser.getEmail())) {
+            if (emails.contains(requestingUser.getEmail())) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "Aborted - you cannot modify yourself.")
                         .toResponse();
             }
@@ -402,7 +523,7 @@ public class AdminFacade extends AbstractSegueFacade {
 
                     if (null == user) {
                         log.error(String.format("No user could be found with email (%s)", email));
-                        throw new NoUserException();
+                        throw new NoUserException("No user found with this email.");
                     }
                 }
             }
@@ -425,177 +546,7 @@ public class AdminFacade extends AbstractSegueFacade {
         return Response.ok().build();
     }
 
-    /**
-     * This method will allow the live version served by the site to be changed.
-     * 
-     * @param request
-     *            - to help determine access rights.
-     * @param version
-     *            - version to use as updated version of content store.
-     * @return Success shown by returning the new liveSHA or failed message "Invalid version selected".
-     */
-    @POST
-    @Path("/live_version/{version}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public synchronized Response changeLiveVersion(@Context final HttpServletRequest request,
-            @PathParam("version") final String version) {
 
-        try {
-            if (isUserAnAdmin(request)) {
-                IContentManager contentPersistenceManager = contentVersionController.getContentManager();
-                String newVersion;
-                if (!contentPersistenceManager.isValidVersion(version)) {
-                    SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid version selected: "
-                            + version);
-                    log.warn(error.getErrorMessage());
-                    return error.toResponse();
-                }
-
-                if (!contentPersistenceManager.getCachedVersionList().contains(version)) {
-                    newVersion = contentVersionController.triggerSyncJob(version).get();
-                } else {
-                    newVersion = version;
-                }
-
-                Collection<String> availableVersions = contentPersistenceManager.getCachedVersionList();
-
-                if (!availableVersions.contains(version)) {
-                    SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid version selected: "
-                            + version);
-                    log.warn(error.getErrorMessage());
-                    return error.toResponse();
-                }
-
-                contentVersionController.setLiveVersion(newVersion);
-                log.info("Live version of the site changed to: " + newVersion + " by user: "
-                        + this.userManager.getCurrentRegisteredUser(request).getEmail());
-
-                return Response.ok().build();
-            } else {
-                return new SegueErrorResponse(Status.FORBIDDEN,
-                        "You must be logged in as an admin to access this function.").toResponse();
-            }
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (InterruptedException e) {
-            log.error("ExecutorException during version change.", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while trying to terminate a process.", e)
-                    .toResponse();
-        } catch (ExecutionException e) {
-            log.error("ExecutorException during version change.", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error during verison change.", e).toResponse();
-        }
-    }
-
-    /**
-     * This method will try to bring the live version that Segue is using to host content up-to-date with the latest in
-     * the database.
-     * 
-     * @param request
-     *            - to enable security checking.
-     * @return a response to indicate the synchronise job has triggered.
-     */
-    @POST
-    @Path("/synchronise_datastores")
-    public synchronized Response synchroniseDataStores(@Context final HttpServletRequest request) {
-        try {
-            // check if we are authorized to do this operation.
-            // no authorisation required in DEV mode, but in PROD we need to be
-            // an admin.
-            if (!this.getProperties().getProperty(Constants.SEGUE_APP_ENVIRONMENT)
-                    .equals(Constants.EnvironmentType.PROD.name())
-                    || isUserAnAdmin(request)) {
-                log.info("Informed of content change; " + "so triggering new synchronisation job.");
-                contentVersionController.triggerSyncJob().get();
-                return Response.ok("success - job started").build();
-            } else {
-                log.warn("Unable to trigger synch job as not an admin or this server is set to the PROD environment.");
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an administrator to use this function.")
-                        .toResponse();
-            }
-        } catch (NoUserLoggedInException e) {
-            log.warn("Unable to trigger synch job as not logged in.");
-            return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (InterruptedException e) {
-            log.error("ExecutorException during synchronise datastores operation.", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while trying to terminate a process.", e)
-                    .toResponse();
-        } catch (ExecutionException e) {
-            log.error("ExecutorException during synchronise datastores operation.", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error during verison change.", e).toResponse();
-        }
-    }
-
-    /**
-     * This method is only intended to be used on development / staging servers.
-     * 
-     * It will try to bring the live version that Segue is using to host content up-to-date with the latest in the
-     * database.
-     * 
-     * @param request
-     *            - to enable security checking.
-     * @return a response to indicate the synchronise job has triggered.
-     */
-    @POST
-    @Path("/new_version_alert")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response versionChangeNotification(@Context final HttpServletRequest request) {
-        // check if we are authorized to do this operation.
-        // no authorisation required in DEV mode, but in PROD we need to be
-        // an admin.
-        try {
-            if (!this.getProperties().getProperty(Constants.SEGUE_APP_ENVIRONMENT)
-                    .equals(Constants.EnvironmentType.PROD.name())
-                    || this.isUserAnAdmin(request)) {
-                log.info("Informed of content change; so triggering new async synchronisation job.");
-                // on this occasion we don't want to wait for a response.
-                contentVersionController.triggerSyncJob();
-                return Response.ok().build();
-            } else {
-                log.warn("Unable to trigger synch job as this segue environment is "
-                        + "configured in PROD mode unless you are an ADMIN.");
-                return new SegueErrorResponse(Status.FORBIDDEN,
-                        "You must be an administrator to use this function on the PROD environment.").toResponse();
-            }
-        } catch (NoUserLoggedInException e) {
-            return new SegueErrorResponse(Status.UNAUTHORIZED,
-                    "You must be logged in to use this function on a PROD environment.").toResponse();
-        }
-    }
-
-    /**
-     * This method will delete all cached data from the CMS and any search indices.
-     * 
-     * @param request
-     *            - containing user session information.
-     * 
-     * @return the latest version id that will be cached if content is requested.
-     */
-    @POST
-    @Produces(MediaType.APPLICATION_JSON)
-    @Path("/clear_caches")
-    public synchronized Response clearCaches(@Context final HttpServletRequest request) {
-        try {
-            if (isUserAnAdmin(request)) {
-                IContentManager contentPersistenceManager = contentVersionController.getContentManager();
-                RegisteredUserDTO currentRegisteredUser = userManager.getCurrentRegisteredUser(request);
-                
-                log.info(String.format("Admin user: (%s) triggered cache clears...", currentRegisteredUser.getEmail()));
-                contentPersistenceManager.clearCache();
-
-                ImmutableMap<String, String> response = new ImmutableMap.Builder<String, String>().put("result",
-                        "success").build();
-
-                return Response.ok(response).build();
-            } else {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an administrator to use this function.")
-                        .toResponse();
-            }
-
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        }
-    }
 
     /**
      * This method will delete all cached data from the CMS and any search indices.
@@ -626,70 +577,13 @@ public class AdminFacade extends AbstractSegueFacade {
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (IOException e) {
+            log.error("Unable to trigger property refresh", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to trigger properties refresh", e)
                     .toResponse();
         }
     }
 
-    /**
-     * This method will show a string representation of all jobs in the to index queue.
-     * 
-     * @param request
-     *            - containing user session information.
-     * 
-     * @return the latest queue information
-     */
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Path("/content_index_queue")
-    public synchronized Response getCurrentIndexQueue(@Context final HttpServletRequest request) {
-        try {
-            if (isUserStaff(request)) {
-                ImmutableMap<String, Object> response = new ImmutableMap.Builder<String, Object>().put("queue",
-                        contentVersionController.getToIndexQueue()).build();
 
-                return Response.ok(response).build();
-            } else {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an administrator to use this function.")
-                        .toResponse();
-            }
-
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        }
-    }
-
-    /**
-     * This method will delete all jobs not yet started in the indexer queue.
-     * 
-     * @param request
-     *            - containing user session information.
-     * 
-     * @return the new queue.
-     */
-    @DELETE
-    @Produces(MediaType.APPLICATION_JSON)
-    @Path("/content_index_queue")
-    public synchronized Response deleteAllInCurrentIndexQueue(@Context final HttpServletRequest request) {
-        try {
-            if (isUserAnAdmin(request)) {
-                RegisteredUserDTO u = userManager.getCurrentRegisteredUser(request);
-                log.info(String.format("Admin user (%s) requested to empty indexer queue.", u.getEmail()));
-
-                contentVersionController.cleanUpTheIndexQueue();
-
-                ImmutableMap<String, Object> response = new ImmutableMap.Builder<String, Object>().put("queue",
-                        contentVersionController.getToIndexQueue()).build();
-
-                return Response.ok(response).build();
-            } else {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an administrator to use this function.")
-                        .toResponse();
-            }
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        }
-    }
 
     /**
      * Rest end point to allow content editors to see the content which failed to import into segue.
@@ -708,8 +602,8 @@ public class AdminFacade extends AbstractSegueFacade {
     @GZIP
     public Response getContentProblems(@Context final HttpServletRequest request,
             @Context final Request requestForCaching) {
-        Map<Content, List<String>> problemMap = contentVersionController.getContentManager().getProblemMap(
-                contentVersionController.getLiveVersion());
+        Map<Content, List<String>> problemMap = this.contentManager.getProblemMap(
+                this.contentIndex);
 
         if (this.getProperties().getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(EnvironmentType.PROD.name())) {
             try {
@@ -723,7 +617,7 @@ public class AdminFacade extends AbstractSegueFacade {
         }
 
         // Calculate the ETag
-        EntityTag etag = new EntityTag(this.contentVersionController.getLiveVersion().hashCode() + "");
+        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + "");
 
         Response cachedResponse = generateCachedResponse(requestForCaching, etag, NEVER_CACHE_WITHOUT_ETAG_CHECK);
         if (cachedResponse != null) {
@@ -745,13 +639,8 @@ public class AdminFacade extends AbstractSegueFacade {
         // go through each errored content and list of errors
         for (Map.Entry<Content, List<String>> pair : problemMap.entrySet()) {
             Map<String, Object> errorRecord = Maps.newHashMap();
-            
-            Content partialContentWithErrors = new Content();
-            partialContentWithErrors.setId(pair.getKey().getId());
-            partialContentWithErrors.setTitle(pair.getKey().getTitle());
-            partialContentWithErrors.setTags(pair.getKey().getTags());
-            partialContentWithErrors.setPublished(pair.getKey().getPublished());
-            partialContentWithErrors.setCanonicalSourceFile(pair.getKey().getCanonicalSourceFile());
+
+            Content partialContentWithErrors =  pair.getKey();
 
             errorRecord.put("partialContent", partialContentWithErrors);
             
@@ -761,9 +650,10 @@ public class AdminFacade extends AbstractSegueFacade {
             if (partialContentWithErrors.getId() != null) {
                 try {
                     
-                    boolean success = contentVersionController.getContentManager().getContentById(
-                            this.contentVersionController.getLiveVersion(),
-                            partialContentWithErrors.getId()) != null;
+                    boolean success = this.contentManager.getContentById(
+                            this.contentManager.getCurrentContentSHA(),
+                            partialContentWithErrors.getId(),
+                            true) != null;
                     
                     errorRecord.put("successfulIngest", success);
                     if (success) {
@@ -808,7 +698,7 @@ public class AdminFacade extends AbstractSegueFacade {
         responseBuilder.put("totalErrors", errors);
         responseBuilder.put("errorsList", errorList);
         responseBuilder.put("failedFiles", failures);
-        responseBuilder.put("currentLiveVersion", this.contentVersionController.getLiveVersion());
+        responseBuilder.put("currentLiveVersion", this.contentManager.getCurrentContentSHA());
 
         return Response.ok(responseBuilder.build())
                 .cacheControl(getCacheControl(NUMBER_SECONDS_IN_MINUTE, false)).tag(etag)
@@ -836,6 +726,8 @@ public class AdminFacade extends AbstractSegueFacade {
      *            - if searching by postcode.
      * @param schoolURN
      *            - if searching by school by the URN.
+     * @param subjectOfInterest
+     *            - if searching by subject interest
      * @return a userDTO or a segue error response
      */
     @GET
@@ -848,7 +740,8 @@ public class AdminFacade extends AbstractSegueFacade {
             @QueryParam("schoolOther") @Nullable final String schoolOther,
             @QueryParam("postcode") @Nullable final String postcode,
             @QueryParam("postcodeRadius") @Nullable final String postcodeRadius,
-            @QueryParam("schoolURN") @Nullable final Long schoolURN) {
+            @QueryParam("schoolURN") @Nullable final String schoolURN,
+            @QueryParam("subjectOfInterest") @Nullable final String subjectOfInterest) {
 
         RegisteredUserDTO currentUser;
         try {
@@ -859,7 +752,11 @@ public class AdminFacade extends AbstractSegueFacade {
             }
             
             if (!currentUser.getRole().equals(Role.ADMIN)
-                    && (familyName.isEmpty() && null == schoolOther && email.isEmpty() && null == schoolURN && null == postcode)) {
+                    && (null == familyName || familyName.isEmpty())
+                    && (null == schoolOther || schoolOther.isEmpty())
+                    && (null == email || email.isEmpty())
+                    && (null == schoolURN || schoolURN.isEmpty())
+                    && (null == postcode || postcode.isEmpty())) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to do wildcard searches.")
                         .toResponse();
 
@@ -876,7 +773,8 @@ public class AdminFacade extends AbstractSegueFacade {
 
             if (null != email && !email.isEmpty()) {
                 if (currentUser.getRole().equals(Role.EVENT_MANAGER) && email.replaceAll("[^A-z]", "").length() < 4) {
-                    return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to do wildcard searches with less than 4 characters.")
+                    return new SegueErrorResponse(Status.FORBIDDEN,
+                            "You do not have permission to do wildcard searches with less than 4 characters.")
                             .toResponse();
                 }
                 userPrototype.setEmail(email);
@@ -905,8 +803,9 @@ public class AdminFacade extends AbstractSegueFacade {
             }
 
             List<RegisteredUserDTO> findUsers;
-            
-            if (null != email && !email.isEmpty()) {
+
+            // If a unique email address (without wildcards) provided, look up using this email immediately:
+            if (null != email && !email.isEmpty() && !(email.contains("%") || email.contains("_"))) {
                 try {
                     findUsers = Collections.singletonList(this.userManager.getUserDTOByEmail(email));
                 } catch (NoUserException e) {
@@ -925,7 +824,7 @@ public class AdminFacade extends AbstractSegueFacade {
                             School school = this.schoolReader.findSchoolById(userDTO.getSchoolId());
                             if (school != null) {
                                 String schoolPostCode = school.getPostcode();
-                                List<Long> ids = null;
+                                List<Long> ids;
                                 if (postCodeAndUserIds.containsKey(schoolPostCode)) {
                                     ids = postCodeAndUserIds.get(schoolPostCode);
                                 } else {
@@ -953,9 +852,11 @@ public class AdminFacade extends AbstractSegueFacade {
                     findUsers = nearbyUsers;
 
                 } catch (LocationServerException e) {
+                    log.error("Location service unavailable. ", e);
                     return new SegueErrorResponse(Status.SERVICE_UNAVAILABLE,
                             "Unable to process request using 3rd party location provider").toResponse();
-                } catch (UnableToIndexSchoolsException e) {
+                } catch (UnableToIndexSchoolsException | SegueSearchException e) {
+                    log.error("Unable to get school statistics", e);
                     return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                             "Unable to process schools information").toResponse();
                 } catch (JsonParseException | JsonMappingException e) {
@@ -970,6 +871,23 @@ public class AdminFacade extends AbstractSegueFacade {
                     log.error("User cannot be found from user Id", e);
                 }
                 
+            }
+
+            // FIXME - this shouldn't really be in a segue class!
+            if (subjectOfInterest != null && !subjectOfInterest.isEmpty()) {
+                List<RegisteredUserDTO> subjectFilteredUsers = new ArrayList<>();
+                Map<Long, List<UserPreference>> userPreferences = userPreferenceManager.getUserPreferences(IsaacUserPreferences.SUBJECT_INTEREST.name(), findUsers);
+
+                for (RegisteredUserDTO userToFilter: findUsers) {
+                    if (userPreferences.containsKey(userToFilter.getId())) {
+                        for (UserPreference pref : userPreferences.get(userToFilter.getId())) {
+                            if (pref.getPreferenceName().equals(subjectOfInterest) && pref.getPreferenceValue()) {
+                                subjectFilteredUsers.add(userToFilter);
+                            }
+                        }
+                    }
+                }
+                findUsers = subjectFilteredUsers;
             }
 
             // Calculate the ETag
@@ -1064,7 +982,7 @@ public class AdminFacade extends AbstractSegueFacade {
             this.userManager.deleteUserAccount(userToDelete);
             
             getLogManager().logEvent(currentlyLoggedInUser, httpServletRequest, DELETE_USER_ACCOUNT,
-                    ImmutableMap.of("userIdDeleted", userToDelete.getId()));
+                    ImmutableMap.of(USER_ID_FKEY_FIELDNAME, userToDelete.getId()));
             
             log.info("Admin User: " + currentlyLoggedInUser.getEmail() + " has just deleted the user account with id: "
                     + userId);
@@ -1102,22 +1020,21 @@ public class AdminFacade extends AbstractSegueFacade {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
                         .toResponse();
             }
-            
-            Long schoolURN = Long.parseLong(schoolId);
-            School school = schoolReader.findSchoolById(schoolURN);
+
+            School school = schoolReader.findSchoolById(schoolId);
             
             Map<String, Object> result = ImmutableMap.of("school", school, "users",
-                    statsManager.getUsersBySchoolId(schoolURN));
+                    statsManager.getUsersBySchoolId(schoolId));
             
             return Response.ok(result).build();
         } catch (UnableToIndexSchoolsException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Unable To Index Schools Exception in admin facade", e).toResponse();
+                    "Unable To Index SchoolIndexer Exception in admin facade", e).toResponse();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (ResourceNotFoundException e) {
             return new SegueErrorResponse(Status.NOT_FOUND, "We cannot locate the school requested").toResponse();
-        } catch (SegueDatabaseException e) {
+        } catch (SegueDatabaseException | SegueSearchException e) {
             log.error("Error while trying to list users belonging to a school.", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error").toResponse();
         } catch (NumberFormatException e) {
@@ -1130,6 +1047,112 @@ public class AdminFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "IOException while trying to communicate with the school service.").toResponse();
         }
+    }
+
+
+    /**
+     * Get users by school id.
+     *
+     * @param request
+     *            - to determine access.
+     * @param schoolId
+     *            - of the school of interest.
+     * @return stats
+     */
+    @GET
+    @Path("/users/schools/{school_id}/v2")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public Response getKafkaSchoolStatistics(@Context final HttpServletRequest request,
+                                        @PathParam("school_id") final String schoolId) {
+        try {
+            if (!isUserStaff(request)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
+                        .toResponse();
+            }
+
+            School school = schoolReader.findSchoolById(schoolId);
+
+            Map<String, Object> result = ImmutableMap.of("school", school, "users",
+                    kafkaStatsManager.getUsersBySchoolId(schoolId));
+
+            return Response.ok(result).build();
+        } catch (UnableToIndexSchoolsException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Unable To Index SchoolIndexer Exception in admin facade", e).toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (InvalidStateStoreException | SegueSearchException e) {
+            log.error("Error while trying to list users belonging to a school.", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error").toResponse();
+        } catch (NumberFormatException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "The school id provided is invalid.").toResponse();
+        } catch (JsonParseException | JsonMappingException e) {
+            log.error("Problem parsing school", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to read school").toResponse();
+        } catch (IOException e) {
+            log.error("Problem parsing school", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "IOException while trying to communicate with the school service.").toResponse();
+        }
+    }
+
+    /**
+     * Service method to fetch the event data for a specified user.
+     *
+     * @param request
+     *            - request information used authentication
+     * @param requestForCaching
+     *            - request information used for caching.
+     * @param httpServletRequest
+     *            - the request which may contain session information.
+     * @param fromDate
+     *            - date to start search
+     * @param toDate
+     *            - date to end search
+     * @param events
+     *            - comma separated list of events of interest.,
+     * @param bin
+     *            - Should we group data into the first day of the month? true or false.
+     * @return Returns a map of eventType to Map of dates to total number of events.
+     * @throws BadRequestException
+     *            - because the request is missing various essential parameters
+     * @throws ForbiddenException
+     *            - because the user is not an admin
+     * @throws NoUserLoggedInException
+     *            - because the user is not logged in
+     * @throws SegueDatabaseException
+     *            - because there has been some problem with database access
+     */
+    private Map<String, Map<LocalDate, Long>> fetchEventDataForAllUsers(@Context final Request request,
+             @Context final HttpServletRequest httpServletRequest, @Context final Request requestForCaching,
+             @QueryParam("from_date") final Long fromDate, @QueryParam("to_date") final Long toDate,
+             @QueryParam("events") final String events, @QueryParam("bin_data") final Boolean bin,
+                                                                        final Boolean newVersion)
+            throws BadRequestException, ForbiddenException, NoUserLoggedInException, SegueDatabaseException {
+
+        final boolean binData = null != bin && bin;
+
+        if (null == events || events.isEmpty()) {
+            throw new BadRequestException("You must specify the events you are interested in.");
+        }
+
+        if (null == fromDate || null == toDate) {
+            throw new BadRequestException("You must specify the from_date and to_date you are interested in.");
+        }
+
+        if (!isUserStaff(httpServletRequest)) {
+            throw new ForbiddenException("You must be logged in as an admin to access this function.");
+        }
+
+        if (!newVersion) {
+            return this.statsManager.getEventLogsByDate(
+                    Lists.newArrayList(events.split(",")), new Date(fromDate), new Date(toDate), binData);
+        } else {
+            return this.kafkaStatsManager.getEventLogsByDate(
+                    Lists.newArrayList(events.split(",")), new Date(fromDate), new Date(toDate), binData);
+        }
+
     }
 
     /**
@@ -1160,47 +1183,155 @@ public class AdminFacade extends AbstractSegueFacade {
             @QueryParam("from_date") final Long fromDate, @QueryParam("to_date") final Long toDate,
             @QueryParam("events") final String events, @QueryParam("bin_data") final Boolean bin) {
 
-        final boolean binData;
-        if (null == bin || !bin) {
-            binData = false;
-        } else {
-            binData = true;
-        }
-
-        if (null == events || events.isEmpty()) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "You must specify the events you are interested in.")
-                    .toResponse();
-        }
-
-        if (null == fromDate || null == toDate) {
-            return new SegueErrorResponse(Status.BAD_REQUEST,
-                    "You must specify the from_date and to_date you are interested in.").toResponse();
-        }
-
+        Map<String, Map<LocalDate, Long>> eventLogsByDate;
         try {
-            if (!isUserStaff(httpServletRequest)) {
-                return new SegueErrorResponse(Status.FORBIDDEN,
-                        "You must be logged in as an admin to access this function.").toResponse();
-            }
-
-            Map<String, Map<LocalDate, Long>> eventLogsByDate = this.statsManager.getEventLogsByDate(
-                    Lists.newArrayList(events.split(",")), new Date(fromDate), new Date(toDate), binData);
-
-            // Calculate the ETag
-            EntityTag etag = new EntityTag(eventLogsByDate.toString().hashCode() + "");
-
-            Response cachedResponse = generateCachedResponse(requestForCaching, etag);
-            if (cachedResponse != null) {
-                return cachedResponse;
-            }
-
-            return Response.ok(eventLogsByDate).tag(etag)
-                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false)).build();
+            eventLogsByDate = fetchEventDataForAllUsers(request, httpServletRequest, requestForCaching, fromDate,
+                    toDate, events, bin, false);
+        } catch (BadRequestException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
+        } catch (ForbiddenException e) {
+            return new SegueErrorResponse(Status.FORBIDDEN, e.getMessage()).toResponse();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
             log.error("Database error while getting event details for a user.", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to complete the request.").toResponse();
+        }
+
+        EntityTag etag = new EntityTag(eventLogsByDate.toString().hashCode() + "");
+
+        Response cachedResponse = generateCachedResponse(requestForCaching, etag);
+        if (cachedResponse != null) {
+            return cachedResponse;
+        }
+
+        return Response.ok(eventLogsByDate).tag(etag)
+                .cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false)).build();
+    }
+
+
+    /**
+     * Get the event data for a specified user.
+     *
+     * @param request
+     *            - request information used authentication
+     * @param requestForCaching
+     *            - request information used for caching.
+     * @param httpServletRequest
+     *            - the request which may contain session information.
+     * @param fromDate
+     *            - date to start search
+     * @param toDate
+     *            - date to end search
+     * @param events
+     *            - comma separated list of events of interest.,
+     * @param bin
+     *            - Should we group data into the first day of the month? true or false.
+     * @return Returns a map of eventType to Map of dates to total number of events.
+     */
+    @GET
+    @Path("/users/event_data/over_time/v2")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public Response getKafkaEventDataForAllUsers(@Context final Request request,
+                                            @Context final HttpServletRequest httpServletRequest, @Context final Request requestForCaching,
+                                            @QueryParam("from_date") final Long fromDate, @QueryParam("to_date") final Long toDate,
+                                            @QueryParam("events") final String events, @QueryParam("bin_data") final Boolean bin) {
+
+        Map<String, Map<LocalDate, Long>> eventLogsByDate;
+        try {
+            eventLogsByDate = fetchEventDataForAllUsers(request, httpServletRequest, requestForCaching, fromDate,
+                    toDate, events, bin, true);
+        } catch (BadRequestException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
+        } catch (ForbiddenException e) {
+            return new SegueErrorResponse(Status.FORBIDDEN, e.getMessage()).toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            log.error("Database error while getting event details for a user.", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to complete the request.").toResponse();
+        }
+
+        EntityTag etag = new EntityTag(eventLogsByDate.toString().hashCode() + "");
+
+        Response cachedResponse = generateCachedResponse(requestForCaching, etag);
+        if (cachedResponse != null) {
+            return cachedResponse;
+        }
+
+        return Response.ok(eventLogsByDate).tag(etag)
+                .cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false)).build();
+    }
+
+    /**
+     * Get the event data for a specified user, in CSV format.
+     *
+     * @param request
+     *            - request information used authentication
+     * @param requestForCaching
+     *            - request information used for caching.
+     * @param httpServletRequest
+     *            - the request which may contain session information.
+     * @param fromDate
+     *            - date to start search
+     * @param toDate
+     *            - date to end search
+     * @param events
+     *            - comma separated list of events of interest.,
+     * @param bin
+     *            - Should we group data into the first day of the month? true or false.
+     * @return Returns a map of eventType to Map of dates to total number of events.
+     */
+    @GET
+    @Path("/users/event_data/over_time/download")
+    @Produces("text/csv")
+    @GZIP
+    public Response getEventDataForAllUsersDownloadCSV(@Context final Request request,
+            @Context final HttpServletRequest httpServletRequest, @Context final Request requestForCaching,
+            @QueryParam("from_date") final Long fromDate, @QueryParam("to_date") final Long toDate,
+            @QueryParam("events") final String events, @QueryParam("bin_data") final Boolean bin) {
+
+        try {
+            Map<String, Map<LocalDate, Long>> eventLogsByDate;
+            eventLogsByDate = fetchEventDataForAllUsers(request, httpServletRequest, requestForCaching, fromDate,
+                    toDate, events, bin, false);
+
+            StringWriter stringWriter = new StringWriter();
+            CSVWriter csvWriter = new CSVWriter(stringWriter);
+            List<String[]> rows = Lists.newArrayList();
+            rows.add(new String[]{"event_type", "timestamp", "value"});
+
+            for(Map.Entry<String, Map<LocalDate, Long>> eventType : eventLogsByDate.entrySet()) {
+                String eventTypeKey = eventType.getKey();
+                for(Map.Entry<LocalDate, Long> record : eventType.getValue().entrySet()) {
+                    rows.add(new String[]{eventTypeKey, record.getKey().toString(), record.getValue().toString()});
+                }
+            }
+            csvWriter.writeAll(rows);
+            csvWriter.close();
+
+            EntityTag etag = new EntityTag(eventLogsByDate.toString().hashCode() + "");
+            Response cachedResponse = generateCachedResponse(requestForCaching, etag);
+            if (cachedResponse != null) {
+                return cachedResponse;
+            }
+
+            return Response.ok(stringWriter.toString()).tag(etag)
+                    .header("Content-Disposition", "attachment; filename=admin_stats.csv")
+                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false)).build();
+        } catch (BadRequestException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
+        } catch (ForbiddenException e) {
+            return new SegueErrorResponse(Status.FORBIDDEN, e.getMessage()).toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            log.error("Database error while getting event details for a user.", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to complete the request.").toResponse();
+        } catch (IOException e) {
+            log.error("IO error while creating the CSV file.", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while creating the CSV file").toResponse();
         }
     }
 
@@ -1259,7 +1390,7 @@ public class AdminFacade extends AbstractSegueFacade {
     @GZIP
     public Response viewPerfLog(@Context final Request request, @Context final HttpServletRequest httpServletRequest) {
         try (BufferedReader bufferedReader = new BufferedReader(new FileReader(System.getProperty("catalina.base")
-                + File.separator + "logs" + File.separator + "perf.log"));) {
+                + File.separator + "logs" + File.separator + "perf.log"))) {
             if (!isUserAnAdmin(httpServletRequest)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You must be logged in as staff to access this function.").toResponse();
@@ -1308,15 +1439,15 @@ public class AdminFacade extends AbstractSegueFacade {
                         "You must be logged in as staff to access this function.").toResponse();
             }
 
-            ResultsWrapper<ContentDTO> allByType = contentVersionController.getContentManager().getAllByTypeRegEx(
-                    contentVersionController.getLiveVersion(), ".*", 0, -1);
+            ResultsWrapper<ContentDTO> allByType = this.contentManager.getAllByTypeRegEx(
+                    this.contentIndex, ".*", 0, -1);
             
             List<ContentSummaryDTO> results = Lists.newArrayList();
             for (ContentDTO c : allByType.getResults()) {
-                results.add(contentVersionController.getContentManager().extractContentSummary(c));
+                results.add(this.contentManager.extractContentSummary(c));
             }
 
-            ResultsWrapper<ContentSummaryDTO> toReturn = new ResultsWrapper<ContentSummaryDTO>(results,
+            ResultsWrapper<ContentSummaryDTO> toReturn = new ResultsWrapper<>(results,
                     allByType.getTotalResults());
             return Response.ok(toReturn).build();
         } catch (NoUserLoggedInException e) {
@@ -1366,4 +1497,148 @@ public class AdminFacade extends AbstractSegueFacade {
     private boolean isUserStaff(final HttpServletRequest request) throws NoUserLoggedInException {
         return isUserStaff(userManager, request);
     }
+
+    /**
+     * This method will allow the live version served by the site to be changed.
+     *
+     * @param request
+     *            - to help determine access rights.
+     * @param version
+     *            - version to use as updated version of content store.
+     * @return Success shown by returning the new liveSHA or failed message "Invalid version selected".
+     */
+    @POST
+    @Path("/live_version/{version}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public synchronized Response changeLiveVersion(@Context final HttpServletRequest request,
+                                                   @PathParam("version") final String version) {
+
+        try {
+            if (isUserAnAdmin(request)) {
+
+                String oldLiveVersion = contentManager.getCurrentContentSHA();
+
+                HttpClient httpClient = new DefaultHttpClient();
+
+                HttpPost httpPost = new HttpPost("http://" + getProperties().getProperty("ETL_HOSTNAME") + ":" +
+                        getProperties().getProperty("ETL_PORT") + "/isaac-api/api/etl/set_version_alias/" + this.contentIndex + "/" + version);
+
+                httpPost.addHeader("Content-Type", "application/json");
+
+                HttpResponse httpResponse = httpClient.execute(httpPost);
+
+                HttpEntity e = httpResponse.getEntity();
+
+                if (httpResponse.getStatusLine().getStatusCode() == 200) {
+                    log.info(userManager.getCurrentRegisteredUser(request).getEmail() + " changed live version from " + oldLiveVersion + " to " + version + ".");
+                    return Response.ok().build();
+                } else {
+                    SegueErrorResponse r = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, IOUtils.toString(e.getContent()));
+                    r.setBypassGenericSiteErrorPage(true);
+                    return r.toResponse();
+                }
+
+            } else {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "You must be logged in as an admin to access this function.").toResponse();
+            }
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (Exception e) {
+            log.error("Exception during version change.", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error during verison change.", e).toResponse();
+        }
+    }
+
+    @POST
+    @Path("/new_version_alert")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response versionChangeNotification(GithubPushEventPayload payload) {
+
+        // TODO: Verify webhook secret.
+        try {
+            // We are only interested in the master branch
+            if(payload.getRef().equals("refs/heads/master")) {
+                String newVersion = payload.getAfter();
+
+                HttpPost httpPost = new HttpPost("http://" + getProperties().getProperty("ETL_HOSTNAME") + ":" +
+                        getProperties().getProperty("ETL_PORT") + "/isaac-api/api/etl/new_version_alert/" + newVersion);
+
+                HttpResponse httpResponse;
+                httpResponse = new DefaultHttpClient().execute(httpPost);
+                HttpEntity e = httpResponse.getEntity();
+
+                if (httpResponse.getStatusLine().getStatusCode() == 200) {
+                    return Response.ok().build();
+                } else {
+                    SegueErrorResponse r = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, IOUtils.toString(e.getContent()));
+                    r.setBypassGenericSiteErrorPage(true);
+                    return r.toResponse();
+                }
+            }
+        } catch (IOException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    e.getMessage()).toResponse();
+        }
+        return Response.ok().build();
+    }
+
+
+    @GET
+    @Path("/diagnostics")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public Response getDiagnostics(@Context final Request request, @Context final HttpServletRequest httpServletRequest) {
+
+        try {
+
+            if (isUserAnAdmin(httpServletRequest)) {
+
+                ObjectMapper mapper = new ObjectMapper();
+                Map<String, Object> diagnosticReport = Maps.newHashMap();
+                Map<String, Object> websocketReport = Maps.newHashMap();
+                Map<String, Object> runtimeReport = Maps.newHashMap();
+                Integer numCurrentWebSockets = 0;
+                Integer numCurrentWebSocketUsers = 0;
+
+                // websocket reporting
+                for (ConcurrentLinkedQueue<UserAlertsWebSocket> queue : UserAlertsWebSocket.connectedSockets.values()) {
+                    numCurrentWebSockets += queue.size();
+                    if (queue.size() > 0) {
+                        numCurrentWebSocketUsers++;
+                    }
+                }
+
+                websocketReport.put("currentWebsocketsOpen", numCurrentWebSockets);
+                websocketReport.put("usersCurrent", numCurrentWebSocketUsers);
+                websocketReport.put("usersTotal", UserAlertsWebSocket.connectedSockets.size());
+                websocketReport.put("totalWebsocketsOpened", UserAlertsWebSocket.getWebsocketCounts().get("numWebsocketsOpenedOverTime"));
+                websocketReport.put("totalWebsocketsClosed", UserAlertsWebSocket.getWebsocketCounts().get("numWebsocketsClosedOverTime"));
+
+                diagnosticReport.put("websockets", websocketReport);
+
+                // runtime reporting
+                runtimeReport.put("processors", Runtime.getRuntime().availableProcessors());
+                runtimeReport.put("memoryFree", Runtime.getRuntime().freeMemory());
+                runtimeReport.put("memoryMax", Runtime.getRuntime().maxMemory());
+                runtimeReport.put("memoryTotal", Runtime.getRuntime().totalMemory());
+                runtimeReport.put("threadCount", Thread.activeCount());
+
+                diagnosticReport.put("runtime", runtimeReport);
+
+                // other reporting
+                diagnosticReport.put("numAnonymousUsers", userManager.getNumberOfAnonymousUsers());
+
+                return Response.ok(diagnosticReport).build();
+
+            } else {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "You must be logged in as an admin to access this function.").toResponse();
+            }
+
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
+    }
+
 }

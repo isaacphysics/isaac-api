@@ -15,12 +15,19 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
 
 /**
- * IsaacQuestion Page DO.
+ * IsaacConcept Page DTO.
  *
  */
 public class IsaacConceptPageDTO extends SeguePageDTO {
+
+    @Override
+    @JsonIgnore(false) // Override the parent class decorator!
+    public String getCanonicalSourceFile() {
+        return this.canonicalSourceFile;
+    }
 
 }

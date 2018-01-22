@@ -15,10 +15,10 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import com.google.api.client.util.Lists;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
@@ -52,7 +52,7 @@ public class GameboardDTO {
      * Default Gameboard Constructor.
      */
     public GameboardDTO() {
-        this.questions = new ArrayList<GameboardItem>();
+        this.questions = Lists.newArrayList();
     }
 
     /**

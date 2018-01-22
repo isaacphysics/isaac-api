@@ -24,6 +24,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
+import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 /**
  * An interface defining the password authentication process.
@@ -35,7 +36,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 public interface IPasswordAuthenticator extends IAuthenticator {
 
     /**
-     * Registers a new user with the system.
+     * Creates or updates a local set of credentials for a Segue user with the system.
      * 
      * @param user
      *            object to register containing all user information to be stored including the plain text password.
@@ -43,8 +44,10 @@ public interface IPasswordAuthenticator extends IAuthenticator {
      *            - plain text password to be hashed.
      * @throws InvalidPasswordException
      *             - if the password specified does not meet the complexity requirements or is empty.
+     * @throws SegueDatabaseException
+     *             - If there is an internal database error.
      */
-    void setOrChangeUsersPassword(RegisteredUser user, final String plainTextPassword) throws InvalidPasswordException;
+    void setOrChangeUsersPassword(RegisteredUser user, final String plainTextPassword) throws InvalidPasswordException, SegueDatabaseException;
 
     /**
      * authenticate This method authenticates a given user based on the given e-mail address and password.
@@ -68,18 +71,53 @@ public interface IPasswordAuthenticator extends IAuthenticator {
             SegueDatabaseException;
 
     /**
-     * Creates a password reset token and attaches it to the UserDO ready to be persisted.
+     * Method to check if a user has a password configured.
+     *
+     * @param userToCheck - user
+     * @return true if so false if not.
+     */
+    boolean hasPasswordRegistered(RegisteredUser userToCheck) throws SegueDatabaseException;
+
+    /**
+     * Creates a password reset token and save it to the persistent engine.
      * 
      * @param userToAttachToken
      *            - the user which should have token information added. -
-     * @return UserDO which has the associated password reset details attached. This user still needs to be persisted.
+     * @return The reset token
      * @throws NoSuchAlgorithmException
      *             - if the configured algorithm is not valid.
      * @throws InvalidKeySpecException
      *             - if the preconfigured key spec is invalid.
      */
-    RegisteredUser createPasswordResetTokenForUser(RegisteredUser userToAttachToken) throws NoSuchAlgorithmException,
-            InvalidKeySpecException;
+    String createPasswordResetTokenForUser(RegisteredUser userToAttachToken) throws NoSuchAlgorithmException,
+            InvalidKeySpecException, SegueDatabaseException, NoCredentialsAvailableException;
+
+    /**
+     * This method will test if the user's reset token is valid reset token for a given user.
+     *
+     * @param token
+     *            - Token to validate.
+     * @return true if the reset token is valid
+     */
+    boolean isValidResetToken(final String token) throws SegueDatabaseException;
+
+    /**
+     * This method will throw an exception for invalid passwords.
+     *
+     * @param password
+     *            - Password to validate.
+     * @throws InvalidPasswordException - if the password is invalid
+     */
+    void ensureValidPassword(final String password) throws InvalidPasswordException;
+
+    /**
+     * This method will test if the user's reset token is valid reset token for a given user.
+     *
+     * @param token
+     *            - Token to validate.
+     * @return RegisteredUser
+     */
+    RegisteredUser getRegisteredUserByToken(final String token) throws SegueDatabaseException;
 
     /**
      * Creates an email verification token and attaches it to the UserDO ready to be persisted.
@@ -98,15 +136,6 @@ public interface IPasswordAuthenticator extends IAuthenticator {
      */
     RegisteredUser createEmailVerificationTokenForUser(final RegisteredUser userToAttachVerificationToken, 
             final String email) throws NoSuchAlgorithmException, InvalidKeySpecException;
-
-    /**
-     * This method will test if the user's reset token is valid reset token.
-     *
-     * @param user
-     *            - The user object to test
-     * @return true if the reset token is valid
-     */
-    boolean isValidResetToken(final RegisteredUser user);
 
     /**
      * This method tests whether the verification token is valid.

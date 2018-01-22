@@ -37,8 +37,8 @@ import com.google.inject.Inject;
 public class TokenOwnerLookupMisuseHandler implements IMisuseHandler {
     private static final Logger log = LoggerFactory.getLogger(TokenOwnerLookupMisuseHandler.class);
 
-    public static final Integer SOFT_THRESHOLD = 50;
-    public static final Integer HARD_THRESHOLD = 200;
+    public static final Integer SOFT_THRESHOLD = 20;
+    public static final Integer HARD_THRESHOLD = 50;
     public static final Integer ACCOUNTING_INTERVAL = 86400;
 
     private PropertiesLoader properties;
@@ -81,14 +81,14 @@ public class TokenOwnerLookupMisuseHandler implements IMisuseHandler {
         final String subject = "Soft Threshold limit reached for TokenOwnershipRequest endpoint";
         EmailCommunicationMessage e = new EmailCommunicationMessage(null,
                 properties.getProperty(Constants.SERVER_ADMIN_ADDRESS), subject, message, message, EmailType.ADMIN,
-                null, null);
+                null, null, null);
         try {
 			emailManager.addSystemEmailToQueue(e);
 		} catch (SegueDatabaseException e1) {
 			log.error("Database access error when attempting to send hard threshold limit warnings: " 
 							+ e1.getMessage());
 		}
-        log.warn("Soft threshold limit reached" + message);
+        log.warn("Soft threshold limit: " + message);
 
     }
 
@@ -98,14 +98,14 @@ public class TokenOwnerLookupMisuseHandler implements IMisuseHandler {
 
         EmailCommunicationMessage e = new EmailCommunicationMessage(null,
                 properties.getProperty(Constants.SERVER_ADMIN_ADDRESS), subject, message, message, EmailType.ADMIN,
-                null, null);
+                null, null, null);
         try {
 			emailManager.addSystemEmailToQueue(e);
 		} catch (SegueDatabaseException e1) {
 			log.error("Database access error when attempting to send hard threshold limit warnings: " 
 							+ e1.getMessage());
 		}
-        log.warn("Hard threshold limit reached" + message);
+        log.warn("Hard threshold limit: " + message);
 
     }
 }

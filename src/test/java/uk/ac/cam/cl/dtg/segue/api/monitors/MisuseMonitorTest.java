@@ -114,12 +114,12 @@ public class MisuseMonitorTest {
     @Test
     public final void emailVerificationRequest_checkForMisuse_emailShouldBeSentAndExceptionShouldOccur() {
         
-        String event = EmailVerificationRequestMisusehandler.class.toString();
+        String event = EmailVerificationRequestMisuseHandler.class.toString();
         
         IMisuseMonitor misuseMonitor = new InMemoryMisuseMonitor();
 
-        EmailVerificationRequestMisusehandler emailVerificationMisuseHandler 
-            = new EmailVerificationRequestMisusehandler();
+        EmailVerificationRequestMisuseHandler emailVerificationMisuseHandler
+            = new EmailVerificationRequestMisuseHandler();
         
         misuseMonitor.registerHandler(event, emailVerificationMisuseHandler);
 
@@ -133,11 +133,11 @@ public class MisuseMonitorTest {
         try {
             //Register the misuse monitor
             if (misuseMonitor.hasMisused(user.getEmail(),
-                    EmailVerificationRequestMisusehandler.class.toString())) {
+                    EmailVerificationRequestMisuseHandler.class.toString())) {
                 throw new SegueResourceMisuseException("Number of requests exceeded. Triggering Error Response");
             }
             
-            for (int i = 0; i < EmailVerificationRequestMisusehandler.SOFT_THRESHOLD; i++) {
+            for (int i = 0; i < EmailVerificationRequestMisuseHandler.SOFT_THRESHOLD; i++) {
                 misuseMonitor.notifyEvent(user.getEmail(), event);
             }
         } catch (SegueResourceMisuseException e) {
@@ -148,12 +148,12 @@ public class MisuseMonitorTest {
         try {
             //Register the misuse monitor
             if (misuseMonitor.hasMisused(user.getEmail(),
-                    EmailVerificationRequestMisusehandler.class.toString())) {
+                    EmailVerificationRequestMisuseHandler.class.toString())) {
                 throw new SegueResourceMisuseException("Number of requests exceeded. Triggering Error Response");
             }
             
-            for (int i = EmailVerificationRequestMisusehandler.SOFT_THRESHOLD;
-                                        i < EmailVerificationRequestMisusehandler.HARD_THRESHOLD; i++) {
+            for (int i = EmailVerificationRequestMisuseHandler.SOFT_THRESHOLD;
+                                        i < EmailVerificationRequestMisuseHandler.HARD_THRESHOLD; i++) {
                 misuseMonitor.notifyEvent(user.getEmail(), event);
             }
         } catch (SegueResourceMisuseException e) {

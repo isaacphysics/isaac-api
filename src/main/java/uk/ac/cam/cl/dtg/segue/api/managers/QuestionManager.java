@@ -15,16 +15,12 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import com.google.inject.Injector;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +29,7 @@ import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 
+import uk.ac.cam.cl.dtg.isaac.configuration.IsaacApplicationRegister;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
@@ -42,12 +39,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceQuestionDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.*;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -118,7 +110,8 @@ public class QuestionManager {
                 validateQuestionResponse = validator.validateQuestionResponse(question,
                         answerFromUser);
             } catch (ValidatorUnavailableException e) {
-                return SegueErrorResponse.getServiceUnavailableResponse(e.getClass().getSimpleName() + ":" + e.getMessage());
+                return SegueErrorResponse.getServiceUnavailableResponse(e.getClass().getSimpleName() + ":"
+                        + e.getMessage());
             }
 
             return Response.ok(
@@ -134,7 +127,7 @@ public class QuestionManager {
      * @return a Validator
      */
     @SuppressWarnings("unchecked")
-    public static IValidator locateValidator(final Class<? extends Question> questionType) {
+    private static IValidator locateValidator(final Class<? extends Question> questionType) {
         // check we haven't gone too high up the superclass tree
         if (!Question.class.isAssignableFrom(questionType)) {
             return null;
@@ -142,14 +135,12 @@ public class QuestionManager {
 
         // Does this class have the correct annotation?
         if (questionType.isAnnotationPresent(ValidatesWith.class)) {
-            try {
-                log.debug("Validator for question validation found. Using : "
-                        + questionType.getAnnotation(ValidatesWith.class).value());
-                return questionType.getAnnotation(ValidatesWith.class).value().newInstance();
-            } catch (InstantiationException | IllegalAccessException e) {
-                log.error("Error while trying to find annotations in the class provided.", e);
-                return null;
-            }
+
+            log.debug("Validator for question validation found. Using : "
+                    + questionType.getAnnotation(ValidatesWith.class).value());
+            Injector injector = IsaacApplicationRegister.injector;
+            return injector.getInstance(questionType.getAnnotation(ValidatesWith.class).value());
+
         } else if (questionType.equals(Question.class)) {
             // so if we get here then we haven't found a ValidatesWith class, so
             // we should just give up and return null.
@@ -181,6 +172,7 @@ public class QuestionManager {
                 new ArrayList<QuestionDTO>());
 
         this.augmentQuestionObjectWithAttemptInformation(page, questionsToAugment, usersQuestionAttempts);
+        QuestionManager.augmentRelatedQuestionsWithAttemptInformation(page, usersQuestionAttempts);
 
         shuffleChoiceQuestionsChoices(userId, questionsToAugment);
 
@@ -237,6 +229,55 @@ public class QuestionManager {
 
         }
         return page;
+    }
+
+    /**
+     * A mathod which audments related questions with attempt information.
+     * i.e. sets whether the related content summary has been completed.
+     * @param content the content to be augmented.
+     * @param usersQuestionAttempts the user's question attempts.
+     */
+    private static void augmentRelatedQuestionsWithAttemptInformation(
+            final ContentDTO content,
+            final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
+        // Check if all question parts have been answered
+        List<ContentSummaryDTO> relatedContentSummaries = content.getRelatedContent();
+        if (relatedContentSummaries != null) {
+            for (ContentSummaryDTO relatedContentSummary : relatedContentSummaries) {
+                String questionId = relatedContentSummary.getId();
+                Map<String, List<QuestionValidationResponse>> questionAttempts = usersQuestionAttempts.get(questionId);
+                boolean questionAnsweredCorrectly = false;
+                if (questionAttempts != null) {
+                    for (String relatedQuestionPartId : relatedContentSummary.getQuestionPartIds()) {
+                        questionAnsweredCorrectly = false;
+                        List<QuestionValidationResponse> questionPartAttempts =
+                                questionAttempts.get(relatedQuestionPartId);
+                        if (questionPartAttempts != null) {
+                            for (QuestionValidationResponse partAttempt : questionPartAttempts) {
+                                questionAnsweredCorrectly = partAttempt.isCorrect();
+                                if (questionAnsweredCorrectly) {
+                                    break; // exit on first correct attempt
+                                }
+                            }
+                        }
+                        if (!questionAnsweredCorrectly) {
+                            break; // exit on first false question part
+                        }
+                    }
+                }
+                relatedContentSummary.setCorrect(questionAnsweredCorrectly);
+            }
+        }
+        // for all children recurse
+        List<ContentBaseDTO> children = content.getChildren();
+        if (children != null) {
+            for (ContentBaseDTO child : children) {
+                if (child instanceof ContentDTO) {
+                    ContentDTO childContent = (ContentDTO) child;
+                    QuestionManager.augmentRelatedQuestionsWithAttemptInformation(childContent, usersQuestionAttempts);
+                }
+            }
+        }
     }
 
     /**
@@ -436,10 +477,13 @@ public class QuestionManager {
         // shuffle all choices based on the seed provided, augmented by individual question ID.
         for (QuestionDTO question : questions) {
             if (question instanceof ChoiceQuestionDTO) {
-                ChoiceQuestionDTO choiceQuestion = (ChoiceQuestionDTO) question;
-                String qSeed = seed + choiceQuestion.getId();
-                if (choiceQuestion.getChoices() != null) {
-                    Collections.shuffle(choiceQuestion.getChoices(), new Random(qSeed.hashCode()));
+                Boolean randomiseChoices = ((ChoiceQuestionDTO) question).getRandomiseChoices();
+                if (randomiseChoices == null || randomiseChoices) {  // Default to randomised if not set.
+                    ChoiceQuestionDTO choiceQuestion = (ChoiceQuestionDTO) question;
+                    String qSeed = seed + choiceQuestion.getId();
+                    if (choiceQuestion.getChoices() != null) {
+                        Collections.shuffle(choiceQuestion.getChoices(), new Random(qSeed.hashCode()));
+                    }
                 }
             }
         }

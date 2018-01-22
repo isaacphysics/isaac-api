@@ -16,6 +16,8 @@
 package uk.ac.cam.cl.dtg.segue.dto.content;
 
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import uk.ac.cam.cl.dtg.segue.quiz.ChoiceQuestionValidator;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 
@@ -27,6 +29,7 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 @ValidatesWith(ChoiceQuestionValidator.class)
 public class ChoiceQuestionDTO extends QuestionDTO {
     protected List<ChoiceDTO> choices;
+    protected Boolean randomiseChoices;
 
     /**
      * Default Constructor for mappers.
@@ -52,6 +55,26 @@ public class ChoiceQuestionDTO extends QuestionDTO {
      */
     public final void setChoices(final List<ChoiceDTO> choices) {
         this.choices = choices;
+    }
+
+    /**
+     * Gets the whether to randomlyOrderUnits.
+     *
+     * @return randomiseChoices
+     */
+    @JsonIgnore
+    public Boolean getRandomiseChoices() {
+        return randomiseChoices;
+    }
+
+    /**
+     * Sets the randomiseChoices.
+     *
+     * @param randomiseChoices
+     *            the randomiseChoices to set
+     */
+    public void setRandomiseChoices(final Boolean randomiseChoices) {
+        this.randomiseChoices = randomiseChoices;
     }
 
 }

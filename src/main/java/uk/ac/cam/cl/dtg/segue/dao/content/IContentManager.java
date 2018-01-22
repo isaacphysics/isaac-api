@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,6 +25,7 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
+import org.elasticsearch.action.search.SearchResponse;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
@@ -42,26 +43,6 @@ import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 public interface IContentManager {
 
     /**
-     * Sets Index Restrictions.
-     * 
-     * @param loadOnlyPublishedContent
-     *            - True if you only wish to index content where the top level content object is marked as published.
-     *            False if all valid content should be indexed.
-     */
-    void setIndexRestriction(boolean loadOnlyPublishedContent);
-
-    /**
-     * Save an object to the content manager.
-     * 
-     * @param <T>
-     *            - the type of the object being saved.
-     * @param objectToSave
-     *            - the object to save to the content Manager.
-     * @return the objects id.
-     */
-    <T extends Content> String save(T objectToSave);
-
-    /**
      * Goes to the configured Database and attempts to find a content item with the specified ID. This returns the
      * object in the raw DO form.
      * 
@@ -75,6 +56,7 @@ public interface IContentManager {
      *             - if there is an error retrieving the content requested.
      */
     Content getContentDOById(String version, String id) throws ContentManagerException;
+    Content getContentDOById(String version, String id, boolean failQuietly) throws ContentManagerException;
 
     /**
      * Goes to the configured Database and attempts to find a content item with the specified ID. This returns the
@@ -83,19 +65,20 @@ public interface IContentManager {
      * @param id
      *            id to search for in preconfigured data source.
      * @param version
-     *            - the version to attempt to retrieve.
+     *            - the SHA (not alias due to caching) to attempt to retrieve.
      * 
      * @return Will return a Content object (or subclass of Content) or Null if no content object is found.
      * @throws ContentManagerException
      *             - if there is an error retrieving the content requested.
      */
     ContentDTO getContentById(String version, String id) throws ContentManagerException;
+    ContentDTO getContentById(String version, String id, boolean failQuietly) throws ContentManagerException;
 
     /**
      * GetByIdPrefix Returns results that match a given id prefix for a specified version number.
      * 
      * @param version
-     *            - version of the content to search against.
+     *            - SHA (not alias due to caching) of the content version to search against.
      * @param idPrefix
      *            - id prefix to search for.
      * @param startIndex
@@ -107,6 +90,26 @@ public interface IContentManager {
      *             - if there is an error retrieving the content requested.
      */
     ResultsWrapper<ContentDTO> getByIdPrefix(String version, String idPrefix, int startIndex, int limit)
+            throws ContentManagerException;
+
+    /**
+     * getContentMatchingIds Returns results that match any of the listed ids for a specified version number.
+     *
+     * This method will retrieve all content that matches at least one of the given list of IDs.
+     *
+     * @param version
+     *            - SHA (not alias due to caching) of the content version to search against.
+     * @param ids
+     *            - ids to match.
+     * @param startIndex
+     *            - start index for results
+     * @param limit
+     *            - the maximum number of results to return -1 will attempt to return all results.
+     * @return ResultsWrapper of objects that match the id prefix.
+     * @throws ContentManagerException
+     *             - if there is an error retrieving the content requested.
+     */
+    ResultsWrapper<ContentDTO> getContentMatchingIds(String version, Collection<String> ids, int startIndex, int limit)
             throws ContentManagerException;
 
     /**
@@ -269,23 +272,6 @@ public interface IContentManager {
      */
     String getLatestVersionId();
 
-    /**
-     * A utility method to instruct the content manager to evict ALL of its cached data including data held within its
-     * search providers.
-     * 
-     * WARNING: this is a nuclear method. Re-indexing will definitely have to occur if you do this.
-     * 
-     */
-    void clearCache();
-
-    /**
-     * A utility method to instruct a content manager to evict a particular version of the content from its caches. This
-     * includes data held within its search providers.
-     * 
-     * @param version
-     *            - version to dump the cache of.
-     */
-    void clearCache(String version);
 
     /**
      * A method that will return an unordered set of tags registered for a particular version of the content.
@@ -402,4 +388,12 @@ public interface IContentManager {
      * @return summary of content
      */
     ContentSummaryDTO extractContentSummary(ContentDTO content);
+
+    /**
+     * Get the SHA for the current content being presented.
+     * This will look up the underlying SHA that is returned for the alias used.
+     *
+     * @return a git content SHA.
+     */
+    String getCurrentContentSHA();
 }

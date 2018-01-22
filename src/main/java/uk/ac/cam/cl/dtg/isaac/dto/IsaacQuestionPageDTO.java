@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 import java.util.List;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
@@ -36,7 +37,7 @@ public class IsaacQuestionPageDTO extends SeguePageDTO {
     protected String supersededBy;
 
     @JsonCreator
-    public IsaacQuestionPageDTO(@JsonProperty("_id") String _id, @JsonProperty("id") String id,
+    public IsaacQuestionPageDTO(@JsonProperty("id") String id,
             @JsonProperty("title") String title, @JsonProperty("subtitle") String subtitle,
             @JsonProperty("type") String type, @JsonProperty("author") String author,
             @JsonProperty("encoding") String encoding, @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
@@ -47,7 +48,7 @@ public class IsaacQuestionPageDTO extends SeguePageDTO {
             @JsonProperty("level") Integer level, @JsonProperty("passMark") Float passMark,
             @JsonProperty("supersededBy") String supersededBy) {
 
-        super(_id, id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
+        super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
                 attribution, relatedContent, published, tags, level);
 
         this.passMark = passMark;
@@ -72,5 +73,11 @@ public class IsaacQuestionPageDTO extends SeguePageDTO {
     public String getSupersededBy() { return supersededBy; }
 
     public void setSupersededBy(String supersededBy) { this.supersededBy = supersededBy; }
+
+    @Override
+    @JsonIgnore(false) // Override the parent class decorator!
+    public String getCanonicalSourceFile() {
+        return this.canonicalSourceFile;
+    }
 
 }

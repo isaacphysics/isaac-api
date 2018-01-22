@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,16 +30,19 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import com.google.inject.name.Named;
 import org.apache.commons.lang3.Validate;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.LocationManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
@@ -48,7 +51,9 @@ import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 import uk.ac.cam.cl.dtg.util.locations.Location;
 import static com.google.common.collect.Maps.immutableEntry;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
@@ -66,14 +71,15 @@ import com.google.inject.Inject;
  * StatisticsManager.
  * TODO this file is a mess... it needs refactoring.
  */
-public class StatisticsManager {
+public class StatisticsManager implements IStatisticsManager {
     private UserAccountManager userManager;
     private ILogManager logManager;
     private SchoolListReader schoolManager;
-    private ContentVersionController versionManager;
-    //private IContentManager contentManager;
+    private final IContentManager contentManager;
+    private final String contentIndex;
     private GroupManager groupManager;
     private QuestionManager questionManager;
+    private GameManager gameManager;
     
     private Cache<String, Object> longStatsCache;
     private LocationManager locationHistoryManager;
@@ -95,7 +101,7 @@ public class StatisticsManager {
      *            - to query Log information
      * @param schoolManager
      *            - to query School information
-     * @param versionManager
+     * @param contentManager
      *            - to query live version information
      * @param locationHistoryManager
      *            - so that we can query our location database (ip addresses)
@@ -106,18 +112,20 @@ public class StatisticsManager {
      */
     @Inject
     public StatisticsManager(final UserAccountManager userManager, final ILogManager logManager,
-            final SchoolListReader schoolManager, final ContentVersionController versionManager,
-            final LocationManager locationHistoryManager,
-            final GroupManager groupManager, final QuestionManager questionManager) {
+            final SchoolListReader schoolManager, final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex,
+                             final LocationManager locationHistoryManager, final GroupManager groupManager,
+            final QuestionManager questionManager, final GameManager gameManager) {
         this.userManager = userManager;
         this.logManager = logManager;
         this.schoolManager = schoolManager;
 
-        this.versionManager = versionManager;
+        this.contentManager = contentManager;
+        this.contentIndex = contentIndex;
 
         this.locationHistoryManager = locationHistoryManager;
         this.groupManager = groupManager;
         this.questionManager = questionManager;
+        this.gameManager = gameManager;
 
         this.longStatsCache = CacheBuilder.newBuilder()
                 .expireAfterWrite(LONG_STATS_EVICTION_INTERVAL_MINUTES, TimeUnit.MINUTES)
@@ -144,7 +152,7 @@ public class StatisticsManager {
 
         // get all the users
         List<RegisteredUserDTO> users = userManager.findUsers(new RegisteredUserDTO());
-        ImmutableMap.Builder<String, Object> ib = new ImmutableMap.Builder<String, Object>();
+        ImmutableMap.Builder<String, Object> ib = new ImmutableMap.Builder<>();
 
         List<RegisteredUserDTO> male = Lists.newArrayList();
         List<RegisteredUserDTO> female = Lists.newArrayList();
@@ -303,6 +311,8 @@ public class StatisticsManager {
         Map<String, Object> result = ib.build();
         this.longStatsCache.put(GENERAL_STATS, result);
 
+        log.info("Finished calculating General Statistics");
+
         return result;
     }
 
@@ -331,7 +341,7 @@ public class StatisticsManager {
      *             - if there is a database exception.
      */
     public List<Map<String, Object>> getSchoolStatistics() 
-            throws UnableToIndexSchoolsException, SegueDatabaseException {
+            throws UnableToIndexSchoolsException, SegueDatabaseException, SegueSearchException {
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> cachedOutput = (List<Map<String, Object>>) this.longStatsCache
                 .getIfPresent(SCHOOL_STATS);
@@ -348,13 +358,12 @@ public class StatisticsManager {
         final String connections = "connections";
         final String teachers = "teachers";
         final String numberActive = "numberActiveLastThirtyDays";
+        final String teachersActive = "teachersActiveLastThirtyDays";
         final int thirtyDays = 30;
 
         Map<String, Date> lastSeenUserMap = getLastSeenUserMap();
         List<Map<String, Object>> result = Lists.newArrayList();
         for (Entry<School, List<RegisteredUserDTO>> e : map.entrySet()) {
-            RegisteredUserDTO prototype = new RegisteredUserDTO();
-            prototype.setSchoolId(e.getKey().getUrn());
 
             List<RegisteredUserDTO> teachersConnected = Lists.newArrayList();
             for (RegisteredUserDTO user : e.getValue()) {
@@ -363,9 +372,13 @@ public class StatisticsManager {
                 }
             }
 
-            result.add(ImmutableMap.of(school, e.getKey(), connections, e.getValue().size(), teachers,
-                    teachersConnected.size(), numberActive,
-                    getNumberOfUsersActiveForLastNDays(e.getValue(), lastSeenUserMap, thirtyDays).size()));
+            result.add(ImmutableMap.of(
+                school, e.getKey(),
+                connections, e.getValue().size(),
+                teachers, teachersConnected.size(),
+                numberActive, getNumberOfUsersActiveForLastNDays(e.getValue(), lastSeenUserMap, thirtyDays).size(),
+                teachersActive, getNumberOfUsersActiveForLastNDays(teachersConnected, lastSeenUserMap, thirtyDays).size()
+            ));
         }
 
         Collections.sort(result, new Comparator<Map<String, Object>>() {
@@ -398,7 +411,7 @@ public class StatisticsManager {
      * @return A map of schools to integers (representing the number of registered users)
      * @throws UnableToIndexSchoolsException as per the description
      */
-    public Map<School, List<RegisteredUserDTO>> getUsersBySchool() throws UnableToIndexSchoolsException {
+    public Map<School, List<RegisteredUserDTO>> getUsersBySchool() throws UnableToIndexSchoolsException, SegueSearchException {
         List<RegisteredUserDTO> users;
         Map<School, List<RegisteredUserDTO>> usersBySchool = Maps.newHashMap();
 
@@ -444,11 +457,11 @@ public class StatisticsManager {
      * @throws UnableToIndexSchoolsException
      *             - if the school list has not been indexed.
      */
-    public List<RegisteredUserDTO> getUsersBySchoolId(final Long schoolId) throws ResourceNotFoundException,
-            SegueDatabaseException, UnableToIndexSchoolsException {
+    public List<RegisteredUserDTO> getUsersBySchoolId(final String schoolId) throws ResourceNotFoundException,
+            SegueDatabaseException, UnableToIndexSchoolsException, SegueSearchException {
         Validate.notNull(schoolId);
 
-        List<RegisteredUserDTO> users = Lists.newArrayList();
+        List<RegisteredUserDTO> users;
 
         School s;
         try {
@@ -521,75 +534,126 @@ public class StatisticsManager {
             throws SegueDatabaseException, ContentManagerException {
         Validate.notNull(userOfInterest);
 
-        // get questions answered correctly.
+        // FIXME: there was a TODO here about tidying this up and moving it elsewhere.
+        // It has been improved and tidied, but may still better belong elsewhere . . .
+
         int questionsAnsweredCorrectly = 0;
-
-        // get total questions attempted
+        int questionPartsAnsweredCorrectly = 0;
         int totalQuestionsAttempted = 0;
+        int totalQuestionPartsAttempted = 0;
+        Map<String, Integer> questionAttemptsByTagStats = Maps.newHashMap();
+        Map<String, Integer> questionsCorrectByTagStats = Maps.newHashMap();
+        Map<String, Integer> questionAttemptsByLevelStats = Maps.newHashMap();
+        Map<String, Integer> questionsCorrectByLevelStats = Maps.newHashMap();
+        Map<String, Integer> questionAttemptsByTypeStats = Maps.newHashMap();
+        Map<String, Integer> questionsCorrectByTypeStats = Maps.newHashMap();
 
-        Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsByUser = questionManager
-                .getQuestionAttemptsByUser(userOfInterest);
-
-        // all relevant question page info
-        for (Entry<String, Map<String, List<QuestionValidationResponse>>> questionPage : questionAttemptsByUser
-                .entrySet()) {
-
-            for (Entry<String, List<QuestionValidationResponse>> question : questionPage.getValue().entrySet()) {
-                totalQuestionsAttempted++;
-
-                for (int i = 0; question.getValue().size() > i; i++) {
-
-                    QuestionValidationResponse validationResponse = question.getValue().get(i);
-                    if (validationResponse.isCorrect() != null && validationResponse.isCorrect()) {
-                        questionsAnsweredCorrectly++;
-                        break;
-                    }
-                }
-            }
-        }
-
-        // TODO this stuff should be tidied up and put somewhere else
+        Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsByUser = questionManager.getQuestionAttemptsByUser(userOfInterest);
         Map<String, ContentDTO> questionMap = this.getQuestionMap(questionAttemptsByUser.keySet());
 
-        Map<String, Integer> questionAttemptsByTagStats = Maps.newHashMap();
-        Map<String, Integer> questionAttemptsByLevelStats = Maps.newHashMap();
+        // Loop through each Question attempted:
+        for (Entry<String, Map<String, List<QuestionValidationResponse>>> question : questionAttemptsByUser.entrySet()) {
+            totalQuestionsAttempted++;
 
-        for (Entry<String, Map<String, List<QuestionValidationResponse>>> question 
-                : questionAttemptsByUser.entrySet()) {
-            // add the tags
-            if (questionMap.get(question.getKey()) != null) {
-                for (String tag : questionMap.get(question.getKey()).getTags()) {
-                    if (questionAttemptsByTagStats.containsKey(tag)) {
-                        questionAttemptsByTagStats.put(tag, questionAttemptsByTagStats.get(tag) + 1);
+            boolean questionCorrect = true;  // Are all Parts of the Question correct?
+            // Loop through each Part of the Question:
+            // TODO - We might be able to avoid using a GameManager here!
+            // The question page content object is questionMap.get(question.getKey()) and we could search this instead!
+            for (QuestionDTO questionPart : gameManager.getAllMarkableQuestionPartsDFSOrder(question.getKey())) {
+
+                boolean questionPartCorrect = false;  // Is this Part of the Question correct?
+                // Has the user attempted this part of the question at all?
+                if (question.getValue().containsKey(questionPart.getId())) {
+                    totalQuestionPartsAttempted++;
+
+                    // Loop through each attempt at the Question Part if they have attempted it:
+                    for (QuestionValidationResponse validationResponse : question.getValue().get(questionPart.getId())) {
+
+                        if (validationResponse.isCorrect() != null && validationResponse.isCorrect()) {
+                            questionPartsAnsweredCorrectly++;
+                            questionPartCorrect = true;
+                            break;
+                        }
+                    }
+                    // Type Stats - Count the attempt at the Question Part:
+                    String questionPartType = questionPart.getType();
+                    if (questionAttemptsByTypeStats.containsKey(questionPartType)) {
+                        questionAttemptsByTypeStats.put(questionPartType, questionAttemptsByTypeStats.get(questionPartType) + 1);
                     } else {
-                        questionAttemptsByTagStats.put(tag, 1);
+                        questionAttemptsByTypeStats.put(questionPartType, 1);
+                    }
+                    // If this Question Part is correct, count this too:
+                    if (questionPartCorrect) {
+                        if (questionsCorrectByTypeStats.containsKey(questionPartType)) {
+                            questionsCorrectByTypeStats.put(questionPartType, questionsCorrectByTypeStats.get(questionPartType) + 1);
+                        } else {
+                            questionsCorrectByTypeStats.put(questionPartType, 1);
+                        }
                     }
                 }
+
+                // Correctness of whole Question: is the Question correct so far, and is this Question Part also correct?
+                questionCorrect = questionCorrect && questionPartCorrect;
             }
 
             ContentDTO questionContentDTO = questionMap.get(question.getKey());
-
             if (null == questionContentDTO) {
+                // We no longer have any information on this question!
                 continue;
             }
 
-            String questionLevel = questionContentDTO.getLevel().toString();
+            // Tag Stats - Loop through the Question's tags:
+            for (String tag : questionContentDTO.getTags()) {
+                // Count the attempt at the Question:
+                if (questionAttemptsByTagStats.containsKey(tag)) {
+                    questionAttemptsByTagStats.put(tag, questionAttemptsByTagStats.get(tag) + 1);
+                } else {
+                    questionAttemptsByTagStats.put(tag, 1);
+                }
+                // If it's correct, count this too:
+                if (questionCorrect) {
+                    if (questionsCorrectByTagStats.containsKey(tag)) {
+                        questionsCorrectByTagStats.put(tag, questionsCorrectByTagStats.get(tag) + 1);
+                    } else {
+                        questionsCorrectByTagStats.put(tag, 1);
+                    }
+                }
+            }
 
+            // Level Stats:
+            String questionLevel = questionContentDTO.getLevel().toString();
             if (questionAttemptsByLevelStats.containsKey(questionLevel)) {
-                questionAttemptsByLevelStats.put(questionLevel,
-                        questionAttemptsByLevelStats.get(questionLevel) + 1);
+                questionAttemptsByLevelStats.put(questionLevel, questionAttemptsByLevelStats.get(questionLevel) + 1);
             } else {
                 questionAttemptsByLevelStats.put(questionLevel, 1);
             }
+            // If it's correct, count this globally and for the Question's level too:
+            if (questionCorrect) {
+                questionsAnsweredCorrectly++;
+                if (questionsCorrectByLevelStats.containsKey(questionLevel)) {
+                    questionsCorrectByLevelStats.put(questionLevel, questionsCorrectByLevelStats.get(questionLevel) + 1);
+                } else {
+                    questionsCorrectByLevelStats.put(questionLevel, 1);
+                }
+            }
         }
 
-        ImmutableMap<String, Object> immutableMap = new ImmutableMap.Builder<String, Object>()
-                .put("totalQuestionsAttempted", totalQuestionsAttempted)
-                .put("totalCorrect", questionsAnsweredCorrectly)
-                .put("attemptsByTag", questionAttemptsByTagStats).put("attemptsByLevel", questionAttemptsByLevelStats)
-                .put("userDetails", this.userManager.convertToUserSummaryObject(userOfInterest)).build();
+        Map<String, Object> questionInfo = Maps.newHashMap();
 
-        return immutableMap;
+        questionInfo.put("totalQuestionsAttempted", totalQuestionsAttempted);
+        questionInfo.put("totalQuestionsCorrect", questionsAnsweredCorrectly);
+        questionInfo.put("totalQuestionPartsAttempted", totalQuestionPartsAttempted);
+        questionInfo.put("totalQuestionPartsCorrect", questionPartsAnsweredCorrectly);
+        questionInfo.put("attemptsByTag", questionAttemptsByTagStats);
+        questionInfo.put("correctByTag", questionsCorrectByTagStats);
+        questionInfo.put("attemptsByLevel", questionAttemptsByLevelStats);
+        questionInfo.put("correctByLevel", questionsCorrectByLevelStats);
+        questionInfo.put("attemptsByType", questionAttemptsByTypeStats);
+        questionInfo.put("correctByType", questionsCorrectByTypeStats);
+        questionInfo.put("userDetails", this.userManager.convertToUserSummaryObject(userOfInterest));
+
+        return questionInfo;
+
     }
 
     /**
@@ -697,6 +761,11 @@ public class StatisticsManager {
         return result;
     }
 
+    @Override
+    public Map<String, Object> getDetailedUserStatistics(RegisteredUserDTO userOfInterest) {
+        return null;
+    }
+
     /**
      * Utility method to get a load of question pages by id in one go.
      * 
@@ -710,16 +779,16 @@ public class StatisticsManager {
         Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
 
         fieldsToMap.put(immutableEntry(BooleanOperator.OR, ID_FIELDNAME + '.' + UNPROCESSED_SEARCH_FIELD_SUFFIX),
-                new ArrayList<String>(ids));
+                new ArrayList<>(ids));
 
         fieldsToMap.put(immutableEntry(BooleanOperator.OR, TYPE_FIELDNAME),
                 Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
 
         // Search for questions that match the ids.
-        ResultsWrapper<ContentDTO> findByFieldNames = versionManager.getContentManager().findByFieldNames(
-                versionManager.getLiveVersion(), fieldsToMap, 0, ids.size());
+        ResultsWrapper<ContentDTO> allMatchingIds =
+                this.contentManager.getContentMatchingIds(this.contentIndex, ids, 0, ids.size());
 
-        List<ContentDTO> questionsForGameboard = findByFieldNames.getResults();
+        List<ContentDTO> questionsForGameboard = allMatchingIds.getResults();
 
         Map<String, ContentDTO> questionIdToQuestionMap = Maps.newHashMap();
         for (ContentDTO content : questionsForGameboard) {

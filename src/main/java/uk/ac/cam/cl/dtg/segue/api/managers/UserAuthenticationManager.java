@@ -36,7 +36,9 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.HttpMethod;
 
+import com.google.common.collect.Maps;
 import ma.glasnost.orika.MapperFacade;
 
 import org.apache.commons.codec.binary.Base64;
@@ -44,6 +46,7 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
@@ -66,6 +69,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
+import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
@@ -77,6 +81,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 
 /**
@@ -86,6 +91,7 @@ import com.google.inject.Inject;
 public class UserAuthenticationManager {
     private static final Logger log = LoggerFactory.getLogger(UserAuthenticationManager.class);
     private static final String HMAC_SHA_ALGORITHM = "HmacSHA256";
+    private static final List<String> ORIGIN_HEADER_REQUEST_METHODS = ImmutableList.of(HttpMethod.POST, HttpMethod.DELETE, HttpMethod.PUT);
 
     private final PropertiesLoader properties;
     private final IUserDataManager database;
@@ -278,45 +284,24 @@ public class UserAuthenticationManager {
         if (authenticator instanceof IPasswordAuthenticator) {
             IPasswordAuthenticator passwordAuthenticator = (IPasswordAuthenticator) authenticator;
             
-            RegisteredUser user = passwordAuthenticator.authenticate(email, plainTextPassword);
-            return user;
+            return passwordAuthenticator.authenticate(email, plainTextPassword);
         } else {
             throw new AuthenticationProviderMappingException("Unable to map to a known authenticator that accepts "
                  + "raw credentials for the given provider: " + provider);
         }
     }
-    
+
     /**
-     * Helper method to handle the setting of segue passwords when user objects are updated.
-     * 
-     * This method will mutate the password fields in both parameters.
-     * 
-     * @param userContainingPlainTextPassword
-     *            - the object to extract the plain text password from (and then nullify it)
-     * @param userToSave
-     *            - the object to store the hashed credentials prior to saving.
-     * 
-     * @throws AuthenticationProviderMappingException
-     *             - if we can't map to a valid authenticator.
-     * @throws InvalidPasswordException
-     *             - if the password is not valid.
+     * Checks to see if a user has valid way to authenticate with Segue.
+     *
+     * @param user - to check
+     * @return true means the user should have a means of authenticating with their account as far as we are concerned
      */
-    public void checkForSeguePasswordChange(final RegisteredUser userContainingPlainTextPassword,
-            final RegisteredUser userToSave) throws AuthenticationProviderMappingException, InvalidPasswordException {
-        // do we need to do local password storage using the segue
-        // authenticator? I.e. is the password changing?
-        if (null != userContainingPlainTextPassword.getPassword()
-                && !userContainingPlainTextPassword.getPassword().isEmpty()) {
-            IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this
-                    .mapToProvider(AuthenticationProvider.SEGUE.name());
-            String plainTextPassword = userContainingPlainTextPassword.getPassword();
+    public boolean hasLocalCredentials(RegisteredUser user) throws SegueDatabaseException {
+        IPasswordAuthenticator passwordAuthenticator = (IPasswordAuthenticator) this.registeredAuthProviders
+                .get(AuthenticationProvider.SEGUE);
 
-            // clear reference to plainTextPassword
-            userContainingPlainTextPassword.setPassword(null);
-
-            // set the new password on the object to be saved.
-            authenticator.setOrChangeUsersPassword(userToSave, plainTextPassword);
-        }
+        return passwordAuthenticator.hasPasswordRegistered(user);
     }
     
     /**
@@ -331,12 +316,33 @@ public class UserAuthenticationManager {
         try {
             currentSessionInformation = this.getSegueSessionFromRequest(request);
         } catch (IOException e1) {
-            log.error("Error parsing session information ");
+            log.error("Error parsing session information to retrieve user.");
             return null;
         } catch (InvalidSessionException e) {
             log.debug("We cannot read the session information. It probably doesn't exist");
             // assuming that no user is logged in.
             return null;
+        }
+
+        if (properties.getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(EnvironmentType.PROD.name())) {
+            // If in production, check if the request originated from Isaac:
+            String referrer = request.getHeader("Referer");  // Note HTTP Header misspelling!
+            if (null == referrer) {
+                log.warn("Authenticated request had no 'Referer' information set! Attempted to access: "
+                        + request.getPathInfo());
+            } else if (!referrer.startsWith("https://" + properties.getProperty(HOST_NAME) + "/")) {
+                log.warn("Authenticated request had unexpected Referer: '" + referrer + "'. Attempted to access: "
+                        + request.getPathInfo());
+            }
+            // If the client sends an Origin header, we should afford them better security. If they do not send the header,
+            // we can draw no conclusions and must allow the request through.
+            String origin = request.getHeader("Origin");
+            boolean expectOriginHeader = ORIGIN_HEADER_REQUEST_METHODS.contains(request.getMethod());
+            if (expectOriginHeader && null != origin && !origin.equals("https://" + properties.getProperty(HOST_NAME))) {
+                log.error("Authenticated request had unexpected Origin: '" + origin + "'. Blocked access to: "
+                        + request.getMethod() + " " + request.getPathInfo());
+                return null;
+            }
         }
 
         // check if the users session is valid.
@@ -486,8 +492,11 @@ public class UserAuthenticationManager {
             return;
         }
 
+        IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this
+                    .mapToProvider(AuthenticationProvider.SEGUE.name());
+
         // make sure that the change doesn't prevent the user from logging in again.
-        if ((this.database.getAuthenticationProvidersByUser(userDO).size() > 1) || userDO.getPassword() != null) {
+        if ((this.database.getAuthenticationProvidersByUser(userDO).size() > 1) || authenticator.hasPasswordRegistered(userDO)) {
             this.database.unlinkAuthProviderFromUser(userDO, this.mapToProvider(providerString)
                     .getAuthenticationProvider());
         } else {
@@ -517,31 +526,35 @@ public class UserAuthenticationManager {
     public final void resetPasswordRequest(final RegisteredUser userDO, final RegisteredUserDTO userAsDTO)
             throws InvalidKeySpecException,
             NoSuchAlgorithmException, CommunicationException, SegueDatabaseException {
-
-        if (this.database.hasALinkedAccount(userDO)
-                && (userDO.getPassword() == null || userDO.getPassword().isEmpty())) {
-            // User is not authenticated locally
-            this.sendFederatedAuthenticatorResetMessage(userDO, userAsDTO);
-            return;
-        }
-
-        // User is valid and authenticated locally, proceed with reset
-        // Generate token
-        IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
-                .get(AuthenticationProvider.SEGUE);
-
-        RegisteredUser updatedUser = authenticator.createPasswordResetTokenForUser(userDO);
-
-        // Save user object
-        this.database.createOrUpdateUser(updatedUser);
-
-        log.info(String.format("Sending password reset message to %s", userDO.getEmail()));
         try {
-            this.emailManager.sendPasswordReset(userAsDTO, updatedUser.getResetToken());
+            IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
+                    .get(AuthenticationProvider.SEGUE);
+
+            // Before we create a reset token, record if they already have a password:
+            boolean userHadPasswordRegistered = authenticator.hasPasswordRegistered(userDO);
+
+            // Generate reset token, whether or not they have a local password set up:
+            String token = authenticator.createPasswordResetTokenForUser(userDO);
+            log.info(String.format("Sending password reset message to %s", userDO.getEmail()));
+
+            Map<String, Object> emailValues = ImmutableMap.of("resetURL",
+                    String.format("https://%s/resetpassword/%s",
+                            properties.getProperty(HOST_NAME), token));
+
+            if (this.database.hasALinkedAccount(userDO) && !userHadPasswordRegistered) {
+                // If user wasn't previously authenticated locally, and has a linked account
+                // allow them to reset their password but tell them about their provider(s):
+                this.sendFederatedAuthenticatorResetMessage(userDO, userAsDTO, emailValues);
+            } else {
+                this.emailManager.sendTemplatedEmailToUser(userAsDTO,
+                        emailManager.getEmailTemplateDTO("email-template-password-reset"),
+                        emailValues, EmailType.SYSTEM);
+            }
+
         } catch (ContentManagerException e) {
             log.error("ContentManagerException " + e.getMessage());
-        } catch (NoUserException e) {
-            log.error("ContentManagerException " + e.getMessage());
+        } catch (NoCredentialsAvailableException e) {
+            log.error("Unable to find user or credentials " + e.getMessage());
         }
     }
     
@@ -550,8 +563,8 @@ public class UserAuthenticationManager {
      *
      * @param token
      *            - the password reset token
-     * @param userObject
-     *            - the supplied user DO
+     * @param newPassword
+     *            - New password to set in plain text
      * @return the user which has had the password reset.
      * @throws InvalidTokenException
      *             - If the token provided is invalid.
@@ -560,37 +573,30 @@ public class UserAuthenticationManager {
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
      */
-    public RegisteredUser resetPassword(final String token, final RegisteredUser userObject)
+    public RegisteredUser resetPassword(final String token, final String newPassword)
             throws InvalidTokenException, InvalidPasswordException, SegueDatabaseException {
         // Ensure new password is valid
-        if (userObject.getPassword() == null || userObject.getPassword().isEmpty()) {
+
+        if (null == newPassword || newPassword.isEmpty()) {
             throw new InvalidPasswordException("Empty passwords are not allowed if using local authentication.");
+        }
+
+        if (newPassword.length() < 6) {
+            throw new InvalidPasswordException("Password must be at least 6 characters in length.");
         }
 
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
                 .get(AuthenticationProvider.SEGUE);
 
         // Ensure reset token is valid
-        RegisteredUser user = this.database.getByResetToken(token);
-        if (!authenticator.isValidResetToken(user)) {
+        RegisteredUser user = authenticator.getRegisteredUserByToken(token);
+        if (null == user) {
             throw new InvalidTokenException();
         }
 
         // Set user's password
-        authenticator.setOrChangeUsersPassword(user, userObject.getPassword());
-
-        // clear plainTextPassword
-        userObject.setPassword(null);
-
-        // Nullify reset token
-        user.setResetToken(null);
-        user.setResetExpiry(null);
-
-        // Save user
-        RegisteredUser createOrUpdateUser = this.database.createOrUpdateUser(user);
-        log.info(String.format("Password Reset for user (%s) has completed successfully.",
-                createOrUpdateUser.getId()));
-        return createOrUpdateUser;
+        authenticator.setOrChangeUsersPassword(user, newPassword);
+        return user;
     }
     
     /**
@@ -600,12 +606,14 @@ public class UserAuthenticationManager {
      *            - a user with the givenName, email and token fields set
      * @param userAsDTO
      *            - A user DTO object sanitised so that we can send it to the email manager.
+     * @param additionalEmailValues
+     *            - Additional email values to find and replace including any password reset urls.
      * @throws CommunicationException
      *             - if a fault occurred whilst sending the communique
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
      */
-    private void sendFederatedAuthenticatorResetMessage(final RegisteredUser user, final RegisteredUserDTO userAsDTO)
+    private void sendFederatedAuthenticatorResetMessage(final RegisteredUser user, final RegisteredUserDTO userAsDTO, final Map<String, Object> additionalEmailValues)
             throws CommunicationException,
             SegueDatabaseException {
         Validate.notNull(user);
@@ -646,13 +654,18 @@ public class UserAuthenticationManager {
         }
 
         try {
-            emailManager.sendFederatedPasswordReset(userAsDTO, providersString, providerWord);
+            Map<String, Object> emailTokens = Maps.newHashMap();
+            emailTokens.putAll(ImmutableMap.of("providerString", providersString,
+                    "providerWord", providerWord));
+            emailTokens.putAll(additionalEmailValues);
+
+            emailManager.sendTemplatedEmailToUser(userAsDTO,
+                    emailManager.getEmailTemplateDTO("email-template-federated-password-reset"),
+                    emailTokens, EmailType.SYSTEM);
+
         } catch (ContentManagerException contentException) {
             log.error(String.format("Error sending federated email verification message - %s", 
                             contentException.getMessage()));
-        } catch (NoUserException noUserException) {
-            log.error(String.format("Error sending federated email verification message - %s", 
-                            noUserException.getMessage()));
         }
     }
     
@@ -791,7 +804,7 @@ public class UserAuthenticationManager {
      *            - map containing session information retrieved from the cookie.
      * @return true if it is still valid, false if not.
      */
-    private boolean isValidUsersSession(final Map<String, String> sessionInformation) {
+    public boolean isValidUsersSession(final Map<String, String> sessionInformation) {
         Validate.notNull(sessionInformation);
 
         Integer sessionExpiryTimeInSeconds = Integer.parseInt(properties.getProperty(SESSION_EXPIRY_SECONDS));

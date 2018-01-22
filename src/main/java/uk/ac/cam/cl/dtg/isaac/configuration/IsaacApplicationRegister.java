@@ -30,24 +30,12 @@ import uk.ac.cam.cl.dtg.isaac.api.EventsFacade;
 import uk.ac.cam.cl.dtg.isaac.api.GameboardsFacade;
 import uk.ac.cam.cl.dtg.isaac.api.IsaacController;
 import uk.ac.cam.cl.dtg.isaac.api.PagesFacade;
-import uk.ac.cam.cl.dtg.segue.api.AdminFacade;
-import uk.ac.cam.cl.dtg.segue.api.AuthenticationFacade;
-import uk.ac.cam.cl.dtg.segue.api.AuthorisationFacade;
-import uk.ac.cam.cl.dtg.segue.api.ContactFacade;
-import uk.ac.cam.cl.dtg.segue.api.EmailFacade;
-import uk.ac.cam.cl.dtg.segue.api.GroupsFacade;
-import uk.ac.cam.cl.dtg.segue.api.InfoFacade;
-import uk.ac.cam.cl.dtg.segue.api.LogEventFacade;
-import uk.ac.cam.cl.dtg.segue.api.NotificationFacade;
-import uk.ac.cam.cl.dtg.segue.api.QuestionFacade;
-import uk.ac.cam.cl.dtg.segue.api.SchoolLookupServiceFacade;
-import uk.ac.cam.cl.dtg.segue.api.SegueDefaultFacade;
-import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
-import uk.ac.cam.cl.dtg.segue.api.UsersFacade;
+import uk.ac.cam.cl.dtg.segue.api.*;
 import uk.ac.cam.cl.dtg.segue.api.monitors.PerformanceMonitor;
 import uk.ac.cam.cl.dtg.segue.configuration.SchoolLookupConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.AnonymousEventsStreamsApplication;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.google.inject.Guice;
@@ -67,7 +55,7 @@ public class IsaacApplicationRegister extends Application {
     private static final Logger log = LoggerFactory.getLogger(IsaacApplicationRegister.class);
     private Set<Object> singletons;
     
-    private final Injector injector;
+    public static Injector injector;
     
     /**
      * Default constructor.
@@ -120,6 +108,8 @@ public class IsaacApplicationRegister extends Application {
             this.singletons.add(injector.getInstance(EventsFacade.class));
             this.singletons.add(injector.getInstance(NotificationFacade.class));
             this.singletons.add(injector.getInstance(EmailFacade.class));
+            this.singletons.add(injector.getInstance(AnonymousEventsStreamsApplication.class));
+
         }
 
         return this.singletons;

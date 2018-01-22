@@ -38,7 +38,7 @@ public class IsaacFeaturedProfileDTO extends ContentDTO {
     private String homepage;
 
     @JsonCreator
-    public IsaacFeaturedProfileDTO(@JsonProperty("_id") String _id, @JsonProperty("id") String id,
+    public IsaacFeaturedProfileDTO( @JsonProperty("id") String id,
             @JsonProperty("title") String title, @JsonProperty("subtitle") String subtitle,
             @JsonProperty("type") String type, @JsonProperty("author") String author,
             @JsonProperty("encoding") String encoding, @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
@@ -49,7 +49,7 @@ public class IsaacFeaturedProfileDTO extends ContentDTO {
             @JsonProperty("level") Integer level, @JsonProperty("src") String src,
             @JsonProperty("altText") String altText, @JsonProperty("emailAddress") String emailAddress,
             @JsonProperty("image") ImageDTO image, @JsonProperty("homepage") String homepage) {
-        super(_id, id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
+        super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
                 attribution, relatedContent, published, tags, level);
 
         this.emailAddress = emailAddress;

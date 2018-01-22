@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Sets;
@@ -46,7 +47,7 @@ public class ContentDTO extends ContentBaseDTO {
     protected Integer level;
 
     @JsonCreator
-    public ContentDTO(@JsonProperty("_id") String _id, @JsonProperty("id") String id,
+    public ContentDTO(@JsonProperty("id") String id,
             @JsonProperty("title") String title, @JsonProperty("subtitle") String subtitle,
             @JsonProperty("type") String type, @JsonProperty("author") String author,
             @JsonProperty("encoding") String encoding, @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
@@ -55,7 +56,6 @@ public class ContentDTO extends ContentBaseDTO {
             @JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
             @JsonProperty("published") Boolean published, @JsonProperty("tags") Set<String> tags,
             @JsonProperty("level") Integer level) {
-        this._id = _id;
         this.id = id;
         this.title = title;
         this.subtitle = subtitle;
@@ -128,6 +128,7 @@ public class ContentDTO extends ContentBaseDTO {
         this.subtitle = subtitle;
     }
 
+    @JsonIgnore
     public String getAuthor() {
         return author;
     }

@@ -24,7 +24,7 @@ import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import org.elasticsearch.common.lang3.Validate;
+import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,8 +34,11 @@ import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 
+import javax.annotation.Nullable;
+import javax.validation.constraints.Null;
+
 /**
- * MongoAssociationDataManager.
+ * PgAssociationDataManager.
  * 
  */
 public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManager {
@@ -100,11 +103,12 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
         PreparedStatement pst;
         try (Connection conn = database.getDatabaseConnection()) {
             pst = conn
-                    .prepareStatement("UPDATE groups SET group_name=?, owner_id=?, created=? WHERE id = ?;");
+                    .prepareStatement("UPDATE groups SET group_name=?, owner_id=?, created=?, archived=? WHERE id = ?;");
             pst.setString(1, group.getGroupName());
             pst.setLong(2, group.getOwnerId());
             pst.setTimestamp(3, new Timestamp(group.getCreated().getTime()));
-            pst.setLong(4, group.getId());
+            pst.setBoolean(4, group.isArchived());
+            pst.setLong(5, group.getId());
             
             log.debug(pst.toString());
             
@@ -155,15 +159,29 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
         }
     }
 
+
     @Override
     public List<UserGroup> getGroupsByOwner(final Long ownerUserId) throws SegueDatabaseException {
+        return this.getGroupsByOwner(ownerUserId, null);
+    }
+
+    @Override
+    public List<UserGroup> getGroupsByOwner(final Long ownerUserId, @Nullable final Boolean archivedGroupsOnly) throws SegueDatabaseException {
+        String pstString = "SELECT * FROM groups WHERE owner_id = ?";
+        if (archivedGroupsOnly != null) {
+            pstString = pstString +  " AND archived = ?";
+        }
+
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM groups WHERE owner_id = ?");
+            pst = conn.prepareStatement(pstString);
             pst.setLong(1, ownerUserId);
 
-            ResultSet results = pst.executeQuery();
+            if (archivedGroupsOnly != null) {
+                pst.setBoolean(2, archivedGroupsOnly);
+            }
             
+            ResultSet results = pst.executeQuery();
             List<UserGroup> listOfResults = Lists.newArrayList();
             while (results.next()) {
                 listOfResults.add(this.buildGroup(results));
@@ -288,6 +306,6 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
      */
     private UserGroup buildGroup(final ResultSet set) throws SQLException {
         return new UserGroup(set.getLong("id"), set.getString("group_name"), set.getLong("owner_id"),
-                set.getDate("created"));
+                set.getDate("created"), set.getBoolean("archived"));
     }
 }

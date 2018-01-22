@@ -23,8 +23,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
-import org.elasticsearch.common.collect.Maps;
-import org.elasticsearch.common.lang3.Validate;
+import com.google.common.collect.Maps;
+import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -110,15 +110,14 @@ public class InMemoryMisuseMonitor implements IMisuseMonitor {
                 if (handler.getSoftThreshold() != null
                         && (previousValue < handler.getSoftThreshold() && entry.getValue() >= handler
                                 .getSoftThreshold())) {
-                    handler.executeSoftThresholdAction(String.format(
-                            "(%s) has exceeded the soft limit specified by (%s)", agentIdentifier, eventLabel));
+                    handler.executeSoftThresholdAction(String.format("(%s) has exceeded the soft limit!",
+                            agentIdentifier));
                 }
 
                 if (handler.getHardThreshold() != null
                         && (previousValue < handler.getHardThreshold() && entry.getValue() >= handler
                                 .getHardThreshold())) {
-                    String errMessage = String.format("(%s) has exceeded the hard limit specified by (%s)",
-                            agentIdentifier, eventLabel);
+                    String errMessage = String.format("(%s) has exceeded the hard limit!", agentIdentifier);
 
                     handler.executeHardThresholdAction(errMessage);
                 }

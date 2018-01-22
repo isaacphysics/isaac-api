@@ -1,5 +1,5 @@
-/**
- * Copyright 2015 Alistair Stead
+/*
+ * Copyright 2015 Alistair Stead, 2017 James Sharkey
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,14 +24,27 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * A collection of user settings objects.
  *
  * @author Alistair Stead
+ * @author James Sharkey
  *
  */
 public class UserSettings {
 	
 	private RegisteredUser registeredUser;
-	
 	private String passwordCurrent;
-	
+	private Map<String, Map<String, Boolean>> userPreferences;
+
+    /**
+     * A collection of user settings objects.
+     * @param registeredUser - the user data
+     * @param userPreferences - a list of email preferences
+     */
+    @JsonCreator
+    public UserSettings(@JsonProperty("registeredUser") final RegisteredUser registeredUser,
+						@JsonProperty("userPreferences") final Map<String, Map<String, Boolean>> userPreferences) {
+        this.registeredUser = registeredUser;
+		this.userPreferences = userPreferences;
+    }
+
 	/**
 	 * @return the passwordCurrent
 	 */
@@ -46,8 +59,13 @@ public class UserSettings {
 		this.passwordCurrent = passwordCurrent;
 	}
 
-	private Map<String, Boolean> emailPreferences;
-	
+	/**
+     * @return a registered user object
+     */
+    @JsonProperty("registeredUser")
+    public RegisteredUser getRegisteredUser() {
+        return this.registeredUser;
+    }
     /**
 	 * @param registeredUser the registeredUser to set
 	 */
@@ -57,39 +75,20 @@ public class UserSettings {
 	}
 
 	/**
-	 * @param emailPreferences the emailPreferences to set
+	 * @return a list of user preferences
 	 */
-	@JsonProperty("emailPreferences")
-	public void setEmailPreferences(final Map<String, Boolean> emailPreferences) {
-		this.emailPreferences = emailPreferences;
+	@JsonProperty("userPreferences")
+	public Map<String, Map<String, Boolean>> getUserPreferences() {
+		return this.userPreferences;
 	}
 
 	/**
-     * A collection of user settings objects.
-     * @param registeredUser - the user data 
-     * @param emailPreferences - a list of email preferences
-     */
-    @JsonCreator
-    public UserSettings(@JsonProperty("registeredUser") final RegisteredUser registeredUser,
-            @JsonProperty("emailPreferences") final Map<String, Boolean> emailPreferences) {
-        this.registeredUser = registeredUser;
-        this.emailPreferences = emailPreferences;
-    }
-    
-    /**
-     * @return a registered user object
-     */
-    @JsonProperty("registeredUser")
-    public RegisteredUser getRegisteredUser() {
-    	return this.registeredUser;
-    }
-    
-    /**
-     * @return a list of email preferences
-     */
-    @JsonProperty("emailPreferences")
-    public Map<String, Boolean> getEmailPreferences() {
-    	return this.emailPreferences;
-    }
+	 * @param userPreferences the userPreferences to set
+	 */
+	@JsonProperty("userPreferences")
+	public void setUserPreferences(final Map<String, Map<String, Boolean>> userPreferences) {
+		this.userPreferences = userPreferences;
+	}
+
 
 }
