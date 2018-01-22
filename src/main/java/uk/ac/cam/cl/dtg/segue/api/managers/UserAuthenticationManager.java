@@ -91,12 +91,12 @@ import com.google.inject.Inject;
 public class UserAuthenticationManager {
     private static final Logger log = LoggerFactory.getLogger(UserAuthenticationManager.class);
     private static final String HMAC_SHA_ALGORITHM = "HmacSHA256";
-    private static final List<String> ORIGIN_HEADER_REQUEST_METHODS = ImmutableList.of(HttpMethod.POST, HttpMethod.DELETE, HttpMethod.PUT);
 
     private final PropertiesLoader properties;
     private final IUserDataManager database;
     private final EmailManager emailManager;
     private final ObjectMapper serializationMapper;
+    private final boolean checkOriginHeader;
     
     private final Map<AuthenticationProvider, IAuthenticator> registeredAuthProviders;
     
@@ -130,6 +130,7 @@ public class UserAuthenticationManager {
 
         this.emailManager = emailQueue;
         this.serializationMapper = new ObjectMapper();
+        this.checkOriginHeader = properties.getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(EnvironmentType.PROD.name());
     }
 
     /**
@@ -324,24 +325,23 @@ public class UserAuthenticationManager {
             return null;
         }
 
-        if (properties.getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(EnvironmentType.PROD.name())) {
-            // If in production, check if the request originated from Isaac:
+        if (checkOriginHeader) {
+            // Check if the request originated from Isaac, which should be unnecessary except for WebSockets given
+            // correct CORS headers. This code will merely print warnings if something doesn't look right:
             String referrer = request.getHeader("Referer");  // Note HTTP Header misspelling!
             if (null == referrer) {
-                log.warn("Authenticated request had no 'Referer' information set! Attempted to access: "
+                log.warn("Authenticated request has no 'Referer' information set! Accessing: "
                         + request.getPathInfo());
             } else if (!referrer.startsWith("https://" + properties.getProperty(HOST_NAME) + "/")) {
-                log.warn("Authenticated request had unexpected Referer: '" + referrer + "'. Attempted to access: "
+                log.warn("Authenticated request has unexpected Referer: '" + referrer + "'. Accessing: "
                         + request.getPathInfo());
             }
-            // If the client sends an Origin header, we should afford them better security. If they do not send the header,
-            // we can draw no conclusions and must allow the request through.
+            // If the client sends an Origin header, we can check its value. If they do not send the header,
+            // we can draw no conclusions.
             String origin = request.getHeader("Origin");
-            boolean expectOriginHeader = ORIGIN_HEADER_REQUEST_METHODS.contains(request.getMethod());
-            if (expectOriginHeader && null != origin && !origin.equals("https://" + properties.getProperty(HOST_NAME))) {
-                log.error("Authenticated request had unexpected Origin: '" + origin + "'. Blocked access to: "
+            if (null != origin && !origin.equals("https://" + properties.getProperty(HOST_NAME))) {
+                log.warn("Authenticated request has unexpected Origin: '" + origin + "'. Accessing: "
                         + request.getMethod() + " " + request.getPathInfo());
-                return null;
             }
         }
 
