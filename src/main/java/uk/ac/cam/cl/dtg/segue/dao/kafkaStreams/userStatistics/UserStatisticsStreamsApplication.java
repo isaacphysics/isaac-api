@@ -95,9 +95,7 @@ public class UserStatisticsStreamsApplication {
     private ILogManager logManager;
     private List<String> bookTags = ImmutableList.of("phys_book_gcse", "physics_skills_14", "chemistry_16");
 
-
-    private final String streamsAppNameAndVersion = "streamsapp_user_stats-v1.0";
-
+    private final String streamsAppNameAndVersion = "streamsapp_user_stats-v2.0";
 
     /**
      * Constructor
