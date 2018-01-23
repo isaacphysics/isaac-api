@@ -3,6 +3,7 @@ package uk.ac.cam.cl.dtg.segue.dao.kafkaStreams;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
@@ -29,6 +30,7 @@ import java.io.FileReader;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -106,10 +108,7 @@ public class UserStatsStreamsServiceTest {
         replay(dummyUserDb);
 
 
-        // SITE STATISTICS
-        UserStatisticsStreamsApplication.streamProcess(rawLoggedEvents[0], dummyUserDb, dummyQuestionAttemptDb, dummyLogManager);
-
-        driver = new ProcessorTopologyTestDriver(config, builder);
+        List<Map<String, Object>> events = Lists.newLinkedList();
 
         String csvFile = new File("").getAbsolutePath().concat("/src/test/resources/test_data/kafka-streams-test.data");
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -129,9 +128,20 @@ public class UserStatsStreamsServiceTest {
                     .put("timestamp", dateFormat.parse(fields[6]).getTime())
                     .build();
 
+            events.add(kafkaLogRecord);
+        }
+
+
+        // SITE STATISTICS
+        UserStatisticsStreamsApplication.streamProcess(rawLoggedEvents[0], dummyUserDb, dummyQuestionAttemptDb, dummyLogManager);
+
+        driver = new ProcessorTopologyTestDriver(config, builder);
+
+        for (Map<String, Object> event : events
+             ) {
             driver.process("topic_logged_events",
-                    fields[0].getBytes(),
-                    objectMapper.writeValueAsString(kafkaLogRecord).getBytes());
+                    event.get("user_id").toString().getBytes(),
+                    objectMapper.writeValueAsString(event).getBytes());
         }
     }
 
