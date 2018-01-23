@@ -214,7 +214,15 @@ public class UserStatisticsStreamsApplication {
         // map the key-value pair to one where the key is always the user id
         KStream<String, JsonNode> mappedStream = rawStream
                 .map(
-                        (k, v) -> new KeyValue<>(v.path("user_id").asText(), v)
+                        (k, v) -> {
+
+                            //TODO: this is a bit hacky, currently this event is recorded as being associated with the admin ID, so need to extract out the event attendee ID
+                            if (v.path("event_type").asText().equals("ADMIN_EVENT_ATTENDANCE_RECORDED")) {
+                                return new KeyValue<>(v.path("event_details").path("userId").asText(), v);
+                            }
+
+                            return new KeyValue<>(v.path("user_id").asText(), v);
+                        }
                 );
 
         // user question answer streaks
@@ -262,6 +270,13 @@ public class UserStatisticsStreamsApplication {
                                                     }
                                                 }
                                             }
+                                    }
+
+                                    if (latestEvent.path("event_type").asText().equals("ADMIN_EVENT_ATTENDANCE_RECORDED")) {
+                                        if (latestEvent.path("event_details").path("eventTags").has("teacher")) {
+                                            ((ObjectNode) userSnapshot.path("teacher_record"))
+                                                    .put("cpd_events_attended", updateActivityCount("cpd_events_attended", userSnapshot.path("teacher_record")));
+                                        }
                                     }
                                 }
 
