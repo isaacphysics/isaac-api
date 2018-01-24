@@ -13,7 +13,7 @@
 		<segue.version>2.4.3-SNAPSHOT</segue.version>
 		<resteasy.version>3.0.11.Final</resteasy.version>
 		<powermock.version>1.5.2</powermock.version>
-		<postgresql.version>9.3-1102-jdbc41</postgresql.version>
+		<postgresql.version>9.3-1104-jdbc41</postgresql.version>
 		<swagger-ui-version>2.1.0</swagger-ui-version>
         <jetty.port.api>8080</jetty.port.api>
         <jetty.port.etl>8090</jetty.port.etl>
@@ -53,7 +53,7 @@
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
 			<artifactId>jetty-servlets</artifactId>
-			<version>9.3.12.v20160915</version>
+			<version>9.3.22.v20171030</version>
 		</dependency>
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
@@ -312,14 +312,14 @@
 		<dependency>
 			<groupId>org.eclipse.jetty.websocket</groupId>
 			<artifactId>javax-websocket-server-impl</artifactId>
-			<version>9.3.12.v20160915</version>
+			<version>9.3.22.v20171030</version>
 		</dependency>
 
 		<!--Jetty Websocket API server side dependency -->
 		<dependency>
 			<groupId>org.eclipse.jetty.websocket</groupId>
 			<artifactId>websocket-server</artifactId>
-			<version>9.3.12.v20160915</version>
+			<version>9.3.22.v20171030</version>
 		</dependency>
 
 
@@ -394,7 +394,7 @@
 			<plugin>
 				<groupId>org.eclipse.jetty</groupId>
 				<artifactId>jetty-maven-plugin</artifactId>
-				<version>9.3.12.v20160915</version>
+				<version>9.3.22.v20171030</version>
 				<configuration>
 					<webApp>
 						<contextPath>/isaac-api</contextPath>
@@ -473,7 +473,7 @@
 					<plugin>
 						<groupId>org.eclipse.jetty</groupId>
 						<artifactId>jetty-maven-plugin</artifactId>
-						<version>9.3.12.v20160915</version>
+						<version>9.3.22.v20171030</version>
 						<configuration>
 							<webApp>
 								<contextPath>/isaac-api</contextPath>
