@@ -426,7 +426,12 @@ public class GameManager {
 
         Collections.sort(resultToReturn, comparatorForSorting);
 
-        int toIndex = startIndex + limit > resultToReturn.size() ? resultToReturn.size() : startIndex + limit;
+        int toIndex;
+        if (limit == null || startIndex + limit > resultToReturn.size()) {
+            toIndex = resultToReturn.size();
+        } else {
+            toIndex = startIndex + limit;
+        }
 
         List<GameboardDTO> sublistOfGameboards = resultToReturn.subList(startIndex, toIndex);
 

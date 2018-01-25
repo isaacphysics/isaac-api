@@ -5,8 +5,6 @@ import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import org.apache.kafka.streams.KafkaStreams;
-import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.errors.InvalidStateStoreException;
 import org.apache.kafka.streams.state.*;
 import org.joda.time.LocalDate;
@@ -15,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.UserStatisticsStreamsApplication;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.SiteStatisticsStreamsApplication;
@@ -43,16 +42,13 @@ public class KafkaStatisticsManager implements IStatisticsManager {
     private GroupManager groupManager;
     private SchoolListReader schoolManager;
     private SiteStatisticsStreamsApplication statisticsStreamsApplication;
+    private UserStatisticsStreamsApplication userStatisticsStreamsApplication;
     private IStatisticsManager oldStatisticsManager;
 
 
     private static final Logger log = LoggerFactory.getLogger(KafkaStatisticsManager.class);
     private static final String GENERAL_STATS = "GENERAL_STATS";
     private static final String SCHOOL_STATS = "SCHOOL_STATS";
-
-    private static final int LONG_STATS_EVICTION_INTERVAL_MINUTES = 720; // 12 hours
-    private static final long LONG_STATS_MAX_ITEMS = 20;
-
 
 
     /**
@@ -74,11 +70,13 @@ public class KafkaStatisticsManager implements IStatisticsManager {
     public KafkaStatisticsManager(final UserAccountManager userManager, final ILogManager logManager,
                                   final SchoolListReader schoolManager, final GroupManager groupManager,
                                   final SiteStatisticsStreamsApplication statisticsStreamsApplication,
+                                  final UserStatisticsStreamsApplication userStatisticsStreamsApplication,
                                   final StatisticsManager statsManager) {
 
         this.oldStatisticsManager = statsManager;
 
         this.statisticsStreamsApplication = statisticsStreamsApplication;
+        this.userStatisticsStreamsApplication = userStatisticsStreamsApplication;
         this.logManager = logManager;
         this.userManager = userManager;
         this.groupManager = groupManager;
@@ -92,11 +90,9 @@ public class KafkaStatisticsManager implements IStatisticsManager {
      * Output general stats. This returns a Map of String to Object and is intended to be sent directly to a
      * serializable facade endpoint.
      *
-     * @return ImmutableMap<String, String> (stat name, stat value)
-     * @throws InvalidStateStoreException
-     *          - if there is a kafka data store error.
-     * @throws SegueDatabaseException
-     *          - if there is a database error.
+     * @return Map<String, Object> (stat name, stat value)
+     * @throws InvalidStateStoreException if there is a kafka data store error.
+     * @throws SegueDatabaseException if there is a database error.
      */
     @Override
     public synchronized Map<String, Object> outputGeneralStatistics() throws InvalidStateStoreException, SegueDatabaseException {
@@ -105,23 +101,10 @@ public class KafkaStatisticsManager implements IStatisticsManager {
 
         ImmutableMap.Builder<String, Object> ib = new ImmutableMap.Builder<>();
 
-        // get user records from local kafka store
-        // this is much faster than accessing postgres
-        ReadOnlyKeyValueStore<String, JsonNode> userStore = waitUntilStoreIsQueryable("globalstore_user_data",
-                    QueryableStoreTypes.<String, JsonNode>keyValueStore(),
-                statisticsStreamsApplication.getStream());
-
-        // get user activity data from local kafka store
-        ReadOnlyKeyValueStore<String, JsonNode> userLastSeenStore = waitUntilStoreIsQueryable("globalstore_user_last_seen",
-                QueryableStoreTypes.<String, JsonNode>keyValueStore(),
-                statisticsStreamsApplication.getStream());
-
-
         Map<String, Object> gender = Maps.newHashMap();
         Map<String, Object> role = Maps.newHashMap();
 
-        KeyValueIterator<String, JsonNode> it = userStore.all();
-        //Iterator<RegisteredUserDTO> it = userManager.findUsers(new RegisteredUserDTO()).iterator();
+        KeyValueIterator<String, JsonNode> it = statisticsStreamsApplication.getAllUsers();
 
         Integer userCount = 0;
 
@@ -163,27 +146,21 @@ public class KafkaStatisticsManager implements IStatisticsManager {
 
         while (it.hasNext()) {
 
-            JsonNode userData = it.next().value.path("user_data");
-            //RegisteredUserDTO user = it.next();
+            JsonNode node = it.next().value;
+            JsonNode userData = node.path("user_data");
+            JsonNode lastSeenData = node.path("last_seen_data");
 
             try {
 
                 userCount++;
 
-                String userId = userData.path("user_id").asText();
                 String usrGender = userData.path("gender").asText();
                 String usrRole = userData.path("role").asText();
 
                 Integer usrSchoolId = userData.path("school_id").asInt();
                 String usrSchoolOther = userData.path("school_other").asText();
-                /*String userId = String.valueOf(user.getId());
-                String usrGender = (user.getGender() != null) ? user.getGender().name() : "";
-                String usrRole = (user.getRole() != null) ? user.getRole().name() : "";
-                String usrSchoolId = (user.getSchoolId() != null) ? user.getSchoolId() : "";
-                String usrSchoolOther = (user.getSchoolOther() != null) ? user.getSchoolOther() : "";*/
 
-                JsonNode userLastSeenData = userLastSeenStore.get(userId);
-                Long lastSeen = userLastSeenData.path("last_seen").asLong();
+                Long lastSeen = lastSeenData.path("last_seen").asLong();
 
 
                 // gender
@@ -261,14 +238,14 @@ public class KafkaStatisticsManager implements IStatisticsManager {
                     activeUsersSixMonths++;
                 }
 
-                if (userLastSeenData.has(VIEW_QUESTION)) {
-                    viewQuestionEvents += userLastSeenData.path(VIEW_QUESTION).path("count").asInt();;
+                if (lastSeenData.has(VIEW_QUESTION)) {
+                    viewQuestionEvents += lastSeenData.path(VIEW_QUESTION).path("count").asInt();;
                 }
 
-                if (userLastSeenData.has(ANSWER_QUESTION)) {
-                    answeredQuestionEvents += userLastSeenData.path(ANSWER_QUESTION).path("count").asInt();
+                if (lastSeenData.has(ANSWER_QUESTION)) {
+                    answeredQuestionEvents += lastSeenData.path(ANSWER_QUESTION).path("count").asInt();
 
-                    if (userLastSeenNDays(userLastSeenData.path(ANSWER_QUESTION).path("latest").asLong(), sevenDays)) {
+                    if (userLastSeenNDays(lastSeenData.path(ANSWER_QUESTION).path("latest").asLong(), sevenDays)) {
 
                         if (usrRole.equals(Role.STUDENT.toString()))
                             questionsAnsweredLastWeekStudents++;
@@ -277,7 +254,7 @@ public class KafkaStatisticsManager implements IStatisticsManager {
                             questionsAnsweredLastWeekTeachers++;
                     }
 
-                    if (userLastSeenNDays(userLastSeenData.path(ANSWER_QUESTION).path("latest").asLong(), thirtyDays)) {
+                    if (userLastSeenNDays(lastSeenData.path(ANSWER_QUESTION).path("latest").asLong(), thirtyDays)) {
 
                         if (usrRole.equals(Role.STUDENT.toString()))
                             questionsAnsweredLastThirtyDaysStudents++;
@@ -343,22 +320,14 @@ public class KafkaStatisticsManager implements IStatisticsManager {
     /**
      * LogCount.
      *
-     * @param logTypeOfInterest
-     *            - the log event that we care about.
+     * @param logTypeOfInterest the log event that we care about.
      * @return the number of logs of that type (or an estimate).
-     * @throws InvalidStateStoreException
-     *          - if there is a kafka data store error.
+     * @throws InvalidStateStoreException if there is a kafka data store error.
      */
     @Override
     public Long getLogCount(final String logTypeOfInterest) throws InvalidStateStoreException {
-
-        ReadOnlyKeyValueStore<String, Long> logEventCounts = waitUntilStoreIsQueryable("globalstore_log_event_counts",
-                QueryableStoreTypes.<String, Long>keyValueStore(),
-                statisticsStreamsApplication.getStream());
-
-        return (logEventCounts.get(logTypeOfInterest) != null) ? logEventCounts.get(logTypeOfInterest) : Long.valueOf(0);
+        return statisticsStreamsApplication.getLogCountByType(logTypeOfInterest);
     }
-
 
 
 
@@ -368,12 +337,9 @@ public class KafkaStatisticsManager implements IStatisticsManager {
      * @return list of school to statistics mapping. The object in the map is another map with keys connections,
      *         numberActiveLastThirtyDays.
      *
-     * @throws UnableToIndexSchoolsException
-     *             - if there is a problem getting school details.
-     * @throws InvalidStateStoreException
-     *          - if there is a kafka data store error.
-     * @throws SegueSearchException
-     *             - if there is a search exception.
+     * @throws UnableToIndexSchoolsException if there is a problem getting school details.
+     * @throws InvalidStateStoreException if there is a kafka data store error.
+     * @throws SegueSearchException if there is a search exception.
      */
     @Override
     public List<Map<String, Object>> getSchoolStatistics() throws UnableToIndexSchoolsException, InvalidStateStoreException, SegueSearchException {
@@ -439,14 +405,13 @@ public class KafkaStatisticsManager implements IStatisticsManager {
     }
 
 
-
-
-
     /**
      * Get the number of users per school.
      *
-     * @return A map of schools to integers (representing the number of registered users)
-     * @throws UnableToIndexSchoolsException as per the description
+     * @return A map of schools to integers (representing the number of registered users).
+     * @throws UnableToIndexSchoolsException as per the description.
+     * @throws InvalidStateStoreException if there is a kafka data store error.
+     * @throws SegueSearchException as per the description.
      */
     @Override
     public Map<School, List<RegisteredUserDTO>> getUsersBySchool() throws UnableToIndexSchoolsException, InvalidStateStoreException, SegueSearchException {
@@ -455,23 +420,15 @@ public class KafkaStatisticsManager implements IStatisticsManager {
 
         try {
 
-            // get user data from local kafka store
-            ReadOnlyKeyValueStore<String, JsonNode> userStore = waitUntilStoreIsQueryable("globalstore_user_data",
-                    QueryableStoreTypes.<String, JsonNode>keyValueStore(),
-                    statisticsStreamsApplication.getStream());
-
-            // get user activity data from local kafka store
-            ReadOnlyKeyValueStore<String, JsonNode> userLastSeenStore = waitUntilStoreIsQueryable("globalstore_user_last_seen",
-                    QueryableStoreTypes.<String, JsonNode>keyValueStore(),
-                    statisticsStreamsApplication.getStream());
-
-            KeyValueIterator<String, JsonNode> it = userStore.all();
+            KeyValueIterator<String, JsonNode> it = statisticsStreamsApplication.getAllUsers();
 
             while (it.hasNext()) {
 
-                JsonNode userNode = it.next().value.path("user_data");
-                String userId = userNode.path("user_id").asText();
-                Long lastSeen = userLastSeenStore.get(userId).path("last_seen").asLong();
+                JsonNode node = it.next().value;
+                JsonNode userNode = node.path("user_data");
+                JsonNode lastSeenData = node.path("last_seen_data");
+
+                Long lastSeen = lastSeenData.path("last_seen").asLong();
 
                 if (userNode.path("school_id").asText().isEmpty())
                     continue;
@@ -514,36 +471,25 @@ public class KafkaStatisticsManager implements IStatisticsManager {
     /**
      * Find all users belonging to a given school.
      *
-     * @param schoolId
-     *            - that we are interested in.
+     * @param schoolId that we are interested in.
      * @return list of users.
-     * @throws InvalidStateStoreException
-     *          - if there is a kafka data store error.
-     * @throws UnableToIndexSchoolsException
-     *             - if the school list has not been indexed.
+     * @throws InvalidStateStoreException if there is a kafka data store error.
+     * @throws UnableToIndexSchoolsException if the school list has not been indexed..
      */
     @Override
     public List<RegisteredUserDTO> getUsersBySchoolId(final String schoolId) throws InvalidStateStoreException, UnableToIndexSchoolsException, SegueSearchException {
 
         List<RegisteredUserDTO> users = Lists.newArrayList();
 
-        // get user data from local kafka store
-        ReadOnlyKeyValueStore<String, JsonNode> userStore = waitUntilStoreIsQueryable("globalstore_user_data",
-                QueryableStoreTypes.<String, JsonNode>keyValueStore(),
-                statisticsStreamsApplication.getStream());
-
-        // get user activity data from local kafka store
-        ReadOnlyKeyValueStore<String, JsonNode> userLastSeenStore = waitUntilStoreIsQueryable("globalstore_user_last_seen",
-                QueryableStoreTypes.<String, JsonNode>keyValueStore(),
-                statisticsStreamsApplication.getStream());
-
-        KeyValueIterator<String, JsonNode> it = userStore.all();
+        KeyValueIterator<String, JsonNode> it = statisticsStreamsApplication.getAllUsers();
 
         while (it.hasNext()) {
 
-            JsonNode userNode = it.next().value.path("user_data");
-            String userId = userNode.path("user_id").asText();
-            Long lastSeen = userLastSeenStore.get(userId).path("last_seen").asLong();
+            JsonNode node = it.next().value;
+            JsonNode userNode = node.path("user_data");
+            JsonNode lastSeenData = node.path("last_seen_data");
+
+            Long lastSeen = lastSeenData.path("last_seen").asLong();
 
             if (userNode.path("school_id").asText().equals(schoolId)) {
 
@@ -565,42 +511,24 @@ public class KafkaStatisticsManager implements IStatisticsManager {
 
 
     /**
-     * @return a list of userId's to last event timestamp
+     * @return a list of userId's to last event timestamp.
+     * @throws InvalidStateStoreException if there is a kafka data store error.
      */
     @Override
-    public Map<String, Date> getLastSeenUserMap() {
-
+    public Map<String, Date> getLastSeenUserMap() throws InvalidStateStoreException {
         return getLastSeenUserMap("last_seen");
     }
 
 
     /**
-     * @param qualifyingLogEvent
-     *          - the string event type that will be looked for.
-     * @return a map of userId's to last event timestamp
-     * @throws InvalidStateStoreException
-     *          - if there is a kafka data store error.
+     * @param qualifyingLogEvent the string event type that will be looked for.
+     * @return a map of userId's to last event timestamp.
+     * @throws InvalidStateStoreException if there is a kafka data store error.
      */
     @Override
     public Map<String, Date> getLastSeenUserMap(String qualifyingLogEvent) throws InvalidStateStoreException {
-
-        Map<String, Date> userMap = Maps.newHashMap();
-
-        ReadOnlyKeyValueStore<String, JsonNode> userLastSeenStore = waitUntilStoreIsQueryable("globalstore_user_last_seen",
-                QueryableStoreTypes.<String, JsonNode>keyValueStore(),
-                statisticsStreamsApplication.getStream());
-
-        KeyValueIterator<String, JsonNode> it = userLastSeenStore.all();
-
-        while (it.hasNext()) {
-            KeyValue<String, JsonNode> record = it.next();
-            userMap.put(record.key, new Date(record.value.path(qualifyingLogEvent).path("count").asLong()));
-        }
-
-        return userMap;
-
+        return statisticsStreamsApplication.getLastLogDateForAllUsers(qualifyingLogEvent);
     }
-
 
 
     @Override
@@ -628,77 +556,21 @@ public class KafkaStatisticsManager implements IStatisticsManager {
         return oldStatisticsManager.getLocationInformation(fromDate, toDate);
     }
 
+    @Override
+    public Map<String, Object> getDetailedUserStatistics(RegisteredUserDTO userOfInterest) {
+        return userStatisticsStreamsApplication.getUserSnapshot(userOfInterest);
+    }
 
-
-
-
-
-    /*private Map<String, Long> getLogEventsLastNDays(String logEventType, int daysFromToday) {
-
-        Map<String, Long> mapToReturn = Maps.newHashMap();
-
-        Timestamp stamp = new Timestamp(System.currentTimeMillis());
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(stamp);
-        cal.set(Calendar.HOUR_OF_DAY, 0);
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
-        cal.set(Calendar.MILLISECOND, 0);
-
-        Long firstDate = cal.getTimeInMillis() - (daysFromToday * 24 * 60 * 60 * 1000L);
-
-        ReadOnlyKeyValueStore<Long, JsonNode> dailyEvents = waitUntilStoreIsQueryable("store_daily_log_events",
-                QueryableStoreTypes.<Long, JsonNode>keyValueStore(),
-                kafkaStreamsService.getStream());
-
-        KeyValueIterator<Long, JsonNode> dates = dailyEvents.range(firstDate, cal.getTimeInMillis());
-
-        Long studentCount = Long.valueOf(0);
-        Long teacherCount = Long.valueOf(0);
-
-        while (dates.hasNext()) {
-
-            JsonNode node = dates.next().value;
-
-            studentCount += node.path("STUDENT").path(logEventType).asLong();
-            teacherCount += node.path("TEACHER").path(logEventType).asLong();
-
-        }
-
-        mapToReturn.put("STUDENT", studentCount);
-        mapToReturn.put("TEACHER", teacherCount);
-        return mapToReturn;
-
-    }*/
 
     /**
-     * Utility method for returning a boolean value specifying if a user has been seen within a given time frame
-     * @param lastSeen - the last seen date of the user
-     * @param daysFromToday - the time period within which we want to check
-     * @return whether they were last seen in the specifie time window or not
+     * Utility method for returning a boolean value specifying if a user has been seen within a given time frame.
+     *
+     * @param lastSeen - the last seen date of the user.
+     * @param daysFromToday - the time period within which we want to check.
+     * @return whether they were last seen in the specifie time window or not.
      */
     private Boolean userLastSeenNDays(Long lastSeen, int daysFromToday) {
         return lastSeen > System.currentTimeMillis() - daysFromToday * 24 * 60 * 60 * 1000L;
     }
-
-
-    /**
-     * Utility method for returning a kafka state store when it is available for querying
-     *
-     * @param storeName - the name of the state store to be queried
-     * @param queryableStoreType - the state of the state store to be queried
-     * @param streams - the globally accessible streams instance to access all state stores
-     * @return a queryable state store abstraction
-     * @throws InvalidStateStoreException
-     *          - if there is a kafka data store error.
-     */
-    private static <T> T waitUntilStoreIsQueryable(final String storeName,
-                                                   final QueryableStoreType<T> queryableStoreType,
-                                                   final KafkaStreams streams) throws InvalidStateStoreException {
-
-            return streams.store(storeName, queryableStoreType);
-    }
-
-
 
 }

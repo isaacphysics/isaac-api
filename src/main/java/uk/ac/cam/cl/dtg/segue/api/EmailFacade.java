@@ -38,6 +38,7 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.apache.commons.lang3.EnumUtils;
 import org.jboss.resteasy.annotations.GZIP;
 
 import com.google.api.client.util.Lists;
@@ -62,8 +63,6 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
-import uk.ac.cam.cl.dtg.segue.dos.AbstractEmailPreferenceManager;
-import uk.ac.cam.cl.dtg.segue.dos.IEmailPreference;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
@@ -92,7 +91,6 @@ public class EmailFacade extends AbstractSegueFacade {
     private final IContentManager contentManager;
     private final String contentIndex;
     private final IMisuseMonitor misuseMonitor;
-    private final AbstractEmailPreferenceManager emailPreferenceManager;
 
     /**
      * EmailFacade. This class is responsible for orchestrating e-mail operations
@@ -103,8 +101,6 @@ public class EmailFacade extends AbstractSegueFacade {
      *            - log manager
      * @param emailManager
      *            - class responsible for sending e-mail
-     * @param emailPreferenceManager
-     *            - so we can provide email preferences
      * @param userManager
      *            - so we can look up users and verify permissions..
      * @param contentManager
@@ -116,13 +112,12 @@ public class EmailFacade extends AbstractSegueFacade {
     public EmailFacade(final PropertiesLoader properties, final ILogManager logManager,
             final EmailManager emailManager, final UserAccountManager userManager,
                        final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex,
-                       final AbstractEmailPreferenceManager emailPreferenceManager, final IMisuseMonitor misuseMonitor) {
+                       final IMisuseMonitor misuseMonitor) {
 		super(properties, logManager);
         this.contentManager = contentManager;
         this.contentIndex = contentIndex;
 		this.emailManager = emailManager;
 		this.userManager = userManager;
-        this.emailPreferenceManager = emailPreferenceManager;
         this.misuseMonitor = misuseMonitor;
 	}
     
@@ -276,48 +271,13 @@ public class EmailFacade extends AbstractSegueFacade {
     	List<Map<String, Object>> resultList = Lists.newArrayList();
     	for (EmailType type : types) {
     		if (type.isValidEmailPreference()) {
-    			HashMap<String, Object> map = new HashMap<String, Object>();
-    			map.put("id", type.mapEmailTypeToInt());
+    			HashMap<String, Object> map = new HashMap<>();
     			map.put("name", type.toString());
     			resultList.add(map);
     		}
     	}    	
     	
 		return Response.ok(resultList).build();
-    }
-    
-    /**
-     * Get a Set of all schools reported by users in the school other field.
-     * 
-     * @param request
-     *            for caching purposes.
-     * @param httpServletRequest
-     *            to get the user object
-     * @return list of strings.
-     */
-    @GET
-    @Path("/users/email_preferences")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    public Response getUserEmailPreferences(@Context final Request request,
-            @Context final HttpServletRequest httpServletRequest) {
-
-        try {
-            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
-            List<IEmailPreference> userEmailPreferences = emailPreferenceManager.getEmailPreferences(currentUser
-                    .getId());
-
-            Map<String, Boolean> emailPreferences = emailPreferenceManager
-                    .mapToEmailPreferencePair(userEmailPreferences);
-
-            return Response.ok(emailPreferences).build();
-        } catch (SegueDatabaseException e) {
-            log.warn("Segue Database Exception");
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while getting email preferences")
-                    .toResponse();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        }
     }
     
     /**
@@ -409,7 +369,7 @@ public class EmailFacade extends AbstractSegueFacade {
      *            - so that we can allow only logged in users to view their own data.
      * @param contentId
      *            - of the e-mail to send
-     * @param emailTypeInt
+     * @param emailTypeString
      *            - the type of e-mail that is being sent.
      * @param roles
      *            - string of user roles to boolean (i.e. whether or not to send to this type)
@@ -422,10 +382,17 @@ public class EmailFacade extends AbstractSegueFacade {
     @GZIP
     public final Response sendEmails(@Context final HttpServletRequest request,
 		    		@PathParam("contentid") final String contentId, 
-		    		@PathParam("emailtype") final Integer emailTypeInt, 
+		    		@PathParam("emailtype") final String emailTypeString,
 		    		final Map<String, Boolean> roles) {
-		EmailType emailType = EmailType.mapIntToPreference(emailTypeInt);
-		List<RegisteredUserDTO> allSelectedUsers =  Lists.newArrayList();
+        EmailType emailType;
+        List<RegisteredUserDTO> allSelectedUsers = Lists.newArrayList();
+
+        if (EnumUtils.isValidEnum(EmailType.class, emailTypeString)) {
+            emailType = EmailType.valueOf(emailTypeString);
+        } else {
+            log.warn("Unknown email type '" + emailTypeString + "' provided to admin endpoint!");
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Unknown email type!").toResponse();
+        }
 		
 		try {
             RegisteredUserDTO sender = this.userManager.getCurrentRegisteredUser(request);
@@ -486,7 +453,7 @@ public class EmailFacade extends AbstractSegueFacade {
      *            - so that we can allow only logged in users to view their own data.
      * @param contentId
      *            - of the e-mail to send
-     * @param emailTypeInt
+     * @param emailTypeString
      *            - the type of e-mail that is being sent.
      * @param userIds
      *            - list of user ids
@@ -498,10 +465,17 @@ public class EmailFacade extends AbstractSegueFacade {
     @Consumes(MediaType.APPLICATION_JSON)
     @GZIP
     public final Response sendEmailsToUserIds(@Context final HttpServletRequest request,
-            @PathParam("contentid") final String contentId, @PathParam("emailtype") final Integer emailTypeInt,
+            @PathParam("contentid") final String contentId, @PathParam("emailtype") final String emailTypeString,
             final List<Long> userIds) {
-        EmailType emailType = EmailType.mapIntToPreference(emailTypeInt);
+        EmailType emailType;
         List<RegisteredUserDTO> allSelectedUsers = Lists.newArrayList();
+
+        if (EnumUtils.isValidEnum(EmailType.class, emailTypeString)) {
+            emailType = EmailType.valueOf(emailTypeString);
+        } else {
+            log.warn("Unknown email type '" + emailTypeString + "' provided to admin endpoint!");
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Unknown email type!").toResponse();
+        }
 
         try {
             RegisteredUserDTO sender = this.userManager.getCurrentRegisteredUser(request);

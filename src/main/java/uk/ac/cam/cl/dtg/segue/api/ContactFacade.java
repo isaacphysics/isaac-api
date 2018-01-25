@@ -101,11 +101,14 @@ public class ContactFacade extends AbstractSegueFacade {
 
         try {
             String currentUserId;
+            String currentUserRole;
             if (userManager.isRegisteredUserLoggedIn(request)) {
                 RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(request);
                 currentUserId = currentUser.getId().toString();
+                currentUserRole = currentUser.getRole().toString();
             } else {
                 currentUserId = "N/A";
+                currentUserRole = "N/A";
             }
 
             emailManager.sendContactUsFormEmail(this.getProperties().getProperty(Constants.MAIL_RECEIVERS),
@@ -113,6 +116,7 @@ public class ContactFacade extends AbstractSegueFacade {
                             .put("contactGivenName", form.get("firstName") == null ? "" : form.get("firstName"))
                             .put("contactFamilyName", form.get("lastName") == null ? "" : form.get("lastName"))
                             .put("contactUserId", currentUserId)
+                            .put("contactUserRole", currentUserRole)
                             .put("contactEmail", form.get("emailAddress") == null ? "" : form.get("emailAddress"))
                             .put("contactSubject", form.get("subject") == null ? "" : form.get("subject"))
                             .put("contactMessage", form.get("message") == null ? "" : form.get("message"))

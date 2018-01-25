@@ -15,6 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
+import com.google.common.collect.ImmutableSet;
+
 import java.util.Set;
 
 /**
@@ -83,7 +85,7 @@ public final class Constants {
     public static final String EVENT_DATE_FIELDNAME = "date";
     public static final String EVENT_ENDDATE_FIELDNAME = "endDate";
 
-
+    public static final String ALL_BOARDS = "ALL";
     public static final Integer DEFAULT_GAMEBOARDS_RESULTS_LIMIT = 6;
     public static final Integer MAX_PODS_TO_RETURN = 10;
     public static final Integer SEARCH_MAX_WINDOW_SIZE = 10000;
@@ -99,7 +101,6 @@ public final class Constants {
     public static final String VIEW_PAGE = "VIEW_PAGE";
     public static final String PAGE_ID_LOG_FIELDNAME = "pageId";
 
-    public static final String VIEW_MY_ASSIGNMENTS = "VIEW_MY_ASSIGNMENTS";
     public static final String VIEW_GROUPS_ASSIGNMENTS = "VIEW_GROUPS_ASSIGNMENTS";
     public static final String VIEW_ASSIGNMENT_PROGRESS = "VIEW_ASSIGNMENT_PROGRESS";
     public static final String DOWNLOAD_ASSIGNMENT_PROGRESS_CSV = "DOWNLOAD_ASSIGNMENT_PROGRESS_CSV";
@@ -113,7 +114,14 @@ public final class Constants {
 
     public static final String CREATE_GAMEBOARD = "CREATE_GAMEBOARD";
 
-    public static final String SUBJECT_INTEREST = "SUBJECT_INTEREST";
+    public enum IsaacUserPreferences {
+        SUBJECT_INTEREST, BETA_FEATURE
+    }
+
+    public static final Set<String> ISAAC_LOG_EVENT_TYPES = ImmutableSet.of(ADD_BOARD_TO_PROFILE, CREATE_GAMEBOARD,
+            DELETE_ASSIGNMENT, DELETE_BOARD_FROM_PROFILE, DOWNLOAD_ASSIGNMENT_PROGRESS_CSV, DOWNLOAD_GROUP_PROGRESS_CSV,
+            GLOBAL_SITE_SEARCH, SET_NEW_ASSIGNMENT, VIEW_ASSIGNMENT_PROGRESS, VIEW_CONCEPT, VIEW_GROUPS_ASSIGNMENTS,
+            VIEW_MY_BOARDS_PAGE, VIEW_PAGE, VIEW_QUESTION, VIEW_USER_PROGRESS);
 
     /**
      * Private constructor to prevent this class being created.

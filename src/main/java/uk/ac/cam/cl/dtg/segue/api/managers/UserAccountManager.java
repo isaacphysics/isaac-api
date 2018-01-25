@@ -532,7 +532,11 @@ public class UserAccountManager {
      *             - If there is another database error       
      */
     public final RegisteredUserDTO getUserDTOById(final Long id) throws NoUserException, SegueDatabaseException {
-        return this.convertUserDOToUserDTO(this.findUserById(id));
+        RegisteredUser user = this.findUserById(id);
+        if (null == user) {
+            throw new NoUserException("No user found with this ID!");
+        }
+        return this.convertUserDOToUserDTO(user);
     }
 
     /**
@@ -1498,6 +1502,11 @@ public class UserAccountManager {
     public Boolean isValidUserFromSession(final Map<String, String> sessionInformation) {
 
         return this.userAuthenticationManager.isValidUsersSession(sessionInformation);
+    }
+
+
+    public Long getNumberOfAnonymousUsers() {
+        return temporaryUserCache.size();
     }
 
 
