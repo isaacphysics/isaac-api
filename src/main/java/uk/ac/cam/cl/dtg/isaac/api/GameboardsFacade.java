@@ -417,12 +417,16 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
         try {
             user = userManager.getCurrentRegisteredUser(request);
+
+            if (null == newGameboardObject) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a gameboard object").toResponse();
+            }
+
+            if ((newGameboardObject.getId() != null || newGameboardObject.getTags().size() > 0) && !isUserStaff(userManager, request)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You cannot provide a gameboard ID or tags.").toResponse();
+            }
         } catch (NoUserLoggedInException e1) {
             return SegueErrorResponse.getNotLoggedInResponse();
-        }
-
-        if (null == newGameboardObject) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a gameboard object").toResponse();
         }
 
         newGameboardObject.setCreationMethod(GameboardCreationMethod.BUILDER);

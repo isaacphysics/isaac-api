@@ -18,7 +18,10 @@ package uk.ac.cam.cl.dtg.isaac.dos;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
+import com.google.api.client.util.Lists;
+import com.google.api.client.util.Sets;
 import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -38,6 +41,7 @@ public class GameboardDO {
     private GameFilter gameFilter;
     private Long ownerUserId;
     private GameboardCreationMethod creationMethod;
+    private Set<String> tags;
 
     /**
      * Complete gameboard constructor with all dependencies.
@@ -63,7 +67,7 @@ public class GameboardDO {
      */
     public GameboardDO(final String id, final String title, final List<String> questions, final IsaacWildcard wildCard,
             final Integer wildcardPosition, final Date creationDate, final GameFilter gameFilter,
-            final Long ownerUserId, final GameboardCreationMethod creationMethod) {
+            final Long ownerUserId, final GameboardCreationMethod creationMethod, final Set<String> tags) {
         this.id = id;
         this.title = title;
         this.questions = questions;
@@ -73,13 +77,15 @@ public class GameboardDO {
         this.gameFilter = gameFilter;
         this.ownerUserId = ownerUserId;
         this.creationMethod = creationMethod;
+        this.tags = tags;
     }
 
     /**
      * Default constructor required for AutoMapping.
      */
     public GameboardDO() {
-        this.questions = new ArrayList<String>();
+        this.questions = Lists.newArrayList();
+        this.tags = Sets.newHashSet();
     }
 
     /**
@@ -245,11 +251,37 @@ public class GameboardDO {
 
     /**
      * Sets the creationMethod.
-     * 
+     *
      * @param creationMethod
      *            the creationMethod to set
      */
     public void setCreationMethod(final GameboardCreationMethod creationMethod) {
         this.creationMethod = creationMethod;
+    }
+
+    /**
+     * Gets the gameboard's tags.
+     *
+     * @return the gameboard's tags
+     */
+    public final Set<String> getTags() {
+        return tags;
+    }
+
+    /**
+     * Sets the gameboard's tags.
+     *
+     * @param tags
+     *            the gameboard's tags to set
+     */
+    public final void setTags(final Set<String> tags) {
+        this.tags = tags;
+    }
+
+    @Override
+    public String toString() {
+        return "GameboardDTO [id=" + id + ", title=" + title + ", questions=" + questions + ", wildCard=" + wildCard
+                + ", wildCardPosition=" + wildCardPosition + ", creationDate=" + creationDate + ", gameFilter="
+                + gameFilter + ", ownerUserId=" + ownerUserId + ", creationMethod=" + creationMethod + ", tags=" + tags + "]";
     }
 }

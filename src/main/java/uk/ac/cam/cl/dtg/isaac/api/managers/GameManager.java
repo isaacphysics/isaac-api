@@ -19,6 +19,7 @@ import java.util.*;
 
 import javax.annotation.Nullable;
 
+import com.google.common.collect.Sets;
 import com.google.inject.name.Named;
 import ma.glasnost.orika.MapperFacade;
 
@@ -178,7 +179,7 @@ public class GameManager {
 
             GameboardDTO gameboardDTO = new GameboardDTO(uuid, title, selectionOfGameboardQuestions,
                     getRandomWildcard(mapper, subjectsList), generateRandomWildCardPosition(), new Date(), gameFilter,
-                    boardOwnerId, GameboardCreationMethod.FILTER);
+                    boardOwnerId, GameboardCreationMethod.FILTER, Sets.newHashSet());
 
             this.gameboardPersistenceManager.temporarilyStoreGameboard(gameboardDTO);
 

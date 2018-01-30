@@ -548,8 +548,8 @@ public class GameboardPersistenceManager {
             pst = conn
                     .prepareStatement("INSERT INTO "
                             + "gameboards(id, title, questions, wildcard, wildcard_position, "
-                            + "game_filter, owner_user_id, creation_method, creation_date)"
-                            + " VALUES (?, ?, ?, ?::text::jsonb, ?, ?::text::jsonb, ?, ?, ?);");
+                            + "game_filter, owner_user_id, creation_method, tags, creation_date)"
+                            + " VALUES (?, ?, ?, ?::text::jsonb, ?, ?::text::jsonb, ?, ?, ?::text::jsonb, ?);");
             Array questionIds = conn.createArrayOf("varchar", gameboardToSave.getQuestions().toArray());
             
             pst.setObject(1, gameboardToSave.getId());
@@ -560,11 +560,11 @@ public class GameboardPersistenceManager {
             pst.setString(6, objectMapper.writeValueAsString(gameboardToSave.getGameFilter()));
             pst.setLong(7, gameboardToSave.getOwnerUserId());
             pst.setString(8, gameboardToSave.getCreationMethod().toString());            
-            
+            pst.setString(9, objectMapper.writeValueAsString(gameboardToSave.getTags()));
             if (gameboardToSave.getCreationDate() != null) {
-                pst.setTimestamp(9, new java.sql.Timestamp(gameboardToSave.getCreationDate().getTime()));
+                pst.setTimestamp(10, new java.sql.Timestamp(gameboardToSave.getCreationDate().getTime()));
             } else {
-                pst.setTimestamp(9, new java.sql.Timestamp(new Date().getTime()));
+                pst.setTimestamp(10, new java.sql.Timestamp(new Date().getTime()));
             }
 
             if (pst.executeUpdate() == 0) {
@@ -794,7 +794,7 @@ public class GameboardPersistenceManager {
         Long ownerUserId = results.getLong("owner_user_id");
         // by default getLong (primitive) sets null to 0, where 0 is a distinct value from null for user IDs
         gameboardDO.setOwnerUserId(!results.wasNull() ? ownerUserId : null);
-
+        gameboardDO.setTags(objectMapper.readValue(results.getObject("tags").toString(), Set.class));
         if (results.getString("creation_method") != null) {
             gameboardDO.setCreationMethod(GameboardCreationMethod.valueOf(results.getString("creation_method")));    
         }
