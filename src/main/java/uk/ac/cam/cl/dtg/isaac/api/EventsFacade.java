@@ -548,6 +548,11 @@ public class EventsFacade extends AbstractIsaacFacade {
                     .toResponse();
             }
 
+            if (EventStatus.WAITING_LIST_ONLY.equals(event.getEventStatus())) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "Sorry booking for this event is restricted. You can only be added to a waiting list.")
+                        .toResponse();
+            }
+
             if (bookingManager.isUserBooked(eventId, user.getId())) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "You are already booked on this event.")
                     .toResponse();

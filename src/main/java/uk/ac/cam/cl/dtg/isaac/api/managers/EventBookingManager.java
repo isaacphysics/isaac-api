@@ -25,6 +25,7 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dos.EventStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.EventBooking;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
@@ -170,7 +171,18 @@ public class EventBookingManager {
                     + " booked on to it.", event.getId(), user.getEmail()));
         }
 
+        // if an event admin wants to add a user to a waiting list only event they will need to promote them afterwards.
         EventBookingDTO booking;
+        if (EventStatus.WAITING_LIST_ONLY.equals(event.getEventStatus())) {
+            try {
+                booking =  this.createBooking(event, user, additionalEventInformation, BookingStatus.WAITING_LIST);
+            } catch (EventIsFullException e1) {
+                throw new RuntimeException("Creating a waiting list booking should never throw an event is full exception " +
+                        "- something went terribly wrong for this to have happened", e1);
+            }
+            return booking;
+        }
+
         // attempt to create a confirmed booking for the user.
         try {
             booking = this.createBooking(event, user, additionalEventInformation, BookingStatus.CONFIRMED);
@@ -381,7 +393,7 @@ public class EventBookingManager {
             if (numberOfPlaces != null) {
                 // check the number of places - if some available then check if the event deadline has passed. If not
                 // throw error.
-                if (numberOfPlaces > 0 && !(event.getBookingDeadline() != null
+                if (!EventStatus.WAITING_LIST_ONLY.equals(event.getEventStatus()) && numberOfPlaces > 0 && !(event.getBookingDeadline() != null
                         && now.after(event.getBookingDeadline()))) {
                     throw new EventIsNotFullException("There are still spaces on this event. Please attempt to book "
                             + "on it.");
