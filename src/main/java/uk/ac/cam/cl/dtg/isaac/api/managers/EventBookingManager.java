@@ -416,6 +416,16 @@ public class EventBookingManager {
                         additionalInformation);
             }
 
+            // auto add them to the group and grant the owner permission - only if this event is a special wait list only event.
+            if (event.getIsaacGroupToken() != null && EventStatus.WAITING_LIST_ONLY.equals(event.getEventStatus())) {
+                try {
+                    this.userAssociationManager.createAssociationWithToken(event.getIsaacGroupToken(), user);
+                } catch (InvalidUserAssociationTokenException e) {
+                    log.error(String.format("Unable to auto add user (%s) using token (%s) as the token is invalid.",
+                            user.getEmail(), event.getIsaacGroupToken()));
+                }
+            }
+
             try {
                 emailManager.sendTemplatedEmailToUser(user,
                         emailManager.getEmailTemplateDTO("email-event-waiting-list-addition-notification"),
