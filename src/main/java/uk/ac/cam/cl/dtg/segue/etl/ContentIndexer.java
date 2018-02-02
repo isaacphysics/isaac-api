@@ -409,7 +409,7 @@ public class ContentIndexer {
      * @return src with relative paths fixed.
      */
     private String fixMediaSrc(final String canonicalSourceFile, final String originalSrc) {
-        if (originalSrc != null && !(originalSrc.startsWith("http://") || originalSrc.startsWith("https://"))) {
+        if (originalSrc != null && !(originalSrc.startsWith("http://") || originalSrc.startsWith("https://") || originalSrc.startsWith("/assets/"))) {
             return FilenameUtils.normalize(FilenameUtils.getPath(canonicalSourceFile) + originalSrc, true);
         }
         return originalSrc;
