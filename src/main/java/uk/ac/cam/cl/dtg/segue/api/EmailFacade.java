@@ -17,11 +17,14 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
+import com.google.common.collect.Sets;
 import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
 
@@ -468,7 +471,7 @@ public class EmailFacade extends AbstractSegueFacade {
             @PathParam("contentid") final String contentId, @PathParam("emailtype") final String emailTypeString,
             final List<Long> userIds) {
         EmailType emailType;
-        List<RegisteredUserDTO> allSelectedUsers = Lists.newArrayList();
+        Set<RegisteredUserDTO> allSelectedUsers = Sets.newHashSet();
 
         if (EnumUtils.isValidEnum(EmailType.class, emailTypeString)) {
             emailType = EmailType.valueOf(emailTypeString);
@@ -499,7 +502,7 @@ public class EmailFacade extends AbstractSegueFacade {
                 return error.toResponse();
             }
 
-            emailManager.sendCustomEmail(sender, contentId, allSelectedUsers, emailType);
+            emailManager.sendCustomEmail(sender, contentId, new ArrayList<>(allSelectedUsers), emailType);
         } catch (NoUserException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
                     "One or more userId(s) did not map to a valid user!.");
