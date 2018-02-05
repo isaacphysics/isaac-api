@@ -52,12 +52,13 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Concrete Kafka streams processing application for generating site statistics
+ * Kafka streams processing application for generating site statistics
  *  @author Dan Underwood
  */
 public class SiteStatisticsStreamsApplication {
@@ -65,21 +66,16 @@ public class SiteStatisticsStreamsApplication {
     private static final Logger log = LoggerFactory.getLogger(SiteStatisticsStreamsApplication.class);
     private static final Logger kafkaLog = LoggerFactory.getLogger("kafkaStreamsLogger");
 
-    private static final Serializer<JsonNode> JsonSerializer = new JsonSerializer();
-    private static final Deserializer<JsonNode> JsonDeserializer = new JsonDeserializer();
     private static final Serde<String> StringSerde = Serdes.String();
-    private static final Serde<JsonNode> JsonSerde = Serdes.serdeFrom(JsonSerializer, JsonDeserializer);
+    private static final Serde<JsonNode> JsonSerde = Serdes.serdeFrom(new JsonSerializer(), new JsonDeserializer());
     private static final Serde<Long> LongSerde = Serdes.Long();
 
-    private KafkaTopicManager kafkaTopicManager;
-    private UserAccountManager userAccountManager;
     private KafkaStreams streams;
-    private KStreamBuilder builder = new KStreamBuilder();
-    private Properties streamsConfiguration = new Properties();
-    private Long streamAppStartTime = System.currentTimeMillis();
+    private UserAccountManager userAccountManager;
 
     private final String streamsAppName = "streamsapp_site_stats";
-    private final String streamsAppVersion = "v1.45";
+    private final String streamsAppVersion = "v2";
+    private Long streamAppStartTime = System.currentTimeMillis();
 
 
     /**
@@ -93,9 +89,10 @@ public class SiteStatisticsStreamsApplication {
                                             final KafkaTopicManager kafkaTopicManager,
                                             final UserAccountManager userAccountManager) {
 
-        this.kafkaTopicManager = kafkaTopicManager;
         this.userAccountManager = userAccountManager;
 
+        // set up streams app configuration
+        Properties streamsConfiguration = new Properties();
         streamsConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, streamsAppName + "-" + streamsAppVersion);
         streamsConfiguration.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG,
                 globalProperties.getProperty("KAFKA_HOSTNAME") + ":" + globalProperties.getProperty("KAFKA_PORT"));
@@ -103,20 +100,12 @@ public class SiteStatisticsStreamsApplication {
         streamsConfiguration.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
         streamsConfiguration.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
         streamsConfiguration.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, 10 * 1000);
-        streamsConfiguration.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 0);
         streamsConfiguration.put(StreamsConfig.METADATA_MAX_AGE_CONFIG, 10 * 1000);
         streamsConfiguration.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 0);
         streamsConfiguration.put(StreamsConfig.consumerPrefix(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG), "earliest");
         streamsConfiguration.put(StreamsConfig.consumerPrefix(ConsumerConfig.METADATA_MAX_AGE_CONFIG), 60 * 1000);
         streamsConfiguration.put(StreamsConfig.producerPrefix(ProducerConfig.METADATA_MAX_AGE_CONFIG), 60 * 1000);
 
-    }
-
-
-    /**
-     * Method to be called to start the streams application
-     */
-    public void start() {
 
         // ensure topics exist before attempting to consume
 
@@ -129,6 +118,7 @@ public class SiteStatisticsStreamsApplication {
         List<ConfigEntry> changelogConfigs = Lists.newLinkedList();
         changelogConfigs.add(new ConfigEntry(TopicConfig.CLEANUP_POLICY_CONFIG, TopicConfig.CLEANUP_POLICY_COMPACT));
 
+        // we set up the changelog topics ourselves so we can use them for global state store population (below)
         kafkaTopicManager.ensureTopicExists(streamsAppName + "-" + streamsAppVersion + "-localstore_user_data-changelog", changelogConfigs);
         kafkaTopicManager.ensureTopicExists(streamsAppName + "-" + streamsAppVersion + "-localstore_log_event_counts-changelog", changelogConfigs);
 
@@ -136,10 +126,13 @@ public class SiteStatisticsStreamsApplication {
         final AtomicBoolean wasLagging = new AtomicBoolean(true);
 
         // raw logged events incoming data stream from kafka
+        KStreamBuilder builder = new KStreamBuilder();
         KStream<String, JsonNode> rawLoggedEvents = builder.stream(StringSerde, JsonSerde, Constants.KAFKA_TOPIC_LOGGED_EVENTS)
                 .filterNot(
-                        (k, v) -> v.path("anonymous_user").asBoolean()
-                ).peek(
+                        (k, v) -> v.path("transferredFromAnonymous").asBoolean()
+                )
+                // log any lags in the streams processing
+                .peek(
                         (k,v) -> {
                             long lag = System.currentTimeMillis() - v.get("timestamp").asLong();
                             if (lag > 1000) {
@@ -179,8 +172,8 @@ public class SiteStatisticsStreamsApplication {
         }
 
         kafkaLog.info("Site statistics streams application started.");
-
     }
+
 
     /**
      * This method contains the logic that transforms the incoming stream
@@ -198,8 +191,10 @@ public class SiteStatisticsStreamsApplication {
                 );
 
         // process user data in local data stores, extract user record related events
-        KTable<String, JsonNode> userData = mappedStream
-                // set up a local user data store
+        mappedStream
+                .filterNot(
+                        (k, v) -> v.path("anonymous_user").asBoolean()
+                )
                 .groupByKey(StringSerde, JsonSerde)
                 .aggregate(
                         // initializer
@@ -226,6 +221,8 @@ public class SiteStatisticsStreamsApplication {
                             if (eventType.equals("CREATE_UPDATE_USER")) {
 
                                 try {
+
+                                    // we get the latest record from postgres to avoid passing sensitive info through Kafka
                                     RegisteredUserDTO regUser = userAccountManager.getUserDTOById(Long.parseLong(userId));
 
                                     ObjectNode userDetails = JsonNodeFactory.instance.objectNode()
@@ -282,31 +279,11 @@ public class SiteStatisticsStreamsApplication {
                         "localstore_user_data"
                 );
 
-        // join user table to incoming event stream to get user data for stats processing
-        KStream<String, JsonNode> userEvents = rawStream
-                .join(
-                        userData,
-                        (logEventVal, userDataVal) -> {
-                            ObjectNode joinedValueRecord = JsonNodeFactory.instance.objectNode();
-
-                            joinedValueRecord.put("user_id", userDataVal.path("user_data").path("user_id").asInt());
-                            joinedValueRecord.put("user_role", userDataVal.path("user_data").path("role").asText());
-                            joinedValueRecord.put("user_gender", userDataVal.path("user_data").path("gender").asText());
-                            joinedValueRecord.put("event_type", logEventVal.path("event_type").asText());
-                            joinedValueRecord.set("event_details", logEventVal.path("event_details"));
-                            joinedValueRecord.put("timestamp", logEventVal.path("timestamp").asLong());
-
-                            return joinedValueRecord;
-                        }, StringSerde, JsonSerde
-                );
-
 
         // maintain internal store of log event type counts
-        userEvents
+        mappedStream
                 .map(
-                        (k, v) -> {
-                            return new KeyValue<String, JsonNode>(v.path("event_type").asText(), v);
-                        }
+                        (k, v) -> new KeyValue<>(v.path("event_type").asText(), v)
                 )
                 .groupByKey(StringSerde, JsonSerde)
                 .count("localstore_log_event_counts");

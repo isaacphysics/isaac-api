@@ -170,6 +170,7 @@ public class KafkaLoggingManager extends LoggingEventHandler {
                                 .put("event_details", record.value().path("event_details"))
                                 .put("ip_address", (record.value().path("ip_address").asText() != null) ? record.value().path("ip_address").asText() : "")
                                 .put("timestamp", ts.toString())
+                                .put("transferredFromAnonymous", true)
                                 .build();
 
                         // producerRecord contains the name of the kafka topic we are publishing to, followed by the message to be sent.
