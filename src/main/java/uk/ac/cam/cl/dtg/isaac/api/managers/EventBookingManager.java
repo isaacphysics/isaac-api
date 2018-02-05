@@ -271,7 +271,8 @@ public class EventBookingManager {
         }
 
         // auto add them to the group and grant the owner permission
-        if (BookingStatus.CONFIRMED.equals(status) && event.getIsaacGroupToken() != null) {
+        if (BookingStatus.CONFIRMED.equals(status) && event.getIsaacGroupToken() != null
+                && !event.getIsaacGroupToken().isEmpty()) {
             try {
                 this.userAssociationManager.createAssociationWithToken(event.getIsaacGroupToken(), user);
             } catch (InvalidUserAssociationTokenException e) {
@@ -343,7 +344,7 @@ public class EventBookingManager {
             }
 
             // auto add them to the group and grant the owner permission
-            if (event.getIsaacGroupToken() != null) {
+            if (event.getIsaacGroupToken() != null && !event.getIsaacGroupToken().isEmpty()) {
                 try {
                     this.userAssociationManager.createAssociationWithToken(event.getIsaacGroupToken(), user);
                 } catch (InvalidUserAssociationTokenException e) {
@@ -417,7 +418,8 @@ public class EventBookingManager {
             }
 
             // auto add them to the group and grant the owner permission - only if this event is a special wait list only event.
-            if (event.getIsaacGroupToken() != null && EventStatus.WAITING_LIST_ONLY.equals(event.getEventStatus())) {
+            if (event.getIsaacGroupToken() != null && !event.getIsaacGroupToken().isEmpty()
+                    && EventStatus.WAITING_LIST_ONLY.equals(event.getEventStatus())) {
                 try {
                     this.userAssociationManager.createAssociationWithToken(event.getIsaacGroupToken(), user);
                 } catch (InvalidUserAssociationTokenException e) {
@@ -511,7 +513,7 @@ public class EventBookingManager {
         }
 
         // auto add them to the group and grant the owner permission
-        if (event.getIsaacGroupToken() != null) {
+        if (event.getIsaacGroupToken() != null && !event.getIsaacGroupToken().isEmpty()) {
             try {
                 this.userAssociationManager.createAssociationWithToken(event.getIsaacGroupToken(), userDTO);
             } catch (InvalidUserAssociationTokenException e) {
