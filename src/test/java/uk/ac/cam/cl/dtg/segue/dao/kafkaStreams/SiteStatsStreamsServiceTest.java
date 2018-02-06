@@ -46,6 +46,7 @@ import uk.ac.cam.cl.dtg.util.ClassVersionHash;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.lang.reflect.Method;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -133,7 +134,10 @@ public class SiteStatsStreamsServiceTest {
 
 
         // SITE STATISTICS
-        SiteStatisticsStreamsApplication.streamProcess(rawLoggedEvents[0], dummyUserDb);
+        // get the streams logic which exists inside the "streamProcess" method
+        Method method = SiteStatisticsStreamsApplication.class.getDeclaredMethod("streamProcess", KStream.class, IUserAccountManager.class);
+        method.setAccessible(true);
+        method.invoke(null, rawLoggedEvents[0], dummyUserDb);
 
         driver = new ProcessorTopologyTestDriver(config, builder);
 
@@ -267,7 +271,7 @@ public class SiteStatsStreamsServiceTest {
 
     @Test
     public void streamsClassVersions_Test() throws Exception {
-        assertClassUnchanged(SiteStatisticsStreamsApplication.class,"bb385eaf6cf51dcf9589ebe725c0e3d36f13e8e33af05d05394325af9f014a11");
+        assertClassUnchanged(SiteStatisticsStreamsApplication.class,"3eca240662f8ad908223a14d0875bace1d033a8fe0026530f6677bacf4aeaa75");
     }
 
 

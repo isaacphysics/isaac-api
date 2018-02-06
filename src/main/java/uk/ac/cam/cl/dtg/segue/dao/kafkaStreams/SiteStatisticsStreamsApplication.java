@@ -181,12 +181,11 @@ public class SiteStatisticsStreamsApplication {
 
     /**
      * This method contains the logic that transforms the incoming stream
-     * We keep this public and static to make it easy to unit test
      *
      * @param rawStream
      *          - the input stream
      */
-    public static void streamProcess(KStream<String, JsonNode> rawStream,
+    private static void streamProcess(KStream<String, JsonNode> rawStream,
                                      IUserAccountManager userAccountManager) {
 
         // map the key-value pair to one where the key is always the user id
