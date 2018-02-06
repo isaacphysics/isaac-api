@@ -884,7 +884,7 @@ public class EventBookingManager {
             throws SegueDatabaseException{
         try {
             // auto remove them from the group
-            if (event.getIsaacGroupToken() != null) {
+            if (event.getIsaacGroupToken() != null && !event.getIsaacGroupToken().isEmpty()) {
                 AssociationToken associationToken = this.userAssociationManager.lookupTokenDetails(user, event.getIsaacGroupToken());
                 UserGroupDTO group = this.groupManager.getGroupById(associationToken.getGroupId());
                 if (group != null) {
