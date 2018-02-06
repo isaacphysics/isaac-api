@@ -43,6 +43,7 @@ import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.api.managers.IUserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -71,11 +72,10 @@ public class SiteStatisticsStreamsApplication {
     private static final Serde<Long> LongSerde = Serdes.Long();
 
     private KafkaStreams streams;
-    private UserAccountManager userAccountManager;
 
     private final String streamsAppName = "streamsapp_site_stats";
     private final String streamsAppVersion = "v2";
-    private Long streamAppStartTime = System.currentTimeMillis();
+    private static Long streamAppStartTime = System.currentTimeMillis();
 
 
     /**
@@ -88,8 +88,6 @@ public class SiteStatisticsStreamsApplication {
     public SiteStatisticsStreamsApplication(final PropertiesLoader globalProperties,
                                             final KafkaTopicManager kafkaTopicManager,
                                             final UserAccountManager userAccountManager) {
-
-        this.userAccountManager = userAccountManager;
 
         // set up streams app configuration
         Properties streamsConfiguration = new Properties();
@@ -153,7 +151,7 @@ public class SiteStatisticsStreamsApplication {
                 );
 
         // process raw logged events
-        streamProcess(rawLoggedEvents);
+        streamProcess(rawLoggedEvents, userAccountManager);
 
         // need to make state stores queryable globally, as we often have 2 versions of API running concurrently, hence 2 streams app instances
         // aggregations are saved to a local state store per streams app instance and update a changelog topic in Kafka
@@ -180,12 +178,12 @@ public class SiteStatisticsStreamsApplication {
 
     /**
      * This method contains the logic that transforms the incoming stream
-     * We keep this public and static to make it easy to unit test
      *
      * @param rawStream
      *          - the input stream
      */
-    public void streamProcess(KStream<String, JsonNode> rawStream) {
+    private static void streamProcess(KStream<String, JsonNode> rawStream,
+                                     IUserAccountManager userAccountManager) {
 
         // map the key-value pair to one where the key is always the user id
         KStream<String, JsonNode> mappedStream = rawStream

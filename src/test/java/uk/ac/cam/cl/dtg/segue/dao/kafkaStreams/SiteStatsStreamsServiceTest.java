@@ -34,19 +34,30 @@ import org.apache.kafka.test.ProcessorTopologyTestDriver;
 import org.junit.Before;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import uk.ac.cam.cl.dtg.segue.api.managers.IUserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
+import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
+import uk.ac.cam.cl.dtg.segue.dos.users.Role;
+import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.ClassVersionHash;
 
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.lang.reflect.Method;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 
+import static org.easymock.EasyMock.createMock;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -74,8 +85,11 @@ public class SiteStatsStreamsServiceTest {
      * @throws Exception
      *             - test exception
      */
-    /*@Before
+    @Before
     public final void setUp() throws Exception {
+
+        IUserAccountManager dummyUserDb = createMock(IUserAccountManager.class);
+
         KStreamBuilder builder = new KStreamBuilder();
         Properties streamsConfiguration = new Properties();
 
@@ -97,9 +111,33 @@ public class SiteStatsStreamsServiceTest {
         // parallel log for anonymous events (may want to optimise how we do this later)
         rawLoggedEvents[1].to(StringSerde, JsonSerde, "topic_anonymous_logged_events");
 
+        // initialise the mock DB for the user data
+        Long testUser1Id = 1L;
+        Long testUser2Id = 2L;
+        RegisteredUserDTO testUser1 = new RegisteredUserDTO("TestingOne", "Test1", null,
+                null, new Date(), Gender.MALE, new Date(),"");
+        testUser1.setId(testUser1Id);
+        testUser1.setRole(Role.STUDENT);
+        RegisteredUserDTO testUser2 = new RegisteredUserDTO("TestingTwo", "Test2", null,
+                null, new Date(), Gender.MALE, new Date(),"");
+        testUser2.setId(testUser2Id);
+        testUser2.setRole(Role.STUDENT);
+
+        RegisteredUserDTO testUser2change = new RegisteredUserDTO("TestingTwoChange", "Test2", null,
+                null, new Date(), Gender.FEMALE, new Date(),"");
+        testUser2change.setId(testUser2Id);
+        testUser2change.setRole(Role.TEACHER);
+
+        expect(dummyUserDb.getUserDTOById(testUser1Id)).andReturn(testUser1);
+        expect(dummyUserDb.getUserDTOById(testUser2Id)).andReturn(testUser2).andReturn(testUser2change);
+        replay(dummyUserDb);
+
 
         // SITE STATISTICS
-        //SiteStatisticsStreamsApplication.streamProcess(rawLoggedEvents[0]);
+        // get the streams logic which exists inside the "streamProcess" method
+        Method method = SiteStatisticsStreamsApplication.class.getDeclaredMethod("streamProcess", KStream.class, IUserAccountManager.class);
+        method.setAccessible(true);
+        method.invoke(null, rawLoggedEvents[0], dummyUserDb);
 
         driver = new ProcessorTopologyTestDriver(config, builder);
 
@@ -128,8 +166,6 @@ public class SiteStatsStreamsServiceTest {
     }
 
 
-
-
     @Test
     public void userDataTableUpdate_Test() throws Exception {
 
@@ -143,16 +179,12 @@ public class SiteStatsStreamsServiceTest {
 
             Map<String, Object> userRecord = new ImmutableMap.Builder<String, Object>()
                     .put("user_id", fields[0])
-                    //.put("family_name", fields[1])
-                    //.put("given_name", fields[2])
+                    .put("family_name", fields[1])
+                    .put("given_name", fields[2])
                     .put("role", fields[3])
-                    //.put("date_of_birth", fields[4])
                     .put("gender", fields[5])
-                    //.put("registration_date", fields[6])
                     .put("school_id", fields[7])
                     .put("school_other", fields[8])
-                    //.put("default_level", fields[9])
-                    //.put("email_verification_status", fields[10])
                     .build();
 
             testData.put(fields[0], userRecord);
@@ -166,15 +198,13 @@ public class SiteStatsStreamsServiceTest {
             KeyValue<String, JsonNode> entry = iter.next();
 
             assertTrue(testData.containsKey(entry.key)
-                    //&& (testData.get(entry.key).get("family_name").toString().equals(entry.value.path("user_data").path("family_name").asText()))
-                    //&& (testData.get(entry.key).get("given_name").toString().equals(entry.value.path("user_data").path("given_name").asText()))
+                    && (testData.get(entry.key).get("family_name").toString().equals(entry.value.path("user_data").path("family_name").asText()))
+                    && (testData.get(entry.key).get("given_name").toString().equals(entry.value.path("user_data").path("given_name").asText()))
                     && (testData.get(entry.key).get("gender").toString().equals(entry.value.path("user_data").path("gender").asText()))
                     && (testData.get(entry.key).get("role").toString().equals(entry.value.path("user_data").path("role").asText()))
             );
         }
-
     }
-
 
 
     @Test
@@ -236,16 +266,13 @@ public class SiteStatsStreamsServiceTest {
                 }
             }
         }
-
-    }*/
+    }
 
 
     @Test
     public void streamsClassVersions_Test() throws Exception {
-        assertClassUnchanged(SiteStatisticsStreamsApplication.class,"077312d75a98feca469af1a3ce8040615afea19ac82e35de5a74666efd7e2776");
+        assertClassUnchanged(SiteStatisticsStreamsApplication.class,"6ba4c2a1d86fef80062b78bd118f62d660a5b4053a1f5e23ea58e7d3c23ab5ba");
     }
-
-
 
 
     private void assertClassUnchanged(Class c, String hash) {
