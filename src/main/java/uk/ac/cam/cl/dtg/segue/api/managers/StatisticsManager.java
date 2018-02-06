@@ -144,7 +144,7 @@ public class StatisticsManager implements IStatisticsManager {
         @SuppressWarnings("unchecked")
         Map<String, Object> cachedOutput = (Map<String, Object>) this.longStatsCache.getIfPresent(GENERAL_STATS);
         if (cachedOutput != null) {
-            log.debug("Using cached statistics.");
+            log.info("Using cached General Statistics");
             return cachedOutput;
         } else {
             log.info("Calculating General Statistics");

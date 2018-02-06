@@ -216,7 +216,8 @@ CREATE TABLE gameboards (
     game_filter jsonb,
     owner_user_id integer,
     creation_method character varying,
-    creation_date timestamp without time zone
+    creation_date timestamp without time zone,
+    tags jsonb
 );
 
 
@@ -818,6 +819,11 @@ ALTER TABLE ONLY user_preferences
 
 CREATE UNIQUE INDEX event_booking_user_event_id_index ON event_bookings USING btree (event_id, user_id);
 
+--
+-- Name: gameboards_tags_gin_index; Type: INDEX; Schema: public; Owner: rutherford
+--
+
+CREATE INDEX gameboards_tags_gin_index ON gameboards USING gin (tags);
 
 --
 -- Name: fki_user_id fkey; Type: INDEX; Schema: public; Owner: rutherford

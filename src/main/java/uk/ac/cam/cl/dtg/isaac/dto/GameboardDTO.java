@@ -17,8 +17,10 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import com.google.api.client.util.Lists;
+import com.google.api.client.util.Sets;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
@@ -37,6 +39,7 @@ public class GameboardDTO {
     private GameFilter gameFilter;
     private Long ownerUserId;
     private UserSummaryDTO ownerUserInformation;
+    private Set<String> tags;
     
     private Boolean isSavedToCurrentUser;
 
@@ -53,6 +56,7 @@ public class GameboardDTO {
      */
     public GameboardDTO() {
         this.questions = Lists.newArrayList();
+        this.tags = Sets.newHashSet();
     }
 
     /**
@@ -79,7 +83,8 @@ public class GameboardDTO {
      */
     public GameboardDTO(final String id, final String title, final List<GameboardItem> questions,
             final IsaacWildcard wildCard, final Integer wildcardPosition, final Date creationDate,
-            final GameFilter gameFilter, final Long ownerUserId, final GameboardCreationMethod creationMethod) {
+            final GameFilter gameFilter, final Long ownerUserId, final GameboardCreationMethod creationMethod,
+            final Set<String> tags) {
         this.id = id;
         this.title = title;
         this.questions = questions;
@@ -89,6 +94,7 @@ public class GameboardDTO {
         this.gameFilter = gameFilter;
         this.ownerUserId = ownerUserId;
         this.creationMethod = creationMethod;
+        this.tags = tags;
     }
 
     /**
@@ -356,11 +362,30 @@ public class GameboardDTO {
         this.startedQuestion = startedQuestion;
     }
 
+    /**
+     * Gets the gameboard's tags.
+     *
+     * @return the gameboard's tags
+     */
+    public Set<String> getTags() {
+        return tags;
+    }
+
+    /**
+     * Sets the gameboard's tags.
+     *
+     * @param tags
+     *            the gameboard's tags
+     */
+    public void setTags(final Set<String> tags) {
+        this.tags = tags;
+    }
+
     @Override
     public String toString() {
         return "GameboardDTO [id=" + id + ", title=" + title + ", questions=" + questions + ", wildCard=" + wildCard
                 + ", wildCardPosition=" + wildCardPosition + ", creationDate=" + creationDate + ", gameFilter="
-                + gameFilter + ", ownerUserId=" + ownerUserId + "]";
+                + gameFilter + ", ownerUserId=" + ownerUserId + ", tags=" + tags + "]";
     }
 
     @Override
@@ -374,6 +399,7 @@ public class GameboardDTO {
         result = prime * result + ((questions == null) ? 0 : questions.hashCode());
         result = prime * result + ((wildCard == null) ? 0 : wildCard.hashCode());
         result = prime * result + ((wildCardPosition == null) ? 0 : wildCardPosition.hashCode());
+        result = prime * result + ((tags == null) ? 0 : tags.hashCode());
         return result;
     }
 
@@ -436,6 +462,8 @@ public class GameboardDTO {
                 return false;
             }
         } else if (!wildCardPosition.equals(other.wildCardPosition)) {
+            return false;
+        } else if (!tags.equals(other.tags)) {
             return false;
         }
         return true;

@@ -31,22 +31,18 @@ public class UserSettings {
 	
 	private RegisteredUser registeredUser;
 	private String passwordCurrent;
-	private Map<String, Boolean> emailPreferences;
-	// FIXME - the subjectInterests should be refactored out of here!
-	private Map<String, Boolean> subjectInterests;
+	private Map<String, Map<String, Boolean>> userPreferences;
 
     /**
      * A collection of user settings objects.
      * @param registeredUser - the user data
-     * @param emailPreferences - a list of email preferences
+     * @param userPreferences - a list of email preferences
      */
     @JsonCreator
     public UserSettings(@JsonProperty("registeredUser") final RegisteredUser registeredUser,
-                        @JsonProperty("emailPreferences") final Map<String, Boolean> emailPreferences,
-                        @JsonProperty("subjectInterests") final Map<String, Boolean> subjectInterests) {
+						@JsonProperty("userPreferences") final Map<String, Map<String, Boolean>> userPreferences) {
         this.registeredUser = registeredUser;
-        this.emailPreferences = emailPreferences;
-        this.subjectInterests = subjectInterests;
+		this.userPreferences = userPreferences;
     }
 
 	/**
@@ -78,35 +74,21 @@ public class UserSettings {
 		this.registeredUser = registeredUser;
 	}
 
-    /**
-     * @return a list of email preferences
-     */
-    @JsonProperty("emailPreferences")
-    public Map<String, Boolean> getEmailPreferences() {
-        return this.emailPreferences;
-    }
-
 	/**
-	 * @param emailPreferences the emailPreferences to set
+	 * @return a list of user preferences
 	 */
-	@JsonProperty("emailPreferences")
-	public void setEmailPreferences(final Map<String, Boolean> emailPreferences) {
-		this.emailPreferences = emailPreferences;
+	@JsonProperty("userPreferences")
+	public Map<String, Map<String, Boolean>> getUserPreferences() {
+		return this.userPreferences;
 	}
 
-    /**
-     * @return the subjectInterests
-     */
-    @JsonProperty("subjectInterests")
-    public Map<String, Boolean> getSubjectInterests() {
-        return subjectInterests;
-    }
+	/**
+	 * @param userPreferences the userPreferences to set
+	 */
+	@JsonProperty("userPreferences")
+	public void setUserPreferences(final Map<String, Map<String, Boolean>> userPreferences) {
+		this.userPreferences = userPreferences;
+	}
 
-    /**
-     * @param subjectInterests the subjectInterests to set
-     */
-    @JsonProperty("subjectInterests")
-    public void setSubjectInterests(Map<String, Boolean> subjectInterests) {
-        this.subjectInterests = subjectInterests;
-    }
+
 }

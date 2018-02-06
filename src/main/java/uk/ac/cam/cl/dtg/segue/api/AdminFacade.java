@@ -73,7 +73,6 @@ import com.google.common.collect.ImmutableMap.Builder;
 import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType;
-import uk.ac.cam.cl.dtg.segue.api.managers.IStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.KafkaStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -97,7 +96,6 @@ import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.etl.GithubPushEventPayload;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
@@ -106,7 +104,7 @@ import uk.ac.cam.cl.dtg.util.locations.Location;
 import uk.ac.cam.cl.dtg.util.locations.LocationServerException;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeRadius;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.SUBJECT_INTEREST;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacUserPreferences; // FIXME: Isaac class in Segue!
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
@@ -650,7 +648,8 @@ public class AdminFacade extends AbstractSegueFacade {
                     
                     boolean success = this.contentManager.getContentById(
                             this.contentManager.getCurrentContentSHA(),
-                            partialContentWithErrors.getId()) != null;
+                            partialContentWithErrors.getId(),
+                            true) != null;
                     
                     errorRecord.put("successfulIngest", success);
                     if (success) {
@@ -873,7 +872,7 @@ public class AdminFacade extends AbstractSegueFacade {
             // FIXME - this shouldn't really be in a segue class!
             if (subjectOfInterest != null && !subjectOfInterest.isEmpty()) {
                 List<RegisteredUserDTO> subjectFilteredUsers = new ArrayList<>();
-                Map<Long, List<UserPreference>> userPreferences = userPreferenceManager.getUserPreferences(SUBJECT_INTEREST, findUsers);
+                Map<Long, List<UserPreference>> userPreferences = userPreferenceManager.getUserPreferences(IsaacUserPreferences.SUBJECT_INTEREST.name(), findUsers);
 
                 for (RegisteredUserDTO userToFilter: findUsers) {
                     if (userPreferences.containsKey(userToFilter.getId())) {
@@ -1578,6 +1577,64 @@ public class AdminFacade extends AbstractSegueFacade {
                     e.getMessage()).toResponse();
         }
         return Response.ok().build();
+    }
+
+
+    @GET
+    @Path("/diagnostics")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public Response getDiagnostics(@Context final Request request, @Context final HttpServletRequest httpServletRequest) {
+
+        try {
+
+            if (isUserAnAdmin(httpServletRequest)) {
+
+                ObjectMapper mapper = new ObjectMapper();
+                Map<String, Object> diagnosticReport = Maps.newHashMap();
+                Map<String, Object> websocketReport = Maps.newHashMap();
+                Map<String, Object> runtimeReport = Maps.newHashMap();
+                Integer numCurrentWebSockets = 0;
+                Integer numCurrentWebSocketUsers = 0;
+
+                // websocket reporting
+                for (ConcurrentLinkedQueue<UserAlertsWebSocket> queue : UserAlertsWebSocket.connectedSockets.values()) {
+                    numCurrentWebSockets += queue.size();
+                    if (queue.size() > 0) {
+                        numCurrentWebSocketUsers++;
+                    }
+                }
+
+                websocketReport.put("currentWebsocketsOpen", numCurrentWebSockets);
+                websocketReport.put("usersCurrent", numCurrentWebSocketUsers);
+                websocketReport.put("usersTotal", UserAlertsWebSocket.connectedSockets.size());
+                websocketReport.put("totalWebsocketsOpened", UserAlertsWebSocket.getWebsocketCounts().get("numWebsocketsOpenedOverTime"));
+                websocketReport.put("totalWebsocketsClosed", UserAlertsWebSocket.getWebsocketCounts().get("numWebsocketsClosedOverTime"));
+
+                diagnosticReport.put("websockets", websocketReport);
+
+                // runtime reporting
+                runtimeReport.put("processors", Runtime.getRuntime().availableProcessors());
+                runtimeReport.put("memoryFree", Runtime.getRuntime().freeMemory());
+                runtimeReport.put("memoryMax", Runtime.getRuntime().maxMemory());
+                runtimeReport.put("memoryTotal", Runtime.getRuntime().totalMemory());
+                runtimeReport.put("threadCount", Thread.activeCount());
+
+                diagnosticReport.put("runtime", runtimeReport);
+
+                // other reporting
+                diagnosticReport.put("numAnonymousUsers", userManager.getNumberOfAnonymousUsers());
+
+                return Response.ok(diagnosticReport).build();
+
+            } else {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "You must be logged in as an admin to access this function.").toResponse();
+            }
+
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
     }
 
 }

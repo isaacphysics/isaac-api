@@ -114,7 +114,9 @@ public final class Constants {
 
     public static final String CREATE_GAMEBOARD = "CREATE_GAMEBOARD";
 
-    public static final String SUBJECT_INTEREST = "SUBJECT_INTEREST";
+    public enum IsaacUserPreferences {
+        SUBJECT_INTEREST, BETA_FEATURE
+    }
 
     public static final Set<String> ISAAC_LOG_EVENT_TYPES = ImmutableSet.of(ADD_BOARD_TO_PROFILE, CREATE_GAMEBOARD,
             DELETE_ASSIGNMENT, DELETE_BOARD_FROM_PROFILE, DOWNLOAD_ASSIGNMENT_PROGRESS_CSV, DOWNLOAD_GROUP_PROGRESS_CSV,

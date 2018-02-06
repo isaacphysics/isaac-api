@@ -53,7 +53,7 @@ public abstract class AbstractUserPreferenceManager {
 
     /**
      * Get all preferences of one type for a specific user.
-     * @param preferenceType - the type of preferences inrterested in
+     * @param preferenceType - the type of preferences interested in
      * @param userId - the ID of the user interested in
      * @return a list of the UserPreference objects
      * @throws SegueDatabaseException - if a database error occurs
@@ -62,8 +62,17 @@ public abstract class AbstractUserPreferenceManager {
             throws SegueDatabaseException;
 
     /**
+     * Get all preferences for a specific user.
+     * @param userId - the ID of the user interested in
+     * @return a list of the UserPreference objects
+     * @throws SegueDatabaseException - if a database error occurs
+     */
+    public abstract List<UserPreference> getAllUserPreferences(final long userId)
+            throws SegueDatabaseException;
+
+    /**
      * Get all preferences of one type for many users.
-     * @param preferenceType - the type of preferences inrterested in
+     * @param preferenceType - the type of preferences interested in
      * @param users - a list of user objects interested in
      * @return a map of user IDs to a list of the UserPreference objects
      * @throws SegueDatabaseException - if a database error occurs

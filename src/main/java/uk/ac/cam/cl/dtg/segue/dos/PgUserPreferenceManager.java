@@ -163,6 +163,31 @@ public class PgUserPreferenceManager extends AbstractUserPreferenceManager {
     }
 
     @Override
+    public List<UserPreference> getAllUserPreferences(long userId) throws SegueDatabaseException {
+
+        try (Connection conn = database.getDatabaseConnection()) {
+            PreparedStatement pst;
+            pst = conn.prepareStatement("SELECT * FROM user_preferences WHERE user_id=?;");
+
+            pst.setLong(1, userId);
+
+            ResultSet results = pst.executeQuery();
+
+            List<UserPreference> userPreferences = Lists.newArrayList();
+
+            while (results.next()) {
+                UserPreference pref = userPreferenceFromResultSet(results);
+                userPreferences.add(pref);
+            }
+
+            return userPreferences;
+
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        }
+    }
+
+    @Override
     public Map<Long, List<UserPreference>> getUserPreferences(String preferenceType, List<RegisteredUserDTO> users)
             throws SegueDatabaseException {
         Validate.notBlank(preferenceType);
