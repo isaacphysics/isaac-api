@@ -710,7 +710,9 @@ public class EventsFacade extends AbstractIsaacFacade {
                     .toResponse();
             }
 
-            if (!bookingManager.hasBookingWithStatus(eventId, userOwningBooking.getId(), BookingStatus.WAITING_LIST) && !bookingManager.hasBookingWithStatus(eventId, userOwningBooking.getId(), BookingStatus.CONFIRMED)) {
+            Set<BookingStatus> cancelableStatuses =
+                    new HashSet<>(Arrays.asList(BookingStatus.CONFIRMED, BookingStatus.WAITING_LIST));
+            if (!bookingManager.hasBookingWithAnyOfStatuses(eventId, userOwningBooking.getId(), cancelableStatuses)) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "User is not booked on this event.").toResponse();
             }
 
@@ -811,8 +813,8 @@ public class EventsFacade extends AbstractIsaacFacade {
                         .toResponse();
             }
 
-            if (!bookingManager.hasBookingWithStatus(eventId, userId, BookingStatus.WAITING_LIST) && !bookingManager.hasBookingWithStatus(eventId, userId, BookingStatus.CONFIRMED)
-                && !bookingManager.hasBookingWithStatus(eventId, userId, BookingStatus.CANCELLED)) {
+            Set<BookingStatus> allValidBookingStatuses = new HashSet<>(Arrays.asList(BookingStatus.values()));
+            if (!bookingManager.hasBookingWithAnyOfStatuses(eventId, userId, allValidBookingStatuses)) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "User is not booked on this event.").toResponse();
             }
 
