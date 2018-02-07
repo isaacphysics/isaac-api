@@ -694,8 +694,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Singleton
     @Inject
     private static KafkaStreamsProducer getKafkaProducer(@Named(Constants.KAFKA_HOSTNAME) final String kafkaHost,
-                                         @Named(Constants.KAFKA_PORT) final String kafkaPort,
-                                         final KafkaTopicManager topicManager) {
+                                                         @Named(Constants.KAFKA_PORT) final String kafkaPort,
+                                                         final KafkaTopicManager topicManager) {
 
         if (null == kafkaProducer) {
             kafkaProducer = new KafkaStreamsProducer(kafkaHost, kafkaPort, topicManager);
