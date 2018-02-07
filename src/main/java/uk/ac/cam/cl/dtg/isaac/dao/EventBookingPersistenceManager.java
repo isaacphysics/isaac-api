@@ -208,7 +208,9 @@ public class EventBookingPersistenceManager {
 
     /**
      * Acquire a globally unique database lock.
+     *
      * This lock must be released manually.
+     *
      * @param resourceId - the unique id for the object to be locked.
      * @throws SegueDatabaseException if there is a problem acquiring the lock
      */

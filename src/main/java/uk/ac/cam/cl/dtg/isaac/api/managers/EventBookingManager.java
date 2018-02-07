@@ -25,7 +25,9 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dos.EventStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
+import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.EventBooking;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
@@ -150,19 +152,72 @@ public class EventBookingManager {
 
     /**
      * Create booking on behalf of a user.
-     * This method will allow users to be booked onto an event providing there is space. No other rules are applied.
-     * This is likely to be only for admin users.
+     * This method will allow users to be booked onto an event providing there is space. If there is no space the user
+     * will simply be added to the waiting list.
      *
      * @param event - of interest
      * @param user  - user to book on to the event.
      * @param additionalEventInformation - any additional information for the event organisers (nullable)
      * @return the newly created booking.
      * @throws SegueDatabaseException    - if an error occurs.
+     * @throws DuplicateBookingException - Duplicate booking, only unique bookings.
+     */
+    public EventBookingDTO createBookingOrAddToWaitingList(final IsaacEventPageDTO event, final RegisteredUserDTO user,
+                                         final Map<String, String> additionalEventInformation)
+            throws SegueDatabaseException, DuplicateBookingException {
+        // check if already booked
+        if (this.isUserBooked(event.getId(), user.getId())) {
+            throw new DuplicateBookingException(String.format("Unable to book onto event (%s) as user (%s) is already"
+                    + " booked on to it.", event.getId(), user.getEmail()));
+        }
+
+        // if an event admin wants to add a user to a waiting list only event they will need to promote them afterwards.
+        EventBookingDTO booking;
+        if (EventStatus.WAITING_LIST_ONLY.equals(event.getEventStatus())) {
+            try {
+                booking =  this.createBooking(event, user, additionalEventInformation, BookingStatus.WAITING_LIST);
+            } catch (EventIsFullException e1) {
+                throw new RuntimeException("Creating a waiting list booking should never throw an event is full exception " +
+                        "- something went terribly wrong for this to have happened", e1);
+            }
+            return booking;
+        }
+
+        // attempt to create a confirmed booking for the user.
+        try {
+            booking = this.createBooking(event, user, additionalEventInformation, BookingStatus.CONFIRMED);
+
+        } catch (EventIsFullException e) {
+            // book the user on the waiting list instead as the event is full
+            try {
+                booking =  this.createBooking(event, user, additionalEventInformation, BookingStatus.WAITING_LIST);
+            } catch (EventIsFullException e1) {
+                throw new RuntimeException("Creating a waiting list booking should never throw an event is full exception " +
+                        "- something went terribly wrong for this to have happened", e1);
+            }
+        }
+
+        return booking;
+    }
+
+    /**
+     * Create booking on behalf of a user.
+     * This method will allow users to be booked onto an event providing there is space. No other rules are applied.
+     * This is likely to be only for admin users.
+     *
+     * This method will not enforce some of the restrictions such as event deadlines and email verification
+     *
+     * @param event - of interest
+     * @param user  - user to book on to the event.
+     * @param additionalEventInformation - any additional information for the event organisers (nullable)
+     * @param status - the booking status to create i.e. CONFIRMED, WAITING_LIST etc.
+     * @return the newly created booking.
+     * @throws SegueDatabaseException    - if an error occurs.
      * @throws EventIsFullException      - No space on the event
      * @throws DuplicateBookingException - Duplicate booking, only unique bookings.
      */
     public EventBookingDTO createBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user,
-                                         final Map<String, String> additionalEventInformation)
+                                         final Map<String, String> additionalEventInformation, BookingStatus status)
             throws SegueDatabaseException, DuplicateBookingException, EventIsFullException {
         // check if already booked
         if (this.isUserBooked(event.getId(), user.getId())) {
@@ -175,22 +230,36 @@ public class EventBookingManager {
             // Obtain an exclusive database lock to lock the booking
             this.bookingPersistenceManager.acquireDistributedLock(event.getId());
 
-            this.ensureCapacity(event, user);
+            if (BookingStatus.CONFIRMED.equals(status)) {
+                this.ensureCapacity(event, user);
+            }
 
-            booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), BookingStatus.CONFIRMED,
+            booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), status,
                     additionalEventInformation);
 
-            emailManager.sendTemplatedEmailToUser(user,
-                    emailManager.getEmailTemplateDTO("email-event-booking-confirmed"),
-                    new ImmutableMap.Builder<String, Object>()
-                            .put("contactUsURL", generateEventContactUsURL(event))
-                            .put("authorizationLink", String.format("https://%s/account?authToken=%s",
-                                    propertiesLoader.getProperty(HOST_NAME), event.getIsaacGroupToken()))
-                            .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
-                            .put("event", event)
-                            .build(),
-                    EmailType.SYSTEM,
-                    Arrays.asList(generateEventICSFile(event, booking)));
+            if (BookingStatus.CONFIRMED.equals(status)) {
+                emailManager.sendTemplatedEmailToUser(user,
+                        emailManager.getEmailTemplateDTO("email-event-booking-confirmed"),
+                        new ImmutableMap.Builder<String, Object>()
+                                .put("contactUsURL", generateEventContactUsURL(event))
+                                .put("authorizationLink", String.format("https://%s/account?authToken=%s",
+                                        propertiesLoader.getProperty(HOST_NAME), event.getIsaacGroupToken()))
+                                .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
+                                .put("event", event)
+                                .build(),
+                        EmailType.SYSTEM,
+                        Arrays.asList(generateEventICSFile(event, booking)));
+
+            } else if (BookingStatus.WAITING_LIST.equals(status)) {
+                emailManager.sendTemplatedEmailToUser(user,
+                        emailManager.getEmailTemplateDTO("email-event-waiting-list-addition-notification"),
+                        new ImmutableMap.Builder<String, Object>()
+                                .put("contactUsURL", generateEventContactUsURL(event))
+                                .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
+                                .put("event", event)
+                                .build(),
+                        EmailType.SYSTEM);
+            }
         
         } catch (ContentManagerException e) {
             log.error(String.format("Unable to send booking confirmation email (%s) to user (%s)", event.getId(), user
@@ -200,6 +269,18 @@ public class EventBookingManager {
             // release lock.
             this.bookingPersistenceManager.releaseDistributedLock(event.getId());
         }
+
+        // auto add them to the group and grant the owner permission
+        if (BookingStatus.CONFIRMED.equals(status) && event.getIsaacGroupToken() != null
+                && !event.getIsaacGroupToken().isEmpty()) {
+            try {
+                this.userAssociationManager.createAssociationWithToken(event.getIsaacGroupToken(), user);
+            } catch (InvalidUserAssociationTokenException e) {
+                log.error(String.format("Unable to auto add user (%s) using token (%s) as the token is invalid.",
+                        user.getEmail(), event.getIsaacGroupToken()));
+            }
+        }
+
         return booking;
     }
 
@@ -263,7 +344,7 @@ public class EventBookingManager {
             }
 
             // auto add them to the group and grant the owner permission
-            if (event.getIsaacGroupToken() != null) {
+            if (event.getIsaacGroupToken() != null && !event.getIsaacGroupToken().isEmpty()) {
                 try {
                     this.userAssociationManager.createAssociationWithToken(event.getIsaacGroupToken(), user);
                 } catch (InvalidUserAssociationTokenException e) {
@@ -313,7 +394,7 @@ public class EventBookingManager {
             if (numberOfPlaces != null) {
                 // check the number of places - if some available then check if the event deadline has passed. If not
                 // throw error.
-                if (numberOfPlaces > 0 && !(event.getBookingDeadline() != null
+                if (!EventStatus.WAITING_LIST_ONLY.equals(event.getEventStatus()) && numberOfPlaces > 0 && !(event.getBookingDeadline() != null
                         && now.after(event.getBookingDeadline()))) {
                     throw new EventIsNotFullException("There are still spaces on this event. Please attempt to book "
                             + "on it.");
@@ -334,6 +415,17 @@ public class EventBookingManager {
                         user.getId(),
                         BookingStatus.WAITING_LIST,
                         additionalInformation);
+            }
+
+            // auto add them to the group and grant the owner permission - only if this event is a special wait list only event.
+            if (event.getIsaacGroupToken() != null && !event.getIsaacGroupToken().isEmpty()
+                    && EventStatus.WAITING_LIST_ONLY.equals(event.getEventStatus())) {
+                try {
+                    this.userAssociationManager.createAssociationWithToken(event.getIsaacGroupToken(), user);
+                } catch (InvalidUserAssociationTokenException e) {
+                    log.error(String.format("Unable to auto add user (%s) using token (%s) as the token is invalid.",
+                            user.getEmail(), event.getIsaacGroupToken()));
+                }
             }
 
             try {
@@ -418,6 +510,16 @@ public class EventBookingManager {
             throw new EventBookingUpdateException("Unable to send welcome email, failed to update event booking");
         } finally {
             this.bookingPersistenceManager.releaseDistributedLock(event.getId());
+        }
+
+        // auto add them to the group and grant the owner permission
+        if (event.getIsaacGroupToken() != null && !event.getIsaacGroupToken().isEmpty()) {
+            try {
+                this.userAssociationManager.createAssociationWithToken(event.getIsaacGroupToken(), userDTO);
+            } catch (InvalidUserAssociationTokenException e) {
+                log.error(String.format("Unable to auto add user (%s) using token (%s) as the token is invalid.",
+                        userDTO.getEmail(), event.getIsaacGroupToken()));
+            }
         }
 
         return updatedStatus;
@@ -782,7 +884,7 @@ public class EventBookingManager {
             throws SegueDatabaseException{
         try {
             // auto remove them from the group
-            if (event.getIsaacGroupToken() != null) {
+            if (event.getIsaacGroupToken() != null && !event.getIsaacGroupToken().isEmpty()) {
                 AssociationToken associationToken = this.userAssociationManager.lookupTokenDetails(user, event.getIsaacGroupToken());
                 UserGroupDTO group = this.groupManager.getGroupById(associationToken.getGroupId());
                 if (group != null) {
