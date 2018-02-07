@@ -375,4 +375,15 @@ public class SiteStatisticsStreamsApplication {
                 .all();
     }
 
+
+    public Map<String, Object> getAppStatus() {
+
+        Map<String, Object> stats = Maps.newHashMap();
+
+        stats.put("appName", streamsAppName);
+        stats.put("version", streamsAppVersion);
+
+        return stats;
+    }
+
 }
