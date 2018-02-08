@@ -7,11 +7,13 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.KafkaException;
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.KafkaStreamsProducer;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
+import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.util.Date;
 import java.util.List;
@@ -28,8 +30,9 @@ public class KafkaUsers implements IUserDataManager {
     private ObjectMapper objectMapper = new ObjectMapper();
 
     @Inject
-    public KafkaUsers(PostgresSqlDb postgresSqlDb,
-                      KafkaStreamsProducer kafkaProducer) {
+    public KafkaUsers(final PostgresSqlDb postgresSqlDb,
+                      final KafkaStreamsProducer kafkaProducer,
+                      final PropertiesLoader globalProperties) {
 
         this.pgUsers = new PgUsers(postgresSqlDb);
         this.kafkaProducer = kafkaProducer;
@@ -56,7 +59,7 @@ public class KafkaUsers implements IUserDataManager {
                 .build();
         try {
             // producerRecord contains the name of the kafka topic we are publishing to, followed by the message to be sent.
-            ProducerRecord producerRecord = new ProducerRecord<String, String>("topic_logged_events_v1", regUser.getId().toString(),
+            ProducerRecord producerRecord = new ProducerRecord<String, String>(Constants.KAFKA_TOPIC_LOGGED_EVENTS, regUser.getId().toString(),
                     objectMapper.writeValueAsString(kafkaLogRecord));
 
             kafkaProducer.send(producerRecord);

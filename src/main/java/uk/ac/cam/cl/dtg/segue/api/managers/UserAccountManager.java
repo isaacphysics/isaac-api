@@ -85,7 +85,7 @@ import com.google.inject.Inject;
  * This class is responsible for managing all user data and orchestration of calls to a user Authentication Manager for
  * dealing with sessions and passwords.
  */
-public class UserAccountManager {
+public class UserAccountManager implements IUserAccountManager {
     private static final Logger log = LoggerFactory.getLogger(UserAccountManager.class);
 
     private final IUserDataManager database;
