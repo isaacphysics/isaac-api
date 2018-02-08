@@ -29,6 +29,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
+import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.api.GameboardsFacade;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.NoWildcardException;
@@ -73,6 +74,9 @@ public class GameboardsFacadeTest {
 		this.userManager = createMock(UserAccountManager.class);
 	    this.questionManager = createMock(QuestionManager.class);
 		this.userAssociationManager = createMock(UserAssociationManager.class);
+		expect(this.dummyPropertiesLoader.getProperty(Constants.FASTTRACK_GAMEBOARD_WHITELIST))
+				.andReturn("ft_board_1,ft_board_2").anyTimes();
+		replay(this.dummyPropertiesLoader);
 	}
 
 	/**
