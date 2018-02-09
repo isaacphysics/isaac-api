@@ -139,9 +139,10 @@ public class KafkaStatisticsManager implements IStatisticsManager {
         //Integer answeredQuestionEvents = 0;
         Integer questionsAnsweredLastWeekTeachers = 0;
         Integer questionsAnsweredLastThirtyDaysTeachers = 0;
+        Integer questionsAnsweredLastNinetyDaysTeachers = 0;
         Integer questionsAnsweredLastWeekStudents = 0;
         Integer questionsAnsweredLastThirtyDaysStudents = 0;
-
+        Integer questionsAnsweredLastNinetyDaysStudents = 0;
 
         final int sevenDays = 7;
         final int thirtyDays = 30;
@@ -292,6 +293,15 @@ public class KafkaStatisticsManager implements IStatisticsManager {
                             questionsAnsweredLastThirtyDaysTeachers++;
                     }
 
+                    if (userLastSeenNDays(lastSeenData.path(ANSWER_QUESTION).path("latest").asLong(), ninetyDays)) {
+
+                        if (usrRole.equals(Role.STUDENT.toString()))
+                            questionsAnsweredLastNinetyDaysStudents++;
+
+                        if (usrRole.equals(Role.TEACHER.toString()))
+                            questionsAnsweredLastNinetyDaysTeachers++;
+                    }
+
                 }
 
             } catch (Exception e) {
@@ -338,8 +348,10 @@ public class KafkaStatisticsManager implements IStatisticsManager {
 
         ib.put("questionsAnsweredLastWeekTeachers", questionsAnsweredLastWeekTeachers);
         ib.put("questionsAnsweredLastThirtyDaysTeachers", questionsAnsweredLastThirtyDaysTeachers);
+        ib.put("questionsAnsweredLastNinetyDaysTeachers", questionsAnsweredLastNinetyDaysTeachers);
         ib.put("questionsAnsweredLastWeekStudents", questionsAnsweredLastWeekStudents);
         ib.put("questionsAnsweredLastThirtyDaysStudents", questionsAnsweredLastThirtyDaysStudents);
+        ib.put("questionsAnsweredLastNinetyDaysStudents", questionsAnsweredLastNinetyDaysStudents);
 
         ib.put("groupCount", groupManager.getGroupCount());
 
