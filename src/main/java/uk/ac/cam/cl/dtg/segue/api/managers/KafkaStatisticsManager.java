@@ -129,19 +129,24 @@ public class KafkaStatisticsManager implements IStatisticsManager {
         Integer activeStudentsWeek = 0;
         Integer activeTeachersWeek = 0;
         Integer activeUsersMonth = 0;
+        Integer activeUsersNinetyDays = 0;
         Integer activeStudentsMonth = 0;
         Integer activeTeachersMonth = 0;
+        Integer activeStudentsNinetyDays = 0;
+        Integer activeTeachersNinetyDays = 0;
 
-        Integer viewQuestionEvents = 0;
-        Integer answeredQuestionEvents = 0;
+        //Integer viewQuestionEvents = 0;
+        //Integer answeredQuestionEvents = 0;
         Integer questionsAnsweredLastWeekTeachers = 0;
         Integer questionsAnsweredLastThirtyDaysTeachers = 0;
+        Integer questionsAnsweredLastNinetyDaysTeachers = 0;
         Integer questionsAnsweredLastWeekStudents = 0;
         Integer questionsAnsweredLastThirtyDaysStudents = 0;
-
+        Integer questionsAnsweredLastNinetyDaysStudents = 0;
 
         final int sevenDays = 7;
         final int thirtyDays = 30;
+        final int ninetyDays = 90;
         final int sixMonthsInDays = 180;
 
         while (it.hasNext()) {
@@ -150,6 +155,10 @@ public class KafkaStatisticsManager implements IStatisticsManager {
             JsonNode userData = node.path("user_data");
             JsonNode lastSeenData = node.path("last_seen_data");
 
+            if (node.path("user_id").asText().equals("")) {
+                continue;
+            }
+
             try {
 
                 userCount++;
@@ -157,7 +166,7 @@ public class KafkaStatisticsManager implements IStatisticsManager {
                 String usrGender = userData.path("gender").asText();
                 String usrRole = userData.path("role").asText();
 
-                Integer usrSchoolId = userData.path("school_id").asInt();
+                String usrSchoolId = userData.path("school_id").asText();
                 String usrSchoolOther = userData.path("school_other").asText();
 
                 Long lastSeen = lastSeenData.path("last_seen").asLong();
@@ -193,7 +202,7 @@ public class KafkaStatisticsManager implements IStatisticsManager {
 
 
                 // schools
-                if ((usrSchoolId.toString().equals("0") || usrSchoolId == null || usrSchoolId.toString().equals(""))
+                if ((usrSchoolId == null || usrSchoolId.equals(""))
                         && (usrSchoolOther.equals("") || usrSchoolOther == null)) {
                     hasNoSchoolCount++;
                 } else {
@@ -210,15 +219,19 @@ public class KafkaStatisticsManager implements IStatisticsManager {
                     if (usrRole.equals(Role.STUDENT.toString())) {
                         activeUsersWeek++;
                         activeUsersMonth++;
+                        activeUsersNinetyDays++;
                         activeStudentsWeek++;
                         activeStudentsMonth++;
+                        activeStudentsNinetyDays++;
                     }
 
                     if (usrRole.equals(Role.TEACHER.toString())) {
                         activeUsersWeek++;
                         activeUsersMonth++;
+                        activeUsersNinetyDays++;
                         activeTeachersWeek++;
                         activeTeachersMonth++;
+                        activeTeachersNinetyDays++;
                     }
 
                 } else if (userLastSeenNDays(lastSeen, thirtyDays)) {
@@ -226,24 +239,41 @@ public class KafkaStatisticsManager implements IStatisticsManager {
 
                     if (usrRole.equals(Role.STUDENT.toString())) {
                         activeUsersMonth++;
+                        activeUsersNinetyDays++;
                         activeStudentsMonth++;
+                        activeStudentsNinetyDays++;
                     }
 
                     if (usrRole.equals(Role.TEACHER.toString())) {
                         activeUsersMonth++;
+                        activeUsersNinetyDays++;
                         activeTeachersMonth++;
+                        activeTeachersNinetyDays++;
+                    }
+
+                } else if (userLastSeenNDays(lastSeen, ninetyDays)) {
+                    activeUsersSixMonths++;
+
+                    if (usrRole.equals(Role.STUDENT.toString())) {
+                        activeUsersNinetyDays++;
+                        activeStudentsNinetyDays++;
+                    }
+
+                    if (usrRole.equals(Role.TEACHER.toString())) {
+                        activeUsersNinetyDays++;
+                        activeTeachersNinetyDays++;
                     }
 
                 } else if (userLastSeenNDays(lastSeen, sixMonthsInDays)) {
                     activeUsersSixMonths++;
                 }
 
-                if (lastSeenData.has(VIEW_QUESTION)) {
+                /*if (lastSeenData.has(VIEW_QUESTION)) {
                     viewQuestionEvents += lastSeenData.path(VIEW_QUESTION).path("count").asInt();;
-                }
+                }*/
 
                 if (lastSeenData.has(ANSWER_QUESTION)) {
-                    answeredQuestionEvents += lastSeenData.path(ANSWER_QUESTION).path("count").asInt();
+                    //answeredQuestionEvents += lastSeenData.path(ANSWER_QUESTION).path("count").asInt();
 
                     if (userLastSeenNDays(lastSeenData.path(ANSWER_QUESTION).path("latest").asLong(), sevenDays)) {
 
@@ -261,6 +291,15 @@ public class KafkaStatisticsManager implements IStatisticsManager {
 
                         if (usrRole.equals(Role.TEACHER.toString()))
                             questionsAnsweredLastThirtyDaysTeachers++;
+                    }
+
+                    if (userLastSeenNDays(lastSeenData.path(ANSWER_QUESTION).path("latest").asLong(), ninetyDays)) {
+
+                        if (usrRole.equals(Role.STUDENT.toString()))
+                            questionsAnsweredLastNinetyDaysStudents++;
+
+                        if (usrRole.equals(Role.TEACHER.toString()))
+                            questionsAnsweredLastNinetyDaysTeachers++;
                     }
 
                 }
@@ -293,18 +332,26 @@ public class KafkaStatisticsManager implements IStatisticsManager {
         ib.put("activeInLastSixMonths", activeUsersSixMonths);
         ib.put("activeUsersLastWeek", activeUsersWeek);
         ib.put("activeUsersLastThirtyDays", activeUsersMonth);
+        ib.put("activeUsersLastNinetyDays", activeUsersNinetyDays);
         ib.put("activeTeachersLastWeek", activeTeachersWeek);
         ib.put("activeTeachersLastThirtyDays", activeTeachersMonth);
+        ib.put("activeTeachersLastNinetyDays", activeTeachersNinetyDays);
         ib.put("activeStudentsLastWeek", activeStudentsWeek);
         ib.put("activeStudentsLastThirtyDays", activeStudentsMonth);
+        ib.put("activeStudentsLastNinetyDays", activeStudentsNinetyDays);
 
-        ib.put("viewQuestionEvents", viewQuestionEvents);
-        ib.put("answeredQuestionEvents", answeredQuestionEvents);
+        //ib.put("viewQuestionEvents", viewQuestionEvents);
+        //ib.put("answeredQuestionEvents", answeredQuestionEvents);
+
+        ib.put("viewQuestionEvents", getLogCount(VIEW_QUESTION));
+        ib.put("answeredQuestionEvents", getLogCount(ANSWER_QUESTION));
 
         ib.put("questionsAnsweredLastWeekTeachers", questionsAnsweredLastWeekTeachers);
         ib.put("questionsAnsweredLastThirtyDaysTeachers", questionsAnsweredLastThirtyDaysTeachers);
+        ib.put("questionsAnsweredLastNinetyDaysTeachers", questionsAnsweredLastNinetyDaysTeachers);
         ib.put("questionsAnsweredLastWeekStudents", questionsAnsweredLastWeekStudents);
         ib.put("questionsAnsweredLastThirtyDaysStudents", questionsAnsweredLastThirtyDaysStudents);
+        ib.put("questionsAnsweredLastNinetyDaysStudents", questionsAnsweredLastNinetyDaysStudents);
 
         ib.put("groupCount", groupManager.getGroupCount());
 

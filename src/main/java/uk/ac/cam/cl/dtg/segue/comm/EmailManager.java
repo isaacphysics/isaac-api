@@ -405,7 +405,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             valueToStore = ((Enum) o).name();
         } else if (o instanceof ExternalReference) {
             ExternalReference er = (ExternalReference) o;
-            valueToStore = String.format("<a href='%s'>%s</a>", er.getUrl(), er.getTitle()) + "\n";
+            valueToStore = String.format("<a href='%s'>%s</a>", er.getUrl(), er.getTitle());
         } else if (o instanceof Collection) {
             List<String> sl = Lists.newArrayList();
 
@@ -416,7 +416,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                 }
             }
 
-            valueToStore = StringUtils.join(sl, ",");
+            valueToStore = StringUtils.join(sl, ", ");
         } else {
             return null;
         }
