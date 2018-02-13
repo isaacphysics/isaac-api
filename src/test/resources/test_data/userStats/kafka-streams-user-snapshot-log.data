@@ -1,0 +1,362 @@
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "8e8e2e15-0833-4fd0-85bf-e0d1a5ec7d16"};::1;2018-02-06 13:37:15.627000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "bed_of_nails", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:37:17.296000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "8e8e2e15-0833-4fd0-85bf-e0d1a5ec7d16"};::1;2018-02-06 13:37:17.738000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "8e8e2e15-0833-4fd0-85bf-e0d1a5ec7d16"};::1;2018-02-06 13:37:34.089000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "09145aed-a674-45ec-a123-3188712ade64"};::1;2018-02-06 13:37:36.413000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "symmetry_and_com", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:37:37.202000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "09145aed-a674-45ec-a123-3188712ade64"};::1;2018-02-06 13:37:37.874000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "09145aed-a674-45ec-a123-3188712ade64"};::1;2018-02-06 13:37:39.688000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "6e22546d-28c4-4ef1-b083-fe60fe2745e5"};::1;2018-02-06 13:37:40.769000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "cases_of_equilibria", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:37:41.555000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "6e22546d-28c4-4ef1-b083-fe60fe2745e5"};::1;2018-02-06 13:37:41.788000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "6e22546d-28c4-4ef1-b083-fe60fe2745e5"};::1;2018-02-06 13:37:58.746000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "human_tower", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:37:59.921000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "6e22546d-28c4-4ef1-b083-fe60fe2745e5"};::1;2018-02-06 13:38:00.181000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "6e22546d-28c4-4ef1-b083-fe60fe2745e5"};::1;2018-02-06 13:38:07.325000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "b1e8775d-1ca4-4aef-a702-f64563e7954a"};::1;2018-02-06 13:38:08.240000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "72442d82-cf40-4d6a-9336-ac85f357fe5a"};::1;2018-02-06 13:38:09.170000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "6b626c09-f387-47e3-b4a5-32fe6088cb0c"};::1;2018-02-06 13:38:09.557000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "human_tower", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:38:10.944000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "6b626c09-f387-47e3-b4a5-32fe6088cb0c"};::1;2018-02-06 13:38:11.367000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "6b626c09-f387-47e3-b4a5-32fe6088cb0c"};::1;2018-02-06 13:38:12.548000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "thinking_about_friction_with_active_hints", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:38:13.600000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "6b626c09-f387-47e3-b4a5-32fe6088cb0c"};::1;2018-02-06 13:38:13.820000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "6b626c09-f387-47e3-b4a5-32fe6088cb0c"};::1;2018-02-06 13:38:18.496000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "basic_concepts", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:38:19.829000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "6b626c09-f387-47e3-b4a5-32fe6088cb0c"};::1;2018-02-06 13:38:19.982000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "6b626c09-f387-47e3-b4a5-32fe6088cb0c"};::1;2018-02-06 13:38:23.609000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "6b626c09-f387-47e3-b4a5-32fe6088cb0c"};::1;2018-02-06 13:38:26.166000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-06 13:38:33.289000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "6b626c09-f387-47e3-b4a5-32fe6088cb0c"};::1;2018-02-06 13:38:35.263000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "tug_of_war", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:38:38.482000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "6b626c09-f387-47e3-b4a5-32fe6088cb0c"};::1;2018-02-06 13:38:38.658000
+1;false;EQN_EDITOR_LOG;java.util.LinkedHashMap;{"mode": "maths", "actions": [{"event": "OPEN", "timestamp": 1517924319996}, {"event": "CLOSE", "timestamp": 1517924322102}], "finalState": [{"id": 1, "type": "Symbol", "children": {"right": {"id": 2, "type": "Relation", "properties": {"relation": "="}}}, "position": {"x": 630.5, "y": 646.25}, "expression": {"latex": "x", "python": "x"}, "properties": {"letter": "x"}}], "questionId": "tug_of_war|1f2e5a81-520b-40b5-8abc-856b72e93e5a", "screenSize": {"width": 1278, "height": 1314}, "initialState": [{"id": 1, "type": "Symbol", "children": {"right": {"id": 2, "type": "Relation", "properties": {"relation": "="}}}, "position": {"x": 630.5, "y": 646.25}, "expression": {"latex": "x", "python": "x"}, "properties": {"letter": "x"}}]};::1;2018-02-06 13:38:42.127000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "6b626c09-f387-47e3-b4a5-32fe6088cb0c"};::1;2018-02-06 13:38:55.435000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "action_reaction_pairs", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:38:56.747000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "6b626c09-f387-47e3-b4a5-32fe6088cb0c"};::1;2018-02-06 13:38:56.941000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "056d0ee2-e972-4b38-8750-3b4b29cf203f"};::1;2018-02-06 13:47:24.972000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 13:58:33.899000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "6b626c09-f387-47e3-b4a5-32fe6088cb0c"};::1;2018-02-06 13:39:14.416000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "6b626c09-f387-47e3-b4a5-32fe6088cb0c"};::1;2018-02-06 13:39:24.560000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "misbehaving_student", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:39:26.207000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "6b626c09-f387-47e3-b4a5-32fe6088cb0c"};::1;2018-02-06 13:39:26.498000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-06 13:39:31.446000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-06 13:39:47.398000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "6b626c09-f387-47e3-b4a5-32fe6088cb0c"};::1;2018-02-06 13:39:57.219000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "thinking_about_friction_with_active_hints", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:39:58.368000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "6b626c09-f387-47e3-b4a5-32fe6088cb0c"};::1;2018-02-06 13:39:58.631000
+1;false;QUESTION_PART_OPEN;java.util.LinkedHashMap;{"questionPageId": "thinking_about_friction_with_active_hints", "questionPartIndex": 1};::1;2018-02-06 13:40:00.193000
+1;false;QUESTION_PART_OPEN;java.util.LinkedHashMap;{"questionPageId": "thinking_about_friction_with_active_hints", "questionPartIndex": 2};::1;2018-02-06 13:40:01.537000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "6b626c09-f387-47e3-b4a5-32fe6088cb0c"};::1;2018-02-06 13:40:37.414000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "bed_of_nails", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:40:38.691000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "6b626c09-f387-47e3-b4a5-32fe6088cb0c"};::1;2018-02-06 13:40:38.974000
+1;false;QUESTION_PART_OPEN;java.util.LinkedHashMap;{"questionPageId": "bed_of_nails", "questionPartIndex": 1};::1;2018-02-06 13:40:42.826000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "f01ec1b3-963d-4d10-99e3-9854fcfcdb39"};::1;2018-02-06 13:50:58.133000
+1;false;QUESTION_PART_OPEN;java.util.LinkedHashMap;{"questionPageId": "bed_of_nails", "questionPartIndex": 2};::1;2018-02-06 13:40:46.878000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "6b626c09-f387-47e3-b4a5-32fe6088cb0c"};::1;2018-02-06 13:40:48.198000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "thinking_about_friction", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:40:49.222000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "6b626c09-f387-47e3-b4a5-32fe6088cb0c"};::1;2018-02-06 13:40:49.495000
+1;false;QUESTION_PART_OPEN;java.util.LinkedHashMap;{"questionPageId": "thinking_about_friction", "questionPartIndex": 1};::1;2018-02-06 13:40:54.252000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "6b626c09-f387-47e3-b4a5-32fe6088cb0c"};::1;2018-02-06 13:40:55.687000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "6b626c09-f387-47e3-b4a5-32fe6088cb0c"};::1;2018-02-06 13:40:58.269000
+1;false;VIEW_MY_BOARDS_PAGE;com.google.common.collect.RegularImmutableMap;{"totalBoards": 22, "completedTotal": 0, "inProgressTotal": 5, "notStartedTotal": 17};::1;2018-02-06 13:40:59.060000
+1;false;VIEW_MY_BOARDS_PAGE;com.google.common.collect.RegularImmutableMap;{"totalBoards": 22, "completedTotal": 0, "inProgressTotal": 5, "notStartedTotal": 17};::1;2018-02-06 13:40:59.766000
+1;false;VIEW_MY_BOARDS_PAGE;com.google.common.collect.RegularImmutableMap;{"totalBoards": 22, "completedTotal": 0, "inProgressTotal": 5, "notStartedTotal": 17};::1;2018-02-06 13:41:01.078000
+1;false;VIEW_MY_BOARDS_PAGE;com.google.common.collect.RegularImmutableMap;{"totalBoards": 22, "completedTotal": 0, "inProgressTotal": 5, "notStartedTotal": 17};::1;2018-02-06 13:41:01.750000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-06 13:41:03.330000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "6b626c09-f387-47e3-b4a5-32fe6088cb0c"};::1;2018-02-06 13:41:04.411000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{};::1;2018-02-06 13:41:07.575000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "8ea10ee8-62fb-47a5-8e46-bac0014402a7"};::1;2018-02-06 13:41:07.651000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "15891f6e-f23f-4a43-b311-5ff87270db2c"};::1;2018-02-06 13:41:08.036000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "056d0ee2-e972-4b38-8750-3b4b29cf203f"};::1;2018-02-06 13:41:08.994000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "out_of_the_shadows_sym", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:41:11.129000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "056d0ee2-e972-4b38-8750-3b4b29cf203f"};::1;2018-02-06 13:41:11.594000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "056d0ee2-e972-4b38-8750-3b4b29cf203f"};::1;2018-02-06 13:41:12.967000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "bending_light_in_atmosphere", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:41:15.136000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "056d0ee2-e972-4b38-8750-3b4b29cf203f"};::1;2018-02-06 13:41:15.347000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "056d0ee2-e972-4b38-8750-3b4b29cf203f"};::1;2018-02-06 13:41:17.589000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "056d0ee2-e972-4b38-8750-3b4b29cf203f"};::1;2018-02-06 13:41:18.894000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "reflecting_and_absorbing_surfaces", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:41:21.492000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "056d0ee2-e972-4b38-8750-3b4b29cf203f"};::1;2018-02-06 13:41:21.667000
+1;false;LONGEST_STREAK_REACHED;java.util.HashMap;{"threshold": 3, "streakType": "correctQuestionPartsPerDay", "longestStreak": 1};;2018-02-06 13:42:23.030000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "056d0ee2-e972-4b38-8750-3b4b29cf203f"};::1;2018-02-06 13:47:23.227000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "refractive_index", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:47:24.641000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "056d0ee2-e972-4b38-8750-3b4b29cf203f"};::1;2018-02-06 13:47:30.707000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "multicoloured_pinhole", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:47:32.306000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "056d0ee2-e972-4b38-8750-3b4b29cf203f"};::1;2018-02-06 13:47:32.557000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "056d0ee2-e972-4b38-8750-3b4b29cf203f"};::1;2018-02-06 13:47:38.860000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "the_anglerfish", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:47:40.206000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "056d0ee2-e972-4b38-8750-3b4b29cf203f"};::1;2018-02-06 13:47:40.455000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "056d0ee2-e972-4b38-8750-3b4b29cf203f"};::1;2018-02-06 13:47:46.607000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "vanishing_light_sym", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:47:48.610000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "056d0ee2-e972-4b38-8750-3b4b29cf203f"};::1;2018-02-06 13:47:48.832000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "056d0ee2-e972-4b38-8750-3b4b29cf203f"};::1;2018-02-06 13:47:51.103000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "searching_for_the_invisible", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:47:52.462000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "056d0ee2-e972-4b38-8750-3b4b29cf203f"};::1;2018-02-06 13:47:52.729000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "9f18f7f5-7e7b-4009-a1e5-1890bd92f72c"};::1;2018-02-06 13:50:58.635000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "e870b4dd-4c34-463b-b1bf-a460d1b0a0d7"};::1;2018-02-06 13:50:59.321000
+1;false;QUESTION_PART_OPEN;java.util.LinkedHashMap;{"questionPageId": "searching_for_the_invisible", "questionPartIndex": 1};::1;2018-02-06 13:47:58.839000
+1;false;QUESTION_PART_OPEN;java.util.LinkedHashMap;{"questionPageId": "searching_for_the_invisible", "questionPartIndex": 2};::1;2018-02-06 13:48:02.186000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "056d0ee2-e972-4b38-8750-3b4b29cf203f"};::1;2018-02-06 13:48:14.677000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "out_of_the_shadows", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:48:16.169000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "056d0ee2-e972-4b38-8750-3b4b29cf203f"};::1;2018-02-06 13:48:16.479000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "056d0ee2-e972-4b38-8750-3b4b29cf203f"};::1;2018-02-06 13:48:23.137000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "fd67d0d6-eba1-4ae5-94e5-4ca67662ee55"};::1;2018-02-06 13:48:37.813000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "vanishing_light", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:48:38.934000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "fd67d0d6-eba1-4ae5-94e5-4ca67662ee55"};::1;2018-02-06 13:48:39.299000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "fd67d0d6-eba1-4ae5-94e5-4ca67662ee55"};::1;2018-02-06 13:48:45.020000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "waves_at_sea", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:48:46.758000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "fd67d0d6-eba1-4ae5-94e5-4ca67662ee55"};::1;2018-02-06 13:48:46.995000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-06 13:50:59.989000
+1;false;QUESTION_PART_OPEN;java.util.LinkedHashMap;{"questionPageId": "waves_at_sea", "questionPartIndex": 1};::1;2018-02-06 13:48:51.417000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "fd67d0d6-eba1-4ae5-94e5-4ca67662ee55"};::1;2018-02-06 13:48:57.505000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "noise_production", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:48:58.568000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "fd67d0d6-eba1-4ae5-94e5-4ca67662ee55"};::1;2018-02-06 13:48:58.826000
+1;false;QUESTION_PART_OPEN;java.util.LinkedHashMap;{"questionPageId": "noise_production", "questionPartIndex": 1};::1;2018-02-06 13:49:04.160000
+1;false;QUESTION_PART_OPEN;java.util.LinkedHashMap;{"questionPageId": "noise_production", "questionPartIndex": 2};::1;2018-02-06 13:49:09.133000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "fd67d0d6-eba1-4ae5-94e5-4ca67662ee55"};::1;2018-02-06 13:49:16.818000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "two_microphones", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:49:18.612000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "fd67d0d6-eba1-4ae5-94e5-4ca67662ee55"};::1;2018-02-06 13:49:18.805000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "fd67d0d6-eba1-4ae5-94e5-4ca67662ee55"};::1;2018-02-06 13:49:24.341000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "finding_wavespeed", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:49:25.497000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "fd67d0d6-eba1-4ae5-94e5-4ca67662ee55"};::1;2018-02-06 13:49:25.685000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "dropped_stone", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:51:01.147000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-06 13:51:01.500000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "fd67d0d6-eba1-4ae5-94e5-4ca67662ee55"};::1;2018-02-06 13:49:32.137000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "out_of_the_shadows_sym", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:49:33.338000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "fd67d0d6-eba1-4ae5-94e5-4ca67662ee55"};::1;2018-02-06 13:49:33.607000
+1;false;EQN_EDITOR_LOG;java.util.LinkedHashMap;{"mode": "maths", "actions": [{"event": "OPEN", "timestamp": 1517924975307}, {"event": "CLOSE", "timestamp": 1517924976685}], "finalState": [], "questionId": "out_of_the_shadows_sym|9ca78af4-cc65-4696-893f-20ada2b43bc9", "screenSize": {"width": 1278, "height": 1314}, "initialState": []};::1;2018-02-06 13:49:36.714000
+1;false;QUESTION_PART_OPEN;java.util.LinkedHashMap;{"questionPageId": "out_of_the_shadows_sym", "questionPartIndex": 1};::1;2018-02-06 13:49:38.733000
+1;false;QUESTION_PART_OPEN;java.util.LinkedHashMap;{"questionPageId": "out_of_the_shadows_sym", "questionPartIndex": 2};::1;2018-02-06 13:49:40.223000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "fd67d0d6-eba1-4ae5-94e5-4ca67662ee55"};::1;2018-02-06 13:49:49.117000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{};::1;2018-02-06 13:50:03.815000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "d035268d-5413-4406-ac62-81762f936afc"};::1;2018-02-06 13:50:03.951000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "79bb5b45-2d96-4bc5-98cd-b95a45c57028"};::1;2018-02-06 13:50:04.286000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "hansel_and_gretel", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:50:05.921000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "79bb5b45-2d96-4bc5-98cd-b95a45c57028"};::1;2018-02-06 13:50:06.279000
+1;false;QUESTION_PART_OPEN;java.util.LinkedHashMap;{"questionPageId": "hansel_and_gretel", "questionPartIndex": 1};::1;2018-02-06 13:50:07.337000
+1;false;QUESTION_PART_OPEN;java.util.LinkedHashMap;{"questionPageId": "hansel_and_gretel", "questionPartIndex": 2};::1;2018-02-06 13:50:08.553000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "79bb5b45-2d96-4bc5-98cd-b95a45c57028"};::1;2018-02-06 13:50:13.873000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "cracking_eggs", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:50:14.784000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "79bb5b45-2d96-4bc5-98cd-b95a45c57028"};::1;2018-02-06 13:50:15.004000
+1;false;QUESTION_PART_OPEN;java.util.LinkedHashMap;{"questionPageId": "cracking_eggs", "questionPartIndex": 1};::1;2018-02-06 13:50:21.179000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "79bb5b45-2d96-4bc5-98cd-b95a45c57028"};::1;2018-02-06 13:50:25.638000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "sprinter_100m", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:50:26.692000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "79bb5b45-2d96-4bc5-98cd-b95a45c57028"};::1;2018-02-06 13:50:27.017000
+1;false;QUESTION_PART_OPEN;java.util.LinkedHashMap;{"questionPageId": "sprinter_100m", "questionPartIndex": 3};::1;2018-02-06 13:50:30.579000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "79bb5b45-2d96-4bc5-98cd-b95a45c57028"};::1;2018-02-06 13:50:35.082000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "symmetry_and_com", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:50:35.872000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "79bb5b45-2d96-4bc5-98cd-b95a45c57028"};::1;2018-02-06 13:50:36.152000
+1;false;QUESTION_PART_OPEN;java.util.LinkedHashMap;{"questionPageId": "symmetry_and_com", "questionPartIndex": 1};::1;2018-02-06 13:50:37.206000
+1;false;QUESTION_PART_OPEN;java.util.LinkedHashMap;{"questionPageId": "symmetry_and_com", "questionPartIndex": 3};::1;2018-02-06 13:50:38.650000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "79bb5b45-2d96-4bc5-98cd-b95a45c57028"};::1;2018-02-06 13:50:40.110000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "rocket_orbit", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:50:40.939000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "79bb5b45-2d96-4bc5-98cd-b95a45c57028"};::1;2018-02-06 13:50:41.184000
+1;false;QUESTION_PART_OPEN;java.util.LinkedHashMap;{"questionPageId": "rocket_orbit", "questionPartIndex": 2};::1;2018-02-06 13:50:42.034000
+1;false;QUESTION_PART_OPEN;java.util.LinkedHashMap;{"questionPageId": "rocket_orbit", "questionPartIndex": 4};::1;2018-02-06 13:50:45.348000
+1;false;QUESTION_PART_OPEN;java.util.LinkedHashMap;{"questionPageId": "rocket_orbit", "questionPartIndex": 5};::1;2018-02-06 13:50:46.906000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "79bb5b45-2d96-4bc5-98cd-b95a45c57028"};::1;2018-02-06 13:50:48.385000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "vector_scalar_train", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:50:49.257000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "79bb5b45-2d96-4bc5-98cd-b95a45c57028"};::1;2018-02-06 13:50:49.485000
+1;false;QUESTION_PART_OPEN;java.util.LinkedHashMap;{"questionPageId": "vector_scalar_train", "questionPartIndex": 2};::1;2018-02-06 13:50:50.391000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "79bb5b45-2d96-4bc5-98cd-b95a45c57028"};::1;2018-02-06 13:50:52.143000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "63543da7-deb1-49e0-8e59-7fcdee15463b"};::1;2018-02-06 13:50:55.855000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "6a8bdea7-c367-44a3-854e-0580c7ac4f5e"};::1;2018-02-06 13:50:57.245000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "9cd4d2b4-693b-48ac-a562-77b3112efcf9"};::1;2018-02-06 13:50:57.795000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-06 13:51:03.359000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "earth_field", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-06 13:51:04.114000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-06 13:51:04.245000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-06 13:51:08.361000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 09:52:30.524000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "field_lines", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-07 09:52:44.320000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 09:52:44.671000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 09:53:08.033000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 09:53:17.597000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 09:53:24.758000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 09:53:26.943000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "radial_field_lines", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-07 09:53:30.610000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 09:53:30.774000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 09:53:34.794000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 09:53:52.723000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 09:54:23.505000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 09:54:37.400000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 09:54:44.342000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 09:54:45.689000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "field_lines", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-07 09:54:47.629000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 09:54:47.908000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 09:54:51.741000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 09:56:07.707000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "uniform_radial_fields", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-07 09:56:08.877000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 09:56:09.065000
+1;false;LONGEST_STREAK_REACHED;java.util.HashMap;{"threshold": 3, "streakType": "correctQuestionPartsPerDay", "longestStreak": 1};;2018-02-07 09:56:12.799000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 09:56:12.912000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 09:56:14.778000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 09:57:44.008000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 10:57:37.659000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 11:03:44.932000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 11:03:51.272000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 11:04:07.479000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 11:06:42.856000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 11:09:29.558000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 11:09:41.282000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 11:11:16.123000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 11:11:39.112000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 11:11:48.823000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 11:11:57.649000
+1;false;VIEW_PAGE;com.google.common.collect.RegularImmutableMap;{"pageId": "teach_with_isaac", "contentVersion": "da04e559acf1f69b5db96f71b910cc77886906a2"};::1;2018-02-07 11:12:11.883000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 11:19:14.686000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 11:21:49.756000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 11:21:57.741000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 11:33:59.060000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 11:34:08.137000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "thrown_stone", "contentVersion": "4d44136a4cc4455d69ed8709b77f40af76e3d675"};::1;2018-02-07 11:34:10.965000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 11:34:11.316000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 11:34:13.266000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "thrown_stone", "contentVersion": "4d44136a4cc4455d69ed8709b77f40af76e3d675"};::1;2018-02-07 11:34:40.958000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 11:34:50.065000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 11:34:53.366000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 11:35:04.279000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 11:54:03.133000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 11:54:10.202000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "uniform_field", "contentVersion": "4d44136a4cc4455d69ed8709b77f40af76e3d675"};::1;2018-02-07 11:54:11.685000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 11:54:11.952000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 11:54:42.302000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 11:54:55.744000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 11:54:58.038000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 11:54:59.594000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 11:55:01.903000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 11:55:03.824000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 11:55:31.793000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 11:55:46.552000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 11:55:58.447000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 12:23:47.532000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 12:24:01.624000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 12:24:16.366000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 12:43:38.511000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 12:44:02.468000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 12:44:04.875000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "below_surface", "contentVersion": "4d44136a4cc4455d69ed8709b77f40af76e3d675"};::1;2018-02-07 12:44:06.305000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 12:44:06.619000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 12:44:29.390000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 12:44:31.645000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 12:44:35.137000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 12:44:38.835000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 12:44:46.982000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 12:46:54.423000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 12:47:05.970000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 13:12:50.108000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 13:13:02.905000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 13:13:21.544000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 13:14:32.543000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 13:17:03.404000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 13:17:22.849000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 13:18:42.951000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 13:20:39.545000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 13:22:38.325000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 13:22:58.281000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 13:23:41.711000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 13:36:00.213000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 13:40:46.562000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 13:41:45.039000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 13:43:12.004000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 13:46:28.281000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 13:46:59.276000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "dropped_stone", "contentVersion": "4d44136a4cc4455d69ed8709b77f40af76e3d675"};::1;2018-02-07 13:47:09.569000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 13:47:13.249000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 13:47:24.370000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 13:54:06.577000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 13:54:30.442000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 13:55:38.870000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 13:57:29.592000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 13:58:40.446000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 13:59:10.654000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 13:59:24.562000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "moving_particle", "contentVersion": "4d44136a4cc4455d69ed8709b77f40af76e3d675"};::1;2018-02-07 13:59:36.413000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 13:59:36.698000
+1;false;ANSWER_QUESTION;uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;{"answer": {"type": "choice", "value": "If it starts from rest it will start moving in the direction along the field lines", "children": [], "encoding": "markdown", "published": false}, "correct": true, "questionId": "moving_particle|59842252-d714-4a14-a94b-4a86fcddd29c", "explanation": {"tags": [], "type": "content", "children": [], "encoding": "markdown", "published": false}, "dateAttempted": 1518011996085};::1;2018-02-07 13:59:56.092000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 13:59:56.303000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"};::1;2018-02-07 14:00:29.351000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "f5face1f-655c-4140-8f0e-5599318ce465"};::1;2018-02-07 14:00:36.951000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "e9ab80fa-1228-4d13-b717-96cfabe761b4"};::1;2018-02-07 14:00:41.491000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 14:14:59.022000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "e42b055f-50fe-42a1-8a7d-734f0c4d46d7"};::1;2018-02-07 14:15:28.103000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 14:32:07.438000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 15:31:27.415000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 16:07:49.766000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 16:08:10.322000
+1;false;ACHIEVEMENT_GET_STARTED;java.util.LinkedHashMap;{"achievementType": "CREATE_GROUP"};::1;2018-02-07 16:08:16.113000
+1;false;VIEW_MY_BOARDS_PAGE;com.google.common.collect.RegularImmutableMap;{"totalBoards": 26, "completedTotal": 0, "inProgressTotal": 22, "notStartedTotal": 4};::1;2018-02-07 16:08:17.941000
+1;false;VIEW_MY_BOARDS_PAGE;com.google.common.collect.RegularImmutableMap;{"totalBoards": 26, "completedTotal": 0, "inProgressTotal": 22, "notStartedTotal": 4};::1;2018-02-07 16:10:27.588000
+1;false;CREATE_USER_GROUP;com.google.common.collect.SingletonImmutableBiMap;{"groupId": 1};::1;2018-02-07 16:10:36.460000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 16:10:39.856000
+1;false;ACHIEVEMENT_GET_STARTED;java.util.LinkedHashMap;{"achievementType": "CREATE_BOOK_ASSIGNMENT"};::1;2018-02-07 16:11:24.686000
+1;false;VIEW_MY_BOARDS_PAGE;com.google.common.collect.RegularImmutableMap;{"totalBoards": 26, "completedTotal": 0, "inProgressTotal": 22, "notStartedTotal": 4};::1;2018-02-07 16:11:25.185000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 16:12:10.271000
+1;false;VIEW_MY_BOARDS_PAGE;com.google.common.collect.RegularImmutableMap;{"totalBoards": 26, "completedTotal": 0, "inProgressTotal": 22, "notStartedTotal": 4};::1;2018-02-07 16:12:14.617000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 16:12:18.243000
+1;false;ACHIEVEMENT_GET_STARTED;java.util.LinkedHashMap;{"achievementType": "CREATE_BOOK_ASSIGNMENT"};::1;2018-02-07 16:12:19.654000
+1;false;VIEW_MY_BOARDS_PAGE;com.google.common.collect.RegularImmutableMap;{"totalBoards": 26, "completedTotal": 0, "inProgressTotal": 22, "notStartedTotal": 4};::1;2018-02-07 16:12:20.034000
+1;false;SET_NEW_ASSIGNMENT;java.util.LinkedHashMap;{"dueDate": null, "groupId": 1, "gameboardId": "f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5", "assignmentId": 1};::1;2018-02-07 16:12:24.206000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 16:12:26.288000
+1;false;ACHIEVEMENT_GET_STARTED;java.util.LinkedHashMap;{"achievementType": "CREATE_BOOK_ASSIGNMENT"};::1;2018-02-07 16:12:46.446000
+1;false;VIEW_MY_BOARDS_PAGE;com.google.common.collect.RegularImmutableMap;{"totalBoards": 26, "completedTotal": 0, "inProgressTotal": 22, "notStartedTotal": 4};::1;2018-02-07 16:12:46.833000
+1;false;VIEW_BOARD_BUILDER;java.util.LinkedHashMap;{};::1;2018-02-07 16:12:55.148000
+1;false;CREATE_GAMEBOARD;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "98f5602b-cbc6-4786-b39f-88259e6d5172"};::1;2018-02-07 16:13:46.621000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 16:13:49.410000
+1;false;VIEW_BOARD_BUILDER;java.util.LinkedHashMap;{};::1;2018-02-07 16:13:56.395000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 16:13:58.777000
+1;false;VIEW_MY_BOARDS_PAGE;com.google.common.collect.RegularImmutableMap;{"totalBoards": 27, "completedTotal": 0, "inProgressTotal": 22, "notStartedTotal": 5};::1;2018-02-07 16:14:01.060000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "98f5602b-cbc6-4786-b39f-88259e6d5172"};::1;2018-02-07 16:14:05.124000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "ch_a_p1", "contentVersion": "4d44136a4cc4455d69ed8709b77f40af76e3d675"};::1;2018-02-07 16:14:06.297000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "98f5602b-cbc6-4786-b39f-88259e6d5172"};::1;2018-02-07 16:14:06.654000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "98f5602b-cbc6-4786-b39f-88259e6d5172"};::1;2018-02-07 16:14:08.102000
+1;false;VIEW_MY_BOARDS_PAGE;com.google.common.collect.RegularImmutableMap;{"totalBoards": 27, "completedTotal": 0, "inProgressTotal": 22, "notStartedTotal": 5};::1;2018-02-07 16:14:08.956000
+1;false;VIEW_BOARD_BUILDER;java.util.LinkedHashMap;{};::1;2018-02-07 16:14:28.382000
+1;false;CREATE_GAMEBOARD;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "c6b4b02c-e6cb-4939-9790-c475f9fc8037"};::1;2018-02-07 16:14:49.347000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 16:14:52.987000
+1;false;VIEW_MY_BOARDS_PAGE;com.google.common.collect.RegularImmutableMap;{"totalBoards": 28, "completedTotal": 0, "inProgressTotal": 22, "notStartedTotal": 6};::1;2018-02-07 16:15:07.556000
+1;false;SET_NEW_ASSIGNMENT;java.util.LinkedHashMap;{"dueDate": null, "groupId": 1, "gameboardId": "c6b4b02c-e6cb-4939-9790-c475f9fc8037", "assignmentId": 2};::1;2018-02-07 16:15:11.837000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 16:15:13.677000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-07 16:43:53.879000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "98f5602b-cbc6-4786-b39f-88259e6d5172"};::1;2018-02-08 09:45:04.369000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "f8d694f1-9156-4d30-a9b8-821a8fd8a680"};::1;2018-02-08 09:45:16.853000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "7720e9ee-ea8e-4dfc-982c-da7f46ce7082"};::1;2018-02-08 09:45:17.735000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "wax_prism", "contentVersion": "4d44136a4cc4455d69ed8709b77f40af76e3d675"};::1;2018-02-08 09:45:18.991000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "7720e9ee-ea8e-4dfc-982c-da7f46ce7082"};::1;2018-02-08 09:45:19.539000
+1;false;ANSWER_QUESTION;uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;{"answer": {"type": "choice", "value": "The waves are faster in air", "children": [], "encoding": "markdown", "published": false}, "correct": true, "questionId": "wax_prism|24792f7c-903a-4711-81e8-9084de3741d4", "explanation": {"tags": [], "type": "content", "children": [], "encoding": "markdown", "published": false}, "dateAttempted": 1518083123404};::1;2018-02-08 09:45:23.468000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-08 09:45:27.154000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-08 09:45:36.148000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "7720e9ee-ea8e-4dfc-982c-da7f46ce7082"};::1;2018-02-08 09:45:39.910000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "the_photoelectric_effect", "contentVersion": "4d44136a4cc4455d69ed8709b77f40af76e3d675"};::1;2018-02-08 09:45:42.963000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "7720e9ee-ea8e-4dfc-982c-da7f46ce7082"};::1;2018-02-08 09:45:43.227000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "7720e9ee-ea8e-4dfc-982c-da7f46ce7082"};::1;2018-02-08 09:45:45.260000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "wax_prism", "contentVersion": "4d44136a4cc4455d69ed8709b77f40af76e3d675"};::1;2018-02-08 09:45:48.225000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "7720e9ee-ea8e-4dfc-982c-da7f46ce7082"};::1;2018-02-08 09:45:48.496000
+1;false;QUESTION_PART_OPEN;java.util.LinkedHashMap;{"questionPageId": "wax_prism", "questionPartIndex": 1};::1;2018-02-08 09:45:50.194000
+1;false;ANSWER_QUESTION;uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;{"answer": {"type": "choice", "value": "A", "children": [], "encoding": "markdown", "published": false}, "correct": true, "questionId": "wax_prism|3ff204cd-b09f-4651-bb1b-5fa2c52ee755", "explanation": {"tags": [], "type": "content", "children": [], "encoding": "markdown", "published": false}, "dateAttempted": 1518083152344};::1;2018-02-08 09:45:52.349000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "7720e9ee-ea8e-4dfc-982c-da7f46ce7082"};::1;2018-02-08 09:45:52.492000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "7720e9ee-ea8e-4dfc-982c-da7f46ce7082"};::1;2018-02-08 09:45:55.762000
+1;false;SHUFFLE_BOARD;java.util.LinkedHashMap;{"questions": {"wax_prism": "PERFECT", "birefringence": "NOT_ATTEMPTED", "triple_trouble": "NOT_ATTEMPTED", "prism_deviations_sym": "NOT_ATTEMPTED", "fermat_last_cocktail_num": "NOT_ATTEMPTED", "the_photoelectric_effect": "NOT_ATTEMPTED", "through_the_looking_glass": "NOT_ATTEMPTED", "optical_path_difference_sym": "NOT_ATTEMPTED", "collecting_light_in_a_funnel": "NOT_ATTEMPTED", "refraction_at_right_angles_sym": "NOT_ATTEMPTED"}};::1;2018-02-08 09:45:59.793000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "4ca41e92-90a4-4449-a4f7-8b3d74171eca"};::1;2018-02-08 09:46:00.033000
+1;false;SHUFFLE_BOARD;java.util.LinkedHashMap;{"questions": {"dark_rain": "NOT_ATTEMPTED", "moon_halo": "NOT_ATTEMPTED", "breakaway_sym": "NOT_ATTEMPTED", "telescope_trouble": "NOT_ATTEMPTED", "compound_microscope": "NOT_ATTEMPTED", "polarised_power_sym": "NOT_ATTEMPTED", "fermat_last_cocktail": "NOT_ATTEMPTED", "prism_deviations_sym": "NOT_ATTEMPTED", "doppler_spectral_lines": "NOT_ATTEMPTED", "fermat_last_cocktail_num": "NOT_ATTEMPTED"}};::1;2018-02-08 09:46:03.175000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "67923e39-bc99-40d0-9a57-577034453b70"};::1;2018-02-08 09:46:03.356000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "energy_levels", "contentVersion": "4d44136a4cc4455d69ed8709b77f40af76e3d675"};::1;2018-02-08 09:46:05.694000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "67923e39-bc99-40d0-9a57-577034453b70"};::1;2018-02-08 09:46:06.069000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "67923e39-bc99-40d0-9a57-577034453b70"};::1;2018-02-08 09:46:07.600000
+1;false;SHUFFLE_BOARD;java.util.LinkedHashMap;{"questions": {"energy_levels": "NOT_ATTEMPTED", "camera_lens_sym": "NOT_ATTEMPTED", "twice_refracted": "NOT_ATTEMPTED", "deriving_lensmaker": "NOT_ATTEMPTED", "intensity_of_image": "NOT_ATTEMPTED", "changing_perspective": "NOT_ATTEMPTED", "parabolic_mirror_sym": "NOT_ATTEMPTED", "light_through_plastic": "NOT_ATTEMPTED", "optical_path_difference_sym": "NOT_ATTEMPTED", "reflecting_and_absorbing_surfaces": "IN_PROGRESS"}};::1;2018-02-08 09:46:11.068000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "58d1c8e3-e6fe-40d0-95ed-8fdd6919536b"};::1;2018-02-08 09:46:11.233000
+1;false;SHUFFLE_BOARD;java.util.LinkedHashMap;{"questions": {"breakaway": "NOT_ATTEMPTED", "breakaway_sym": "NOT_ATTEMPTED", "seeing_double": "NOT_ATTEMPTED", "optical_dipstick": "NOT_ATTEMPTED", "light_circ_mirror": "NOT_ATTEMPTED", "seeing_double_sym": "NOT_ATTEMPTED", "floating_on_mercury": "NOT_ATTEMPTED", "off_the_optical_axis": "NOT_ATTEMPTED", "through_the_looking_glass_num": "NOT_ATTEMPTED", "reflecting_and_absorbing_surfaces": "IN_PROGRESS"}};::1;2018-02-08 09:46:13.992000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "c0c2d983-6cdc-414c-9d41-4300c7743523"};::1;2018-02-08 09:46:14.160000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "3f3c7326-604e-4ec1-85f0-85d8b41dc6c4"};::1;2018-02-08 09:46:16.017000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "e1aa46bc-67ce-42c9-a1ca-3920e59807d9"};::1;2018-02-08 09:46:17.039000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "d9ce5f5e-0e3f-4dd6-871b-a216d6c9d818"};::1;2018-02-08 09:46:17.322000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "307bb273-a157-477a-9979-5682ce8688b0"};::1;2018-02-08 09:46:17.700000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "c1d1c50c-9bfb-4ccc-95c1-62bcc7a33489"};::1;2018-02-08 09:46:17.863000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "3dfdb2e0-588c-43ce-87e6-f84775f6bf7f"};::1;2018-02-08 09:46:18.249000
+1;false;VIEW_GAMEBOARD_BY_ID;java.util.LinkedHashMap;{"gameboardId": "df77a063-3dbd-4342-a637-9aa5a9f90be0"};::1;2018-02-08 09:46:18.632000
+1;false;VIEW_QUESTION;com.google.common.collect.RegularImmutableMap;{"questionId": "electromagnetic_frequencies", "contentVersion": "4d44136a4cc4455d69ed8709b77f40af76e3d675"};::1;2018-02-08 09:46:20.640000
+1;false;ADD_BOARD_TO_PROFILE;com.google.common.collect.SingletonImmutableBiMap;{"gameboardId": "df77a063-3dbd-4342-a637-9aa5a9f90be0"};::1;2018-02-08 09:46:20.923000
+1;false;ANSWER_QUESTION;uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;{"answer": {"type": "choice", "value": "$10^{9}$ - $\\quantity{10^{12}}{Hz}$", "children": [], "encoding": "markdown", "published": false}, "correct": true, "questionId": "electromagnetic_frequencies|c6974236-f7b3-40a9-a596-6a23a3efc40d", "explanation": {"tags": [], "type": "content", "children": [], "encoding": "markdown", "published": false}, "dateAttempted": 1518083182733};::1;2018-02-08 09:46:22.738000
+1;false;STREAK_UPDATED;java.util.HashMap;{"threshold": 3, "streakType": "correctQuestionPartsPerDay", "currentStreak": 1};;2018-02-08 09:46:22.811000
+1;false;LONGEST_STREAK_REACHED;java.util.HashMap;{"threshold": 3, "streakType": "correctQuestionPartsPerDay", "longestStreak": 1};;2018-02-08 09:46:22.832000
+1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-08 09:46:37.396000
