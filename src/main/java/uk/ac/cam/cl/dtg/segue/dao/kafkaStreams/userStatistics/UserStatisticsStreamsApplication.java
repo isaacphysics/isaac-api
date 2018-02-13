@@ -284,8 +284,7 @@ public class UserStatisticsStreamsApplication {
                                     JsonNode gameboardCreationNode = userSnapshot.path("gameboard_record").path("creations");
 
                                     if (gameboard.getCreationMethod().equals(GameboardCreationMethod.BUILDER)) {
-                                        ((ObjectNode) gameboardCreationNode).put("" +
-                                                "", updateActivityCount("builder", gameboardCreationNode));
+                                        ((ObjectNode) gameboardCreationNode).put("builder", updateActivityCount("builder", gameboardCreationNode));
                                     } else if (gameboard.getCreationMethod().equals(GameboardCreationMethod.FILTER)) {
                                         ((ObjectNode) gameboardCreationNode).put("filter", updateActivityCount("filter", gameboardCreationNode));
                                     }
