@@ -290,6 +290,14 @@ public class UserStatisticsStreamsApplication {
                                     }
                                 }
 
+                                // if we need to manually change a user's streak
+                                if (latestEvent.path("event_type").asText().equals("ADMIN_UPDATE_USER_STREAK")) {
+
+                                    String subUserId = latestEvent.path("event_details").path("user_id").asText();
+                                    ((ObjectNode) userSnapshot).put("streak_record", updateStreakRecord(subUserId, latestEvent, userSnapshot.path("streak_record"),
+                                            questionAttemptManager, userAccountManager, logManager));
+                                }
+
                             } catch (Exception e) {
 
                                 if (e instanceof NoUserException) {
@@ -409,6 +417,28 @@ public class UserStatisticsStreamsApplication {
         Calendar latest = Calendar.getInstance();
         latest.setTimeInMillis(latestEventTimestamp);
         latest = roundDownToDay(latest);
+
+        // manual admin update of user streak
+        if (latestEvent.path("event_type").asText().equals("ADMIN_UPDATE_USER_STREAK")) {
+
+            Long newStreakLength = latestEvent.path("event_details").path("new_streak_length").asLong();
+
+            // set latest event time to end of today
+            latest.add(Calendar.DAY_OF_YEAR, 1);
+
+            // get the "fake" start timestamp
+            Long dummyStartTimestamp = latest.getTimeInMillis() - (86400000 * newStreakLength);
+
+            ((ObjectNode) streakRecord).put("streak_start", dummyStartTimestamp);
+            ((ObjectNode) streakRecord).put("streak_end", latest.getTimeInMillis());
+            ((ObjectNode) streakRecord).put("current_activity", streakRecord.path("activity_threshold").asLong());
+
+            if (newStreakLength > streakRecord.path("largest_streak").asLong()) {
+                ((ObjectNode) streakRecord).put("largest_streak", newStreakLength);
+            }
+
+            return streakRecord;
+        }
 
 
         // 1) If the current activity threshold for the day has been reached
