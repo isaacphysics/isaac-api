@@ -19,27 +19,24 @@ package uk.ac.cam.cl.dtg.segue.dao.kafkaStreams;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.consumer.CommitFailedException;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.config.TopicConfig;
-import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.connect.json.JsonDeserializer;
 import org.apache.kafka.connect.json.JsonSerializer;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.errors.InvalidStateStoreException;
-import org.apache.kafka.streams.errors.StreamsException;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KStreamBuilder;
-import org.apache.kafka.streams.kstream.KTable;
+import org.apache.kafka.streams.processor.internals.StreamThread;
 import org.apache.kafka.streams.state.KeyValueIterator;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.slf4j.Logger;
@@ -60,6 +57,9 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static org.apache.kafka.streams.processor.internals.StreamThread.State.DEAD;
+import static org.apache.kafka.streams.processor.internals.StreamThread.State.RUNNING;
+
 /**
  * Kafka streams processing application for generating site statistics
  *  @author Dan Underwood
@@ -78,6 +78,7 @@ public class SiteStatisticsStreamsApplication {
     private final String streamsAppName = "streamsapp_site_stats";
     private final String streamsAppVersion = "v2";
     private static Long streamAppStartTime = System.currentTimeMillis();
+    private StreamThread.State streamThreadStatus;
 
 
     /**
@@ -164,15 +165,15 @@ public class SiteStatisticsStreamsApplication {
         // use the builder and the streams configuration we set to setup and start a streams object
         streams = new KafkaStreams(builder, streamsConfiguration);
 
+        // handling fatal streams app exceptions
         streams.setUncaughtExceptionHandler(
                 (thread, throwable) -> {
 
-                    if (throwable instanceof StreamsException) {
-
-
-
+                    // a bit hacky, but we know that the rebalance-inducing app death is caused by a CommitFailedException that is two levels deep into the stack trace
+                    // otherwsie we get a StreamsException which is too general
+                    if (throwable.getCause().getCause() instanceof CommitFailedException) {
+                        streamThreadStatus = DEAD;
                     }
-
                 }
         );
 
@@ -181,8 +182,10 @@ public class SiteStatisticsStreamsApplication {
         // return when streams instance is initialized
         while (true) {
 
-            if (streams.state().isCreatedOrRunning())
+            if (streams.state().isCreatedOrRunning()) {
+                streamThreadStatus = RUNNING;
                 break;
+            }
         }
 
         kafkaLog.info("Site statistics streams application started.");
@@ -367,14 +370,16 @@ public class SiteStatisticsStreamsApplication {
     }
 
 
+    /**
+     * Method to expose streams app details and status
+     * @return map of streams app properties
+     */
     public Map<String, Object> getAppStatus() {
 
-        Map<String, Object> stats = Maps.newHashMap();
-
-        stats.put("appName", streamsAppName);
-        stats.put("version", streamsAppVersion);
-
-        return stats;
+        return ImmutableMap.of(
+                "streamsApplicationName", streamsAppName,
+                "version", streamsAppVersion,
+                "streamThreadStatus", streamThreadStatus);
     }
 
 }

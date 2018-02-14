@@ -22,10 +22,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.api.client.util.Maps;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import org.apache.kafka.clients.admin.ConfigEntry;
+import org.apache.kafka.clients.consumer.CommitFailedException;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.config.TopicConfig;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
@@ -37,6 +38,7 @@ import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KStreamBuilder;
+import org.apache.kafka.streams.processor.internals.StreamThread;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,6 +66,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static org.apache.kafka.streams.processor.internals.StreamThread.State.DEAD;
+import static org.apache.kafka.streams.processor.internals.StreamThread.State.RUNNING;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.LONGEST_STREAK_REACHED;
 
 /**
@@ -90,7 +94,10 @@ public class UserStatisticsStreamsApplication {
     private ILogManager logManager;
 
 
-    private final String streamsAppNameAndVersion = "streamsapp_user_stats-v1.0";
+    private final String streamsAppName = "streamsapp_site_stats";
+    private final String streamsAppVersion = "v2";
+    private static Long streamAppStartTime = System.currentTimeMillis();
+    private StreamThread.State streamThreadStatus;
 
 
     /**
@@ -113,7 +120,7 @@ public class UserStatisticsStreamsApplication {
         this.logManager = logManager;
 
 
-        streamsConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, streamsAppNameAndVersion);
+        streamsConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, streamsAppName + "-" + streamsAppVersion);
         streamsConfiguration.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG,
                 globalProperties.getProperty("KAFKA_HOSTNAME") + ":" + globalProperties.getProperty("KAFKA_PORT"));
         streamsConfiguration.put(StreamsConfig.STATE_DIR_CONFIG, globalProperties.getProperty("KAFKA_STREAMS_STATE_DIR"));
@@ -146,7 +153,7 @@ public class UserStatisticsStreamsApplication {
         // local store changelog topics
         List<ConfigEntry> changelogConfigs = Lists.newLinkedList();
         changelogConfigs.add(new ConfigEntry(TopicConfig.CLEANUP_POLICY_CONFIG, TopicConfig.CLEANUP_POLICY_COMPACT));
-        kafkaTopicManager.ensureTopicExists(streamsAppNameAndVersion + "-localstore_user_snapshot-changelog", changelogConfigs);
+        kafkaTopicManager.ensureTopicExists(streamsAppName + "-" + streamsAppVersion + "-localstore_user_snapshot-changelog", changelogConfigs);
 
         final AtomicLong lastLagLog = new AtomicLong(0);
         final AtomicBoolean wasLagging = new AtomicBoolean(true);
@@ -178,17 +185,32 @@ public class UserStatisticsStreamsApplication {
         // need to make state stores queryable globally, as we often have 2 versions of API running concurrently, hence 2 streams app instances
         // aggregations are saved to a local state store per streams app instance and update a changelog topic in Kafka
         // we can use this changelog to populate a global state store for all streams app instances
-        builder.globalTable(StringSerde, JsonSerde,streamsAppNameAndVersion + "-localstore_user_snapshot-changelog", "globalstore_user_snapshot");
+        builder.globalTable(StringSerde, JsonSerde,streamsAppName + "-" + streamsAppVersion + "-localstore_user_snapshot-changelog", "globalstore_user_snapshot");
 
         // use the builder and the streams configuration we set to setup and start a streams object
         streams = new KafkaStreams(builder, streamsConfiguration);
+
+        // handling fatal streams app exceptions
+        streams.setUncaughtExceptionHandler(
+                (thread, throwable) -> {
+
+                    // a bit hacky, but we know that the rebalance-inducing app death is caused by a CommitFailedException that is two levels deep into the stack trace
+                    // otherwsie we get a StreamsException which is too general
+                    if (throwable.getCause().getCause() instanceof CommitFailedException) {
+                        streamThreadStatus = DEAD;
+                    }
+                }
+        );
+
         streams.start();
 
         // return when streams instance is initialized
         while (true) {
 
-            if (streams.state().isCreatedOrRunning())
+            if (streams.state().isCreatedOrRunning()) {
+                streamThreadStatus = RUNNING;
                 break;
+            }
         }
 
         kafkaLog.info("User statistics streams application started.");
@@ -535,6 +557,19 @@ public class UserStatisticsStreamsApplication {
         calendar.set(Calendar.HOUR_OF_DAY, 0);
 
         return calendar;
+    }
+
+
+    /**
+     * Method to expose streams app details and status
+     * @return map of streams app properties
+     */
+    public Map<String, Object> getAppStatus() {
+
+        return ImmutableMap.of(
+                "streamsApplicationName", streamsAppName,
+                "version", streamsAppVersion,
+                "streamThreadStatus", streamThreadStatus);
     }
 
 }
