@@ -619,22 +619,4 @@ public class KafkaStatisticsManager implements IStatisticsManager {
     private Boolean userLastSeenNDays(Long lastSeen, int daysFromToday) {
         return lastSeen > System.currentTimeMillis() - daysFromToday * 24 * 60 * 60 * 1000L;
     }
-
-    /**
-     * Used here to expose streams app details and status to any stats manager dependants
-     * @return map of streams app properties
-     */
-    public Map<String, Object> getSiteStatisticsStreamsAppStats() {
-        return statisticsStreamsApplication.getAppStatus();
-    }
-
-
-    /**
-     * Used here to expose streams app details and status to any stats manager dependants
-     * @return map of streams app properties
-     */
-    public Map<String, Object> getUserStatisticsStreamsAppStats() {
-        return userStatisticsStreamsApplication.getAppStatus();
-    }
-
 }

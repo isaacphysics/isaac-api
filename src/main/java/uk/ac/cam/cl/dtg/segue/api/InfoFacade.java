@@ -25,6 +25,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
@@ -42,10 +43,13 @@ import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.SiteStatisticsStreamsApplication;
+import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.UserStatisticsStreamsApplication;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
@@ -307,6 +311,23 @@ public class InfoFacade extends AbstractSegueFacade {
             return Response.ok(ImmutableMap.of("success", false)).build();
         }
 
+    }
+
+    @GET
+    @Path("/ping/{streams_app}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getUserStatsAppStatus(@Context final Request request, @PathParam("streams_app") final String appName) {
+
+        switch (appName) {
+            case "site_statistics":
+                return Response.ok(ImmutableMap.of("running", SiteStatisticsStreamsApplication.getAppStatus().get("running"))).build();
+
+            case "user_statistics":
+                return Response.ok(ImmutableMap.of("running", UserStatisticsStreamsApplication.getAppStatus().get("running"))).build();
+
+            default:
+                return Response.ok(ImmutableMap.of("running", false)).build();
+        }
     }
 
 }

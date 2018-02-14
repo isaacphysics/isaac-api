@@ -38,7 +38,6 @@ import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KStreamBuilder;
-import org.apache.kafka.streams.processor.internals.StreamThread;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,8 +65,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.apache.kafka.streams.processor.internals.StreamThread.State.DEAD;
-import static org.apache.kafka.streams.processor.internals.StreamThread.State.RUNNING;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.LONGEST_STREAK_REACHED;
 
 /**
@@ -94,10 +91,10 @@ public class UserStatisticsStreamsApplication {
     private ILogManager logManager;
 
 
-    private final String streamsAppName = "streamsapp_user_stats";
-    private final String streamsAppVersion = "v1.0";
+    private static final String streamsAppName = "streamsapp_user_stats";
+    private static final String streamsAppVersion = "v1.0";
     private static Long streamAppStartTime = System.currentTimeMillis();
-    private StreamThread.State streamThreadStatus;
+    private static Boolean streamThreadRunning;
 
 
     /**
@@ -197,7 +194,7 @@ public class UserStatisticsStreamsApplication {
                     // a bit hacky, but we know that the rebalance-inducing app death is caused by a CommitFailedException that is two levels deep into the stack trace
                     // otherwsie we get a StreamsException which is too general
                     if (throwable.getCause().getCause() instanceof CommitFailedException) {
-                        streamThreadStatus = DEAD;
+                        streamThreadRunning = false;
                     }
                 }
         );
@@ -208,7 +205,7 @@ public class UserStatisticsStreamsApplication {
         while (true) {
 
             if (streams.state().isCreatedOrRunning()) {
-                streamThreadStatus = RUNNING;
+                streamThreadRunning = true;
                 break;
             }
         }
@@ -564,12 +561,12 @@ public class UserStatisticsStreamsApplication {
      * Method to expose streams app details and status
      * @return map of streams app properties
      */
-    public Map<String, Object> getAppStatus() {
+    public static Map<String, Object> getAppStatus() {
 
         return ImmutableMap.of(
                 "streamsApplicationName", streamsAppName,
                 "version", streamsAppVersion,
-                "streamThreadStatus", streamThreadStatus);
+                "running", streamThreadRunning);
     }
 
 }

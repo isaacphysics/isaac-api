@@ -36,7 +36,6 @@ import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.errors.InvalidStateStoreException;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KStreamBuilder;
-import org.apache.kafka.streams.processor.internals.StreamThread;
 import org.apache.kafka.streams.state.KeyValueIterator;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.slf4j.Logger;
@@ -57,8 +56,6 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.apache.kafka.streams.processor.internals.StreamThread.State.DEAD;
-import static org.apache.kafka.streams.processor.internals.StreamThread.State.RUNNING;
 
 /**
  * Kafka streams processing application for generating site statistics
@@ -75,10 +72,10 @@ public class SiteStatisticsStreamsApplication {
 
     private KafkaStreams streams;
 
-    private final String streamsAppName = "streamsapp_site_stats";
-    private final String streamsAppVersion = "v2";
+    private static final String streamsAppName = "streamsapp_site_stats";
+    private static final String streamsAppVersion = "v2";
     private static Long streamAppStartTime = System.currentTimeMillis();
-    private StreamThread.State streamThreadStatus;
+    private static Boolean streamThreadRunning;
 
 
     /**
@@ -106,7 +103,7 @@ public class SiteStatisticsStreamsApplication {
         streamsConfiguration.put(StreamsConfig.consumerPrefix(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG), "earliest");
         streamsConfiguration.put(StreamsConfig.consumerPrefix(ConsumerConfig.METADATA_MAX_AGE_CONFIG), 60 * 1000);
         streamsConfiguration.put(StreamsConfig.consumerPrefix(ConsumerConfig.MAX_POLL_RECORDS_CONFIG), 250);
-        streamsConfiguration.put(StreamsConfig.consumerPrefix(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG), 60000);
+        //streamsConfiguration.put(StreamsConfig.consumerPrefix(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG), 60000);
 
 
         // ensure topics exist before attempting to consume
@@ -172,7 +169,7 @@ public class SiteStatisticsStreamsApplication {
                     // a bit hacky, but we know that the rebalance-inducing app death is caused by a CommitFailedException that is two levels deep into the stack trace
                     // otherwsie we get a StreamsException which is too general
                     if (throwable.getCause().getCause() instanceof CommitFailedException) {
-                        streamThreadStatus = DEAD;
+                        streamThreadRunning = false;
                     }
                 }
         );
@@ -183,7 +180,7 @@ public class SiteStatisticsStreamsApplication {
         while (true) {
 
             if (streams.state().isCreatedOrRunning()) {
-                streamThreadStatus = RUNNING;
+                streamThreadRunning = true;
                 break;
             }
         }
@@ -374,12 +371,12 @@ public class SiteStatisticsStreamsApplication {
      * Method to expose streams app details and status
      * @return map of streams app properties
      */
-    public Map<String, Object> getAppStatus() {
+    public static Map<String, Object> getAppStatus() {
 
         return ImmutableMap.of(
                 "streamsApplicationName", streamsAppName,
                 "version", streamsAppVersion,
-                "streamThreadStatus", streamThreadStatus);
+                "running", streamThreadRunning);
     }
 
 }

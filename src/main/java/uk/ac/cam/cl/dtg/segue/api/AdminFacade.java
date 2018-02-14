@@ -1640,47 +1640,4 @@ public class AdminFacade extends AbstractSegueFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
     }
-
-
-    @GET
-    @Path("/site_statistics_app_status")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    public Response getSiteStatsAppStatus(@Context final Request request, @Context final HttpServletRequest httpServletRequest) {
-
-        try {
-
-            if (!isUserAnAdmin(httpServletRequest)) {
-                return new SegueErrorResponse(Status.FORBIDDEN,
-                        "You must be logged in as an admin to access this function.").toResponse();
-            }
-
-            return Response.ok(kafkaStatsManager.getSiteStatisticsStreamsAppStats()).build();
-
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        }
-    }
-
-
-    @GET
-    @Path("/user_statistics_app_status")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    public Response getUserStatsAppStatus(@Context final Request request, @Context final HttpServletRequest httpServletRequest) {
-
-        try {
-
-            if (!isUserAnAdmin(httpServletRequest)) {
-                return new SegueErrorResponse(Status.FORBIDDEN,
-                        "You must be logged in as an admin to access this function.").toResponse();
-            }
-
-            return Response.ok(kafkaStatsManager.getUserStatisticsStreamsAppStats()).build();
-
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        }
-    }
-
 }
