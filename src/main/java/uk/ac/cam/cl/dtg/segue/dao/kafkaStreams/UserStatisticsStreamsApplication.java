@@ -94,8 +94,8 @@ public class UserStatisticsStreamsApplication {
     private ILogManager logManager;
 
 
-    private final String streamsAppName = "streamsapp_site_stats";
-    private final String streamsAppVersion = "v2";
+    private final String streamsAppName = "streamsapp_user_stats";
+    private final String streamsAppVersion = "v1.0";
     private static Long streamAppStartTime = System.currentTimeMillis();
     private StreamThread.State streamThreadStatus;
 
