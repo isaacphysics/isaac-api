@@ -68,6 +68,7 @@ public final class Constants {
             }
         }
     }
+    public static final String FASTTRACK_GAMEBOARD_WHITELIST = "FASTTRACK_GAMEBOARD_WHITELIST";
 
     /**
      * GameboardState Represents the potential states of a gameboard.

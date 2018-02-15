@@ -46,6 +46,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.IGameManager;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.IUserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.userAlerts.IAlertListener;
 import uk.ac.cam.cl.dtg.segue.api.userAlerts.UserAlertsWebSocket;
@@ -118,7 +119,8 @@ public class UserStatisticsStreamsApplication {
         streamsConfiguration.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 0);
         streamsConfiguration.put(StreamsConfig.consumerPrefix(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG), "earliest");
         streamsConfiguration.put(StreamsConfig.consumerPrefix(ConsumerConfig.METADATA_MAX_AGE_CONFIG), 60 * 1000);
-        streamsConfiguration.put(StreamsConfig.producerPrefix(ProducerConfig.METADATA_MAX_AGE_CONFIG), 60 * 1000);
+        streamsConfiguration.put(StreamsConfig.consumerPrefix(ConsumerConfig.MAX_POLL_RECORDS_CONFIG), 250);
+        streamsConfiguration.put(StreamsConfig.consumerPrefix(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG), 60000);
 
 
         // ensure topics exist before attempting to consume
@@ -126,7 +128,7 @@ public class UserStatisticsStreamsApplication {
         // logged events
         List<ConfigEntry> loggedEventsConfigs = Lists.newLinkedList();
         loggedEventsConfigs.add(new ConfigEntry(TopicConfig.RETENTION_MS_CONFIG, String.valueOf(-1)));
-        kafkaTopicManager.ensureTopicExists("topic_logged_events_v1", loggedEventsConfigs);
+        kafkaTopicManager.ensureTopicExists(Constants.KAFKA_TOPIC_LOGGED_EVENTS, loggedEventsConfigs);
 
         // local store changelog topics
         List<ConfigEntry> changelogConfigs = Lists.newLinkedList();
@@ -138,7 +140,7 @@ public class UserStatisticsStreamsApplication {
 
         // raw logged events incoming data stream from kafka
         KStreamBuilder builder = new KStreamBuilder();
-        KStream<String, JsonNode> rawLoggedEvents = builder.stream(StringSerde, JsonSerde, "topic_logged_events_v1")
+        KStream<String, JsonNode> rawLoggedEvents = builder.stream(StringSerde, JsonSerde, Constants.KAFKA_TOPIC_LOGGED_EVENTS)
                 .filterNot(
                         (k, v) -> v.path("anonymous_user").asBoolean()
                 ).peek(

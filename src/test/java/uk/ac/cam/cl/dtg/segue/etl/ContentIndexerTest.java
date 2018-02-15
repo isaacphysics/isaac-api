@@ -86,6 +86,7 @@ public class ContentIndexerTest {
 
 		Set<String> someTagsList = Sets.newHashSet();
 		Map<String, String> someUnitsMap = Maps.newHashMap();
+		Map<String, String> publishedUnitsMap = Maps.newHashMap();
         Map<Content, List<String>> someContentProblemsMap = Maps.newHashMap();
 
         Map versionMeta = ImmutableMap.of("version", INITIAL_VERSION, "created", new Date().toString());
@@ -128,7 +129,7 @@ public class ContentIndexerTest {
 
 		Whitebox.invokeMethod(contentIndexer,
 				"buildElasticSearchIndex",
-                INITIAL_VERSION, contents, someTagsList, someUnitsMap, someContentProblemsMap);
+                INITIAL_VERSION, contents, someTagsList, someUnitsMap, publishedUnitsMap, someContentProblemsMap);
 
 		verify(searchProvider, contentMapper, objectMapper);
 	}

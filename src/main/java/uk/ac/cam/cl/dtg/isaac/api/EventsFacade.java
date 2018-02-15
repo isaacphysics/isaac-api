@@ -380,7 +380,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                                                      @PathParam("user_id") final Long userId, final Map<String, String> additionalInformation) {
         try {
             if (!isUserStaff(userManager, request)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
+                return new SegueErrorResponse(Status.FORBIDDEN, "You must be a staff user to access this endpoint.")
                     .toResponse();
             }
 
@@ -461,7 +461,8 @@ public class EventsFacade extends AbstractIsaacFacade {
 
     /**
      * createBooking for a specific isaac user.
-     * Must be a Staff user.
+     * - Will attempt to create a waiting list booking if the event is already full.
+     * - Must be a Staff user.
      * 
      * @param request
      *            - so we can determine if the user is logged in
@@ -494,9 +495,13 @@ public class EventsFacade extends AbstractIsaacFacade {
                         .toResponse();
             }
 
-            EventBookingDTO booking = bookingManager.createBooking(event, bookedUser, additionalInformation);
+            EventBookingDTO booking = bookingManager.createBookingOrAddToWaitingList(event, bookedUser, additionalInformation);
             this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
-                    Constants.ADMIN_EVENT_BOOKING_CONFIRMED, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId(), USER_ID_FKEY_FIELDNAME, userId));
+                    Constants.ADMIN_EVENT_BOOKING_CREATED,
+                    ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId(),
+                            USER_ID_FKEY_FIELDNAME, userId,
+                            BOOKING_STATUS_FIELDNAME, booking.getBookingStatus().toString(),
+                            ADMIN_BOOKING_REASON_FIELDNAME, additionalInformation.get("authorisation") == null ? "NOT_PROVIDED" : additionalInformation.get("authorisation")));
 
             return Response.ok(booking).build();
         } catch (NoUserLoggedInException e) {
@@ -514,10 +519,6 @@ public class EventsFacade extends AbstractIsaacFacade {
         } catch (DuplicateBookingException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST,
                 "User already booked on this event. Unable to create a duplicate booking.")
-                .toResponse();
-        } catch (EventIsFullException e) {
-            return new SegueErrorResponse(Status.CONFLICT,
-                "This event is already full. Unable to book the user on to it.")
                 .toResponse();
         }
     }
@@ -545,6 +546,11 @@ public class EventsFacade extends AbstractIsaacFacade {
             if (EventStatus.CLOSED.equals(event.getEventStatus())){
                 return new SegueErrorResponse(Status.BAD_REQUEST, "Sorry booking for this event is closed. Please try again later.")
                     .toResponse();
+            }
+
+            if (EventStatus.WAITING_LIST_ONLY.equals(event.getEventStatus())) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "Sorry booking for this event is restricted. You can only be added to a waiting list.")
+                        .toResponse();
             }
 
             if (bookingManager.isUserBooked(eventId, user.getId())) {
@@ -704,7 +710,9 @@ public class EventsFacade extends AbstractIsaacFacade {
                     .toResponse();
             }
 
-            if (!bookingManager.hasBookingWithStatus(eventId, userOwningBooking.getId(), BookingStatus.WAITING_LIST) && !bookingManager.hasBookingWithStatus(eventId, userOwningBooking.getId(), BookingStatus.CONFIRMED)) {
+            Set<BookingStatus> cancelableStatuses =
+                    new HashSet<>(Arrays.asList(BookingStatus.CONFIRMED, BookingStatus.WAITING_LIST));
+            if (!bookingManager.hasBookingWithAnyOfStatuses(eventId, userOwningBooking.getId(), cancelableStatuses)) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "User is not booked on this event.").toResponse();
             }
 
@@ -805,8 +813,8 @@ public class EventsFacade extends AbstractIsaacFacade {
                         .toResponse();
             }
 
-            if (!bookingManager.hasBookingWithStatus(eventId, userId, BookingStatus.WAITING_LIST) && !bookingManager.hasBookingWithStatus(eventId, userId, BookingStatus.CONFIRMED)
-                && !bookingManager.hasBookingWithStatus(eventId, userId, BookingStatus.CANCELLED)) {
+            Set<BookingStatus> allValidBookingStatuses = new HashSet<>(Arrays.asList(BookingStatus.values()));
+            if (!bookingManager.hasBookingWithAnyOfStatuses(eventId, userId, allValidBookingStatuses)) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "User is not booked on this event.").toResponse();
             }
 

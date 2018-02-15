@@ -220,6 +220,7 @@ public final class Constants {
     // Kafka Properties
     public static final String KAFKA_HOSTNAME = "KAFKA_HOSTNAME";
     public static final String KAFKA_PORT = "KAFKA_PORT";
+    public static final String KAFKA_TOPIC_LOGGED_EVENTS = "topic_logged_events_v1";
 
     // Logging component
     public static final String LOGGING_ENABLED = "LOGGING_ENABLED";
@@ -245,7 +246,7 @@ public final class Constants {
     public static final String EVENT_WAITING_LIST_BOOKING = "EVENT_WAITING_LIST_BOOKING";
     public static final String EVENT_BOOKING_CANCELLED = "EVENT_BOOKING_CANCELLED";
     public static final String ADMIN_EVENT_BOOKING_CANCELLED = "ADMIN_EVENT_BOOKING_CANCELLED";
-    public static final String ADMIN_EVENT_BOOKING_CONFIRMED = "ADMIN_EVENT_BOOKING_CONFIRMED";
+    public static final String ADMIN_EVENT_BOOKING_CREATED = "ADMIN_EVENT_BOOKING_CREATED";
     public static final String ADMIN_EVENT_WAITING_LIST_PROMOTION = "ADMIN_EVENT_WAITING_LIST_PROMOTION";
     public static final String ADMIN_EVENT_BOOKING_DELETED = "ADMIN_EVENT_BOOKING_DELETED";
     public static final String ADMIN_CHANGE_USER_SCHOOL = "ADMIN_CHANGE_USER_SCHOOL";
@@ -258,7 +259,7 @@ public final class Constants {
     public static final String STREAK_UPDATED = "STREAK_UPDATED";
 
     public static final Set<String> SEGUE_LOG_EVENT_TYPES = ImmutableSet.of(ADMIN_CHANGE_USER_SCHOOL, ADMIN_EVENT_BOOKING_CANCELLED,
-            ADMIN_EVENT_BOOKING_CONFIRMED, ADMIN_EVENT_BOOKING_DELETED, ADMIN_EVENT_WAITING_LIST_PROMOTION, ANSWER_QUESTION,
+            ADMIN_EVENT_BOOKING_CREATED, ADMIN_EVENT_BOOKING_DELETED, ADMIN_EVENT_WAITING_LIST_PROMOTION, ANSWER_QUESTION,
             CHANGE_USER_ROLE, CREATE_USER_ASSOCIATION, CREATE_USER_GROUP, DELETE_USER_ACCOUNT, DELETE_USER_GROUP,
             EMAIL_VERIFICATION_REQUEST_RECEIVED, EVENT_BOOKING, EVENT_BOOKING_CANCELLED, EVENT_WAITING_LIST_BOOKING,
             LOG_OUT, MERGE_USER, PASSWORD_RESET_REQUEST_RECEIVED, PASSWORD_RESET_REQUEST_SUCCESSFUL, QUESTION_ATTEMPT_RATE_LIMITED,
@@ -290,6 +291,8 @@ public final class Constants {
 
     public static final String USER_ID_FKEY_FIELDNAME = "userId";
     public static final String EVENT_ID_FKEY_FIELDNAME = "eventId";
+    public static final String BOOKING_STATUS_FIELDNAME = "bookingStatus";
+    public static final String ADMIN_BOOKING_REASON_FIELDNAME = "authorisationReason";
     public static final String CONTENT_VERSION_FIELDNAME = "contentVersion";
 
     public static final String ID_SEPARATOR = "|";
