@@ -26,12 +26,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.config.TopicConfig;
-import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.connect.json.JsonDeserializer;
 import org.apache.kafka.connect.json.JsonSerializer;
 import org.apache.kafka.streams.KafkaStreams;
@@ -80,16 +77,17 @@ public class UserStatisticsStreamsApplication {
     private static final Logger log = LoggerFactory.getLogger(UserStatisticsStreamsApplication.class);
     private static final Logger kafkaLog = LoggerFactory.getLogger("kafkaStreamsLogger");
 
-    private static final Serializer<JsonNode> JsonSerializer = new JsonSerializer();
-    private static final Deserializer<JsonNode> JsonDeserializer = new JsonDeserializer();
     private static final Serde<String> StringSerde = Serdes.String();
-    private static final Serde<JsonNode> JsonSerde = Serdes.serdeFrom(JsonSerializer, JsonDeserializer);
+    private static final Serde<JsonNode> JsonSerde = Serdes.serdeFrom(new JsonSerializer(), new JsonDeserializer());
     private static final ObjectMapper objectMapper = new ObjectMapper();
+
     private static List<String> bookTags = ImmutableList.of("phys_book_gcse", "physics_skills_14", "chemistry_16");
 
     private KafkaStreams streams;
 
-    private final String streamsAppNameAndVersion = "streamsapp_user_stats-v2.0";
+    private final String streamsAppName = "streamsapp_user_stats";
+    private final String streamsAppVersion = "v1.1";
+    private static Long streamAppStartTime = System.currentTimeMillis();
 
     /**
      * Constructor
@@ -107,7 +105,7 @@ public class UserStatisticsStreamsApplication {
 
 
         Properties streamsConfiguration = new Properties();
-        streamsConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, streamsAppNameAndVersion);
+        streamsConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, streamsAppName + "-" + streamsAppVersion);
         streamsConfiguration.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG,
                 globalProperties.getProperty("KAFKA_HOSTNAME") + ":" + globalProperties.getProperty("KAFKA_PORT"));
         streamsConfiguration.put(StreamsConfig.STATE_DIR_CONFIG, globalProperties.getProperty("KAFKA_STREAMS_STATE_DIR"));
@@ -133,7 +131,7 @@ public class UserStatisticsStreamsApplication {
         // local store changelog topics
         List<ConfigEntry> changelogConfigs = Lists.newLinkedList();
         changelogConfigs.add(new ConfigEntry(TopicConfig.CLEANUP_POLICY_CONFIG, TopicConfig.CLEANUP_POLICY_COMPACT));
-        kafkaTopicManager.ensureTopicExists(streamsAppNameAndVersion + "-localstore_user_snapshot-changelog", changelogConfigs);
+        kafkaTopicManager.ensureTopicExists(streamsAppName + "-" + streamsAppVersion + "-localstore_user_snapshot-changelog", changelogConfigs);
 
         final AtomicLong lastLagLog = new AtomicLong(0);
         final AtomicBoolean wasLagging = new AtomicBoolean(true);
@@ -166,7 +164,7 @@ public class UserStatisticsStreamsApplication {
         // need to make state stores queryable globally, as we often have 2 versions of API running concurrently, hence 2 streams app instances
         // aggregations are saved to a local state store per streams app instance and update a changelog topic in Kafka
         // we can use this changelog to populate a global state store for all streams app instances
-        builder.globalTable(StringSerde, JsonSerde,streamsAppNameAndVersion + "-localstore_user_snapshot-changelog", "globalstore_user_snapshot");
+        builder.globalTable(StringSerde, JsonSerde,streamsAppName + "-" + streamsAppVersion + "-localstore_user_snapshot-changelog", "globalstore_user_snapshot-" + streamsAppVersion);
 
         // use the builder and the streams configuration we set to setup and start a streams object
         streams = new KafkaStreams(builder, streamsConfiguration);
@@ -335,7 +333,7 @@ public class UserStatisticsStreamsApplication {
 
         // get the persisted snapshot document
         JsonNode snapshotRecord = streams
-                .store("globalstore_user_snapshot", QueryableStoreTypes.<String, JsonNode>keyValueStore())
+                .store("globalstore_user_snapshot-" + streamsAppVersion, QueryableStoreTypes.<String, JsonNode>keyValueStore())
                 .get(String.valueOf(user.getId()));
 
 
