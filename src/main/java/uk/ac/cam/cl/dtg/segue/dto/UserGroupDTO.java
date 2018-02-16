@@ -16,9 +16,12 @@
 package uk.ac.cam.cl.dtg.segue.dto;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Set;
 
 import javax.annotation.Nullable;
 
+import com.google.api.client.util.Sets;
 import org.mongojack.ObjectId;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -35,6 +38,7 @@ public class UserGroupDTO {
     private Date created;
     private String token;
     private boolean archived;
+    private Set<Long> additionalManagers;
 
     /**
      * Default Constructor.
@@ -62,6 +66,7 @@ public class UserGroupDTO {
         this.ownerId = ownerId;
         this.created = created;
         this.archived = archived;
+        this.additionalManagers = Sets.newHashSet();
     }
 
     /**
@@ -204,5 +209,23 @@ public class UserGroupDTO {
 
     public void setArchived(boolean archived) {
         this.archived = archived;
+    }
+
+    /**
+     * Get the list of other users who should be able to view this group's data subject to individual permissions being granted.
+     *
+     * @return list of user ids
+     */
+    public Set<Long> getAdditionalManagers() {
+        return additionalManagers;
+    }
+
+    /**
+     * Set the list of other users who should be able to view this group's data subject to individual permissions being granted.
+     *
+     * @param additionalManagers - those users who should have access to this group.
+     */
+    public void setAdditionalManagers(Set<Long> additionalManagers) {
+        this.additionalManagers = additionalManagers;
     }
 }
