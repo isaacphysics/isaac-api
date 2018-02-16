@@ -129,6 +129,19 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
+-- Name: additional_group_managers; Type: TABLE; Schema: public; Owner: rutherford
+--
+
+CREATE TABLE additional_group_managers (
+    user_id integer NOT NULL,
+    group_id integer NOT NULL,
+    created timestamp with time zone DEFAULT now()
+);
+
+
+ALTER TABLE additional_group_managers OWNER TO rutherford;
+
+--
 -- Name: assignments; Type: TABLE; Schema: public; Owner: rutherford
 --
 
@@ -654,6 +667,15 @@ ALTER TABLE ONLY users
 
 
 --
+-- Name: additional_group_managers ck_user_group_manager; Type: CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY additional_group_managers
+    ADD CONSTRAINT ck_user_group_manager PRIMARY KEY (user_id, group_id);
+
+
+
+--
 -- Name: assignments composite pkey assignments; Type: CONSTRAINT; Schema: public; Owner: rutherford
 --
 
@@ -876,14 +898,28 @@ ALTER TABLE ONLY assignments
 ALTER TABLE ONLY event_bookings
     ADD CONSTRAINT event_bookings_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
+--
+-- Name: additional_group_managers fk_group_id; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY additional_group_managers
+    ADD CONSTRAINT fk_group_id FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE;
+
 
 --
--- Name: fk_user_id_pswd; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+-- Name: user_credentials fk_user_id_pswd; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
 --
 
 ALTER TABLE ONLY user_credentials
     ADD CONSTRAINT fk_user_id_pswd FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
+
+--
+-- Name: additional_group_managers fk_user_manager_id; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY additional_group_managers
+    ADD CONSTRAINT fk_user_manager_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 --
 -- Name: assignments gameboard_assignment_fkey; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
