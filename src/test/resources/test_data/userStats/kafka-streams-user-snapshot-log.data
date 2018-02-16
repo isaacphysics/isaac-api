@@ -360,3 +360,4 @@
 1;false;STREAK_UPDATED;java.util.HashMap;{"threshold": 3, "streakType": "correctQuestionPartsPerDay", "currentStreak": 1};;2018-02-08 09:46:22.811000
 1;false;LONGEST_STREAK_REACHED;java.util.HashMap;{"threshold": 3, "streakType": "correctQuestionPartsPerDay", "longestStreak": 1};;2018-02-08 09:46:22.832000
 1;false;VIEW_USER_PROGRESS;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1};::1;2018-02-08 09:46:37.396000
+100;false;ADMIN_EVENT_ATTENDANCE_RECORDED;com.google.common.collect.SingletonImmutableBiMap;{"userId": 1, "attended": true, "eventTags": ["teacher"]};::1;2018-02-08 09:46:37.396000

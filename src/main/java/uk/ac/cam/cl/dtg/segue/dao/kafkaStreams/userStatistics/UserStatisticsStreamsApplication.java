@@ -256,10 +256,20 @@ public class UserStatisticsStreamsApplication {
                                             }
                                     }
 
+
                                     if (latestEvent.path("event_type").asText().equals("ADMIN_EVENT_ATTENDANCE_RECORDED")) {
-                                        if (latestEvent.path("event_details").path("eventTags").has("teacher")) {
-                                            ((ObjectNode) userSnapshot.path("teacher_record"))
-                                                    .put("cpd_events_attended", updateActivityCount("cpd_events_attended", userSnapshot.path("teacher_record")));
+                                        if (latestEvent.path("event_details").path("attended").asBoolean()) {
+
+                                            Iterator<JsonNode> tags = latestEvent.path("event_details").path("eventTags").elements();
+
+                                            while (tags.hasNext()) {
+
+                                                if (tags.next().asText().equals("teacher")) {
+                                                    ((ObjectNode) userSnapshot.path("teacher_record"))
+                                                            .put("cpd_events_attended", updateActivityCount("cpd_events_attended", userSnapshot.path("teacher_record")));
+                                                    break;
+                                                }
+                                            }
                                         }
                                     }
                                 }

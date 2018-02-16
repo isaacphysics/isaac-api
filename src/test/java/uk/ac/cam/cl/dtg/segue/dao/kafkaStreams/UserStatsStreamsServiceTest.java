@@ -163,31 +163,28 @@ public class UserStatsStreamsServiceTest {
         GameboardItem gbi1 = new GameboardItem();
         gbi1.setId("gbi1");
         gbi1.setLevel(1);
-        List<String> list1 = Lists.newArrayList();
-        list1.add("phys_book_gcse");
-        gbi1.setTags(list1);
+        GameboardDTO gb1 = new GameboardDTO("98f5602b-cbc6-4786-b39f-88259e6d5172", null, Arrays.asList(gbi1), null, null, null, null, null, GameboardCreationMethod.BUILDER, null);
+
         GameboardItem gbi2 = new GameboardItem();
         gbi2.setId("gbi2");
         gbi2.setLevel(2);
-        List<String> list2 = Lists.newArrayList();
-        list2.add("phys_book_gcse");
-        gbi1.setTags(list2);
+        gbi2.setTags(Arrays.asList("phys_book_gcse"));
+        GameboardDTO gb2 = new GameboardDTO("c6b4b02c-e6cb-4939-9790-c475f9fc8037", null, Arrays.asList(gbi2), null, null, null, null, null, GameboardCreationMethod.BUILDER, null);
+
         GameboardItem gbi3 = new GameboardItem();
         gbi3.setId("gbi3");
         gbi3.setLevel(3);
-        List<String> list3 = Lists.newArrayList();
-        list3.add("phys_book_gcse");
-        gbi1.setTags(list3);
+        GameboardDTO gb3 = new GameboardDTO("f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5", null, Arrays.asList(gbi3), null, null, null, null, null, GameboardCreationMethod.BUILDER, null);
 
 
         expect(dummyGameManager.getGameboard("98f5602b-cbc6-4786-b39f-88259e6d5172"))
-                .andReturn(new GameboardDTO("98f5602b-cbc6-4786-b39f-88259e6d5172", null, Arrays.asList(gbi1), null, null, null, null, null, GameboardCreationMethod.BUILDER, null))
+                .andReturn(gb1)
                 .atLeastOnce();
         expect(dummyGameManager.getGameboard("c6b4b02c-e6cb-4939-9790-c475f9fc8037"))
-                .andReturn(new GameboardDTO("c6b4b02c-e6cb-4939-9790-c475f9fc8037", null, Arrays.asList(gbi2), null, null, null, null, null, GameboardCreationMethod.BUILDER, null))
+                .andReturn(gb2)
                 .atLeastOnce();
         expect(dummyGameManager.getGameboard("f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5"))
-                .andReturn(new GameboardDTO("f9c5be15-4fc4-4fdf-ac79-0aa278bdcbf5", null, Arrays.asList(gbi3), null, null, null, null, null, GameboardCreationMethod.BUILDER, null))
+                .andReturn(gb3)
                 .atLeastOnce();
 
         replay(dummyGameManager);
@@ -304,7 +301,7 @@ public class UserStatsStreamsServiceTest {
 
     @Test
     public void streamsClassVersions_Test() throws Exception {
-        assertClassUnchanged(UserStatisticsStreamsApplication.class,"cb0553873503f583e7df69cd04f5cc33f4b4de8d5eb9d1cabee092e999a152f0");
+        assertClassUnchanged(UserStatisticsStreamsApplication.class,"50d00c1f30863ae73ca180a82b38850d0df0ef2424cc9fc7c83618fc0f612ea5");
     }
 
 
