@@ -16,10 +16,8 @@
 package uk.ac.cam.cl.dtg.isaac.dao;
 
 import java.sql.*;
-import java.util.Calendar;
+import java.util.*;
 import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.List;
 
 import ma.glasnost.orika.MapperFacade;
 
@@ -238,6 +236,39 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
 
         } catch (SQLException e) {
             throw new SegueDatabaseException("Unable to find assignment by owner", e);
+        }
+    }
+
+    @Override
+    public List<AssignmentDTO> getAssignmentsByGroupList(Collection<Long> groupIds) throws SegueDatabaseException {
+        try (Connection conn = database.getDatabaseConnection()) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("SELECT * FROM assignments WHERE group_id IN (");
+
+            for (int i = 0; i < groupIds.size(); i++) {
+                sb.append("?").append(i < groupIds.size() - 1 ? ", " : "");
+            }
+            sb.append(")");
+
+            PreparedStatement pst;
+            pst = conn.prepareStatement(sb.toString());
+            int i = 1;
+            for (Long id : groupIds) {
+                pst.setLong(i, id);
+                i++;
+            }
+
+            ResultSet results = pst.executeQuery();
+            List<AssignmentDTO> listOfResults = Lists.newArrayList();
+
+            while (results.next()) {
+                listOfResults.add(this.convertToAssignmentDTO(this.convertFromSQLToAssignmentDO(results)));
+            }
+
+            return listOfResults;
+
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Unable to find assignment by group list", e);
         }
     }
 

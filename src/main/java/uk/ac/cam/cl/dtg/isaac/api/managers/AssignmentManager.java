@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.api.managers;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import com.google.common.collect.ImmutableMap;
 import org.apache.commons.lang3.Validate;
@@ -37,6 +38,7 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
@@ -114,6 +116,16 @@ public class AssignmentManager implements IGroupObserver {
         }
 
         return assignments;
+    }
+
+    /**
+     * Get all assignments for a given group id
+     * @param groupId - to which the assignments have been assigned
+     * @return all assignments
+     * @throws SegueDatabaseException
+     */
+    public Collection<AssignmentDTO> getAssignmentsByGroup(final Long groupId) throws SegueDatabaseException {
+        return this.assignmentPersistenceManager.getAssignmentsByGroupId(groupId);
     }
 
     /**
@@ -220,6 +232,18 @@ public class AssignmentManager implements IGroupObserver {
     public List<AssignmentDTO> getAllAssignmentsSetByUser(final RegisteredUserDTO user) throws SegueDatabaseException {
         Validate.notNull(user);
         return this.assignmentPersistenceManager.getAssignmentsByOwner(user.getId());
+    }
+
+    /**
+     * Get all assignments for a list of groups
+     *
+     * @param groups to include in the search
+     * @return a list of assignments set to the group ids provided.
+     */
+    public List<AssignmentDTO> getAllAssignmentsForSpecificGroups(Collection<UserGroupDTO> groups) throws SegueDatabaseException {
+        Validate.notNull(groups);
+        List<Long> groupIds = groups.stream().map(UserGroupDTO::getId).collect(Collectors.toList());
+        return this.assignmentPersistenceManager.getAssignmentsByGroupList(groupIds);
     }
 
     /**

@@ -154,6 +154,28 @@ public class GroupManager {
     }
 
     /**
+     * getAllGroupsOwnedAndManagedByUser.
+     *
+     * This method will get all groups that a user could have an interest in.
+     * I.e. if the user is the owner or additional manager of the group the group should be included in the list.
+     *
+     * @param ownerUser
+     *            - the owner of the groups to search for.
+     * @param archivedGroupsOnly
+     *            if true then only archived groups will be returned,
+     *            if false then only unarchived groups will be returned.
+     * @return List of groups or empty list.
+     * @throws SegueDatabaseException
+     */
+    public List<UserGroupDTO> getAllGroupsOwnedAndManagedByUser(final RegisteredUserDTO ownerUser, boolean archivedGroupsOnly) throws SegueDatabaseException {
+        Validate.notNull(ownerUser);
+        List<UserGroupDTO> combinedResults = Lists.newArrayList();
+        combinedResults.addAll(convertGroupToDTOs(groupDatabase.getGroupsByOwner(ownerUser.getId(), archivedGroupsOnly)));
+        combinedResults.addAll(convertGroupToDTOs(groupDatabase.getGroupsByAdditionalManager(ownerUser.getId(), archivedGroupsOnly)));
+        return combinedResults;
+    }
+
+    /**
      * getGroupsByOwner.
      * 
      * @param ownerUser
@@ -258,6 +280,32 @@ public class GroupManager {
         return convertGroupToDTO(group);
     }
 
+    public UserGroupDTO addUserToManagerList(UserGroupDTO group, RegisteredUserDTO userToAdd) throws SegueDatabaseException {
+        Validate.notNull(group);
+        Validate.notNull(userToAdd);
+
+        if (group.getAdditionalManagers().contains(userToAdd.getId())) {
+            // don't add them if they are already in there
+            return group;
+        }
+        this.groupDatabase.addUserAdditionalManagerList(userToAdd.getId(), group.getId());
+
+        return this.getGroupById(group.getId());
+    }
+
+    public UserGroupDTO removeUserFromManagerList(UserGroupDTO group, RegisteredUserDTO userToAdd) throws SegueDatabaseException {
+        Validate.notNull(group);
+        Validate.notNull(userToAdd);
+
+        if (group.getAdditionalManagers().contains(userToAdd.getId())) {
+            // don't add them if they are already in there
+            return group;
+        }
+        this.groupDatabase.removeUserFromAdditionalManagerList(userToAdd.getId(), group.getId());
+
+        return this.getGroupById(group.getId());
+    }
+
     /**
      * Determine if a group id exists and is valid.
      * 
@@ -311,8 +359,10 @@ public class GroupManager {
      *            to convert
      * @return groupDTO
      */
-    private UserGroupDTO convertGroupToDTO(final UserGroup group) {
-        return dtoMapper.map(group, UserGroupDTO.class);
+    private UserGroupDTO convertGroupToDTO(final UserGroup group) throws SegueDatabaseException{
+        UserGroupDTO dtoToReturn = dtoMapper.map(group, UserGroupDTO.class);
+        dtoToReturn.setAdditionalManagers(this.groupDatabase.getAdditionalManagerSetByGroupId(group.getId()));
+        return dtoToReturn;
     }
 
     /**
@@ -320,7 +370,7 @@ public class GroupManager {
      *            to convert
      * @return groupDTOs
      */
-    private List<UserGroupDTO> convertGroupToDTOs(final Iterable<UserGroup> groups) {
+    private List<UserGroupDTO> convertGroupToDTOs(final Iterable<UserGroup> groups) throws SegueDatabaseException {
         List<UserGroupDTO> result = Lists.newArrayList();
         for (UserGroup group : groups) {
             result.add(convertGroupToDTO(group));

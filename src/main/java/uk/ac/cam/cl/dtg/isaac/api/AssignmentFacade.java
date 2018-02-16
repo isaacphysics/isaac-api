@@ -233,7 +233,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
 
             if (null == groupIdOfInterest) {
-                return Response.ok(this.assignmentManager.getAllAssignmentsSetByUser(currentlyLoggedInUser))
+                List<UserGroupDTO> allGroupsOwnedAndManagedByUser = this.groupManager.getAllGroupsOwnedAndManagedByUser(currentlyLoggedInUser, false);
+                return Response.ok(this.assignmentManager.getAllAssignmentsForSpecificGroups(allGroupsOwnedAndManagedByUser))
                         .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
             } else {
                 UserGroupDTO group = this.groupManager.getGroupById(groupIdOfInterest);
@@ -243,18 +244,18 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                             .toResponse();
                 }
 
-                List<AssignmentDTO> allAssignmentsSetByUserToGroup = this.assignmentManager
-                        .getAllAssignmentsSetByUserToGroup(currentlyLoggedInUser, group);
+                Collection<AssignmentDTO> allAssignmentsSetToGroup
+                        = this.assignmentManager.getAssignmentsByGroup(group.getId());
 
                 // we want to populate gameboard details for the assignment DTO.
-                for (AssignmentDTO assignment : allAssignmentsSetByUserToGroup) {
+                for (AssignmentDTO assignment : allAssignmentsSetToGroup) {
                     assignment.setGameboard(this.gameManager.getGameboard(assignment.getGameboardId()));
                 }
 
                 this.getLogManager().logEvent(currentlyLoggedInUser, request, VIEW_GROUPS_ASSIGNMENTS,
                         Maps.newHashMap());
 
-                return Response.ok(allAssignmentsSetByUserToGroup)
+                return Response.ok(allAssignmentsSetToGroup)
                         .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
             }
 
@@ -289,14 +290,17 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 return SegueErrorResponse.getResourceNotFoundResponse("The assignment requested cannot be found");
             }
 
-            if (!assignment.getOwnerUserId().equals(currentlyLoggedInUser.getId()) 
+            UserGroupDTO group = this.groupManager.getGroupById(assignment.getGroupId());
+
+            if (!(assignment.getOwnerUserId().equals(currentlyLoggedInUser.getId())
+                    || group.getAdditionalManagers().contains(currentlyLoggedInUser.getId()))
                     && !isUserAnAdmin(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
             }
 
             GameboardDTO gameboard = this.gameManager.getGameboard(assignment.getGameboardId());
-            UserGroupDTO group = this.groupManager.getGroupById(assignment.getGroupId());
+
             List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group);
 
             List<ImmutableMap<String, Object>> result = Lists.newArrayList();
@@ -400,14 +404,17 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 return SegueErrorResponse.getResourceNotFoundResponse("The assignment requested cannot be found");
             }
 
-            if (!assignment.getOwnerUserId().equals(currentlyLoggedInUser.getId())
+            UserGroupDTO group = this.groupManager.getGroupById(assignment.getGroupId());
+
+            if (!(assignment.getOwnerUserId().equals(currentlyLoggedInUser.getId())
+                    || group.getAdditionalManagers().contains(currentlyLoggedInUser.getId()))
                     && !isUserAnAdmin(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
             }
             
             GameboardDTO gameboard = this.gameManager.getGameboard(assignment.getGameboardId());
-            UserGroupDTO group = this.groupManager.getGroupById(assignment.getGroupId());
+
             List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group);
             List<String> questionIds = Lists.newArrayList();
             
@@ -805,6 +812,13 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                         .toResponse();
             }
 
+            if (!(assigneeGroup.getOwnerId().equals(currentlyLoggedInUser.getId())
+                    || assigneeGroup.getAdditionalManagers().contains(currentlyLoggedInUser.getId()))
+                    && !isUserAnAdmin(userManager, request)) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "You can only view the results of assignments that you own.").toResponse();
+            }
+
             GameboardDTO gameboard = this.gameManager.getGameboard(assignmentDTOFromClient.getGameboardId());
             if (null == gameboard) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "The gameboard id specified does not exist.")
@@ -874,7 +888,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             if (null == assignmentToDelete) {
                 return new SegueErrorResponse(Status.NOT_FOUND, "The assignment does not exist.").toResponse();
             }
-            if (!assignmentToDelete.getOwnerUserId().equals(currentlyLoggedInUser.getId())) {
+            if (!(assignmentToDelete.getOwnerUserId().equals(currentlyLoggedInUser.getId())
+                    || assigneeGroup.getAdditionalManagers().contains(currentlyLoggedInUser.getId()))) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You are not the owner of this assignment. Unable to delete it.").toResponse();
             }
