@@ -526,6 +526,37 @@ public class EventBookingManager {
     }
 
     /**
+     * Allows an admin user to record the attendance of a booking as either attended or absent.
+     *
+     * @param event                 - The event in question.
+     * @param userDTO               - The user whose booking should be updated.
+     * @param attended              - Whether the user attended the event or not.
+     * @return the updated booking.
+     * @throws SegueDatabaseException       - Database error.
+     * @throws EventBookingUpdateException  - Unable to update the event booking.
+     */
+    public EventBookingDTO recordAttendance(final IsaacEventPageDTO event, final RegisteredUserDTO
+            userDTO, final boolean attended)
+            throws SegueDatabaseException, EventBookingUpdateException {
+
+        final EventBookingDTO eventBooking = this.bookingPersistenceManager.getBookingByEventIdAndUserId(
+                event.getId(), userDTO.getId());
+        if (null == eventBooking) {
+            throw new EventBookingUpdateException("Unable to record attendance for booking that doesn't exist.");
+        }
+
+        BookingStatus attendanceStatus = attended ? BookingStatus.ATTENDED : BookingStatus.ABSENT;
+        if (attendanceStatus.equals(eventBooking.getBookingStatus())) {
+            throw new EventBookingUpdateException("Booking attendance is already registered.");
+        }
+
+        EventBookingDTO updatedStatus = this.bookingPersistenceManager.updateBookingStatus(eventBooking.getEventId(),
+                userDTO.getId(), attendanceStatus, eventBooking.getAdditionalInformation());
+
+        return updatedStatus;
+    }
+
+    /**
      * getPlacesAvailable.
      * This method is not threadsafe and will not acquire a lock.
      * It assumes that both WAITING_LIST and CONFIRMED bookings count towards capacity.
