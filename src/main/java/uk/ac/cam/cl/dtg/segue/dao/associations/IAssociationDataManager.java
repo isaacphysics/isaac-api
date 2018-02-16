@@ -84,6 +84,19 @@ public interface IAssociationDataManager {
     void createAssociation(AssociationToken token, Long userIdGrantingAccess) throws SegueDatabaseException;
 
     /**
+     * Creates an association based on a token.
+     *
+     * @param userIdReceivingAccess
+     *            - the user to grant access to.
+     * @param userIdGrantingAccess
+     *            - This user is the user granting access to their data.
+     * @throws SegueDatabaseException
+     *             - if there is a database error.
+     */
+    void createAssociation(final Long userIdReceivingAccess, final Long userIdGrantingAccess)
+            throws SegueDatabaseException;
+
+    /**
      * Revoke permission to access personal data.
      * 
      * @param ownerUserId
