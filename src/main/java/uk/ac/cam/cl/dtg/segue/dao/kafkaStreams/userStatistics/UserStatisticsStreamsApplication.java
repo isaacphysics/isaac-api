@@ -304,7 +304,7 @@ public class UserStatisticsStreamsApplication {
                                 if (latestEvent.path("event_type").asText().equals("ADMIN_UPDATE_USER_STREAK")) {
 
                                     String subUserId = latestEvent.path("event_details").path("user_id").asText();
-                                    ((ObjectNode) userSnapshot).put("streak_record", updateStreakRecord(subUserId, latestEvent, userSnapshot.path("streak_record"),
+                                    ((ObjectNode) userSnapshot).set("streak_record", updateStreakRecord(subUserId, latestEvent, userSnapshot.path("streak_record"),
                                             questionAttemptManager, userAccountManager, logManager));
                                 }
 
@@ -525,7 +525,6 @@ public class UserStatisticsStreamsApplication {
             eventDetailsStreakUpdate.put("threshold", streakRecord.path("activity_threshold").asLong());
             eventDetailsStreakUpdate.put("streakType", "correctQuestionPartsPerDay");
 
-            logManager.logInternalEvent(userAccountManager.getUserDTOById(Long.parseLong(userId)), STREAK_UPDATED, eventDetailsStreakUpdate);
 
             // 5) Update largest streak count if days since start is greater than the recorded largest streak
             if (daysSinceStart > streakRecord.path("largest_streak").asLong()) {
@@ -536,8 +535,6 @@ public class UserStatisticsStreamsApplication {
                 eventDetailsLongestStreak.put("longestStreak", streakRecord.path("largest_streak").asLong());
                 eventDetailsLongestStreak.put("threshold", streakRecord.path("activity_threshold").asLong());
                 eventDetailsLongestStreak.put("streakType", "correctQuestionPartsPerDay");
-
-                logManager.logInternalEvent(userAccountManager.getUserDTOById(Long.parseLong(userId)), LONGEST_STREAK_REACHED, eventDetailsLongestStreak);
             }
 
 
