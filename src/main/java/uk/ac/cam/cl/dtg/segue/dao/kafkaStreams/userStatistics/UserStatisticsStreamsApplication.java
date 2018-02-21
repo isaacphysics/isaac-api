@@ -279,8 +279,7 @@ public class UserStatisticsStreamsApplication {
 
                                     if (latestEvent.path("event_details").path("correct").asBoolean()) {
                                         ((ObjectNode) userSnapshot).set("streak_record",
-                                                updateStreakRecord(userId, latestEvent, userSnapshot.path("streak_record"),
-                                                        questionAttemptManager, userAccountManager, logManager));
+                                                updateStreakRecord(userId, latestEvent, userSnapshot.path("streak_record"), questionAttemptManager));
                                     }
                                 }
 
@@ -304,8 +303,7 @@ public class UserStatisticsStreamsApplication {
                                 if (latestEvent.path("event_type").asText().equals("ADMIN_UPDATE_USER_STREAK")) {
 
                                     String subUserId = latestEvent.path("event_details").path("user_id").asText();
-                                    ((ObjectNode) userSnapshot).set("streak_record", updateStreakRecord(subUserId, latestEvent, userSnapshot.path("streak_record"),
-                                            questionAttemptManager, userAccountManager, logManager));
+                                    ((ObjectNode) userSnapshot).set("streak_record", updateStreakRecord(subUserId, latestEvent, userSnapshot.path("streak_record"), questionAttemptManager));
                                 }
 
                             } catch (Exception e) {
@@ -410,9 +408,10 @@ public class UserStatisticsStreamsApplication {
     private static JsonNode updateStreakRecord(String userId,
                                                JsonNode latestEvent,
                                                JsonNode streakRecord,
-                                               IQuestionAttemptManager questionAttemptManager,
-                                               IUserAccountManager userAccountManager,
-                                               ILogManager logManager) throws NoUserException, SegueDatabaseException {
+                                               IQuestionAttemptManager questionAttemptManager)
+            throws NoUserException, SegueDatabaseException {
+
+        Long uId = Long.parseLong(userId);
 
         // timestamp of streak start
         Long streakStartTimestamp = streakRecord.path("streak_start").asLong();
@@ -464,36 +463,40 @@ public class UserStatisticsStreamsApplication {
 
 
         // 2) We want to make sure the user hasn't answered the question part correctly before. If they have, don't continue
-        String questionId = latestEvent.path("event_details").path("questionId").asText();
-        List<Long> user = Lists.newArrayList();
-        List<String> questionPageId = Lists.newArrayList();
-        user.add(Long.parseLong(userId));
-        questionPageId.add(questionId.split("\\|")[0]);
+        String questionPartId = latestEvent.path("event_details").path("questionId").asText();
+        String questionPageId = questionPartId.split("\\|")[0];
 
-        Map<Long, Map<String, Map<String, List<QuestionValidationResponse>>>> questionAttempts =
-                questionAttemptManager.getQuestionAttemptsByUsersAndQuestionPrefix(user, questionPageId);
+        Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts =
+                questionAttemptManager.getQuestionAttemptsByUsersAndQuestionPrefix(ImmutableList.of(uId), ImmutableList.of(questionPageId)).get(uId);
 
-        // the following assumes that question attempts are always recorded in the question attempt table before they are logged as an event
-        if (!questionAttempts.get(Long.parseLong(userId)).isEmpty()
-                && questionAttempts.get(Long.parseLong(userId)).containsKey(questionId.split("\\|")[0])
-                && questionAttempts.get(Long.parseLong(userId)).get(questionId.split("\\|")[0]).containsKey(questionId)) {
+        // the following assumes that question attempts are always recorded in the pg question attempt table before they are logged as an event
+        if (!userQuestionAttempts.isEmpty()
+                && userQuestionAttempts.containsKey(questionPageId)
+                && userQuestionAttempts.get(questionPageId).containsKey(questionPartId)) {
 
-            Integer correctCount = 0;
-            for (QuestionValidationResponse response: questionAttempts.get(Long.parseLong(userId))
-                    .get(questionId.split("\\|")[0])
-                    .get(questionId)
+            List<QuestionValidationResponse> correctResponses = Lists.newArrayList();
+            for (QuestionValidationResponse response: userQuestionAttempts
+                    .get(questionPageId)
+                    .get(questionPartId)
                     ) {
 
-                // count all the times the user has correctly attempted the question
+                // make note of all correct attempts for this question part
                 if (response.isCorrect()) {
-                    correctCount++;
+                    correctResponses.add(response);
                 }
             }
 
-            // if the correct count is 1 then the recorded attempt corresponds to the current event
-            // otherwise the user has attempted it correctly before, therefore we don't continue
-            if (correctCount > 1) {
-                return streakRecord;
+            // sort the attempts by date attempted
+            correctResponses.sort(Comparator.comparing(QuestionValidationResponse::getDateAttempted));
+
+            // only want to continue if the current correct attempt has never been processed before
+            // need to accommodate for possibility of multiple correct attempts in pg question attempts table (e.g. when re-processing historical log events)
+            if (correctResponses.size() > 1) {
+
+                // dateAttempted is consistent across log event details and question attempt details, so compare this
+                if (latestEvent.path("event_details").path("dateAttempted").asLong() > correctResponses.get(0).getDateAttempted().getTime()) {
+                    return streakRecord;
+                }
             }
         }
 
@@ -552,15 +555,14 @@ public class UserStatisticsStreamsApplication {
 
             try {
                 // notify the user of a streak increase
-                IUserAlert alert = new PgUserAlert(null,
-                        Long.parseLong(userId),
+                IUserAlert alert = new PgUserAlert(null, uId,
                         objectMapper.writeValueAsString(notificationData),
                         "progress",
                         new Timestamp(System.currentTimeMillis()),
                         null, null, null);
 
-                if (null != UserAlertsWebSocket.connectedSockets && UserAlertsWebSocket.connectedSockets.containsKey(Long.parseLong(userId))) {
-                    for(IAlertListener listener : UserAlertsWebSocket.connectedSockets.get(Long.parseLong(userId))) {
+                if (null != UserAlertsWebSocket.connectedSockets && UserAlertsWebSocket.connectedSockets.containsKey(uId)) {
+                    for(IAlertListener listener : UserAlertsWebSocket.connectedSockets.get(uId)) {
                         listener.notifyAlert(alert);
                     }
                 }
