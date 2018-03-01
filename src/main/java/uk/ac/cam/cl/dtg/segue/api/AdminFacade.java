@@ -1642,12 +1642,12 @@ public class AdminFacade extends AbstractSegueFacade {
     }
 
 
-    @GET
-    @Path("/change_user_streak/{user_id}/{streak_value}")
+    @POST
+    @Path("/change_user_streak/{user_id}")
     @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
     public synchronized Response changeUserStreak(@Context final HttpServletRequest request,
-                                                  @PathParam("user_id") final Long userId,
-                                                  @PathParam("streak_value") final Long streakValue) {
+                                                  @PathParam("user_id") final Long userId, final Long streakValue) {
 
         Map<String, Object> eventDetails = ImmutableMap.of("user_id", userId, "new_streak_length", streakValue);
 
