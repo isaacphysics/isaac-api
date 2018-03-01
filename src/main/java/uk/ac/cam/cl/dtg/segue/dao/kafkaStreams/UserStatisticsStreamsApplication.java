@@ -260,15 +260,13 @@ public class UserStatisticsStreamsApplication {
 
                                 }
 
-                            } catch (Exception e) {
-                                // streams app annoyingly dies if there is an uncaught exception from any level, so we catch everything
-                                if (e instanceof NoUserException) {
-                                    log.error("User " + userId + " not found in Postgres DB while processing streams data!");
-                                } else if (e instanceof NumberFormatException) {
-                                    log.error("Could not process user with id = " + userId + " in streams application.");
-                                } else {
-                                    e.printStackTrace();
-                                }
+                            } catch (NoUserException e) {
+                                log.error("User " + userId + " not found in Postgres DB while processing streams data!");
+                            } catch (NumberFormatException | SegueDatabaseException e) {
+                                log.error("Could not process user with id = " + userId + " in streams application.");
+                            } catch (RuntimeException e) {
+                                // streams app annoyingly dies if there is an uncaught runtime exception from any level, so we catch everything
+                                e.printStackTrace();
                             }
 
                             return userSnapshot;

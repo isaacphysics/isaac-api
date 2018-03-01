@@ -256,24 +256,22 @@ public class SiteStatisticsStreamsApplication {
                                 ((ObjectNode) lastSeenData.path(eventType)).put("latest", stamp.getTime());
                                 ((ObjectNode) lastSeenData).put("last_seen", stamp.getTime());
 
-                            } catch (Exception e) {
-                                // streams app annoyingly dies if there is an uncaught exception from any level, so we catch everything
-                                if (e instanceof NoUserException) {
-                                    // don't want to clog up the logs with historical processing if we are ever doing a backfill
-                                    if (userUpdateLogEvent.path("timestamp").asLong() > streamAppStartTime) {
-                                        log.error("User " + userId + " not found in Postgres DB while processing streams data!");
-                                    }
-                                    // returning a null record will ensure that it will be removed from the internal rocksDB store
-                                    return null;
 
-                                } else if (e instanceof NumberFormatException) {
-                                    if (userUpdateLogEvent.path("timestamp").asLong() > streamAppStartTime) {
-                                        log.error("Could not process user with id = " + userId + " in streams application.");
-                                    }
-                                    return null;
-                                } else {
-                                    e.printStackTrace();
+                            } catch (NoUserException e) {
+                                // don't want to clog up the logs with historical processing if we are ever doing a backfill
+                                if (userUpdateLogEvent.path("timestamp").asLong() > streamAppStartTime) {
+                                    log.error("User " + userId + " not found in Postgres DB while processing streams data!");
                                 }
+                                // returning a null record will ensure that it will be removed from the internal rocksDB store
+                                return null;
+                            } catch (NumberFormatException | SegueDatabaseException e) {
+                                if (userUpdateLogEvent.path("timestamp").asLong() > streamAppStartTime) {
+                                    log.error("Could not process user with id = " + userId + " in streams application.");
+                                }
+                                return null;
+                            } catch (RuntimeException e) {
+                                // streams app annoyingly dies if there is an uncaught runtime exception from any level, so we catch everything
+                                e.printStackTrace();
                             }
 
                             return userRecord;
