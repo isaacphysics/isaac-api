@@ -215,11 +215,11 @@ public class SiteStatisticsStreamsApplication {
                         // aggregator
                         (userId, userUpdateLogEvent, userRecord) -> {
 
-                            String eventType = userUpdateLogEvent.path("event_type").asText();
+                            try {
 
-                            if (eventType.equals("CREATE_UPDATE_USER")) {
+                                String eventType = userUpdateLogEvent.path("event_type").asText();
 
-                                try {
+                                if (eventType.equals("CREATE_UPDATE_USER")) {
 
                                     // we get the latest record from postgres to avoid passing sensitive info through Kafka
                                     RegisteredUserDTO regUser = userAccountManager.getUserDTOById(Long.parseLong(userId));
@@ -237,40 +237,42 @@ public class SiteStatisticsStreamsApplication {
 
                                     ((ObjectNode) userRecord).put("user_id", userId);
                                     ((ObjectNode) userRecord).set("user_data", userDetails);
-
-                                } catch (SegueDatabaseException e) {
-                                    e.printStackTrace();
-                                } catch (NoUserException e) {
-                                    // don't want to clog up the logs with historical processing if we are ever doing a backfill
-                                    if (userUpdateLogEvent.path("timestamp").asLong() > streamAppStartTime) {
-                                        log.error("User " + userId + " not found in Postgres DB while processing streams data!");
-                                    }
-                                    // returning a null record will ensure that it will be removed from the internal rocksDB store
-                                    return null;
-                                } catch (NumberFormatException e) {
-                                    if (userUpdateLogEvent.path("timestamp").asLong() > streamAppStartTime) {
-                                        log.error("Could not process user with id = " + userId + " in streams application.");
-                                    }
-                                    return null;
                                 }
+
+                                // record user last seen data
+                                JsonNode lastSeenData = userRecord.path("last_seen_data");
+                                Timestamp stamp = new Timestamp(userUpdateLogEvent.path("timestamp").asLong());
+
+
+                                if (!lastSeenData.has(eventType)) {
+                                    ObjectNode node = JsonNodeFactory.instance.objectNode();
+                                    node.put("count", 0);
+                                    node.put("latest", 0);
+                                    ((ObjectNode) lastSeenData).set(eventType, node);
+                                }
+
+                                Long count = lastSeenData.path(eventType).path("count").asLong();
+                                ((ObjectNode) lastSeenData.path(eventType)).put("count", count + 1);
+                                ((ObjectNode) lastSeenData.path(eventType)).put("latest", stamp.getTime());
+                                ((ObjectNode) lastSeenData).put("last_seen", stamp.getTime());
+
+
+                            } catch (NoUserException e) {
+                                // don't want to clog up the logs with historical processing if we are ever doing a backfill
+                                if (userUpdateLogEvent.path("timestamp").asLong() > streamAppStartTime) {
+                                    log.error("User " + userId + " not found in Postgres DB while processing streams data!");
+                                }
+                                // returning a null record will ensure that it will be removed from the internal rocksDB store
+                                return null;
+                            } catch (NumberFormatException | SegueDatabaseException e) {
+                                if (userUpdateLogEvent.path("timestamp").asLong() > streamAppStartTime) {
+                                    log.error("Could not process user with id = " + userId + " in streams application.");
+                                }
+                                return null;
+                            } catch (RuntimeException e) {
+                                // streams app annoyingly dies if there is an uncaught runtime exception from any level, so we catch everything
+                                e.printStackTrace();
                             }
-
-                            // record user last seen data
-                            JsonNode lastSeenData = userRecord.path("last_seen_data");
-                            Timestamp stamp = new Timestamp(userUpdateLogEvent.path("timestamp").asLong());
-
-
-                            if (!lastSeenData.has(eventType)) {
-                                ObjectNode node = JsonNodeFactory.instance.objectNode();
-                                node.put("count", 0);
-                                node.put("latest", 0);
-                                ((ObjectNode) lastSeenData).set(eventType, node);
-                            }
-
-                            Long count = lastSeenData.path(eventType).path("count").asLong();
-                            ((ObjectNode) lastSeenData.path(eventType)).put("count", count + 1);
-                            ((ObjectNode) lastSeenData.path(eventType)).put("latest", stamp.getTime());
-                            ((ObjectNode) lastSeenData).put("last_seen", stamp.getTime());
 
                             return userRecord;
                         },

@@ -218,7 +218,7 @@ public class UserStatisticsStreamsApplication {
                             streakRecord.put("current_activity", 0);
                             streakRecord.put("activity_threshold", 3);
 
-                            userSnapshot.put("streak_record", streakRecord);
+                            userSnapshot.set("streak_record", streakRecord);
 
                             return userSnapshot;
                         },
@@ -233,37 +233,41 @@ public class UserStatisticsStreamsApplication {
                                 teacherRecord.put("assignments_set", 0);
                                 teacherRecord.put("book_pages_set", 0);
                                 teacherRecord.put("cpd_events_attended", 0);
-                                ((ObjectNode) userSnapshot).put("teacher_record", teacherRecord);
+                                ((ObjectNode) userSnapshot).set("teacher_record", teacherRecord);
                             }
 
 
-                            // snapshot updates pertaining to question answer activity
-                            if (latestEvent.path("event_type").asText().equals("ANSWER_QUESTION")) {
-
-                                if (latestEvent.path("event_details").path("correct").asBoolean()) {
-                                    ((ObjectNode) userSnapshot).put("streak_record", updateStreakRecord(userId, latestEvent, userSnapshot.path("streak_record")));
-                                }
-                            }
-
-                            // snapshot updates pertaining to teacher activity
                             try {
 
+                                // snapshot updates pertaining to question answer activity
+                                if (latestEvent.path("event_type").asText().equals("ANSWER_QUESTION")) {
+
+                                    if (latestEvent.path("event_details").path("correct").asBoolean()) {
+                                        ((ObjectNode) userSnapshot).set("streak_record", updateStreakRecord(userId, latestEvent, userSnapshot.path("streak_record")));
+                                    }
+                                }
+
+                                // snapshot updates pertaining to teacher activity
                                 if (!userAccountManager.getUserDTOById(Long.parseLong(userId)).getRole().equals(Role.STUDENT)) {
 
                                     if (latestEvent.path("event_type").asText().equals("CREATE_USER_GROUP")) {
-                                        ((ObjectNode) userSnapshot).put("teacher_record", updateTeacherActivityRecord("groups_created", userSnapshot.path("teacher_record")));
+                                        ((ObjectNode) userSnapshot).set("teacher_record", updateTeacherActivityRecord("groups_created", userSnapshot.path("teacher_record")));
                                     }
 
                                     if (latestEvent.path("event_type").asText().equals("SET_NEW_ASSIGNMENT")) {
-                                        ((ObjectNode) userSnapshot).put("teacher_record", updateTeacherActivityRecord("assignments_set", userSnapshot.path("teacher_record")));
+                                        ((ObjectNode) userSnapshot).set("teacher_record", updateTeacherActivityRecord("assignments_set", userSnapshot.path("teacher_record")));
                                     }
 
                                 }
 
-                            } catch (NoUserException | SegueDatabaseException e) {
+                            } catch (NoUserException e) {
+                                log.error("User " + userId + " not found in Postgres DB while processing streams data!");
+                            } catch (NumberFormatException | SegueDatabaseException e) {
+                                log.error("Could not process user with id = " + userId + " in streams application.");
+                            } catch (RuntimeException e) {
+                                // streams app annoyingly dies if there is an uncaught runtime exception from any level, so we catch everything
                                 e.printStackTrace();
                             }
-
 
                             return userSnapshot;
                         },
