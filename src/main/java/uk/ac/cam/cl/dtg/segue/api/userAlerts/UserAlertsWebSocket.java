@@ -132,12 +132,7 @@ public class UserAlertsWebSocket implements IAlertListener {
                 // TODO: Send initial set of notifications.
                 List<IUserAlert> persistedAlerts = userAlerts.getUserAlerts(connectedUser.getId());
                 if (!persistedAlerts.isEmpty()) {
-
-                    try {
-                        session.getRemote().sendString(objectMapper.writeValueAsString(ImmutableMap.of("notifications", persistedAlerts)));
-                    } catch (IllegalStateException e) {
-                        e.printStackTrace();
-                    }
+                    session.getRemote().sendString(objectMapper.writeValueAsString(ImmutableMap.of("notifications", persistedAlerts)));
                 }
 
                 websocketsOpened++;
@@ -201,7 +196,7 @@ public class UserAlertsWebSocket implements IAlertListener {
     public void notifyAlert(final IUserAlert alert) {
         try {
             this.session.getRemote().sendString(objectMapper.writeValueAsString(ImmutableMap.of("notifications", ImmutableList.of(alert))));
-        } catch (IOException | IllegalStateException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -215,12 +210,8 @@ public class UserAlertsWebSocket implements IAlertListener {
      */
     private void sendUserSnapshotData() throws IOException {
 
-        try {
-            session.getRemote().sendString(objectMapper.writeValueAsString(ImmutableMap.of("userSnapshot",
-                    userStatisticsStreamsApplication.getUserSnapshot(connectedUser))));
-        } catch (IllegalStateException e) {
-            e.printStackTrace();
-        }
+        session.getRemote().sendString(objectMapper.writeValueAsString(ImmutableMap.of("userSnapshot",
+                userStatisticsStreamsApplication.getUserSnapshot(connectedUser))));
     }
 
 
