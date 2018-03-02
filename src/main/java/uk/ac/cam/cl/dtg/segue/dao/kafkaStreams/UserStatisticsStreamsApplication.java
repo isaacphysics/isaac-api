@@ -25,7 +25,6 @@ import com.google.api.client.util.Maps;
 import com.google.common.collect.Lists;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.config.TopicConfig;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
@@ -90,7 +89,7 @@ public class UserStatisticsStreamsApplication {
     private ILogManager logManager;
 
 
-    private final String streamsAppNameAndVersion = "streamsapp_user_stats-v1.0";
+    private final String streamsAppNameAndVersion = "streamsapp_user_stats-v1.1";
 
 
     /**
