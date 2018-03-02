@@ -167,7 +167,7 @@ public class UserStatisticsStreamsApplication {
 
                             } else if (wasLagging.get()) {
                                 wasLagging.set(false);
-                                kafkaLog.info("Site statistics stream processing caught up.");
+                                kafkaLog.info("User statistics stream processing caught up.");
                             }
                         }
                 );
