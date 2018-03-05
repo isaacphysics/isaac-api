@@ -22,14 +22,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.api.client.util.Maps;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.config.TopicConfig;
-import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.connect.json.JsonDeserializer;
 import org.apache.kafka.connect.json.JsonSerializer;
 import org.apache.kafka.streams.KafkaStreams;
@@ -56,6 +55,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.sql.Timestamp;
 import java.util.Calendar;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -74,10 +74,8 @@ public class UserStatisticsStreamsApplication {
     private static final Logger log = LoggerFactory.getLogger(UserStatisticsStreamsApplication.class);
     private static final Logger kafkaLog = LoggerFactory.getLogger("kafkaStreamsLogger");
 
-    private static final Serializer<JsonNode> JsonSerializer = new JsonSerializer();
-    private static final Deserializer<JsonNode> JsonDeserializer = new JsonDeserializer();
     private static final Serde<String> StringSerde = Serdes.String();
-    private static final Serde<JsonNode> JsonSerde = Serdes.serdeFrom(JsonSerializer, JsonDeserializer);
+    private static final Serde<JsonNode> JsonSerde = Serdes.serdeFrom(new JsonSerializer(), new JsonDeserializer());
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private KafkaTopicManager kafkaTopicManager;
@@ -89,7 +87,8 @@ public class UserStatisticsStreamsApplication {
     private ILogManager logManager;
 
 
-    private final String streamsAppNameAndVersion = "streamsapp_user_stats-v1.1";
+    private final String streamsAppName = "streamsapp_user_stats";
+    private final String streamsAppVersion = "v1.1-050318-test";
 
 
     /**
@@ -112,14 +111,13 @@ public class UserStatisticsStreamsApplication {
         this.logManager = logManager;
 
 
-        streamsConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, streamsAppNameAndVersion);
+        streamsConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, streamsAppName + "-" + streamsAppVersion);
         streamsConfiguration.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG,
                 globalProperties.getProperty("KAFKA_HOSTNAME") + ":" + globalProperties.getProperty("KAFKA_PORT"));
         streamsConfiguration.put(StreamsConfig.STATE_DIR_CONFIG, globalProperties.getProperty("KAFKA_STREAMS_STATE_DIR"));
         streamsConfiguration.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
         streamsConfiguration.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
         streamsConfiguration.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, 10 * 1000);
-        streamsConfiguration.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 0);
         streamsConfiguration.put(StreamsConfig.METADATA_MAX_AGE_CONFIG, 10 * 1000);
         streamsConfiguration.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 0);
         streamsConfiguration.put(StreamsConfig.REPLICATION_FACTOR_CONFIG, globalProperties.getProperty("KAFKA_REPLICATION_FACTOR"));
@@ -146,7 +144,7 @@ public class UserStatisticsStreamsApplication {
         // local store changelog topics
         List<ConfigEntry> changelogConfigs = Lists.newLinkedList();
         changelogConfigs.add(new ConfigEntry(TopicConfig.CLEANUP_POLICY_CONFIG, TopicConfig.CLEANUP_POLICY_COMPACT));
-        kafkaTopicManager.ensureTopicExists(streamsAppNameAndVersion + "-localstore_user_snapshot-changelog", changelogConfigs);
+        kafkaTopicManager.ensureTopicExists(streamsAppName + "-" + streamsAppVersion + "-localstore_user_snapshot-changelog", changelogConfigs);
 
         final AtomicLong lastLagLog = new AtomicLong(0);
         final AtomicBoolean wasLagging = new AtomicBoolean(true);
@@ -178,7 +176,8 @@ public class UserStatisticsStreamsApplication {
         // need to make state stores queryable globally, as we often have 2 versions of API running concurrently, hence 2 streams app instances
         // aggregations are saved to a local state store per streams app instance and update a changelog topic in Kafka
         // we can use this changelog to populate a global state store for all streams app instances
-        builder.globalTable(StringSerde, JsonSerde,streamsAppNameAndVersion + "-localstore_user_snapshot-changelog", "globalstore_user_snapshot");
+        builder.globalTable(StringSerde, JsonSerde,streamsAppName + "-" + streamsAppVersion + "-localstore_user_snapshot-changelog",
+                "globalstore_user_snapshot-" + streamsAppVersion);
 
         // use the builder and the streams configuration we set to setup and start a streams object
         streams = new KafkaStreams(builder, streamsConfiguration);
@@ -386,7 +385,7 @@ public class UserStatisticsStreamsApplication {
      * @param streakRecord the current snapshot of the streak record
      * @return the new updated streak record
      */
-    private JsonNode updateStreakRecord(String userId, JsonNode latestEvent, JsonNode streakRecord) {
+    private JsonNode updateStreakRecord(String userId, JsonNode latestEvent, JsonNode streakRecord) throws SegueDatabaseException {
 
         // timestamp of streak start
         Long streakStartTimestamp = streakRecord.path("streak_start").asLong();
@@ -439,42 +438,42 @@ public class UserStatisticsStreamsApplication {
 
 
         // 2) We want to make sure the user hasn't answered the question part correctly before. If they have, don't continue
-        String questionId = latestEvent.path("event_details").path("questionId").asText();
-        List<Long> user = Lists.newArrayList();
-        List<String> questionPageId = Lists.newArrayList();
-        user.add(Long.parseLong(userId));
-        questionPageId.add(questionId.split("\\|")[0]);
+        String questionPartId = latestEvent.path("event_details").path("questionId").asText();
+        String questionPageId = questionPartId.split("\\|")[0];
 
-        try {
-            Map<Long, Map<String, Map<String, List<QuestionValidationResponse>>>> questionAttempts =
-                    questionAttemptManager.getQuestionAttemptsByUsersAndQuestionPrefix(user, questionPageId);
+        Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts =
+                questionAttemptManager.getQuestionAttemptsByUsersAndQuestionPrefix(ImmutableList.of(Long.parseLong(userId)), ImmutableList.of(questionPageId))
+                        .get(Long.parseLong(userId));
 
-            // the following assumes that question attempts are always recorded in the question attempt table before they are logged as an event
-            if (!questionAttempts.get(Long.parseLong(userId)).isEmpty()
-                    && questionAttempts.get(Long.parseLong(userId)).containsKey(questionId.split("\\|")[0])
-                    && questionAttempts.get(Long.parseLong(userId)).get(questionId.split("\\|")[0]).containsKey(questionId)) {
+        // the following assumes that question attempts are always recorded in the pg question attempt table before they are logged as an event
+        if (!userQuestionAttempts.isEmpty()
+                && userQuestionAttempts.containsKey(questionPageId)
+                && userQuestionAttempts.get(questionPageId).containsKey(questionPartId)) {
 
-                Integer correctCount = 0;
-                for (QuestionValidationResponse response: questionAttempts.get(Long.parseLong(userId))
-                        .get(questionId.split("\\|")[0])
-                        .get(questionId)
-                        ) {
+            List<QuestionValidationResponse> correctResponses = Lists.newArrayList();
+            for (QuestionValidationResponse response: userQuestionAttempts
+                    .get(questionPageId)
+                    .get(questionPartId)
+                    ) {
 
-                    // count all the times the user has correctly attempted the question
-                    if (response.isCorrect()) {
-                        correctCount++;
-                    }
-                }
-
-                // if the correct count is 1 then the recorded attempt corresponds to the current event
-                // otherwise the user has attempted it correctly before, therefore we don't continue
-                if (correctCount > 1) {
-                    return streakRecord;
+                // make note of all correct attempts for this question part
+                if (response.isCorrect()) {
+                    correctResponses.add(response);
                 }
             }
 
-        } catch (SegueDatabaseException e) {
-            e.printStackTrace();
+            // sort the attempts by date attempted
+            correctResponses.sort(Comparator.comparing(QuestionValidationResponse::getDateAttempted));
+
+            // only want to continue if the current correct attempt has never been processed before
+            // need to accommodate for possibility of multiple correct attempts in pg question attempts table (e.g. when re-processing historical log events)
+            if (correctResponses.size() > 1) {
+
+                // dateAttempted is consistent across log event details and question attempt details, so compare this
+                if (latestEvent.path("event_details").path("dateAttempted").asLong() > correctResponses.get(0).getDateAttempted().getTime()) {
+                    return streakRecord;
+                }
+            }
         }
 
 
