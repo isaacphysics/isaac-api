@@ -32,6 +32,7 @@ import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.connect.json.JsonDeserializer;
 import org.apache.kafka.connect.json.JsonSerializer;
 import org.apache.kafka.streams.KafkaStreams;
+import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KStreamBuilder;
@@ -88,7 +89,7 @@ public class UserStatisticsStreamsApplication {
 
 
     private final String streamsAppName = "streamsapp_user_stats";
-    private final String streamsAppVersion = "v1.2";
+    private final String streamsAppVersion = "v1.2-060318-test-from-beginning";
 
 
     /**
@@ -202,9 +203,14 @@ public class UserStatisticsStreamsApplication {
      */
     private void streamProcess(KStream<String, JsonNode> rawStream) {
 
+        // map the key-value pair to one where the key is always the user id
+        KStream<String, JsonNode> mappedStream = rawStream
+                .map(
+                        (k, v) -> new KeyValue<>(v.path("user_id").asText(), v)
+                );
 
         // user question answer streaks
-        rawStream.groupByKey()
+        mappedStream.groupByKey(StringSerde, JsonSerde)
                 .aggregate(
                         // initializer
                         () -> {
