@@ -88,7 +88,7 @@ public class UserStatisticsStreamsApplication {
 
 
     private final String streamsAppName = "streamsapp_user_stats";
-    private final String streamsAppVersion = "v1.1-050318-test";
+    private final String streamsAppVersion = "v1.2";
 
 
     /**
