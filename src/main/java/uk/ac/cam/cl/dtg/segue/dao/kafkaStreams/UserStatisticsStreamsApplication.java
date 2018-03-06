@@ -303,7 +303,7 @@ public class UserStatisticsStreamsApplication {
 
         // get the persisted snapshot document
         JsonNode snapshotRecord = streams
-                .store("globalstore_user_snapshot", QueryableStoreTypes.<String, JsonNode>keyValueStore())
+                .store("globalstore_user_snapshot-" + streamsAppVersion, QueryableStoreTypes.<String, JsonNode>keyValueStore())
                 .get(String.valueOf(user.getId()));
 
 
