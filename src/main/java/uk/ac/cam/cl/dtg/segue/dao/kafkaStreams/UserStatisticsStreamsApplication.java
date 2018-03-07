@@ -90,8 +90,8 @@ public class UserStatisticsStreamsApplication {
     private ILogManager logManager;
 
 
-    private final String streamsAppName = "streamsapp_user_stats";
-    private final String streamsAppVersion = "v1.2";
+    private static final String streamsAppName = "streamsapp_user_stats";
+    private static final String streamsAppVersion = "v1.2";
     private static Boolean streamThreadRunning;
 
 
@@ -129,7 +129,7 @@ public class UserStatisticsStreamsApplication {
         streamsConfiguration.put(StreamsConfig.consumerPrefix(ConsumerConfig.METADATA_MAX_AGE_CONFIG), 45 * 1000);
         streamsConfiguration.put(StreamsConfig.producerPrefix(ProducerConfig.METADATA_MAX_AGE_CONFIG), 45 * 1000);
         streamsConfiguration.put(StreamsConfig.consumerPrefix(ConsumerConfig.MAX_POLL_RECORDS_CONFIG), 250);
-        streamsConfiguration.put(StreamsConfig.consumerPrefix(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG), 60000);
+        //streamsConfiguration.put(StreamsConfig.consumerPrefix(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG), 60000);
 
     }
 
@@ -595,7 +595,7 @@ public class UserStatisticsStreamsApplication {
      * Method to expose streams app details and status
      * @return map of streams app properties
      */
-    public Map<String, Object> getAppStatus() {
+    public static Map<String, Object> getAppStatus() {
 
         return ImmutableMap.of(
                 "streamsApplicationName", streamsAppName,

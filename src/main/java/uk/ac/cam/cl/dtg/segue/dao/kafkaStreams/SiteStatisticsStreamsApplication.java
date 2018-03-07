@@ -73,8 +73,8 @@ public class SiteStatisticsStreamsApplication {
 
     private KafkaStreams streams;
 
-    private final String streamsAppName = "streamsapp_site_stats";
-    private final String streamsAppVersion = "v2.1";
+    private static final String streamsAppName = "streamsapp_site_stats";
+    private static final String streamsAppVersion = "v2.1";
     private static Long streamAppStartTime = System.currentTimeMillis();
     private static Boolean streamThreadRunning;
 
@@ -376,7 +376,7 @@ public class SiteStatisticsStreamsApplication {
      * Method to expose streams app details and status
      * @return map of streams app properties
      */
-    public Map<String, Object> getAppStatus() {
+    public static Map<String, Object> getAppStatus() {
 
         return ImmutableMap.of(
                 "streamsApplicationName", streamsAppName,
