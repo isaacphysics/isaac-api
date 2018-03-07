@@ -654,8 +654,8 @@ public class GameboardPersistenceManager {
 			if (item != null) {
 				gameboardDTO.getQuestions().add(item);	
 			} else {
-                log.warn("The gameboard: " + gameboardDTO.getId() + " has a reference to a question (" + questionid
-                        + ") that we cannot find. Removing it from the DTO.");
+                log.warn(String.format("The gameboard '%s' references an unavailable question '%s' - removing it from the DTO!",
+                        gameboardDTO.getId(), questionid));
 			}
 		}
 		return gameboardDTO;
