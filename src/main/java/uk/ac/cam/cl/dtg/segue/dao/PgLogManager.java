@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.ParseException;
@@ -555,4 +556,64 @@ public class PgLogManager implements ILogManager {
 
         return logEvent;
     }
+
+
+
+
+    // FIXME!!!!!!!!! - CODE FROM HERE ADDED AS AN EXPERIMENT!
+
+    private List<Map<String, Object>> doQuery(final String sqlQuery) throws SegueDatabaseException {
+        try (Connection conn = database.getDatabaseConnection()) {
+
+            ResultSet resultSet = conn.createStatement().executeQuery(sqlQuery);
+            List<String> columnNames = Lists.newArrayList();
+            ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
+            for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
+                columnNames.add(resultSetMetaData.getColumnName(i));
+            }
+
+            List<Map<String, Object>> data = Lists.newArrayList();
+            while (resultSet.next()) {
+                Map<String, Object> row = Maps.newHashMap();
+                for (String column: columnNames) {
+                    row.put(column, resultSet.getObject(column));
+                }
+                data.add(row);
+            }
+
+            return data;
+
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        }
+    }
+
+
+    public Map<String, Object> calculateStatistics() throws SegueDatabaseException {
+
+        Map<String, Object> result = new HashMap<>();
+
+        result.put("userGenders", doQuery("SELECT gender, count(1) FROM users GROUP BY gender;"));
+        result.put("userRoles", doQuery("SELECT role, count(1) FROM users GROUP BY role;"));
+
+        result.put("userSchools", doQuery("SELECT school_id IS NOT NULL AS has_school_id, school_other IS NOT NULL AS has_school_other, count(1) FROM users GROUP BY has_school_id, has_school_other;"));
+
+        result.put("viewQuestionEvents", doQuery("SELECT count(1) FROM logged_events WHERE event_type='VIEW_QUESTION'").get(0));
+        result.put("answeredQuestionEvents", doQuery("SELECT count(1) FROM logged_events WHERE event_type='ANSWER_QUESTION'").get(0));
+
+        result.put("activeInLastSixMonths", doQuery("SELECT count(1) FROM users WHERE last_seen >= now() - INTERVAL '6 MONTH'").get(0));
+
+        result.put("activeUsersLastSevenDays", doQuery("SELECT role, count(1) FROM users WHERE last_seen >= now() - INTERVAL '7 DAY' GROUP BY role"));
+        result.put("activeUsersLastThirtyDays", doQuery("SELECT role, count(1) FROM users WHERE last_seen >= now() - INTERVAL '30 DAY' GROUP BY role"));
+        result.put("activeUsersLastNinetyDays", doQuery("SELECT role, count(1) FROM users WHERE last_seen >= now() - INTERVAL '90 DAY' GROUP BY role"));
+
+        result.put("answeringUsersLastSevenDays", doQuery("SELECT role, count(DISTINCT users.id) FROM logged_events LEFT OUTER JOIN users ON user_id=users.id::TEXT WHERE timestamp > now() - INTERVAL '7 DAY' AND event_type='ANSWER_QUESTION' GROUP BY role"));
+        result.put("answeringUsersLastThirtyDays", doQuery("SELECT role, count(DISTINCT users.id) FROM logged_events LEFT OUTER JOIN users ON user_id=users.id::TEXT WHERE timestamp > now() - INTERVAL '30 DAY' AND event_type='ANSWER_QUESTION' GROUP BY role"));
+        result.put("answeringUsersLastNinetyDays", doQuery("SELECT role, count(DISTINCT users.id) FROM logged_events LEFT OUTER JOIN users ON user_id=users.id::TEXT WHERE timestamp > now() - INTERVAL '90 DAY' AND event_type='ANSWER_QUESTION' GROUP BY role"));
+
+        result.put("groupCount", doQuery("SELECT count(*) FROM groups").get(0));
+
+        return result;
+    }
+
 }

@@ -166,4 +166,7 @@ public interface ILogManager {
      * @throws SegueDatabaseException - if there is a problem contacting the underlying database
      */
     Set<String> getAllEventTypes() throws SegueDatabaseException;
+
+    // FIXME!!!!!!!!! - CODE FROM HERE ADDED AS AN EXPERIMENT!
+     Map<String, Object> calculateStatistics() throws SegueDatabaseException;
 }
