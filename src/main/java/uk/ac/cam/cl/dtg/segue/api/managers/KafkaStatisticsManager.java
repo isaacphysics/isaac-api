@@ -619,5 +619,4 @@ public class KafkaStatisticsManager implements IStatisticsManager {
     private Boolean userLastSeenNDays(Long lastSeen, int daysFromToday) {
         return lastSeen > System.currentTimeMillis() - daysFromToday * 24 * 60 * 60 * 1000L;
     }
-
 }

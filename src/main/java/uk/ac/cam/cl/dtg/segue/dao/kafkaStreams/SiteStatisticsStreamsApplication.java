@@ -19,9 +19,11 @@ package uk.ac.cam.cl.dtg.segue.dao.kafkaStreams;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.kafka.clients.admin.ConfigEntry;
+import org.apache.kafka.clients.consumer.CommitFailedException;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.config.TopicConfig;
@@ -55,6 +57,7 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+
 /**
  * Kafka streams processing application for generating site statistics
  *  @author Dan Underwood
@@ -70,9 +73,10 @@ public class SiteStatisticsStreamsApplication {
 
     private KafkaStreams streams;
 
-    private final String streamsAppName = "streamsapp_site_stats";
-    private final String streamsAppVersion = "v2.1";
+    private static final String streamsAppName = "streamsapp_site_stats";
+    private static final String streamsAppVersion = "v2.1";
     private static Long streamAppStartTime = System.currentTimeMillis();
+    private static Boolean streamThreadRunning;
 
 
     /**
@@ -160,13 +164,29 @@ public class SiteStatisticsStreamsApplication {
 
         // use the builder and the streams configuration we set to setup and start a streams object
         streams = new KafkaStreams(builder, streamsConfiguration);
+
+        // handling fatal streams app exceptions
+        streams.setUncaughtExceptionHandler(
+                (thread, throwable) -> {
+
+                    // a bit hacky, but we know that the rebalance-inducing app death is caused by a CommitFailedException that is two levels deep into the stack trace
+                    // otherwsie we get a StreamsException which is too general
+                    if (throwable.getCause().getCause() instanceof CommitFailedException) {
+                        streamThreadRunning = false;
+                        log.info("Site statistics streams app no longer running.");
+                    }
+                }
+        );
+
         streams.start();
 
         // return when streams instance is initialized
         while (true) {
 
-            if (streams.state().isCreatedOrRunning())
+            if (streams.state().isCreatedOrRunning()) {
+                streamThreadRunning = true;
                 break;
+            }
         }
 
         kafkaLog.info("Site statistics streams application started.");
@@ -350,6 +370,20 @@ public class SiteStatisticsStreamsApplication {
                 .store("globalstore_user_data-" + streamsAppVersion,
                         QueryableStoreTypes.<String, JsonNode>keyValueStore())
                 .all();
+    }
+
+
+    /**
+     * Method to expose streams app details and status
+     * TODO: we can share this between different streams apps in future if we introduce some inheritance between them
+     * @return map of streams app properties
+     */
+    public static Map<String, Object> getAppStatus() {
+
+        return ImmutableMap.of(
+                "streamsApplicationName", streamsAppName,
+                "version", streamsAppVersion,
+                "running", streamThreadRunning);
     }
 
 }

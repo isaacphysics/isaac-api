@@ -23,8 +23,10 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import org.apache.kafka.clients.admin.ConfigEntry;
+import org.apache.kafka.clients.consumer.CommitFailedException;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.config.TopicConfig;
@@ -88,8 +90,9 @@ public class UserStatisticsStreamsApplication {
     private ILogManager logManager;
 
 
-    private final String streamsAppName = "streamsapp_user_stats";
-    private final String streamsAppVersion = "v1.2";
+    private static final String streamsAppName = "streamsapp_user_stats";
+    private static final String streamsAppVersion = "v1.2";
+    private static Boolean streamThreadRunning;
 
 
     /**
@@ -183,13 +186,29 @@ public class UserStatisticsStreamsApplication {
 
         // use the builder and the streams configuration we set to setup and start a streams object
         streams = new KafkaStreams(builder, streamsConfiguration);
+
+        // handling fatal streams app exceptions
+        streams.setUncaughtExceptionHandler(
+                (thread, throwable) -> {
+
+                    // a bit hacky, but we know that the rebalance-inducing app death is caused by a CommitFailedException that is two levels deep into the stack trace
+                    // otherwsie we get a StreamsException which is too general
+                    if (throwable.getCause().getCause() instanceof CommitFailedException) {
+                        streamThreadRunning = false;
+                        log.info("User statistics streams app no longer running.");
+                    }
+                }
+        );
+
         streams.start();
 
         // return when streams instance is initialized
         while (true) {
 
-            if (streams.state().isCreatedOrRunning())
+            if (streams.state().isCreatedOrRunning()) {
+                streamThreadRunning = true;
                 break;
+            }
         }
 
         kafkaLog.info("User statistics streams application started.");
@@ -570,6 +589,20 @@ public class UserStatisticsStreamsApplication {
         calendar.set(Calendar.HOUR_OF_DAY, 0);
 
         return calendar;
+    }
+
+
+    /**
+     * Method to expose streams app details and status
+     * TODO: we can share this between different streams apps in future if we introduce some inheritance between them
+     * @return map of streams app properties
+     */
+    public static Map<String, Object> getAppStatus() {
+
+        return ImmutableMap.of(
+                "streamsApplicationName", streamsAppName,
+                "version", streamsAppVersion,
+                "running", streamThreadRunning);
     }
 
 }
