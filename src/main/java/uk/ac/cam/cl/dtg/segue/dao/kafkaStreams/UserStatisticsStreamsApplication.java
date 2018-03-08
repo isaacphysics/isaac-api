@@ -195,6 +195,7 @@ public class UserStatisticsStreamsApplication {
                     // otherwsie we get a StreamsException which is too general
                     if (throwable.getCause().getCause() instanceof CommitFailedException) {
                         streamThreadRunning = false;
+                        log.info("User statistics streams app no longer running.");
                     }
                 }
         );
@@ -593,6 +594,7 @@ public class UserStatisticsStreamsApplication {
 
     /**
      * Method to expose streams app details and status
+     * TODO: we can share this between different streams apps in future if we introduce some inheritance between them
      * @return map of streams app properties
      */
     public static Map<String, Object> getAppStatus() {

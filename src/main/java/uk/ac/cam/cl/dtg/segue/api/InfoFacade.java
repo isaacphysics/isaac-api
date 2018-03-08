@@ -43,11 +43,11 @@ import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.AnonymousEventsStreamsApplication;
 import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.SiteStatisticsStreamsApplication;
 import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.UserStatisticsStreamsApplication;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
@@ -325,8 +325,11 @@ public class InfoFacade extends AbstractSegueFacade {
             case "user_statistics":
                 return Response.ok(ImmutableMap.of("running", UserStatisticsStreamsApplication.getAppStatus().get("running"))).build();
 
+            case "anonymous_events":
+                return Response.ok(ImmutableMap.of("running", AnonymousEventsStreamsApplication.getAppStatus().get("running"))).build();
+
             default:
-                return Response.ok(ImmutableMap.of("running", false)).build();
+                return new SegueErrorResponse(Status.NOT_FOUND, "Invalid streams app name provided.").toResponse();
         }
     }
 
