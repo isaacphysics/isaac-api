@@ -48,6 +48,8 @@ public class IsaacEventPageDTO extends ContentDTO {
     private List<ExternalReference> preResources;
     private List<ContentDTO> preResourceContent;
     private String emailEventDetails;
+    private String emailConfirmedBookingText;
+    private String emailWaitingListBookingText;
 
     private List<ExternalReference> postResources;
     private List<ContentDTO> postResourceContent;
@@ -447,12 +449,57 @@ public class IsaacEventPageDTO extends ContentDTO {
         isUserOnWaitList = userOnWaitList;
     }
 
+    /**
+     * Get information about the event that is common to all booking system emails
+     * @return emailEventDetails
+     */
     @JsonIgnore
     public String getEmailEventDetails() {
         return emailEventDetails;
     }
 
+    /**
+     * Set the email event details.
+     * @param emailEventDetails - the text to show in the email token
+     */
     public void setEmailEventDetails(final String emailEventDetails) {
         this.emailEventDetails = emailEventDetails;
+    }
+
+
+    /**
+     * Get text about the event for the confirmed emails
+     *
+     * @return emailEventDetails
+     */
+    @JsonIgnore
+    public String getEmailConfirmedBookingText() {
+        return emailConfirmedBookingText;
+    }
+
+    /**
+     * Set the email confirmed booking text for emails.
+     * @param emailConfirmedBookingText - text to show in emails
+     */
+    public void setEmailConfirmedBookingText(String emailConfirmedBookingText) {
+        this.emailConfirmedBookingText = emailConfirmedBookingText;
+    }
+
+    /**
+     * Get text about the event for the waiting list emails
+     *
+     * @return emailEventDetails
+     */
+    @JsonIgnore
+    public String getEmailWaitingListBookingText() {
+        return emailWaitingListBookingText;
+    }
+
+    /**
+     * Set the email waiting list text for emails.
+     * @param emailWaitingListBookingText - text to show in email.
+     */
+    public void setEmailWaitingListBookingText(String emailWaitingListBookingText) {
+        this.emailWaitingListBookingText = emailWaitingListBookingText;
     }
 }
