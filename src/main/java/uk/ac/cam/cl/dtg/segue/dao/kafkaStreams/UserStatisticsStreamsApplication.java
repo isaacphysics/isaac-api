@@ -530,12 +530,6 @@ public class UserStatisticsStreamsApplication {
             eventDetails.put("longestStreak", streakRecord.path("largest_streak").asLong());
             eventDetails.put("threshold", streakRecord.path("activity_threshold").asLong());
             eventDetails.put("streakType", "correctQuestionPartsPerDay");
-
-            try {
-                logManager.logInternalEvent(userAccountManager.getUserDTOById(Long.parseLong(userId)), LONGEST_STREAK_REACHED, eventDetails);
-            } catch (NoUserException | SegueDatabaseException e) {
-                e.printStackTrace();
-            }
         }
 
 
