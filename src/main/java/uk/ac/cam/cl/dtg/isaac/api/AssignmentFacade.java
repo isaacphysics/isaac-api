@@ -751,24 +751,36 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     }
 
     /**
-     * Allows a user to get all groups that have been assigned to a given board.
-     * 
+     * Allows a user to get all groups that have been assigned to a given list of boards.
+     *
      * @param request
      *            - so that we can identify the current user.
-     * @param gameboardId
-     *            - the id of the game board of interest.
+     * @param gameboardIdsQueryParam
+     *            - The comma seperated list of gameboard ids.
      * @return the assignment object.
      */
     @GET
-    @Path("/assign/{gameboard_id}")
+    @Path("/assign/groups")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public Response getAssignedGroups(@Context final HttpServletRequest request,
-            @PathParam("gameboard_id") final String gameboardId) {
+            @QueryParam("gameboard_ids") final String gameboardIdsQueryParam) {
         try {
-            RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
 
-            return Response.ok(assignmentManager.findGroupsByGameboard(currentlyLoggedInUser, gameboardId))
+            if (null == gameboardIdsQueryParam || gameboardIdsQueryParam.isEmpty() ) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a comma separated list of gameboard_ids in the query param")
+                        .toResponse();
+            }
+
+            RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
+            Map<String, Object> gameboardGroups = Maps.newHashMap();
+
+
+            for (String gameboardId : gameboardIdsQueryParam.split(",")) {
+                gameboardGroups.put(gameboardId, assignmentManager.findGroupsByGameboard(currentlyLoggedInUser, gameboardId));
+            }
+
+            return Response.ok(gameboardGroups)
                     .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
