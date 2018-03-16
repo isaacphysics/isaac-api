@@ -238,7 +238,7 @@ public class UserAssociationManager {
 
         UserGroupDTO group = userGroupManager.getGroupById(lookedupToken.getGroupId());
         // add additional manager associations
-        for (Long additionalManagerId : group.getAdditionalManagers()) {
+        for (Long additionalManagerId : group.getAddtionalManagersUserIds()) {
             if (!associationDatabase
                     .hasValidAssociation(additionalManagerId, userGrantingPermission.getId())) {
                 associationDatabase.createAssociation(additionalManagerId, userGrantingPermission.getId());

@@ -18,7 +18,9 @@ package uk.ac.cam.cl.dtg.segue.api.managers;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
+import com.google.api.client.util.Sets;
 import ma.glasnost.orika.MapperFacade;
 
 import org.apache.commons.lang3.Validate;
@@ -33,6 +35,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.DetailedUserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 /**
@@ -101,10 +104,10 @@ public class GroupManager {
      * @throws SegueDatabaseException
      *             - If an error occurred while interacting with the database.
      */
-    public UserGroupDTO editUserGroup(final UserGroup groupToEdit) throws SegueDatabaseException {
+    public UserGroupDTO editUserGroup(final UserGroupDTO groupToEdit) throws SegueDatabaseException {
         Validate.notNull(groupToEdit);
 
-        return this.convertGroupToDTO(groupDatabase.editGroup(groupToEdit));
+        return this.convertGroupToDTO(groupDatabase.editGroup(dtoMapper.map(groupToEdit, UserGroup.class)));
     }
 
     /**
@@ -280,6 +283,14 @@ public class GroupManager {
         return convertGroupToDTO(group);
     }
 
+    /**
+     * Add a user to the list of additional managers who are allowed to manage the group.
+     *
+     * @param group - group to grant permission for
+     * @param userToAdd - user to grant permission to
+     * @return The group DTO
+     * @throws SegueDatabaseException
+     */
     public UserGroupDTO addUserToManagerList(UserGroupDTO group, RegisteredUserDTO userToAdd) throws SegueDatabaseException {
         Validate.notNull(group);
         Validate.notNull(userToAdd);
@@ -293,6 +304,14 @@ public class GroupManager {
         return this.getGroupById(group.getId());
     }
 
+    /**
+     * Remove a user from the list of additional managers who are allowed to manage the group.
+     *
+     * @param group - group to affect
+     * @param userToAdd - user to remove from the management list
+     * @return The group DTO
+     * @throws SegueDatabaseException
+     */
     public UserGroupDTO removeUserFromManagerList(UserGroupDTO group, RegisteredUserDTO userToAdd) throws SegueDatabaseException {
         Validate.notNull(group);
         Validate.notNull(userToAdd);
@@ -373,7 +392,12 @@ public class GroupManager {
      */
     private UserGroupDTO convertGroupToDTO(final UserGroup group) throws SegueDatabaseException{
         UserGroupDTO dtoToReturn = dtoMapper.map(group, UserGroupDTO.class);
-        dtoToReturn.setAdditionalManagers(this.groupDatabase.getAdditionalManagerSetByGroupId(group.getId()));
+
+        Set<DetailedUserSummaryDTO> setOfUsers = Sets.newHashSet();
+        setOfUsers.addAll(userManager.convertToDetailedUserSummaryObjectList(userManager.findUsers(this.groupDatabase.getAdditionalManagerSetByGroupId(group.getId()))));
+
+        dtoToReturn.setAdditionalManagers(setOfUsers);
+
         return dtoToReturn;
     }
 

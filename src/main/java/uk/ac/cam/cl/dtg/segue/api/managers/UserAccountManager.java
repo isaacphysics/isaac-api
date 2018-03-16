@@ -509,13 +509,13 @@ public class UserAccountManager implements IUserAccountManager {
      * @throws SegueDatabaseException
      *             - if there is a database error.
      */
-    public final List<RegisteredUserDTO> findUsers(final List<Long> userIds) throws SegueDatabaseException {
+    public final List<RegisteredUserDTO> findUsers(final Collection<Long> userIds) throws SegueDatabaseException {
         Validate.notNull(userIds);
         if (userIds.isEmpty()) {
             return Lists.newArrayList();
         }
 
-        List<RegisteredUser> registeredUsersDOs = this.database.findUsers(userIds);
+        List<RegisteredUser> registeredUsersDOs = this.database.findUsers(Lists.newArrayList(userIds));
 
         return this.convertUserDOToUserDTOList(registeredUsersDOs);
     }

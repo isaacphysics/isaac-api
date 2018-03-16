@@ -18,13 +18,16 @@ package uk.ac.cam.cl.dtg.segue.dto;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.api.client.util.Sets;
 import org.mongojack.ObjectId;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import uk.ac.cam.cl.dtg.segue.dto.users.DetailedUserSummaryDTO;
 
 /**
  * UserGroupDTO - this object represents a group or label assigned to users who have been placed into a group.
@@ -38,7 +41,7 @@ public class UserGroupDTO {
     private Date created;
     private String token;
     private boolean archived;
-    private Set<Long> additionalManagers;
+    private Set<DetailedUserSummaryDTO> additionalManagers;
 
     /**
      * Default Constructor.
@@ -200,7 +203,7 @@ public class UserGroupDTO {
   
     @Override
     public String toString() {
-        return String.format("UserGroupDTO [id=%s owner_id=%s name=%s]", id, ownerId, groupName);
+        return String.format("UserGroupDTO [id=%s owner_id=%s name=%s additionalManagers=%s]", id, ownerId, groupName, additionalManagers);
     }
   
     public boolean isArchived() {
@@ -216,7 +219,7 @@ public class UserGroupDTO {
      *
      * @return list of user ids
      */
-    public Set<Long> getAdditionalManagers() {
+    public Set<DetailedUserSummaryDTO> getAdditionalManagers() {
         return additionalManagers;
     }
 
@@ -225,7 +228,16 @@ public class UserGroupDTO {
      *
      * @param additionalManagers - those users who should have access to this group.
      */
-    public void setAdditionalManagers(Set<Long> additionalManagers) {
+    public void setAdditionalManagers(Set<DetailedUserSummaryDTO> additionalManagers) {
         this.additionalManagers = additionalManagers;
+    }
+
+    /**
+     * Get the set of user ids who have access
+     * @return set of ids
+     */
+    @JsonIgnore
+    public Set<Long> getAddtionalManagersUserIds() {
+        return additionalManagers.stream().map(DetailedUserSummaryDTO::getId).collect(Collectors.toSet());
     }
 }
