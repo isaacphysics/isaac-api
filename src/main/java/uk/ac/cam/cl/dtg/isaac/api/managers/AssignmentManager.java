@@ -327,7 +327,11 @@ public class AssignmentManager implements IGroupObserver {
         for (AssignmentDTO assignment : allAssignments) {
             if (assignment.getGameboardId().equals(gameboardId)) {
                 try {
-                    groups.add(groupManager.getGroupById(assignment.getGroupId()));
+                    // make sure the user has a reason to see the assignment still
+                    UserGroupDTO group = groupManager.getGroupById(assignment.getGroupId());
+                    if (group.getOwnerId().equals(user.getId()) || GroupManager.isInAdditionalManagerList(group, user.getId())) {
+                        groups.add(group);
+                    }
                 } catch (ResourceNotFoundException e) {
                     // skip group as it no longer exists.
                     log.warn(String.format(
