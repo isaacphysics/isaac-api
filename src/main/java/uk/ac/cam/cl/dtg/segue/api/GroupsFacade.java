@@ -503,7 +503,7 @@ public class GroupsFacade extends AbstractSegueFacade {
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (NoUserException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "User specified does not exist.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "There was a problem adding the user specified. Please make sure their email address is correct and they have a teacher account.").toResponse();
         }
 
     }
