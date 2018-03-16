@@ -394,7 +394,11 @@ public class GroupManager {
         UserGroupDTO dtoToReturn = dtoMapper.map(group, UserGroupDTO.class);
 
         Set<DetailedUserSummaryDTO> setOfUsers = Sets.newHashSet();
-        setOfUsers.addAll(userManager.convertToDetailedUserSummaryObjectList(userManager.findUsers(this.groupDatabase.getAdditionalManagerSetByGroupId(group.getId()))));
+        Set<Long> additionalManagers = this.groupDatabase.getAdditionalManagerSetByGroupId(group.getId());
+
+        if (additionalManagers != null) {
+            setOfUsers.addAll(userManager.convertToDetailedUserSummaryObjectList(userManager.findUsers(additionalManagers)));
+        }
 
         dtoToReturn.setAdditionalManagers(setOfUsers);
 

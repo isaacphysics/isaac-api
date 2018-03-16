@@ -493,7 +493,7 @@ public class UserAccountManager implements IUserAccountManager {
      * @throws SegueDatabaseException
      *             - if there is a database error.
      */
-    public final List<RegisteredUserDTO> findUsers(final RegisteredUserDTO prototype) throws SegueDatabaseException {
+    public List<RegisteredUserDTO> findUsers(final RegisteredUserDTO prototype) throws SegueDatabaseException {
         List<RegisteredUser> registeredUsersDOs = this.database.findUsers(this.dtoMapper.map(prototype,
                 RegisteredUser.class));
 
@@ -509,7 +509,7 @@ public class UserAccountManager implements IUserAccountManager {
      * @throws SegueDatabaseException
      *             - if there is a database error.
      */
-    public final List<RegisteredUserDTO> findUsers(final Collection<Long> userIds) throws SegueDatabaseException {
+    public List<RegisteredUserDTO> findUsers(final Collection<Long> userIds) throws SegueDatabaseException {
         Validate.notNull(userIds);
         if (userIds.isEmpty()) {
             return Lists.newArrayList();

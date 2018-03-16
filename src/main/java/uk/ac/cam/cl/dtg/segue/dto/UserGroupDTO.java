@@ -47,7 +47,7 @@ public class UserGroupDTO {
      * Default Constructor.
      */
     public UserGroupDTO() {
-
+        this.additionalManagers = Sets.newHashSet();
     }
 
     /**
@@ -237,7 +237,7 @@ public class UserGroupDTO {
      * @return set of ids
      */
     @JsonIgnore
-    public Set<Long> getAddtionalManagersUserIds() {
+    public Set<Long> getAdditionalManagersUserIds() {
         return additionalManagers.stream().map(DetailedUserSummaryDTO::getId).collect(Collectors.toSet());
     }
 }

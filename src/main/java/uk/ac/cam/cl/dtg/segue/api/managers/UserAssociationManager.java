@@ -237,20 +237,20 @@ public class UserAssociationManager {
         }
 
         UserGroupDTO group = userGroupManager.getGroupById(lookedupToken.getGroupId());
-        // add additional manager associations
-        for (Long additionalManagerId : group.getAddtionalManagersUserIds()) {
-            if (!associationDatabase
-                    .hasValidAssociation(additionalManagerId, userGrantingPermission.getId())) {
-                associationDatabase.createAssociation(additionalManagerId, userGrantingPermission.getId());
-                // don't create a new association just do the group assignment as they have already granted permission.
-            }
-        }
 
         if (lookedupToken.getGroupId() != null) {
             userGroupManager.addUserToGroup(group, userGrantingPermission);
             log.debug(String.format("Adding User: %s to Group: %s", userGrantingPermission.getId(),
                     lookedupToken.getGroupId()));
 
+            // add additional manager associations
+            for (Long additionalManagerId : group.getAdditionalManagersUserIds()) {
+                if (!associationDatabase
+                        .hasValidAssociation(additionalManagerId, userGrantingPermission.getId())) {
+                    associationDatabase.createAssociation(additionalManagerId, userGrantingPermission.getId());
+                    // don't create a new association just do the group assignment as they have already granted permission.
+                }
+            }
         }
         return lookedupToken;
     }
