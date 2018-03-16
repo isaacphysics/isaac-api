@@ -433,7 +433,6 @@ public class EventBookingManager {
                         emailManager.getEmailTemplateDTO("email-event-waiting-list-addition-notification"),
                         new ImmutableMap.Builder<String, Object>()
                                 .put("contactUsURL", generateEventContactUsURL(event))
-                                .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
                                 .put("event", event)
                                 .build(),
                         EmailType.SYSTEM);

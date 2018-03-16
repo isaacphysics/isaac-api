@@ -575,15 +575,15 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             RegisteredUserDTO currentlyLoggedInUser;
             currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
 
-            if (!isUserAnAdmin(userManager, request) && !isUserStaff(userManager, request)
-                    && currentlyLoggedInUser.getRole() != Role.TEACHER) {
-                return new SegueErrorResponse(Status.FORBIDDEN,
-                        "You are not a teacher, a member of staff, nor an admin.").toResponse();
-            }
-
             // Fetch the requested group
             UserGroupDTO group;
             group = this.groupManager.getGroupById(groupId);
+
+            // Check the group owner:
+            if (!group.getOwnerId().equals(currentlyLoggedInUser.getId()) && !isUserAnAdmin(userManager, request)) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "You can only view the results of assignments that you own.").toResponse();
+            }
 
             // Fetch the assignments owned by the currently logged in user that are assigned to the requested group
             List<AssignmentDTO> assignments;
