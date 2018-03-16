@@ -355,6 +355,18 @@ public class GroupManager {
 
 
     /**
+     * Helper funcion to check if a user id is in the additional managers list of the group dto.
+     * @param group - dto
+     * @param userIdToCheck - user id to verify
+     * @return true if they are in the list false if not.
+     */
+    public static boolean isInAdditionalManagerList(UserGroupDTO group, Long userIdToCheck) {
+        return group.getAdditionalManagers().stream()
+                .map(DetailedUserSummaryDTO::getId)
+                .anyMatch(userIdToCheck::equals);
+    }
+
+    /**
      * @param group
      *            to convert
      * @return groupDTO

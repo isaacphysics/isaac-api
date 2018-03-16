@@ -15,9 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_FKEY_FIELDNAME;
-
 import io.swagger.annotations.Api;
 
 import java.util.Collections;
@@ -52,9 +49,12 @@ import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.DetailedUserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * GroupsFacade. This is responsible for exposing group management functionality.
@@ -212,7 +212,7 @@ public class GroupsFacade extends AbstractSegueFacade {
     @Path("/{group_id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response editGroup(@Context final HttpServletRequest request, final UserGroup groupDTO,
+    public Response editGroup(@Context final HttpServletRequest request, final UserGroupDTO groupDTO,
                               @PathParam("group_id") final Long groupId) {
         if (null == groupDTO.getGroupName() || groupDTO.getGroupName().isEmpty()) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Group name must be specified.").toResponse();
@@ -237,7 +237,7 @@ public class GroupsFacade extends AbstractSegueFacade {
                 return new SegueErrorResponse(Status.NOT_FOUND, "Group specified does not exist.").toResponse();
             }
 
-            if (!existingGroup.getOwnerId().equals(user.getId())) {
+            if (!existingGroup.getOwnerId().equals(user.getId()) && !GroupManager.isInAdditionalManagerList(groupDTO, user.getId())) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "The group you have attempted to edit does not belong to you.").toResponse();
             }
@@ -275,8 +275,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 
             UserGroupDTO group = groupManager.getGroupById(groupId);
 
-            if (!(group.getOwnerId().equals(user.getId()) || group.getAdditionalManagers().contains(user.getId()))
-                    && !isUserAnAdmin(userManager, request)) {
+            if (!(group.getOwnerId().equals(user.getId()) || GroupManager.isInAdditionalManagerList(group, user.getId()))) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "Only owners, admins or managers can view membership of groups").toResponse();
             }
 
@@ -385,8 +384,9 @@ public class GroupsFacade extends AbstractSegueFacade {
 
             UserGroupDTO groupBasedOnId = groupManager.getGroupById(groupId);
 
-            if (!currentRegisteredUser.getId().equals(groupBasedOnId.getOwnerId())) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You are not the owner of this group").toResponse();
+            if (!(groupBasedOnId.getOwnerId().equals(currentRegisteredUser.getId())
+                    || GroupManager.isInAdditionalManagerList(groupBasedOnId, currentRegisteredUser.getId()))) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You are not the owner or manager of this group").toResponse();
             }
 
             RegisteredUserDTO userToRemove = userManager.getUserDTOById(userId);
@@ -433,7 +433,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 
             if (!currentUser.getId().equals(groupBasedOnId.getOwnerId())) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
-                        "You are not the owner of this group, and therefore do not have permission to delete it.")
+                        "You must be the owner of the group in order to delete it.")
                         .toResponse();
             }
 
@@ -453,7 +453,7 @@ public class GroupsFacade extends AbstractSegueFacade {
     }
 
     @POST
-    @Path("{group_id}/manager/{user_id}")
+    @Path("{group_id}/manager")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response addAdditionalManagerToGroup(@Context final HttpServletRequest request,
@@ -469,18 +469,32 @@ public class GroupsFacade extends AbstractSegueFacade {
 
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
-
             RegisteredUserDTO userToAdd = this.userManager.getUserDTOByEmail(responseMap.get("email"));
 
-            if (null == userToAdd && !Role.STUDENT.equals(userToAdd.getRole())) {
+            if (null == userToAdd || Role.STUDENT.equals(userToAdd.getRole())) {
+                // TODO: maybe add misuse monitor to this endpoint
+                // deliberately be vague about whether the account exists or they don't have a teacher account to avoid account scanning.
                 return new SegueErrorResponse(Status.BAD_REQUEST, "There was a problem adding the user specified. Please make sure their email address is correct and they have a teacher account.").toResponse();
             }
 
             UserGroupDTO group = groupManager.getGroupById(groupId);
 
+            if(group.getOwnerId().equals(userToAdd.getId())) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "The owner cannot be added as an additional manager").toResponse();
+            }
+
+            boolean idExists = GroupManager.isInAdditionalManagerList(group, userToAdd.getId());
+
+            if(idExists) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "This user already exists as an additional manager").toResponse();
+            }
+
             if (!group.getOwnerId().equals(user.getId()) && !isUserAnAdmin(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "Only group owners or admins modify groups managers").toResponse();
             }
+
+            this.getLogManager().logEvent(user, request, ADD_ADDITIONAL_GROUP_MANAGER,
+                    ImmutableMap.of(GROUP_FK, group.getId(), USER_ID_FKEY_FIELDNAME, userToAdd.getId()));
 
             return Response.ok(this.groupManager.addUserToManagerList(group, userToAdd)).build();
         } catch (SegueDatabaseException e) {
@@ -520,6 +534,9 @@ public class GroupsFacade extends AbstractSegueFacade {
 
             RegisteredUserDTO userToRemove = this.userManager.getUserDTOById(userId);
 
+            this.getLogManager().logEvent(user, request, DELETE_ADDITIONAL_GROUP_MANAGER,
+                    ImmutableMap.of(GROUP_FK, group.getId(), USER_ID_FKEY_FIELDNAME, userId));
+
             return Response.ok(this.groupManager.removeUserFromManagerList(group, userToRemove)).build();
         } catch (SegueDatabaseException e) {
             log.error("Database error while trying to remove manager from a group. ", e);
@@ -529,6 +546,5 @@ public class GroupsFacade extends AbstractSegueFacade {
         } catch (NoUserException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "User specified does not exist.").toResponse();
         }
-
     }
 }

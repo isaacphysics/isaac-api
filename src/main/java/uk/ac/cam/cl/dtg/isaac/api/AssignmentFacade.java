@@ -293,7 +293,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             UserGroupDTO group = this.groupManager.getGroupById(assignment.getGroupId());
 
             if (!(assignment.getOwnerUserId().equals(currentlyLoggedInUser.getId())
-                    || group.getAdditionalManagers().contains(currentlyLoggedInUser.getId()))
+                    || GroupManager.isInAdditionalManagerList(group, currentlyLoggedInUser.getId()))
                     && !isUserAnAdmin(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
@@ -407,7 +407,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             UserGroupDTO group = this.groupManager.getGroupById(assignment.getGroupId());
 
             if (!(assignment.getOwnerUserId().equals(currentlyLoggedInUser.getId())
-                    || group.getAdditionalManagers().contains(currentlyLoggedInUser.getId()))
+                    || GroupManager.isInAdditionalManagerList(group, currentlyLoggedInUser.getId()))
                     && !isUserAnAdmin(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
@@ -813,7 +813,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             }
 
             if (!(assigneeGroup.getOwnerId().equals(currentlyLoggedInUser.getId())
-                    || assigneeGroup.getAdditionalManagers().contains(currentlyLoggedInUser.getId()))
+                    || GroupManager.isInAdditionalManagerList(assigneeGroup, currentlyLoggedInUser.getId()))
                     && !isUserAnAdmin(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
@@ -888,8 +888,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             if (null == assignmentToDelete) {
                 return new SegueErrorResponse(Status.NOT_FOUND, "The assignment does not exist.").toResponse();
             }
-            if (!(assignmentToDelete.getOwnerUserId().equals(currentlyLoggedInUser.getId())
-                    || assigneeGroup.getAdditionalManagers().contains(currentlyLoggedInUser.getId()))) {
+            if (!assignmentToDelete.getOwnerUserId().equals(currentlyLoggedInUser.getId())) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You are not the owner of this assignment. Unable to delete it.").toResponse();
             }
