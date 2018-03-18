@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.*;
+import uk.ac.cam.cl.dtg.segue.api.metrics.MetricsExporter;
 import uk.ac.cam.cl.dtg.segue.api.monitors.*;
 import uk.ac.cam.cl.dtg.segue.auth.*;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicator;
@@ -109,6 +110,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     //private static IStatisticsManager statsManager = null;
 	private static GroupManager groupManager = null;
 	private static IUserAlerts userAlerts = null;
+	private static MetricsExporter metricsExporter = null;
 
 	// kafka streams applications
     private static SiteStatisticsStreamsApplication statisticsStreamsApplication;
@@ -139,6 +141,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             this.configureSegueSearch();
             this.configureAuthenticationProviders();
             this.configureApplicationManagers();
+            this.configureMetricsExporter();
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -266,6 +269,25 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         bind(IUserAlerts.class).to(PgUserAlerts.class);
 
         bind(IStatisticsManager.class).to(KafkaStatisticsManager.class);
+    }
+
+    /**
+     * TODO MT
+     */
+    private void configureMetricsExporter() {
+        // I want the exporter to be configured and running from servlet process start
+        if (null == metricsExporter) {
+            boolean exportJvmMetrics = true;
+            log.info("Creating singleton MetricsExporter");
+            String exportPort = globalProperties.getProperty(Constants.API_METRICS_EXPORT_PORT);
+            try {
+                metricsExporter = new MetricsExporter(exportPort, exportJvmMetrics);
+            } catch (IOException e) {
+                // notify if it is down but the api should not be dependent on the export endpoint working
+                log.error("IOException while setting up MetricsExporter on port: " + exportPort);
+                e.printStackTrace();
+            }
+        }
     }
 
     /**

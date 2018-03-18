@@ -16,7 +16,6 @@
 package uk.ac.cam.cl.dtg.isaac.configuration;
 
 import com.google.inject.name.Named;
-import com.google.inject.name.Names;
 import ma.glasnost.orika.MapperFacade;
 
 import org.slf4j.Logger;
@@ -31,13 +30,17 @@ import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicValidator;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+
+import java.io.IOException;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 
@@ -50,6 +53,7 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
     private static final Logger log = LoggerFactory.getLogger(IsaacGuiceConfigurationModule.class);
 
     private static GameboardPersistenceManager gameboardPersistenceManager = null;
+    private SchoolListReader schoolListReader = null;
 
     /**
      * Creates a new isaac guice configuration module.
@@ -128,5 +132,27 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
 
         return new IsaacSymbolicChemistryValidator(properties.getProperty(Constants.CHEMISTRY_CHECKER_HOST),
                 properties.getProperty(Constants.CHEMISTRY_CHECKER_PORT));
+    }
+
+    /**
+     * This provides a singleton of the SchoolListReader for use by segue backed applications..
+     *
+     * We want this to be a singleton as otherwise it may not be threadsafe for loading into same SearchProvider.
+     *
+     * @param provider
+     *            - The search provider.
+     * @return schoolList reader
+     * @throws IOException
+     *             - if there is a problem loading the school list.
+     */
+    @Inject
+    @Provides
+    @Singleton
+    private SchoolListReader getSchoolListReader(final ISearchProvider provider) throws IOException {
+        if (null == schoolListReader) {
+            schoolListReader = new SchoolListReader(provider);
+            log.info("Creating singleton of SchoolListReader");
+        }
+        return schoolListReader;
     }
 }

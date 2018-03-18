@@ -20,6 +20,7 @@ import org.apache.kafka.streams.kstream.KStreamBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.api.metrics.SegueMetrics;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.util.List;
@@ -94,6 +95,7 @@ public class AnonymousEventsStreamsApplication {
                     // otherwsie we get a StreamsException which is too general
                     if (throwable.getCause().getCause() instanceof CommitFailedException) {
                         streamThreadRunning = false;
+                        SegueMetrics.ANONYMOUS_LOGGED_EVENTS_STREAMS_APP_STATUS.dec();
                         log.info("Anonymous logged events streams app no longer running.");
                     }
                 }
@@ -101,7 +103,7 @@ public class AnonymousEventsStreamsApplication {
 
         streams.start();
         streamThreadRunning = true;
-
+        SegueMetrics.ANONYMOUS_LOGGED_EVENTS_STREAMS_APP_STATUS.inc();
     }
 
     /**

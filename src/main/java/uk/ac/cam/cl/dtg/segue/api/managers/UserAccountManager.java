@@ -39,6 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.api.metrics.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IPasswordAuthenticator;
@@ -124,8 +125,9 @@ public class UserAccountManager implements IUserAccountManager {
             final PropertiesLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
             final MapperFacade dtoMapper, final EmailManager emailQueue, final ILogManager logManager,
             final UserAuthenticationManager userAuthenticationManager) {
+
         this(database, questionDb, properties, providersToRegister, dtoMapper, emailQueue, CacheBuilder.newBuilder()
-                .expireAfterAccess(ANONYMOUS_SESSION_DURATION_IN_MINUTES, TimeUnit.MINUTES)
+                .expireAfterAccess(ANONYMOUS_SESSION_DURATION_IN_MINUTES, TimeUnit.MINUTES).recordStats()
                 .<String, AnonymousUser> build(), logManager, userAuthenticationManager);
     }
 
@@ -165,6 +167,7 @@ public class UserAccountManager implements IUserAccountManager {
         this.database = database;
         this.questionAttemptDb = questionDb;
         this.temporaryUserCache = temporaryUserCache;
+        SegueMetrics.CACHE_METRICS_COLLECTOR.addCache("anonymous_user_cache", temporaryUserCache);
         this.logManager = logManager;
 
         this.registeredAuthProviders = providersToRegister;

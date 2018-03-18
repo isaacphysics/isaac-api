@@ -44,6 +44,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.IUserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.metrics.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -76,9 +77,6 @@ public class SiteStatisticsStreamsApplication {
     private static final String streamsAppName = "streamsapp_site_stats";
     private static final String streamsAppVersion = "v2.1";
     private static Long streamAppStartTime = System.currentTimeMillis();
-    private static Boolean streamThreadRunning;
-
-
     /**
      * Constructor
      * @param globalProperties
@@ -168,11 +166,11 @@ public class SiteStatisticsStreamsApplication {
         // handling fatal streams app exceptions
         streams.setUncaughtExceptionHandler(
                 (thread, throwable) -> {
-
                     // a bit hacky, but we know that the rebalance-inducing app death is caused by a CommitFailedException that is two levels deep into the stack trace
                     // otherwsie we get a StreamsException which is too general
                     if (throwable.getCause().getCause() instanceof CommitFailedException) {
                         streamThreadRunning = false;
+                        SegueMetrics.SITE_STATISTICS_STREAMS_APP_STATUS.dec();
                         log.info("Site statistics streams app no longer running.");
                     }
                 }
@@ -185,12 +183,16 @@ public class SiteStatisticsStreamsApplication {
 
             if (streams.state().isCreatedOrRunning()) {
                 streamThreadRunning = true;
+                SegueMetrics.SITE_STATISTICS_STREAMS_APP_STATUS.inc();
                 break;
             }
         }
 
         kafkaLog.info("Site statistics streams application started.");
     }
+
+
+    private static Boolean streamThreadRunning;
 
 
     /**

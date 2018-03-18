@@ -10,6 +10,7 @@ import org.eclipse.jetty.websocket.api.annotations.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.metrics.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidSessionException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -43,7 +44,8 @@ public class UserAlertsWebSocket implements IAlertListener {
     private Session session;
     private static ObjectMapper objectMapper = new ObjectMapper();
 
-    public static ConcurrentHashMap<Long, ConcurrentLinkedQueue<UserAlertsWebSocket>> connectedSockets = new ConcurrentHashMap<>();
+    public static final ConcurrentHashMap<Long, ConcurrentLinkedQueue<UserAlertsWebSocket>>
+            connectedSockets = new ConcurrentHashMap<>();
     private static Long websocketsOpened = 0L;
     private static Long websocketsClosed = 0L;
 
@@ -121,10 +123,15 @@ public class UserAlertsWebSocket implements IAlertListener {
                     return;
                 }
 
-                connectedSockets.putIfAbsent(connectedUser.getId(), new ConcurrentLinkedQueue<>());
+                Object nullIfNewUser = connectedSockets.putIfAbsent(
+                        connectedUser.getId(), new ConcurrentLinkedQueue<>());
+                if (null == nullIfNewUser) {
+                    SegueMetrics.CURRENT_WEBSOCKET_USERS.inc();
+                }
 
                 connectedSockets.get(connectedUser.getId()).add(this);
-                log.debug("User " + connectedUser.getId() + " opened new websocket. Total open: " + connectedSockets.get(connectedUser.getId()).size());
+                log.debug("User " + connectedUser.getId() + " opened new websocket. Total open: "
+                        + connectedSockets.get(connectedUser.getId()).size());
 
                 // For now, we hijack this websocket class to deliver user streak information
                 sendUserSnapshotData();
@@ -132,9 +139,11 @@ public class UserAlertsWebSocket implements IAlertListener {
                 // TODO: Send initial set of notifications.
                 List<IUserAlert> persistedAlerts = userAlerts.getUserAlerts(connectedUser.getId());
                 if (!persistedAlerts.isEmpty()) {
-                    session.getRemote().sendString(objectMapper.writeValueAsString(ImmutableMap.of("notifications", persistedAlerts)));
+                    session.getRemote().sendString(objectMapper.writeValueAsString(
+                            ImmutableMap.of("notifications", persistedAlerts)));
                 }
 
+                SegueMetrics.CURRENT_OPEN_WEBSOCKETS.inc();
                 websocketsOpened++;
             } else {
                 log.debug("WebSocket connection failed! Expired or invalid session.");
@@ -169,19 +178,26 @@ public class UserAlertsWebSocket implements IAlertListener {
     @OnWebSocketClose
     public void onClose(final Session session, final int status, final String reason) {
         connectedSockets.get(connectedUser.getId()).remove(this);
-        log.debug("User " + connectedUser.getId() + " closed a websocket. Total still open: " + connectedSockets.get(connectedUser.getId()).size());
+        log.debug("User " + connectedUser.getId() + " closed a websocket. Total still open: "
+                + connectedSockets.get(connectedUser.getId()).size());
 
+        // TODO MT remove this and explain or just fix it
         // if the user has no websocket conenctions open, remove them from the map
-        /*synchronized (connectedSockets) {
-            if (connectedSockets.containsKey(connectedUser.getId()) && connectedSockets.get(connectedUser.getId()).isEmpty()) {
-                connectedSockets.remove(connectedUser.getId(), connectedSockets.get(connectedUser.getId()));
+        //synchronized (connectedSockets) {
+        //  if (connectedSockets.containsKey(connectedUser.getId()) && connectedSockets.get(connectedUser.getId()).isEmpty()) {
+        //      connectedSockets.remove(connectedUser.getId(), connectedSockets.get(connectedUser.getId()));
+        //  }
+        //}
+        //
+        //if (connectedSockets.containsKey(connectedUser.getId()) && connectedSockets.get(connectedUser.getId()).isEmpty()) {
+        //  log.info("User " + connectedUser.getId() + " has no websocket connections but still contains entry in hashmap!");
+        //}
+        SegueMetrics.CURRENT_OPEN_WEBSOCKETS.dec();
+        synchronized (connectedSockets) {
+            if (connectedSockets.get(connectedUser.getId()).isEmpty()) {
+                SegueMetrics.CURRENT_WEBSOCKET_USERS.dec();
             }
         }
-
-        if (connectedSockets.containsKey(connectedUser.getId()) && connectedSockets.get(connectedUser.getId()).isEmpty()) {
-            log.info("User " + connectedUser.getId() + " has no websocket connections but still contains entry in hashmap!");
-        }*/
-
         websocketsClosed++;
     }
 
@@ -215,6 +231,11 @@ public class UserAlertsWebSocket implements IAlertListener {
     }
 
 
+
+    public static Map<String, Long> getWebsocketCounts() {
+        return ImmutableMap.of("numWebsocketsOpenedOverTime", websocketsOpened, "numWebsocketsClosedOverTime", websocketsClosed);
+
+    }
 
     /**
      * Extracts the segue session information from the given session.
@@ -250,11 +271,6 @@ public class UserAlertsWebSocket implements IAlertListener {
                 HashMap.class);
 
         return sessionInformation;
-
-    }
-
-    public static Map<String, Long> getWebsocketCounts() {
-        return ImmutableMap.of("numWebsocketsOpenedOverTime", websocketsOpened, "numWebsocketsClosedOverTime", websocketsClosed);
 
     }
 

@@ -43,6 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.metrics.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.api.userAlerts.IAlertListener;
 import uk.ac.cam.cl.dtg.segue.api.userAlerts.UserAlertsWebSocket;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
@@ -195,6 +196,7 @@ public class UserStatisticsStreamsApplication {
                     // otherwsie we get a StreamsException which is too general
                     if (throwable.getCause().getCause() instanceof CommitFailedException) {
                         streamThreadRunning = false;
+                        SegueMetrics.USER_STATISTICS_STREAMS_APP_STATUS.dec();
                         log.info("User statistics streams app no longer running.");
                     }
                 }
@@ -207,6 +209,7 @@ public class UserStatisticsStreamsApplication {
 
             if (streams.state().isCreatedOrRunning()) {
                 streamThreadRunning = true;
+                SegueMetrics.USER_STATISTICS_STREAMS_APP_STATUS.inc();
                 break;
             }
         }
