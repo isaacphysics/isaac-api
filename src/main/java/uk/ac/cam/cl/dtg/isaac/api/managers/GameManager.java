@@ -494,8 +494,8 @@ public class GameManager implements IGameManager {
                 this.augmentGameItemWithAttemptInformation(gameItem, questionAttemptsFromUser);
             } catch (ResourceNotFoundException e) {
                 log.info(String.format(
-                        "A question is unavailable (%s) - treating it as if it never existed for marking.",
-                        gameItem.getId()));
+                        "The gameboard '%s' references an unavailable question '%s' - treating it as if it never existed for marking!",
+                        gameboardDTO.getId(), gameItem.getId()));
                 continue;
             }
             if (!gameboardStarted && !gameItem.getState().equals(Constants.GameboardItemState.NOT_ATTEMPTED)) {

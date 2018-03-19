@@ -1642,28 +1642,24 @@ public class AdminFacade extends AbstractSegueFacade {
     }
 
 
-    @GET
-    @Path("/change_user_streak/{user_id}/{streak_value}")
+    @POST
+    @Path("/change_user_streak/{user_id}")
     @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
     public synchronized Response changeUserStreak(@Context final HttpServletRequest request,
-                                                   @PathParam("user_id") final Long userId,
-                                                  @PathParam("streak_value") final Long streakValue) {
+                                                  @PathParam("user_id") final Long userId, final Long streakValue) {
 
         Map<String, Object> eventDetails = ImmutableMap.of("user_id", userId, "new_streak_length", streakValue);
 
         try {
-
             if (!isUserAnAdmin(request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You must be logged in as an admin to access this function.").toResponse();
             }
 
-            getLogManager().logEvent(userManager.getUserDTOById(userId), request, "ADMIN_UPDATE_USER_STREAK", eventDetails);
+            getLogManager().logEvent(userManager.getCurrentRegisteredUser(request), request, "ADMIN_UPDATE_USER_STREAK", eventDetails);
             return Response.ok(eventDetails).build();
 
-        } catch (NumberFormatException | NoUserException | SegueDatabaseException e) {
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to locate user with id = " + userId, e)
-                    .toResponse();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
