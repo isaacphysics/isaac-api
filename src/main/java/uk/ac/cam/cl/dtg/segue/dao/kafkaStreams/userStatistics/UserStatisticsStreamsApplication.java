@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.config.TopicConfig;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
@@ -112,11 +113,12 @@ public class UserStatisticsStreamsApplication {
         streamsConfiguration.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
         streamsConfiguration.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
         streamsConfiguration.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, 10 * 1000);
-        streamsConfiguration.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 0);
         streamsConfiguration.put(StreamsConfig.METADATA_MAX_AGE_CONFIG, 10 * 1000);
         streamsConfiguration.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 0);
+        streamsConfiguration.put(StreamsConfig.REPLICATION_FACTOR_CONFIG, globalProperties.getProperty("KAFKA_REPLICATION_FACTOR"));
         streamsConfiguration.put(StreamsConfig.consumerPrefix(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG), "earliest");
-        streamsConfiguration.put(StreamsConfig.consumerPrefix(ConsumerConfig.METADATA_MAX_AGE_CONFIG), 60 * 1000);
+        streamsConfiguration.put(StreamsConfig.consumerPrefix(ConsumerConfig.METADATA_MAX_AGE_CONFIG), 45 * 1000);
+        streamsConfiguration.put(StreamsConfig.producerPrefix(ProducerConfig.METADATA_MAX_AGE_CONFIG), 45 * 1000);
         streamsConfiguration.put(StreamsConfig.consumerPrefix(ConsumerConfig.MAX_POLL_RECORDS_CONFIG), 250);
         streamsConfiguration.put(StreamsConfig.consumerPrefix(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG), 60000);
 
@@ -306,15 +308,13 @@ public class UserStatisticsStreamsApplication {
                                     ((ObjectNode) userSnapshot).set("streak_record", updateStreakRecord(subUserId, latestEvent, userSnapshot.path("streak_record"), questionAttemptManager));
                                 }
 
-                            } catch (Exception e) {
-
-                                if (e instanceof NoUserException) {
-                                    log.error("User " + userId + " not found in Postgres DB while processing streams data!");
-                                } else if (e instanceof NumberFormatException) {
-                                    log.error("Could not process user with id = " + userId + " in streams application.");
-                                } else {
-                                    e.printStackTrace();
-                                }
+                            } catch (NoUserException e) {
+                                log.error("User " + userId + " not found in Postgres DB while processing streams data!");
+                            } catch (NumberFormatException | SegueDatabaseException e) {
+                                log.error("Could not process user with id = " + userId + " in streams application.");
+                            } catch (RuntimeException e) {
+                                // streams app annoyingly dies if there is an uncaught runtime exception from any level, so we catch everything
+                                e.printStackTrace();
                             }
 
                             return userSnapshot;
