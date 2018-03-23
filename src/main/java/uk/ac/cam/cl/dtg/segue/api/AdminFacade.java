@@ -1665,4 +1665,28 @@ public class AdminFacade extends AbstractSegueFacade {
         }
     }
 
+
+    @GET
+    @Path("/get_user_streaks")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public Response getUserStreaks(@Context final Request request, @Context final HttpServletRequest httpServletRequest) {
+
+        try {
+            if (isUserAnAdmin(httpServletRequest)) {
+                Map<String, Object> result = Maps.newHashMap();
+
+                result.put("streakStatistics", kafkaStatsManager.getStreakStatistics());
+                return Response.ok(result).build();
+
+            } else {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "You must be logged in as an admin to access this function.").toResponse();
+            }
+
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
+    }
+
 }

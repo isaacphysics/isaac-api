@@ -35,9 +35,11 @@ import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.connect.json.JsonDeserializer;
 import org.apache.kafka.connect.json.JsonSerializer;
 import org.apache.kafka.streams.KafkaStreams;
+import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KStreamBuilder;
+import org.apache.kafka.streams.state.KeyValueIterator;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,7 +68,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.LONGEST_STREAK_REACHED;
 
 /**
  * Concrete Kafka streams processing application for generating user statistics
@@ -583,6 +584,65 @@ public class UserStatisticsStreamsApplication {
         calendar.set(Calendar.HOUR_OF_DAY, 0);
 
         return calendar;
+    }
+
+    /**
+     *
+     * @return
+     */
+    public Map<Long, Map<String, Long>> getAllUserStreaks() {
+
+        Map<Long, Map<String, Long>> userStreakInfo = Maps.newHashMap();
+
+        // get the persisted snapshot document
+        KeyValueIterator<String, JsonNode> snapshotRecords = streams
+                .store("globalstore_user_snapshot-" + streamsAppVersion, QueryableStoreTypes.<String, JsonNode>keyValueStore())
+                .all();
+
+        while (snapshotRecords.hasNext()) {
+
+            KeyValue<String, JsonNode> record = snapshotRecords.next();
+
+            try {
+
+                Long userId = Long.valueOf(record.key);
+                JsonNode snapshotRecord = record.value;
+
+                if (snapshotRecord != null) {
+
+                    Map<String, Long> streakRecord = Maps.newHashMap();
+
+                    // get daily streak information
+                    JsonNode streakNode = snapshotRecord.path("streak_record");
+                    Long streakEndTimestamp = streakNode.path("streak_end").asLong();
+
+                    if (streakEndTimestamp != 0) {
+
+                        streakRecord.put("currentStreak", 0L);
+
+                        // set up a streak increase deadline at midnight for the next day
+                        Calendar tomorrowMidnight = roundDownToDay(Calendar.getInstance());
+                        tomorrowMidnight.add(Calendar.DAY_OF_YEAR, 1);
+
+                        Long daysSinceStreakIncrease = TimeUnit.DAYS.convert(tomorrowMidnight.getTimeInMillis() - streakEndTimestamp, TimeUnit.MILLISECONDS);
+
+                        if (daysSinceStreakIncrease <= 1) {
+                            streakRecord.put("currentStreak",
+                                    TimeUnit.DAYS.convert(streakEndTimestamp - snapshotRecord.path("streak_record").path("streak_start").asLong(),
+                                            TimeUnit.MILLISECONDS));
+                        }
+
+                        streakRecord.put("largestStreak", snapshotRecord.path("streak_record").path("largest_streak").asLong());
+                        userStreakInfo.put(userId, streakRecord);
+                    }
+                }
+
+            } catch (NumberFormatException e) {
+                log.error("Could not process user with id = " + record.key);
+            }
+        }
+
+        return userStreakInfo;
     }
 
 

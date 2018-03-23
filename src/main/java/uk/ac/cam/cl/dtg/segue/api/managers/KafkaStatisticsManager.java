@@ -608,6 +608,21 @@ public class KafkaStatisticsManager implements IStatisticsManager {
         return userStatisticsStreamsApplication.getUserSnapshot(userOfInterest);
     }
 
+    public List<Map.Entry<Long, Map<String, Long>>> getStreakStatistics() {
+
+        List<Map.Entry<Long, Map<String, Long>>> streakStats =
+                new ArrayList<>(userStatisticsStreamsApplication.getAllUserStreaks().entrySet());
+
+        streakStats.sort(
+                Comparator.comparing(o -> o.getValue().get("largestStreak"))
+        );
+
+        // sort descending
+        Collections.reverse(streakStats);
+
+        return streakStats;
+    }
+
 
     /**
      * Utility method for returning a boolean value specifying if a user has been seen within a given time frame.
