@@ -209,9 +209,9 @@ public class UserStatsStreamsServiceTest {
 
         // get the streams logic which exists inside the "streamProcess" method
         Method method = UserStatisticsStreamsApplication.class.getDeclaredMethod("streamProcess",
-                KStream.class, IQuestionAttemptManager.class, IUserAccountManager.class, IGameManager.class, ILogManager.class);
+                KStream.class, IQuestionAttemptManager.class, IUserAccountManager.class, IGameManager.class);
         method.setAccessible(true);
-        method.invoke(null, rawLoggedEvents[0], dummyQuestionAttemptDb, dummyUserDb, dummyGameManager, dummyLogManager);
+        method.invoke(null, rawLoggedEvents[0], dummyQuestionAttemptDb, dummyUserDb, dummyGameManager);
 
 
         driver = new ProcessorTopologyTestDriver(config, builder);
@@ -298,7 +298,7 @@ public class UserStatsStreamsServiceTest {
 
     @Test
     public void streamsClassVersions_Test() throws Exception {
-        assertClassUnchanged(UserStatisticsStreamsApplication.class,"d7e6ccb09a9212637317e067f7e2622426c4d0b8411c8e42206edce5556e3a67");
+        assertClassUnchanged(UserStatisticsStreamsApplication.class,"5ce0cb76db6468b7ffa9464ff0b6e788f00efad72555cc2b48ffb89bf3aea2b0");
     }
 
 
