@@ -64,7 +64,7 @@ import static com.google.common.collect.Maps.*;
  * This class will be responsible for generating and managing gameboards used by users.
  * 
  */
-public class GameManager {
+public class GameManager implements IGameManager {
     private static final Logger log = LoggerFactory.getLogger(GameManager.class);
 
     private static final int MAX_QUESTIONS_TO_SEARCH = 20;

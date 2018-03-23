@@ -49,7 +49,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.AnonymousEventsStreamsApplication;
-import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.UserStatisticsStreamsApplication;
+import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.userStatistics.UserStatisticsStreamsApplication;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.KafkaTopicManager;
 import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.SiteStatisticsStreamsApplication;
@@ -751,14 +751,14 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     private static UserStatisticsStreamsApplication getUserStatsEventsStreamsApp(final PropertiesLoader globalProperties,
                                                                             final KafkaTopicManager kafkaTopicManager,
+                                                                                 final GameManager gameManager,
                                                                                  final ILogManager logManager) {
 
         if (null == userStatsStreamsApplication) {
 
             log.info("Creating singleton of User Stats events Kafka Streams Application.");
             userStatsStreamsApplication = new UserStatisticsStreamsApplication(globalProperties, kafkaTopicManager,
-                    questionPersistenceManager, userManager, logManager);
-            userStatsStreamsApplication.start();
+                    questionPersistenceManager, userManager, gameManager);
         }
         return userStatsStreamsApplication;
     }

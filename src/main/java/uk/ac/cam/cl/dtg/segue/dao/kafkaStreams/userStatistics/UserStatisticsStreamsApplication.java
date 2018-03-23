@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.ac.cam.cl.dtg.segue.dao.kafkaStreams;
+package uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.userStatistics;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -35,19 +35,25 @@ import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.connect.json.JsonDeserializer;
 import org.apache.kafka.connect.json.JsonSerializer;
 import org.apache.kafka.streams.KafkaStreams;
+import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KStreamBuilder;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.api.managers.IGameManager;
+import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.IUserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.userAlerts.IAlertListener;
 import uk.ac.cam.cl.dtg.segue.api.userAlerts.UserAlertsWebSocket;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.KafkaTopicManager;
 import uk.ac.cam.cl.dtg.segue.dos.IUserAlert;
 import uk.ac.cam.cl.dtg.segue.dos.PgUserAlert;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
@@ -57,16 +63,13 @@ import uk.ac.cam.cl.dtg.segue.quiz.IQuestionAttemptManager;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.sql.Timestamp;
-import java.util.Calendar;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.LONGEST_STREAK_REACHED;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.STREAK_UPDATED;
 
 /**
  * Concrete Kafka streams processing application for generating user statistics
@@ -81,19 +84,14 @@ public class UserStatisticsStreamsApplication {
     private static final Serde<JsonNode> JsonSerde = Serdes.serdeFrom(new JsonSerializer(), new JsonDeserializer());
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    private KafkaTopicManager kafkaTopicManager;
-    private KafkaStreams streams;
-    private KStreamBuilder builder = new KStreamBuilder();
-    private Properties streamsConfiguration = new Properties();
-    private IQuestionAttemptManager questionAttemptManager;
-    private UserAccountManager userAccountManager;
-    private ILogManager logManager;
+    private static List<String> bookTags = ImmutableList.of("phys_book_gcse", "physics_skills_14", "chemistry_16");
 
+    private KafkaStreams streams;
 
     private static final String streamsAppName = "streamsapp_user_stats";
-    private static final String streamsAppVersion = "v1.2";
+    private static final String streamsAppVersion = "v1.3";
     private static Boolean streamThreadRunning;
-
+    private static Long streamAppStartTime = System.currentTimeMillis();
 
     /**
      * Constructor
@@ -105,16 +103,11 @@ public class UserStatisticsStreamsApplication {
     public UserStatisticsStreamsApplication(final PropertiesLoader globalProperties,
                                             final KafkaTopicManager kafkaTopicManager,
                                             final IQuestionAttemptManager questionAttemptManager,
-                                            final UserAccountManager userAccountManager,
-                                            final ILogManager logManager) {
+                                            final IUserAccountManager userAccountManager,
+                                            final IGameManager gameManager) {
 
 
-        this.kafkaTopicManager = kafkaTopicManager;
-        this.questionAttemptManager = questionAttemptManager;
-        this.userAccountManager = userAccountManager;
-        this.logManager = logManager;
-
-
+        Properties streamsConfiguration = new Properties();
         streamsConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, streamsAppName + "-" + streamsAppVersion);
         streamsConfiguration.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG,
                 globalProperties.getProperty("KAFKA_HOSTNAME") + ":" + globalProperties.getProperty("KAFKA_PORT"));
@@ -131,13 +124,6 @@ public class UserStatisticsStreamsApplication {
         streamsConfiguration.put(StreamsConfig.consumerPrefix(ConsumerConfig.MAX_POLL_RECORDS_CONFIG), 250);
         streamsConfiguration.put(StreamsConfig.consumerPrefix(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG), 60000);
 
-    }
-
-
-    /**
-     * Method to be called to start the streams application
-     */
-    public void start() {
 
         // ensure topics exist before attempting to consume
 
@@ -155,6 +141,7 @@ public class UserStatisticsStreamsApplication {
         final AtomicBoolean wasLagging = new AtomicBoolean(true);
 
         // raw logged events incoming data stream from kafka
+        KStreamBuilder builder = new KStreamBuilder();
         KStream<String, JsonNode> rawLoggedEvents = builder.stream(StringSerde, JsonSerde, Constants.KAFKA_TOPIC_LOGGED_EVENTS)
                 .filterNot(
                         (k, v) -> v.path("anonymous_user").asBoolean()
@@ -176,13 +163,12 @@ public class UserStatisticsStreamsApplication {
                 );
 
         // process raw logged events
-        streamProcess(rawLoggedEvents);
+        streamProcess(rawLoggedEvents, questionAttemptManager, userAccountManager, gameManager);
 
         // need to make state stores queryable globally, as we often have 2 versions of API running concurrently, hence 2 streams app instances
         // aggregations are saved to a local state store per streams app instance and update a changelog topic in Kafka
         // we can use this changelog to populate a global state store for all streams app instances
-        builder.globalTable(StringSerde, JsonSerde,streamsAppName + "-" + streamsAppVersion + "-localstore_user_snapshot-changelog",
-                "globalstore_user_snapshot-" + streamsAppVersion);
+        builder.globalTable(StringSerde, JsonSerde,streamsAppName + "-" + streamsAppVersion + "-localstore_user_snapshot-changelog", "globalstore_user_snapshot-" + streamsAppVersion);
 
         // use the builder and the streams configuration we set to setup and start a streams object
         streams = new KafkaStreams(builder, streamsConfiguration);
@@ -195,7 +181,7 @@ public class UserStatisticsStreamsApplication {
                     // otherwsie we get a StreamsException which is too general
                     if (throwable.getCause().getCause() instanceof CommitFailedException) {
                         streamThreadRunning = false;
-                        log.info("User statistics streams app no longer running.");
+                        log.info("Site statistics streams app no longer running.");
                     }
                 }
         );
@@ -205,15 +191,14 @@ public class UserStatisticsStreamsApplication {
         // return when streams instance is initialized
         while (true) {
 
-            if (streams.state().isCreatedOrRunning()) {
+            if (streams.state().isCreatedOrRunning())
                 streamThreadRunning = true;
                 break;
-            }
         }
 
         kafkaLog.info("User statistics streams application started.");
-
     }
+
 
     /**
      * This method contains the logic that transforms the incoming stream
@@ -221,71 +206,122 @@ public class UserStatisticsStreamsApplication {
      * @param rawStream
      *          - the input stream
      */
-    private void streamProcess(KStream<String, JsonNode> rawStream) {
+    private static void streamProcess(KStream<String, JsonNode> rawStream,
+                                      final IQuestionAttemptManager questionAttemptManager,
+                                      final IUserAccountManager userAccountManager,
+                                      final IGameManager gameManager) {
 
+        // map the key-value pair to one where the key is always the user id
+        KStream<String, JsonNode> mappedStream = rawStream
+                .map(
+                        (k, v) -> {
+
+                            //TODO: this is a bit hacky, currently this event is recorded as being associated with the admin ID, so need to extract out the event attendee ID
+                            if (v.path("event_type").asText().equals("ADMIN_EVENT_ATTENDANCE_RECORDED")) {
+                                return new KeyValue<>(v.path("event_details").path("userId").asText(), v);
+                            }
+
+                            return new KeyValue<>(v.path("user_id").asText(), v);
+                        }
+                );
 
         // user question answer streaks
-        rawStream.groupByKey()
+        mappedStream.groupByKey(StringSerde, JsonSerde)
                 .aggregate(
                         // initializer
-                        () -> {
-                            ObjectNode userSnapshot = JsonNodeFactory.instance.objectNode();
-
-                            ObjectNode streakRecord = JsonNodeFactory.instance.objectNode();
-                            streakRecord.put("streak_start", 0);
-                            streakRecord.put("streak_end", 0);
-                            streakRecord.put("largest_streak", 0);
-                            streakRecord.put("current_activity", 0);
-                            streakRecord.put("activity_threshold", 3);
-
-                            userSnapshot.set("streak_record", streakRecord);
-
-                            return userSnapshot;
-                        },
+                        new UserStatisticsSnapshotInitializer(),
                         // aggregator
                         (userId, latestEvent, userSnapshot) -> {
 
-                            // first, make sure that if the user is not a student, we augment their snapshot with a teacher sub-record
-                            if (!userSnapshot.has("teacher_record")) {
-                                ObjectNode teacherRecord = JsonNodeFactory.instance.objectNode();
-                                teacherRecord.put("groups_created", 0);
-                                teacherRecord.put("boards_created", 0);
-                                teacherRecord.put("assignments_set", 0);
-                                teacherRecord.put("book_pages_set", 0);
-                                teacherRecord.put("cpd_events_attended", 0);
-                                ((ObjectNode) userSnapshot).set("teacher_record", teacherRecord);
-                            }
-
-
                             try {
+
+                                RegisteredUserDTO regUser = userAccountManager.getUserDTOById(Long.parseLong(userId));
+
+                                // see if we need to augment the user record
+                                if (!regUser.getRole().equals(Role.STUDENT)) {
+
+                                    // first, lets see if we need to augment the user snapshot with teacher information
+                                    if (!userSnapshot.has("teacher_record")) {
+                                        ((ObjectNode) userSnapshot).set("teacher_record", getInitializedNonStudentRecord());
+                                    }
+
+                                    // non-student based event handling
+                                    if (latestEvent.path("event_type").asText().equals("CREATE_USER_GROUP")) {
+                                        ((ObjectNode) userSnapshot.path("teacher_record"))
+                                                .put("groups_created", updateActivityCount("groups_created", userSnapshot.path("teacher_record")));
+                                    }
+
+                                    if (latestEvent.path("event_type").asText().equals("SET_NEW_ASSIGNMENT")) {
+                                        ((ObjectNode) userSnapshot.path("teacher_record"))
+                                                .put("assignments_set", updateActivityCount("assignments_set", userSnapshot.path("teacher_record")));
+
+                                        // check if the assignment set contains book pages
+                                        GameboardDTO gameboard = gameManager.getGameboard(latestEvent.path("event_details").path("gameboardId").asText());
+
+                                        tagsLoop:
+                                            for (GameboardItem item: gameboard.getQuestions()) {
+
+                                                if (item.getTags() != null) {
+                                                    for (String tag: item.getTags()
+                                                            ) {
+                                                        if (bookTags.contains(tag)) {
+                                                            ((ObjectNode) userSnapshot.path("teacher_record"))
+                                                                    .put("book_pages_set", updateActivityCount("book_pages_set", userSnapshot.path("teacher_record")));
+                                                            break tagsLoop;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                    }
+
+
+                                    if (latestEvent.path("event_type").asText().equals("ADMIN_EVENT_ATTENDANCE_RECORDED")) {
+                                        if (latestEvent.path("event_details").path("attended").asBoolean()) {
+
+                                            Iterator<JsonNode> tags = latestEvent.path("event_details").path("eventTags").elements();
+
+                                            while (tags.hasNext()) {
+
+                                                if (tags.next().asText().equals("teacher")) {
+                                                    ((ObjectNode) userSnapshot.path("teacher_record"))
+                                                            .put("cpd_events_attended", updateActivityCount("cpd_events_attended", userSnapshot.path("teacher_record")));
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
 
                                 // snapshot updates pertaining to question answer activity
                                 if (latestEvent.path("event_type").asText().equals("ANSWER_QUESTION")) {
 
                                     if (latestEvent.path("event_details").path("correct").asBoolean()) {
-                                        ((ObjectNode) userSnapshot).set("streak_record", updateStreakRecord(userId, latestEvent, userSnapshot.path("streak_record")));
+                                        ((ObjectNode) userSnapshot).set("streak_record",
+                                                updateStreakRecord(userId, latestEvent, userSnapshot.path("streak_record"), questionAttemptManager));
                                     }
                                 }
 
-                                // snapshot updates pertaining to teacher activity
-                                if (!userAccountManager.getUserDTOById(Long.parseLong(userId)).getRole().equals(Role.STUDENT)) {
+                                // snapshot updates pertaining to gameboard creation activity
+                                if (latestEvent.path("event_type").asText().equals("CREATE_GAMEBOARD")) {
 
-                                    if (latestEvent.path("event_type").asText().equals("CREATE_USER_GROUP")) {
-                                        ((ObjectNode) userSnapshot).set("teacher_record", updateTeacherActivityRecord("groups_created", userSnapshot.path("teacher_record")));
+                                    String gameboardId = latestEvent.path("event_details").path("gameboardId").asText();
+
+                                    GameboardDTO gameboard = gameManager.getGameboard(gameboardId);
+
+                                    JsonNode gameboardCreationNode = userSnapshot.path("gameboard_record").path("creations");
+
+                                    if (gameboard.getCreationMethod().equals(GameboardCreationMethod.BUILDER)) {
+                                        ((ObjectNode) gameboardCreationNode).put("builder", updateActivityCount("builder", gameboardCreationNode));
+                                    } else if (gameboard.getCreationMethod().equals(GameboardCreationMethod.FILTER)) {
+                                        ((ObjectNode) gameboardCreationNode).put("filter", updateActivityCount("filter", gameboardCreationNode));
                                     }
-
-                                    if (latestEvent.path("event_type").asText().equals("SET_NEW_ASSIGNMENT")) {
-                                        ((ObjectNode) userSnapshot).set("teacher_record", updateTeacherActivityRecord("assignments_set", userSnapshot.path("teacher_record")));
-                                    }
-
                                 }
-
 
                                 // if we need to manually change a user's streak
                                 if (latestEvent.path("event_type").asText().equals("ADMIN_UPDATE_USER_STREAK")) {
 
                                     String subUserId = latestEvent.path("event_details").path("user_id").asText();
-                                    ((ObjectNode) userSnapshot).set("streak_record", updateStreakRecord(subUserId, latestEvent, userSnapshot.path("streak_record")));
+                                    ((ObjectNode) userSnapshot).set("streak_record", updateStreakRecord(subUserId, latestEvent, userSnapshot.path("streak_record"), questionAttemptManager));
                                 }
 
                             } catch (NoUserException e) {
@@ -302,10 +338,7 @@ public class UserStatisticsStreamsApplication {
                         JsonSerde,
                         "localstore_user_snapshot"
                 );
-
     }
-
-
 
 
     /**
@@ -372,41 +405,29 @@ public class UserStatisticsStreamsApplication {
             if (!user.getRole().equals(Role.STUDENT) && snapshotRecord.has("teacher_record")) {
                 userSnapshot.put("teacherActivityRecord", snapshotRecord.path("teacher_record"));
             }
+
+            userSnapshot.put("gameboardRecord", snapshotRecord.path("gameboard_record"));
         }
 
         return userSnapshot;
     }
 
 
-
     /**
-     *
-     * @param activityType
-     * @param teacherRecord
-     * @return
-     */
-    private JsonNode updateTeacherActivityRecord(String activityType, JsonNode teacherRecord) {
-
-        Integer count = teacherRecord.path(activityType).asInt();
-        ((ObjectNode) teacherRecord).put(activityType, count + 1);
-
-        return teacherRecord;
-    }
-
-
-
-
-
-
-    /**
-     *We call this method to update the streak data for the user snapshot record
+     * We call this method to update the streak data for the user snapshot record
      *
      * @param userId id of the user we want to update
      * @param latestEvent json object describing the event which triggers the streak update
      * @param streakRecord the current snapshot of the streak record
      * @return the new updated streak record
      */
-    private JsonNode updateStreakRecord(String userId, JsonNode latestEvent, JsonNode streakRecord) throws SegueDatabaseException {
+    private static JsonNode updateStreakRecord(String userId,
+                                               JsonNode latestEvent,
+                                               JsonNode streakRecord,
+                                               IQuestionAttemptManager questionAttemptManager)
+            throws NoUserException, SegueDatabaseException {
+
+        Long uId = Long.parseLong(userId);
 
         // timestamp of streak start
         Long streakStartTimestamp = streakRecord.path("streak_start").asLong();
@@ -454,7 +475,6 @@ public class UserStatisticsStreamsApplication {
             } else {
                 ((ObjectNode) streakRecord).put("current_activity", 0);
             }
-
         }
 
 
@@ -463,8 +483,7 @@ public class UserStatisticsStreamsApplication {
         String questionPageId = questionPartId.split("\\|")[0];
 
         Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts =
-                questionAttemptManager.getQuestionAttemptsByUsersAndQuestionPrefix(ImmutableList.of(Long.parseLong(userId)), ImmutableList.of(questionPageId))
-                        .get(Long.parseLong(userId));
+                questionAttemptManager.getQuestionAttemptsByUsersAndQuestionPrefix(ImmutableList.of(uId), ImmutableList.of(questionPageId)).get(uId);
 
         // the following assumes that question attempts are always recorded in the pg question attempt table before they are logged as an event
         if (!userQuestionAttempts.isEmpty()
@@ -516,56 +535,86 @@ public class UserStatisticsStreamsApplication {
         if (streakRecord.path("current_activity").asLong() == streakRecord.path("activity_threshold").asLong()) {
             latest.add(Calendar.DAY_OF_YEAR, 1);
             ((ObjectNode) streakRecord).put("streak_end", latest.getTimeInMillis());
-        }
+
+            Long daysSinceStart = TimeUnit.DAYS.convert(latest.getTimeInMillis() - streakStartTimestamp, TimeUnit.MILLISECONDS);
+
+            // log when the streak count has been updated
+            Map<String, Object> eventDetailsStreakUpdate = Maps.newHashMap();
+            eventDetailsStreakUpdate.put("currentStreak", daysSinceStart);
+            eventDetailsStreakUpdate.put("threshold", streakRecord.path("activity_threshold").asLong());
+            eventDetailsStreakUpdate.put("streakType", "correctQuestionPartsPerDay");
 
 
-        // 5) Update largest streak count if days since start is greater than the recorded largest streak
-        Long daysSinceStart = TimeUnit.DAYS.convert(latest.getTimeInMillis() - streakStartTimestamp, TimeUnit.MILLISECONDS);
+            // 5) Update largest streak count if days since start is greater than the recorded largest streak
+            if (daysSinceStart > streakRecord.path("largest_streak").asLong()) {
+                ((ObjectNode) streakRecord).put("largest_streak", daysSinceStart);
 
-        if (daysSinceStart > streakRecord.path("largest_streak").asLong()) {
-            ((ObjectNode) streakRecord).put("largest_streak", daysSinceStart);
-
-            // log the new longest streak record
-            Map<String, Object> eventDetails = Maps.newHashMap();
-            eventDetails.put("longestStreak", streakRecord.path("largest_streak").asLong());
-            eventDetails.put("threshold", streakRecord.path("activity_threshold").asLong());
-            eventDetails.put("streakType", "correctQuestionPartsPerDay");
-        }
-
-
-        // 6) At this point we want to notify the user that their streak has increased
-        Map<String, Object> notificationData = Maps.newHashMap();
-        Map<String, Object> streakData = Maps.newHashMap();
-        streakData.put("currentStreak", daysSinceStart);
-        streakData.put("currentActivity", streakRecord.path("current_activity").asInt());
-
-        if (streakRecord.path("current_activity").asLong() == streakRecord.path("activity_threshold").asLong()) {
-            streakData.put("streakIncrease", true);
-        }
-
-        notificationData.put("streakData", streakData);
-
-        try {
-            // notify the user of a streak increase
-            IUserAlert alert = new PgUserAlert(null,
-                    Long.parseLong(userId),
-                    objectMapper.writeValueAsString(notificationData),
-                    "progress",
-                    new Timestamp(System.currentTimeMillis()),
-                    null, null, null);
-
-            if (null != UserAlertsWebSocket.connectedSockets && UserAlertsWebSocket.connectedSockets.containsKey(Long.parseLong(userId))) {
-                for(IAlertListener listener : UserAlertsWebSocket.connectedSockets.get(Long.parseLong(userId))) {
-                    listener.notifyAlert(alert);
-                }
+                // log the new longest streak record
+                Map<String, Object> eventDetailsLongestStreak = Maps.newHashMap();
+                eventDetailsLongestStreak.put("longestStreak", streakRecord.path("largest_streak").asLong());
+                eventDetailsLongestStreak.put("threshold", streakRecord.path("activity_threshold").asLong());
+                eventDetailsLongestStreak.put("streakType", "correctQuestionPartsPerDay");
             }
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
 
+
+            // 6) At this point we want to notify the user that their streak has increased
+            Map<String, Object> notificationData = Maps.newHashMap();
+            Map<String, Object> streakData = Maps.newHashMap();
+            streakData.put("currentStreak", daysSinceStart);
+            streakData.put("currentActivity", streakRecord.path("current_activity").asInt());
+
+            if (streakRecord.path("current_activity").asLong() == streakRecord.path("activity_threshold").asLong()) {
+                streakData.put("streakIncrease", true);
+            }
+
+            notificationData.put("streakData", streakData);
+
+            try {
+                // notify the user of a streak increase
+                IUserAlert alert = new PgUserAlert(null, uId,
+                        objectMapper.writeValueAsString(notificationData),
+                        "progress",
+                        new Timestamp(System.currentTimeMillis()),
+                        null, null, null);
+
+                if (null != UserAlertsWebSocket.connectedSockets && UserAlertsWebSocket.connectedSockets.containsKey(uId)) {
+                    for(IAlertListener listener : UserAlertsWebSocket.connectedSockets.get(uId)) {
+                        listener.notifyAlert(alert);
+                    }
+                }
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+        }
         return streakRecord;
     }
 
+
+    /**
+     * Utility function to increase generic activity counts
+     *
+     * @param activityType the type of activity that we want to increment
+     * @param record the holding record of the current snapshot
+     * @return the new activity count
+     */
+    private static Integer updateActivityCount(String activityType, JsonNode record) {
+        return record.path(activityType).asInt() + 1;
+    }
+
+
+    /**
+     * Function to supply an initialized JsonNode record for storing non-student activity
+     *
+     * @return the initialized JsonNode record
+     */
+    private static JsonNode getInitializedNonStudentRecord() {
+
+        return JsonNodeFactory.instance.objectNode()
+                .put("groups_created", 0)
+                .put("assignments_set", 0)
+                .put("book_pages_set", 0)
+                .put("cpd_events_attended", 0);
+    }
 
 
     /**
@@ -598,5 +647,4 @@ public class UserStatisticsStreamsApplication {
                 "version", streamsAppVersion,
                 "running", streamThreadRunning);
     }
-
 }
