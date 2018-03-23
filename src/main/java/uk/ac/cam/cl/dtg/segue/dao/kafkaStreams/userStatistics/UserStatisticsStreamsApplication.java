@@ -23,8 +23,10 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import org.apache.kafka.clients.admin.ConfigEntry;
+import org.apache.kafka.clients.consumer.CommitFailedException;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.config.TopicConfig;
@@ -86,8 +88,9 @@ public class UserStatisticsStreamsApplication {
 
     private KafkaStreams streams;
 
-    private final String streamsAppName = "streamsapp_user_stats";
-    private final String streamsAppVersion = "v1.1";
+    private static final String streamsAppName = "streamsapp_user_stats";
+    private static final String streamsAppVersion = "v1.3";
+    private static Boolean streamThreadRunning;
     private static Long streamAppStartTime = System.currentTimeMillis();
 
     /**
@@ -101,8 +104,7 @@ public class UserStatisticsStreamsApplication {
                                             final KafkaTopicManager kafkaTopicManager,
                                             final IQuestionAttemptManager questionAttemptManager,
                                             final IUserAccountManager userAccountManager,
-                                            final IGameManager gameManager,
-                                            final ILogManager logManager) {
+                                            final IGameManager gameManager) {
 
 
         Properties streamsConfiguration = new Properties();
@@ -161,7 +163,7 @@ public class UserStatisticsStreamsApplication {
                 );
 
         // process raw logged events
-        streamProcess(rawLoggedEvents, questionAttemptManager, userAccountManager, gameManager, logManager);
+        streamProcess(rawLoggedEvents, questionAttemptManager, userAccountManager, gameManager);
 
         // need to make state stores queryable globally, as we often have 2 versions of API running concurrently, hence 2 streams app instances
         // aggregations are saved to a local state store per streams app instance and update a changelog topic in Kafka
@@ -170,12 +172,27 @@ public class UserStatisticsStreamsApplication {
 
         // use the builder and the streams configuration we set to setup and start a streams object
         streams = new KafkaStreams(builder, streamsConfiguration);
+
+        // handling fatal streams app exceptions
+        streams.setUncaughtExceptionHandler(
+                (thread, throwable) -> {
+
+                    // a bit hacky, but we know that the rebalance-inducing app death is caused by a CommitFailedException that is two levels deep into the stack trace
+                    // otherwsie we get a StreamsException which is too general
+                    if (throwable.getCause().getCause() instanceof CommitFailedException) {
+                        streamThreadRunning = false;
+                        log.info("Site statistics streams app no longer running.");
+                    }
+                }
+        );
+
         streams.start();
 
         // return when streams instance is initialized
         while (true) {
 
             if (streams.state().isCreatedOrRunning())
+                streamThreadRunning = true;
                 break;
         }
 
@@ -192,8 +209,7 @@ public class UserStatisticsStreamsApplication {
     private static void streamProcess(KStream<String, JsonNode> rawStream,
                                       final IQuestionAttemptManager questionAttemptManager,
                                       final IUserAccountManager userAccountManager,
-                                      final IGameManager gameManager,
-                                      final ILogManager logManager) {
+                                      final IGameManager gameManager) {
 
         // map the key-value pair to one where the key is always the user id
         KStream<String, JsonNode> mappedStream = rawStream
@@ -616,5 +632,19 @@ public class UserStatisticsStreamsApplication {
         calendar.set(Calendar.HOUR_OF_DAY, 0);
 
         return calendar;
+    }
+
+
+    /**
+     * Method to expose streams app details and status
+     * TODO: we can share this between different streams apps in future if we introduce some inheritance between them
+     * @return map of streams app properties
+     */
+    public static Map<String, Object> getAppStatus() {
+
+        return ImmutableMap.of(
+                "streamsApplicationName", streamsAppName,
+                "version", streamsAppVersion,
+                "running", streamThreadRunning);
     }
 }
