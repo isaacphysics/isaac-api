@@ -587,8 +587,9 @@ public class UserStatisticsStreamsApplication {
     }
 
     /**
+     *Method to return streak data for all users, including current and largest streaks
      *
-     * @return
+     * @return map of user ids to streak records
      */
     public Map<Long, Map<String, Long>> getAllUserStreaks() {
 
