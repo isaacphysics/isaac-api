@@ -151,6 +151,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public Response getAssignments(@Context final HttpServletRequest request,
+
             @QueryParam("assignmentStatus") final GameboardState assignmentStatus) {
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
@@ -411,27 +412,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group);
             List<String> questionIds = Lists.newArrayList();
             
-            // quick hack to sort list by user last name, first name
-            groupMembers.sort((user1, user2) -> {
-                if (user1.getGivenName() == null && user2.getGivenName() != null) {
-                    return -1;
-                } else if (user1.getGivenName() != null && user2.getGivenName() == null) {
-                    return 1;
-                } else if (user1.getGivenName() == null && user2.getGivenName() == null) {
-                    return 0;
-                }
-                return user1.getGivenName().toLowerCase().compareTo(user2.getGivenName().toLowerCase());
-            });
-            groupMembers.sort((user1, user2) -> {
-                if (user1.getFamilyName() == null && user2.getFamilyName() != null) {
-                    return -1;
-                } else if (user1.getFamilyName() != null && user2.getFamilyName() == null) {
-                    return 1;
-                } else if (user1.getFamilyName() == null && user2.getFamilyName() == null) {
-                    return 0;
-                }
-                return user1.getFamilyName().toLowerCase().compareTo(user2.getFamilyName().toLowerCase());
-            });
+            AssignmentManager.sortUsersByFamilyName(groupMembers);
 
             List<String[]> rows = Lists.newArrayList();
             StringWriter stringWriter = new StringWriter();
@@ -585,18 +566,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             // Fetch the members of the requested group
             List<RegisteredUserDTO> groupMembers;
             groupMembers = this.groupManager.getUsersInGroup(group);
-            // quick hack to sort list by user last name
-            groupMembers.sort((user1, user2) -> {
-                if (user1.getFamilyName() == null && user2.getFamilyName() != null) {
-                    return -1;
-                } else if (user1.getFamilyName() != null && user2.getFamilyName() == null) {
-                    return 1;
-                } else if (user1.getFamilyName() == null && user2.getFamilyName() == null) {
-                    return 0;
-                } else {
-                    return user1.getFamilyName().compareTo(user2.getFamilyName());
-                }
-            });
+            AssignmentManager.sortUsersByFamilyName(groupMembers);
 
             // String: question part id
             // Integer: question part result

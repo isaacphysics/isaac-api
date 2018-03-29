@@ -417,4 +417,31 @@ public class AssignmentManager implements IGroupObserver {
                 .put("assignmentsInfo", plainTextSB.toString())
                 .put("assignmentsInfo_HTML", htmlSB.toString()).build();
     }
+
+    /**
+     * TODO MT
+     * @param users ...
+     */
+    public static void sortUsersByFamilyName(final List<RegisteredUserDTO> users) {
+        users.sort((user1, user2) -> {
+            if (user1.getGivenName() == null && user2.getGivenName() != null) {
+                return -1;
+            } else if (user1.getGivenName() != null && user2.getGivenName() == null) {
+                return 1;
+            } else if (user1.getGivenName() == null && user2.getGivenName() == null) {
+                return 0;
+            }
+            return user1.getGivenName().toLowerCase().compareTo(user2.getGivenName().toLowerCase());
+        });
+        users.sort((user1, user2) -> {
+            if (user1.getFamilyName() == null && user2.getFamilyName() != null) {
+                return -1;
+            } else if (user1.getFamilyName() != null && user2.getFamilyName() == null) {
+                return 1;
+            } else if (user1.getFamilyName() == null && user2.getFamilyName() == null) {
+                return 0;
+            }
+            return user1.getFamilyName().toLowerCase().compareTo(user2.getFamilyName().toLowerCase());
+        });
+    }
 }
