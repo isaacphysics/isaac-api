@@ -41,7 +41,10 @@
 
     <context-param>
         <param-name>resteasy.providers</param-name>
-        <param-value>uk.ac.cam.cl.dtg.isaac.configuration.exceptionMappers.MethodNotAllowedExceptionMapper</param-value>
+        <param-value>
+            uk.ac.cam.cl.dtg.isaac.configuration.exceptionMappers.MethodNotAllowedExceptionMapper,
+            uk.ac.cam.cl.dtg.segue.configuration.exceptionMappers.JacksonInvalidFormatExceptionMapper
+        </param-value>
     </context-param>
 
 </web-app>
