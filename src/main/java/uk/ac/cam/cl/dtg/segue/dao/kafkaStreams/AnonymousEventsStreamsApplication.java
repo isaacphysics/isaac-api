@@ -1,8 +1,10 @@
 package uk.ac.cam.cl.dtg.segue.dao.kafkaStreams;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import org.apache.kafka.clients.admin.ConfigEntry;
+import org.apache.kafka.clients.consumer.CommitFailedException;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.config.TopicConfig;
@@ -15,10 +17,13 @@ import org.apache.kafka.connect.json.JsonSerializer;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KStreamBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -27,10 +32,15 @@ import java.util.Properties;
  */
 public class AnonymousEventsStreamsApplication {
 
+    private static final Logger log = LoggerFactory.getLogger(AnonymousEventsStreamsApplication.class);
     private static final Serializer<JsonNode> JsonSerializer = new JsonSerializer();
     private static final Deserializer<JsonNode> JsonDeserializer = new JsonDeserializer();
     private static final Serde<String> StringSerde = Serdes.String();
     private static final Serde<JsonNode> JsonSerde = Serdes.serdeFrom(JsonSerializer, JsonDeserializer);
+
+    private static final String streamsAppName = "streamsapp_anonymous_logged_events";
+    private static final String streamsAppVersion = "v1.0";
+    private static Boolean streamThreadRunning;
 
 
     public AnonymousEventsStreamsApplication(final PropertiesLoader globalProperties,
@@ -39,7 +49,7 @@ public class AnonymousEventsStreamsApplication {
         KStreamBuilder builder = new KStreamBuilder();
         Properties streamsConfiguration = new Properties();
 
-        streamsConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, "streamsapp_anonymous_logged_events-v1.0");
+        streamsConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, streamsAppName + "-" + streamsAppVersion);
         streamsConfiguration.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG,
                 globalProperties.getProperty("KAFKA_HOSTNAME") + ":" + globalProperties.getProperty("KAFKA_PORT"));
         streamsConfiguration.put(StreamsConfig.STATE_DIR_CONFIG, globalProperties.getProperty("KAFKA_STREAMS_STATE_DIR"));
@@ -75,8 +85,36 @@ public class AnonymousEventsStreamsApplication {
 
         // use the builder and the streams configuration we set to setup and start a streams object
         KafkaStreams streams = new KafkaStreams(builder, streamsConfiguration);
-        streams.start();
 
+        // handling fatal streams app exceptions
+        streams.setUncaughtExceptionHandler(
+                (thread, throwable) -> {
+
+                    // a bit hacky, but we know that the rebalance-inducing app death is caused by a CommitFailedException that is two levels deep into the stack trace
+                    // otherwsie we get a StreamsException which is too general
+                    if (throwable.getCause().getCause() instanceof CommitFailedException) {
+                        streamThreadRunning = false;
+                        log.info("Anonymous logged events streams app no longer running.");
+                    }
+                }
+        );
+
+        streams.start();
+        streamThreadRunning = true;
+
+    }
+
+    /**
+     * Method to expose streams app details and status
+     * TODO: we can share this between different streams apps in future if we introduce some inheritance between them
+     * @return map of streams app properties
+     */
+    public static Map<String, Object> getAppStatus() {
+
+        return ImmutableMap.of(
+                "streamsApplicationName", streamsAppName,
+                "version", streamsAppVersion,
+                "running", streamThreadRunning);
     }
 
 }

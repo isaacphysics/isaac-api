@@ -19,16 +19,16 @@ package uk.ac.cam.cl.dtg.segue.dao.kafkaStreams;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.kafka.clients.admin.ConfigEntry;
+import org.apache.kafka.clients.consumer.CommitFailedException;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.config.TopicConfig;
-import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.connect.json.JsonDeserializer;
 import org.apache.kafka.connect.json.JsonSerializer;
 import org.apache.kafka.streams.KafkaStreams;
@@ -37,7 +37,6 @@ import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.errors.InvalidStateStoreException;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KStreamBuilder;
-import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.state.KeyValueIterator;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.slf4j.Logger;
@@ -58,6 +57,7 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+
 /**
  * Kafka streams processing application for generating site statistics
  *  @author Dan Underwood
@@ -73,9 +73,10 @@ public class SiteStatisticsStreamsApplication {
 
     private KafkaStreams streams;
 
-    private final String streamsAppName = "streamsapp_site_stats";
-    private final String streamsAppVersion = "v2";
+    private static final String streamsAppName = "streamsapp_site_stats";
+    private static final String streamsAppVersion = "v2.1";
     private static Long streamAppStartTime = System.currentTimeMillis();
+    private static Boolean streamThreadRunning;
 
 
     /**
@@ -100,8 +101,10 @@ public class SiteStatisticsStreamsApplication {
         streamsConfiguration.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, 10 * 1000);
         streamsConfiguration.put(StreamsConfig.METADATA_MAX_AGE_CONFIG, 10 * 1000);
         streamsConfiguration.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 0);
+        streamsConfiguration.put(StreamsConfig.REPLICATION_FACTOR_CONFIG, globalProperties.getProperty("KAFKA_REPLICATION_FACTOR"));
         streamsConfiguration.put(StreamsConfig.consumerPrefix(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG), "earliest");
-        streamsConfiguration.put(StreamsConfig.consumerPrefix(ConsumerConfig.METADATA_MAX_AGE_CONFIG), 60 * 1000);
+        streamsConfiguration.put(StreamsConfig.consumerPrefix(ConsumerConfig.METADATA_MAX_AGE_CONFIG), 45 * 1000);
+        streamsConfiguration.put(StreamsConfig.producerPrefix(ProducerConfig.METADATA_MAX_AGE_CONFIG), 45 * 1000);
         streamsConfiguration.put(StreamsConfig.consumerPrefix(ConsumerConfig.MAX_POLL_RECORDS_CONFIG), 250);
         streamsConfiguration.put(StreamsConfig.consumerPrefix(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG), 60000);
 
@@ -161,13 +164,29 @@ public class SiteStatisticsStreamsApplication {
 
         // use the builder and the streams configuration we set to setup and start a streams object
         streams = new KafkaStreams(builder, streamsConfiguration);
+
+        // handling fatal streams app exceptions
+        streams.setUncaughtExceptionHandler(
+                (thread, throwable) -> {
+
+                    // a bit hacky, but we know that the rebalance-inducing app death is caused by a CommitFailedException that is two levels deep into the stack trace
+                    // otherwsie we get a StreamsException which is too general
+                    if (throwable.getCause().getCause() instanceof CommitFailedException) {
+                        streamThreadRunning = false;
+                        log.info("Site statistics streams app no longer running.");
+                    }
+                }
+        );
+
         streams.start();
 
         // return when streams instance is initialized
         while (true) {
 
-            if (streams.state().isCreatedOrRunning())
+            if (streams.state().isCreatedOrRunning()) {
+                streamThreadRunning = true;
                 break;
+            }
         }
 
         kafkaLog.info("Site statistics streams application started.");
@@ -215,11 +234,11 @@ public class SiteStatisticsStreamsApplication {
                         // aggregator
                         (userId, userUpdateLogEvent, userRecord) -> {
 
-                            String eventType = userUpdateLogEvent.path("event_type").asText();
+                            try {
 
-                            if (eventType.equals("CREATE_UPDATE_USER")) {
+                                String eventType = userUpdateLogEvent.path("event_type").asText();
 
-                                try {
+                                if (eventType.equals("CREATE_UPDATE_USER")) {
 
                                     // we get the latest record from postgres to avoid passing sensitive info through Kafka
                                     RegisteredUserDTO regUser = userAccountManager.getUserDTOById(Long.parseLong(userId));
@@ -237,40 +256,42 @@ public class SiteStatisticsStreamsApplication {
 
                                     ((ObjectNode) userRecord).put("user_id", userId);
                                     ((ObjectNode) userRecord).set("user_data", userDetails);
-
-                                } catch (SegueDatabaseException e) {
-                                    e.printStackTrace();
-                                } catch (NoUserException e) {
-                                    // don't want to clog up the logs with historical processing if we are ever doing a backfill
-                                    if (userUpdateLogEvent.path("timestamp").asLong() > streamAppStartTime) {
-                                        log.error("User " + userId + " not found in Postgres DB while processing streams data!");
-                                    }
-                                    // returning a null record will ensure that it will be removed from the internal rocksDB store
-                                    return null;
-                                } catch (NumberFormatException e) {
-                                    if (userUpdateLogEvent.path("timestamp").asLong() > streamAppStartTime) {
-                                        log.error("Could not process user with id = " + userId + " in streams application.");
-                                    }
-                                    return null;
                                 }
+
+                                // record user last seen data
+                                JsonNode lastSeenData = userRecord.path("last_seen_data");
+                                Timestamp stamp = new Timestamp(userUpdateLogEvent.path("timestamp").asLong());
+
+
+                                if (!lastSeenData.has(eventType)) {
+                                    ObjectNode node = JsonNodeFactory.instance.objectNode();
+                                    node.put("count", 0);
+                                    node.put("latest", 0);
+                                    ((ObjectNode) lastSeenData).set(eventType, node);
+                                }
+
+                                Long count = lastSeenData.path(eventType).path("count").asLong();
+                                ((ObjectNode) lastSeenData.path(eventType)).put("count", count + 1);
+                                ((ObjectNode) lastSeenData.path(eventType)).put("latest", stamp.getTime());
+                                ((ObjectNode) lastSeenData).put("last_seen", stamp.getTime());
+
+
+                            } catch (NoUserException e) {
+                                // don't want to clog up the logs with historical processing if we are ever doing a backfill
+                                if (userUpdateLogEvent.path("timestamp").asLong() > streamAppStartTime) {
+                                    log.error("User " + userId + " not found in Postgres DB while processing streams data!");
+                                }
+                                // returning a null record will ensure that it will be removed from the internal rocksDB store
+                                return null;
+                            } catch (NumberFormatException | SegueDatabaseException e) {
+                                if (userUpdateLogEvent.path("timestamp").asLong() > streamAppStartTime) {
+                                    log.error("Could not process user with id = " + userId + " in streams application.");
+                                }
+                                return null;
+                            } catch (RuntimeException e) {
+                                // streams app annoyingly dies if there is an uncaught runtime exception from any level, so we catch everything
+                                e.printStackTrace();
                             }
-
-                            // record user last seen data
-                            JsonNode lastSeenData = userRecord.path("last_seen_data");
-                            Timestamp stamp = new Timestamp(userUpdateLogEvent.path("timestamp").asLong());
-
-
-                            if (!lastSeenData.has(eventType)) {
-                                ObjectNode node = JsonNodeFactory.instance.objectNode();
-                                node.put("count", 0);
-                                node.put("latest", 0);
-                                ((ObjectNode) lastSeenData).set(eventType, node);
-                            }
-
-                            Long count = lastSeenData.path(eventType).path("count").asLong();
-                            ((ObjectNode) lastSeenData.path(eventType)).put("count", count + 1);
-                            ((ObjectNode) lastSeenData.path(eventType)).put("latest", stamp.getTime());
-                            ((ObjectNode) lastSeenData).put("last_seen", stamp.getTime());
 
                             return userRecord;
                         },
@@ -349,6 +370,20 @@ public class SiteStatisticsStreamsApplication {
                 .store("globalstore_user_data-" + streamsAppVersion,
                         QueryableStoreTypes.<String, JsonNode>keyValueStore())
                 .all();
+    }
+
+
+    /**
+     * Method to expose streams app details and status
+     * TODO: we can share this between different streams apps in future if we introduce some inheritance between them
+     * @return map of streams app properties
+     */
+    public static Map<String, Object> getAppStatus() {
+
+        return ImmutableMap.of(
+                "streamsApplicationName", streamsAppName,
+                "version", streamsAppVersion,
+                "running", streamThreadRunning);
     }
 
 }

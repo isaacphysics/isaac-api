@@ -62,6 +62,7 @@ import java.util.List;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ANSWER_QUESTION;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.QUESTION_ATTEMPT_RATE_LIMITED;
 
 /**
@@ -113,6 +114,28 @@ public class QuestionFacade extends AbstractSegueFacade {
         this.contentIndex = contentIndex;
         this.userManager = userManager;
         this.misuseMonitor = misuseMonitor;
+    }
+
+    /**
+     * Warn users attempting to make GET requests to answers that we do not provide these. Log the attempt.
+     *
+     * @param request - the incoming request
+     * @param questionId - the question the user is referring to
+     * @return an error message informing the user where to find help.
+     */
+    @GET
+    @Path("{question_id}/answer")
+    public Response getQuestionAnswer(@Context final HttpServletRequest request, @PathParam("question_id") final String questionId) {
+        String errorMessage = String.format("We do not provide answers to questions. See https://%s/solving_problems for more help!",
+                                            getProperties().getProperty(HOST_NAME));
+        AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(request);
+        if (currentUser instanceof RegisteredUserDTO) {
+            log.warn(String.format("MethodNotAllowed: User (%s) attempted to GET the answer to the question '%s'!",
+                                    ((RegisteredUserDTO) currentUser).getId(), questionId));
+        } else {
+            log.warn(String.format("MethodNotAllowed: Anonymous user attempted to GET the answer to the question '%s'!", questionId));
+        }
+        return new SegueErrorResponse(Status.METHOD_NOT_ALLOWED, errorMessage).toResponse();
     }
 
     /**

@@ -568,15 +568,15 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             RegisteredUserDTO currentlyLoggedInUser;
             currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
 
-            if (!isUserAnAdmin(userManager, request) && !isUserStaff(userManager, request)
-                    && currentlyLoggedInUser.getRole() != Role.TEACHER) {
-                return new SegueErrorResponse(Status.FORBIDDEN,
-                        "You are not a teacher, a member of staff, nor an admin.").toResponse();
-            }
-
             // Fetch the requested group
             UserGroupDTO group;
             group = this.groupManager.getGroupById(groupId);
+
+            // Check the group owner:
+            if (!group.getOwnerId().equals(currentlyLoggedInUser.getId()) && !isUserAnAdmin(userManager, request)) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "You can only view the results of assignments that you own.").toResponse();
+            }
 
             // Fetch the assignments owned by the currently logged in user that are assigned to the requested group
             List<AssignmentDTO> assignments;
@@ -671,12 +671,14 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             for (RegisteredUserDTO groupMember : groupMembers) {
                 ArrayList<String> row = Lists.newArrayList();
                 Map<GameboardDTO, Map<String, Integer>> userAssignments = grandTable.get(groupMember);
-                List<Double> totals = Lists.newArrayList();
+                List<Float> assignmentPercentages = Lists.newArrayList();
                 List<Integer> marks = Lists.newArrayList();
+                int totalQPartsCorrect = 0;
+                int totalQPartsCount = 0;
                 for (AssignmentDTO assignment : assignments) {
                     GameboardDTO gameboard = gameManager.getGameboard(assignment.getGameboardId());
-                    int total = 0;
-                    int outOf = 0;
+                    int assignmentQPartsCorrect = 0;
+                    int assignmentQPartsCount = 0;
                     List<String> questionIds = gameboardQuestionIds.get(gameboard);
                     List<GameboardItem> questions = gameboard.getQuestions();
                     Map<String, Integer> gameboardPartials = Maps.newHashMap();
@@ -694,21 +696,21 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                         }
                     }
                     for (Entry<String, Integer> entry : gameboardPartials.entrySet()) {
-                        total += entry.getValue();
-                        outOf += questionParts.get(entry.getKey());
+                        assignmentQPartsCorrect += entry.getValue();
+                        assignmentQPartsCount += questionParts.get(entry.getKey());
                     }
-                    totals.add(100 * new Double(total) / outOf);
+                    totalQPartsCorrect += assignmentQPartsCorrect;
+                    totalQPartsCount += assignmentQPartsCount;
+                    assignmentPercentages.add((100f * assignmentQPartsCorrect) / assignmentQPartsCount);
                 }
-                Double overallTotal = totals.stream()
-                        .map(boardTotal -> boardTotal / assignments.size())
-                        .reduce(0d, (a, b) -> a + b);
+                float overallTotal = (100f * totalQPartsCorrect) / totalQPartsCount;
 
                 // The next three lines could be a little better if I were not this sleepy...
                 row.add(groupMember.getFamilyName());
                 row.add(groupMember.getGivenName());
                 row.add(String.format("%.0f", overallTotal));
-                for (Double total : totals) {
-                    row.add(String.format("%.0f", total));
+                for (Float assignmentPercentage : assignmentPercentages) {
+                    row.add(String.format("%.0f", assignmentPercentage));
                 }
                 row.add("");
                 for (Integer mark : marks) {
