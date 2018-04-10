@@ -308,21 +308,8 @@ public class GroupsFacade extends AbstractSegueFacade {
                 return cachedResponse;
             }
 
-            Collections.sort(summarisedMemberInfo, new Comparator<UserSummaryDTO>() {
-                @Override
-                public int compare(final UserSummaryDTO arg0, final UserSummaryDTO arg1) {
-                    
-                    if (arg0.getFamilyName() == null && arg1.getFamilyName() != null) {
-                        return -1;
-                    } else if (arg0.getFamilyName() != null && arg1.getFamilyName() == null) {
-                        return 1;
-                    } else if (arg0.getFamilyName() == null && arg1.getFamilyName() == null) {
-                        return 0;
-                    }
-
-                    return arg0.getFamilyName().compareTo(arg1.getFamilyName());
-                }
-            });
+            UserAccountManager.sortOnUserNames(summarisedMemberInfo,
+                    UserSummaryDTO::getGivenName, UserSummaryDTO::getFamilyName);
 
             associationManager.enforceAuthorisationPrivacy(user, summarisedMemberInfo);
 
