@@ -41,10 +41,9 @@ public class JacksonInvalidFormatExceptionMapper implements ExceptionMapper<Inva
 
     @Override
     public Response toResponse(final InvalidFormatException e) {
-        String message = e.getMessage();
+        String message = String.format("%s on %s request to %s", e.getClass().getSimpleName(), request.getMethod(),
+                 request.getRequestURI());
         log.error(message);
-        return SegueErrorResponse.getBadRequestResponse(
-                String.format("Invalid format exception while processing a %s request to %s",
-                request.getMethod(), request.getRequestURI()));
+        return SegueErrorResponse.getBadRequestResponse("Invalid Format");
     }
 }
