@@ -47,6 +47,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -306,17 +307,17 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             final String correctPartString = "correctPartResults";
             final String incorrectPartString = "incorrectPartResults";
 
-            for (Entry<RegisteredUserDTO, List<GameboardItem>> e : this.gameManager.gatherGameProgressData(
-                    groupMembers, gameboard).entrySet()) {
+            for (ImmutablePair<RegisteredUserDTO, List<GameboardItem>> userGameboardItems : this.gameManager
+                    .gatherGameProgressData(groupMembers, gameboard)) {
                 UserSummaryDTO userSummary = associationManager.enforceAuthorisationPrivacy(currentlyLoggedInUser,
-                        userManager.convertToUserSummaryObject(e.getKey()));
+                        userManager.convertToUserSummaryObject(userGameboardItems.getLeft()));
 
                 // can the user access the data?
                 if (userSummary.isAuthorisedFullAccess()) {
                     ArrayList<GameboardItemState> states = Lists.newArrayList();
                     ArrayList<Integer> correctQuestionParts = Lists.newArrayList();
                     ArrayList<Integer> incorrectQuestionParts = Lists.newArrayList();
-                    for (GameboardItem questionResult : e.getValue()) {
+                    for (GameboardItem questionResult : userGameboardItems.getRight()) {
                         states.add(questionResult.getState());
                         correctQuestionParts.add(questionResult.getQuestionPartsCorrect());
                         incorrectQuestionParts.add(questionResult.getQuestionPartsIncorrect());
@@ -328,10 +329,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                             correctPartString, Lists.newArrayList(), incorrectPartString, Lists.newArrayList()));
                 }
             }
-
-            UserAccountManager.sortOnUserNames(result,
-                    (user) -> ((UserSummaryDTO) user.get(userString)).getGivenName(),
-                    (user) -> ((UserSummaryDTO) user.get(userString)).getFamilyName());
 
             this.getLogManager().logEvent(currentlyLoggedInUser, request, VIEW_ASSIGNMENT_PROGRESS,
                     ImmutableMap.of(ASSIGNMENT_FK, assignment.getId()));
@@ -385,9 +382,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             UserGroupDTO group = this.groupManager.getGroupById(assignment.getGroupId());
             List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group);
             List<String> questionIds = Lists.newArrayList();
-            
-            UserAccountManager.sortOnUserNames(groupMembers,
-                    RegisteredUserDTO::getGivenName, RegisteredUserDTO::getFamilyName);
 
             List<String[]> rows = Lists.newArrayList();
             StringWriter stringWriter = new StringWriter();
@@ -541,8 +535,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             // Fetch the members of the requested group
             List<RegisteredUserDTO> groupMembers;
             groupMembers = this.groupManager.getUsersInGroup(group);
-            UserAccountManager.sortOnUserNames(groupMembers,
-                    RegisteredUserDTO::getGivenName, RegisteredUserDTO::getFamilyName);
 
             // String: question part id
             // Integer: question part result

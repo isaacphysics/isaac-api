@@ -24,12 +24,10 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.google.common.collect.ComparisonChain;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
 
@@ -1183,38 +1181,6 @@ public class UserAccountManager implements IUserAccountManager {
         }
         return resultList;
     }
-
-    /**
-     * Helper method to consistently sort user objects by family name then given name in a case-insensitive order.
-     *
-     * @param users
-     *            - list of users.
-     * @param givenNameAccessor
-     *            - accessor method which returns the user object's given name.
-     * @param familyNameAccessor
-     *            - accessor method which returns the user object's family name.
-     * @param <UserObject>
-     *            - generic user object type.
-     */
-    public static <UserObject> void sortOnUserNames(final List<UserObject> users,
-                                                    final Function<UserObject, String> givenNameAccessor,
-                                                    final Function<UserObject, String> familyNameAccessor) {
-        users.sort((userA, userB) -> {
-
-            String givenNameA = givenNameAccessor.apply(userA);
-            String familyNameA = familyNameAccessor.apply(userA);
-            String givenNameB = givenNameAccessor.apply(userB);
-            String familyNameB = familyNameAccessor.apply(userB);
-
-            return ComparisonChain.start().
-                    compare(familyNameA, familyNameB, String.CASE_INSENSITIVE_ORDER).
-                    compare(familyNameA, familyNameB).
-                    compare(givenNameA, givenNameB, String.CASE_INSENSITIVE_ORDER).
-                    compare(givenNameA, givenNameB).
-                    result();
-        });
-    }
-
 
     /**
      * Logs the user in and creates the signed sessions.

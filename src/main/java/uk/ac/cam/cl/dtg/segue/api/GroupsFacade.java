@@ -308,9 +308,6 @@ public class GroupsFacade extends AbstractSegueFacade {
                 return cachedResponse;
             }
 
-            UserAccountManager.sortOnUserNames(summarisedMemberInfo,
-                    UserSummaryDTO::getGivenName, UserSummaryDTO::getFamilyName);
-
             associationManager.enforceAuthorisationPrivacy(user, summarisedMemberInfo);
 
             return Response.ok(summarisedMemberInfo).tag(etag)
