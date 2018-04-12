@@ -17,8 +17,8 @@ package uk.ac.cam.cl.dtg.isaac.quiz;
 
 import java.math.BigDecimal;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 
 import com.google.common.collect.Lists;
@@ -159,15 +159,13 @@ public class IsaacNumericValidator implements IValidator {
                     validUnits = bestResponse.getCorrectUnits();
                 }
                 // Our new bestResponse is about incorrect significant figures:
-                bestResponse = new QuantityValidationResponse(
-                        question.getId(),
-                        answerFromUser,
-                        false,
-                        new Content(
-                                "Your <strong>Significant figures</strong> are incorrect, "
-                                + "read our "
-                                + "<strong><a target='_blank' href='/solving_problems#acc_solving_problems_sig_figs'>"
-                                + "sig fig guide</a></strong>."),
+                Content sigFigResponse = new Content(
+                        "Your <strong>Significant figures</strong> are incorrect, "
+                        + "read our "
+                        + "<strong><a target='_blank' href='/solving_problems#acc_solving_problems_sig_figs'>"
+                        + "sig fig guide</a></strong>.");
+                sigFigResponse.setTags(new HashSet<>(Collections.singletonList("sig_figs")));
+                bestResponse = new QuantityValidationResponse(question.getId(), answerFromUser, false, sigFigResponse,
                         false, validUnits, new Date());
             }
             log.debug("Finished validation: correct=" + bestResponse.isCorrect() + ", correctValue="
@@ -485,11 +483,15 @@ public class IsaacNumericValidator implements IValidator {
 
                 StringBuilder userStringForComparison = new StringBuilder();
                 userStringForComparison.append(answerFromUser.getValue().trim());
-                userStringForComparison.append(answerFromUser.getUnits());
+                if (isaacNumericQuestion.getRequireUnits()) {
+                    userStringForComparison.append(answerFromUser.getUnits());
+                }
 
                 StringBuilder questionAnswerStringForComparison = new StringBuilder();
                 questionAnswerStringForComparison.append(quantityFromQuestion.getValue().trim());
-                questionAnswerStringForComparison.append(quantityFromQuestion.getUnits());
+                if (isaacNumericQuestion.getRequireUnits()) {
+                    questionAnswerStringForComparison.append(quantityFromQuestion.getUnits());
+                }
 
                 if (questionAnswerStringForComparison.toString().trim()
                         .equals(userStringForComparison.toString().trim())) {

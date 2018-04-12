@@ -25,6 +25,7 @@ import ma.glasnost.orika.MapperFacade;
 
 import org.apache.commons.collections4.comparators.ComparatorChain;
 import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -723,13 +724,13 @@ public class GameManager {
      * @throws ContentManagerException
      *             - if we can't look up the question page details.
      */
-    public Map<RegisteredUserDTO, List<GameboardItem>> gatherGameProgressData(
+    public List<ImmutablePair<RegisteredUserDTO, List<GameboardItem>>> gatherGameProgressData(
             final List<RegisteredUserDTO> users, final GameboardDTO gameboard) throws SegueDatabaseException,
             ContentManagerException {
         Validate.notNull(users);
         Validate.notNull(gameboard);
 
-        Map<RegisteredUserDTO, List<GameboardItem>> result = Maps.newHashMap();
+        List<ImmutablePair<RegisteredUserDTO, List<GameboardItem>>> result = Lists.newArrayList();
 
         List<String> questionPageIds = Lists.newArrayList();
 
@@ -750,7 +751,7 @@ public class GameManager {
                         questionAttemptsForAllUsersOfInterest.get(user.getId()));
                 userGameItems.add(userGameItem);
             }
-            result.put(user, userGameItems);
+            result.add(new ImmutablePair<>(user, userGameItems));
         }
 
         return result;

@@ -21,9 +21,6 @@ import java.util.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -65,7 +62,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class KafkaLoggingManager extends LoggingEventHandler {
     private static final Logger log = LoggerFactory.getLogger(KafkaLoggingManager.class);
 
-    private static final Set ignoredEvents = ImmutableSet.of(SEND_EMAIL, CONTACT_US_FORM_USED, EMAIL_VERIFICATION_REQUEST_RECEIVED,
+    private static final Set ignoredEvents = ImmutableSet.of(SENT_EMAIL, CONTACT_US_FORM_USED, EMAIL_VERIFICATION_REQUEST_RECEIVED,
             PASSWORD_RESET_REQUEST_RECEIVED, PASSWORD_RESET_REQUEST_SUCCESSFUL);
 
     private KafkaStreamsProducer kafkaProducer;
