@@ -217,7 +217,8 @@ public class EventBookingManager {
      * @throws DuplicateBookingException - Duplicate booking, only unique bookings.
      */
     public EventBookingDTO createBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user,
-                                         final Map<String, String> additionalEventInformation, BookingStatus status)
+                                         final Map<String, String> additionalEventInformation,
+                                         final BookingStatus status)
             throws SegueDatabaseException, DuplicateBookingException, EventIsFullException {
         // check if already booked
         if (this.isUserBooked(event.getId(), user.getId())) {
@@ -474,7 +475,7 @@ public class EventBookingManager {
             throw new EventBookingUpdateException("Unable to promote a booking that doesn't exist.");
         }
 
-        if (BookingStatus.CONFIRMED.equals(eventBooking.getBookingStatus())) {
+        if (this.isUserBooked(event.getId(), userDTO.getId())) {
             throw new EventBookingUpdateException("Unable to promote a booking that is CONFIRMED already.");
         }
 

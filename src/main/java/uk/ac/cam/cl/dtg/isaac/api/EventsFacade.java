@@ -950,7 +950,8 @@ public class EventsFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST,
                     "You cannot request both show active and inactive only.").toResponse();
         }
-        if (showActiveOnly != null && showActiveOnly) {
+        if ((showActiveOnly == null && showInactiveOnly == null) // default case
+                || (showActiveOnly != null && showActiveOnly)) {
             filterInstructions = Maps.newHashMap();
             DateRangeFilterInstruction anyEventsFromNow = new DateRangeFilterInstruction(new Date(), null);
             filterInstructions.put(ENDDATE_FIELDNAME, anyEventsFromNow);
@@ -999,6 +1000,10 @@ public class EventsFacade extends AbstractIsaacFacade {
                         this.bookingManager.countNumberOfBookingsWithStatus(e.getId(), BookingStatus.CONFIRMED));
                 eventOverviewBuilder.put("numberOfWaitingListBookings",
                         this.bookingManager.countNumberOfBookingsWithStatus(e.getId(), BookingStatus.WAITING_LIST));
+                eventOverviewBuilder.put("numberAttended",
+                        this.bookingManager.countNumberOfBookingsWithStatus(e.getId(), BookingStatus.ATTENDED));
+                eventOverviewBuilder.put("numberAbsent",
+                        this.bookingManager.countNumberOfBookingsWithStatus(e.getId(), BookingStatus.ABSENT));
 
                 if (null != e.getNumberOfPlaces()) {
                     eventOverviewBuilder.put("numberOfPlaces", e.getNumberOfPlaces());
