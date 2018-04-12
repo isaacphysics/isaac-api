@@ -19,6 +19,7 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.google.common.collect.ComparisonChain;
 import ma.glasnost.orika.MapperFacade;
 
 import org.apache.commons.lang3.Validate;
@@ -137,7 +138,23 @@ public class GroupManager {
             return Lists.newArrayList();
         }
 
-        return userManager.findUsers(groupMemberIds);
+        List<RegisteredUserDTO> users = userManager.findUsers(groupMemberIds);
+        this.orderUsersByName(users);
+        return users;
+    }
+
+    /**
+     * Helper method to consistently sort users by family name then given name in a case-insensitive order.
+     * @param users
+     *            - list of users.
+     */
+    private void orderUsersByName(final List<RegisteredUserDTO> users) {
+        users.sort((userA, userB) -> ComparisonChain.start().
+                compare(userA.getFamilyName(), userB.getFamilyName(), String.CASE_INSENSITIVE_ORDER).
+                compare(userA.getFamilyName(), userB.getFamilyName()).
+                compare(userA.getGivenName(), userB.getGivenName(), String.CASE_INSENSITIVE_ORDER).
+                compare(userB.getFamilyName(), userB.getGivenName()).
+                result());
     }
 
     /**
