@@ -58,6 +58,7 @@ import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.database.KafkaStreamsProducer;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dos.*;
+import uk.ac.cam.cl.dtg.segue.dos.userBadges.MechanicsBadge;
 import uk.ac.cam.cl.dtg.segue.quiz.IQuestionAttemptManager;
 import uk.ac.cam.cl.dtg.segue.quiz.PgQuestionAttempts;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
@@ -109,6 +110,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     //private static IStatisticsManager statsManager = null;
 	private static GroupManager groupManager = null;
 	private static IUserAlerts userAlerts = null;
+	private static PgUserBadgeManager userBadgeManager = null;
+	private static MechanicsBadge mechanicsBadge = null;
 
 	// kafka streams applications
     private static SiteStatisticsStreamsApplication statisticsStreamsApplication;
@@ -704,7 +707,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         return kafkaProducer;
     }
 
-
     /**
      * Gets the instance of the site statistics kafka stream application
      * @return Site Statistics Stream App object
@@ -763,7 +765,30 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         return userStatsStreamsApplication;
     }
 
+    @Provides
+    @Singleton
+    @Inject
+    private static MechanicsBadge getMechanicsBadge() {
 
+        if (null == mechanicsBadge) {
+
+            mechanicsBadge = new MechanicsBadge();
+        }
+        return mechanicsBadge;
+    }
+
+
+    @Provides
+    @Singleton
+    @Inject
+    private static PgUserBadgeManager getUserBadgeManager() {
+
+        if (null == userBadgeManager) {
+
+            userBadgeManager = new PgUserBadgeManager(postgresDB);
+        }
+        return userBadgeManager;
+    }
 
     /**
      * Gets the instance of the StatisticsManager. Note: this class is a hack and needs to be refactored.... It is
