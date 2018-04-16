@@ -80,11 +80,14 @@ services:
     ports:
       - "5432:5432"
   postgres-exporter:
+    # if this isn't working run ./initialise_local_environment.sh
     network_mode: bridge
     image: wrouesnel/postgres_exporter
     container_name: postgres-exporter
     environment:
-      - DATA_SOURCE_NAME=postgresql://rutherford:ADD_PASSWORD_HERE@postgres:5432/rutherford?sslmode=disable
+      - DATA_SOURCE_URI=postgres:5432/rutherford?sslmode=disable
+      - DATA_SOURCE_USER=$POSTGRES_DB_USER
+      - DATA_SOURCE_PASS=$POSTGRES_DB_PASSWORD
     links:
       - postgres:postgres
     ports:
