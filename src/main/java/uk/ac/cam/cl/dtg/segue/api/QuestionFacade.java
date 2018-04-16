@@ -16,7 +16,10 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -31,6 +34,8 @@ import uk.ac.cam.cl.dtg.segue.api.monitors.AnonQuestionAttemptMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IPQuestionAttemptMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.QuestionAttemptMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.userAlerts.IAlertListener;
+import uk.ac.cam.cl.dtg.segue.api.userAlerts.UserAlertsWebSocket;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -38,6 +43,8 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dos.IUserAlert;
 import uk.ac.cam.cl.dtg.segue.dos.IUserAlerts;
+import uk.ac.cam.cl.dtg.segue.dos.IUserStreaksManager;
+import uk.ac.cam.cl.dtg.segue.dos.PgUserAlert;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
@@ -58,6 +65,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.List;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ANSWER_QUESTION;
@@ -77,12 +85,13 @@ public class QuestionFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(QuestionFacade.class);
 
     private final ContentMapper mapper;
-
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private final IContentManager contentManager;
     private final String contentIndex;
     private final UserAccountManager userManager;
     private final QuestionManager questionManager;
     private IMisuseMonitor misuseMonitor;
+    private IUserStreaksManager userStreaksManager;
 
     /**
      * 
@@ -105,7 +114,8 @@ public class QuestionFacade extends AbstractSegueFacade {
     public QuestionFacade(final PropertiesLoader properties, final ContentMapper mapper,
                           final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final UserAccountManager userManager,
                           final QuestionManager questionManager,
-                          final ILogManager logManager, final IMisuseMonitor misuseMonitor) {
+                          final ILogManager logManager, final IMisuseMonitor misuseMonitor,
+                          final IUserStreaksManager userStreaksManager) {
         super(properties, logManager);
 
         this.questionManager = questionManager;
@@ -114,6 +124,7 @@ public class QuestionFacade extends AbstractSegueFacade {
         this.contentIndex = contentIndex;
         this.userManager = userManager;
         this.misuseMonitor = misuseMonitor;
+        this.userStreaksManager = userStreaksManager;
     }
 
     /**
@@ -253,6 +264,28 @@ public class QuestionFacade extends AbstractSegueFacade {
             if (response.getEntity() instanceof QuestionValidationResponseDTO) {
                 questionManager.recordQuestionAttempt(currentUser,
                         (QuestionValidationResponseDTO) response.getEntity());
+            }
+
+            // update the user of their question answering streak record
+            if (currentUser instanceof RegisteredUserDTO &&
+                    null != UserAlertsWebSocket.connectedSockets &&
+                    UserAlertsWebSocket.connectedSockets.containsKey(((RegisteredUserDTO) currentUser).getId())) {
+
+                try {
+                    IUserAlert alert = new PgUserAlert(null,
+                            ((RegisteredUserDTO) currentUser).getId(),
+                            objectMapper.writeValueAsString(ImmutableMap.of("streakRecord",
+                                    userStreaksManager.getCurrentStreakRecord((RegisteredUserDTO) currentUser))),
+                            "progress",
+                            new Timestamp(System.currentTimeMillis()),
+                            null, null, null);
+
+                    for(IAlertListener listener : UserAlertsWebSocket.connectedSockets.get(((RegisteredUserDTO) currentUser).getId())) {
+                        listener.notifyAlert(alert);
+                    }
+                } catch (JsonProcessingException e) {
+                    e.printStackTrace();
+                }
             }
 
             this.getLogManager().logEvent(currentUser, request, ANSWER_QUESTION, response.getEntity());

@@ -17,6 +17,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.UserStatisticsStreamsApplication;
 import uk.ac.cam.cl.dtg.segue.dos.IUserAlert;
 import uk.ac.cam.cl.dtg.segue.dos.IUserAlerts;
+import uk.ac.cam.cl.dtg.segue.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 import java.io.IOException;
@@ -39,7 +40,7 @@ public class UserAlertsWebSocket implements IAlertListener {
     private RegisteredUserDTO connectedUser;
     private final IUserAlerts userAlerts;
     private final ILogManager logManager;
-    private final UserStatisticsStreamsApplication userStatisticsStreamsApplication;
+    private final IUserStreaksManager userStreaksManager;
     private Session session;
     private static ObjectMapper objectMapper = new ObjectMapper();
 
@@ -66,12 +67,13 @@ public class UserAlertsWebSocket implements IAlertListener {
     public UserAlertsWebSocket(final UserAccountManager userManager,
                                final IUserAlerts userAlerts,
                                final ILogManager logManager,
-                               final UserStatisticsStreamsApplication userStatisticsStreamsApplication) {
+                               final UserStatisticsStreamsApplication userStatisticsStreamsApplication,
+                               final IUserStreaksManager userStreaksManager) {
 
         this.userManager = userManager;
         this.userAlerts = userAlerts;
         this.logManager = logManager;
-        this.userStatisticsStreamsApplication = userStatisticsStreamsApplication;
+        this.userStreaksManager = userStreaksManager;
     }
 
 
@@ -85,14 +87,14 @@ public class UserAlertsWebSocket implements IAlertListener {
      */
     @OnWebSocketMessage
     public void onText(final Session session, final String message) {
-        try {
+        /*try {
             if (message.equals("user-snapshot-nudge")) {
                 sendUserSnapshotData();
             }
         } catch (IOException e) {
             log.warn("WebSocket connection failed! " + e.getClass().getSimpleName() + ": " + e.getMessage());
             session.close(StatusCode.SERVER_ERROR, "onText IOException");
-        }
+        }*/
     }
 
 
@@ -211,7 +213,8 @@ public class UserAlertsWebSocket implements IAlertListener {
     private void sendUserSnapshotData() throws IOException {
 
         session.getRemote().sendString(objectMapper.writeValueAsString(ImmutableMap.of("userSnapshot",
-                userStatisticsStreamsApplication.getUserSnapshot(connectedUser))));
+                //userStatisticsStreamsApplication.getUserSnapshot(connectedUser))));
+                ImmutableMap.of("streakRecord", userStreaksManager.getCurrentStreakRecord(connectedUser)))));
     }
 
 
