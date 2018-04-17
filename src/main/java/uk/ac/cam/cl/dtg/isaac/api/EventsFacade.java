@@ -864,7 +864,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                                                 @PathParam("user_id") final Long userId,
                                                 @QueryParam("attended") final Boolean attended) {
         try {
-            if (!isUserStaff(userManager, request)) {
+            if (!isUserAnAdminOrEventManager(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be a staff user to access this endpoint.")
                         .toResponse();
             }
