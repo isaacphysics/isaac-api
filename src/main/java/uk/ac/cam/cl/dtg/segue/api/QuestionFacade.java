@@ -85,7 +85,6 @@ public class QuestionFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(QuestionFacade.class);
 
     private final ContentMapper mapper;
-    private final ObjectMapper objectMapper = new ObjectMapper();
     private final IContentManager contentManager;
     private final String contentIndex;
     private final UserAccountManager userManager;
@@ -266,29 +265,12 @@ public class QuestionFacade extends AbstractSegueFacade {
                         (QuestionValidationResponseDTO) response.getEntity());
             }
 
-            // update the user of their question answering streak record
-            if (currentUser instanceof RegisteredUserDTO &&
-                    null != UserAlertsWebSocket.connectedSockets &&
-                    UserAlertsWebSocket.connectedSockets.containsKey(((RegisteredUserDTO) currentUser).getId())) {
-
-                try {
-                    IUserAlert alert = new PgUserAlert(null,
-                            ((RegisteredUserDTO) currentUser).getId(),
-                            objectMapper.writeValueAsString(ImmutableMap.of("streakRecord",
-                                    userStreaksManager.getCurrentStreakRecord((RegisteredUserDTO) currentUser))),
-                            "progress",
-                            new Timestamp(System.currentTimeMillis()),
-                            null, null, null);
-
-                    for(IAlertListener listener : UserAlertsWebSocket.connectedSockets.get(((RegisteredUserDTO) currentUser).getId())) {
-                        listener.notifyAlert(alert);
-                    }
-                } catch (JsonProcessingException e) {
-                    e.printStackTrace();
-                }
-            }
-
             this.getLogManager().logEvent(currentUser, request, ANSWER_QUESTION, response.getEntity());
+
+            // Update the user in case their streak has changed:
+            if (currentUser instanceof RegisteredUserDTO) {
+                this.userStreaksManager.notifyUserOfStreakChange((RegisteredUserDTO) currentUser);
+            }
 
             return response;
 

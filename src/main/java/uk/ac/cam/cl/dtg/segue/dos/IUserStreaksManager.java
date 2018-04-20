@@ -11,4 +11,5 @@ public interface IUserStreaksManager {
 
     Map<String, Object> getCurrentStreakRecord(RegisteredUserDTO user);
     int getHighestStreak(RegisteredUserDTO user);
+    void notifyUserOfStreakChange(RegisteredUserDTO user);
 }

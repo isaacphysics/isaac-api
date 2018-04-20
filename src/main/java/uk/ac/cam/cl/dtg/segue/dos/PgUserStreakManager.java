@@ -1,8 +1,11 @@
 package uk.ac.cam.cl.dtg.segue.dos;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.api.userAlerts.IAlertListener;
+import uk.ac.cam.cl.dtg.segue.api.userAlerts.UserAlertsWebSocket;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
@@ -10,6 +13,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.Map;
 
 /**
@@ -73,4 +77,25 @@ public class PgUserStreakManager implements IUserStreaksManager {
 
         return 0;
     }
+
+    @Override
+    public void notifyUserOfStreakChange(final RegisteredUserDTO user) {
+        // FIXME - it is unlikely that this is the best location for this code!
+        // It is better than in the already bloated facade method, however!
+        if (null != UserAlertsWebSocket.connectedSockets && UserAlertsWebSocket.connectedSockets.containsKey(user.getId())) {
+
+            try {
+                IUserAlert alert = new PgUserAlert(null, user.getId(),
+                        objectMapper.writeValueAsString(ImmutableMap.of("streakRecord", this.getCurrentStreakRecord(user))),
+                        "progress", new Timestamp(System.currentTimeMillis()), null, null, null);
+
+                for (IAlertListener listener : UserAlertsWebSocket.connectedSockets.get(user.getId())) {
+                    listener.notifyAlert(alert);
+                }
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
 }
