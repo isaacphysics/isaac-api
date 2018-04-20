@@ -89,6 +89,8 @@ public class UserAlertsWebSocket implements IAlertListener {
                         ImmutableMap.of("heartbeat", System.currentTimeMillis())));
             } else if (message.equals("user-snapshot-nudge")) {
                 sendUserSnapshotData();
+            } else {
+                session.close(StatusCode.POLICY_VIOLATION, "Invalid message!");
             }
         } catch (IOException e) {
             log.warn("WebSocket connection failed! " + e.getClass().getSimpleName() + ": " + e.getMessage());
