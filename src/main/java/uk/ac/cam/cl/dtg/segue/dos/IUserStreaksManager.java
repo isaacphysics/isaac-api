@@ -10,6 +10,6 @@ import java.util.Map;
 public interface IUserStreaksManager {
 
     Map<String, Object> getCurrentStreakRecord(RegisteredUserDTO user);
-    int getHighestStreak(RegisteredUserDTO user);
+    int getLongestStreak(RegisteredUserDTO user);
     void notifyUserOfStreakChange(RegisteredUserDTO user);
 }

@@ -770,7 +770,7 @@ public class StatisticsManager implements IStatisticsManager {
 
         //user streak info
         Map<String, Object> userStreakRecord = userStreaksManager.getCurrentStreakRecord(userOfInterest);
-        userStreakRecord.put("largestStreak", userStreaksManager.getHighestStreak(userOfInterest));
+        userStreakRecord.put("largestStreak", userStreaksManager.getLongestStreak(userOfInterest));
 
         return ImmutableMap.of("streakRecord", userStreakRecord);
     }

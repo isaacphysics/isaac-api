@@ -58,7 +58,7 @@ public class PgUserStreakManager implements IUserStreaksManager {
     }
 
     @Override
-    public int getHighestStreak(RegisteredUserDTO user) {
+    public int getLongestStreak(final RegisteredUserDTO user) {
 
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
