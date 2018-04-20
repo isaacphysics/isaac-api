@@ -209,12 +209,15 @@ public class UserAlertsWebSocket implements IAlertListener {
      * TODO: Currently only delivers user streak information but we can generalise it later to deliver more data
      *
      * @throws IOException
+     *             - if the WebSocket is unexpectedly closed or in an invalid state
      */
     private void sendUserSnapshotData() throws IOException {
 
-        session.getRemote().sendString(objectMapper.writeValueAsString(ImmutableMap.of("userSnapshot",
-                statisticsManager.getDetailedUserStatistics(connectedUser),
-                "heartbeat", System.currentTimeMillis())));
+        session.getRemote().sendString(objectMapper.writeValueAsString(
+                ImmutableMap.of(
+                        "userSnapshot", statisticsManager.getDetailedUserStatistics(connectedUser),
+                        "heartbeat", System.currentTimeMillis()
+                )));
     }
 
 
@@ -256,6 +259,11 @@ public class UserAlertsWebSocket implements IAlertListener {
 
     }
 
+    /**
+     *  Access stats about WebSocket usage.
+     *
+     * @return a count of how many WebSockets opened and closed
+     */
     public static Map<String, Long> getWebsocketCounts() {
         return ImmutableMap.of("numWebsocketsOpenedOverTime", websocketsOpened, "numWebsocketsClosedOverTime", websocketsClosed);
 

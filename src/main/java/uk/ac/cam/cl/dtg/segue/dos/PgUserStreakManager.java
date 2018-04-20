@@ -22,14 +22,21 @@ import java.util.Map;
 public class PgUserStreakManager implements IUserStreaksManager {
 
     private final PostgresSqlDb database;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public PgUserStreakManager(PostgresSqlDb database) {
+    /**
+     * PgUserStreakManager.
+     *
+     * @param database
+     *            client for postgres.
+     */
+    public PgUserStreakManager(final PostgresSqlDb database) {
         this.database = database;
     }
 
 
     @Override
-    public Map<String, Object> getCurrentStreakRecord(RegisteredUserDTO user) {
+    public Map<String, Object> getCurrentStreakRecord(final RegisteredUserDTO user) {
 
         Map<String, Object> streakRecord = Maps.newHashMap();
         streakRecord.put("currentActivity", 0);
