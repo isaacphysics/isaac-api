@@ -198,8 +198,11 @@ public class UserAlertsWebSocket implements IAlertListener {
     @Override
     public void notifyAlert(final IUserAlert alert) {
         try {
-            this.session.getRemote().sendString(objectMapper.writeValueAsString(ImmutableMap.of("notifications", ImmutableList.of(alert),
-                    "heartbeat", System.currentTimeMillis())));
+            this.session.getRemote().sendString(objectMapper.writeValueAsString(
+                    ImmutableMap.of(
+                            "notifications", ImmutableList.of(alert),
+                            "heartbeat", System.currentTimeMillis()
+                    )));
         } catch (IOException e) {
             e.printStackTrace();
         }
