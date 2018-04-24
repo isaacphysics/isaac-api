@@ -188,7 +188,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         try {
             ResultsWrapper<ContentDTO> findByFieldNames = null;
 
-            if (showMyBookingsOnly) {
+            if (null != showMyBookingsOnly && showMyBookingsOnly) {
                 RegisteredUserDTO currentUser = null;
                 try {
                     currentUser = this.userManager.getCurrentRegisteredUser(request);
