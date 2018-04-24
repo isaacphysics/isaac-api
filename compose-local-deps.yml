@@ -138,8 +138,13 @@ services:
     image: grafana/grafana
     container_name: grafana
     environment:
-      - GF_AUTH_ANONYMOUS_ENABLED=true
-      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_DATABASE_TYPE=sqlite3
+      - GF_SECURITY_ADMIN_USER=grafana
+      - GF_SECURITY_ADMIN_PASSWORD=grafana
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_AUTH_BASIC_ENABLED=false
+    volumes:
+      - ./grafana-db:/var/lib/grafana
     network_mode: bridge
     links:
       - prometheus:prometheus
