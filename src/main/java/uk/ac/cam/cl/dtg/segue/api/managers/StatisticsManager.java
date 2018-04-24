@@ -45,6 +45,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
+import uk.ac.cam.cl.dtg.segue.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
@@ -80,6 +81,7 @@ public class StatisticsManager implements IStatisticsManager {
     private GroupManager groupManager;
     private QuestionManager questionManager;
     private GameManager gameManager;
+    private IUserStreaksManager userStreaksManager;
     
     private Cache<String, Object> longStatsCache;
     private LocationManager locationHistoryManager;
@@ -114,7 +116,8 @@ public class StatisticsManager implements IStatisticsManager {
     public StatisticsManager(final UserAccountManager userManager, final ILogManager logManager,
             final SchoolListReader schoolManager, final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex,
                              final LocationManager locationHistoryManager, final GroupManager groupManager,
-            final QuestionManager questionManager, final GameManager gameManager) {
+            final QuestionManager questionManager, final GameManager gameManager,
+                             final IUserStreaksManager userStreaksManager) {
         this.userManager = userManager;
         this.logManager = logManager;
         this.schoolManager = schoolManager;
@@ -126,6 +129,7 @@ public class StatisticsManager implements IStatisticsManager {
         this.groupManager = groupManager;
         this.questionManager = questionManager;
         this.gameManager = gameManager;
+        this.userStreaksManager = userStreaksManager;
 
         this.longStatsCache = CacheBuilder.newBuilder()
                 .expireAfterWrite(LONG_STATS_EVICTION_INTERVAL_MINUTES, TimeUnit.MINUTES)
@@ -763,7 +767,12 @@ public class StatisticsManager implements IStatisticsManager {
 
     @Override
     public Map<String, Object> getDetailedUserStatistics(RegisteredUserDTO userOfInterest) {
-        return null;
+
+        //user streak info
+        Map<String, Object> userStreakRecord = userStreaksManager.getCurrentStreakRecord(userOfInterest);
+        userStreakRecord.put("largestStreak", userStreaksManager.getLongestStreak(userOfInterest));
+
+        return ImmutableMap.of("streakRecord", userStreakRecord);
     }
 
     /**

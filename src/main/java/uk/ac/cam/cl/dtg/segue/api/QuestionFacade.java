@@ -32,16 +32,13 @@ import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IPQuestionAttemptMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.QuestionAttemptMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
-import uk.ac.cam.cl.dtg.segue.dos.IUserAlert;
-import uk.ac.cam.cl.dtg.segue.dos.IUserAlerts;
+import uk.ac.cam.cl.dtg.segue.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
-import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
@@ -77,12 +74,12 @@ public class QuestionFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(QuestionFacade.class);
 
     private final ContentMapper mapper;
-
     private final IContentManager contentManager;
     private final String contentIndex;
     private final UserAccountManager userManager;
     private final QuestionManager questionManager;
     private IMisuseMonitor misuseMonitor;
+    private IUserStreaksManager userStreaksManager;
 
     /**
      * 
@@ -105,7 +102,8 @@ public class QuestionFacade extends AbstractSegueFacade {
     public QuestionFacade(final PropertiesLoader properties, final ContentMapper mapper,
                           final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final UserAccountManager userManager,
                           final QuestionManager questionManager,
-                          final ILogManager logManager, final IMisuseMonitor misuseMonitor) {
+                          final ILogManager logManager, final IMisuseMonitor misuseMonitor,
+                          final IUserStreaksManager userStreaksManager) {
         super(properties, logManager);
 
         this.questionManager = questionManager;
@@ -114,6 +112,7 @@ public class QuestionFacade extends AbstractSegueFacade {
         this.contentIndex = contentIndex;
         this.userManager = userManager;
         this.misuseMonitor = misuseMonitor;
+        this.userStreaksManager = userStreaksManager;
     }
 
     /**
@@ -256,6 +255,11 @@ public class QuestionFacade extends AbstractSegueFacade {
             }
 
             this.getLogManager().logEvent(currentUser, request, ANSWER_QUESTION, response.getEntity());
+
+            // Update the user in case their streak has changed:
+            if (currentUser instanceof RegisteredUserDTO) {
+                this.userStreaksManager.notifyUserOfStreakChange((RegisteredUserDTO) currentUser);
+            }
 
             return response;
 

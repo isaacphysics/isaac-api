@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 9.5.6
+-- Dumped from database version 9.6.2
 -- Dumped by pg_dump version 9.6.2
 
 SET statement_timeout = 0;
@@ -15,114 +15,20 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: plpgsql; Type: EXTENSION; Schema: -; Owner:
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
 --
 
 CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 
 
 --
--- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner:
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
 --
 
 COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
 
 
 SET search_path = public, pg_catalog;
-
---
--- Name: mergeuser(integer, integer); Type: FUNCTION; Schema: public; Owner: rutherford
---
-
-CREATE FUNCTION mergeuser(targetuseridtokeep integer, targetuseridtodelete integer) RETURNS boolean
-LANGUAGE plpgsql
-AS $$
-BEGIN
-    BEGIN
-        UPDATE linked_accounts
-        SET user_id = targetUserIdToKeep
-        WHERE user_id = targetUserIdToDelete;
-        EXCEPTION WHEN unique_violation THEN
-        -- Ignore duplicate inserts.
-    END;
-
-    UPDATE question_attempts
-    SET user_id = targetUserIdToKeep
-    WHERE user_id = targetUserIdToDelete;
-
-    UPDATE logged_events
-    SET user_id = targetUserIdToKeep::varchar(255)
-    WHERE user_id = targetUserIdToDelete::varchar(255);
-
-    UPDATE groups
-    SET owner_id = targetUserIdToKeep
-    WHERE owner_id = targetUserIdToDelete;
-
-    BEGIN
-        UPDATE group_memberships
-        SET user_id = targetUserIdToKeep
-        WHERE user_id = targetUserIdToDelete;
-        EXCEPTION WHEN unique_violation THEN
-        -- Ignore duplicate inserts.
-    END;
-
-    UPDATE assignments
-    SET owner_user_id = targetUserIdToKeep
-    WHERE owner_user_id = targetUserIdToDelete;
-
-    BEGIN
-        UPDATE event_bookings
-        SET user_id = targetUserIdToKeep
-        WHERE user_id = targetUserIdToDelete;
-        EXCEPTION WHEN unique_violation THEN
-        -- Ignore duplicate inserts.
-    END;
-
-    -- Deal with user associations
-
-    UPDATE gameboards
-    SET owner_user_id = targetUserIdToKeep
-    WHERE owner_user_id = targetUserIdToDelete;
-
-    BEGIN
-        UPDATE user_gameboards
-        SET user_id = targetUserIdToKeep
-        WHERE user_id = targetUserIdToDelete;
-        EXCEPTION WHEN unique_violation THEN
-        -- Ignore duplicate inserts.
-    END;
-
-    -- Deal with user associations
-
-    UPDATE user_associations_tokens
-    SET owner_user_id = targetUserIdToKeep
-    WHERE owner_user_id = targetUserIdToDelete;
-
-    BEGIN
-        UPDATE user_associations
-        SET user_id_granting_permission = targetUserIdToKeep
-        WHERE user_id_granting_permission = targetUserIdToDelete;
-        EXCEPTION WHEN unique_violation THEN
-        -- Ignore duplicate inserts.
-    END;
-
-    BEGIN
-        UPDATE user_associations
-        SET user_id_receiving_permission = targetUserIdToKeep
-        WHERE user_id_receiving_permission = targetUserIdToDelete;
-        EXCEPTION WHEN unique_violation THEN
-        -- Ignore duplicate inserts.
-    END;
-
-    DELETE FROM users
-    WHERE id = targetUserIdToDelete;
-
-    RETURN true;
-END
-$$;
-
-
-ALTER FUNCTION public.mergeuser(targetuseridtokeep integer, targetuseridtodelete integer) OWNER TO rutherford;
 
 SET default_tablespace = '';
 
@@ -149,11 +55,11 @@ ALTER TABLE assignments OWNER TO rutherford;
 --
 
 CREATE SEQUENCE assignments_id_seq
-START WITH 1
-INCREMENT BY 1
-NO MINVALUE
-NO MAXVALUE
-CACHE 1;
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
 ALTER TABLE assignments_id_seq OWNER TO rutherford;
@@ -187,11 +93,11 @@ ALTER TABLE event_bookings OWNER TO rutherford;
 --
 
 CREATE SEQUENCE event_bookings_id_seq
-START WITH 1
-INCREMENT BY 1
-NO MINVALUE
-NO MAXVALUE
-CACHE 1;
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
 ALTER TABLE event_bookings_id_seq OWNER TO rutherford;
@@ -217,7 +123,7 @@ CREATE TABLE gameboards (
     owner_user_id integer,
     creation_method character varying,
     creation_date timestamp without time zone,
-    tags jsonb
+    tags jsonb DEFAULT '[]'::jsonb NOT NULL
 );
 
 
@@ -244,8 +150,8 @@ CREATE TABLE groups (
     id integer NOT NULL,
     group_name text,
     owner_id integer,
-    archived boolean NOT NULL DEFAULT false,
-    created timestamp without time zone
+    created timestamp without time zone,
+    archived boolean DEFAULT false NOT NULL
 );
 
 
@@ -256,11 +162,11 @@ ALTER TABLE groups OWNER TO rutherford;
 --
 
 CREATE SEQUENCE groups_id_seq
-START WITH 1
-INCREMENT BY 1
-NO MINVALUE
-NO MAXVALUE
-CACHE 1;
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
 ALTER TABLE groups_id_seq OWNER TO rutherford;
@@ -293,11 +199,11 @@ ALTER TABLE ip_location_history OWNER TO rutherford;
 --
 
 CREATE SEQUENCE ip_location_history_id_seq
-START WITH 1
-INCREMENT BY 1
-NO MINVALUE
-NO MAXVALUE
-CACHE 1;
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
 ALTER TABLE ip_location_history_id_seq OWNER TO rutherford;
@@ -359,11 +265,11 @@ ALTER TABLE logged_events OWNER TO rutherford;
 --
 
 CREATE SEQUENCE logged_events_id_seq
-START WITH 1
-INCREMENT BY 1
-NO MINVALUE
-NO MAXVALUE
-CACHE 1;
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
 ALTER TABLE logged_events_id_seq OWNER TO rutherford;
@@ -396,11 +302,11 @@ ALTER TABLE question_attempts OWNER TO rutherford;
 --
 
 CREATE SEQUENCE question_attempts_id_seq
-START WITH 1
-INCREMENT BY 1
-NO MINVALUE
-NO MAXVALUE
-CACHE 1;
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
 ALTER TABLE question_attempts_id_seq OWNER TO rutherford;
@@ -470,7 +376,6 @@ CREATE TABLE user_credentials (
 
 ALTER TABLE user_credentials OWNER TO rutherford;
 
-
 --
 -- Name: user_email_preferences; Type: TABLE; Schema: public; Owner: rutherford
 --
@@ -527,6 +432,35 @@ CREATE TABLE user_preferences (
 ALTER TABLE user_preferences OWNER TO rutherford;
 
 --
+-- Name: user_streak_freezes; Type: TABLE; Schema: public; Owner: rutherford
+--
+
+CREATE TABLE user_streak_freezes (
+    user_id bigint NOT NULL,
+    start_date date NOT NULL,
+    end_date date,
+    comment text
+);
+
+
+ALTER TABLE user_streak_freezes OWNER TO rutherford;
+
+--
+-- Name: user_streak_targets; Type: TABLE; Schema: public; Owner: rutherford
+--
+
+CREATE TABLE user_streak_targets (
+    user_id bigint NOT NULL,
+    target_count integer NOT NULL,
+    start_date date NOT NULL,
+    end_date date,
+    comment text
+);
+
+
+ALTER TABLE user_streak_targets OWNER TO rutherford;
+
+--
 -- Name: users; Type: TABLE; Schema: public; Owner: rutherford
 --
 
@@ -557,11 +491,11 @@ ALTER TABLE users OWNER TO rutherford;
 --
 
 CREATE SEQUENCE users_id_seq
-START WITH 1
-INCREMENT BY 1
-NO MINVALUE
-NO MAXVALUE
-CACHE 1;
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
 ALTER TABLE users_id_seq OWNER TO rutherford;
@@ -790,7 +724,7 @@ ALTER TABLE ONLY user_gameboards
 
 
 --
--- Name: user_id; Type: CONSTRAINT; Schema: public; Owner: rutherford
+-- Name: user_credentials user_id; Type: CONSTRAINT; Schema: public; Owner: rutherford
 --
 
 ALTER TABLE ONLY user_credentials
@@ -814,16 +748,27 @@ ALTER TABLE ONLY user_preferences
 
 
 --
+-- Name: user_streak_freezes user_streak_freeze_pkey; Type: CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY user_streak_freezes
+    ADD CONSTRAINT user_streak_freeze_pkey PRIMARY KEY (user_id, start_date);
+
+
+--
+-- Name: user_streak_targets user_streak_targets_pkey; Type: CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY user_streak_targets
+    ADD CONSTRAINT user_streak_targets_pkey PRIMARY KEY (user_id, start_date);
+
+
+--
 -- Name: event_booking_user_event_id_index; Type: INDEX; Schema: public; Owner: rutherford
 --
 
 CREATE UNIQUE INDEX event_booking_user_event_id_index ON event_bookings USING btree (event_id, user_id);
 
---
--- Name: gameboards_tags_gin_index; Type: INDEX; Schema: public; Owner: rutherford
---
-
-CREATE INDEX gameboards_tags_gin_index ON gameboards USING gin (tags);
 
 --
 -- Name: fki_user_id fkey; Type: INDEX; Schema: public; Owner: rutherford
@@ -833,18 +778,59 @@ CREATE INDEX "fki_user_id fkey" ON user_notifications USING btree (user_id);
 
 
 --
+-- Name: gameboards_tags_gin_index; Type: INDEX; Schema: public; Owner: rutherford
+--
+
+CREATE INDEX gameboards_tags_gin_index ON gameboards USING gin (tags);
+
+
+--
+-- Name: log_events_timestamp; Type: INDEX; Schema: public; Owner: rutherford
+--
+
+CREATE INDEX log_events_timestamp ON logged_events USING btree ("timestamp");
+
+
+--
+-- Name: log_events_type; Type: INDEX; Schema: public; Owner: rutherford
+--
+
+CREATE INDEX log_events_type ON logged_events USING btree (event_type);
+
+
+--
 -- Name: log_events_user_id; Type: INDEX; Schema: public; Owner: rutherford
 --
 
 CREATE INDEX log_events_user_id ON logged_events USING btree (user_id);
-CREATE INDEX log_events_type ON logged_events USING btree (event_type);
+
+
+--
+-- Name: logged_events_type_timestamp; Type: INDEX; Schema: public; Owner: rutherford
+--
+
+CREATE INDEX logged_events_type_timestamp ON logged_events USING btree (event_type, "timestamp");
+
 
 --
 -- Name: question-attempts-by-user; Type: INDEX; Schema: public; Owner: rutherford
 --
 
 CREATE INDEX "question-attempts-by-user" ON question_attempts USING btree (user_id);
-CREATE INDEX "question_attempts_by_question" ON question_attempts USING btree (question_id);
+
+
+--
+-- Name: question_attempts_by_question; Type: INDEX; Schema: public; Owner: rutherford
+--
+
+CREATE INDEX question_attempts_by_question ON question_attempts USING btree (question_id);
+
+
+--
+-- Name: question_attempts_by_timestamp; Type: INDEX; Schema: public; Owner: rutherford
+--
+
+CREATE INDEX question_attempts_by_timestamp ON question_attempts USING btree ("timestamp");
 
 
 --
@@ -859,6 +845,27 @@ CREATE UNIQUE INDEX "unique email case insensitive" ON users USING btree (lower(
 --
 
 CREATE UNIQUE INDEX user_email ON users USING btree (email);
+
+
+--
+-- Name: user_streak_freezes_by_user_id; Type: INDEX; Schema: public; Owner: rutherford
+--
+
+CREATE INDEX user_streak_freezes_by_user_id ON user_streak_freezes USING btree (user_id);
+
+
+--
+-- Name: user_streak_targets_by_user_id; Type: INDEX; Schema: public; Owner: rutherford
+--
+
+CREATE INDEX user_streak_targets_by_user_id ON user_streak_targets USING btree (user_id);
+
+
+--
+-- Name: users_id_role; Type: INDEX; Schema: public; Owner: rutherford
+--
+
+CREATE INDEX users_id_role ON users USING btree (id, role);
 
 
 --
@@ -878,7 +885,7 @@ ALTER TABLE ONLY event_bookings
 
 
 --
--- Name: fk_user_id_pswd; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+-- Name: user_credentials fk_user_id_pswd; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
 --
 
 ALTER TABLE ONLY user_credentials
@@ -1011,6 +1018,22 @@ ALTER TABLE ONLY user_preferences
 
 ALTER TABLE ONLY user_associations
     ADD CONSTRAINT user_receiving_permissions_key FOREIGN KEY (user_id_receiving_permission) REFERENCES users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_streak_freezes user_streak_freezes_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY user_streak_freezes
+    ADD CONSTRAINT user_streak_freezes_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_streak_targets user_streak_targets_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY user_streak_targets
+    ADD CONSTRAINT user_streak_targets_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 
 --

@@ -109,6 +109,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     //private static IStatisticsManager statsManager = null;
 	private static GroupManager groupManager = null;
 	private static IUserAlerts userAlerts = null;
+	private static IUserStreaksManager userStreaksManager = null;
 
 	// kafka streams applications
     private static SiteStatisticsStreamsApplication statisticsStreamsApplication;
@@ -763,7 +764,16 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         return userStatsStreamsApplication;
     }
 
+    @Provides
+    @Singleton
+    @Inject
+    private static IUserStreaksManager getUserStreaksManager(final PostgresSqlDb postgresDB) {
 
+        if (null == userStreaksManager) {
+            userStreaksManager = new PgUserStreakManager(postgresDB);
+        }
+        return userStreaksManager;
+    }
 
     /**
      * Gets the instance of the StatisticsManager. Note: this class is a hack and needs to be refactored.... It is
@@ -791,15 +801,15 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Singleton
     @Inject
     private static StatisticsManager getStatsManager(final UserAccountManager userManager,
-                                                      final ILogManager logManager, final SchoolListReader schoolManager,
-                                                      final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final LocationManager locationHistoryManager,
-                                                      final GroupManager groupManager, final QuestionManager questionManager, final GameManager gameManager) {
+                                                     final ILogManager logManager, final SchoolListReader schoolManager,
+                                                     final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final LocationManager locationHistoryManager,
+                                                     final GroupManager groupManager, final QuestionManager questionManager, final GameManager gameManager,
+                                                     final IUserStreaksManager userStreaksManager) {
 
         if (null == statsManager) {
             statsManager = new StatisticsManager(userManager, logManager, schoolManager, contentManager, contentIndex,
-                    locationHistoryManager, groupManager, questionManager, gameManager);
-
-
+                    locationHistoryManager, groupManager, questionManager, gameManager, userStreaksManager);
+            log.info("Created Singleton of Statistics Manager");
         }
 
         return statsManager;
@@ -829,12 +839,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static KafkaStatisticsManager getKafkaStatsManager(final UserAccountManager userManager,
                                                      final ILogManager logManager, final SchoolListReader schoolManager,
                                                      final GroupManager groupManager, SiteStatisticsStreamsApplication statisticsStreamsApplication,
-                                                     final UserStatisticsStreamsApplication userStatisticsStreamsApplication,
                                                      final StatisticsManager statsManager) {
 
         if (null == kafkaStatsManager) {
             kafkaStatsManager = new KafkaStatisticsManager(userManager, logManager,
-                    schoolManager, groupManager, statisticsStreamsApplication, userStatisticsStreamsApplication, statsManager);
+                    schoolManager, groupManager, statisticsStreamsApplication, statsManager);
             log.info("Created Singleton of Kafka Statistics Manager");
         }
 
