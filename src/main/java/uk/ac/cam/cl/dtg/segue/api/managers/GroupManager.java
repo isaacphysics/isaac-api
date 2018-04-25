@@ -295,7 +295,7 @@ public class GroupManager {
         Validate.notNull(group);
         Validate.notNull(userToAdd);
 
-        if (group.getAdditionalManagers().contains(userToAdd.getId())) {
+        if (group.getAdditionalManagersUserIds().contains(userToAdd.getId())) {
             // don't add them if they are already in there
             return group;
         }
@@ -316,8 +316,8 @@ public class GroupManager {
         Validate.notNull(group);
         Validate.notNull(userToAdd);
 
-        if (group.getAdditionalManagers().contains(userToAdd.getId())) {
-            // don't add them if they are already in there
+        if (!group.getAdditionalManagersUserIds().contains(userToAdd.getId())) {
+            // don't remove them if they are not in there
             return group;
         }
         this.groupDatabase.removeUserFromAdditionalManagerList(userToAdd.getId(), group.getId());
