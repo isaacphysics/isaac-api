@@ -471,8 +471,8 @@ public class GroupsFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST, "The group must be specified.").toResponse();
         }
 
-        if (null == responseMap && responseMap.containsKey("email") && !responseMap.get("email").isEmpty()) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "User email must be specified.").toResponse();
+        if (null == responseMap || !responseMap.containsKey("email") || responseMap.get("email").isEmpty()) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "The email of the user to add must be specified.").toResponse();
         }
 
         try {
