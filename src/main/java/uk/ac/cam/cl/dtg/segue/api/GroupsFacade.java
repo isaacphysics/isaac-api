@@ -38,8 +38,11 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.monitors.GroupManagerLookupMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -69,6 +72,7 @@ public class GroupsFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(GroupsFacade.class);
     private final GroupManager groupManager;
     private final UserAssociationManager associationManager;
+    private IMisuseMonitor misuseMonitor;
 
     /**
      * Create an instance of the authentication Facade.
@@ -82,11 +86,12 @@ public class GroupsFacade extends AbstractSegueFacade {
     @Inject
     public GroupsFacade(final PropertiesLoader properties, final UserAccountManager userManager,
                         final ILogManager logManager, final GroupManager groupManager,
-                        final UserAssociationManager associationsManager) {
+                        final UserAssociationManager associationsManager, final IMisuseMonitor misuseMonitor) {
         super(properties, logManager);
         this.userManager = userManager;
         this.groupManager = groupManager;
         this.associationManager = associationsManager;
+        this.misuseMonitor = misuseMonitor;
     }
 
     /**
@@ -477,28 +482,28 @@ public class GroupsFacade extends AbstractSegueFacade {
 
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+
+            // Check for abuse of this endpoint:
+            misuseMonitor.notifyEvent(user.getId().toString(), GroupManagerLookupMisuseHandler.class.toString());
+
             RegisteredUserDTO userToAdd = this.userManager.getUserDTOByEmail(responseMap.get("email"));
+            UserGroupDTO group = groupManager.getGroupById(groupId);
+
+            if (!group.getOwnerId().equals(user.getId()) && !isUserAnAdmin(userManager, request)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "Only group owners can modify additional group managers!").toResponse();
+            }
 
             if (null == userToAdd || Role.STUDENT.equals(userToAdd.getRole())) {
-                // TODO: maybe add misuse monitor to this endpoint
                 // deliberately be vague about whether the account exists or they don't have a teacher account to avoid account scanning.
                 return new SegueErrorResponse(Status.BAD_REQUEST, "There was a problem adding the user specified. Please make sure their email address is correct and they have a teacher account.").toResponse();
             }
 
-            UserGroupDTO group = groupManager.getGroupById(groupId);
-
-            if(group.getOwnerId().equals(userToAdd.getId())) {
-                return new SegueErrorResponse(Status.BAD_REQUEST, "The owner cannot be added as an additional manager").toResponse();
+            if (group.getOwnerId().equals(userToAdd.getId())) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "The group owner cannot be added as an additional manager!").toResponse();
             }
 
-            boolean idExists = GroupManager.isInAdditionalManagerList(group, userToAdd.getId());
-
-            if(idExists) {
-                return new SegueErrorResponse(Status.BAD_REQUEST, "This user already exists as an additional manager").toResponse();
-            }
-
-            if (!group.getOwnerId().equals(user.getId()) && !isUserAnAdmin(userManager, request)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "Only group owners or admins modify groups managers").toResponse();
+            if (GroupManager.isInAdditionalManagerList(group, userToAdd.getId())) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "This user is already an additional manager").toResponse();
             }
 
             this.getLogManager().logEvent(user, request, ADD_ADDITIONAL_GROUP_MANAGER,
@@ -512,6 +517,10 @@ public class GroupsFacade extends AbstractSegueFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (NoUserException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "There was a problem adding the user specified. Please make sure their email address is correct and they have a teacher account.").toResponse();
+        } catch (SegueResourceMisuseException e) {
+            String message = "You have exceeded the number of requests allowed for this endpoint. "
+                    + "Please try again later.";
+            return SegueErrorResponse.getRateThrottledResponse(message);
         }
 
     }
