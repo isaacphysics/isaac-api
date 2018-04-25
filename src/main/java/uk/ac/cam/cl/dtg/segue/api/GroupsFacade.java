@@ -452,6 +452,14 @@ public class GroupsFacade extends AbstractSegueFacade {
         return Response.noContent().build();
     }
 
+    /**
+     * Add an additional manager to a group.
+     *
+     * @param request - for authentication
+     * @param groupId - group to delete the manager from
+     * @param responseMap - a map containing the email of the user to add
+     * @return No Content response or error response
+     */
     @POST
     @Path("{group_id}/manager")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -460,7 +468,7 @@ public class GroupsFacade extends AbstractSegueFacade {
                                                 @PathParam("group_id") final Long groupId,
                                                 final Map<String, String> responseMap) {
         if (null == groupId) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Group must be specified.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "The group must be specified.").toResponse();
         }
 
         if (null == responseMap && responseMap.containsKey("email") && !responseMap.get("email").isEmpty()) {
@@ -508,19 +516,27 @@ public class GroupsFacade extends AbstractSegueFacade {
 
     }
 
+    /**
+     * Delete an additional manager from a group.
+     *
+     * @param request - for authentication
+     * @param groupId - group to delete the manager from
+     * @param userId - the additional manager to delete
+     * @return No Content response or error response
+     */
     @DELETE
     @Path("{group_id}/manager/{user_id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response removeAdditionalManagerToGroup(@Context final HttpServletRequest request,
+    public Response removeAdditionalManagerFromGroup(@Context final HttpServletRequest request,
                                                 @PathParam("group_id") final Long groupId,
                                                    @PathParam("user_id") final Long userId) {
         if (null == groupId) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Group must be specified.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "The group must be specified.").toResponse();
         }
 
         if (null == userId) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "User email must be specified.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "The ID of the user to remove must be specified.").toResponse();
         }
 
         try {
@@ -529,7 +545,7 @@ public class GroupsFacade extends AbstractSegueFacade {
             UserGroupDTO group = groupManager.getGroupById(groupId);
 
             if (!group.getOwnerId().equals(user.getId()) && !isUserAnAdmin(userManager, request)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "Only group owners or admins modify groups managers").toResponse();
+                return new SegueErrorResponse(Status.FORBIDDEN, "Only group owners can modify additional group managers!").toResponse();
             }
 
             RegisteredUserDTO userToRemove = this.userManager.getUserDTOById(userId);

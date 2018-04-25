@@ -291,7 +291,7 @@ public class GroupManager {
      * @return The group DTO
      * @throws SegueDatabaseException
      */
-    public UserGroupDTO addUserToManagerList(UserGroupDTO group, RegisteredUserDTO userToAdd) throws SegueDatabaseException {
+    public UserGroupDTO addUserToManagerList(final UserGroupDTO group, final RegisteredUserDTO userToAdd) throws SegueDatabaseException {
         Validate.notNull(group);
         Validate.notNull(userToAdd);
 
@@ -312,7 +312,7 @@ public class GroupManager {
      * @return The group DTO
      * @throws SegueDatabaseException
      */
-    public UserGroupDTO removeUserFromManagerList(UserGroupDTO group, RegisteredUserDTO userToAdd) throws SegueDatabaseException {
+    public UserGroupDTO removeUserFromManagerList(final UserGroupDTO group, final RegisteredUserDTO userToAdd) throws SegueDatabaseException {
         Validate.notNull(group);
         Validate.notNull(userToAdd);
 
