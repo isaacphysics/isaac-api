@@ -275,7 +275,7 @@ public class EventBookingPersistenceManager {
     private EventBookingDTO convertToDTO(final EventBooking eb) throws SegueDatabaseException {
         try {
             ContentDTO c = this.contentManager.getContentById(this.contentManager.getCurrentContentSHA(),
-                    eb.getEventId());
+                    eb.getEventId(), true);
 
             if (null == c) {
                 // The event this booking relates to has disappeared so treat it as though it never existed.
