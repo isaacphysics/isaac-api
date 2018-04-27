@@ -27,6 +27,8 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.google.inject.Inject;
 
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_DAY;
+
 /**
  * Handler to deal with additional group managers requests.
  *
@@ -38,7 +40,7 @@ public class GroupManagerLookupMisuseHandler implements IMisuseHandler {
 
     public static final Integer SOFT_THRESHOLD = 10;
     public static final Integer HARD_THRESHOLD = 50;
-    public static final Integer ACCOUNTING_INTERVAL = 86400;
+    public static final Integer ACCOUNTING_INTERVAL = NUMBER_SECONDS_IN_ONE_DAY;
 
     private PropertiesLoader properties;
     private EmailManager emailManager;
