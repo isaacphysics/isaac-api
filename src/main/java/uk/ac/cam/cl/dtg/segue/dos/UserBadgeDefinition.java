@@ -1,5 +1,7 @@
 package uk.ac.cam.cl.dtg.segue.dos;
 
+import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -12,6 +14,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface UserBadgeDefinition {
 
-    UserBadgeFields.Badge value();
+    UserBadgeManager.Badge value();
 
 }

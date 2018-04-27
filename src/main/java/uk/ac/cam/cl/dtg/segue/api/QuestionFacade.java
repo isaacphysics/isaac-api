@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.AnonQuestionAttemptMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IPQuestionAttemptMisuseHandler;
@@ -35,8 +36,6 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
-import uk.ac.cam.cl.dtg.segue.dos.PgUserBadgeManager;
-import uk.ac.cam.cl.dtg.segue.dos.UserBadgeFields;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
@@ -81,7 +80,7 @@ public class QuestionFacade extends AbstractSegueFacade {
     private final String contentIndex;
     private final UserAccountManager userManager;
     private final QuestionManager questionManager;
-    private PgUserBadgeManager userBadgeManager;
+    private final UserBadgeManager userBadgeManager;
     private IMisuseMonitor misuseMonitor;
 
     /**
@@ -106,7 +105,7 @@ public class QuestionFacade extends AbstractSegueFacade {
                           final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final UserAccountManager userManager,
                           final QuestionManager questionManager,
                           final ILogManager logManager, final IMisuseMonitor misuseMonitor,
-                          final PgUserBadgeManager userBadgeManager) {
+                          final UserBadgeManager userBadgeManager) {
         super(properties, logManager);
 
         this.questionManager = questionManager;
@@ -252,23 +251,23 @@ public class QuestionFacade extends AbstractSegueFacade {
 
             // If we get to this point, this is a valid question attempt. Record it.
 
+            Boolean correct = false;
             if (response.getEntity() instanceof QuestionValidationResponseDTO) {
                 questionManager.recordQuestionAttempt(currentUser,
                         (QuestionValidationResponseDTO) response.getEntity());
+                correct = ((QuestionValidationResponseDTO) response.getEntity()).isCorrect();
             }
 
             this.getLogManager().logEvent(currentUser, request, ANSWER_QUESTION, response.getEntity());
 
-            try {
-                if (true) {
-
-                    userBadgeManager.updateBadge(null, UserBadgeFields.Badge.MECHANICS, questionId);
+            if (correct && currentUser instanceof RegisteredUserDTO) {
+                try {
+                    userBadgeManager.updateBadge(null, (RegisteredUserDTO) currentUser,
+                            UserBadgeManager.Badge.TOTAL_QUESTIONS_ANSWERED, questionId);
+                } catch (SQLException e) {
+                    e.printStackTrace();
                 }
             }
-            catch (SQLException e) {
-                e.printStackTrace();
-            }
-
             return response;
 
         } catch (IllegalArgumentException e) {
