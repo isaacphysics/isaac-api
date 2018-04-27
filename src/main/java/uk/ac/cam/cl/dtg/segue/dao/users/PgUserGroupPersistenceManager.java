@@ -186,7 +186,7 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
 
     @Override
     public List<UserGroup> getGroupsByAdditionalManager(final Long additionalManagerId, @Nullable final Boolean archivedGroupsOnly) throws SegueDatabaseException {
-        String pstString = "SELECT * FROM groups WHERE id IN (SELECT group_id FROM additional_group_managers WHERE user_id = ?)";
+        String pstString = "SELECT * FROM groups WHERE id IN (SELECT group_id FROM group_additional_managers WHERE user_id = ?)";
         if (archivedGroupsOnly != null) {
             pstString = pstString +  " AND archived = ?";
         }
@@ -302,7 +302,7 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
             pst = conn
-                    .prepareStatement("SELECT * FROM additional_group_managers"
+                    .prepareStatement("SELECT * FROM group_additional_managers"
                             + " WHERE group_id = ?");
             pst.setLong(1, groupId);
 
@@ -325,7 +325,7 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
             PreparedStatement pst;
             pst = conn
                     .prepareStatement(
-                            "INSERT INTO additional_group_managers(group_id, user_id, created) VALUES (?, ?, ?);",
+                            "INSERT INTO group_additional_managers(group_id, user_id, created) VALUES (?, ?, ?);",
                             Statement.RETURN_GENERATED_KEYS);
             pst.setLong(1, groupId);
             pst.setLong(2, userId);
@@ -346,7 +346,7 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
     public void removeUserFromAdditionalManagerList(final Long userId, final Long groupId) throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("DELETE FROM additional_group_managers WHERE group_id = ? AND user_id = ?");
+            pst = conn.prepareStatement("DELETE FROM group_additional_managers WHERE group_id = ? AND user_id = ?");
             pst.setLong(1, groupId);
             pst.setLong(2, userId);
 

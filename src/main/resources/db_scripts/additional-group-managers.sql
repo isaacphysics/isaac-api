@@ -1,8 +1,8 @@
--- Table: public.additional_group_managers
+-- Table: public.group_additional_managers
 
--- DROP TABLE public.additional_group_managers;
+-- DROP TABLE public.group_additional_managers;
 
-CREATE TABLE public.additional_group_managers
+CREATE TABLE public.group_additional_managers
 (
   user_id integer NOT NULL,
   group_id integer NOT NULL,
@@ -18,5 +18,5 @@ CREATE TABLE public.additional_group_managers
 WITH (
   OIDS=FALSE
 );
-ALTER TABLE public.additional_group_managers
+ALTER TABLE public.group_additional_managers
   OWNER TO rutherford;

@@ -35,19 +35,6 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
--- Name: additional_group_managers; Type: TABLE; Schema: public; Owner: rutherford
---
-
-CREATE TABLE additional_group_managers (
-    user_id integer NOT NULL,
-    group_id integer NOT NULL,
-    created timestamp with time zone DEFAULT now()
-);
-
-
-ALTER TABLE additional_group_managers OWNER TO rutherford;
-
---
 -- Name: assignments; Type: TABLE; Schema: public; Owner: rutherford
 --
 
@@ -141,6 +128,19 @@ CREATE TABLE gameboards (
 
 
 ALTER TABLE gameboards OWNER TO rutherford;
+
+--
+-- Name: group_additional_managers; Type: TABLE; Schema: public; Owner: rutherford
+--
+
+CREATE TABLE group_additional_managers (
+  user_id integer NOT NULL,
+  group_id integer NOT NULL,
+  created timestamp with time zone DEFAULT now()
+);
+
+
+ALTER TABLE group_additional_managers OWNER TO rutherford;
 
 --
 -- Name: group_memberships; Type: TABLE; Schema: public; Owner: rutherford
@@ -599,12 +599,6 @@ ALTER TABLE ONLY users ALTER COLUMN id SET DEFAULT nextval('users_id_seq'::regcl
 ALTER TABLE ONLY users
     ADD CONSTRAINT "User Id" PRIMARY KEY (id);
 
---
--- Name: additional_group_managers ck_user_group_manager; Type: CONSTRAINT; Schema: public; Owner: rutherford
---
-
-ALTER TABLE ONLY additional_group_managers
-    ADD CONSTRAINT ck_user_group_manager PRIMARY KEY (user_id, group_id);
 
 --
 -- Name: assignments composite pkey assignments; Type: CONSTRAINT; Schema: public; Owner: rutherford
@@ -636,6 +630,14 @@ ALTER TABLE ONLY event_bookings
 
 ALTER TABLE ONLY gameboards
     ADD CONSTRAINT "gameboard-id-pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: group_additional_managers ck_user_group_manager; Type: CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY group_additional_managers
+  ADD CONSTRAINT ck_user_group_manager PRIMARY KEY (user_id, group_id);
 
 
 --
@@ -904,11 +906,11 @@ ALTER TABLE ONLY event_bookings
 
 
 --
--- Name: additional_group_managers fk_group_id; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+-- Name: group_additional_managers fk_group_id; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
 --
 
-ALTER TABLE ONLY additional_group_managers
-    ADD CONSTRAINT fk_group_id FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE
+ALTER TABLE ONLY group_additional_managers
+    ADD CONSTRAINT fk_group_id FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE;
 
 
 --
@@ -920,10 +922,10 @@ ALTER TABLE ONLY user_credentials
 
 
 --
--- Name: additional_group_managers fk_user_manager_id; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+-- Name: group_additional_managers fk_user_manager_id; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
 --
 
-ALTER TABLE ONLY additional_group_managers
+ALTER TABLE ONLY group_additional_managers
     ADD CONSTRAINT fk_user_manager_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 
