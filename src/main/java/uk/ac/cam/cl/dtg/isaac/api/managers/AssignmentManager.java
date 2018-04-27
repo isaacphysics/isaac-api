@@ -445,4 +445,5 @@ public class AssignmentManager implements IGroupObserver {
                 .put("assignmentsInfo", plainTextSB.toString())
                 .put("assignmentsInfo_HTML", htmlSB.toString()).build();
     }
+
 }

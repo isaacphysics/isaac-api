@@ -220,7 +220,7 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
     public List<AssignmentDTO> getAssignmentsByOwner(final Long ownerId) throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM assignments WHERE owner_user_id = ?");
+            pst = conn.prepareStatement("SELECT * FROM assignments WHERE owner_user_id = ? ORDER BY creation_date");
 
             pst.setLong(1, ownerId);
             

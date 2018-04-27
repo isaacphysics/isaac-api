@@ -17,6 +17,7 @@ import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.UserStatisticsStreamsApplication;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.SiteStatisticsStreamsApplication;
+import uk.ac.cam.cl.dtg.segue.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
@@ -42,7 +43,6 @@ public class KafkaStatisticsManager implements IStatisticsManager {
     private GroupManager groupManager;
     private SchoolListReader schoolManager;
     private SiteStatisticsStreamsApplication statisticsStreamsApplication;
-    private UserStatisticsStreamsApplication userStatisticsStreamsApplication;
     private IStatisticsManager oldStatisticsManager;
 
 
@@ -70,18 +70,15 @@ public class KafkaStatisticsManager implements IStatisticsManager {
     public KafkaStatisticsManager(final UserAccountManager userManager, final ILogManager logManager,
                                   final SchoolListReader schoolManager, final GroupManager groupManager,
                                   final SiteStatisticsStreamsApplication statisticsStreamsApplication,
-                                  final UserStatisticsStreamsApplication userStatisticsStreamsApplication,
                                   final StatisticsManager statsManager) {
 
         this.oldStatisticsManager = statsManager;
 
         this.statisticsStreamsApplication = statisticsStreamsApplication;
-        this.userStatisticsStreamsApplication = userStatisticsStreamsApplication;
         this.logManager = logManager;
         this.userManager = userManager;
         this.groupManager = groupManager;
         this.schoolManager = schoolManager;
-
     }
 
 
@@ -605,7 +602,7 @@ public class KafkaStatisticsManager implements IStatisticsManager {
 
     @Override
     public Map<String, Object> getDetailedUserStatistics(RegisteredUserDTO userOfInterest) {
-        return userStatisticsStreamsApplication.getUserSnapshot(userOfInterest);
+        return oldStatisticsManager.getDetailedUserStatistics(userOfInterest);
     }
 
 
