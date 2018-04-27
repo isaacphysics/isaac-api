@@ -247,7 +247,6 @@ public class UserAssociationManager {
                 if (!associationDatabase
                         .hasValidAssociation(additionalManagerId, userGrantingPermission.getId())) {
                     associationDatabase.createAssociation(additionalManagerId, userGrantingPermission.getId());
-                    // don't create a new association just do the group assignment as they have already granted permission.
                 }
             }
         }
