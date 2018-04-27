@@ -217,7 +217,8 @@ public class EventBookingManager {
      * @throws DuplicateBookingException - Duplicate booking, only unique bookings.
      */
     public EventBookingDTO createBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user,
-                                         final Map<String, String> additionalEventInformation, BookingStatus status)
+                                         final Map<String, String> additionalEventInformation,
+                                         final BookingStatus status)
             throws SegueDatabaseException, DuplicateBookingException, EventIsFullException {
         // check if already booked
         if (this.isUserBooked(event.getId(), user.getId())) {
@@ -474,7 +475,7 @@ public class EventBookingManager {
             throw new EventBookingUpdateException("Unable to promote a booking that doesn't exist.");
         }
 
-        if (BookingStatus.CONFIRMED.equals(eventBooking.getBookingStatus())) {
+        if (this.isUserBooked(event.getId(), userDTO.getId())) {
             throw new EventBookingUpdateException("Unable to promote a booking that is CONFIRMED already.");
         }
 
@@ -520,6 +521,37 @@ public class EventBookingManager {
                         userDTO.getEmail(), event.getIsaacGroupToken()));
             }
         }
+
+        return updatedStatus;
+    }
+
+    /**
+     * Allows an admin user to record the attendance of a booking as either attended or absent.
+     *
+     * @param event                 - The event in question.
+     * @param userDTO               - The user whose booking should be updated.
+     * @param attended              - Whether the user attended the event or not.
+     * @return the updated booking.
+     * @throws SegueDatabaseException       - Database error.
+     * @throws EventBookingUpdateException  - Unable to update the event booking.
+     */
+    public EventBookingDTO recordAttendance(final IsaacEventPageDTO event, final RegisteredUserDTO
+            userDTO, final boolean attended)
+            throws SegueDatabaseException, EventBookingUpdateException {
+
+        final EventBookingDTO eventBooking = this.bookingPersistenceManager.getBookingByEventIdAndUserId(
+                event.getId(), userDTO.getId());
+        if (null == eventBooking) {
+            throw new EventBookingUpdateException("Unable to record attendance for booking that doesn't exist.");
+        }
+
+        BookingStatus attendanceStatus = attended ? BookingStatus.ATTENDED : BookingStatus.ABSENT;
+        if (attendanceStatus.equals(eventBooking.getBookingStatus())) {
+            throw new EventBookingUpdateException("Booking attendance is already registered.");
+        }
+
+        EventBookingDTO updatedStatus = this.bookingPersistenceManager.updateBookingStatus(eventBooking.getEventId(),
+                userDTO.getId(), attendanceStatus, eventBooking.getAdditionalInformation());
 
         return updatedStatus;
     }

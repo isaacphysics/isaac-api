@@ -308,7 +308,7 @@ public class QuestionManager {
      * @param questionResponse - the outcome of the attempt to be persisted.
      */
     public void recordQuestionAttempt(final AbstractSegueUserDTO user,
-            final QuestionValidationResponseDTO questionResponse) {
+            final QuestionValidationResponseDTO questionResponse) throws SegueDatabaseException {
         QuestionValidationResponse questionResponseDO = this.mapper.getAutoMapper().map(questionResponse,
                 QuestionValidationResponse.class);
 
@@ -316,24 +316,20 @@ public class QuestionManager {
         // an id is the question page
         // and that the id separator is |
         String[] questionPageId = questionResponse.getQuestionId().split(Constants.ESCAPED_ID_SEPARATOR);
-        try {
-            if (user instanceof RegisteredUserDTO) {
-                RegisteredUserDTO registeredUser = (RegisteredUserDTO) user;
+        if (user instanceof RegisteredUserDTO) {
+            RegisteredUserDTO registeredUser = (RegisteredUserDTO) user;
 
-                this.questionAttemptPersistenceManager.registerQuestionAttempt(registeredUser.getId(),
-                        questionPageId[0], questionResponse.getQuestionId(), questionResponseDO);
-                log.debug("Question information recorded for user: " + registeredUser.getId());
+            this.questionAttemptPersistenceManager.registerQuestionAttempt(registeredUser.getId(),
+                    questionPageId[0], questionResponse.getQuestionId(), questionResponseDO);
+            log.debug("Question information recorded for user: " + registeredUser.getId());
 
-            } else if (user instanceof AnonymousUserDTO) {
-                AnonymousUserDTO anonymousUserDTO = (AnonymousUserDTO) user;
+        } else if (user instanceof AnonymousUserDTO) {
+            AnonymousUserDTO anonymousUserDTO = (AnonymousUserDTO) user;
 
-                this.questionAttemptPersistenceManager.registerAnonymousQuestionAttempt(anonymousUserDTO.getSessionId(),
-                        questionPageId[0], questionResponse.getQuestionId(), questionResponseDO);
-            } else {
-                log.error("Unexpected user type. Unable to record question response");
-            }
-        } catch (SegueDatabaseException e) {
-            log.error("Unable to to record question attempt.", e);
+            this.questionAttemptPersistenceManager.registerAnonymousQuestionAttempt(anonymousUserDTO.getSessionId(),
+                    questionPageId[0], questionResponse.getQuestionId(), questionResponseDO);
+        } else {
+            log.error("Unexpected user type. Unable to record question response");
         }
     }
     

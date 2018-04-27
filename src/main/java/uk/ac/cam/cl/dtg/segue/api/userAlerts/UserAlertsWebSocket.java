@@ -9,13 +9,13 @@ import org.eclipse.jetty.websocket.api.StatusCode;
 import org.eclipse.jetty.websocket.api.annotations.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.segue.api.managers.IStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.metrics.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidSessionException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.UserStatisticsStreamsApplication;
 import uk.ac.cam.cl.dtg.segue.dos.IUserAlert;
 import uk.ac.cam.cl.dtg.segue.dos.IUserAlerts;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -40,7 +40,7 @@ public class UserAlertsWebSocket implements IAlertListener {
     private RegisteredUserDTO connectedUser;
     private final IUserAlerts userAlerts;
     private final ILogManager logManager;
-    private final UserStatisticsStreamsApplication userStatisticsStreamsApplication;
+    private final IStatisticsManager statisticsManager;
     private Session session;
     private static ObjectMapper objectMapper = new ObjectMapper();
 
@@ -61,19 +61,17 @@ public class UserAlertsWebSocket implements IAlertListener {
      *              - to get/update persisted user alerts
      * @param logManager
      *              - so that we can log events for users.
-     * @param userStatisticsStreamsApplication
-     *              - to enable querying of user stat stream process state stores
      */
     @Inject
     public UserAlertsWebSocket(final UserAccountManager userManager,
                                final IUserAlerts userAlerts,
                                final ILogManager logManager,
-                               final UserStatisticsStreamsApplication userStatisticsStreamsApplication) {
+                               final IStatisticsManager statisticsManager) {
 
         this.userManager = userManager;
         this.userAlerts = userAlerts;
         this.logManager = logManager;
-        this.userStatisticsStreamsApplication = userStatisticsStreamsApplication;
+        this.statisticsManager = statisticsManager;
     }
 
 
@@ -88,8 +86,13 @@ public class UserAlertsWebSocket implements IAlertListener {
     @OnWebSocketMessage
     public void onText(final Session session, final String message) {
         try {
-            if (message.equals("user-snapshot-nudge")) {
+            if (message.equals("heartbeat")) {
+                session.getRemote().sendString(objectMapper.writeValueAsString(
+                        ImmutableMap.of("heartbeat", System.currentTimeMillis())));
+            } else if (message.equals("user-snapshot-nudge")) {
                 sendUserSnapshotData();
+            } else {
+                session.close(StatusCode.POLICY_VIOLATION, "Invalid message!");
             }
         } catch (IOException e) {
             log.warn("WebSocket connection failed! " + e.getClass().getSimpleName() + ": " + e.getMessage());
@@ -118,7 +121,7 @@ public class UserAlertsWebSocket implements IAlertListener {
                 // Do not let one user open too many WebSockets:
                 if (connectedSockets.containsKey(connectedUser.getId())
                         && (connectedSockets.get(connectedUser.getId()).size() >= MaxConcurrentWebSocketsPerUser)) {
-                    log.warn("User " + connectedUser.getId() + " attempted to open too many simultaneous WebSockets; sending TRY_AGAIN_LATER.");
+                    log.debug("User " + connectedUser.getId() + " attempted to open too many simultaneous WebSockets; sending TRY_AGAIN_LATER.");
                     session.close(StatusCode.NORMAL, "TRY_AGAIN_LATER");
                     return;
                 }
@@ -211,7 +214,11 @@ public class UserAlertsWebSocket implements IAlertListener {
     @Override
     public void notifyAlert(final IUserAlert alert) {
         try {
-            this.session.getRemote().sendString(objectMapper.writeValueAsString(ImmutableMap.of("notifications", ImmutableList.of(alert))));
+            this.session.getRemote().sendString(objectMapper.writeValueAsString(
+                    ImmutableMap.of(
+                            "notifications", ImmutableList.of(alert),
+                            "heartbeat", System.currentTimeMillis()
+                    )));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -223,11 +230,15 @@ public class UserAlertsWebSocket implements IAlertListener {
      * TODO: Currently only delivers user streak information but we can generalise it later to deliver more data
      *
      * @throws IOException
+     *             - if the WebSocket is unexpectedly closed or in an invalid state
      */
     private void sendUserSnapshotData() throws IOException {
 
-        session.getRemote().sendString(objectMapper.writeValueAsString(ImmutableMap.of("userSnapshot",
-                userStatisticsStreamsApplication.getUserSnapshot(connectedUser))));
+        session.getRemote().sendString(objectMapper.writeValueAsString(
+                ImmutableMap.of(
+                        "userSnapshot", statisticsManager.getDetailedUserStatistics(connectedUser),
+                        "heartbeat", System.currentTimeMillis()
+                )));
     }
 
 
@@ -274,4 +285,13 @@ public class UserAlertsWebSocket implements IAlertListener {
 
     }
 
+    /**
+     *  Access stats about WebSocket usage.
+     *
+     * @return a count of how many WebSockets opened and closed
+     */
+    public static Map<String, Long> getWebsocketCounts() {
+        return ImmutableMap.of("numWebsocketsOpenedOverTime", websocketsOpened, "numWebsocketsClosedOverTime", websocketsClosed);
+
+    }
 }
