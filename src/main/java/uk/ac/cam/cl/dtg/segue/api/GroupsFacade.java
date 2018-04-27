@@ -473,7 +473,7 @@ public class GroupsFacade extends AbstractSegueFacade {
             RegisteredUserDTO userToAdd = this.userManager.getUserDTOByEmail(responseMap.get("email"));
             UserGroupDTO group = groupManager.getGroupById(groupId);
 
-            if (!group.getOwnerId().equals(user.getId()) && !isUserAnAdmin(userManager, request)) {
+            if (null == group || !(group.getOwnerId().equals(user.getId()) || isUserAnAdmin(userManager, request))) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "Only group owners can modify additional group managers!").toResponse();
             }
 
