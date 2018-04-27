@@ -233,7 +233,6 @@ public class UserAssociationManager {
         if (!associationDatabase
                 .hasValidAssociation(lookedupToken.getOwnerUserId(), userGrantingPermission.getId())) {
             associationDatabase.createAssociation(lookedupToken, userGrantingPermission.getId());
-            // don't create a new association just do the group assignment as they have already granted permission.
         }
 
         UserGroupDTO group = userGroupManager.getGroupById(lookedupToken.getGroupId());
