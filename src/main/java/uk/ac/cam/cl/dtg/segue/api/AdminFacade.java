@@ -420,7 +420,7 @@ public class AdminFacade extends AbstractSegueFacade {
             
             if (userIds.contains(requestingUser.getId())) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
-                        "Aborted - you cannoted modify your own role.")
+                        "Aborted - you cannot modify your own role.")
                 .toResponse();
             }
             

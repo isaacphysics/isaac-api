@@ -77,7 +77,7 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 	private final Collection<String> requestedScopes;
 	private final String requestedFields;
 	
-	private static final String FACEBOOK_API_VERSION = "2.8";
+	private static final String FACEBOOK_API_VERSION = "2.12";
 	
     private static final String AUTH_URL = "https://graph.facebook.com/v" + FACEBOOK_API_VERSION + "/oauth/authorize";
     private static final String TOKEN_EXCHANGE_URL = "https://graph.facebook.com/v" + FACEBOOK_API_VERSION
