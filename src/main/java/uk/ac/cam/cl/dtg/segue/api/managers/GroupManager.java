@@ -319,6 +319,11 @@ public class GroupManager {
         }
         this.groupDatabase.addUserAdditionalManagerList(userToAdd.getId(), group.getId());
 
+        // Notify observers of change
+        for (IGroupObserver interestedParty : this.groupsObservers) {
+            interestedParty.onAdditionalManagerAddedToGroup(group, userToAdd);
+        }
+
         return this.getGroupById(group.getId());
     }
 

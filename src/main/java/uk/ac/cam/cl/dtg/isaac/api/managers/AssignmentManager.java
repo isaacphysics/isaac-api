@@ -374,6 +374,50 @@ public class AssignmentManager implements IGroupObserver {
         }
     }
 
+    @Override
+    public void onAdditionalManagerAddedToGroup(final UserGroupDTO group, final RegisteredUserDTO additionalManagerUser) {
+        Validate.notNull(group);
+        Validate.notNull(additionalManagerUser);
+
+        // Try to email user to let them know:
+        try {
+            RegisteredUserDTO groupOwner = this.userManager.getUserDTOById(group.getOwnerId());
+
+            String groupOwnerName = "Unknown";
+            if (groupOwner != null && groupOwner.getFamilyName() != null) {
+                groupOwnerName = groupOwner.getFamilyName();
+            }
+            if (groupOwner != null && groupOwner.getGivenName() != null && !groupOwner.getGivenName().isEmpty()) {
+                groupOwnerName = groupOwner.getGivenName().substring(0, 1) + ". " + groupOwnerName;
+            }
+            String groupOwnerEmail = "Unknown";
+            if (groupOwner != null && groupOwner.getEmail() != null && !groupOwner.getEmail().isEmpty()) {
+                groupOwnerEmail = groupOwner.getEmail();
+            }
+            String groupName = "Unknown";
+            if (group.getGroupName() != null && !group.getGroupName().isEmpty()) {
+                groupName = group.getGroupName();
+            }
+
+            Map<String, Object> emailProperties = new ImmutableMap.Builder<String, Object>()
+                    .put("ownerName", groupOwnerName)
+                    .put("ownerEmail", groupOwnerEmail)
+                    .put("groupName", groupName)
+                    .build();
+            emailManager.sendTemplatedEmailToUser(additionalManagerUser,
+                    emailManager.getEmailTemplateDTO("email-template-group-additional-manager-welcome"),
+                    emailProperties,
+                    EmailType.SYSTEM);
+
+        } catch (ContentManagerException e) {
+            log.info("Could not send group additional manager email ", e);
+        } catch (NoUserException e) {
+            log.info(String.format("Could not find owner user object of group %s", group.getId()), e);
+        } catch (SegueDatabaseException e) {
+            log.error("Unable to send group additional manager e-mail due to a database error. Failing silently.", e);
+        }
+    }
+
     /**
      * Helper to build up the list of tokens for addToGroup email.
      *
