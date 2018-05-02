@@ -2,11 +2,13 @@ package uk.ac.cam.cl.dtg.segue.dao.userBadges;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.Inject;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dos.UserBadge;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -26,12 +28,13 @@ public class PgUserBadgePersistenceManager implements IUserBadgePersistenceManag
      *
      * @param postgresSqlDb pre-configured connection
      */
+    @Inject
     public PgUserBadgePersistenceManager(PostgresSqlDb postgresSqlDb) {
         this.postgresSqlDb = postgresSqlDb;
     }
 
     @Override
-    public UserBadge getBadge(Connection conn, RegisteredUserDTO user, UserBadgeManager.Badge badgeName) throws SQLException {
+    public UserBadge getBadge(Connection conn, RegisteredUserDTO user, UserBadgeManager.Badge badgeName) throws SQLException, IOException {
 
         if (null == conn) {
             conn = postgresSqlDb.getDatabaseConnection();
@@ -49,7 +52,7 @@ public class PgUserBadgePersistenceManager implements IUserBadgePersistenceManag
         ResultSet results = pst.executeQuery();
         results.next();
 
-        return new UserBadge(user.getId(), badgeName, results.getObject("state"));
+        return new UserBadge(user.getId(), badgeName, results.getString("state"));
     }
 
     @Override

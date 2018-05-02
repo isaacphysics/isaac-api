@@ -27,5 +27,5 @@ public interface IUserBadgePolicy {
      * @param event
      * @return
      */
-    Object updateState(Object state, Object event);
+    Object updateState(RegisteredUserDTO user, Object state, Object event);
 }

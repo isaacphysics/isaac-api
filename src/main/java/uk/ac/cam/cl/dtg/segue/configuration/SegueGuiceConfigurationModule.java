@@ -53,6 +53,7 @@ import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.UserStatisticsStreamsApplication;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.KafkaTopicManager;
 import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.SiteStatisticsStreamsApplication;
+import uk.ac.cam.cl.dtg.segue.dao.userBadges.IUserBadgePersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.PgUserBadgePersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.*;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
@@ -110,7 +111,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     //private static IStatisticsManager statsManager = null;
 	private static GroupManager groupManager = null;
 	private static IUserAlerts userAlerts = null;
-	private static PgUserBadgePersistenceManager userBadgeManager = null;
+	private static IUserBadgePersistenceManager userBadgePersitenceManager = null;
 
 	// kafka streams applications
     private static SiteStatisticsStreamsApplication statisticsStreamsApplication;
@@ -771,13 +772,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     @Inject
-    private static PgUserBadgePersistenceManager getUserBadgeManager() {
+    private static IUserBadgePersistenceManager getUserBadgePersistenceManager() {
 
-        if (null == userBadgeManager) {
-
-            userBadgeManager = new PgUserBadgePersistenceManager(postgresDB);
+        if (null == userBadgePersitenceManager) {
+            userBadgePersitenceManager = new PgUserBadgePersistenceManager(postgresDB);
         }
-        return userBadgeManager;
+        return userBadgePersitenceManager;
     }
 
     /**

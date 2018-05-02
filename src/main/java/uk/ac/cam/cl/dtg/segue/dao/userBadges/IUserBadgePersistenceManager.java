@@ -4,6 +4,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.dos.UserBadge;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -20,7 +21,7 @@ public interface IUserBadgePersistenceManager {
      * @return
      * @throws SQLException
      */
-    UserBadge getBadge(Connection conn, RegisteredUserDTO user, UserBadgeManager.Badge badgeName) throws SQLException;
+    UserBadge getBadge(Connection conn, RegisteredUserDTO user, UserBadgeManager.Badge badgeName) throws SQLException, IOException;
 
     /**
      *
