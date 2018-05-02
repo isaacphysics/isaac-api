@@ -36,6 +36,9 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dos.IUserStreaksManager;
+import uk.ac.cam.cl.dtg.segue.dos.IUserAlert;
+import uk.ac.cam.cl.dtg.segue.dos.IUserAlerts;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
@@ -75,13 +78,13 @@ public class QuestionFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(QuestionFacade.class);
 
     private final ContentMapper mapper;
-
     private final IContentManager contentManager;
     private final String contentIndex;
     private final UserAccountManager userManager;
     private final QuestionManager questionManager;
     private final UserBadgeManager userBadgeManager;
     private IMisuseMonitor misuseMonitor;
+    private IUserStreaksManager userStreaksManager;
 
     /**
      * 
@@ -106,6 +109,7 @@ public class QuestionFacade extends AbstractSegueFacade {
                           final QuestionManager questionManager,
                           final ILogManager logManager, final IMisuseMonitor misuseMonitor,
                           final UserBadgeManager userBadgeManager) {
+                          final IUserStreaksManager userStreaksManager) {
         super(properties, logManager);
 
         this.questionManager = questionManager;
@@ -114,6 +118,7 @@ public class QuestionFacade extends AbstractSegueFacade {
         this.contentIndex = contentIndex;
         this.userManager = userManager;
         this.misuseMonitor = misuseMonitor;
+        this.userStreaksManager = userStreaksManager;
         this.userBadgeManager = userBadgeManager;
     }
 
@@ -260,6 +265,11 @@ public class QuestionFacade extends AbstractSegueFacade {
 
             this.getLogManager().logEvent(currentUser, request, ANSWER_QUESTION, response.getEntity());
 
+            // Update the user in case their streak has changed:
+            if (currentUser instanceof RegisteredUserDTO) {
+                this.userStreaksManager.notifyUserOfStreakChange((RegisteredUserDTO) currentUser);
+            }
+
             if (correct && currentUser instanceof RegisteredUserDTO) {
                 try {
                     userBadgeManager.updateBadge(null, (RegisteredUserDTO) currentUser,
@@ -273,6 +283,10 @@ public class QuestionFacade extends AbstractSegueFacade {
         } catch (IllegalArgumentException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Bad request - " + e.getMessage(), e);
             log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        } catch (SegueDatabaseException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to save question attempt. Try again later!");
+            log.error("Unable to to record question attempt.", e);
             return error.toResponse();
         }
     }

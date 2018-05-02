@@ -56,6 +56,8 @@ public class DetailedUserSummaryDTO extends UserSummaryDTO {
         builder.append(this.getFamilyName());
         builder.append(", email=");
         builder.append(email);
+        builder.append(", emailVerificationStatus=");
+        builder.append(this.getEmailVerificationStatus().name());
         builder.append(", authorisedFullAccess=");
         builder.append(this.isAuthorisedFullAccess());
         builder.append("]");
