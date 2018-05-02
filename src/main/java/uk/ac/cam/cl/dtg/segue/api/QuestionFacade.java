@@ -33,6 +33,7 @@ import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IPQuestionAttemptMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.QuestionAttemptMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
@@ -108,7 +109,7 @@ public class QuestionFacade extends AbstractSegueFacade {
                           final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final UserAccountManager userManager,
                           final QuestionManager questionManager,
                           final ILogManager logManager, final IMisuseMonitor misuseMonitor,
-                          final UserBadgeManager userBadgeManager) {
+                          final UserBadgeManager userBadgeManager,
                           final IUserStreaksManager userStreaksManager) {
         super(properties, logManager);
 
@@ -268,16 +269,19 @@ public class QuestionFacade extends AbstractSegueFacade {
             // Update the user in case their streak has changed:
             if (currentUser instanceof RegisteredUserDTO) {
                 this.userStreaksManager.notifyUserOfStreakChange((RegisteredUserDTO) currentUser);
-            }
 
-            if (correct && currentUser instanceof RegisteredUserDTO) {
-                try {
-                    userBadgeManager.updateBadge(null, (RegisteredUserDTO) currentUser,
-                            UserBadgeManager.Badge.TOTAL_QUESTIONS_ANSWERED, questionId);
-                } catch (SQLException e) {
-                    e.printStackTrace();
+                if (correct) {
+                    try {
+                        userBadgeManager.updateBadge(null, (RegisteredUserDTO) currentUser,
+                                UserBadgeManager.Badge.QUESTIONS_ANSWERED_TOTAL, questionId);
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
+
             return response;
 
         } catch (IllegalArgumentException e) {
