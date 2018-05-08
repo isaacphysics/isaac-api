@@ -130,6 +130,19 @@ CREATE TABLE gameboards (
 ALTER TABLE gameboards OWNER TO rutherford;
 
 --
+-- Name: group_additional_managers; Type: TABLE; Schema: public; Owner: rutherford
+--
+
+CREATE TABLE group_additional_managers (
+  user_id integer NOT NULL,
+  group_id integer NOT NULL,
+  created timestamp with time zone DEFAULT now()
+);
+
+
+ALTER TABLE group_additional_managers OWNER TO rutherford;
+
+--
 -- Name: group_memberships; Type: TABLE; Schema: public; Owner: rutherford
 --
 
@@ -620,6 +633,14 @@ ALTER TABLE ONLY gameboards
 
 
 --
+-- Name: group_additional_managers ck_user_group_manager; Type: CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY group_additional_managers
+  ADD CONSTRAINT ck_user_group_manager PRIMARY KEY (user_id, group_id);
+
+
+--
 -- Name: group_memberships group_membership_pkey; Type: CONSTRAINT; Schema: public; Owner: rutherford
 --
 
@@ -885,11 +906,27 @@ ALTER TABLE ONLY event_bookings
 
 
 --
+-- Name: group_additional_managers fk_group_id; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY group_additional_managers
+    ADD CONSTRAINT fk_group_id FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE;
+
+
+--
 -- Name: user_credentials fk_user_id_pswd; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
 --
 
 ALTER TABLE ONLY user_credentials
     ADD CONSTRAINT fk_user_id_pswd FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: group_additional_managers fk_user_manager_id; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY group_additional_managers
+    ADD CONSTRAINT fk_user_manager_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 
 --
@@ -1049,4 +1086,3 @@ GRANT ALL ON SCHEMA public TO PUBLIC;
 --
 -- PostgreSQL database dump complete
 --
-

@@ -15,19 +15,17 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
-import static org.easymock.EasyMock.and;
-import static org.easymock.EasyMock.capture;
-import static org.easymock.EasyMock.createMock;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.isA;
-import static org.easymock.EasyMock.replay;
-import static org.easymock.EasyMock.verify;
+import static org.easymock.EasyMock.*;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
+import java.util.Set;
 
+import com.google.api.client.util.Lists;
+import com.google.api.client.util.Sets;
 import ma.glasnost.orika.MapperFacade;
 
 import org.easymock.Capture;
@@ -39,9 +37,11 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.DetailedUserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
@@ -91,16 +91,28 @@ public class GroupManagerTest {
 		RegisteredUserDTO someGroupOwner = new RegisteredUserDTO();
 		someGroupOwner.setId(5339L);
 		someGroupOwner.setEmail("test@test.com");
-		
+		Set<Long> someSetOfManagers = Sets.newHashSet();
 		Capture<UserGroup> capturedGroup = new Capture<UserGroup>();
-		
+
+		List<RegisteredUserDTO> someListOfUsers = Lists.newArrayList();
+		List<DetailedUserSummaryDTO> someListOfUsersDTOs = Lists.newArrayList();
+
 		UserGroup resultFromDB = new UserGroup();
+		resultFromDB.setId(2L);
+		UserGroupDTO mappedGroup = new UserGroupDTO();
+		resultFromDB.setId(2L);
 		
-		GroupManager gm = new GroupManager(this.groupDataManager, this.userManager, dummyMapper);
+		GroupManager gm = new GroupManager(this.groupDataManager, this.userManager, this.dummyMapper);
 		try {
 			expect(this.groupDataManager.createGroup(and(capture(capturedGroup), isA(UserGroup.class))))
 					.andReturn(resultFromDB);
-			replay(this.groupDataManager);
+			expect(this.groupDataManager.getAdditionalManagerSetByGroupId(anyObject()))
+					.andReturn(someSetOfManagers).atLeastOnce();
+			expect(this.userManager.findUsers(someSetOfManagers)).andReturn(someListOfUsers);
+			expect(this.userManager.convertToDetailedUserSummaryObjectList(someListOfUsers)).andReturn(someListOfUsersDTOs);
+			expect(this.dummyMapper.map(resultFromDB, UserGroupDTO.class)).andReturn(mappedGroup).atLeastOnce();
+
+			replay(this.userManager, this.groupDataManager, this.dummyMapper);
 
 			// check that the result of the method is whatever comes out of the database
 			UserGroupDTO createUserGroup = gm.createUserGroup(someGroupName, someGroupOwner);

@@ -229,10 +229,10 @@ public class UserAssociationManager {
             throw new InvalidUserAssociationTokenException("The group token provided does not exist or is invalid.");
         }
 
+        // add owner association
         if (!associationDatabase
                 .hasValidAssociation(lookedupToken.getOwnerUserId(), userGrantingPermission.getId())) {
             associationDatabase.createAssociation(lookedupToken, userGrantingPermission.getId());
-            // don't create a new association just do the group assignment as they have already granted permission.
         }
 
         UserGroupDTO group = userGroupManager.getGroupById(lookedupToken.getGroupId());
@@ -242,6 +242,13 @@ public class UserAssociationManager {
             log.debug(String.format("Adding User: %s to Group: %s", userGrantingPermission.getId(),
                     lookedupToken.getGroupId()));
 
+            // add additional manager associations
+            for (Long additionalManagerId : group.getAdditionalManagersUserIds()) {
+                if (!associationDatabase
+                        .hasValidAssociation(additionalManagerId, userGrantingPermission.getId())) {
+                    associationDatabase.createAssociation(additionalManagerId, userGrantingPermission.getId());
+                }
+            }
         }
         return lookedupToken;
     }

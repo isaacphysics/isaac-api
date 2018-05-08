@@ -16,12 +16,18 @@
 package uk.ac.cam.cl.dtg.segue.dto;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.google.api.client.util.Sets;
 import org.mongojack.ObjectId;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import uk.ac.cam.cl.dtg.segue.dto.users.DetailedUserSummaryDTO;
 
 /**
  * UserGroupDTO - this object represents a group or label assigned to users who have been placed into a group.
@@ -35,12 +41,13 @@ public class UserGroupDTO {
     private Date created;
     private String token;
     private boolean archived;
+    private Set<DetailedUserSummaryDTO> additionalManagers;
 
     /**
      * Default Constructor.
      */
     public UserGroupDTO() {
-
+        this.additionalManagers = Sets.newHashSet();
     }
 
     /**
@@ -62,6 +69,7 @@ public class UserGroupDTO {
         this.ownerId = ownerId;
         this.created = created;
         this.archived = archived;
+        this.additionalManagers = Sets.newHashSet();
     }
 
     /**
@@ -195,7 +203,7 @@ public class UserGroupDTO {
   
     @Override
     public String toString() {
-        return String.format("UserGroupDTO [id=%s owner_id=%s name=%s]", id, ownerId, groupName);
+        return String.format("UserGroupDTO [id=%s owner_id=%s name=%s additionalManagers=%s]", id, ownerId, groupName, additionalManagers);
     }
   
     public boolean isArchived() {
@@ -204,5 +212,32 @@ public class UserGroupDTO {
 
     public void setArchived(boolean archived) {
         this.archived = archived;
+    }
+
+    /**
+     * Get the list of other users who should be able to view this group's data subject to individual permissions being granted.
+     *
+     * @return list of user ids
+     */
+    public Set<DetailedUserSummaryDTO> getAdditionalManagers() {
+        return additionalManagers;
+    }
+
+    /**
+     * Set the list of other users who should be able to view this group's data subject to individual permissions being granted.
+     *
+     * @param additionalManagers - those users who should have access to this group.
+     */
+    public void setAdditionalManagers(Set<DetailedUserSummaryDTO> additionalManagers) {
+        this.additionalManagers = additionalManagers;
+    }
+
+    /**
+     * Get the set of user ids who have access
+     * @return set of ids
+     */
+    @JsonIgnore
+    public Set<Long> getAdditionalManagersUserIds() {
+        return additionalManagers.stream().map(DetailedUserSummaryDTO::getId).collect(Collectors.toSet());
     }
 }

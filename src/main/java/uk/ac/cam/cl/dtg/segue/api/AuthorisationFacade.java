@@ -42,6 +42,7 @@ import org.slf4j.LoggerFactory;
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 
+import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -55,7 +56,10 @@ import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenExcept
 import uk.ac.cam.cl.dtg.segue.dao.associations.UserGroupNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.segue.dos.UserAssociation;
+import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.DetailedUserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
@@ -69,6 +73,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 public class AuthorisationFacade extends AbstractSegueFacade {
     private final UserAccountManager userManager;
     private final UserAssociationManager associationManager;
+    private final GroupManager groupManager;
 
     private static final Logger log = LoggerFactory.getLogger(AuthorisationFacade.class);
     private IMisuseMonitor misuseMonitor;
@@ -89,11 +94,12 @@ public class AuthorisationFacade extends AbstractSegueFacade {
      */
     @Inject
     public AuthorisationFacade(final PropertiesLoader properties, final UserAccountManager userManager,
-            final ILogManager logManager, final UserAssociationManager associationManager,
+            final ILogManager logManager, final UserAssociationManager associationManager, final GroupManager groupManager,
             final IMisuseMonitor misuseMonitor) {
         super(properties, logManager);
         this.userManager = userManager;
         this.associationManager = associationManager;
+        this.groupManager = groupManager;
         this.misuseMonitor = misuseMonitor;
     }
 
@@ -256,15 +262,24 @@ public class AuthorisationFacade extends AbstractSegueFacade {
         try {
             // ensure the user is logged in
             currentRegisteredUser = userManager.getCurrentRegisteredUser(request);
+            AssociationToken associationToken = this.associationManager.lookupTokenDetails(currentRegisteredUser, token);
+
+            UserGroupDTO group = this.groupManager.getGroupById(associationToken.getGroupId());
 
             misuseMonitor.notifyEvent(currentRegisteredUser.getId().toString(),
                     TokenOwnerLookupMisuseHandler.class.toString());
 
-            RegisteredUserDTO userDTO = userManager.getUserDTOById(associationManager.lookupTokenDetails(
-                    currentRegisteredUser, token).getOwnerUserId());
+            // add owner
+            List<DetailedUserSummaryDTO> usersLinkedToToken = Lists.newArrayList();
+            usersLinkedToToken.add(userManager.convertToDetailedUserSummaryObject(userManager.getUserDTOById(associationToken.getOwnerUserId())));
 
-            return Response.ok(userManager.convertToDetailedUserSummaryObject(userDTO))
-                    .cacheControl(getCacheControl(Constants.NUMBER_SECONDS_IN_FIVE_MINUTES, false)).build();
+            // add additional managers
+            for (DetailedUserSummaryDTO user : group.getAdditionalManagers()) {
+                usersLinkedToToken.add(user);
+            }
+
+            return Response.ok(usersLinkedToToken)
+                    .cacheControl(getCacheControl(Constants.NUMBER_SECONDS_IN_MINUTE, false)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (InvalidUserAssociationTokenException e) {

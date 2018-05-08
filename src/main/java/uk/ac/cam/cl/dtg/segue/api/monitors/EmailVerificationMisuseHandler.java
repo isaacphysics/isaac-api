@@ -20,6 +20,8 @@ import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_DAY;
+
 /**
  * Handler to deal with email verification requests.
  * 
@@ -35,7 +37,7 @@ public class EmailVerificationMisuseHandler implements IMisuseHandler {
 
     private static final Integer SOFT_THRESHOLD = 5;
     private static final Integer HARD_THRESHOLD = 10;
-    private static final Integer ACCOUNTING_INTERVAL = 86400;
+    private static final Integer ACCOUNTING_INTERVAL = NUMBER_SECONDS_IN_ONE_DAY;
     
     /**
      * 
