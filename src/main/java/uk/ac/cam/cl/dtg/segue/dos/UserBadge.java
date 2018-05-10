@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.segue.dos;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 
 /**
@@ -9,7 +10,7 @@ public class UserBadge {
 
     private Long userId;
     private UserBadgeManager.Badge badgeName;
-    private Object state;
+    private JsonNode state;
 
     /**
      * Constructor
@@ -18,7 +19,7 @@ public class UserBadge {
      * @param badgeName the name of the badge
      * @param state an object specifying the current state of the badge
      */
-    public UserBadge(Long userId, UserBadgeManager.Badge badgeName, Object state) {
+    public UserBadge(Long userId, UserBadgeManager.Badge badgeName, JsonNode state) {
         this.userId = userId;
         this.badgeName = badgeName;
         this.state = state;
@@ -47,11 +48,11 @@ public class UserBadge {
      *
      * @return an object specifying the current badge state
      */
-    public Object getState() {
+    public JsonNode getState() {
         return this.state;
     }
 
-    public void setState(Object state) {
+    public void setState(JsonNode state) {
         this.state = state;
     }
 }

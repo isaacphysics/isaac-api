@@ -20,8 +20,6 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_FKEY_FIELDNAME;
 
 import io.swagger.annotations.Api;
 
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -42,6 +40,7 @@ import com.google.inject.Inject;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -66,6 +65,7 @@ public class GroupsFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(GroupsFacade.class);
     private final GroupManager groupManager;
     private final UserAssociationManager associationManager;
+    private final UserBadgeManager userBadgeManager;
 
     /**
      * Create an instance of the authentication Facade.
@@ -83,12 +83,14 @@ public class GroupsFacade extends AbstractSegueFacade {
      */
     @Inject
     public GroupsFacade(final PropertiesLoader properties, final UserAccountManager userManager,
-            final ILogManager logManager, final GroupManager groupManager,
-            final UserAssociationManager associationsManager) {
+                        final ILogManager logManager, final GroupManager groupManager,
+                        final UserAssociationManager associationsManager,
+                        final UserBadgeManager userBadgeManager) {
         super(properties, logManager);
         this.userManager = userManager;
         this.groupManager = groupManager;
         this.associationManager = associationsManager;
+        this.userBadgeManager = userBadgeManager;
     }
 
     /**
@@ -201,6 +203,9 @@ public class GroupsFacade extends AbstractSegueFacade {
 
             this.getLogManager().logEvent(user, request, Constants.CREATE_USER_GROUP,
                     ImmutableMap.of(Constants.GROUP_FK, group.getId()));
+
+            this.userBadgeManager.updateBadge(null, user, UserBadgeManager.Badge.TEACHER_GROUPS_CREATED,
+                    group.getId().toString());
 
             return Response.ok(group).build();
         } catch (SegueDatabaseException e) {

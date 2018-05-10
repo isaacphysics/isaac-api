@@ -1,6 +1,7 @@
 package uk.ac.cam.cl.dtg.segue.dao.userBadges;
 
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.UserBadge;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
@@ -14,21 +15,23 @@ import java.sql.SQLException;
 public interface IUserBadgePersistenceManager {
 
     /**
+     * Gets the current state of a user badge from the database
      *
-     * @param conn
-     * @param user
-     * @param badgeName
-     * @return
-     * @throws SQLException
+     * @param conn database connection
+     * @param user owner of badge record
+     * @param badgeName enum of badge to be updated
+     * @return a user badge object
+     * @throws SegueDatabaseException
      */
-    UserBadge getBadge(Connection conn, RegisteredUserDTO user, UserBadgeManager.Badge badgeName) throws SQLException, IOException;
+    UserBadge getBadge(Connection conn, RegisteredUserDTO user, UserBadgeManager.Badge badgeName) throws SegueDatabaseException;
 
     /**
+     * Updates the state of a user badge to the database
      *
-     * @param conn
-     * @param badge
-     * @throws SQLException
+     * @param conn database connection
+     * @param badge a user badge object
+     * @throws SegueDatabaseException
      */
-    public void updateBadge(Connection conn, UserBadge badge) throws SQLException;
+    public void updateBadge(Connection conn, UserBadge badge) throws SegueDatabaseException;
 
 }

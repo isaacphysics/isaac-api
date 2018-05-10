@@ -66,6 +66,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -86,6 +87,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     private GameManager gameManager;
     private UserAccountManager userManager;
     private UserAssociationManager associationManager;
+    private UserBadgeManager userBadgeManager;
 
     private static final Logger log = LoggerFactory.getLogger(GameboardsFacade.class);
     private final QuestionManager questionManager;
@@ -110,9 +112,11 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     @Inject
     public GameboardsFacade(final PropertiesLoader properties, final ILogManager logManager,
             final GameManager gameManager, final QuestionManager questionManager, final UserAccountManager userManager,
-            final UserAssociationManager associationManager) {
+            final UserAssociationManager associationManager,
+                            UserBadgeManager userBadgeManager) {
         super(properties, logManager);
 
+        this.userBadgeManager = userBadgeManager;
         this.gameManager = gameManager;
         this.questionManager = questionManager;
         this.userManager = userManager;
@@ -454,6 +458,12 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
         try {
             persistedGameboard = gameManager.saveNewGameboard(newGameboardObject, user);
+
+            if (persistedGameboard.getCreationMethod().equals(GameboardCreationMethod.BUILDER)) {
+                this.userBadgeManager.updateBadge(null, user, UserBadgeManager.Badge.TEACHER_GAMEBOARDS_CREATED,
+                        persistedGameboard.getId());
+            }
+
         } catch (NoWildcardException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "No wildcard available. Unable to construct gameboard.")
                     .toResponse();

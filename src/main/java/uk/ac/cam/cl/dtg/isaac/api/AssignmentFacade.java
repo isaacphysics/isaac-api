@@ -63,6 +63,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -103,6 +104,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     private final UserAssociationManager associationManager;
 
     private final QuestionManager questionManager;
+    private final UserBadgeManager userBadgeManager;
 
     /**
      * Creates an instance of the AssignmentFacade controller which provides the REST endpoints for the isaac api.
@@ -126,9 +128,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
      */
     @Inject
     public AssignmentFacade(final AssignmentManager assignmentManager, final QuestionManager questionManager,
-            final UserAccountManager userManager, final GroupManager groupManager,
-            final PropertiesLoader propertiesLoader, final GameManager gameManager, final ILogManager logManager,
-            final UserAssociationManager associationManager) {
+                            final UserAccountManager userManager, final GroupManager groupManager,
+                            final PropertiesLoader propertiesLoader, final GameManager gameManager, final ILogManager logManager,
+                            final UserAssociationManager associationManager, final UserBadgeManager userBadgeManager) {
         super(propertiesLoader, logManager);
         this.questionManager = questionManager;
         this.userManager = userManager;
@@ -136,6 +138,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
         this.groupManager = groupManager;
         this.assignmentManager = assignmentManager;
         this.associationManager = associationManager;
+        this.userBadgeManager = userBadgeManager;
     }
 
     /**
@@ -764,6 +767,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             eventDetails.put(ASSIGNMENT_FK, assignmentWithID.getId());
             eventDetails.put(ASSIGNMENT_DUEDATE_FK, assignmentWithID.getDueDate());
             this.getLogManager().logEvent(currentlyLoggedInUser, request, SET_NEW_ASSIGNMENT, eventDetails);
+
+            this.userBadgeManager.updateBadge(null, currentlyLoggedInUser,
+                    UserBadgeManager.Badge.TEACHER_ASSIGNMENTS_SET, assignmentWithID.getId().toString());
 
             return Response.ok(assignmentDTOFromClient).build();
         } catch (NoUserLoggedInException e) {
