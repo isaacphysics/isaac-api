@@ -654,12 +654,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         return postgresDB;
     }
 
-    @Provides
-    @Singleton
-    @Inject
     /**
+     * Gets instance of user badge database liason manager
      *
-     * @return
+     * @param postgresDB database
+     * @return concrete instance of IUserBadgePersistenceManager
      */
     @Provides
     @Singleton
@@ -674,8 +673,10 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
 
     /**
+     * Gets instance of the user streaks manager
      *
-     * @return
+     * @param postgresDB database
+     * @return concrete instance of IUserStreaksManager
      */
     @Provides
     @Singleton
