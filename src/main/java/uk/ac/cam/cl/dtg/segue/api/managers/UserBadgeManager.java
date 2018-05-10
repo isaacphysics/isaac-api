@@ -1,6 +1,7 @@
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -19,6 +20,7 @@ import uk.ac.cam.cl.dtg.segue.dao.userBadges.IUserBadgePolicy;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 import java.sql.Connection;
+import java.util.List;
 import java.util.Map;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
@@ -34,12 +36,12 @@ public class UserBadgeManager {
         // teacher specific badges
         TEACHER_GROUPS_CREATED,
         TEACHER_ASSIGNMENTS_SET,
-        TEACHER_BOOK_PAGES_SET,
+        //TEACHER_BOOK_PAGES_SET,
         TEACHER_GAMEBOARDS_CREATED,
         TEACHER_CPD_EVENTS_ATTENDED
     }
 
-    private final IUserBadgePersistenceManager userBadges;
+    private final IUserBadgePersistenceManager userBadgePersistenceManager;
     private final Map<Badge, IUserBadgePolicy> badgePolicies = Maps.newHashMap();
 
     /**
@@ -58,7 +60,7 @@ public class UserBadgeManager {
                             EventBookingManager bookingManager, AssignmentManager assignmentManager, GameManager gameManager,
                             IContentManager contentManager, @Named(CONTENT_INDEX) String contentIndex) {
 
-        this.userBadges = userBadgePersistenceManager;
+        this.userBadgePersistenceManager = userBadgePersistenceManager;
 
         badgePolicies.put(Badge.TEACHER_GROUPS_CREATED, new TeacherGroupsBadgePolicy(groupManager));
         badgePolicies.put(Badge.TEACHER_ASSIGNMENTS_SET, new TeacherAssignmentsBadgePolicy(assignmentManager,
@@ -80,7 +82,7 @@ public class UserBadgeManager {
     public UserBadge getOrCreateBadge(Connection conn, RegisteredUserDTO user, Badge badgeName)
             throws SegueDatabaseException {
 
-        UserBadge badge = userBadges.getBadge(conn, user, badgeName);
+        UserBadge badge = userBadgePersistenceManager.getBadge(conn, user, badgeName);
 
         if (null == badge.getState()) {
             badge.setState(badgePolicies.get(badgeName).initialiseState(user));
@@ -102,7 +104,7 @@ public class UserBadgeManager {
     public UserBadge updateBadge(Connection conn, RegisteredUserDTO user, Badge badgeName, String event)
             throws SegueDatabaseException {
 
-        UserBadge badge = userBadges.getBadge(conn, user, badgeName);
+        UserBadge badge = userBadgePersistenceManager.getBadge(conn, user, badgeName);
 
         if (null != badge.getState()) {
 
@@ -122,8 +124,31 @@ public class UserBadgeManager {
             badge.setState(badgePolicies.get(badgeName).initialiseState(user));
         }
 
-        userBadges.updateBadge(conn, badge);
+        userBadgePersistenceManager.updateBadge(conn, badge);
 
         return badge;
+    }
+
+    /**
+     * Gets a map of all the users badges and their values
+     *
+     * @param user the user of interest
+     * @return a map of badge names to values
+     */
+    public Map<String, Object> getAllUserBadges(RegisteredUserDTO user) {
+
+        Map<String, Object> badges = Maps.newHashMap();
+
+        try {
+            for (Badge badgeName : Badge.values()) {
+                UserBadge badge = getOrCreateBadge(null, user, badgeName);
+                badges.put(badge.getBadgeName().name(),
+                        badgePolicies.get(badge.getBadgeName()).getLevel(badge.getState()));
+            }
+        } catch (SegueDatabaseException e) {
+            e.printStackTrace();
+        }
+
+        return badges;
     }
 }
