@@ -632,7 +632,7 @@ public class UserAccountManager implements IUserAccountManager {
         }
 
         // Ensure nobody registers with Isaac email addresses. Users can change emails by verifying them however.
-        if (user.getEmail().matches(".*@isaac(physics|chemistry|biology|science)\\.org")) {
+        if (user.getEmail().matches(".*@isaac(physics|chemistry|maths|biology|science)\\.org")) {
             log.warn("User attempted to register with Isaac email address '" + user.getEmail() + "'!");
             throw new EmailMustBeVerifiedException("You cannot register with an Isaac email address.");
         }
