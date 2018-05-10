@@ -326,7 +326,7 @@ public class GroupsFacade extends AbstractSegueFacade {
         }
 
         try {
-            if (isUserAnAdmin(userManager, request)) {
+            if (!isUserAnAdmin(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "Only admin's can directly add a user to a group without a token").toResponse();
             }
