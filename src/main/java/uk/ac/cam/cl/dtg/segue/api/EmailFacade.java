@@ -142,22 +142,16 @@ public class EmailFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public final Response getEmailQueueSize(@Context final HttpServletRequest request) {
-    	
-        RegisteredUserDTO currentUser;
         try {
-            currentUser = this.userManager.getCurrentRegisteredUser(request);
+            if (!isUserAnAdmin(userManager, request)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin to access this endpoint.").toResponse();
+            }
+
+            ImmutableMap<String, Integer> response = ImmutableMap.of("length", this.emailManager.getQueueLength());
+            return Response.ok(response).build();
         } catch (NoUserLoggedInException e2) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
-        if (currentUser.getRole() == Role.ADMIN) {
-            ImmutableMap<String, Integer> response = new ImmutableMap.Builder<String, Integer>().put(
-                    "length", this.emailManager.getQueueLength()).build();
-            return Response.ok(response).build();
-        }
-        SegueErrorResponse error = new SegueErrorResponse(Status.FORBIDDEN,
-                "User does not have appropriate privilages: ");
-		log.error(error.getErrorMessage());
-		return error.toResponse();
     }
     
     /**
