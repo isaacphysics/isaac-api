@@ -758,7 +758,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     || GroupManager.isInAdditionalManagerList(assigneeGroup, currentlyLoggedInUser.getId()))
                     && !isUserAnAdmin(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
-                        "You can only view the results of assignments that you own.").toResponse();
+                        "You can only set assignments to groups you own or manage.").toResponse();
             }
 
             GameboardDTO gameboard = this.gameManager.getGameboard(assignmentDTOFromClient.getGameboardId());
