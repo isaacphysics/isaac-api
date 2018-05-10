@@ -34,12 +34,12 @@ public class TeacherCpdBadgePolicy implements IUserBadgePolicy {
     }
 
     @Override
-    public int getLevel(Object state) {
-        return ((JsonNode) state).get("cpdEvents").size();
+    public int getLevel(JsonNode state) {
+        return state.get("cpdEvents").size();
     }
 
     @Override
-    public Object initialiseState(RegisteredUserDTO user) {
+    public JsonNode initialiseState(RegisteredUserDTO user) {
 
         ArrayNode events = JsonNodeFactory.instance.arrayNode();
 
@@ -69,8 +69,8 @@ public class TeacherCpdBadgePolicy implements IUserBadgePolicy {
     }
 
     @Override
-    public Object updateState(RegisteredUserDTO user, Object state, Object event) {
-        ((ArrayNode) ((JsonNode) state).get("cpdEvents")).add((String) event);
+    public JsonNode updateState(RegisteredUserDTO user, JsonNode state, String event) {
+        ((ArrayNode) state.get("cpdEvents")).add(event);
         return state;
     }
 

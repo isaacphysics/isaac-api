@@ -21,12 +21,12 @@ public class TeacherGroupsBadgePolicy implements IUserBadgePolicy {
     }
 
     @Override
-    public int getLevel(Object state) {
-        return ((JsonNode) state).get("groups").size();
+    public int getLevel(JsonNode state) {
+        return state.get("groups").size();
     }
 
     @Override
-    public Object initialiseState(RegisteredUserDTO user) {
+    public JsonNode initialiseState(RegisteredUserDTO user) {
 
         ArrayNode groups = JsonNodeFactory.instance.arrayNode();
 
@@ -42,9 +42,9 @@ public class TeacherGroupsBadgePolicy implements IUserBadgePolicy {
     }
 
     @Override
-    public Object updateState(RegisteredUserDTO user, Object state, Object event) {
+    public JsonNode updateState(RegisteredUserDTO user, JsonNode state, String event) {
 
-        ((ArrayNode) ((JsonNode) state).get("groups")).add((String) event);
+        ((ArrayNode) state.get("groups")).add(event);
         return state;
     }
 }

@@ -23,12 +23,12 @@ public class TeacherGameboardsBadgePolicy implements IUserBadgePolicy {
     }
 
     @Override
-    public int getLevel(Object state) {
-        return ((JsonNode) state).get("gameboards").size();
+    public int getLevel(JsonNode state) {
+        return state.get("gameboards").size();
     }
 
     @Override
-    public Object initialiseState(RegisteredUserDTO user) {
+    public JsonNode initialiseState(RegisteredUserDTO user) {
 
         ArrayNode gameboards = JsonNodeFactory.instance.arrayNode();
 
@@ -49,9 +49,9 @@ public class TeacherGameboardsBadgePolicy implements IUserBadgePolicy {
     }
 
     @Override
-    public Object updateState(RegisteredUserDTO user, Object state, Object event) {
+    public JsonNode updateState(RegisteredUserDTO user, JsonNode state, String event) {
 
-        ((ArrayNode) ((JsonNode) state).get("gameboards")).add((String) event);
+        ((ArrayNode) state.get("gameboards")).add(event);
         return state;
     }
 }
