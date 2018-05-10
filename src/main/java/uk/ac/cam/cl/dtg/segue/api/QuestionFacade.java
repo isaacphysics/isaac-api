@@ -256,12 +256,9 @@ public class QuestionFacade extends AbstractSegueFacade {
             }
 
             // If we get to this point, this is a valid question attempt. Record it.
-
-            Boolean correct = false;
             if (response.getEntity() instanceof QuestionValidationResponseDTO) {
                 questionManager.recordQuestionAttempt(currentUser,
                         (QuestionValidationResponseDTO) response.getEntity());
-                correct = ((QuestionValidationResponseDTO) response.getEntity()).isCorrect();
             }
 
             this.getLogManager().logEvent(currentUser, request, ANSWER_QUESTION, response.getEntity());
@@ -269,17 +266,6 @@ public class QuestionFacade extends AbstractSegueFacade {
             // Update the user in case their streak has changed:
             if (currentUser instanceof RegisteredUserDTO) {
                 this.userStreaksManager.notifyUserOfStreakChange((RegisteredUserDTO) currentUser);
-
-                if (correct) {
-                    try {
-                        userBadgeManager.updateBadge(null, (RegisteredUserDTO) currentUser,
-                                UserBadgeManager.Badge.QUESTIONS_ANSWERED_TOTAL, questionId);
-                    } catch (SQLException e) {
-                        e.printStackTrace();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
             }
 
             return response;
