@@ -279,7 +279,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
             }
 
             return Response.ok(usersLinkedToToken)
-                    .cacheControl(getCacheControl(Constants.NUMBER_SECONDS_IN_MINUTE, false)).build();
+                    .cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (InvalidUserAssociationTokenException e) {
