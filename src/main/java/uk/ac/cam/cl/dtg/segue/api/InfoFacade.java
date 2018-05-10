@@ -47,9 +47,6 @@ import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
-import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.AnonymousEventsStreamsApplication;
-import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.SiteStatisticsStreamsApplication;
-import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.UserStatisticsStreamsApplication;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
@@ -312,25 +309,4 @@ public class InfoFacade extends AbstractSegueFacade {
         }
 
     }
-
-    @GET
-    @Path("/ping/{streams_app}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getUserStatsAppStatus(@Context final Request request, @PathParam("streams_app") final String appName) {
-
-        switch (appName) {
-            case "site_statistics":
-                return Response.ok(ImmutableMap.of("running", SiteStatisticsStreamsApplication.getAppStatus().get("running"))).build();
-
-            case "user_statistics":
-                return Response.ok(ImmutableMap.of("running", UserStatisticsStreamsApplication.getAppStatus().get("running"))).build();
-
-            case "anonymous_events":
-                return Response.ok(ImmutableMap.of("running", AnonymousEventsStreamsApplication.getAppStatus().get("running"))).build();
-
-            default:
-                return new SegueErrorResponse(Status.NOT_FOUND, "Invalid streams app name provided.").toResponse();
-        }
-    }
-
 }
