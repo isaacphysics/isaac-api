@@ -246,6 +246,11 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                             .toResponse();
                 }
 
+                if (!(group.getOwnerId().equals(currentlyLoggedInUser.getId()) || GroupManager.isInAdditionalManagerList(group, currentlyLoggedInUser.getId()))
+                        && !isUserAnAdmin(userManager, request)) {
+                    return new SegueErrorResponse(Status.FORBIDDEN, "You are not the owner or manager of this group").toResponse();
+                }
+
                 Collection<AssignmentDTO> allAssignmentsSetToGroup
                         = this.assignmentManager.getAssignmentsByGroup(group.getId());
 
@@ -255,7 +260,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 }
 
                 this.getLogManager().logEvent(currentlyLoggedInUser, request, VIEW_GROUPS_ASSIGNMENTS,
-                        Maps.newHashMap());
+                        ImmutableMap.of("groupId", group.getId()));
 
                 return Response.ok(allAssignmentsSetToGroup)
                         .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
