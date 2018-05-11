@@ -23,13 +23,7 @@ import io.swagger.annotations.Api;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -134,18 +128,20 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 
     /**
      * Revoke a user association.
-     * 
+     *
+     * This endpoint enables a users to revoke access to their data when it had been originally shared with a third party.
+     *
      * @param request
      *            - so we can find out the current user
      * @param userIdToRevoke
-     *            - so we can delete any associations that the user might have.
+     *            - so we can delete any associations that the user might have previously granted.
      * @return response with no content or a segueErrorResponse
      */
     @DELETE
     @Path("/{userId}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    public Response revokeAssociation(@Context final HttpServletRequest request,
+    public Response revokeOwnerAssociation(@Context final HttpServletRequest request,
             @PathParam("userId") final Long userIdToRevoke) {
         if (null == userIdToRevoke) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "revokeUserId value must be specified.").toResponse();
@@ -162,6 +158,48 @@ public class AuthorisationFacade extends AbstractSegueFacade {
             return Response.status(Status.NO_CONTENT).build();
         } catch (SegueDatabaseException e) {
             log.error("Database error while trying to get association token. ", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (NoUserException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to locate user to revoke").toResponse();
+        }
+    }
+
+    /**
+     * Release a user association.
+     *
+     * This endpoint is used when a user who had previously been granted access to another's data no longer needs it
+     * and wants to end the sharing relationship from their side.
+     *
+     * @param request
+     *            - so we can find out the current user
+     * @param associationOwner
+     *            - the original data owner who authorised the data sharing link.
+     * @return response with no content or a segueErrorResponse
+     */
+    @DELETE
+    @Path("release/{userId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public Response releaseAssociation(@Context final HttpServletRequest request,
+                                       @PathParam("userId") final Long associationOwner) {
+        if (null == associationOwner) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "revokeUserId value must be specified.").toResponse();
+        }
+
+        try {
+            RegisteredUserDTO ownerUser = userManager.getUserDTOById(associationOwner);
+            RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+
+            associationManager.revokeAssociation(ownerUser, user);
+
+            this.getLogManager().logEvent(user, request, RELEASE_USER_ASSOCIATION,
+                    ImmutableMap.of(USER_ID_FKEY_FIELDNAME, associationOwner));
+
+            return Response.status(Status.NO_CONTENT).build();
+        } catch (SegueDatabaseException e) {
+            log.error("Database error while trying to access association token. ", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
