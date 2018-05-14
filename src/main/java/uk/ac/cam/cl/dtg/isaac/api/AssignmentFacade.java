@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.opencsv.CSVWriter;
 import io.swagger.annotations.Api;
@@ -105,6 +106,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
     private final QuestionManager questionManager;
     private final UserBadgeManager userBadgeManager;
+    protected final List<String> bookTags = ImmutableList.of("phys_book_gcse", "physics_skills_14", "chemistry_16");
 
     /**
      * Creates an instance of the AssignmentFacade controller which provides the REST endpoints for the isaac api.
@@ -770,6 +772,18 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             this.userBadgeManager.updateBadge(null, currentlyLoggedInUser,
                     UserBadgeManager.Badge.TEACHER_ASSIGNMENTS_SET, assignmentWithID.getId().toString());
+
+            tagsLoop:
+            for (String tag : bookTags) {
+
+                for (GameboardItem item : gameboard.getQuestions()) {
+                    if (item.getTags().contains(tag)) {
+                        this.userBadgeManager.updateBadge(null, currentlyLoggedInUser,
+                                UserBadgeManager.Badge.TEACHER_BOOK_PAGES_SET, assignmentWithID.getId().toString());
+                        break tagsLoop;
+                    }
+                }
+            }
 
             return Response.ok(assignmentDTOFromClient).build();
         } catch (NoUserLoggedInException e) {

@@ -1,7 +1,6 @@
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -12,6 +11,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.IUserBadgePersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.teacherBadges.TeacherAssignmentsBadgePolicy;
+import uk.ac.cam.cl.dtg.segue.dao.userBadges.teacherBadges.TeacherBookPagesBadgePolicy;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.teacherBadges.TeacherCpdBadgePolicy;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.teacherBadges.TeacherGameboardsBadgePolicy;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.teacherBadges.TeacherGroupsBadgePolicy;
@@ -20,7 +20,6 @@ import uk.ac.cam.cl.dtg.segue.dao.userBadges.IUserBadgePolicy;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 import java.sql.Connection;
-import java.util.List;
 import java.util.Map;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
@@ -36,7 +35,7 @@ public class UserBadgeManager {
         // teacher specific badges
         TEACHER_GROUPS_CREATED,
         TEACHER_ASSIGNMENTS_SET,
-        //TEACHER_BOOK_PAGES_SET,
+        TEACHER_BOOK_PAGES_SET,
         TEACHER_GAMEBOARDS_CREATED,
         TEACHER_CPD_EVENTS_ATTENDED
     }
@@ -64,6 +63,8 @@ public class UserBadgeManager {
 
         badgePolicies.put(Badge.TEACHER_GROUPS_CREATED, new TeacherGroupsBadgePolicy(groupManager));
         badgePolicies.put(Badge.TEACHER_ASSIGNMENTS_SET, new TeacherAssignmentsBadgePolicy(assignmentManager,
+                gameManager));
+        badgePolicies.put(Badge.TEACHER_BOOK_PAGES_SET, new TeacherBookPagesBadgePolicy(assignmentManager,
                 gameManager));
         badgePolicies.put(Badge.TEACHER_GAMEBOARDS_CREATED, new TeacherGameboardsBadgePolicy(gameManager));
         badgePolicies.put(Badge.TEACHER_CPD_EVENTS_ATTENDED,
