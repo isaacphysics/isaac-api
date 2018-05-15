@@ -10,6 +10,9 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.IUserBadgePersistenceManager;
+import uk.ac.cam.cl.dtg.segue.dao.userBadges.questionBadges.LevelQuestionsAnsweredBadgePolicy;
+import uk.ac.cam.cl.dtg.segue.dao.userBadges.questionBadges.TotalQuestionsAnsweredBadgePolicy;
+import uk.ac.cam.cl.dtg.segue.dao.userBadges.questionBadges.TopicQuestionsAnsweredBadgePolicy;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.teacherBadges.TeacherAssignmentsBadgePolicy;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.teacherBadges.TeacherBookPagesBadgePolicy;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.teacherBadges.TeacherCpdBadgePolicy;
@@ -37,7 +40,23 @@ public class UserBadgeManager {
         TEACHER_ASSIGNMENTS_SET,
         TEACHER_BOOK_PAGES_SET,
         TEACHER_GAMEBOARDS_CREATED,
-        TEACHER_CPD_EVENTS_ATTENDED
+        TEACHER_CPD_EVENTS_ATTENDED,
+
+        // question answer badges
+        QUESTIONS_ANSWERED_TOTAL,
+        // topics
+        QUESTIONS_ANSWERED_WAVES,
+        QUESTIONS_ANSWERED_MECHANICS,
+        QUESTIONS_ANSWERED_FIELDS,
+        QUESTIONS_ANSWERED_CIRCUITS,
+        QUESTIONS_ANSWERED_PHYS_CHEM,
+        // levels
+        QUESTIONS_ANSWERED_LEVEL1,
+        QUESTIONS_ANSWERED_LEVEL2,
+        QUESTIONS_ANSWERED_LEVEL3,
+        QUESTIONS_ANSWERED_LEVEL4,
+        QUESTIONS_ANSWERED_LEVEL5,
+        QUESTIONS_ANSWERED_LEVEL6
     }
 
     private final IUserBadgePersistenceManager userBadgePersistenceManager;
@@ -56,11 +75,13 @@ public class UserBadgeManager {
      */
     @Inject
     public UserBadgeManager(IUserBadgePersistenceManager userBadgePersistenceManager, GroupManager groupManager,
-                            EventBookingManager bookingManager, AssignmentManager assignmentManager, GameManager gameManager,
-                            IContentManager contentManager, @Named(CONTENT_INDEX) String contentIndex) {
+                            EventBookingManager bookingManager, AssignmentManager assignmentManager,
+                            GameManager gameManager, QuestionManager questionManager, IContentManager contentManager,
+                            @Named(CONTENT_INDEX) String contentIndex) {
 
         this.userBadgePersistenceManager = userBadgePersistenceManager;
 
+        // teacher badges
         badgePolicies.put(Badge.TEACHER_GROUPS_CREATED, new TeacherGroupsBadgePolicy(groupManager));
         badgePolicies.put(Badge.TEACHER_ASSIGNMENTS_SET, new TeacherAssignmentsBadgePolicy(assignmentManager,
                 gameManager));
@@ -69,6 +90,32 @@ public class UserBadgeManager {
         badgePolicies.put(Badge.TEACHER_GAMEBOARDS_CREATED, new TeacherGameboardsBadgePolicy(gameManager));
         badgePolicies.put(Badge.TEACHER_CPD_EVENTS_ATTENDED,
                 new TeacherCpdBadgePolicy(bookingManager, contentManager, contentIndex));
+
+        // question badges
+        badgePolicies.put(Badge.QUESTIONS_ANSWERED_TOTAL, new TotalQuestionsAnsweredBadgePolicy(questionManager,
+                gameManager));
+        badgePolicies.put(Badge.QUESTIONS_ANSWERED_WAVES, new TopicQuestionsAnsweredBadgePolicy(questionManager,
+                gameManager, contentManager, contentIndex, "waves"));
+        badgePolicies.put(Badge.QUESTIONS_ANSWERED_MECHANICS, new TopicQuestionsAnsweredBadgePolicy(questionManager,
+                gameManager, contentManager, contentIndex, "mechanics"));
+        badgePolicies.put(Badge.QUESTIONS_ANSWERED_FIELDS, new TopicQuestionsAnsweredBadgePolicy(questionManager,
+                gameManager, contentManager, contentIndex, "fields"));
+        badgePolicies.put(Badge.QUESTIONS_ANSWERED_CIRCUITS, new TopicQuestionsAnsweredBadgePolicy(questionManager,
+                gameManager, contentManager, contentIndex, "circuits"));
+        badgePolicies.put(Badge.QUESTIONS_ANSWERED_PHYS_CHEM, new TopicQuestionsAnsweredBadgePolicy(questionManager,
+                gameManager, contentManager, contentIndex, "chemphysics"));
+        badgePolicies.put(Badge.QUESTIONS_ANSWERED_LEVEL1, new LevelQuestionsAnsweredBadgePolicy(questionManager,
+                gameManager, contentManager, contentIndex, 1));
+        badgePolicies.put(Badge.QUESTIONS_ANSWERED_LEVEL2, new LevelQuestionsAnsweredBadgePolicy(questionManager,
+                gameManager, contentManager, contentIndex, 2));
+        badgePolicies.put(Badge.QUESTIONS_ANSWERED_LEVEL3, new LevelQuestionsAnsweredBadgePolicy(questionManager,
+                gameManager, contentManager, contentIndex, 3));
+        badgePolicies.put(Badge.QUESTIONS_ANSWERED_LEVEL4, new LevelQuestionsAnsweredBadgePolicy(questionManager,
+                gameManager, contentManager, contentIndex, 4));
+        badgePolicies.put(Badge.QUESTIONS_ANSWERED_LEVEL5, new LevelQuestionsAnsweredBadgePolicy(questionManager,
+                gameManager, contentManager, contentIndex, 5));
+        badgePolicies.put(Badge.QUESTIONS_ANSWERED_LEVEL6, new LevelQuestionsAnsweredBadgePolicy(questionManager,
+                gameManager, contentManager, contentIndex, 6));
     }
 
     /**
@@ -87,6 +134,7 @@ public class UserBadgeManager {
 
         if (null == badge.getState()) {
             badge.setState(badgePolicies.get(badgeName).initialiseState(user));
+            userBadgePersistenceManager.updateBadge(conn, badge);
         }
 
         return badge;

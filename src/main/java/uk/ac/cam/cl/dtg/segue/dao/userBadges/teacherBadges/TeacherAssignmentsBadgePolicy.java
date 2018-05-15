@@ -36,7 +36,7 @@ public class TeacherAssignmentsBadgePolicy implements IUserBadgePolicy {
 
         try {
             for (AssignmentDTO assignment : assignmentManager.getAllAssignmentsSetByUser(user)) {
-                assignments = addToAssignments(assignments, assignment.getId().toString());
+                assignments = updateAssignments(assignments, assignment.getId().toString());
             }
         } catch (SegueDatabaseException e) {
             e.printStackTrace();
@@ -47,8 +47,7 @@ public class TeacherAssignmentsBadgePolicy implements IUserBadgePolicy {
 
     @Override
     public JsonNode updateState(RegisteredUserDTO user, JsonNode state, String event) throws SegueDatabaseException {
-        addToAssignments(((ArrayNode) state.get("assignments")), event);
-        return state;
+        return updateAssignments(((ArrayNode) state.get("assignments")), event);
     }
 
     /**
@@ -58,7 +57,7 @@ public class TeacherAssignmentsBadgePolicy implements IUserBadgePolicy {
      * @param assignmentId a new assignment ID to add
      * @return the updated arrayNode
      */
-    protected ArrayNode addToAssignments(ArrayNode assignments, String assignmentId) throws SegueDatabaseException {
+    protected ArrayNode updateAssignments(ArrayNode assignments, String assignmentId) throws SegueDatabaseException {
 
         if (assignments.has(assignmentId)) {
             return assignments;

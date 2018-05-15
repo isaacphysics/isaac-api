@@ -24,6 +24,7 @@ import io.swagger.annotations.Api;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.api.managers.QuestionBadgeManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -83,7 +84,7 @@ public class QuestionFacade extends AbstractSegueFacade {
     private final String contentIndex;
     private final UserAccountManager userManager;
     private final QuestionManager questionManager;
-    private final UserBadgeManager userBadgeManager;
+    private final QuestionBadgeManager questionBadgeManager;
     private IMisuseMonitor misuseMonitor;
     private IUserStreaksManager userStreaksManager;
 
@@ -109,7 +110,7 @@ public class QuestionFacade extends AbstractSegueFacade {
                           final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final UserAccountManager userManager,
                           final QuestionManager questionManager,
                           final ILogManager logManager, final IMisuseMonitor misuseMonitor,
-                          final UserBadgeManager userBadgeManager,
+                          final QuestionBadgeManager questionBadgeManager,
                           final IUserStreaksManager userStreaksManager) {
         super(properties, logManager);
 
@@ -120,7 +121,7 @@ public class QuestionFacade extends AbstractSegueFacade {
         this.userManager = userManager;
         this.misuseMonitor = misuseMonitor;
         this.userStreaksManager = userStreaksManager;
-        this.userBadgeManager = userBadgeManager;
+        this.questionBadgeManager = questionBadgeManager;
     }
 
     /**
@@ -256,9 +257,11 @@ public class QuestionFacade extends AbstractSegueFacade {
             }
 
             // If we get to this point, this is a valid question attempt. Record it.
+            Boolean correct = false;
             if (response.getEntity() instanceof QuestionValidationResponseDTO) {
                 questionManager.recordQuestionAttempt(currentUser,
                         (QuestionValidationResponseDTO) response.getEntity());
+                correct = ((QuestionValidationResponseDTO) response.getEntity()).isCorrect();
             }
 
             this.getLogManager().logEvent(currentUser, request, ANSWER_QUESTION, response.getEntity());
@@ -266,6 +269,11 @@ public class QuestionFacade extends AbstractSegueFacade {
             // Update the user in case their streak has changed:
             if (currentUser instanceof RegisteredUserDTO) {
                 this.userStreaksManager.notifyUserOfStreakChange((RegisteredUserDTO) currentUser);
+
+                if (correct) {
+                    this.questionBadgeManager.updateQuestionBadges(null, (RegisteredUserDTO) currentUser,
+                            questionId);
+                }
             }
 
             return response;
