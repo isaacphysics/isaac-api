@@ -55,6 +55,7 @@ import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationRequestMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
@@ -321,20 +322,26 @@ public class EmailFacade extends AbstractSegueFacade {
     /**
      * End point that allows a user to generate an email verification request.
      * 
-     * @param email
-     *            - Email address requested for verification
+     * @param payload
+     *            - Post request payload containing the email address requested for verification
      * @param request
      *            - For logging purposes.
      * @return a successful response regardless of whether the email exists or an error code if there is a technical
      *         fault
      */
-    @GET
-    @Path("/users/verifyemail/{email}")
+    @POST
+    @Path("/users/verifyemail")
     @Consumes(MediaType.APPLICATION_JSON)
     @GZIP
-    public Response generateEmailVerificationToken(@PathParam("email") final String email,
-            @Context final HttpServletRequest request) {
+    public Response generateEmailVerificationToken(@Context final HttpServletRequest request,
+                                                   final Map<String, String> payload) {
+        final String emailField = "email";
         try {
+            String email = payload.get(emailField);
+            if (email == null || email.isEmpty()) {
+                throw new MissingRequiredFieldException("No email provided with request");
+            }
+
             misuseMonitor.notifyEvent(email, EmailVerificationRequestMisuseHandler.class.toString());
 
             userManager.emailVerificationRequest(request, email);
@@ -344,15 +351,21 @@ public class EmailFacade extends AbstractSegueFacade {
                     ImmutableMap.of(Constants.LOCAL_AUTH_EMAIL_VERIFICATION_TOKEN_FIELDNAME, email));
 
             return Response.ok().build();
+
         } catch (CommunicationException | NoSuchAlgorithmException | InvalidKeySpecException | SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Error sending verification message.", e);
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
+        } catch (MissingRequiredFieldException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage());
+            log.error(String.format("Invalid email sent to /users/verifyemail endpoint: (%s)", e.getMessage()));
+            return error.toResponse();
         } catch (SegueResourceMisuseException e) {
             String message = "You have exceeded the number of requests allowed for this endpoint. "
                     + "Please try again later.";
-            log.error(String.format("VerifyEmail request endpoint has reached hard limit (%s)", email));
+            log.error(String.format("VerifyEmail request endpoint has reached hard limit (%s)",
+                    payload.get(emailField)));
             return SegueErrorResponse.getRateThrottledResponse(message);
         }
     }

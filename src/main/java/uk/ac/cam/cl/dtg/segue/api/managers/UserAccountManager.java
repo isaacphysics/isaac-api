@@ -1010,16 +1010,33 @@ public class UserAccountManager implements IUserAccountManager {
         // Save user object
         this.database.createOrUpdateUser(user);
 
-        log.info(String.format("Sending password reset message to %s", user.getEmail()));
         try {
         	RegisteredUserDTO userDTO = this.getUserDTOById(user.getId());
 
         	Map<String, Object> emailTokens = ImmutableMap.of("verificationURL",
                     this.generateEmailVerificationURL(userDTO, user.getEmailVerificationToken()));
 
-            emailManager.sendTemplatedEmailToUser(userDTO,
-                    emailManager.getEmailTemplateDTO("email-template-email-verification"),
-                    emailTokens, EmailType.SYSTEM);
+            if (email.equals(user.getEmail())) {
+                // trying to verify the user's current email
+                log.info(String.format("Sending email verification message to %s", email));
+                emailManager.sendTemplatedEmailToUser(userDTO,
+                        emailManager.getEmailTemplateDTO("email-template-email-verification"),
+                        emailTokens, EmailType.SYSTEM);
+            } else {
+                // trying to verify a new email
+                log.info(String.format("Re-sending email for email address change for user (%s)"
+                                + " from email (%s) to email (%s)", userDTO.getId(), userDTO.getEmail(), email));
+                emailManager.sendTemplatedEmailToUser(userDTO,
+                        emailManager.getEmailTemplateDTO("email-verification-change"),
+                        ImmutableMap.of("requestedemail", email), EmailType.SYSTEM);
+
+                // Defensive copy to ensure email address is preserved (shouldn't change until new email is verified)
+                RegisteredUserDTO temporaryUser = this.dtoMapper.map(userDTO, RegisteredUserDTO.class);
+                temporaryUser.setEmail(email);
+                emailManager.sendTemplatedEmailToUser(temporaryUser,
+                        emailManager.getEmailTemplateDTO("email-template-email-verification"),
+                        emailTokens, EmailType.SYSTEM);
+            }
 
         } catch (ContentManagerException e) {
             log.debug("ContentManagerException " + e.getMessage());
