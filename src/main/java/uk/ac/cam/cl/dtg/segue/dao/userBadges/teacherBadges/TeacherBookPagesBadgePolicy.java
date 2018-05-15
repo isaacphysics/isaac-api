@@ -24,7 +24,7 @@ public class TeacherBookPagesBadgePolicy extends TeacherAssignmentsBadgePolicy {
     }
 
     @Override
-    protected ArrayNode addToAssignments(ArrayNode assignments, String assignmentId) throws SegueDatabaseException {
+    protected ArrayNode updateAssignments(ArrayNode assignments, String assignmentId) throws SegueDatabaseException {
 
         if (assignments.has(assignmentId) ||
                 !isBookPage(assignmentManager.getAssignmentById(Long.parseLong(assignmentId)))) {

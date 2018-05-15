@@ -35,13 +35,10 @@ public class PgUserBadgePersistenceManager implements IUserBadgePersistenceManag
     }
 
     @Override
-    public UserBadge getBadge(Connection conn, RegisteredUserDTO user, UserBadgeManager.Badge badgeName)
+    public UserBadge getBadge(Connection connection, RegisteredUserDTO user, UserBadgeManager.Badge badgeName)
             throws SegueDatabaseException {
 
-        try {
-            if (null == conn) {
-                conn = postgresSqlDb.getDatabaseConnection();
-            }
+        try (Connection conn = (connection != null) ? connection : postgresSqlDb.getDatabaseConnection()) {
 
             PreparedStatement pst;
             pst = conn.prepareStatement("INSERT INTO user_badges (user_id, badge)" +
@@ -65,12 +62,9 @@ public class PgUserBadgePersistenceManager implements IUserBadgePersistenceManag
     }
 
     @Override
-    public void updateBadge(Connection conn, UserBadge badge) throws SegueDatabaseException {
+    public void updateBadge(Connection connection, UserBadge badge) throws SegueDatabaseException {
 
-        try {
-            if (null == conn) {
-                conn = postgresSqlDb.getDatabaseConnection();
-            }
+        try (Connection conn = (connection != null) ? connection : postgresSqlDb.getDatabaseConnection()) {
 
             PreparedStatement pst;
             pst = conn.prepareStatement("UPDATE user_badges SET state = ?::jsonb WHERE user_id = ? and badge = ?");
