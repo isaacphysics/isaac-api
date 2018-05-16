@@ -20,6 +20,7 @@ import uk.ac.cam.cl.dtg.segue.dao.userBadges.teacherBadges.TeacherGameboardsBadg
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.teacherBadges.TeacherGroupsBadgePolicy;
 import uk.ac.cam.cl.dtg.segue.dos.UserBadge;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.IUserBadgePolicy;
+import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 import java.sql.Connection;
@@ -43,20 +44,24 @@ public class UserBadgeManager {
         TEACHER_CPD_EVENTS_ATTENDED,
 
         // question answer badges
-        QUESTIONS_ANSWERED_TOTAL,
+        QUESTIONS_TOTAL,
+        // subjects
+        QUESTIONS_SUBJECT_PHYSICS,
+        QUESTIONS_SUBJECT_CHEMISTRY,
+        QUESTIONS_SUBJECT_MATHS,
         // topics
-        QUESTIONS_ANSWERED_WAVES,
-        QUESTIONS_ANSWERED_MECHANICS,
-        QUESTIONS_ANSWERED_FIELDS,
-        QUESTIONS_ANSWERED_CIRCUITS,
-        QUESTIONS_ANSWERED_PHYS_CHEM,
+        QUESTIONS_TOPIC_WAVES,
+        QUESTIONS_TOPIC_MECHANICS,
+        QUESTIONS_TOPIC_FIELDS,
+        QUESTIONS_TOPIC_CIRCUITS,
+        QUESTIONS_TOPIC_PHYSCHEM,
         // levels
-        QUESTIONS_ANSWERED_LEVEL1,
-        QUESTIONS_ANSWERED_LEVEL2,
-        QUESTIONS_ANSWERED_LEVEL3,
-        QUESTIONS_ANSWERED_LEVEL4,
-        QUESTIONS_ANSWERED_LEVEL5,
-        QUESTIONS_ANSWERED_LEVEL6
+        QUESTIONS_LEVEL_1,
+        QUESTIONS_LEVEL_2,
+        QUESTIONS_LEVEL_3,
+        QUESTIONS_LEVEL_4,
+        QUESTIONS_LEVEL_5,
+        QUESTIONS_LEVEL_6
     }
 
     private final IUserBadgePersistenceManager userBadgePersistenceManager;
@@ -92,29 +97,35 @@ public class UserBadgeManager {
                 new TeacherCpdBadgePolicy(bookingManager, contentManager, contentIndex));
 
         // question badges
-        badgePolicies.put(Badge.QUESTIONS_ANSWERED_TOTAL, new TotalQuestionsAnsweredBadgePolicy(questionManager,
+        badgePolicies.put(Badge.QUESTIONS_TOTAL, new TotalQuestionsAnsweredBadgePolicy(questionManager,
                 gameManager));
-        badgePolicies.put(Badge.QUESTIONS_ANSWERED_WAVES, new TopicQuestionsAnsweredBadgePolicy(questionManager,
+        badgePolicies.put(Badge.QUESTIONS_SUBJECT_PHYSICS, new TopicQuestionsAnsweredBadgePolicy(questionManager,
+                gameManager, contentManager, contentIndex, "physics"));
+        badgePolicies.put(Badge.QUESTIONS_SUBJECT_CHEMISTRY, new TopicQuestionsAnsweredBadgePolicy(questionManager,
+                gameManager, contentManager, contentIndex, "chemistry"));
+        badgePolicies.put(Badge.QUESTIONS_SUBJECT_MATHS, new TopicQuestionsAnsweredBadgePolicy(questionManager,
+                gameManager, contentManager, contentIndex, "maths"));
+        badgePolicies.put(Badge.QUESTIONS_TOPIC_WAVES, new TopicQuestionsAnsweredBadgePolicy(questionManager,
                 gameManager, contentManager, contentIndex, "waves"));
-        badgePolicies.put(Badge.QUESTIONS_ANSWERED_MECHANICS, new TopicQuestionsAnsweredBadgePolicy(questionManager,
+        badgePolicies.put(Badge.QUESTIONS_TOPIC_MECHANICS, new TopicQuestionsAnsweredBadgePolicy(questionManager,
                 gameManager, contentManager, contentIndex, "mechanics"));
-        badgePolicies.put(Badge.QUESTIONS_ANSWERED_FIELDS, new TopicQuestionsAnsweredBadgePolicy(questionManager,
+        badgePolicies.put(Badge.QUESTIONS_TOPIC_FIELDS, new TopicQuestionsAnsweredBadgePolicy(questionManager,
                 gameManager, contentManager, contentIndex, "fields"));
-        badgePolicies.put(Badge.QUESTIONS_ANSWERED_CIRCUITS, new TopicQuestionsAnsweredBadgePolicy(questionManager,
+        badgePolicies.put(Badge.QUESTIONS_TOPIC_CIRCUITS, new TopicQuestionsAnsweredBadgePolicy(questionManager,
                 gameManager, contentManager, contentIndex, "circuits"));
-        badgePolicies.put(Badge.QUESTIONS_ANSWERED_PHYS_CHEM, new TopicQuestionsAnsweredBadgePolicy(questionManager,
+        badgePolicies.put(Badge.QUESTIONS_TOPIC_PHYSCHEM, new TopicQuestionsAnsweredBadgePolicy(questionManager,
                 gameManager, contentManager, contentIndex, "chemphysics"));
-        badgePolicies.put(Badge.QUESTIONS_ANSWERED_LEVEL1, new LevelQuestionsAnsweredBadgePolicy(questionManager,
+        badgePolicies.put(Badge.QUESTIONS_LEVEL_1, new LevelQuestionsAnsweredBadgePolicy(questionManager,
                 gameManager, contentManager, contentIndex, 1));
-        badgePolicies.put(Badge.QUESTIONS_ANSWERED_LEVEL2, new LevelQuestionsAnsweredBadgePolicy(questionManager,
+        badgePolicies.put(Badge.QUESTIONS_LEVEL_2, new LevelQuestionsAnsweredBadgePolicy(questionManager,
                 gameManager, contentManager, contentIndex, 2));
-        badgePolicies.put(Badge.QUESTIONS_ANSWERED_LEVEL3, new LevelQuestionsAnsweredBadgePolicy(questionManager,
+        badgePolicies.put(Badge.QUESTIONS_LEVEL_3, new LevelQuestionsAnsweredBadgePolicy(questionManager,
                 gameManager, contentManager, contentIndex, 3));
-        badgePolicies.put(Badge.QUESTIONS_ANSWERED_LEVEL4, new LevelQuestionsAnsweredBadgePolicy(questionManager,
+        badgePolicies.put(Badge.QUESTIONS_LEVEL_4, new LevelQuestionsAnsweredBadgePolicy(questionManager,
                 gameManager, contentManager, contentIndex, 4));
-        badgePolicies.put(Badge.QUESTIONS_ANSWERED_LEVEL5, new LevelQuestionsAnsweredBadgePolicy(questionManager,
+        badgePolicies.put(Badge.QUESTIONS_LEVEL_5, new LevelQuestionsAnsweredBadgePolicy(questionManager,
                 gameManager, contentManager, contentIndex, 5));
-        badgePolicies.put(Badge.QUESTIONS_ANSWERED_LEVEL6, new LevelQuestionsAnsweredBadgePolicy(questionManager,
+        badgePolicies.put(Badge.QUESTIONS_LEVEL_6, new LevelQuestionsAnsweredBadgePolicy(questionManager,
                 gameManager, contentManager, contentIndex, 6));
     }
 
@@ -190,6 +201,11 @@ public class UserBadgeManager {
 
         try {
             for (Badge badgeName : Badge.values()) {
+
+                if (user.getRole().equals(Role.STUDENT) && badgeName.name().split("_")[0].equals("TEACHER")) {
+                    continue;
+                }
+
                 UserBadge badge = getOrCreateBadge(null, user, badgeName);
                 badges.put(badge.getBadgeName().name(),
                         badgePolicies.get(badge.getBadgeName()).getLevel(badge.getState()));

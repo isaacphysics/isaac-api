@@ -28,22 +28,25 @@ public class QuestionBadgeManager {
 
     private final Map<String, UserBadgeManager.Badge> tagBadges =
             ImmutableMap.<String, UserBadgeManager.Badge>builder()
-                    .put("waves", UserBadgeManager.Badge.QUESTIONS_ANSWERED_WAVES)
-                    .put("mechanics", UserBadgeManager.Badge.QUESTIONS_ANSWERED_MECHANICS)
-                    .put("fields", UserBadgeManager.Badge.QUESTIONS_ANSWERED_FIELDS)
-                    .put("circuits", UserBadgeManager.Badge.QUESTIONS_ANSWERED_CIRCUITS)
-                    .put("chemphysics", UserBadgeManager.Badge.QUESTIONS_ANSWERED_PHYS_CHEM)
+                    .put("waves", UserBadgeManager.Badge.QUESTIONS_TOPIC_WAVES)
+                    .put("mechanics", UserBadgeManager.Badge.QUESTIONS_TOPIC_MECHANICS)
+                    .put("fields", UserBadgeManager.Badge.QUESTIONS_TOPIC_FIELDS)
+                    .put("circuits", UserBadgeManager.Badge.QUESTIONS_TOPIC_CIRCUITS)
+                    .put("chemphysics", UserBadgeManager.Badge.QUESTIONS_TOPIC_PHYSCHEM)
+                    .put("physics", UserBadgeManager.Badge.QUESTIONS_SUBJECT_PHYSICS)
+                    .put("chemistry", UserBadgeManager.Badge.QUESTIONS_SUBJECT_CHEMISTRY)
+                    .put("maths", UserBadgeManager.Badge.QUESTIONS_SUBJECT_MATHS)
             .build();
 
 
     private final Map<Integer, UserBadgeManager.Badge> levelBadges =
             ImmutableMap.<Integer, UserBadgeManager.Badge>builder()
-                    .put(1, UserBadgeManager.Badge.QUESTIONS_ANSWERED_LEVEL1)
-                    .put(2, UserBadgeManager.Badge.QUESTIONS_ANSWERED_LEVEL2)
-                    .put(3, UserBadgeManager.Badge.QUESTIONS_ANSWERED_LEVEL3)
-                    .put(4, UserBadgeManager.Badge.QUESTIONS_ANSWERED_LEVEL4)
-                    .put(5, UserBadgeManager.Badge.QUESTIONS_ANSWERED_LEVEL5)
-                    .put(6, UserBadgeManager.Badge.QUESTIONS_ANSWERED_LEVEL6)
+                    .put(1, UserBadgeManager.Badge.QUESTIONS_LEVEL_1)
+                    .put(2, UserBadgeManager.Badge.QUESTIONS_LEVEL_2)
+                    .put(3, UserBadgeManager.Badge.QUESTIONS_LEVEL_3)
+                    .put(4, UserBadgeManager.Badge.QUESTIONS_LEVEL_4)
+                    .put(5, UserBadgeManager.Badge.QUESTIONS_LEVEL_5)
+                    .put(6, UserBadgeManager.Badge.QUESTIONS_LEVEL_6)
             .build();
 
 
@@ -76,7 +79,7 @@ public class QuestionBadgeManager {
 
             // update total questions counter first
             this.userBadgeManager.updateBadge(conn, user,
-                    UserBadgeManager.Badge.QUESTIONS_ANSWERED_TOTAL, questionId);
+                    UserBadgeManager.Badge.QUESTIONS_TOTAL, questionId);
 
             // get additional details
             ContentDTO questionDetails = this.getQuestionDetails(questionId.split("\\|")[0]);
