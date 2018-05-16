@@ -60,6 +60,7 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
@@ -68,6 +69,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.UserFromAuthProvider;
+import uk.ac.cam.cl.dtg.segue.dto.content.EmailTemplateDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -753,27 +755,6 @@ public class UserAccountManager implements IUserAccountManager {
             authenticator.ensureValidPassword(newPassword);
         }
 
-        // Send a new verification email if the user has changed their email
-        if (!existingUser.getEmail().equals(updatedUser.getEmail())) {
-            try {
-                authenticator.createEmailVerificationTokenForUser(existingUser, updatedUser.getEmail());
-
-                RegisteredUserDTO existingUserDTO = this.getUserDTOById(existingUser.getId());
-                emailManager.sendTemplatedEmailToUser(existingUserDTO,
-                        emailManager.getEmailTemplateDTO("email-verification-change"),
-                        ImmutableMap.of("requestedemail", updatedUser.getEmail()), EmailType.SYSTEM);
-
-                log.info(String.format("Sending email for email address change for user (%s)"
-                                + " from email (%s) to email (%s)", existingUser.getId(),
-                        existingUser.getEmail(), updatedUser.getEmail()));
-
-            } catch (ContentManagerException | NoUserException e) {
-                log.error("ContentManagerException during sendEmailVerificationChange " + e.getMessage());
-            } catch (NoSuchAlgorithmException | InvalidKeySpecException e1) {
-                log.error("Creation of email verification token failed: " + e1.getMessage());
-            }
-        }
-
         // Send a welcome email if the user has become a teacher
         try {
             RegisteredUserDTO existingUserDTO = this.getUserDTOById(existingUser.getId());
@@ -816,26 +797,28 @@ public class UserAccountManager implements IUserAccountManager {
             userToSave.setSchoolOther(null);
         }
 
-        // Before save we should validate the user for mandatory fields.
-        if (!this.isUserValid(userToSave)) {
-            throw new MissingRequiredFieldException("The user provided is missing a mandatory field");
-        }
-
         // Make sure the email address is preserved (can't be changed until new email is verified)
-        if (!userToSave.getEmail().equals(existingUser.getEmail())) {
+        // Send a new verification email if the user has changed their email
+        if (!existingUser.getEmail().equals(updatedUser.getEmail())) {
             try {
-                RegisteredUserDTO userToSaveDTO = mapper.map(userToSave, RegisteredUserDTO.class);
+                String newEmail = updatedUser.getEmail();
+                authenticator.createEmailVerificationTokenForUser(existingUser, newEmail);
 
-                Map<String, Object> emailTokens = ImmutableMap.of("verificationURL",
-                        this.generateEmailVerificationURL(userToSaveDTO, userToSave.getEmailVerificationToken()));
+                RegisteredUserDTO userDTO = this.getUserDTOById(existingUser.getId());
+                String emailVerificationToken = existingUser.getEmailVerificationToken();
+                this.sendVerificationEmailsForNewEmail(userDTO, newEmail, emailVerificationToken);
 
-                emailManager.sendTemplatedEmailToUser(userToSaveDTO,
-                        emailManager.getEmailTemplateDTO("email-template-email-verification"),
-                        emailTokens, EmailType.SYSTEM);
-
-            } catch (ContentManagerException e) {
-                log.debug("ContentManagerException during sendEmailVerification " + e.getMessage());
+            } catch (ContentManagerException | NoUserException e) {
+                log.error("ContentManagerException during sendEmailVerificationChange " + e.getMessage());
+            } catch (NoSuchAlgorithmException | InvalidKeySpecException e1) {
+                log.error("Creation of email verification token failed: " + e1.getMessage());
             }
+
+            // Before save we should validate the user for mandatory fields.
+            if (!this.isUserValid(userToSave)) {
+                throw new MissingRequiredFieldException("The user provided is missing a mandatory field");
+            }
+
             userToSave.setEmail(existingUser.getEmail());
         }
 
@@ -969,7 +952,7 @@ public class UserAccountManager implements IUserAccountManager {
      * 
      * @param request
      *            - so we can look up the registered user object.
-     * @param email
+     * @param urlEmail
      *            - The email the user wants to verify.
      * @throws NoSuchAlgorithmException
      *             - if the configured algorithm is not valid.
@@ -980,17 +963,17 @@ public class UserAccountManager implements IUserAccountManager {
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
      */
-    public final void emailVerificationRequest(final HttpServletRequest request, final String email)
+    public final void emailVerificationRequest(final HttpServletRequest request, final String urlEmail)
             throws InvalidKeySpecException, NoSuchAlgorithmException, CommunicationException, SegueDatabaseException {
 
-        RegisteredUser user = this.findUserByEmail(email);
+        RegisteredUser user = this.findUserByEmail(urlEmail);
         if (null == user) {
             try {
                 RegisteredUserDTO userDTO = getCurrentRegisteredUser(request);
                 user = this.findUserById(userDTO.getId());
             } catch (NoUserLoggedInException e) {
                 log.error(String.format("Verification requested for email:%s where email does not exist "
-                        + "and user not logged in!", email));
+                        + "and user not logged in!", urlEmail));
             }
         }
 
@@ -1005,37 +988,18 @@ public class UserAccountManager implements IUserAccountManager {
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
                 .get(AuthenticationProvider.SEGUE);
 
-        user = authenticator.createEmailVerificationTokenForUser(user, email);
+        user = authenticator.createEmailVerificationTokenForUser(user, urlEmail);
 
         // Save user object
         this.database.createOrUpdateUser(user);
+        String emailVerificationToken = user.getEmailVerificationToken();
 
         try {
-        	RegisteredUserDTO userDTO = this.getUserDTOById(user.getId());
-
-        	Map<String, Object> emailTokens = ImmutableMap.of("verificationURL",
-                    this.generateEmailVerificationURL(userDTO, user.getEmailVerificationToken()));
-
-            if (email.equals(user.getEmail())) {
-                // trying to verify the user's current email
-                log.info(String.format("Sending email verification message to %s", email));
-                emailManager.sendTemplatedEmailToUser(userDTO,
-                        emailManager.getEmailTemplateDTO("email-template-email-verification"),
-                        emailTokens, EmailType.SYSTEM);
+            RegisteredUserDTO userDTO = this.getUserDTOById(user.getId());
+            if (urlEmail.equals(user.getEmail())) {
+                this.sendVerificationEmailForCurrentEmail(userDTO, emailVerificationToken);
             } else {
-                // trying to verify a new email
-                log.info(String.format("Re-sending email for email address change for user (%s)"
-                                + " from email (%s) to email (%s)", userDTO.getId(), userDTO.getEmail(), email));
-                emailManager.sendTemplatedEmailToUser(userDTO,
-                        emailManager.getEmailTemplateDTO("email-verification-change"),
-                        ImmutableMap.of("requestedemail", email), EmailType.SYSTEM);
-
-                // Defensive copy to ensure email address is preserved (shouldn't change until new email is verified)
-                RegisteredUserDTO temporaryUser = this.dtoMapper.map(userDTO, RegisteredUserDTO.class);
-                temporaryUser.setEmail(email);
-                emailManager.sendTemplatedEmailToUser(temporaryUser,
-                        emailManager.getEmailTemplateDTO("email-template-email-verification"),
-                        emailTokens, EmailType.SYSTEM);
+                this.sendVerificationEmailsForNewEmail(userDTO, urlEmail, emailVerificationToken);
             }
 
         } catch (ContentManagerException e) {
@@ -1197,6 +1161,51 @@ public class UserAccountManager implements IUserAccountManager {
             resultList.add(this.convertToDetailedUserSummaryObject(user));
         }
         return resultList;
+    }
+
+    /**
+     * @param userDTO
+     * @param emailVerificationToken
+     * @throws ContentManagerException
+     * @throws SegueDatabaseException
+     */
+    private final void sendVerificationEmailForCurrentEmail(final RegisteredUserDTO userDTO,
+                                                            final String emailVerificationToken)
+            throws ContentManagerException, SegueDatabaseException {
+
+        EmailTemplateDTO emailVerificationTemplate =
+                emailManager.getEmailTemplateDTO("email-template-email-verification");
+        Map<String, Object> emailTokens =
+                ImmutableMap.of("verificationURL", this.generateEmailVerificationURL(userDTO, emailVerificationToken));
+
+        log.info(String.format("Sending email verification message to %s", userDTO.getEmail()));
+
+        emailManager.sendTemplatedEmailToUser(userDTO, emailVerificationTemplate, emailTokens, EmailType.SYSTEM);
+    }
+
+    /**
+     * @param userDTO
+     * @param newEmail
+     * @param newEmailToken
+     * @throws ContentManagerException
+     * @throws SegueDatabaseException
+     */
+    private final void sendVerificationEmailsForNewEmail(final RegisteredUserDTO userDTO,
+                                                         final String newEmail,
+                                                         final String newEmailToken)
+            throws ContentManagerException, SegueDatabaseException {
+
+        EmailTemplateDTO emailChangeTemplate = emailManager.getEmailTemplateDTO("email-verification-change");
+        Map<String, Object> emailTokens = ImmutableMap.of("requestedemail", newEmail);
+
+        log.info(String.format("Sending email for email address change for user (%s)"
+                + " from email (%s) to email (%s)", userDTO.getId(), userDTO.getEmail(), newEmail));
+        emailManager.sendTemplatedEmailToUser(userDTO, emailChangeTemplate,  emailTokens, EmailType.SYSTEM);
+
+        // Defensive copy to ensure old email address is preserved (shouldn't change until new email is verified)
+        RegisteredUserDTO temporaryUser = this.dtoMapper.map(userDTO, RegisteredUserDTO.class);
+        temporaryUser.setEmail(newEmail);
+        this.sendVerificationEmailForCurrentEmail(temporaryUser, newEmailToken);
     }
 
     /**
