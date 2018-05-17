@@ -12,7 +12,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.IUserBadgePersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.questionBadges.LevelQuestionsAnsweredBadgePolicy;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.questionBadges.TotalQuestionsAnsweredBadgePolicy;
-import uk.ac.cam.cl.dtg.segue.dao.userBadges.questionBadges.TopicQuestionsAnsweredBadgePolicy;
+import uk.ac.cam.cl.dtg.segue.dao.userBadges.questionBadges.TagQuestionsAnsweredBadgePolicy;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.teacherBadges.TeacherAssignmentsBadgePolicy;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.teacherBadges.TeacherBookPagesBadgePolicy;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.teacherBadges.TeacherCpdBadgePolicy;
@@ -49,12 +49,17 @@ public class UserBadgeManager {
         QUESTIONS_SUBJECT_PHYSICS,
         QUESTIONS_SUBJECT_CHEMISTRY,
         QUESTIONS_SUBJECT_MATHS,
-        // topics
+        // topics - physics
         QUESTIONS_TOPIC_WAVES,
         QUESTIONS_TOPIC_MECHANICS,
         QUESTIONS_TOPIC_FIELDS,
         QUESTIONS_TOPIC_CIRCUITS,
         QUESTIONS_TOPIC_PHYSCHEM,
+        // topics - maths
+        QUESTIONS_TOPIC_GEOMETRY,
+        QUESTIONS_TOPIC_CALCULUS,
+        QUESTIONS_TOPIC_ALGEBRA,
+        QUESTIONS_TOPIC_FUNCTIONS,
         // levels
         QUESTIONS_LEVEL_1,
         QUESTIONS_LEVEL_2,
@@ -99,22 +104,30 @@ public class UserBadgeManager {
         // question badges
         badgePolicies.put(Badge.QUESTIONS_TOTAL, new TotalQuestionsAnsweredBadgePolicy(questionManager,
                 gameManager));
-        badgePolicies.put(Badge.QUESTIONS_SUBJECT_PHYSICS, new TopicQuestionsAnsweredBadgePolicy(questionManager,
+        badgePolicies.put(Badge.QUESTIONS_SUBJECT_PHYSICS, new TagQuestionsAnsweredBadgePolicy(questionManager,
                 gameManager, contentManager, contentIndex, "physics"));
-        badgePolicies.put(Badge.QUESTIONS_SUBJECT_CHEMISTRY, new TopicQuestionsAnsweredBadgePolicy(questionManager,
+        badgePolicies.put(Badge.QUESTIONS_SUBJECT_CHEMISTRY, new TagQuestionsAnsweredBadgePolicy(questionManager,
                 gameManager, contentManager, contentIndex, "chemistry"));
-        badgePolicies.put(Badge.QUESTIONS_SUBJECT_MATHS, new TopicQuestionsAnsweredBadgePolicy(questionManager,
+        badgePolicies.put(Badge.QUESTIONS_SUBJECT_MATHS, new TagQuestionsAnsweredBadgePolicy(questionManager,
                 gameManager, contentManager, contentIndex, "maths"));
-        badgePolicies.put(Badge.QUESTIONS_TOPIC_WAVES, new TopicQuestionsAnsweredBadgePolicy(questionManager,
+        badgePolicies.put(Badge.QUESTIONS_TOPIC_WAVES, new TagQuestionsAnsweredBadgePolicy(questionManager,
                 gameManager, contentManager, contentIndex, "waves"));
-        badgePolicies.put(Badge.QUESTIONS_TOPIC_MECHANICS, new TopicQuestionsAnsweredBadgePolicy(questionManager,
+        badgePolicies.put(Badge.QUESTIONS_TOPIC_MECHANICS, new TagQuestionsAnsweredBadgePolicy(questionManager,
                 gameManager, contentManager, contentIndex, "mechanics"));
-        badgePolicies.put(Badge.QUESTIONS_TOPIC_FIELDS, new TopicQuestionsAnsweredBadgePolicy(questionManager,
+        badgePolicies.put(Badge.QUESTIONS_TOPIC_FIELDS, new TagQuestionsAnsweredBadgePolicy(questionManager,
                 gameManager, contentManager, contentIndex, "fields"));
-        badgePolicies.put(Badge.QUESTIONS_TOPIC_CIRCUITS, new TopicQuestionsAnsweredBadgePolicy(questionManager,
+        badgePolicies.put(Badge.QUESTIONS_TOPIC_CIRCUITS, new TagQuestionsAnsweredBadgePolicy(questionManager,
                 gameManager, contentManager, contentIndex, "circuits"));
-        badgePolicies.put(Badge.QUESTIONS_TOPIC_PHYSCHEM, new TopicQuestionsAnsweredBadgePolicy(questionManager,
+        badgePolicies.put(Badge.QUESTIONS_TOPIC_PHYSCHEM, new TagQuestionsAnsweredBadgePolicy(questionManager,
                 gameManager, contentManager, contentIndex, "chemphysics"));
+        badgePolicies.put(Badge.QUESTIONS_TOPIC_GEOMETRY, new TagQuestionsAnsweredBadgePolicy(questionManager,
+                gameManager, contentManager, contentIndex, "geometry"));
+        badgePolicies.put(Badge.QUESTIONS_TOPIC_CALCULUS, new TagQuestionsAnsweredBadgePolicy(questionManager,
+                gameManager, contentManager, contentIndex, "calculus"));
+        badgePolicies.put(Badge.QUESTIONS_TOPIC_ALGEBRA, new TagQuestionsAnsweredBadgePolicy(questionManager,
+                gameManager, contentManager, contentIndex, "algebra"));
+        badgePolicies.put(Badge.QUESTIONS_TOPIC_FUNCTIONS, new TagQuestionsAnsweredBadgePolicy(questionManager,
+                gameManager, contentManager, contentIndex, "functions"));
         badgePolicies.put(Badge.QUESTIONS_LEVEL_1, new LevelQuestionsAnsweredBadgePolicy(questionManager,
                 gameManager, contentManager, contentIndex, 1));
         badgePolicies.put(Badge.QUESTIONS_LEVEL_2, new LevelQuestionsAnsweredBadgePolicy(questionManager,

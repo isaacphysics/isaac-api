@@ -12,7 +12,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
  *
  * Created by du220 on 15/05/2018.
  */
-public class TopicQuestionsAnsweredBadgePolicy extends AbstractQuestionsAnsweredBadgePolicy {
+public class TagQuestionsAnsweredBadgePolicy extends AbstractQuestionsAnsweredBadgePolicy {
 
     private final IContentManager contentManager;
     private final String contentIndex;
@@ -27,9 +27,9 @@ public class TopicQuestionsAnsweredBadgePolicy extends AbstractQuestionsAnswered
      * @param contentIndex to obtain relevant content version
      * @param topic instance-specific topic filter
      */
-    public TopicQuestionsAnsweredBadgePolicy(QuestionManager questionManager, GameManager gameManager,
-                                             IContentManager contentManager, String contentIndex,
-                                             String topic) {
+    public TagQuestionsAnsweredBadgePolicy(QuestionManager questionManager, GameManager gameManager,
+                                           IContentManager contentManager, String contentIndex,
+                                           String topic) {
         super(questionManager, gameManager);
         this.contentManager = contentManager;
         this.contentIndex = contentIndex;
