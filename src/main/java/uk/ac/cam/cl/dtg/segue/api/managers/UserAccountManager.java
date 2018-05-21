@@ -786,6 +786,7 @@ public class UserAccountManager implements IUserAccountManager {
         RegisteredUser userToSave = new RegisteredUser();
         mergeMapper.map(existingUser, userToSave);
         mergeMapper.map(userDTOContainingUpdates, userToSave);
+        userToSave.setEmailVerificationStatus(existingUser.getEmailVerificationStatus());
         userToSave.setRegistrationDate(existingUser.getRegistrationDate());
         userToSave.setLastUpdated(new Date());
 
@@ -802,11 +803,11 @@ public class UserAccountManager implements IUserAccountManager {
         if (!existingUser.getEmail().equals(updatedUser.getEmail())) {
             try {
                 String newEmail = updatedUser.getEmail();
-                authenticator.createEmailVerificationTokenForUser(existingUser, newEmail);
+                authenticator.createEmailVerificationTokenForUser(userToSave, newEmail);
 
-                RegisteredUserDTO userDTO = this.getUserDTOById(existingUser.getId());
-                String emailVerificationToken = existingUser.getEmailVerificationToken();
-                this.sendVerificationEmailsForNewEmail(userDTO, newEmail, emailVerificationToken);
+                RegisteredUserDTO userDTO = this.getUserDTOById(userToSave.getId());
+                String emailVerificationToken = userToSave.getEmailVerificationToken();
+                this.sendVerificationEmailsForEmailChange(userDTO, newEmail, emailVerificationToken);
 
             } catch (ContentManagerException | NoUserException e) {
                 log.error("ContentManagerException during sendEmailVerificationChange " + e.getMessage());
@@ -814,12 +815,12 @@ public class UserAccountManager implements IUserAccountManager {
                 log.error("Creation of email verification token failed: " + e1.getMessage());
             }
 
-            // Before save we should validate the user for mandatory fields.
-            if (!this.isUserValid(userToSave)) {
-                throw new MissingRequiredFieldException("The user provided is missing a mandatory field");
-            }
-
             userToSave.setEmail(existingUser.getEmail());
+        }
+
+        // Before save we should validate the user for mandatory fields.
+        if (!this.isUserValid(userToSave)) {
+            throw new MissingRequiredFieldException("The user provided is missing a mandatory field");
         }
 
         // save the user
@@ -952,7 +953,7 @@ public class UserAccountManager implements IUserAccountManager {
      * 
      * @param request
      *            - so we can look up the registered user object.
-     * @param urlEmail
+     * @param email
      *            - The email the user wants to verify.
      * @throws NoSuchAlgorithmException
      *             - if the configured algorithm is not valid.
@@ -963,50 +964,36 @@ public class UserAccountManager implements IUserAccountManager {
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
      */
-    public final void emailVerificationRequest(final HttpServletRequest request, final String urlEmail)
+    public final void emailVerificationRequest(final HttpServletRequest request, final String email)
             throws InvalidKeySpecException, NoSuchAlgorithmException, CommunicationException, SegueDatabaseException {
 
-        RegisteredUser user = this.findUserByEmail(urlEmail);
-        if (null == user) {
-            try {
-                RegisteredUserDTO userDTO = getCurrentRegisteredUser(request);
-                user = this.findUserById(userDTO.getId());
-            } catch (NoUserLoggedInException e) {
-                log.error(String.format("Verification requested for email:%s where email does not exist "
-                        + "and user not logged in!", urlEmail));
-            }
-        }
-
-        if (user == null) {
-            // Email address does not exist in the DB
-            // Fail silently
-            return;
-        }
-
-        // TODO: Email verification stuff does not belong in the password authenticator... It should be moved.
-        // Generate token
-        IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
-                .get(AuthenticationProvider.SEGUE);
-
-        user = authenticator.createEmailVerificationTokenForUser(user, urlEmail);
-
-        // Save user object
-        this.database.createOrUpdateUser(user);
-        String emailVerificationToken = user.getEmailVerificationToken();
-
         try {
-            RegisteredUserDTO userDTO = this.getUserDTOById(user.getId());
-            if (urlEmail.equals(user.getEmail())) {
+            RegisteredUserDTO userDTO = getCurrentRegisteredUser(request);
+            RegisteredUser user = this.findUserById(userDTO.getId());
+
+            // TODO: Email verification stuff does not belong in the password authenticator... It should be moved.
+            // Generate token
+            IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
+                    .get(AuthenticationProvider.SEGUE);
+            user = authenticator.createEmailVerificationTokenForUser(user, email);
+
+            // Save user object
+            this.database.createOrUpdateUser(user);
+
+            String emailVerificationToken = user.getEmailVerificationToken();
+
+            if (email.equals(user.getEmail())) {
                 this.sendVerificationEmailForCurrentEmail(userDTO, emailVerificationToken);
             } else {
-                this.sendVerificationEmailsForNewEmail(userDTO, urlEmail, emailVerificationToken);
+                this.sendVerificationEmailsForEmailChange(userDTO, email, emailVerificationToken);
             }
 
+        } catch (NoUserLoggedInException e) {
+            log.error(String.format("Verification requested for email:%s where email does not exist "
+                    + "and user not logged in!", email));
         } catch (ContentManagerException e) {
             log.debug("ContentManagerException " + e.getMessage());
-        } catch (NoUserException e) {
-            log.debug("NoUserException " + e.getMessage());
-		}
+        }
     }
 
     /**
@@ -1029,12 +1016,9 @@ public class UserAccountManager implements IUserAccountManager {
 
     /**
      * processEmailVerification.
-     * @param userid
+     * @param userId
      *            - the user id
      *
-     * @param email
-     *            - the email address - may be new or the same
-     * 
      * @param token
      *            - token used to verify email address
      * 
@@ -1044,39 +1028,37 @@ public class UserAccountManager implements IUserAccountManager {
      * @throws InvalidTokenException - if something is wrong with the token provided
      * @throws NoUserException - if the user does not exist.
      */
-    public RegisteredUserDTO processEmailVerification(final Long userid, final String email, final String token) 
+    public RegisteredUserDTO processEmailVerification(final Long userId, final String token)
             throws SegueDatabaseException, InvalidTokenException, NoUserException {
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
                 .get(AuthenticationProvider.SEGUE);
 
-        RegisteredUser user = this.findUserById(userid);
+        RegisteredUser user = this.findUserById(userId);
 
         if (null == user) {
-            log.warn(String.format("Recieved an invalid email token request for (%s)", email));
-            throw new NoUserException("No user found with this email!");
+            log.warn(String.format("Recieved an invalid email token request for (%s)", userId));
+            throw new NoUserException("No user found with this userId!");
         }
 
-        if (!userid.equals(user.getId())) {
-            log.warn(String.format("Recieved an invalid email token request for (%s)" + " - provided bad userid",
-                    email));
+        if (!userId.equals(user.getId())) {
+            log.warn(String.format("Recieved an invalid email token request by (%s) - provided bad userid",
+                    user.getId()));
             throw new InvalidTokenException();
         }
 
         EmailVerificationStatus evStatus = user.getEmailVerificationStatus();
-        if (evStatus != null && evStatus == EmailVerificationStatus.VERIFIED && user.getEmail().equals(email)) {
-            log.warn(String
-                    .format("Recieved a duplicate email verification request for (%s) - already verified", email));
+        if (evStatus != null && evStatus == EmailVerificationStatus.VERIFIED
+                && user.getEmail().equals(user.getEmailToVerify())) {
+            log.warn(String.format("Recieved a duplicate email verification request for (%s) - already verified",
+                    user.getEmail()));
             return this.convertUserDOToUserDTO(user);
         }
 
-        if (authenticator.isValidEmailVerificationToken(user, email, token)) {
+        if (authenticator.isValidEmailVerificationToken(user, token)) {
             user.setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
+            user.setEmail(user.getEmailToVerify());
             user.setEmailVerificationToken(null);
-
-            // Update the email address if different
-            if (!user.getEmail().equals(email)) {
-                user.setEmail(email);
-            }
+            user.setEmailToVerify(null);
 
             // Save user
             RegisteredUser createOrUpdateUser = this.database.createOrUpdateUser(user);
@@ -1084,7 +1066,7 @@ public class UserAccountManager implements IUserAccountManager {
                     createOrUpdateUser.getId()));
             return this.convertUserDOToUserDTO(createOrUpdateUser);
         } else {
-            log.warn(String.format("Recieved an invalid email verification token for (%s) - invalid token", email));
+            log.warn(String.format("Recieved an invalid email verification token for (%s) - invalid token", userId));
             throw new InvalidTokenException();
         }
     }
@@ -1164,12 +1146,13 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     /**
-     * @param userDTO
-     * @param emailVerificationToken
-     * @throws ContentManagerException
-     * @throws SegueDatabaseException
+     * Sends verification email for the user's current email address. The destination will match the userDTO's email.
+     * @param userDTO - user to which the email is to be sent.
+     * @param emailVerificationToken - the generated email verification token.
+     * @throws ContentManagerException - if the email template does not exist.
+     * @throws SegueDatabaseException - if there is a database exception during the processing of the email.
      */
-    private final void sendVerificationEmailForCurrentEmail(final RegisteredUserDTO userDTO,
+    private void sendVerificationEmailForCurrentEmail(final RegisteredUserDTO userDTO,
                                                             final String emailVerificationToken)
             throws ContentManagerException, SegueDatabaseException {
 
@@ -1184,13 +1167,15 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     /**
-     * @param userDTO
-     * @param newEmail
-     * @param newEmailToken
-     * @throws ContentManagerException
-     * @throws SegueDatabaseException
+     * Sends a notice email for email change to the user's current email address and then creates a copy of the user
+     * with the new email to send to the sendVerificationEmailForCurrentEmail method.
+     * @param userDTO - initial user where the notice of change is to be sent.
+     * @param newEmail - the new email which has been requested to change to.
+     * @param newEmailToken - the generated HMAC token for the new email.
+     * @throws ContentManagerException - if the email template does not exist.
+     * @throws SegueDatabaseException - if there is a database exception during the processing of the email.
      */
-    private final void sendVerificationEmailsForNewEmail(final RegisteredUserDTO userDTO,
+    private void sendVerificationEmailsForEmailChange(final RegisteredUserDTO userDTO,
                                                          final String newEmail,
                                                          final String newEmailToken)
             throws ContentManagerException, SegueDatabaseException {
@@ -1511,13 +1496,10 @@ public class UserAccountManager implements IUserAccountManager {
      * @return
      */
     private String generateEmailVerificationURL(final RegisteredUserDTO userDTO, final String emailVerificationToken) {
-        final int TRUNCATED_TOKEN_LENGTH = 5;
-
         List<NameValuePair> urlParamPairs = Lists.newArrayList();
         urlParamPairs.add(new BasicNameValuePair("userid", userDTO.getId().toString()));
-        urlParamPairs.add(new BasicNameValuePair("email", userDTO.getEmail().toString()));
-        urlParamPairs.add(new BasicNameValuePair("token", emailVerificationToken.substring(0,
-                TRUNCATED_TOKEN_LENGTH)));
+        urlParamPairs.add(
+                new BasicNameValuePair("token", emailVerificationToken.substring(0, Constants.TRUNCATED_TOKEN_LENGTH)));
         String urlParams = URLEncodedUtils.format(urlParamPairs, "UTF-8");
 
         return String.format("https://%s/verifyemail?%s", properties.getProperty(HOST_NAME), urlParams);

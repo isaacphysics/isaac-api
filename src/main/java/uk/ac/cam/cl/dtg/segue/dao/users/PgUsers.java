@@ -458,8 +458,8 @@ public class PgUsers implements IUserDataManager {
                             "INSERT INTO users(family_name, given_name, email, role, "
                             + "date_of_birth, gender, registration_date, school_id, "
                             + "school_other, last_updated, email_verification_status, "
-                            + "last_seen, default_level, email_verification_token) "
-                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
+                            + "last_seen, default_level, email_verification_token, email_to_verify) "
+                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
                             Statement.RETURN_GENERATED_KEYS);
             // TODO: Change this to annotations or something to rely exclusively on the pojo.
             setValueHelper(pst, 1, userToCreate.getFamilyName());
@@ -476,6 +476,7 @@ public class PgUsers implements IUserDataManager {
             setValueHelper(pst, 12, userToCreate.getLastSeen());
             setValueHelper(pst, 13, userToCreate.getDefaultLevel());
             setValueHelper(pst, 14, userToCreate.getEmailVerificationToken());
+            setValueHelper(pst, 15, userToCreate.getEmailToVerify());
             
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save user.");
@@ -514,7 +515,7 @@ public class PgUsers implements IUserDataManager {
                             "UPDATE users SET family_name = ?, given_name = ?, email = ?, role = ?, "
                             + "date_of_birth = ?, gender = ?, registration_date = ?, school_id = ?, "
                             + "school_other = ?, last_updated = ?, email_verification_status = ?, "
-                            + "last_seen = ?, default_level = ?, email_verification_token = ? "
+                            + "last_seen = ?, default_level = ?, email_verification_token = ?, email_to_verify = ? "
                             + "WHERE id = ?;");
             
             setValueHelper(pst, 1, userToCreate.getFamilyName());
@@ -531,7 +532,8 @@ public class PgUsers implements IUserDataManager {
             setValueHelper(pst, 12, userToCreate.getLastSeen());
             setValueHelper(pst, 13, userToCreate.getDefaultLevel());
             setValueHelper(pst, 14, userToCreate.getEmailVerificationToken());
-            setValueHelper(pst, 15, userToCreate.getId());
+            setValueHelper(pst, 15, userToCreate.getEmailToVerify());
+            setValueHelper(pst, 16, userToCreate.getId());
             
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save user.");
@@ -580,6 +582,7 @@ public class PgUsers implements IUserDataManager {
         u.setLastUpdated(results.getTimestamp("last_updated"));
         u.setLastSeen(results.getTimestamp("last_seen"));
         u.setDefaultLevel(results.getInt("default_level"));
+        u.setEmailToVerify(results.getString("email_to_verify"));
         u.setEmailVerificationToken(results.getString("email_verification_token"));
         u.setEmailVerificationStatus(results.getString("email_verification_status") != null ? EmailVerificationStatus
                 .valueOf(results.getString("email_verification_status")) : null);

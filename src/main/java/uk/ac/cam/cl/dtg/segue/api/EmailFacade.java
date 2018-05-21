@@ -71,6 +71,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.EmailTemplateDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
@@ -279,28 +280,25 @@ public class EmailFacade extends AbstractSegueFacade {
     }
     
     /**
-     * End point that verifies whether or not a validation token is valid. If the email address given is not the same as
-     * the one we have, change it.
+     * End point that verifies whether or not a validation token is valid.
      * 
-     * @param userid
+     * @param userId
      *            - the user's id.
-     * @param newemail
-     *            - the email they want to verify - could be new
      * @param token
      *            - A password reset token
      * @return Success if the token is valid, otherwise returns not found
      */
     @GET
-    @Path("/users/verifyemail/{userid}/{newemail}/{token}")
+    @Path("/users/verifyemail/{userid}/{token}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    public Response validateEmailVerificationRequest(@PathParam("userid") final Long userid,
-            @PathParam("newemail") final String newemail, @PathParam("token") final String token) {
+    public Response validateEmailVerificationRequest(@PathParam("userid") final Long userId,
+                                                     @PathParam("token") final String token) {
 
         try {
-            misuseMonitor.notifyEvent(newemail, EmailVerificationMisuseHandler.class.toString());
-            userManager.processEmailVerification(userid, newemail, token);
+            misuseMonitor.notifyEvent(userId.toString(), EmailVerificationMisuseHandler.class.toString());
+            userManager.processEmailVerification(userId, token);
 
             // assume that if there are no exceptions that it worked.
             return Response.ok().build();
@@ -335,9 +333,8 @@ public class EmailFacade extends AbstractSegueFacade {
     @GZIP
     public Response generateEmailVerificationToken(@Context final HttpServletRequest request,
                                                    final Map<String, String> payload) {
-        final String emailField = "email";
         try {
-            String email = payload.get(emailField);
+            String email = payload.get("email");
             if (email == null || email.isEmpty()) {
                 throw new MissingRequiredFieldException("No email provided with request");
             }
@@ -357,15 +354,15 @@ public class EmailFacade extends AbstractSegueFacade {
                     "Error sending verification message.", e);
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
-        } catch (MissingRequiredFieldException e) {
+        } catch (MissingRequiredFieldException | NumberFormatException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage());
-            log.error(String.format("Invalid email sent to /users/verifyemail endpoint: (%s)", e.getMessage()));
+            log.error(String.format("Invalid parameters sent to /users/verifyemail endpoint: (%s)", e.getMessage()));
             return error.toResponse();
         } catch (SegueResourceMisuseException e) {
             String message = "You have exceeded the number of requests allowed for this endpoint. "
                     + "Please try again later.";
             log.error(String.format("VerifyEmail request endpoint has reached hard limit (%s)",
-                    payload.get(emailField)));
+                    payload.get("email")));
             return SegueErrorResponse.getRateThrottledResponse(message);
         }
     }
