@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupPersistenceManager;
@@ -420,9 +421,18 @@ public class GroupManager {
      * @param group
      *            to convert
      * @return groupDTO
+     * @throws SegueDatabaseException
+     *            - if there is a database problem.
      */
-    private UserGroupDTO convertGroupToDTO(final UserGroup group) throws SegueDatabaseException{
+    private UserGroupDTO convertGroupToDTO(final UserGroup group) throws SegueDatabaseException {
         UserGroupDTO dtoToReturn = dtoMapper.map(group, UserGroupDTO.class);
+
+        try {
+            dtoToReturn.setOwnerSummary(userManager.convertToDetailedUserSummaryObject(userManager.getUserDTOById(group.getOwnerId())));
+        } catch (NoUserException e) {
+            // This should never happen!
+            log.error(String.format("Group (%s) has owner ID (%s) that no longer exists!", group.getId(), group.getOwnerId()));
+        }
 
         Set<DetailedUserSummaryDTO> setOfUsers = Sets.newHashSet();
         Set<Long> additionalManagers = this.groupDatabase.getAdditionalManagerSetByGroupId(group.getId());
