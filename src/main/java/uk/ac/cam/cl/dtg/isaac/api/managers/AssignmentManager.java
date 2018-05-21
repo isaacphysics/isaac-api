@@ -329,7 +329,7 @@ public class AssignmentManager implements IGroupObserver {
                 try {
                     // make sure the user has a reason to see the assignment still
                     UserGroupDTO group = groupManager.getGroupById(assignment.getGroupId());
-                    if (group.getOwnerId().equals(user.getId()) || GroupManager.isInAdditionalManagerList(group, user.getId())) {
+                    if (GroupManager.isOwnerOrAdditionalManager(group, user.getId())) {
                         groups.add(group);
                     }
                 } catch (ResourceNotFoundException e) {

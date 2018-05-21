@@ -397,15 +397,23 @@ public class GroupManager {
 
 
     /**
-     * Helper funcion to check if a user id is in the additional managers list of the group dto.
+     * Helper function to check if a user id is in the additional managers list of the group dto.
      * @param group - dto
      * @param userIdToCheck - user id to verify
      * @return true if they are in the list false if not.
      */
-    public static boolean isInAdditionalManagerList(UserGroupDTO group, Long userIdToCheck) {
-        return group.getAdditionalManagers().stream()
-                .map(DetailedUserSummaryDTO::getId)
-                .anyMatch(userIdToCheck::equals);
+    public static boolean isInAdditionalManagerList(final UserGroupDTO group, final Long userIdToCheck) {
+        return group.getAdditionalManagersUserIds().contains(userIdToCheck);
+    }
+
+    /**
+     * Helper function to check if a user has general permission to access a group.
+     * @param group - dto
+     * @param userIdToCheck - user id to verify
+     * @return whether the user is an owner or an additional manager.
+     */
+    public static boolean isOwnerOrAdditionalManager(final UserGroupDTO group, final Long userIdToCheck) {
+        return group.getOwnerId().equals(userIdToCheck) || isInAdditionalManagerList(group, userIdToCheck);
     }
 
     /**
