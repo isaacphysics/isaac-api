@@ -41,6 +41,7 @@ public class UserGroupDTO {
     private Date created;
     private String token;
     private boolean archived;
+    private DetailedUserSummaryDTO ownerSummary;
     private Set<DetailedUserSummaryDTO> additionalManagers;
 
     /**
@@ -171,6 +172,62 @@ public class UserGroupDTO {
         this.token = token;
     }
 
+    /**
+     * Gets the archive status.
+     *
+     * @return whether the group is archived
+     */
+    public boolean isArchived() {
+        return archived;
+    }
+
+    /**
+     * Sets the archived flag.
+     *
+     * @param archived
+     *            the archive status to set
+     */
+    public void setArchived(final boolean archived) {
+        this.archived = archived;
+    }
+
+    /**
+     * Gets the owner summary object.
+     *
+     * @return the owner summary object
+     */
+    public DetailedUserSummaryDTO getOwnerSummary() {
+        return ownerSummary;
+    }
+
+    /**
+     * Sets the owner summary object.
+     *
+     * @param ownerSummary
+     *            the detailed owner summary object
+     */
+    public void setOwnerSummary(final DetailedUserSummaryDTO ownerSummary) {
+        this.ownerSummary = ownerSummary;
+    }
+
+    /**
+     * Get the list of other users who should be able to view this group's data subject to individual permissions being granted.
+     *
+     * @return list of user ids
+     */
+    public Set<DetailedUserSummaryDTO> getAdditionalManagers() {
+        return additionalManagers;
+    }
+
+    /**
+     * Set the list of other users who should be able to view this group's data subject to individual permissions being granted.
+     *
+     * @param additionalManagers - those users who should have access to this group.
+     */
+    public void setAdditionalManagers(Set<DetailedUserSummaryDTO> additionalManagers) {
+        this.additionalManagers = additionalManagers;
+    }
+
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -204,32 +261,6 @@ public class UserGroupDTO {
     @Override
     public String toString() {
         return String.format("UserGroupDTO [id=%s owner_id=%s name=%s additionalManagers=%s]", id, ownerId, groupName, additionalManagers);
-    }
-  
-    public boolean isArchived() {
-        return archived;
-    }
-
-    public void setArchived(boolean archived) {
-        this.archived = archived;
-    }
-
-    /**
-     * Get the list of other users who should be able to view this group's data subject to individual permissions being granted.
-     *
-     * @return list of user ids
-     */
-    public Set<DetailedUserSummaryDTO> getAdditionalManagers() {
-        return additionalManagers;
-    }
-
-    /**
-     * Set the list of other users who should be able to view this group's data subject to individual permissions being granted.
-     *
-     * @param additionalManagers - those users who should have access to this group.
-     */
-    public void setAdditionalManagers(Set<DetailedUserSummaryDTO> additionalManagers) {
-        this.additionalManagers = additionalManagers;
     }
 
     /**
