@@ -287,7 +287,7 @@ public class UserAccountManager implements IUserAccountManager {
 
             return this.convertUserDOToUserDTO(getCurrentRegisteredUserDO(request));
         } else {
-            if (this.findUserByEmail(providerUserDO.getEmail()) != null) {
+            if (providerUserDO.getEmail() != null && !providerUserDO.getEmail().isEmpty() && this.findUserByEmail(providerUserDO.getEmail()) != null) {
                 log.warn("A user tried to use unknown provider '" + capitalizeFully(provider)
                         + "' to log in to an account with matching email (" + providerUserDO.getEmail() + ").");
                 throw new DuplicateAccountException("You do not use " + capitalizeFully(provider) + " to log on to Isaac."
