@@ -783,7 +783,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             }
 
             this.gameManager.unlinkUserToGameboard(gameboardDTO, user);
-            getLogManager().logEvent(user, request, DELETE_BOARD_FROM_PROFILE, gameboardDTO.getId());
+            getLogManager().logEvent(user, request, DELETE_BOARD_FROM_PROFILE,
+                    ImmutableMap.of(GAMEBOARD_ID_FKEY, gameboardDTO.getId()));
 
         } catch (SegueDatabaseException e) {
             String message = "Error whilst trying to delete a gameboard.";

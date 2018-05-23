@@ -37,42 +37,6 @@ services:
     ports:
       - 9108:9108
 
-  kafka:
-    network_mode: bridge
-    container_name: kafka
-    image: ucamcldtg/kafka-standalone
-    links:
-      - zookeeper:zookeeper
-    build:
-      context: ./kafka
-      dockerfile: Dockerfile-kafka
-    volumes:
-      - ./kafka/server.properties.local:/opt/kafka/config/server.properties:ro
-    depends_on:
-      - zookeeper
-    ports:
-      - "9092:9092"
-  kafka-exporter:
-    image: danielqsj/kafka-exporter
-    container_name: kafka-exporter
-    command:
-     - '--web.listen-address=:9422'
-    network_mode: bridge
-    links:
-      - kafka:kafka
-    ports:
-      - 9422:9422
-
-  zookeeper:
-    network_mode: bridge
-    container_name: zookeeper
-    image: ucamcldtg/zookeeper-standalone
-    build:
-      context: ./kafka
-      dockerfile: Dockerfile-zookeeper
-    volumes:
-      - ./kafka/zoo.cfg:/opt/zookeeper/conf/zoo.cfg:ro
-
   postgres:
     network_mode: bridge
     container_name: postgres

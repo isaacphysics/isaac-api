@@ -182,7 +182,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     }
 
     /**
-     * End point that allows the user to logout - i.e. destroy our cookie.
+     * End point that allows the user to remove a third party auth provider.
      * 
      * @param request
      *            - request so we can authenticate the user.

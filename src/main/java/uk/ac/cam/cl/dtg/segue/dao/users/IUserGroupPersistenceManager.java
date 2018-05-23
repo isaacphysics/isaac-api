@@ -17,9 +17,12 @@ package uk.ac.cam.cl.dtg.segue.dao.users;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
+
+import javax.annotation.Nullable;
 
 /**
  * Interface for data manager classes that deal with group data.
@@ -150,4 +153,55 @@ public interface IUserGroupPersistenceManager {
      */
     Long getGroupCount() throws SegueDatabaseException;
 
+    /**
+     * Get the list of Id's representing the users who currently are listed as additional managers for a group.
+     *
+     * @param groupId - the group id of interest
+     * @return list of user ids.
+     * @throws SegueDatabaseException
+     */
+    Set<Long> getAdditionalManagerSetByGroupId(final Long groupId) throws SegueDatabaseException;
+
+    /**
+     * Get groups by additional manager id.
+     *
+     * @param additionalManagerId
+     *            the additional Manager Id to find all groups for.
+     * @throws SegueDatabaseException
+     *             - if we cannot contact the database.
+     */
+    List<UserGroup> getGroupsByAdditionalManager(final Long additionalManagerId) throws SegueDatabaseException;
+
+    /**
+     * Get groups by additional manager id
+     *
+     * @param additionalManagerId
+     *            the owner Id to find all groups for.
+     * @param archivedGroupsOnly
+     *            if true then only archived groups will be returned,
+     *            if false then only unarchived groups will be returned.
+     *            if null then we will return all groups.
+     * @return List of groups belonging to owner user.
+     * @throws SegueDatabaseException
+     *             - if we cannot contact the database.
+     */
+    List<UserGroup> getGroupsByAdditionalManager(final Long additionalManagerId, @Nullable final Boolean archivedGroupsOnly) throws SegueDatabaseException;
+
+    /**
+     * Add a user to the additional manager list for a group.
+     *
+     * @param userId - user Id to add
+     * @param groupId - group id to be affected
+     * @throws SegueDatabaseException - if we cannot contact the database.
+     */
+    void addUserAdditionalManagerList(final Long userId, final Long groupId) throws SegueDatabaseException;
+
+    /**
+     * Remove a user to the additional manager list for a group.
+     *
+     * @param userId - user Id to add
+     * @param groupId - group id to be affected
+     * @throws SegueDatabaseException - if we cannot contact the database.
+     */
+    void removeUserFromAdditionalManagerList(final Long userId, final Long groupId) throws SegueDatabaseException;
 }

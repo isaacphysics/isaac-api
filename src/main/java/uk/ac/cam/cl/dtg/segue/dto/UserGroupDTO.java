@@ -16,12 +16,18 @@
 package uk.ac.cam.cl.dtg.segue.dto;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.google.api.client.util.Sets;
 import org.mongojack.ObjectId;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import uk.ac.cam.cl.dtg.segue.dto.users.DetailedUserSummaryDTO;
 
 /**
  * UserGroupDTO - this object represents a group or label assigned to users who have been placed into a group.
@@ -35,12 +41,14 @@ public class UserGroupDTO {
     private Date created;
     private String token;
     private boolean archived;
+    private DetailedUserSummaryDTO ownerSummary;
+    private Set<DetailedUserSummaryDTO> additionalManagers;
 
     /**
      * Default Constructor.
      */
     public UserGroupDTO() {
-
+        this.additionalManagers = Sets.newHashSet();
     }
 
     /**
@@ -62,6 +70,7 @@ public class UserGroupDTO {
         this.ownerId = ownerId;
         this.created = created;
         this.archived = archived;
+        this.additionalManagers = Sets.newHashSet();
     }
 
     /**
@@ -163,6 +172,62 @@ public class UserGroupDTO {
         this.token = token;
     }
 
+    /**
+     * Gets the archive status.
+     *
+     * @return whether the group is archived
+     */
+    public boolean isArchived() {
+        return archived;
+    }
+
+    /**
+     * Sets the archived flag.
+     *
+     * @param archived
+     *            the archive status to set
+     */
+    public void setArchived(final boolean archived) {
+        this.archived = archived;
+    }
+
+    /**
+     * Gets the owner summary object.
+     *
+     * @return the owner summary object
+     */
+    public DetailedUserSummaryDTO getOwnerSummary() {
+        return ownerSummary;
+    }
+
+    /**
+     * Sets the owner summary object.
+     *
+     * @param ownerSummary
+     *            the detailed owner summary object
+     */
+    public void setOwnerSummary(final DetailedUserSummaryDTO ownerSummary) {
+        this.ownerSummary = ownerSummary;
+    }
+
+    /**
+     * Get the list of other users who should be able to view this group's data subject to individual permissions being granted.
+     *
+     * @return list of user ids
+     */
+    public Set<DetailedUserSummaryDTO> getAdditionalManagers() {
+        return additionalManagers;
+    }
+
+    /**
+     * Set the list of other users who should be able to view this group's data subject to individual permissions being granted.
+     *
+     * @param additionalManagers - those users who should have access to this group.
+     */
+    public void setAdditionalManagers(Set<DetailedUserSummaryDTO> additionalManagers) {
+        this.additionalManagers = additionalManagers;
+    }
+
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -195,14 +260,15 @@ public class UserGroupDTO {
   
     @Override
     public String toString() {
-        return String.format("UserGroupDTO [id=%s owner_id=%s name=%s]", id, ownerId, groupName);
-    }
-  
-    public boolean isArchived() {
-        return archived;
+        return String.format("UserGroupDTO [id=%s owner_id=%s name=%s additionalManagers=%s]", id, ownerId, groupName, additionalManagers);
     }
 
-    public void setArchived(boolean archived) {
-        this.archived = archived;
+    /**
+     * Get the set of user ids who have access
+     * @return set of ids
+     */
+    @JsonIgnore
+    public Set<Long> getAdditionalManagersUserIds() {
+        return additionalManagers.stream().map(DetailedUserSummaryDTO::getId).collect(Collectors.toSet());
     }
 }

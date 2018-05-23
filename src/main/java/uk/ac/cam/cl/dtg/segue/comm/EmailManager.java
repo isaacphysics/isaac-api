@@ -69,7 +69,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
     private static final Logger log = LoggerFactory.getLogger(EmailManager.class);
     private static final int MINIMUM_TAG_LENGTH = 4;
-    private static final DateFormat FULL_DATE_FORMAT = new SimpleDateFormat("EEE d MMM yyyy h:mm aaa z");
+    private static final DateFormat FULL_DATE_FORMAT = new SimpleDateFormat("EEE d MMM yyyy h:mm aaa");
 
     /**
      * @param communicator

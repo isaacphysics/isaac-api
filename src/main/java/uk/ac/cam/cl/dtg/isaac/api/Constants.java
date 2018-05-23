@@ -95,7 +95,7 @@ public final class Constants {
     public static final String VIEW_QUESTION = "VIEW_QUESTION";
     public static final String QUESTION_ID_LOG_FIELDNAME = "questionId";
     public static final String ADD_BOARD_TO_PROFILE = "ADD_BOARD_TO_PROFILE";
-    public static final String DELETE_BOARD_FROM_PROFILE = "ADD_BOARD_TO_PROFILE";
+    public static final String DELETE_BOARD_FROM_PROFILE = "DELETE_BOARD_FROM_PROFILE";
     public static final String GLOBAL_SITE_SEARCH = "GLOBAL_SITE_SEARCH";
     public static final String VIEW_CONCEPT = "VIEW_CONCEPT";
     public static final String CONCEPT_ID_LOG_FIELDNAME = "conceptId";

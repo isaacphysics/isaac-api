@@ -49,14 +49,9 @@ import uk.ac.cam.cl.dtg.segue.dao.associations.PgAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
-import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.AnonymousEventsStreamsApplication;
-import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.UserStatisticsStreamsApplication;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
-import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.KafkaTopicManager;
-import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.SiteStatisticsStreamsApplication;
 import uk.ac.cam.cl.dtg.segue.dao.users.*;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
-import uk.ac.cam.cl.dtg.segue.database.KafkaStreamsProducer;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dos.*;
 import uk.ac.cam.cl.dtg.segue.quiz.IQuestionAttemptManager;
@@ -94,7 +89,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     
     // Singletons - we only ever want there to be one instance of each of these.
     private static PostgresSqlDb postgresDB;
-    private static KafkaStreamsProducer kafkaProducer;
     private static ContentMapper mapper = null;
     private static GitContentManager contentManager = null;
     private static Client elasticSearchClient = null;
@@ -105,18 +99,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static EmailManager emailCommunicationQueue = null;
     private static IMisuseMonitor misuseMonitor = null;
     private static StatisticsManager statsManager = null;
-    private static KafkaStatisticsManager kafkaStatsManager = null;
-    private static KafkaTopicManager kafkaTopicManager = null;
     //private static IStatisticsManager statsManager = null;
 	private static GroupManager groupManager = null;
 	private static IUserAlerts userAlerts = null;
 	private static MetricsExporter metricsExporter = null;
 	private static IUserStreaksManager userStreaksManager = null;
-
-	// kafka streams applications
-    private static SiteStatisticsStreamsApplication statisticsStreamsApplication;
-    private static AnonymousEventsStreamsApplication anonEventsStreamsApplication;
-    private static UserStatisticsStreamsApplication userStatsStreamsApplication;
 
     private static Collection<Class<? extends ServletContextListener>> contextListeners;
     private static Map<String, Reflections> reflections = com.google.common.collect.Maps.newHashMap();
@@ -191,10 +178,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         this.bindConstantToProperty(Constants.POSTGRES_DB_USER, globalProperties);
         this.bindConstantToProperty(Constants.POSTGRES_DB_PASSWORD, globalProperties);
 
-        // Kafka
-        this.bindConstantToProperty(Constants.KAFKA_HOSTNAME, globalProperties);
-        this.bindConstantToProperty(Constants.KAFKA_PORT, globalProperties);
-
         // GitDb
         bind(GitDb.class).toInstance(
                 new GitDb(globalProperties.getProperty(Constants.LOCAL_GIT_DB), globalProperties
@@ -258,8 +241,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         
         bind(PostCodeLocationResolver.class).to(PostCodeIOLocationResolver.class);
 
-        //bind(IUserDataManager.class).to(PgUsers.class);
-        bind(IUserDataManager.class).to(KafkaUsers.class);
+        bind(IUserDataManager.class).to(PgUsers.class);
 
         bind(IPasswordDataManager.class).to(PgPasswordDataManager.class);
 
@@ -269,7 +251,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
         bind(IUserAlerts.class).to(PgUserAlerts.class);
 
-        bind(IStatisticsManager.class).to(KafkaStatisticsManager.class);
+        bind(IStatisticsManager.class).to(StatisticsManager.class);
     }
 
     /**
@@ -379,10 +361,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     private static ILogManager getLogManager(final PostgresSqlDb database,
-                                             @Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled, final LocationManager lhm,
-                                             @Named(Constants.KAFKA_HOSTNAME) final String kafkaHost,
-                                             @Named(Constants.KAFKA_PORT) final String kafkaPort,
-                                             final KafkaStreamsProducer kafkaProducer) {
+                                             @Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled,
+                                             final LocationManager lhm) {
 
         if (null == logManager) {
             //logManager = new MongoLogManager(database, new ObjectMapper(), loggingEnabled, lhm);
@@ -392,7 +372,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             //logManager = new PgLogManager(database, objectMapper, loggingEnabled, lhm);
 
             logManager = new PgLogManagerEventListener(new PgLogManager(database, objectMapper, loggingEnabled, lhm));
-            logManager.addListener(new KafkaLoggingManager(kafkaProducer, lhm, objectMapper, kafkaHost, kafkaPort, kafkaTopicManager));
 
             log.info("Creating singleton of LogManager");
             if (loggingEnabled) {
@@ -610,6 +589,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             misuseMonitor.registerHandler(TokenOwnerLookupMisuseHandler.class.toString(),
                     new TokenOwnerLookupMisuseHandler(emailManager, properties));
 
+            misuseMonitor.registerHandler(GroupManagerLookupMisuseHandler.class.toString(),
+                    new GroupManagerLookupMisuseHandler(emailManager, properties));
+
             misuseMonitor.registerHandler(EmailVerificationMisuseHandler.class.toString(),
                     new EmailVerificationMisuseHandler());
 
@@ -697,98 +679,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     @Inject
-    private static KafkaTopicManager getKafkaTopicManager() {
-        if (null == kafkaTopicManager) {
-            kafkaTopicManager = new KafkaTopicManager(globalProperties);
-        }
-        return kafkaTopicManager;
-    }
-
-    /**
-     * Gets the instance of the kafka connection wrapper.
-     *
-     * @param kafkaHost
-     *            - host to connect to.
-     * @param kafkaPort
-     *            - port that the kafka service is running on.
-     * @return KafkaProducer object.
-     */
-    @Provides
-    @Singleton
-    @Inject
-    private static KafkaStreamsProducer getKafkaProducer(@Named(Constants.KAFKA_HOSTNAME) final String kafkaHost,
-                                                         @Named(Constants.KAFKA_PORT) final String kafkaPort,
-                                                         final KafkaTopicManager topicManager) {
-
-        if (null == kafkaProducer) {
-            kafkaProducer = new KafkaStreamsProducer(kafkaHost, kafkaPort, topicManager);
-            log.info("Creating singleton of KafkaProducer.");
-        }
-        return kafkaProducer;
-    }
-
-
-    /**
-     * Gets the instance of the site statistics kafka stream application
-     * @return Site Statistics Stream App object
-     */
-    @Provides
-    @Singleton
-    @Inject
-    private static SiteStatisticsStreamsApplication getSiteStatsStreamsApp(final PropertiesLoader globalProperties,
-                                                                           final KafkaTopicManager kafkaTopicManager,
-                                                                           UserAccountManager userManager) {
-
-        if (null == statisticsStreamsApplication) {
-
-            log.info("Creating singleton of Site Stats Kafka Streams Application.");
-            statisticsStreamsApplication = new SiteStatisticsStreamsApplication(globalProperties, kafkaTopicManager, userManager);
-        }
-        return statisticsStreamsApplication;
-    }
-
-    /**
-     * Gets the instance of the anonymous events kafka stream application
-     * @return Site Statistics Stream App object
-     */
-    @Provides
-    @Singleton
-    @Inject
-    private static AnonymousEventsStreamsApplication getAnonEventsStreamsApp(final PropertiesLoader globalProperties,
-                                                                             final KafkaTopicManager kafkaTopicManager) {
-
-        if (null == anonEventsStreamsApplication) {
-
-            log.info("Creating singleton of Anonymous events Kafka Streams Application.");
-            anonEventsStreamsApplication = new AnonymousEventsStreamsApplication(globalProperties, kafkaTopicManager);
-        }
-        return anonEventsStreamsApplication;
-    }
-
-    /**
-     * Gets the instance of the anonymous events kafka stream application
-     * @return Site Statistics Stream App object
-     */
-    @Provides
-    @Singleton
-    @Inject
-    private static UserStatisticsStreamsApplication getUserStatsEventsStreamsApp(final PropertiesLoader globalProperties,
-                                                                            final KafkaTopicManager kafkaTopicManager,
-                                                                                 final ILogManager logManager) {
-
-        if (null == userStatsStreamsApplication) {
-
-            log.info("Creating singleton of User Stats events Kafka Streams Application.");
-            userStatsStreamsApplication = new UserStatisticsStreamsApplication(globalProperties, kafkaTopicManager,
-                    questionPersistenceManager, userManager, logManager);
-            userStatsStreamsApplication.start();
-        }
-        return userStatsStreamsApplication;
-    }
-
-    @Provides
-    @Singleton
-    @Inject
     private static IUserStreaksManager getUserStreaksManager(final PostgresSqlDb postgresDB) {
 
         if (null == userStreaksManager) {
@@ -835,41 +725,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         }
 
         return statsManager;
-    }
-
-
-    /**
-     * TEMPORARY: This "kafkaesque" stats manager will eventually replace the postgres based manager
-     * Gets the instance of the kafka StatisticsManager. Note: this class is a hack and needs to be refactored.... It is
-     * currently only a singleton as it keeps a cache.
-     *
-     * @param userManager
-     *            - dependency
-     * @param logManager
-     *            - dependency
-     * @param schoolManager
-     *            - dependency
-     * @param groupManager
-     *            - dependency
-     * @param statsManager
-     *            - dependency
-     * @return kafka stats manager
-     */
-    @Provides
-    @Singleton
-    @Inject
-    private static KafkaStatisticsManager getKafkaStatsManager(final UserAccountManager userManager,
-                                                     final ILogManager logManager, final SchoolListReader schoolManager,
-                                                     final GroupManager groupManager, SiteStatisticsStreamsApplication statisticsStreamsApplication,
-                                                     final StatisticsManager statsManager) {
-
-        if (null == kafkaStatsManager) {
-            kafkaStatsManager = new KafkaStatisticsManager(userManager, logManager,
-                    schoolManager, groupManager, statisticsStreamsApplication, statsManager);
-            log.info("Created Singleton of Kafka Statistics Manager");
-        }
-
-        return kafkaStatsManager;
     }
     
     /**

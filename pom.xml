@@ -10,7 +10,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<segue.version>2.4.9-SNAPSHOT</segue.version>
+		<segue.version>2.5.1-SNAPSHOT</segue.version>
 		<resteasy.version>3.0.11.Final</resteasy.version>
 		<powermock.version>1.5.2</powermock.version>
 		<postgresql.version>9.3-1104-jdbc41</postgresql.version>
@@ -310,33 +310,6 @@
 			<groupId>net.sf.biweekly</groupId>
 			<artifactId>biweekly</artifactId>
 			<version>0.6.1</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.kafka</groupId>
-			<artifactId>kafka-clients</artifactId>
-			<version>0.11.0.0</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.kafka</groupId>
-			<artifactId>kafka-streams</artifactId>
-			<version>0.11.0.0</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.kafka</groupId>
-			<artifactId>kafka-streams</artifactId>
-			<version>0.11.0.0</version>
-			<classifier>test</classifier>
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.kafka</groupId>
-			<artifactId>kafka-clients</artifactId>
-			<version>0.11.0.0</version>
-			<classifier>test</classifier>
-			<scope>test</scope>
 		</dependency>
 
 		<!--Jetty JSR-356 Websocket server side dependency -->
