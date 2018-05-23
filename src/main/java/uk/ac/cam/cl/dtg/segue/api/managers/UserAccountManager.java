@@ -127,7 +127,6 @@ public class UserAccountManager implements IUserAccountManager {
             final PropertiesLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
             final MapperFacade dtoMapper, final EmailManager emailQueue, final ILogManager logManager,
             final UserAuthenticationManager userAuthenticationManager) {
-
         this(database, questionDb, properties, providersToRegister, dtoMapper, emailQueue, CacheBuilder.newBuilder()
                 .expireAfterAccess(ANONYMOUS_SESSION_DURATION_IN_MINUTES, TimeUnit.MINUTES).recordStats()
                 .<String, AnonymousUser> build(), logManager, userAuthenticationManager);

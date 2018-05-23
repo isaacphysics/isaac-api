@@ -241,13 +241,6 @@ public class UserAlertsWebSocket implements IAlertListener {
                 )));
     }
 
-
-
-    public static Map<String, Long> getWebsocketCounts() {
-        return ImmutableMap.of("numWebsocketsOpenedOverTime", websocketsOpened, "numWebsocketsClosedOverTime", websocketsClosed);
-
-    }
-
     /**
      * Extracts the segue session information from the given session.
      *
@@ -294,4 +287,5 @@ public class UserAlertsWebSocket implements IAlertListener {
         return ImmutableMap.of("numWebsocketsOpenedOverTime", websocketsOpened, "numWebsocketsClosedOverTime", websocketsClosed);
 
     }
+
 }

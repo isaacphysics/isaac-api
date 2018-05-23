@@ -12,11 +12,6 @@ scrape_configs:
     static_configs:
       - targets: ['postgres-exporter:9187']
 
-  - job_name: 'kafka_exporter'
-    metrics_path: '/metrics'
-    static_configs:
-      - targets: ['kafka-exporter:9422']
-
   - job_name: 'elasticsearch_exporter'
     metrics_path: '/metrics'
     static_configs:
