@@ -142,7 +142,7 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
     public List<AssignmentDTO> getAssignmentsByGroupId(final Long groupId) throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM assignments WHERE group_id = ? SORT BY creation_date");
+            pst = conn.prepareStatement("SELECT * FROM assignments WHERE group_id = ? ORDER BY creation_date");
 
             pst.setLong(1, groupId);
             
