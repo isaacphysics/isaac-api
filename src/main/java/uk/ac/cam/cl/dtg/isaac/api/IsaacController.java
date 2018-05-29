@@ -304,7 +304,7 @@ public class IsaacController extends AbstractIsaacFacade {
                 Map<String, Object> userProgressInformation = statsManager
                         .getUserQuestionInformation(userOfInterestFull);
 
-                // augment details with kafka streams user snapshot data (perhaps one day we will replace the entire endpoint with this call)
+                // augment details with user snapshot data (perhaps one day we will replace the entire endpoint with this call)
                 userProgressInformation.put("userSnapshot", statsManager.getDetailedUserStatistics(userOfInterestFull));
 
                 this.getLogManager().logEvent(user, request, VIEW_USER_PROGRESS,

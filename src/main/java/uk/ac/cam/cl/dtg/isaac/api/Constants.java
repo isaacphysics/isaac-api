@@ -68,6 +68,7 @@ public final class Constants {
             }
         }
     }
+    public static final String FASTTRACK_GAMEBOARD_WHITELIST = "FASTTRACK_GAMEBOARD_WHITELIST";
 
     /**
      * GameboardState Represents the potential states of a gameboard.
@@ -82,8 +83,8 @@ public final class Constants {
 
     public static final String GAMEBOARD_ID_FKEY = "gameboardId";
 
-    public static final String EVENT_DATE_FIELDNAME = "date";
-    public static final String EVENT_ENDDATE_FIELDNAME = "endDate";
+    public static final String DATE_FIELDNAME = "date";
+    public static final String ENDDATE_FIELDNAME = "endDate";
 
     public static final String ALL_BOARDS = "ALL";
     public static final Integer DEFAULT_GAMEBOARDS_RESULTS_LIMIT = 6;
@@ -94,7 +95,7 @@ public final class Constants {
     public static final String VIEW_QUESTION = "VIEW_QUESTION";
     public static final String QUESTION_ID_LOG_FIELDNAME = "questionId";
     public static final String ADD_BOARD_TO_PROFILE = "ADD_BOARD_TO_PROFILE";
-    public static final String DELETE_BOARD_FROM_PROFILE = "ADD_BOARD_TO_PROFILE";
+    public static final String DELETE_BOARD_FROM_PROFILE = "DELETE_BOARD_FROM_PROFILE";
     public static final String GLOBAL_SITE_SEARCH = "GLOBAL_SITE_SEARCH";
     public static final String VIEW_CONCEPT = "VIEW_CONCEPT";
     public static final String CONCEPT_ID_LOG_FIELDNAME = "conceptId";

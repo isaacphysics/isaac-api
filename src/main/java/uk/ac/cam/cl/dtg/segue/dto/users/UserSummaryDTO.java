@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.dto.users;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 
 /**
@@ -28,6 +29,7 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
     private String familyName;
     private Role role;
     private boolean authorisedFullAccess;
+    private EmailVerificationStatus emailVerificationStatus;
 
     /**
      * UserSummaryDTO.
@@ -151,6 +153,24 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
         this.authorisedFullAccess = authorisedFullAccess;
     }
 
+    /**
+     * Gets the emailVerificationStatus.
+     *
+     * @return the emailVerificationStatus
+     */
+    public EmailVerificationStatus getEmailVerificationStatus() {
+        return emailVerificationStatus;
+    }
+
+    /**
+     * Sets the emailVerificationStatus.
+     *
+     * @param emailVerificationStatus
+     *            the emailVerificationStatus to set
+     */
+    public void setEmailVerificationStatus(final EmailVerificationStatus emailVerificationStatus) {
+        this.emailVerificationStatus = emailVerificationStatus;
+    }
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
@@ -160,6 +180,8 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
         builder.append(givenName);
         builder.append(", familyName=");
         builder.append(familyName);
+        builder.append(", emailVerificationStatus=");
+        builder.append(emailVerificationStatus.name());
         builder.append(", authorisedFullAccess=");
         builder.append(authorisedFullAccess);
         builder.append("]");

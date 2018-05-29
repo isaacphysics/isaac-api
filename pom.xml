@@ -10,10 +10,10 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<segue.version>2.4.2-SNAPSHOT</segue.version>
+		<segue.version>2.5.3-SNAPSHOT</segue.version>
 		<resteasy.version>3.0.11.Final</resteasy.version>
 		<powermock.version>1.5.2</powermock.version>
-		<postgresql.version>9.3-1102-jdbc41</postgresql.version>
+		<postgresql.version>9.3-1104-jdbc41</postgresql.version>
 		<swagger-ui-version>2.1.0</swagger-ui-version>
         <jetty.port.api>8080</jetty.port.api>
         <jetty.port.etl>8090</jetty.port.etl>
@@ -53,7 +53,7 @@
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
 			<artifactId>jetty-servlets</artifactId>
-			<version>9.3.12.v20160915</version>
+			<version>9.3.22.v20171030</version>
 		</dependency>
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
@@ -117,12 +117,12 @@
 		<dependency>
 			<groupId>com.google.oauth-client</groupId>
 			<artifactId>google-oauth-client</artifactId>
-			<version>1.17.0-rc</version>
+			<version>1.23.0</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.oauth-client</groupId>
 			<artifactId>google-oauth-client-servlet</artifactId>
-			<version>1.17.0-rc</version>
+			<version>1.23.0</version>
 			<exclusions>
 				<exclusion>
 					<artifactId>servlet-api</artifactId>
@@ -134,12 +134,12 @@
 		<dependency>
 			<groupId>com.google.http-client</groupId>
 			<artifactId>google-http-client-jackson2</artifactId>
-			<version>1.15.0-rc</version>
+			<version>1.23.0</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.apis</groupId>
 			<artifactId>google-api-services-oauth2</artifactId>
-			<version>v2-rev64-1.17.0-rc</version>
+			<version>v2-rev134-1.23.0</version>
 		</dependency>
 
 		<dependency>
@@ -281,45 +281,18 @@
 			<version>0.6.1</version>
 		</dependency>
 
-		<dependency>
-			<groupId>org.apache.kafka</groupId>
-			<artifactId>kafka-clients</artifactId>
-			<version>0.11.0.0</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.kafka</groupId>
-			<artifactId>kafka-streams</artifactId>
-			<version>0.11.0.0</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.kafka</groupId>
-			<artifactId>kafka-streams</artifactId>
-			<version>0.11.0.0</version>
-			<classifier>test</classifier>
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.kafka</groupId>
-			<artifactId>kafka-clients</artifactId>
-			<version>0.11.0.0</version>
-			<classifier>test</classifier>
-			<scope>test</scope>
-		</dependency>
-
 		<!--Jetty JSR-356 Websocket server side dependency -->
 		<dependency>
 			<groupId>org.eclipse.jetty.websocket</groupId>
 			<artifactId>javax-websocket-server-impl</artifactId>
-			<version>9.3.12.v20160915</version>
+			<version>9.3.22.v20171030</version>
 		</dependency>
 
 		<!--Jetty Websocket API server side dependency -->
 		<dependency>
 			<groupId>org.eclipse.jetty.websocket</groupId>
 			<artifactId>websocket-server</artifactId>
-			<version>9.3.12.v20160915</version>
+			<version>9.3.22.v20171030</version>
 		</dependency>
 
 
@@ -394,7 +367,7 @@
 			<plugin>
 				<groupId>org.eclipse.jetty</groupId>
 				<artifactId>jetty-maven-plugin</artifactId>
-				<version>9.3.12.v20160915</version>
+				<version>9.3.22.v20171030</version>
 				<configuration>
 					<webApp>
 						<contextPath>/isaac-api</contextPath>
@@ -473,7 +446,7 @@
 					<plugin>
 						<groupId>org.eclipse.jetty</groupId>
 						<artifactId>jetty-maven-plugin</artifactId>
-						<version>9.3.12.v20160915</version>
+						<version>9.3.22.v20171030</version>
 						<configuration>
 							<webApp>
 								<contextPath>/isaac-api</contextPath>

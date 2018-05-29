@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.common.collect.Maps;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
@@ -464,6 +465,7 @@ public class ContentMapper {
         contentDeserializerModule.addDeserializer(QuestionValidationResponse.class, validationResponseDeserializer);
 
         ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         objectMapper.registerModule(contentDeserializerModule);
         
         return objectMapper;

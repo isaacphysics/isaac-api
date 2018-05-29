@@ -23,9 +23,11 @@ import io.swagger.annotations.Api;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -70,7 +72,6 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
-import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -88,6 +89,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
     private static final Logger log = LoggerFactory.getLogger(GameboardsFacade.class);
     private final QuestionManager questionManager;
+    private final Set<String> fastTrackGamebaordIds;
 
     /**
      * GamesFacade. For management of gameboards etc.
@@ -115,6 +117,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
         this.questionManager = questionManager;
         this.userManager = userManager;
         this.associationManager = associationManager;
+        String commaSeparatedIds = this.getProperties().getProperty(Constants.FASTTRACK_GAMEBOARD_WHITELIST);
+        this.fastTrackGamebaordIds = new HashSet<>(Arrays.asList(commaSeparatedIds.split(",")));
     }
 
     /**
@@ -270,7 +274,18 @@ public class GameboardsFacade extends AbstractIsaacFacade {
         }
     }
 
-    /** TODO MT Document **/
+
+    /**
+     * REST end point to retrieve FastTrack gameboard progress by ID.
+     *
+     * @param request
+     *             - so that we can deal with caching and etags.
+     * @param httpServletRequest
+     *            - so that we can extract the users session information if available.
+     * @param gameboardId
+     *            - the unique ID of the FastTrack gameboard to be requested, checked against a whitelist.
+     * @return a Response containing a gameboard object or a SequeErrorResponse.
+     */
     @GET
     @Path("gameboards/fasttrack/{gameboard_id}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -280,7 +295,10 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
         try {
             GameboardDTO gameboard;
-
+            if (!fastTrackGamebaordIds.contains(gameboardId)) {
+                return new SegueErrorResponse(Status.NOT_FOUND, "Gameboard id not a valid FastTrack gameboard id.")
+                        .toResponse();
+            }
             AbstractSegueUserDTO randomUser = this.userManager.getCurrentUser(httpServletRequest);
             Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts = this.questionManager
                     .getQuestionAttemptsByUser(randomUser);
@@ -336,8 +354,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(request);
 
-            if (!userManager.checkUserRole(request,
-                    Arrays.asList(Role.ADMIN, Role.STAFF, Role.CONTENT_EDITOR, Role.EVENT_MANAGER))) {
+            if (!isUserStaff(userManager, request)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
@@ -419,12 +436,16 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
         try {
             user = userManager.getCurrentRegisteredUser(request);
+
+            if (null == newGameboardObject) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a gameboard object").toResponse();
+            }
+
+            if ((newGameboardObject.getId() != null || newGameboardObject.getTags().size() > 0) && !isUserStaff(userManager, request)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You cannot provide a gameboard ID or tags.").toResponse();
+            }
         } catch (NoUserLoggedInException e1) {
             return SegueErrorResponse.getNotLoggedInResponse();
-        }
-
-        if (null == newGameboardObject) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a gameboard object").toResponse();
         }
 
         newGameboardObject.setCreationMethod(GameboardCreationMethod.BUILDER);
@@ -762,7 +783,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             }
 
             this.gameManager.unlinkUserToGameboard(gameboardDTO, user);
-            getLogManager().logEvent(user, request, DELETE_BOARD_FROM_PROFILE, gameboardDTO.getId());
+            getLogManager().logEvent(user, request, DELETE_BOARD_FROM_PROFILE,
+                    ImmutableMap.of(GAMEBOARD_ID_FKEY, gameboardDTO.getId()));
 
         } catch (SegueDatabaseException e) {
             String message = "Error whilst trying to delete a gameboard.";

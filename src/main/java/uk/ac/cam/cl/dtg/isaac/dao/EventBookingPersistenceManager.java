@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.isaac.dao;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -188,7 +189,9 @@ public class EventBookingPersistenceManager {
     public boolean isUserBooked(final String eventId, final Long userId) throws SegueDatabaseException {
         try {
             final EventBooking bookingByEventAndUser = dao.findBookingByEventAndUser(eventId, userId);
-            return bookingByEventAndUser != null && bookingByEventAndUser.getBookingStatus() == BookingStatus.CONFIRMED;
+            List<BookingStatus> bookedStatuses = Arrays.asList(
+                    BookingStatus.CONFIRMED, BookingStatus.ATTENDED, BookingStatus.ABSENT);
+            return bookingByEventAndUser != null && bookedStatuses.contains(bookingByEventAndUser.getBookingStatus());
         } catch (ResourceNotFoundException e) {
             return false;
         }
@@ -208,7 +211,9 @@ public class EventBookingPersistenceManager {
 
     /**
      * Acquire a globally unique database lock.
+     *
      * This lock must be released manually.
+     *
      * @param resourceId - the unique id for the object to be locked.
      * @throws SegueDatabaseException if there is a problem acquiring the lock
      */
@@ -270,7 +275,7 @@ public class EventBookingPersistenceManager {
     private EventBookingDTO convertToDTO(final EventBooking eb) throws SegueDatabaseException {
         try {
             ContentDTO c = this.contentManager.getContentById(this.contentManager.getCurrentContentSHA(),
-                    eb.getEventId());
+                    eb.getEventId(), true);
 
             if (null == c) {
                 // The event this booking relates to has disappeared so treat it as though it never existed.

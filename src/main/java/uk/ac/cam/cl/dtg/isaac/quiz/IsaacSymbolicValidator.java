@@ -200,6 +200,9 @@ public class IsaacSymbolicValidator implements IValidator {
                     req.put("target", formulaChoice.getPythonExpression());
                     req.put("test", submittedFormula.getPythonExpression());
                     req.put("description", symbolicQuestion.getId());
+                    if (symbolicQuestion.getAvailableSymbols() != null) {
+                        req.put("symbols", String.join(",", symbolicQuestion.getAvailableSymbols()));
+                    }
 
                     StringWriter sw = new StringWriter();
                     JsonGenerator g = new JsonFactory().createGenerator(sw);
