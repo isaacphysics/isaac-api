@@ -1,9 +1,10 @@
 .project
 .settings
 .classpath
-/target
+target
 .idea/
 *.iml
 .vagrant/
 .env
-/grafana-db
+grafana
+prometheus/data

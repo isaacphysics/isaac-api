@@ -30,8 +30,12 @@ services:
   prometheus:
     image: prom/prometheus
     container_name: prometheus
+    command:
+      - --storage.tsdb.retention=90d
+      - --storage.tsdb.path=/prometheus/data
+      - --config.file=/prometheus/prometheus.yml
     volumes:
-      - ./prometheus-local.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus:/prometheus
     network_mode: bridge
     links:
       - postgres-exporter:postgres-exporter
