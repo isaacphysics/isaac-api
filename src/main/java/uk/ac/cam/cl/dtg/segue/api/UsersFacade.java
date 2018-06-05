@@ -297,7 +297,8 @@ public class UsersFacade extends AbstractSegueFacade {
                 userPreferences.get(pref.getPreferenceType()).put(pref.getPreferenceName(), pref.getPreferenceValue());
             }
 
-            return Response.ok(userPreferences).build();
+            return Response.ok(userPreferences)
+                    .cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
