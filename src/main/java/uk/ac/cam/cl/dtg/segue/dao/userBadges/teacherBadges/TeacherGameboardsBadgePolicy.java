@@ -9,7 +9,10 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.IUserBadgePolicy;
+import uk.ac.cam.cl.dtg.segue.dos.ITransaction;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+
+import java.util.Iterator;
 
 /**
  * Created by du220 on 01/05/2018.
@@ -28,7 +31,7 @@ public class TeacherGameboardsBadgePolicy implements IUserBadgePolicy {
     }
 
     @Override
-    public JsonNode initialiseState(RegisteredUserDTO user) {
+    public JsonNode initialiseState(RegisteredUserDTO user, ITransaction transaction) {
 
         ArrayNode gameboards = JsonNodeFactory.instance.arrayNode();
 
@@ -50,6 +53,14 @@ public class TeacherGameboardsBadgePolicy implements IUserBadgePolicy {
 
     @Override
     public JsonNode updateState(RegisteredUserDTO user, JsonNode state, String event) {
+
+        Iterator<JsonNode> iter = ((ArrayNode) state.get("gameboards")).elements();
+
+        while (iter.hasNext()) {
+            if (iter.next().asText().equals(event)) {
+                return state;
+            }
+        }
 
         ((ArrayNode) state.get("gameboards")).add(event);
         return state;

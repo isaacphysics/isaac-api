@@ -204,7 +204,7 @@ public class GroupsFacade extends AbstractSegueFacade {
             this.getLogManager().logEvent(user, request, Constants.CREATE_USER_GROUP,
                     ImmutableMap.of(Constants.GROUP_FK, group.getId()));
 
-            this.userBadgeManager.updateBadge(null, user, UserBadgeManager.Badge.TEACHER_GROUPS_CREATED,
+            this.userBadgeManager.updateBadge(user, UserBadgeManager.Badge.TEACHER_GROUPS_CREATED,
                     group.getId().toString());
 
             return Response.ok(group).build();

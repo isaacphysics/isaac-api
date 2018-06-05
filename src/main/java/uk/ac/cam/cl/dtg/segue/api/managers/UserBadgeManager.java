@@ -15,11 +15,11 @@ import uk.ac.cam.cl.dtg.segue.dao.userBadges.teacherBadges.TeacherBookPagesBadge
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.teacherBadges.TeacherCpdBadgePolicy;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.teacherBadges.TeacherGameboardsBadgePolicy;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.teacherBadges.TeacherGroupsBadgePolicy;
+import uk.ac.cam.cl.dtg.segue.dos.ITransaction;
 import uk.ac.cam.cl.dtg.segue.dos.UserBadge;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.IUserBadgePolicy;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
-import java.sql.Connection;
 import java.util.Map;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
@@ -42,6 +42,7 @@ public class UserBadgeManager {
 
     private final IUserBadgePersistenceManager userBadgePersistenceManager;
     private final Map<Badge, IUserBadgePolicy> badgePolicies = Maps.newHashMap();
+    private final ITransactionManager transactionManager;
 
     /**
      * Constructor
@@ -57,9 +58,11 @@ public class UserBadgeManager {
     @Inject
     public UserBadgeManager(IUserBadgePersistenceManager userBadgePersistenceManager, GroupManager groupManager,
                             EventBookingManager bookingManager, AssignmentManager assignmentManager, GameManager gameManager,
-                            IContentManager contentManager, @Named(CONTENT_INDEX) String contentIndex) {
+                            IContentManager contentManager, @Named(CONTENT_INDEX) String contentIndex,
+                            ITransactionManager transactionManager) {
 
         this.userBadgePersistenceManager = userBadgePersistenceManager;
+        this.transactionManager = transactionManager;
 
         badgePolicies.put(Badge.TEACHER_GROUPS_CREATED, new TeacherGroupsBadgePolicy(groupManager));
         badgePolicies.put(Badge.TEACHER_ASSIGNMENTS_SET, new TeacherAssignmentsBadgePolicy(assignmentManager,
@@ -74,38 +77,43 @@ public class UserBadgeManager {
     /**
      * Gets an up-to-date badge by either retrieving from the database or initialising first-time on the fly
      *
-     * @param conn database connection
      * @param user owner of badge record
      * @param badgeName enum of badge to be updated
      * @return user badge object
      * @throws SegueDatabaseException
      */
-    public UserBadge getOrCreateBadge(Connection conn, RegisteredUserDTO user, Badge badgeName)
+    public UserBadge getOrCreateBadge(RegisteredUserDTO user, Badge badgeName)
             throws SegueDatabaseException {
 
-        UserBadge badge = userBadgePersistenceManager.getBadge(conn, user, badgeName);
+        // start database transaction to ensure atomicity of badge state update (if required)
+        ITransaction transaction = transactionManager.getTransaction();
+        UserBadge badge = userBadgePersistenceManager.getBadge(user, badgeName, transaction);
 
         if (null == badge.getState()) {
-            badge.setState(badgePolicies.get(badgeName).initialiseState(user));
+            badge.setState(badgePolicies.get(badgeName).initialiseState(user, transaction));
+            userBadgePersistenceManager.updateBadge(badge, transaction);
         }
 
+        transaction.commit();
         return badge;
     }
 
     /**
      * Updates the badge state and delivers to the database
      *
-     * @param conn database connection
      * @param user owner of badge record
      * @param badgeName enum of badge to be updated
      * @param event indicator of
      * @return user badge object
      * @throws SegueDatabaseException
      */
-    public UserBadge updateBadge(Connection conn, RegisteredUserDTO user, Badge badgeName, String event)
+    public UserBadge updateBadge(RegisteredUserDTO user, Badge badgeName, String event)
             throws SegueDatabaseException {
 
-        UserBadge badge = userBadgePersistenceManager.getBadge(conn, user, badgeName);
+        // start a database transaction as an update occurs across two queries
+        ITransaction transaction = transactionManager.getTransaction();
+
+        UserBadge badge = userBadgePersistenceManager.getBadge(user, badgeName, transaction);
 
         if (null != badge.getState()) {
 
@@ -122,10 +130,13 @@ public class UserBadgeManager {
             badge.setState(newState);
 
         } else {
-            badge.setState(badgePolicies.get(badgeName).initialiseState(user));
+            badge.setState(badgePolicies.get(badgeName).initialiseState(user, transaction));
         }
 
-        userBadgePersistenceManager.updateBadge(conn, badge);
+        userBadgePersistenceManager.updateBadge(badge, transaction);
+
+        // commit the badge state update to the database
+        transaction.commit();
 
         return badge;
     }
@@ -142,7 +153,7 @@ public class UserBadgeManager {
 
         try {
             for (Badge badgeName : Badge.values()) {
-                UserBadge badge = getOrCreateBadge(null, user, badgeName);
+                UserBadge badge = getOrCreateBadge(user, badgeName);
                 badges.put(badge.getBadgeName().name(),
                         badgePolicies.get(badge.getBadgeName()).getLevel(badge.getState()));
             }

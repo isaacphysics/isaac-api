@@ -252,6 +252,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         bind(IUserAlerts.class).to(PgUserAlerts.class);
 
         bind(IStatisticsManager.class).to(StatisticsManager.class);
+
+        bind(ITransactionManager.class).to(PgTransactionManager.class);
     }
 
     /**

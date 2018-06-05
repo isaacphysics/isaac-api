@@ -2,7 +2,10 @@ package uk.ac.cam.cl.dtg.segue.dao.userBadges;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dos.ITransaction;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+
+import java.sql.Connection;
 
 /**
  *  Interface defining structure of a user badge policy
@@ -24,9 +27,10 @@ public interface IUserBadgePolicy {
      * Initialises a partial state for a particular badge
      *
      * @param user the user for which state should be calculated
+     * @param transaction object which carries database transaction across multiple functions
      * @return an object describing the current partial state aggregated from the current user activity record
      */
-    JsonNode initialiseState(RegisteredUserDTO user);
+    JsonNode initialiseState(RegisteredUserDTO user, ITransaction transaction);
 
     /**
      * Updates the partial state based on an event trigger

@@ -887,7 +887,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                             EVENT_TAGS_FIELDNAME, event.getTags()));
 
             if (event.getTags().contains("teacher")) {
-                this.userBadgeManager.updateBadge(null, userOfInterest,
+                this.userBadgeManager.updateBadge(userOfInterest,
                         UserBadgeManager.Badge.TEACHER_CPD_EVENTS_ATTENDED, eventId);
             }
 

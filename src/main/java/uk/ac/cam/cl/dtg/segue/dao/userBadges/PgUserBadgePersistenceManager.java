@@ -3,9 +3,13 @@ package uk.ac.cam.cl.dtg.segue.dao.userBadges;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
+import uk.ac.cam.cl.dtg.segue.api.managers.ITransactionManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.PgTransactionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
+import uk.ac.cam.cl.dtg.segue.dos.ITransaction;
+import uk.ac.cam.cl.dtg.segue.dos.PgTransaction;
 import uk.ac.cam.cl.dtg.segue.dos.UserBadge;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
@@ -35,13 +39,17 @@ public class PgUserBadgePersistenceManager implements IUserBadgePersistenceManag
     }
 
     @Override
-    public UserBadge getBadge(Connection connection, RegisteredUserDTO user, UserBadgeManager.Badge badgeName)
-            throws SegueDatabaseException {
+    public UserBadge getBadge(RegisteredUserDTO user, UserBadgeManager.Badge badgeName,
+                              ITransaction transaction) throws SegueDatabaseException {
 
-        try (Connection conn = (connection != null) ? connection : postgresSqlDb.getDatabaseConnection()) {
+        if (!(transaction instanceof PgTransaction)) {
+            throw new SegueDatabaseException("Unable to get badge definition from database.");
+        }
+
+        try {
 
             PreparedStatement pst;
-            pst = conn.prepareStatement("INSERT INTO user_badges (user_id, badge)" +
+            pst = ((PgTransaction)transaction).getConnection().prepareStatement("INSERT INTO user_badges (user_id, badge)" +
                     " VALUES (?, ?) ON CONFLICT (user_id, badge) DO UPDATE SET user_id = excluded.user_id " +
                     "WHERE user_badges.user_id = ? AND user_badges.badge = ? RETURNING *");
 
@@ -57,17 +65,22 @@ public class PgUserBadgePersistenceManager implements IUserBadgePersistenceManag
                     mapper.readTree(results.getString("state")) : null);
 
         } catch (SQLException | IOException e) {
-            throw new SegueDatabaseException("Unable to get badge definition from database.");
+            throw new SegueDatabaseException("Unable to get badge definition from database: " + e);
         }
     }
 
     @Override
-    public void updateBadge(Connection connection, UserBadge badge) throws SegueDatabaseException {
+    public void updateBadge(UserBadge badge, ITransaction transaction) throws SegueDatabaseException {
 
-        try (Connection conn = (connection != null) ? connection : postgresSqlDb.getDatabaseConnection()) {
+        if (!(transaction instanceof PgTransaction)) {
+            throw new SegueDatabaseException("Unable to update database badge.");
+        }
+
+        try {
 
             PreparedStatement pst;
-            pst = conn.prepareStatement("UPDATE user_badges SET state = ?::jsonb WHERE user_id = ? and badge = ?");
+            pst = ((PgTransaction)transaction).getConnection()
+                    .prepareStatement("UPDATE user_badges SET state = ?::jsonb WHERE user_id = ? and badge = ?");
             pst.setString(1, mapper.writeValueAsString(badge.getState()));
             pst.setLong(2, badge.getUserId());
             pst.setString(3, badge.getBadgeName().name());
