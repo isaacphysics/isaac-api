@@ -37,7 +37,6 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.*;
-import uk.ac.cam.cl.dtg.segue.api.metrics.MetricsExporter;
 import uk.ac.cam.cl.dtg.segue.api.monitors.*;
 import uk.ac.cam.cl.dtg.segue.auth.*;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicator;
@@ -98,11 +97,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static LogManagerEventPublisher logManager;
     private static EmailManager emailCommunicationQueue = null;
     private static IMisuseMonitor misuseMonitor = null;
+    private static IMetricsExporter metricsExporter = null;
     private static StatisticsManager statsManager = null;
     //private static IStatisticsManager statsManager = null;
 	private static GroupManager groupManager = null;
 	private static IUserAlerts userAlerts = null;
-	private static MetricsExporter metricsExporter = null;
 	private static IUserStreaksManager userStreaksManager = null;
 
     private static Collection<Class<? extends ServletContextListener>> contextListeners;
@@ -129,7 +128,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             this.configureSegueSearch();
             this.configureAuthenticationProviders();
             this.configureApplicationManagers();
-            this.configureMetricsExporter();
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -162,6 +160,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         this.bindConstantToProperty(Constants.SCHOOL_CSV_LIST_PATH, globalProperties);
 
         this.bindConstantToProperty(CONTENT_INDEX, globalProperties);
+
+        this.bindConstantToProperty(Constants.API_METRICS_EXPORT_PORT, globalProperties);
     }
 
     /**
@@ -254,23 +254,24 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         bind(IStatisticsManager.class).to(StatisticsManager.class);
     }
 
-    /**
-     * TODO MT
-     */
-    private void configureMetricsExporter() {
-        // I want the exporter to be configured and running from servlet process start
+
+    @Inject
+    @Provides
+    @Singleton
+    private static IMetricsExporter getMetricsExporter(
+            @Named(Constants.API_METRICS_EXPORT_PORT) final int port) {
         if (null == metricsExporter) {
-            boolean exportJvmMetrics = true;
-            log.info("Creating singleton MetricsExporter");
-            String exportPort = globalProperties.getProperty(Constants.API_METRICS_EXPORT_PORT);
             try {
-                metricsExporter = new MetricsExporter(exportPort, exportJvmMetrics);
+                log.info("Creating MetricsExporter on port (" + port + ")");
+                metricsExporter = new PrometheusMetricsExporter(port);
+                log.info("Exporting default JVM metrics.");
+                metricsExporter.exposeJvmMetrics();
             } catch (IOException e) {
-                // notify if it is down but the api should not be dependent on the export endpoint working
-                log.error("IOException while setting up MetricsExporter on port: " + exportPort);
-                e.printStackTrace();
+                log.error("Could not create MetricsExporter on port (" + port + ")");
+                return null;
             }
         }
+        return metricsExporter;
     }
 
     /**

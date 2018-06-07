@@ -31,6 +31,7 @@ import uk.ac.cam.cl.dtg.isaac.api.GameboardsFacade;
 import uk.ac.cam.cl.dtg.isaac.api.IsaacController;
 import uk.ac.cam.cl.dtg.isaac.api.PagesFacade;
 import uk.ac.cam.cl.dtg.segue.api.*;
+import uk.ac.cam.cl.dtg.segue.api.monitors.IMetricsExporter;
 import uk.ac.cam.cl.dtg.segue.api.monitors.PerformanceMonitor;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
@@ -73,6 +74,7 @@ public class IsaacApplicationRegister extends Application {
             mapper.registerJsonTypes(segueConfigurationModule.getContentDataTransferObjectMap());
         }
         
+        setupMetricsExporter();
         setupSwaggerApiAdvertiser();
     }
 
@@ -144,5 +146,12 @@ public class IsaacApplicationRegister extends Application {
         
         beanConfig.setResourcePackage("uk.ac.cam.cl.dtg");
         beanConfig.setScan(true);        
+    }
+
+    /**
+     * Set-up metrics exporter. Only needs to be created once per process.
+     */
+    private void setupMetricsExporter() {
+        injector.getInstance(IMetricsExporter.class);
     }
 }

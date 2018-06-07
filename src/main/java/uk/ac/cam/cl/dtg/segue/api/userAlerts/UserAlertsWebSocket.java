@@ -11,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.managers.IStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
-import uk.ac.cam.cl.dtg.segue.api.metrics.SegueMetrics;
+import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidSessionException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -44,8 +44,7 @@ public class UserAlertsWebSocket implements IAlertListener {
     private Session session;
     private static ObjectMapper objectMapper = new ObjectMapper();
 
-    public static final ConcurrentHashMap<Long, ConcurrentLinkedQueue<UserAlertsWebSocket>>
-            connectedSockets = new ConcurrentHashMap<>();
+    public static ConcurrentHashMap<Long, ConcurrentLinkedQueue<UserAlertsWebSocket>> connectedSockets = new ConcurrentHashMap<>();
     private static Long websocketsOpened = 0L;
     private static Long websocketsClosed = 0L;
 
@@ -240,6 +239,8 @@ public class UserAlertsWebSocket implements IAlertListener {
                         "heartbeat", System.currentTimeMillis()
                 )));
     }
+
+
 
     /**
      * Extracts the segue session information from the given session.
