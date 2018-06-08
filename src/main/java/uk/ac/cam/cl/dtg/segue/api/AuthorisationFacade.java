@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,31 +15,17 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
-
+import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableMap;
+import com.google.inject.Inject;
 import io.swagger.annotations.Api;
-
-import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.api.client.util.Lists;
-import com.google.inject.Inject;
-
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.TokenOwnerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
@@ -50,12 +36,23 @@ import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenExcept
 import uk.ac.cam.cl.dtg.segue.dao.associations.UserGroupNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.segue.dos.UserAssociation;
-import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.DetailedUserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * AuthorizationFacade.
@@ -153,7 +150,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
             associationManager.revokeAssociation(user, userToRevoke);
 
             this.getLogManager().logEvent(user, request, REVOKE_USER_ASSOCIATION,
-                    ImmutableMap.of(USER_ID_FKEY_FIELDNAME, userIdToRevoke));
+                    ImmutableMap.of(USER_ID_FKEY_FIELDNAME, Collections.singletonList(userIdToRevoke)));
 
             return Response.status(Status.NO_CONTENT).build();
         } catch (SegueDatabaseException e) {
@@ -163,6 +160,40 @@ public class AuthorisationFacade extends AbstractSegueFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (NoUserException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to locate user to revoke").toResponse();
+        }
+    }
+
+    /**
+     * Revoke all user associations
+     *
+     * This endpoint will release all associations granted to an individual user
+     *
+     * @param request
+     *            - so we can find out the current user
+     * @return response with no content or a segueErrorResponse
+     */
+    @DELETE
+    @Path("/")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public Response revokeAllOwnerAssociations(@Context final HttpServletRequest request) {
+        try {
+            RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+
+            List<Long> userIdsWithAccess = associationManager.getAssociations(user).stream()
+                    .map(UserAssociation::getUserIdReceivingPermission).collect(Collectors.toList());
+
+            associationManager.revokeAllAssociationsByOwnerUser(user);
+
+            this.getLogManager().logEvent(user, request, REVOKE_USER_ASSOCIATION,
+                    ImmutableMap.of(USER_ID_FKEY_FIELDNAME, userIdsWithAccess));
+
+            return Response.status(Status.NO_CONTENT).build();
+        } catch (SegueDatabaseException e) {
+            log.error("Database error while trying to access association token. ", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
         }
     }
 
@@ -195,7 +226,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
             associationManager.revokeAssociation(ownerUser, user);
 
             this.getLogManager().logEvent(user, request, RELEASE_USER_ASSOCIATION,
-                    ImmutableMap.of(USER_ID_FKEY_FIELDNAME, associationOwner));
+                    ImmutableMap.of(USER_ID_FKEY_FIELDNAME, Collections.singletonList(associationOwner)));
 
             return Response.status(Status.NO_CONTENT).build();
         } catch (SegueDatabaseException e) {
@@ -205,6 +236,40 @@ public class AuthorisationFacade extends AbstractSegueFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (NoUserException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to locate user to revoke").toResponse();
+        }
+    }
+
+    /**
+     * Release all user associations.
+     *
+     * This endpoint will release all associations granted to an individual user
+     *
+     * @param request
+     *            - so we can find out the current user
+     * @return response with no content or a segueErrorResponse
+     */
+    @DELETE
+    @Path("release")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public Response releaseAllAssociations(@Context final HttpServletRequest request) {
+        try {
+            RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+
+            List<Long> userIdsWithAccess = associationManager.getAssociationsForOthers(user).stream()
+                    .map(UserAssociation::getUserIdGrantingPermission).collect(Collectors.toList());
+
+            associationManager.revokeAllAssociationsByRecipientUser(user);
+
+            this.getLogManager().logEvent(user, request, RELEASE_USER_ASSOCIATION,
+                    ImmutableMap.of(USER_ID_FKEY_FIELDNAME, userIdsWithAccess));
+
+            return Response.status(Status.NO_CONTENT).build();
+        } catch (SegueDatabaseException e) {
+            log.error("Database error while trying to access association token. ", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
         }
     }
 
