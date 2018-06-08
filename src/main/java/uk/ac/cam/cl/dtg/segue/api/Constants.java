@@ -15,9 +15,9 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
-import com.google.common.collect.ImmutableSet;
-
+import java.util.Arrays;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Utility class to provide common segue-specific constants.
@@ -266,6 +266,8 @@ public final class Constants {
         USER_REGISTRATION,
         USER_SCHOOL_CHANGE
     }
+
+    public static final Set<String> SEGUE_LOG_TYPES = Arrays.stream(SegueLogType.values()).map(SegueLogType::name).collect(Collectors.toSet());
 
     // IP Geocoding stuff
     public static final String IP_INFO_DB_API_KEY = "IP_INFO_DB_API_KEY";

@@ -15,26 +15,10 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacLogType;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
-
+import com.google.inject.Inject;
 import io.swagger.annotations.Api;
-
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-
-import org.apache.commons.lang3.EnumUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
@@ -46,7 +30,20 @@ import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import com.google.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import java.util.Map;
+
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.ISAAC_LOG_TYPES;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_LOG_TYPES;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
 
 /**
  * LogEventFacade. This facade is responsible for allowing the front end to log arbitrary information in the log
@@ -102,7 +99,7 @@ public class LogEventFacade extends AbstractSegueFacade {
 
         String eventType = (String) eventJSON.get(TYPE_FIELDNAME);
 
-        if (EnumUtils.isValidEnum(SegueLogType.class, eventType) || EnumUtils.isValidEnum(IsaacLogType.class, eventType)) {
+        if (SEGUE_LOG_TYPES.contains(eventType) || ISAAC_LOG_TYPES.contains(eventType)) {
             return new SegueErrorResponse(Status.FORBIDDEN, "Unable to record log message, restricted '"
                     + TYPE_FIELDNAME + "' value.").toResponse();
         }

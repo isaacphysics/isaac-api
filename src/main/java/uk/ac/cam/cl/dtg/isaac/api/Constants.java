@@ -15,11 +15,11 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
-import com.google.common.collect.ImmutableSet;
-
 import uk.ac.cam.cl.dtg.segue.api.Constants.LogType;
 
+import java.util.Arrays;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Utility class to provide common isaac-specific constants.
@@ -118,6 +118,7 @@ public final class Constants {
         VIEW_QUESTION,
         VIEW_USER_PROGRESS
     }
+    public static final Set<String> ISAAC_LOG_TYPES = Arrays.stream(IsaacLogType.values()).map(IsaacLogType::name).collect(Collectors.toSet());
 
     public enum IsaacUserPreferences {
         SUBJECT_INTEREST, BETA_FEATURE
