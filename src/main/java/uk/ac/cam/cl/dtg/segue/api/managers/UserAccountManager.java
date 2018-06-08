@@ -701,7 +701,7 @@ public class UserAccountManager implements IUserAccountManager {
         //TODO: do we need this?
         userToReturn = this.database.createOrUpdateUser(userToReturn);
 
-        logManager.logEvent(this.convertUserDOToUserDTO(userToReturn), request, Constants.USER_REGISTRATION,
+        logManager.logEvent(this.convertUserDOToUserDTO(userToReturn), request, SegueLogType.USER_REGISTRATION,
                 ImmutableMap.builder().put("provider", AuthenticationProvider.SEGUE.name()).build());
 
         // return it to the caller.
@@ -1240,7 +1240,7 @@ public class UserAccountManager implements IUserAccountManager {
                         logManager.transferLogEventsToRegisteredUser(anonymousUser.getSessionId(), user.getId()
                                 .toString());
 
-                        logManager.logInternalEvent(userDTO, MERGE_USER,
+                        logManager.logInternalEvent(userDTO, SegueLogType.MERGE_USER,
                                 ImmutableMap.of("oldAnonymousUserId", anonymousUser.getSessionId()));
 
                         // delete the session attribute as merge has completed.
@@ -1341,7 +1341,7 @@ public class UserAccountManager implements IUserAccountManager {
                    EmailVerificationStatus.DELIVERY_FAILED);
         }
 
-        logManager.logInternalEvent(this.convertUserDOToUserDTO(localUserInformation), Constants.USER_REGISTRATION,
+        logManager.logInternalEvent(this.convertUserDOToUserDTO(localUserInformation), SegueLogType.USER_REGISTRATION,
                 ImmutableMap.builder().put("provider", federatedAuthenticator.name())
                         .build());
 

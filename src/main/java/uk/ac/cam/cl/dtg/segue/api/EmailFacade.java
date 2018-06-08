@@ -71,13 +71,14 @@ import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.EmailTemplateDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueLogType;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 
 /**
@@ -344,7 +345,7 @@ public class EmailFacade extends AbstractSegueFacade {
             userManager.emailVerificationRequest(request, email);
 
             this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
-                    Constants.EMAIL_VERIFICATION_REQUEST_RECEIVED,
+                    SegueLogType.EMAIL_VERIFICATION_REQUEST_RECEIVED,
                     ImmutableMap.of(Constants.LOCAL_AUTH_EMAIL_VERIFICATION_TOKEN_FIELDNAME, email));
 
             return Response.ok().build();

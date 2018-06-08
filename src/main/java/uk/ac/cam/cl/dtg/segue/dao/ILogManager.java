@@ -25,6 +25,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.joda.time.LocalDate;
 
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dos.LogEvent;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -51,7 +52,23 @@ public interface ILogManager {
      *            object
      * @throws SegueDatabaseException 
      */
-    void logEvent(AbstractSegueUserDTO user, HttpServletRequest httpRequest, String eventType, Object eventDetails);
+    void logEvent(AbstractSegueUserDTO user, HttpServletRequest httpRequest, Constants.LogType eventType, Object eventDetails);
+
+    /**
+     * Log an arbitrary event from the frontend.
+     *
+     * @param user
+     *            - user to log must not be null.
+     * @param httpRequest
+     *            - so we can figure out request specific information e.g. ip address.
+     * @param eventType
+     *            - Type of event that we are interested in.
+     * @param eventDetails
+     *            - Additional information associated with the event - this is expected to be a json deserializable
+     *            object
+     * @throws SegueDatabaseException
+     */
+    void logExternalEvent(AbstractSegueUserDTO user, HttpServletRequest httpRequest, String eventType, Object eventDetails);
 
     /**
      * Log an event with the persistence logging framework without looking up the user from the database.
@@ -65,7 +82,7 @@ public interface ILogManager {
      *            object
      * @throws SegueDatabaseException 
      */
-    void logInternalEvent(AbstractSegueUserDTO user, String eventType, Object eventDetails);
+    void logInternalEvent(AbstractSegueUserDTO user, Constants.LogType eventType, Object eventDetails);
 
     /**
      * This method will endeavour to find all log events for a given user and reassign ownership to a

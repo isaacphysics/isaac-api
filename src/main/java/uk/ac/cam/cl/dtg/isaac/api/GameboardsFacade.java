@@ -473,7 +473,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         }
 
-        this.getLogManager().logEvent(user, request, CREATE_GAMEBOARD,
+        this.getLogManager().logEvent(user, request, IsaacLogType.CREATE_GAMEBOARD,
                 ImmutableMap.of(GAMEBOARD_ID_FKEY, persistedGameboard.getId()));
 
         return Response.ok(persistedGameboard).build();
@@ -541,7 +541,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
             // go ahead and persist the gameboard (if it is only temporary) / link it to the users my boards account
             gameManager.linkUserToGameboard(existingGameboard, user);
-            getLogManager().logEvent(user, request, ADD_BOARD_TO_PROFILE,
+            getLogManager().logEvent(user, request, IsaacLogType.ADD_BOARD_TO_PROFILE,
                     ImmutableMap.of(GAMEBOARD_ID_FKEY, existingGameboard.getId()));
 
         } catch (SegueDatabaseException e) {
@@ -692,7 +692,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
         getLogManager().logEvent(
                 currentUser,
                 request,
-                VIEW_MY_BOARDS_PAGE,
+                IsaacLogType.VIEW_MY_BOARDS_PAGE,
                 ImmutableMap.builder().put("totalBoards", gameboards.getTotalResults())
                         .put("notStartedTotal", gameboards.getTotalNotStarted())
                         .put("completedTotal", gameboards.getTotalCompleted())
@@ -740,7 +740,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
             // go ahead and persist the gameboard (if it is only temporary) / link it to the users my boards account
             gameManager.linkUserToGameboard(existingGameboard, user);
-            getLogManager().logEvent(user, request, ADD_BOARD_TO_PROFILE,
+            getLogManager().logEvent(user, request, IsaacLogType.ADD_BOARD_TO_PROFILE,
                     ImmutableMap.of(GAMEBOARD_ID_FKEY, existingGameboard.getId()));
 
         } catch (SegueDatabaseException e) {
@@ -783,7 +783,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             }
 
             this.gameManager.unlinkUserToGameboard(gameboardDTO, user);
-            getLogManager().logEvent(user, request, DELETE_BOARD_FROM_PROFILE,
+            getLogManager().logEvent(user, request, IsaacLogType.DELETE_BOARD_FROM_PROFILE,
                     ImmutableMap.of(GAMEBOARD_ID_FKEY, gameboardDTO.getId()));
 
         } catch (SegueDatabaseException e) {

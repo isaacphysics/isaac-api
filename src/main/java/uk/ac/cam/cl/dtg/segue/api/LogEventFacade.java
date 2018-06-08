@@ -15,7 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.ISAAC_LOG_EVENT_TYPES;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacLogType;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 import io.swagger.annotations.Api;
@@ -31,6 +31,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.apache.commons.lang3.EnumUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -101,7 +102,7 @@ public class LogEventFacade extends AbstractSegueFacade {
 
         String eventType = (String) eventJSON.get(TYPE_FIELDNAME);
 
-        if (ISAAC_LOG_EVENT_TYPES.contains(eventType) || SEGUE_LOG_EVENT_TYPES.contains(eventType)) {
+        if (EnumUtils.isValidEnum(SegueLogType.class, eventType) || EnumUtils.isValidEnum(IsaacLogType.class, eventType)) {
             return new SegueErrorResponse(Status.FORBIDDEN, "Unable to record log message, restricted '"
                     + TYPE_FIELDNAME + "' value.").toResponse();
         }
@@ -129,7 +130,7 @@ public class LogEventFacade extends AbstractSegueFacade {
         // remove the type information as we don't need it.
         eventJSON.remove(TYPE_FIELDNAME);
 
-        this.getLogManager().logEvent(this.userManager.getCurrentUser(httpRequest), httpRequest, eventType, eventJSON);
+        this.getLogManager().logExternalEvent(this.userManager.getCurrentUser(httpRequest), httpRequest, eventType, eventJSON);
 
         return Response.ok().cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
     }
