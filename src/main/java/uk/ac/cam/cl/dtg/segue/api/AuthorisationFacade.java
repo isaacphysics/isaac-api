@@ -149,7 +149,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
             RegisteredUserDTO userToRevoke = userManager.getUserDTOById(userIdToRevoke);
             associationManager.revokeAssociation(user, userToRevoke);
 
-            this.getLogManager().logEvent(user, request, REVOKE_USER_ASSOCIATION,
+            this.getLogManager().logEvent(user, request, SegueLogType.REVOKE_USER_ASSOCIATION,
                     ImmutableMap.of(USER_ID_FKEY_FIELDNAME, Collections.singletonList(userIdToRevoke)));
 
             return Response.status(Status.NO_CONTENT).build();
@@ -185,7 +185,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 
             associationManager.revokeAllAssociationsByOwnerUser(user);
 
-            this.getLogManager().logEvent(user, request, REVOKE_USER_ASSOCIATION,
+            this.getLogManager().logEvent(user, request, SegueLogType.REVOKE_USER_ASSOCIATION,
                     ImmutableMap.of(USER_ID_FKEY_FIELDNAME, userIdsWithAccess));
 
             return Response.status(Status.NO_CONTENT).build();
@@ -225,7 +225,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 
             associationManager.revokeAssociation(ownerUser, user);
 
-            this.getLogManager().logEvent(user, request, RELEASE_USER_ASSOCIATION,
+            this.getLogManager().logEvent(user, request, SegueLogType.RELEASE_USER_ASSOCIATION,
                     ImmutableMap.of(USER_ID_FKEY_FIELDNAME, Collections.singletonList(associationOwner)));
 
             return Response.status(Status.NO_CONTENT).build();
@@ -261,7 +261,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 
             associationManager.revokeAllAssociationsByRecipientUser(user);
 
-            this.getLogManager().logEvent(user, request, RELEASE_USER_ASSOCIATION,
+            this.getLogManager().logEvent(user, request, SegueLogType.RELEASE_USER_ASSOCIATION,
                     ImmutableMap.of(USER_ID_FKEY_FIELDNAME, userIdsWithAccess));
 
             return Response.status(Status.NO_CONTENT).build();
@@ -427,7 +427,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 
             AssociationToken associationToken = associationManager.createAssociationWithToken(token, user);
 
-            this.getLogManager().logEvent(user, request, CREATE_USER_ASSOCIATION,
+            this.getLogManager().logEvent(user, request, SegueLogType.CREATE_USER_ASSOCIATION,
                     ImmutableMap.of(ASSOCIATION_TOKEN_FIELDNAME, associationToken.getToken(),
                                     GROUP_FK, associationToken.getGroupId(),
                                     USER_ID_FKEY_FIELDNAME, associationToken.getOwnerUserId()));

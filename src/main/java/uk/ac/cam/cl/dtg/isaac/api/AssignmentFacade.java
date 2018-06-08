@@ -69,7 +69,6 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
-import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
@@ -259,7 +258,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     assignment.setGameboard(this.gameManager.getGameboard(assignment.getGameboardId()));
                 }
 
-                this.getLogManager().logEvent(currentlyLoggedInUser, request, VIEW_GROUPS_ASSIGNMENTS,
+                this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacLogType.VIEW_GROUPS_ASSIGNMENTS,
                         ImmutableMap.of("groupId", group.getId()));
 
                 return Response.ok(allAssignmentsSetToGroup)
@@ -338,7 +337,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 }
             }
 
-            this.getLogManager().logEvent(currentlyLoggedInUser, request, VIEW_ASSIGNMENT_PROGRESS,
+            this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacLogType.VIEW_ASSIGNMENT_PROGRESS,
                     ImmutableMap.of(ASSIGNMENT_FK, assignment.getId()));
 
             // get game manager completion information for this assignment.
@@ -472,7 +471,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 Collections.addAll(resultRows, resultRow.toArray(new String[0]));
             }
 
-            this.getLogManager().logEvent(currentlyLoggedInUser, request, DOWNLOAD_ASSIGNMENT_PROGRESS_CSV,
+            this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacLogType.DOWNLOAD_ASSIGNMENT_PROGRESS_CSV,
                     ImmutableMap.of("assignmentId", assignmentId));
             
             // ignore name columns
@@ -682,7 +681,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     currentlyLoggedInUser.getFamilyName()) + stringWriter.toString()
                     + "\n\nN.B.\n\"The percentages are for question parts completed, not question pages.\"\n";
 
-            this.getLogManager().logEvent(currentlyLoggedInUser, request, DOWNLOAD_GROUP_PROGRESS_CSV,
+            this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacLogType.DOWNLOAD_GROUP_PROGRESS_CSV,
                     ImmutableMap.of("groupId", groupId));
 
             return Response.ok(headerBuilder)
@@ -780,7 +779,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             eventDetails.put(GROUP_FK, assignmentWithID.getGroupId());
             eventDetails.put(ASSIGNMENT_FK, assignmentWithID.getId());
             eventDetails.put(ASSIGNMENT_DUEDATE_FK, assignmentWithID.getDueDate());
-            this.getLogManager().logEvent(currentlyLoggedInUser, request, SET_NEW_ASSIGNMENT, eventDetails);
+            this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacLogType.SET_NEW_ASSIGNMENT, eventDetails);
 
             return Response.ok(assignmentDTOFromClient).build();
         } catch (NoUserLoggedInException e) {
@@ -838,7 +837,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             this.assignmentManager.deleteAssignment(assignmentToDelete);
 
-            this.getLogManager().logEvent(currentlyLoggedInUser, request, DELETE_ASSIGNMENT,
+            this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacLogType.DELETE_ASSIGNMENT,
                     ImmutableMap.of(ASSIGNMENT_FK, assignmentToDelete.getId()));
 
             return Response.noContent().build();
