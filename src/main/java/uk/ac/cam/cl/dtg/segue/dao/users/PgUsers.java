@@ -299,7 +299,7 @@ public class PgUsers implements IUserDataManager {
                 index++;
             }
             
-            pst = conn.prepareStatement("SELECT * FROM users" + sb.toString());
+            pst = conn.prepareStatement("SELECT * FROM users" + sb.toString() + " ORDER BY family_name, given_name");
             index = 1;
             for (Object value : orderToAdd) {
                 if (value instanceof String) {
@@ -334,8 +334,9 @@ public class PgUsers implements IUserDataManager {
                 inParams.append(",?");
             }
             
-            pst = conn.prepareStatement(String.format("SELECT * FROM users WHERE id IN (%s)",
-                    inParams.toString()));
+            pst = conn.prepareStatement(
+                    String.format("SELECT * FROM users WHERE id IN (%s) ORDER BY family_name, given_name",
+                            inParams.toString()));
 
             int index = 1;
             for (Long userId : usersToLocate) {
