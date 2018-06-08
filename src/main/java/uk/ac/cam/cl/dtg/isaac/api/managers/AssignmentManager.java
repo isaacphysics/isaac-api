@@ -239,9 +239,15 @@ public class AssignmentManager implements IGroupObserver {
      *
      * @param groups to include in the search
      * @return a list of assignments set to the group ids provided.
+     * @throws SegueDatabaseException
+     *             - if we cannot complete a required database operation.
      */
-    public List<AssignmentDTO> getAllAssignmentsForSpecificGroups(Collection<UserGroupDTO> groups) throws SegueDatabaseException {
+    public List<AssignmentDTO> getAllAssignmentsForSpecificGroups(final Collection<UserGroupDTO> groups) throws SegueDatabaseException {
         Validate.notNull(groups);
+        // TODO - Is there a better way of doing this empty list check? Database method explodes if given it.
+        if (groups.isEmpty()) {
+            return new ArrayList<>();
+        }
         List<Long> groupIds = groups.stream().map(UserGroupDTO::getId).collect(Collectors.toList());
         return this.assignmentPersistenceManager.getAssignmentsByGroupList(groupIds);
     }
@@ -329,7 +335,7 @@ public class AssignmentManager implements IGroupObserver {
                 try {
                     // make sure the user has a reason to see the assignment still
                     UserGroupDTO group = groupManager.getGroupById(assignment.getGroupId());
-                    if (group.getOwnerId().equals(user.getId()) || GroupManager.isInAdditionalManagerList(group, user.getId())) {
+                    if (GroupManager.isOwnerOrAdditionalManager(group, user.getId())) {
                         groups.add(group);
                     }
                 } catch (ResourceNotFoundException e) {

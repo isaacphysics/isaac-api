@@ -280,7 +280,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 
             UserGroupDTO group = groupManager.getGroupById(groupId);
 
-            if (!(group.getOwnerId().equals(user.getId()) || GroupManager.isInAdditionalManagerList(group, user.getId()))) {
+            if (!GroupManager.isOwnerOrAdditionalManager(group, user.getId())) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "Only owners, admins or managers can view membership of groups").toResponse();
             }
 
@@ -373,8 +373,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 
             UserGroupDTO groupBasedOnId = groupManager.getGroupById(groupId);
 
-            if (!(groupBasedOnId.getOwnerId().equals(currentRegisteredUser.getId())
-                    || GroupManager.isInAdditionalManagerList(groupBasedOnId, currentRegisteredUser.getId()))) {
+            if (!GroupManager.isOwnerOrAdditionalManager(groupBasedOnId, currentRegisteredUser.getId())) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You are not the owner or manager of this group").toResponse();
             }
 

@@ -493,6 +493,7 @@ CREATE TABLE users (
     email_verification_status character varying(255),
     last_seen timestamp without time zone,
     default_level integer,
+    email_to_verify text,
     email_verification_token text
 );
 
