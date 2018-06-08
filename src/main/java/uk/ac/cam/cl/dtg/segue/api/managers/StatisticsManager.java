@@ -260,8 +260,8 @@ public class StatisticsManager implements IStatisticsManager {
         role.put(Role.STAFF.toString(), staffRole.size());
         ib.put("role", role);
 
-        ib.put("viewQuestionEvents", "" + logManager.getLogCountByType(VIEW_QUESTION));
-        ib.put("answeredQuestionEvents", "" + logManager.getLogCountByType(ANSWER_QUESTION));
+        ib.put("viewQuestionEvents", "" + logManager.getLogCountByType(IsaacLogType.VIEW_QUESTION.name()));
+        ib.put("answeredQuestionEvents", "" + logManager.getLogCountByType(SegueLogType.ANSWER_QUESTION.name()));
 
         ib.put("hasSchool", "" + hasSchool.size());
         ib.put("hasNoSchool", "" + hasNoSchool.size());
@@ -295,7 +295,7 @@ public class StatisticsManager implements IStatisticsManager {
         ib.put("activeUsersLastThirtyDays",
                 "" + this.getNumberOfUsersActiveForLastNDays(nonStaffUsers, lastSeenMap, thirtyDays).size());
 
-        Map<String, Date> lastSeenUserMapQuestions = this.getLastSeenUserMap(ANSWER_QUESTION);
+        Map<String, Date> lastSeenUserMapQuestions = this.getLastSeenUserMap(SegueLogType.ANSWER_QUESTION.name());
         ib.put("questionsAnsweredLastWeekTeachers",
                 "" + this.getNumberOfUsersActiveForLastNDays(teacherRole, lastSeenUserMapQuestions, sevenDays).size());
         ib.put("questionsAnsweredLastThirtyDaysTeachers",

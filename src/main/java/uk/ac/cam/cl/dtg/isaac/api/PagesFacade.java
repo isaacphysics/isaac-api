@@ -256,7 +256,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
             // the request log
             getLogManager().logEvent(userManager.getCurrentUser(servletRequest), servletRequest,
-                    Constants.VIEW_CONCEPT, logEntry);
+                    IsaacLogType.VIEW_CONCEPT, logEntry);
         }
 
         Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())
@@ -442,7 +442,7 @@ public class PagesFacade extends AbstractIsaacFacade {
                     userQuestionAttempts);
 
             // the request log
-            getLogManager().logEvent(user, httpServletRequest, Constants.VIEW_QUESTION, logEntry);
+            getLogManager().logEvent(user, httpServletRequest, IsaacLogType.VIEW_QUESTION, logEntry);
 
             // return augmented content.
             return Response.ok(content)
@@ -580,7 +580,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
             // the request log
             getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
-                    Constants.VIEW_PAGE, logEntry);
+                    IsaacLogType.VIEW_PAGE, logEntry);
         }
 
         Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())

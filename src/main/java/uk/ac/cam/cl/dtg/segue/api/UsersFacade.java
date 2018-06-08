@@ -337,7 +337,7 @@ public class UsersFacade extends AbstractSegueFacade {
             userManager.resetPasswordRequest(userObject);
 
             this.getLogManager()
-                    .logEvent(userManager.getCurrentUser(request), request, PASSWORD_RESET_REQUEST_RECEIVED,
+                    .logEvent(userManager.getCurrentUser(request), request, SegueLogType.PASSWORD_RESET_REQUEST_RECEIVED,
                             ImmutableMap.of(LOCAL_AUTH_EMAIL_FIELDNAME, userObject.getEmail()));
 
             return Response.ok().build();
@@ -414,7 +414,7 @@ public class UsersFacade extends AbstractSegueFacade {
             String newPassword = clientResponse.get("password");
             RegisteredUserDTO userDTO = userManager.resetPassword(token, newPassword);
 
-            this.getLogManager().logEvent(userDTO, request, PASSWORD_RESET_REQUEST_SUCCESSFUL,
+            this.getLogManager().logEvent(userDTO, request, SegueLogType.PASSWORD_RESET_REQUEST_SUCCESSFUL,
                     ImmutableMap.of(LOCAL_AUTH_EMAIL_FIELDNAME, userDTO.getEmail()));
 
             // we can reset the misuse monitor for incorrect logins now.
@@ -496,7 +496,7 @@ public class UsersFacade extends AbstractSegueFacade {
 
             UserSummaryDTO userOfInterestSummaryObject = userManager.convertToUserSummaryObject(userOfInterest);
 
-            if (!events.equals(ANSWER_QUESTION) && currentUser.getRole() != Role.ADMIN) {
+            if (!events.equals(SegueLogType.ANSWER_QUESTION.name()) && currentUser.getRole() != Role.ADMIN) {
                 // Non-admins should not be able to choose random log events.
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
@@ -718,7 +718,7 @@ public class UsersFacade extends AbstractSegueFacade {
                 log.info("ADMIN user " + currentlyLoggedInUser.getEmail() + " has modified the role of "
                         + updatedUser.getEmail() + "[" + updatedUser.getId() + "]" + " to "
                         + updatedUser.getRole());
-                this.getLogManager().logEvent(currentlyLoggedInUser, request, Constants.CHANGE_USER_ROLE,
+                this.getLogManager().logEvent(currentlyLoggedInUser, request, SegueLogType.CHANGE_USER_ROLE,
                         ImmutableMap.of(USER_ID_FKEY_FIELDNAME, updatedUser.getId(),
                                         "oldRole", existingUserFromDb.getRole(),
                                         "newRole", updatedUser.getRole()));
@@ -736,10 +736,10 @@ public class UsersFacade extends AbstractSegueFacade {
                 if (!Objects.equals(currentlyLoggedInUser.getId(), updatedUser.getId())) {
                     // This is an ADMIN user changing another user's school:
                     eventDetails.put(USER_ID_FKEY_FIELDNAME, updatedUser.getId());
-                    this.getLogManager().logEvent(currentlyLoggedInUser, request, Constants.ADMIN_CHANGE_USER_SCHOOL,
+                    this.getLogManager().logEvent(currentlyLoggedInUser, request, SegueLogType.ADMIN_CHANGE_USER_SCHOOL,
                             eventDetails);
                 } else {
-                    this.getLogManager().logEvent(currentlyLoggedInUser, request, Constants.USER_SCHOOL_CHANGE,
+                    this.getLogManager().logEvent(currentlyLoggedInUser, request, SegueLogType.USER_SCHOOL_CHANGE,
                             eventDetails);
                 }
             }
