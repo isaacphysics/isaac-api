@@ -385,9 +385,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
             usersLinkedToToken.add(userManager.convertToDetailedUserSummaryObject(userManager.getUserDTOById(associationToken.getOwnerUserId())));
 
             // add additional managers
-            for (DetailedUserSummaryDTO user : group.getAdditionalManagers()) {
-                usersLinkedToToken.add(user);
-            }
+            usersLinkedToToken.addAll(group.getAdditionalManagers());
 
             return Response.ok(usersLinkedToToken)
                     .cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
