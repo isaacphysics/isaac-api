@@ -54,6 +54,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -433,10 +434,15 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 
             AssociationToken associationToken = associationManager.createAssociationWithToken(token, user);
 
+            UserGroupDTO group = groupManager.getGroupById(associationToken.getGroupId());
+            List<Long> usersApproved = new ArrayList<>();
+            usersApproved.add(group.getOwnerId());
+            usersApproved.addAll(group.getAdditionalManagersUserIds());
+
             this.getLogManager().logEvent(user, request, SegueLogType.CREATE_USER_ASSOCIATION,
                     ImmutableMap.of(ASSOCIATION_TOKEN_FIELDNAME, associationToken.getToken(),
                                     GROUP_FK, associationToken.getGroupId(),
-                                    USER_ID_FKEY_FIELDNAME, associationToken.getOwnerUserId()));
+                                    USER_ID_LIST_FKEY_FIELDNAME, usersApproved));
 
             return Response.ok(new ImmutableMap.Builder<String, String>().put("result", "success").build()).build();
         } catch (SegueDatabaseException e) {
