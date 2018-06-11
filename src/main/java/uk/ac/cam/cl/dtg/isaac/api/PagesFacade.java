@@ -593,6 +593,8 @@ public class PagesFacade extends AbstractIsaacFacade {
      * 
      * @param request
      *            - so that we can deal with caching.
+     * @param httpServletRequest
+     *            - so that we can extract user information.
      * @param fragmentId
      *            as a string
      * @return A Response object containing a page fragment object or containing a SegueErrorResponse.
@@ -601,7 +603,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Path("/fragments/{fragment_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    public final Response getPageFragment(@Context final Request request,
+    public final Response getPageFragment(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
             @PathParam("fragment_id") final String fragmentId) {
 
         // Calculate the ETag on current live version of the content
@@ -617,6 +619,12 @@ public class PagesFacade extends AbstractIsaacFacade {
         fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(fragmentId));
 
         Response result = this.findSingleResult(fieldsToMatch);
+
+        getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
+                IsaacLogType.VIEW_PAGE_FRAGMENT, ImmutableMap.of(
+                        FRAGMENT_ID_LOG_FIELDNAME, fragmentId,
+                        CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()
+                ));
 
         return Response.status(result.getStatus()).entity(result.getEntity())
                 .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();

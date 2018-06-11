@@ -97,6 +97,7 @@ public final class Constants {
     public static final String QUESTION_ID_LOG_FIELDNAME = "questionId";
     public static final String CONCEPT_ID_LOG_FIELDNAME = "conceptId";
     public static final String PAGE_ID_LOG_FIELDNAME = "pageId";
+    public static final String FRAGMENT_ID_LOG_FIELDNAME = "pageFragmentId";
 
     /**
      * Class to represent Isaac log types.
@@ -115,6 +116,7 @@ public final class Constants {
         VIEW_GROUPS_ASSIGNMENTS,
         VIEW_MY_BOARDS_PAGE,
         VIEW_PAGE,
+        VIEW_PAGE_FRAGMENT,
         VIEW_QUESTION,
         VIEW_USER_PROGRESS
     }
