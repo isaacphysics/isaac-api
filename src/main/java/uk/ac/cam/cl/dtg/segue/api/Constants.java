@@ -259,6 +259,7 @@ public final class Constants {
         PASSWORD_RESET_REQUEST_RECEIVED,
         PASSWORD_RESET_REQUEST_SUCCESSFUL,
         QUESTION_ATTEMPT_RATE_LIMITED,
+        RELEASE_USER_ASSOCIATION,
         REMOVE_USER_FROM_GROUP,
         REVOKE_USER_ASSOCIATION,
         SEND_MASS_EMAIL,
@@ -293,6 +294,7 @@ public final class Constants {
     public static final String LEVEL_FIELDNAME = "level";
 
     public static final String USER_ID_FKEY_FIELDNAME = "userId";
+    public static final String USER_ID_LIST_FKEY_FIELDNAME = "userIds";
     public static final String EVENT_ID_FKEY_FIELDNAME = "eventId";
     public static final String BOOKING_STATUS_FIELDNAME = "bookingStatus";
     public static final String ADMIN_BOOKING_REASON_FIELDNAME = "authorisationReason";
