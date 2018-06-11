@@ -183,8 +183,8 @@ public class UserAssociationManager {
 
     /**
      * get Associations.
-     * 
-     * This method will get all users who
+     *
+     * I.e. Who can currently view a given user's data.
      * 
      * @param user
      *            to find associations for.
@@ -196,6 +196,8 @@ public class UserAssociationManager {
     }
 
     /**
+     * Get all those user's whose data I can see.
+     *
      * @param user
      *            - who may have access granted.
      * @return List of all associations
@@ -269,6 +271,36 @@ public class UserAssociationManager {
         Validate.notNull(userToRevoke);
 
         associationDatabase.deleteAssociation(ownerUser.getId(), userToRevoke.getId());
+    }
+
+    /**
+     * Revoke all permissions granted by data owner.
+     *
+     * @param ownerUser
+     *            - the user who owns the data
+     * @throws SegueDatabaseException
+     *             - If there is a database issue whilst fulfilling the request.
+     */
+    public void revokeAllAssociationsByOwnerUser(final RegisteredUserDTO ownerUser)
+            throws SegueDatabaseException {
+        Validate.notNull(ownerUser);
+
+        associationDatabase.deleteAssociationsByOwner(ownerUser.getId());
+    }
+
+    /**
+     * Revoke all permissions granted to a data recipient.
+     *
+     * @param recipientUser
+     *            - the user who owns the data
+     * @throws SegueDatabaseException
+     *             - If there is a database issue whilst fulfilling the request.
+     */
+    public void revokeAllAssociationsByRecipientUser(final RegisteredUserDTO recipientUser)
+            throws SegueDatabaseException {
+        Validate.notNull(recipientUser);
+
+        associationDatabase.deleteAssociationsByRecipient(recipientUser.getId());
     }
 
     /**

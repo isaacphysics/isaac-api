@@ -97,7 +97,7 @@ public interface IAssociationDataManager {
             throws SegueDatabaseException;
 
     /**
-     * Revoke permission to access personal data.
+     * Revoke an individual user association i.e. one user's permission to access personal data of another.
      * 
      * @param ownerUserId
      *            - the owner of the data.
@@ -107,6 +107,26 @@ public interface IAssociationDataManager {
      *             - if there is a database error.
      */
     void deleteAssociation(final Long ownerUserId, final Long userIdWithAccess) throws SegueDatabaseException;
+
+    /**
+     * Revoke all permissions granted by a particular data owner.
+     *
+     * @param ownerUserId
+     *            - the owner of the data who no longer wants to share with anyone.
+     * @throws SegueDatabaseException
+     *             - if there is a database error.
+     */
+    void deleteAssociationsByOwner(final Long ownerUserId) throws SegueDatabaseException;
+
+    /**
+     * Revoke all permissions granted to a recipient user id.
+     *
+     * @param recipientUserId
+     *            - the recipient of the data who no longer wants to receive access to anyone.
+     * @throws SegueDatabaseException
+     *             - if there is a database error.
+     */
+    void deleteAssociationsByRecipient(final Long recipientUserId) throws SegueDatabaseException;
 
     /**
      * Determines whether the user has a valid association already.
