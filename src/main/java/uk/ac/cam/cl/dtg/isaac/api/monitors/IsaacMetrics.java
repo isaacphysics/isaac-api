@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.isaac.api.metrics;
+package uk.ac.cam.cl.dtg.isaac.api.monitors;
 
 /**
  * Created by mlt47 on 09/03/2018.

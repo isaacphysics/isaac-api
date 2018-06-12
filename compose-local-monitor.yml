@@ -53,7 +53,7 @@ services:
       - GF_AUTH_ANONYMOUS_ENABLED=false
       - GF_AUTH_BASIC_ENABLED=false
     volumes:
-      - ./grafana-db:/var/lib/grafana
+      - ./grafana:/var/lib/grafana
     network_mode: bridge
     links:
       - prometheus:prometheus
