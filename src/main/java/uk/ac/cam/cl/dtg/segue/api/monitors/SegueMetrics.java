@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.segue.api.monitors;
 
+import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.guava.cache.CacheMetricsCollector;
 
@@ -13,6 +14,10 @@ public final class SegueMetrics {
     // Websocket Metrics
     public static final Gauge CURRENT_OPEN_WEBSOCKETS = Gauge.build()
             .name("segue_current_open_websockets").help("Currently open websockets.").register();
+    public static final Counter WEBSOCKETS_OPENED = Counter.build()
+            .name("segue_opened_websockets").help("Websockets opened since process start.").register();
+    public static final Counter WEBSOCKETS_CLOSED = Counter.build()
+            .name("segue_closed_websockets").help("Websockets closed since process start.").register();
 
     // User Metrics
     public static final Gauge CURRENT_WEBSOCKET_USERS = Gauge.build()

@@ -77,6 +77,7 @@ import com.google.inject.Inject;
 import uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.api.userAlerts.UserAlertsWebSocket;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
@@ -1410,23 +1411,11 @@ public class AdminFacade extends AbstractSegueFacade {
                 Map<String, Object> diagnosticReport = Maps.newHashMap();
                 Map<String, Object> websocketReport = Maps.newHashMap();
                 Map<String, Object> runtimeReport = Maps.newHashMap();
-                Integer numCurrentWebSockets = 0;
-                Integer numCurrentWebSocketUsers = 0;
 
-                // websocket reporting
-                for (ConcurrentLinkedQueue<UserAlertsWebSocket> queue : UserAlertsWebSocket.connectedSockets.values()) {
-                    numCurrentWebSockets += queue.size();
-                    if (queue.size() > 0) {
-                        numCurrentWebSocketUsers++;
-                    }
-                }
-
-                websocketReport.put("currentWebsocketsOpen", numCurrentWebSockets);
-                websocketReport.put("usersCurrent", numCurrentWebSocketUsers);
-                websocketReport.put("usersTotal", UserAlertsWebSocket.connectedSockets.size());
-                websocketReport.put("totalWebsocketsOpened", UserAlertsWebSocket.getWebsocketCounts().get("numWebsocketsOpenedOverTime"));
-                websocketReport.put("totalWebsocketsClosed", UserAlertsWebSocket.getWebsocketCounts().get("numWebsocketsClosedOverTime"));
-
+                websocketReport.put("currentWebsocketsOpen", SegueMetrics.CURRENT_OPEN_WEBSOCKETS.get());
+                websocketReport.put("usersCurrent", SegueMetrics.CURRENT_WEBSOCKET_USERS.get());
+                websocketReport.put("totalWebsocketsOpened", SegueMetrics.WEBSOCKETS_OPENED.get());
+                websocketReport.put("totalWebsocketsClosed", SegueMetrics.WEBSOCKETS_CLOSED.get());
                 diagnosticReport.put("websockets", websocketReport);
 
                 // runtime reporting

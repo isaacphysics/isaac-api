@@ -89,19 +89,15 @@ public class PgUserStreakManager implements IUserStreaksManager {
     public void notifyUserOfStreakChange(final RegisteredUserDTO user) {
         // FIXME - it is unlikely that this is the best location for this code!
         // It is better than in the already bloated facade method, however!
-        if (null != UserAlertsWebSocket.connectedSockets && UserAlertsWebSocket.connectedSockets.containsKey(user.getId())) {
+        long userId = user.getId();
+        try {
+            IUserAlert alert = new PgUserAlert(null, userId,
+                    objectMapper.writeValueAsString(ImmutableMap.of("streakRecord", this.getCurrentStreakRecord(user))),
+                    "progress", new Timestamp(System.currentTimeMillis()), null, null, null);
 
-            try {
-                IUserAlert alert = new PgUserAlert(null, user.getId(),
-                        objectMapper.writeValueAsString(ImmutableMap.of("streakRecord", this.getCurrentStreakRecord(user))),
-                        "progress", new Timestamp(System.currentTimeMillis()), null, null, null);
-
-                for (IAlertListener listener : UserAlertsWebSocket.connectedSockets.get(user.getId())) {
-                    listener.notifyAlert(alert);
-                }
-            } catch (JsonProcessingException e) {
-                e.printStackTrace();
-            }
+            UserAlertsWebSocket.notifyUserOfAlert(userId, alert);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
         }
     }
 
