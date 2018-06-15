@@ -11,9 +11,11 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.IUserBadgePolicy;
+import uk.ac.cam.cl.dtg.segue.dos.ITransaction;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
+import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -39,7 +41,7 @@ public class TeacherCpdBadgePolicy implements IUserBadgePolicy {
     }
 
     @Override
-    public JsonNode initialiseState(RegisteredUserDTO user) {
+    public JsonNode initialiseState(RegisteredUserDTO user, ITransaction transaction) {
 
         ArrayNode events = JsonNodeFactory.instance.arrayNode();
 
@@ -70,6 +72,15 @@ public class TeacherCpdBadgePolicy implements IUserBadgePolicy {
 
     @Override
     public JsonNode updateState(RegisteredUserDTO user, JsonNode state, String event) {
+
+        Iterator<JsonNode> iter = ((ArrayNode) state.get("cpdEvents")).elements();
+
+        while (iter.hasNext()) {
+            if (iter.next().asText().equals(event)) {
+                return state;
+            }
+        }
+
         ((ArrayNode) state.get("cpdEvents")).add(event);
         return state;
     }

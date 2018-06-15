@@ -770,7 +770,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             eventDetails.put(ASSIGNMENT_DUEDATE_FK, assignmentWithID.getDueDate());
             this.getLogManager().logEvent(currentlyLoggedInUser, request, SET_NEW_ASSIGNMENT, eventDetails);
 
-            this.userBadgeManager.updateBadge(null, currentlyLoggedInUser,
+            this.userBadgeManager.updateBadge(currentlyLoggedInUser,
                     UserBadgeManager.Badge.TEACHER_ASSIGNMENTS_SET, assignmentWithID.getId().toString());
 
             tagsLoop:
@@ -778,7 +778,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
                 for (GameboardItem item : gameboard.getQuestions()) {
                     if (item.getTags().contains(tag)) {
-                        this.userBadgeManager.updateBadge(null, currentlyLoggedInUser,
+                        this.userBadgeManager.updateBadge(currentlyLoggedInUser,
                                 UserBadgeManager.Badge.TEACHER_BOOK_PAGES_SET, assignmentWithID.getId().toString());
                         break tagsLoop;
                     }

@@ -82,7 +82,7 @@ public class QuestionBadgeManager {
         try {
 
             // update total questions counter first
-            this.userBadgeManager.updateBadge(conn, user,
+            this.userBadgeManager.updateBadge(user,
                     UserBadgeManager.Badge.QUESTIONS_TOTAL, questionId);
 
             // get additional details
@@ -93,13 +93,13 @@ public class QuestionBadgeManager {
                 // update tag badges
                 for (String tag : questionDetails.getTags()) {
                     if (tagBadges.containsKey(tag)) {
-                        this.userBadgeManager.updateBadge(conn, user, tagBadges.get(tag), questionId);
+                        this.userBadgeManager.updateBadge(user, tagBadges.get(tag), questionId);
                     }
                 }
 
                 // update level badges
                 if (levelBadges.containsKey(questionDetails.getLevel())) {
-                    this.userBadgeManager.updateBadge(conn, user,
+                    this.userBadgeManager.updateBadge(user,
                             levelBadges.get(questionDetails.getLevel()), questionId);
                 }
             }

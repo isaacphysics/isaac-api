@@ -460,7 +460,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             persistedGameboard = gameManager.saveNewGameboard(newGameboardObject, user);
 
             if (persistedGameboard.getCreationMethod().equals(GameboardCreationMethod.BUILDER)) {
-                this.userBadgeManager.updateBadge(null, user, UserBadgeManager.Badge.TEACHER_GAMEBOARDS_CREATED,
+                this.userBadgeManager.updateBadge(user, UserBadgeManager.Badge.TEACHER_GAMEBOARDS_CREATED,
                         persistedGameboard.getId());
             }
 

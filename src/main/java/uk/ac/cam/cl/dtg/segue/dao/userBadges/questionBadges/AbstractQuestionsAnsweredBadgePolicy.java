@@ -9,6 +9,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.IUserBadgePolicy;
+import uk.ac.cam.cl.dtg.segue.dos.ITransaction;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -62,7 +63,7 @@ public abstract class AbstractQuestionsAnsweredBadgePolicy implements IUserBadge
     }
 
     @Override
-    public JsonNode initialiseState(RegisteredUserDTO user) {
+    public JsonNode initialiseState(RegisteredUserDTO user, ITransaction transaction) {
 
         ObjectNode incompleteAttempts = JsonNodeFactory.instance.objectNode();
         ArrayNode completeAttempts = JsonNodeFactory.instance.arrayNode();
