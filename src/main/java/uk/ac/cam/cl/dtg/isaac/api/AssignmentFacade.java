@@ -47,6 +47,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,7 +69,6 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
-import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
@@ -151,6 +151,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public Response getAssignments(@Context final HttpServletRequest request,
+
             @QueryParam("assignmentStatus") final GameboardState assignmentStatus) {
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
@@ -233,7 +234,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
 
             if (null == groupIdOfInterest) {
-                return Response.ok(this.assignmentManager.getAllAssignmentsSetByUser(currentlyLoggedInUser))
+                List<UserGroupDTO> allGroupsOwnedAndManagedByUser = this.groupManager.getAllGroupsOwnedAndManagedByUser(currentlyLoggedInUser, false);
+                return Response.ok(this.assignmentManager.getAllAssignmentsForSpecificGroups(allGroupsOwnedAndManagedByUser))
                         .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
             } else {
                 UserGroupDTO group = this.groupManager.getGroupById(groupIdOfInterest);
@@ -243,18 +245,23 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                             .toResponse();
                 }
 
-                List<AssignmentDTO> allAssignmentsSetByUserToGroup = this.assignmentManager
-                        .getAllAssignmentsSetByUserToGroup(currentlyLoggedInUser, group);
+                if (!GroupManager.isOwnerOrAdditionalManager(group, currentlyLoggedInUser.getId())
+                        && !isUserAnAdmin(userManager, request)) {
+                    return new SegueErrorResponse(Status.FORBIDDEN, "You are not the owner or manager of this group").toResponse();
+                }
+
+                Collection<AssignmentDTO> allAssignmentsSetToGroup
+                        = this.assignmentManager.getAssignmentsByGroup(group.getId());
 
                 // we want to populate gameboard details for the assignment DTO.
-                for (AssignmentDTO assignment : allAssignmentsSetByUserToGroup) {
+                for (AssignmentDTO assignment : allAssignmentsSetToGroup) {
                     assignment.setGameboard(this.gameManager.getGameboard(assignment.getGameboardId()));
                 }
 
-                this.getLogManager().logEvent(currentlyLoggedInUser, request, VIEW_GROUPS_ASSIGNMENTS,
-                        Maps.newHashMap());
+                this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacLogType.VIEW_GROUPS_ASSIGNMENTS,
+                        ImmutableMap.of("groupId", group.getId()));
 
-                return Response.ok(allAssignmentsSetByUserToGroup)
+                return Response.ok(allAssignmentsSetToGroup)
                         .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
             }
 
@@ -289,14 +296,16 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 return SegueErrorResponse.getResourceNotFoundResponse("The assignment requested cannot be found");
             }
 
-            if (!assignment.getOwnerUserId().equals(currentlyLoggedInUser.getId()) 
+            UserGroupDTO group = this.groupManager.getGroupById(assignment.getGroupId());
+
+            if (!GroupManager.isOwnerOrAdditionalManager(group, currentlyLoggedInUser.getId())
                     && !isUserAnAdmin(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
             }
 
             GameboardDTO gameboard = this.gameManager.getGameboard(assignment.getGameboardId());
-            UserGroupDTO group = this.groupManager.getGroupById(assignment.getGroupId());
+
             List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group);
 
             List<ImmutableMap<String, Object>> result = Lists.newArrayList();
@@ -305,17 +314,17 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             final String correctPartString = "correctPartResults";
             final String incorrectPartString = "incorrectPartResults";
 
-            for (Entry<RegisteredUserDTO, List<GameboardItem>> e : this.gameManager.gatherGameProgressData(
-                    groupMembers, gameboard).entrySet()) {
+            for (ImmutablePair<RegisteredUserDTO, List<GameboardItem>> userGameboardItems : this.gameManager
+                    .gatherGameProgressData(groupMembers, gameboard)) {
                 UserSummaryDTO userSummary = associationManager.enforceAuthorisationPrivacy(currentlyLoggedInUser,
-                        userManager.convertToUserSummaryObject(e.getKey()));
+                        userManager.convertToUserSummaryObject(userGameboardItems.getLeft()));
 
                 // can the user access the data?
                 if (userSummary.isAuthorisedFullAccess()) {
                     ArrayList<GameboardItemState> states = Lists.newArrayList();
                     ArrayList<Integer> correctQuestionParts = Lists.newArrayList();
                     ArrayList<Integer> incorrectQuestionParts = Lists.newArrayList();
-                    for (GameboardItem questionResult : e.getValue()) {
+                    for (GameboardItem questionResult : userGameboardItems.getRight()) {
                         states.add(questionResult.getState());
                         correctQuestionParts.add(questionResult.getQuestionPartsCorrect());
                         incorrectQuestionParts.add(questionResult.getQuestionPartsIncorrect());
@@ -328,37 +337,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 }
             }
 
-            // quick fix to sort list by user last name, first name
-            result.sort((result1, result2) -> {
-                UserSummaryDTO user1 = (UserSummaryDTO) result1.get(userString);
-                UserSummaryDTO user2 = (UserSummaryDTO) result2.get(userString);
-
-                if (user1.getGivenName() == null && user2.getGivenName() != null) {
-                    return -1;
-                } else if (user1.getGivenName() != null && user2.getGivenName() == null) {
-                    return 1;
-                } else if (user1.getGivenName() == null && user2.getGivenName() == null) {
-                    return 0;
-                }
-
-                return user1.getGivenName().toLowerCase().compareTo(user2.getGivenName().toLowerCase());
-            });
-            result.sort((result1, result2) -> {
-                UserSummaryDTO user1 = (UserSummaryDTO) result1.get(userString);
-                UserSummaryDTO user2 = (UserSummaryDTO) result2.get(userString);
-
-                if (user1.getFamilyName() == null && user2.getFamilyName() != null) {
-                    return -1;
-                } else if (user1.getFamilyName() != null && user2.getFamilyName() == null) {
-                    return 1;
-                } else if (user1.getFamilyName() == null && user2.getFamilyName() == null) {
-                    return 0;
-                }
-
-                return user1.getFamilyName().toLowerCase().compareTo(user2.getFamilyName().toLowerCase());
-            });
-
-            this.getLogManager().logEvent(currentlyLoggedInUser, request, VIEW_ASSIGNMENT_PROGRESS,
+            this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacLogType.VIEW_ASSIGNMENT_PROGRESS,
                     ImmutableMap.of(ASSIGNMENT_FK, assignment.getId()));
 
             // get game manager completion information for this assignment.
@@ -400,38 +379,18 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 return SegueErrorResponse.getResourceNotFoundResponse("The assignment requested cannot be found");
             }
 
-            if (!assignment.getOwnerUserId().equals(currentlyLoggedInUser.getId())
+            UserGroupDTO group = this.groupManager.getGroupById(assignment.getGroupId());
+
+            if (!GroupManager.isOwnerOrAdditionalManager(group, currentlyLoggedInUser.getId())
                     && !isUserAnAdmin(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
             }
             
             GameboardDTO gameboard = this.gameManager.getGameboard(assignment.getGameboardId());
-            UserGroupDTO group = this.groupManager.getGroupById(assignment.getGroupId());
+
             List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group);
             List<String> questionIds = Lists.newArrayList();
-            
-            // quick hack to sort list by user last name, first name
-            groupMembers.sort((user1, user2) -> {
-                if (user1.getGivenName() == null && user2.getGivenName() != null) {
-                    return -1;
-                } else if (user1.getGivenName() != null && user2.getGivenName() == null) {
-                    return 1;
-                } else if (user1.getGivenName() == null && user2.getGivenName() == null) {
-                    return 0;
-                }
-                return user1.getGivenName().toLowerCase().compareTo(user2.getGivenName().toLowerCase());
-            });
-            groupMembers.sort((user1, user2) -> {
-                if (user1.getFamilyName() == null && user2.getFamilyName() != null) {
-                    return -1;
-                } else if (user1.getFamilyName() != null && user2.getFamilyName() == null) {
-                    return 1;
-                } else if (user1.getFamilyName() == null && user2.getFamilyName() == null) {
-                    return 0;
-                }
-                return user1.getFamilyName().toLowerCase().compareTo(user2.getFamilyName().toLowerCase());
-            });
 
             List<String[]> rows = Lists.newArrayList();
             StringWriter stringWriter = new StringWriter();
@@ -512,7 +471,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 Collections.addAll(resultRows, resultRow.toArray(new String[0]));
             }
 
-            this.getLogManager().logEvent(currentlyLoggedInUser, request, DOWNLOAD_ASSIGNMENT_PROGRESS_CSV,
+            this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacLogType.DOWNLOAD_ASSIGNMENT_PROGRESS_CSV,
                     ImmutableMap.of("assignmentId", assignmentId));
             
             // ignore name columns
@@ -573,7 +532,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             group = this.groupManager.getGroupById(groupId);
 
             // Check the group owner:
-            if (!group.getOwnerId().equals(currentlyLoggedInUser.getId()) && !isUserAnAdmin(userManager, request)) {
+            if (!GroupManager.isOwnerOrAdditionalManager(group, currentlyLoggedInUser.getId())
+                && !isUserAnAdmin(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
             }
@@ -585,18 +545,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             // Fetch the members of the requested group
             List<RegisteredUserDTO> groupMembers;
             groupMembers = this.groupManager.getUsersInGroup(group);
-            // quick hack to sort list by user last name
-            groupMembers.sort((user1, user2) -> {
-                if (user1.getFamilyName() == null && user2.getFamilyName() != null) {
-                    return -1;
-                } else if (user1.getFamilyName() != null && user2.getFamilyName() == null) {
-                    return 1;
-                } else if (user1.getFamilyName() == null && user2.getFamilyName() == null) {
-                    return 0;
-                } else {
-                    return user1.getFamilyName().compareTo(user2.getFamilyName());
-                }
-            });
 
             // String: question part id
             // Integer: question part result
@@ -671,12 +619,14 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             for (RegisteredUserDTO groupMember : groupMembers) {
                 ArrayList<String> row = Lists.newArrayList();
                 Map<GameboardDTO, Map<String, Integer>> userAssignments = grandTable.get(groupMember);
-                List<Double> totals = Lists.newArrayList();
+                List<Float> assignmentPercentages = Lists.newArrayList();
                 List<Integer> marks = Lists.newArrayList();
+                int totalQPartsCorrect = 0;
+                int totalQPartsCount = 0;
                 for (AssignmentDTO assignment : assignments) {
                     GameboardDTO gameboard = gameManager.getGameboard(assignment.getGameboardId());
-                    int total = 0;
-                    int outOf = 0;
+                    int assignmentQPartsCorrect = 0;
+                    int assignmentQPartsCount = 0;
                     List<String> questionIds = gameboardQuestionIds.get(gameboard);
                     List<GameboardItem> questions = gameboard.getQuestions();
                     Map<String, Integer> gameboardPartials = Maps.newHashMap();
@@ -694,21 +644,21 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                         }
                     }
                     for (Entry<String, Integer> entry : gameboardPartials.entrySet()) {
-                        total += entry.getValue();
-                        outOf += questionParts.get(entry.getKey());
+                        assignmentQPartsCorrect += entry.getValue();
+                        assignmentQPartsCount += questionParts.get(entry.getKey());
                     }
-                    totals.add(100 * new Double(total) / outOf);
+                    totalQPartsCorrect += assignmentQPartsCorrect;
+                    totalQPartsCount += assignmentQPartsCount;
+                    assignmentPercentages.add((100f * assignmentQPartsCorrect) / assignmentQPartsCount);
                 }
-                Double overallTotal = totals.stream()
-                        .map(boardTotal -> boardTotal / assignments.size())
-                        .reduce(0d, (a, b) -> a + b);
+                float overallTotal = (100f * totalQPartsCorrect) / totalQPartsCount;
 
                 // The next three lines could be a little better if I were not this sleepy...
                 row.add(groupMember.getFamilyName());
                 row.add(groupMember.getGivenName());
                 row.add(String.format("%.0f", overallTotal));
-                for (Double total : totals) {
-                    row.add(String.format("%.0f", total));
+                for (Float assignmentPercentage : assignmentPercentages) {
+                    row.add(String.format("%.0f", assignmentPercentage));
                 }
                 row.add("");
                 for (Integer mark : marks) {
@@ -731,7 +681,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     currentlyLoggedInUser.getFamilyName()) + stringWriter.toString()
                     + "\n\nN.B.\n\"The percentages are for question parts completed, not question pages.\"\n";
 
-            this.getLogManager().logEvent(currentlyLoggedInUser, request, DOWNLOAD_GROUP_PROGRESS_CSV,
+            this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacLogType.DOWNLOAD_GROUP_PROGRESS_CSV,
                     ImmutableMap.of("groupId", groupId));
 
             return Response.ok(headerBuilder)
@@ -817,6 +767,12 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                         .toResponse();
             }
 
+            if (!GroupManager.isOwnerOrAdditionalManager(assigneeGroup, currentlyLoggedInUser.getId())
+                    && !isUserAnAdmin(userManager, request)) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "You can only set assignments to groups you own or manage.").toResponse();
+            }
+
             GameboardDTO gameboard = this.gameManager.getGameboard(assignmentDTOFromClient.getGameboardId());
             if (null == gameboard) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "The gameboard id specified does not exist.")
@@ -835,7 +791,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             eventDetails.put(GROUP_FK, assignmentWithID.getGroupId());
             eventDetails.put(ASSIGNMENT_FK, assignmentWithID.getId());
             eventDetails.put(ASSIGNMENT_DUEDATE_FK, assignmentWithID.getDueDate());
-            this.getLogManager().logEvent(currentlyLoggedInUser, request, SET_NEW_ASSIGNMENT, eventDetails);
+            this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacLogType.SET_NEW_ASSIGNMENT, eventDetails);
 
             return Response.ok(assignmentDTOFromClient).build();
         } catch (NoUserLoggedInException e) {
@@ -893,7 +849,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             this.assignmentManager.deleteAssignment(assignmentToDelete);
 
-            this.getLogManager().logEvent(currentlyLoggedInUser, request, DELETE_ASSIGNMENT,
+            this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacLogType.DELETE_ASSIGNMENT,
                     ImmutableMap.of(ASSIGNMENT_FK, assignmentToDelete.getId()));
 
             return Response.noContent().build();

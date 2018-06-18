@@ -36,12 +36,10 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
-import uk.ac.cam.cl.dtg.segue.dos.IUserAlert;
-import uk.ac.cam.cl.dtg.segue.dos.IUserAlerts;
+import uk.ac.cam.cl.dtg.segue.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
-import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
@@ -60,9 +58,9 @@ import javax.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.util.List;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.ANSWER_QUESTION;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueLogType;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.QUESTION_ATTEMPT_RATE_LIMITED;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
 /**
  * Question Facade
@@ -76,12 +74,12 @@ public class QuestionFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(QuestionFacade.class);
 
     private final ContentMapper mapper;
-
     private final IContentManager contentManager;
     private final String contentIndex;
     private final UserAccountManager userManager;
     private final QuestionManager questionManager;
     private IMisuseMonitor misuseMonitor;
+    private IUserStreaksManager userStreaksManager;
 
     /**
      * 
@@ -104,7 +102,8 @@ public class QuestionFacade extends AbstractSegueFacade {
     public QuestionFacade(final PropertiesLoader properties, final ContentMapper mapper,
                           final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final UserAccountManager userManager,
                           final QuestionManager questionManager,
-                          final ILogManager logManager, final IMisuseMonitor misuseMonitor) {
+                          final ILogManager logManager, final IMisuseMonitor misuseMonitor,
+                          final IUserStreaksManager userStreaksManager) {
         super(properties, logManager);
 
         this.questionManager = questionManager;
@@ -113,6 +112,29 @@ public class QuestionFacade extends AbstractSegueFacade {
         this.contentIndex = contentIndex;
         this.userManager = userManager;
         this.misuseMonitor = misuseMonitor;
+        this.userStreaksManager = userStreaksManager;
+    }
+
+    /**
+     * Warn users attempting to make GET requests to answers that we do not provide these. Log the attempt.
+     *
+     * @param request - the incoming request
+     * @param questionId - the question the user is referring to
+     * @return an error message informing the user where to find help.
+     */
+    @GET
+    @Path("{question_id}/answer")
+    public Response getQuestionAnswer(@Context final HttpServletRequest request, @PathParam("question_id") final String questionId) {
+        String errorMessage = String.format("We do not provide answers to questions. See https://%s/solving_problems for more help!",
+                                            getProperties().getProperty(HOST_NAME));
+        AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(request);
+        if (currentUser instanceof RegisteredUserDTO) {
+            log.warn(String.format("MethodNotAllowed: User (%s) attempted to GET the answer to the question '%s'!",
+                                    ((RegisteredUserDTO) currentUser).getId(), questionId));
+        } else {
+            log.warn(String.format("MethodNotAllowed: Anonymous user attempted to GET the answer to the question '%s'!", questionId));
+        }
+        return new SegueErrorResponse(Status.METHOD_NOT_ALLOWED, errorMessage).toResponse();
     }
 
     /**
@@ -197,7 +219,7 @@ public class QuestionFacade extends AbstractSegueFacade {
                     misuseMonitor.notifyEvent(((RegisteredUserDTO) currentUser).getId().toString() + "|" + questionId,
                             QuestionAttemptMisuseHandler.class.toString());
                 } catch (SegueResourceMisuseException e) {
-                    this.getLogManager().logEvent(currentUser, request, QUESTION_ATTEMPT_RATE_LIMITED, response.getEntity());
+                    this.getLogManager().logEvent(currentUser, request, SegueLogType.QUESTION_ATTEMPT_RATE_LIMITED, response.getEntity());
                     String message = "You have made too many attempts at this question part. Please try again later.";
                     return SegueErrorResponse.getRateThrottledResponse(message);
                 }
@@ -207,7 +229,7 @@ public class QuestionFacade extends AbstractSegueFacade {
                     misuseMonitor.notifyEvent(((AnonymousUserDTO) currentUser).getSessionId() + "|" + questionId,
                             AnonQuestionAttemptMisuseHandler.class.toString());
                 } catch (SegueResourceMisuseException e) {
-                    this.getLogManager().logEvent(currentUser, request, QUESTION_ATTEMPT_RATE_LIMITED, response.getEntity());
+                    this.getLogManager().logEvent(currentUser, request, SegueLogType.QUESTION_ATTEMPT_RATE_LIMITED, response.getEntity());
                     String message = "You have made too many attempts at this question part. Please log in or try again later.";
                     return SegueErrorResponse.getRateThrottledResponse(message);
                 }
@@ -219,7 +241,7 @@ public class QuestionFacade extends AbstractSegueFacade {
                     misuseMonitor.notifyEvent(RequestIPExtractor.getClientIpAddr(request),
                             IPQuestionAttemptMisuseHandler.class.toString());
                 } catch (SegueResourceMisuseException e) {
-                    this.getLogManager().logEvent(currentUser, request, QUESTION_ATTEMPT_RATE_LIMITED, response.getEntity());
+                    this.getLogManager().logEvent(currentUser, request, SegueLogType.QUESTION_ATTEMPT_RATE_LIMITED, response.getEntity());
                     String message = "Too many question attempts! Please log in or try again later.";
                     return SegueErrorResponse.getRateThrottledResponse(message);
                 }
@@ -232,13 +254,22 @@ public class QuestionFacade extends AbstractSegueFacade {
                         (QuestionValidationResponseDTO) response.getEntity());
             }
 
-            this.getLogManager().logEvent(currentUser, request, ANSWER_QUESTION, response.getEntity());
+            this.getLogManager().logEvent(currentUser, request, SegueLogType.ANSWER_QUESTION, response.getEntity());
+
+            // Update the user in case their streak has changed:
+            if (currentUser instanceof RegisteredUserDTO) {
+                this.userStreaksManager.notifyUserOfStreakChange((RegisteredUserDTO) currentUser);
+            }
 
             return response;
 
         } catch (IllegalArgumentException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Bad request - " + e.getMessage(), e);
             log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        } catch (SegueDatabaseException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to save question attempt. Try again later!");
+            log.error("Unable to to record question attempt.", e);
             return error.toResponse();
         }
     }

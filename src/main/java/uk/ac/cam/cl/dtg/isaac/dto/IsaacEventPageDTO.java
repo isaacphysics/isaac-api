@@ -237,6 +237,7 @@ public class IsaacEventPageDTO extends ContentDTO {
      * 
      * @return the preResources
      */
+    @JsonIgnore
     public List<ExternalReference> getPreResources() {
         return preResources;
     }
@@ -256,6 +257,7 @@ public class IsaacEventPageDTO extends ContentDTO {
      * 
      * @return the postResources
      */
+    @JsonIgnore
     public List<ExternalReference> getPostResources() {
         return postResources;
     }
@@ -333,6 +335,7 @@ public class IsaacEventPageDTO extends ContentDTO {
      *
      * @return the group token.
      */
+    @JsonIgnore
     public String getIsaacGroupToken() {
         return isaacGroupToken;
     }
@@ -378,6 +381,7 @@ public class IsaacEventPageDTO extends ContentDTO {
      *
      * @return the preresource content.
      */
+    @JsonIgnore
     public List<ContentDTO> getPreResourceContent() {
         return preResourceContent;
     }
@@ -396,6 +400,7 @@ public class IsaacEventPageDTO extends ContentDTO {
      *
      * @return the resource content.
      */
+    @JsonIgnore
     public List<ContentDTO> getPostResourceContent() {
         return postResourceContent;
     }

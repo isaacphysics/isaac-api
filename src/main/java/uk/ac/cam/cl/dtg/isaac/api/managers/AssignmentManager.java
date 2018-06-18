@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.api.managers;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import com.google.common.collect.ImmutableMap;
 import org.apache.commons.lang3.Validate;
@@ -37,6 +38,7 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
@@ -114,6 +116,16 @@ public class AssignmentManager implements IGroupObserver {
         }
 
         return assignments;
+    }
+
+    /**
+     * Get all assignments for a given group id
+     * @param groupId - to which the assignments have been assigned
+     * @return all assignments
+     * @throws SegueDatabaseException
+     */
+    public Collection<AssignmentDTO> getAssignmentsByGroup(final Long groupId) throws SegueDatabaseException {
+        return this.assignmentPersistenceManager.getAssignmentsByGroupId(groupId);
     }
 
     /**
@@ -223,6 +235,24 @@ public class AssignmentManager implements IGroupObserver {
     }
 
     /**
+     * Get all assignments for a list of groups
+     *
+     * @param groups to include in the search
+     * @return a list of assignments set to the group ids provided.
+     * @throws SegueDatabaseException
+     *             - if we cannot complete a required database operation.
+     */
+    public List<AssignmentDTO> getAllAssignmentsForSpecificGroups(final Collection<UserGroupDTO> groups) throws SegueDatabaseException {
+        Validate.notNull(groups);
+        // TODO - Is there a better way of doing this empty list check? Database method explodes if given it.
+        if (groups.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<Long> groupIds = groups.stream().map(UserGroupDTO::getId).collect(Collectors.toList());
+        return this.assignmentPersistenceManager.getAssignmentsByGroupList(groupIds);
+    }
+
+    /**
      * Assignments set by user and group.
      * 
      * @param user
@@ -303,7 +333,11 @@ public class AssignmentManager implements IGroupObserver {
         for (AssignmentDTO assignment : allAssignments) {
             if (assignment.getGameboardId().equals(gameboardId)) {
                 try {
-                    groups.add(groupManager.getGroupById(assignment.getGroupId()));
+                    // make sure the user has a reason to see the assignment still
+                    UserGroupDTO group = groupManager.getGroupById(assignment.getGroupId());
+                    if (GroupManager.isOwnerOrAdditionalManager(group, user.getId())) {
+                        groups.add(group);
+                    }
                 } catch (ResourceNotFoundException e) {
                     // skip group as it no longer exists.
                     log.warn(String.format(
@@ -343,6 +377,50 @@ public class AssignmentManager implements IGroupObserver {
             log.info(String.format("Could not find owner user object of group %s", group.getId()), e);
         } catch (SegueDatabaseException e) {
             log.error("Unable to send group welcome e-mail due to a database error. Failing silently.", e);
+        }
+    }
+
+    @Override
+    public void onAdditionalManagerAddedToGroup(final UserGroupDTO group, final RegisteredUserDTO additionalManagerUser) {
+        Validate.notNull(group);
+        Validate.notNull(additionalManagerUser);
+
+        // Try to email user to let them know:
+        try {
+            RegisteredUserDTO groupOwner = this.userManager.getUserDTOById(group.getOwnerId());
+
+            String groupOwnerName = "Unknown";
+            if (groupOwner != null && groupOwner.getFamilyName() != null) {
+                groupOwnerName = groupOwner.getFamilyName();
+            }
+            if (groupOwner != null && groupOwner.getGivenName() != null && !groupOwner.getGivenName().isEmpty()) {
+                groupOwnerName = groupOwner.getGivenName().substring(0, 1) + ". " + groupOwnerName;
+            }
+            String groupOwnerEmail = "Unknown";
+            if (groupOwner != null && groupOwner.getEmail() != null && !groupOwner.getEmail().isEmpty()) {
+                groupOwnerEmail = groupOwner.getEmail();
+            }
+            String groupName = "Unknown";
+            if (group.getGroupName() != null && !group.getGroupName().isEmpty()) {
+                groupName = group.getGroupName();
+            }
+
+            Map<String, Object> emailProperties = new ImmutableMap.Builder<String, Object>()
+                    .put("ownerName", groupOwnerName)
+                    .put("ownerEmail", groupOwnerEmail)
+                    .put("groupName", groupName)
+                    .build();
+            emailManager.sendTemplatedEmailToUser(additionalManagerUser,
+                    emailManager.getEmailTemplateDTO("email-template-group-additional-manager-welcome"),
+                    emailProperties,
+                    EmailType.SYSTEM);
+
+        } catch (ContentManagerException e) {
+            log.info("Could not send group additional manager email ", e);
+        } catch (NoUserException e) {
+            log.info(String.format("Could not find owner user object of group %s", group.getId()), e);
+        } catch (SegueDatabaseException e) {
+            log.error("Unable to send group additional manager e-mail due to a database error. Failing silently.", e);
         }
     }
 
@@ -417,4 +495,5 @@ public class AssignmentManager implements IGroupObserver {
                 .put("assignmentsInfo", plainTextSB.toString())
                 .put("assignmentsInfo_HTML", htmlSB.toString()).build();
     }
+
 }

@@ -24,6 +24,9 @@ import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
+
+import com.google.api.client.util.Sets;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -137,7 +140,7 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
             int affectedRows = pst.executeUpdate();
 
             if (affectedRows == 0) {
-                throw new SQLException("Creating linked account record failed, no rows changed");
+                throw new SQLException("Adding a user to a group failed, no rows changed");
             }
             
         } catch (SQLException e) {
@@ -172,27 +175,25 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
             pstString = pstString +  " AND archived = ?";
         }
 
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement(pstString);
-            pst.setLong(1, ownerUserId);
+        return getGroupsBySQLPst(pstString, ownerUserId, archivedGroupsOnly);
 
-            if (archivedGroupsOnly != null) {
-                pst.setBoolean(2, archivedGroupsOnly);
-            }
-            
-            ResultSet results = pst.executeQuery();
-            List<UserGroup> listOfResults = Lists.newArrayList();
-            while (results.next()) {
-                listOfResults.add(this.buildGroup(results));
-            }
-
-            return listOfResults;
-        } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
-        }  
     }
-    
+
+    @Override
+    public List<UserGroup> getGroupsByAdditionalManager(final Long additionalManagerId) throws SegueDatabaseException {
+        return this.getGroupsByAdditionalManager(additionalManagerId, null);
+    }
+
+    @Override
+    public List<UserGroup> getGroupsByAdditionalManager(final Long additionalManagerId, @Nullable final Boolean archivedGroupsOnly) throws SegueDatabaseException {
+        String pstString = "SELECT * FROM groups WHERE id IN (SELECT group_id FROM group_additional_managers WHERE user_id = ?)";
+        if (archivedGroupsOnly != null) {
+            pstString = pstString +  " AND archived = ?";
+        }
+
+        return getGroupsBySQLPst(pstString, additionalManagerId, archivedGroupsOnly);
+    }
+
     @Override
     public Long getGroupCount() throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
@@ -295,7 +296,66 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
             throw new SegueDatabaseException("Postgres exception", e);
         }
     }
-    
+
+    @Override
+    public Set<Long> getAdditionalManagerSetByGroupId(final Long groupId) throws SegueDatabaseException {
+        try (Connection conn = database.getDatabaseConnection()) {
+            PreparedStatement pst;
+            pst = conn
+                    .prepareStatement("SELECT * FROM group_additional_managers"
+                            + " WHERE group_id = ?");
+            pst.setLong(1, groupId);
+
+            ResultSet results = pst.executeQuery();
+
+            Set<Long> listOfResults = Sets.newHashSet();
+            while (results.next()) {
+                listOfResults.add(results.getLong("user_id"));
+            }
+
+            return listOfResults;
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        }
+    }
+
+    @Override
+    public void addUserAdditionalManagerList(final Long userId, final Long groupId) throws SegueDatabaseException {
+        try (Connection conn = database.getDatabaseConnection()) {
+            PreparedStatement pst;
+            pst = conn
+                    .prepareStatement(
+                            "INSERT INTO group_additional_managers(group_id, user_id, created) VALUES (?, ?, ?);",
+                            Statement.RETURN_GENERATED_KEYS);
+            pst.setLong(1, groupId);
+            pst.setLong(2, userId);
+            pst.setTimestamp(3, new Timestamp(new Date().getTime()));
+
+            int affectedRows = pst.executeUpdate();
+
+            if (affectedRows == 0) {
+                throw new SQLException("Adding a user to the additional manager list failed, no rows changed");
+            }
+
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        }
+    }
+
+    @Override
+    public void removeUserFromAdditionalManagerList(final Long userId, final Long groupId) throws SegueDatabaseException {
+        try (Connection conn = database.getDatabaseConnection()) {
+            PreparedStatement pst;
+            pst = conn.prepareStatement("DELETE FROM group_additional_managers WHERE group_id = ? AND user_id = ?");
+            pst.setLong(1, groupId);
+            pst.setLong(2, userId);
+
+            pst.execute();
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        }
+    }
+
     /**
      * buildGroup. Convenience method to build a group.
      * 
@@ -307,5 +367,27 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
     private UserGroup buildGroup(final ResultSet set) throws SQLException {
         return new UserGroup(set.getLong("id"), set.getString("group_name"), set.getLong("owner_id"),
                 set.getDate("created"), set.getBoolean("archived"));
+    }
+
+    private List<UserGroup> getGroupsBySQLPst(final String pstString, final Long userId, @Nullable final Boolean archivedGroupsOnly) throws SegueDatabaseException {
+        try (Connection conn = database.getDatabaseConnection()) {
+            PreparedStatement pst;
+            pst = conn.prepareStatement(pstString);
+            pst.setLong(1, userId);
+
+            if (archivedGroupsOnly != null) {
+                pst.setBoolean(2, archivedGroupsOnly);
+            }
+
+            ResultSet results = pst.executeQuery();
+            List<UserGroup> listOfResults = Lists.newArrayList();
+            while (results.next()) {
+                listOfResults.add(this.buildGroup(results));
+            }
+
+            return listOfResults;
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        }
     }
 }

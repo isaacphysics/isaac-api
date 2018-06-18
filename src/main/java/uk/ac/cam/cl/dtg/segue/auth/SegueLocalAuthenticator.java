@@ -26,6 +26,7 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.FailedToHashPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
@@ -162,28 +163,29 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
         Validate.notNull(userToAttachVerificationToken);
         Validate.notNull(email, "Email used for verification cannot be null");
         
-        //Get HMAC
+        // Generate HMAC
         String key = properties.getProperty(HMAC_SALT);
-        String token = UserAuthenticationManager.calculateHMAC(key, email);      
-
-        userToAttachVerificationToken.setEmailVerificationToken(token.replace("=", "")
-                                                                     .replace("/", "")
-                                                                     .replace("+", ""));
-
+        String token = UserAuthenticationManager.calculateHMAC(key, email).replace("=", "")
+                                                                          .replace("/", "")
+                                                                          .replace("+", "");
+        userToAttachVerificationToken.setEmailToVerify(email);
+        userToAttachVerificationToken.setEmailVerificationToken(token);
         return userToAttachVerificationToken;
     }
     
     @Override
-    public boolean isValidEmailVerificationToken(final RegisteredUser user, final String email, final String token) {
+    public boolean isValidEmailVerificationToken(final RegisteredUser user, final String token) {
         Validate.notNull(user);
+        Validate.notNull(token);
         
         String userToken = user.getEmailVerificationToken();
-        if (userToken != null && userToken.startsWith(token)) {
+        if (userToken != null && userToken.substring(0, Constants.TRUNCATED_TOKEN_LENGTH).equals(token)) {
             // Check if the email corresponds to the token
             String key = properties.getProperty(HMAC_SALT);
+            String email = user.getEmailToVerify();
             String hmacToken = UserAuthenticationManager.calculateHMAC(key, email).replace("=", "")
-                                                                    .replace("/", "")
-                                                                    .replace("+", ""); 
+                                                                                  .replace("/", "")
+                                                                                  .replace("+", "");
             return userToken.equals(hmacToken);
         }
         return false;

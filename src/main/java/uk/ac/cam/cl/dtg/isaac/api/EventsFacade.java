@@ -160,7 +160,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             sortInstructions.put(Constants.TITLE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
                     SortOrder.ASC);
         } else {
-            sortInstructions.put(EVENT_DATE_FIELDNAME, SortOrder.DESC);
+            sortInstructions.put(DATE_FIELDNAME, SortOrder.DESC);
         }
 
         fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(EVENT_TYPE));
@@ -169,8 +169,8 @@ public class EventsFacade extends AbstractIsaacFacade {
         if (null == showActiveOnly || showActiveOnly) {
             filterInstructions = Maps.newHashMap();
             DateRangeFilterInstruction anyEventsFromNow = new DateRangeFilterInstruction(new Date(), null);
-            filterInstructions.put(EVENT_ENDDATE_FIELDNAME, anyEventsFromNow);
-            sortInstructions.put(EVENT_DATE_FIELDNAME, SortOrder.ASC);
+            filterInstructions.put(ENDDATE_FIELDNAME, anyEventsFromNow);
+            sortInstructions.put(DATE_FIELDNAME, SortOrder.ASC);
         }
 
         if (null != showInactiveOnly && showInactiveOnly) {
@@ -181,14 +181,14 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             filterInstructions = Maps.newHashMap();
             DateRangeFilterInstruction anyEventsToNow = new DateRangeFilterInstruction(null, new Date());
-            filterInstructions.put(EVENT_ENDDATE_FIELDNAME, anyEventsToNow);
-            sortInstructions.put(EVENT_DATE_FIELDNAME, SortOrder.DESC);
+            filterInstructions.put(ENDDATE_FIELDNAME, anyEventsToNow);
+            sortInstructions.put(DATE_FIELDNAME, SortOrder.DESC);
         }
 
         try {
             ResultsWrapper<ContentDTO> findByFieldNames = null;
 
-            if (showMyBookingsOnly) {
+            if (null != showMyBookingsOnly && showMyBookingsOnly) {
                 RegisteredUserDTO currentUser = null;
                 try {
                     currentUser = this.userManager.getCurrentRegisteredUser(request);
@@ -392,7 +392,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                     = this.bookingManager.promoteFromWaitingListOrCancelled(event, userOfInterest);
 
             this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
-                    Constants.ADMIN_EVENT_WAITING_LIST_PROMOTION, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId(),
+                    SegueLogType.ADMIN_EVENT_WAITING_LIST_PROMOTION, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId(),
                                                                          USER_ID_FKEY_FIELDNAME, userId));
             return Response.ok(eventBookingDTO).build();
         } catch (NoUserLoggedInException e) {
@@ -497,11 +497,13 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             EventBookingDTO booking = bookingManager.createBookingOrAddToWaitingList(event, bookedUser, additionalInformation);
             this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
-                    Constants.ADMIN_EVENT_BOOKING_CREATED,
-                    ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId(),
-                            USER_ID_FKEY_FIELDNAME, userId,
-                            BOOKING_STATUS_FIELDNAME, booking.getBookingStatus().toString(),
-                            ADMIN_BOOKING_REASON_FIELDNAME, additionalInformation.get("authorisation") == null ? "NOT_PROVIDED" : additionalInformation.get("authorisation")));
+                    SegueLogType.ADMIN_EVENT_BOOKING_CREATED,
+                    ImmutableMap.of(
+                        EVENT_ID_FKEY_FIELDNAME, event.getId(),
+                        USER_ID_FKEY_FIELDNAME, userId,
+                        BOOKING_STATUS_FIELDNAME, booking.getBookingStatus().toString(),
+                        ADMIN_BOOKING_REASON_FIELDNAME, additionalInformation.get("authorisation") == null ? "NOT_PROVIDED" : additionalInformation.get("authorisation")
+                    ));
 
             return Response.ok(booking).build();
         } catch (NoUserLoggedInException e) {
@@ -543,7 +545,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
 
-            if (EventStatus.CLOSED.equals(event.getEventStatus())){
+            if (EventStatus.CLOSED.equals(event.getEventStatus())) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "Sorry booking for this event is closed. Please try again later.")
                     .toResponse();
             }
@@ -561,7 +563,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             EventBookingDTO eventBookingDTO = bookingManager.requestBooking(event, user, additionalInformation);
 
             this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
-                    Constants.EVENT_BOOKING, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId()));
+                    SegueLogType.EVENT_BOOKING, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId()));
 
             return Response.ok(eventBookingDTO).build();
         } catch (NoUserLoggedInException e) {
@@ -620,7 +622,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             EventBookingDTO eventBookingDTO = bookingManager.requestWaitingListBooking(event, user, additionalInformation);
             this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
-                    Constants.EVENT_WAITING_LIST_BOOKING, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId()));
+                    SegueLogType.EVENT_WAITING_LIST_BOOKING, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId()));
 
             return Response.ok(eventBookingDTO).build();
         } catch (NoUserLoggedInException e) {
@@ -720,10 +722,10 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             if (!userOwningBooking.equals(userLoggedIn)) {
                 this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
-                        Constants.ADMIN_EVENT_BOOKING_CANCELLED, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId(), USER_ID_FKEY_FIELDNAME, userOwningBooking.getId()));
+                        SegueLogType.ADMIN_EVENT_BOOKING_CANCELLED, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId(), USER_ID_FKEY_FIELDNAME, userOwningBooking.getId()));
             } else {
                 this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
-                        Constants.EVENT_BOOKING_CANCELLED, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId()));
+                        SegueLogType.EVENT_BOOKING_CANCELLED, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId()));
             }
 
             return Response.noContent().build();
@@ -824,7 +826,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             bookingManager.deleteBooking(event, user);
 
             this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
-                    Constants.ADMIN_EVENT_BOOKING_DELETED, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, eventId, USER_ID_FKEY_FIELDNAME, userId));
+                    SegueLogType.ADMIN_EVENT_BOOKING_DELETED, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, eventId, USER_ID_FKEY_FIELDNAME, userId));
 
             return Response.noContent().build();
         } catch (NoUserLoggedInException e) {
@@ -843,6 +845,70 @@ public class EventsFacade extends AbstractIsaacFacade {
     }
 
     /**
+     * Allow a staff user to promote a user from the waiting list.
+     *
+     * @param request
+     *            - so we can determine if the user is logged in
+     * @param eventId
+     *            - event booking containing updates, must contain primary id.
+     * @param userId
+     *            - the user to be promoted.
+     * @param attended
+     *            - boolean value representing whether the user was present, true, or absent, false.
+     * @return the updated booking.
+     */
+    @POST
+    @Path("{event_id}/bookings/{user_id}/record_attendance")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public final Response recordEventAttendance(@Context final HttpServletRequest request,
+                                                @PathParam("event_id") final String eventId,
+                                                @PathParam("user_id") final Long userId,
+                                                @QueryParam("attended") final Boolean attended) {
+        try {
+            if (!isUserAnAdminOrEventManager(userManager, request)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You must be a staff user to access this endpoint.")
+                        .toResponse();
+            }
+
+            RegisteredUserDTO userOfInterest = this.userManager.getUserDTOById(userId);
+            IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
+
+            EventBookingDTO eventBookingDTO = this.bookingManager.recordAttendance(event, userOfInterest, attended);
+            this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
+                    SegueLogType.ADMIN_EVENT_ATTENDANCE_RECORDED,
+                    ImmutableMap.of(
+                        EVENT_ID_FKEY_FIELDNAME, event.getId(),
+                        USER_ID_FKEY_FIELDNAME, userId,
+                        ATTENDED_FIELDNAME, attended,
+                        EVENT_DATE_FIELDNAME, event.getDate(),
+                        EVENT_TAGS_FIELDNAME, event.getTags()
+                    ));
+
+            return Response.ok(eventBookingDTO).build();
+
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            String errorMsg = "Database error occurred while trying to update a event booking";
+            log.error(errorMsg, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
+        } catch (ContentManagerException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Content Database error occurred while trying to retrieve event booking information.")
+                    .toResponse();
+        } catch (EventBookingUpdateException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                    "Unable to modify the booking", e)
+                    .toResponse();
+        } catch (NoUserException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                    "The user doesn't exist, so unable to book them onto an event", e)
+                    .toResponse();
+        }
+    }
+
+    /**
      * REST end point to provide a list of events.
      *
      * @param request
@@ -853,6 +919,8 @@ public class EventsFacade extends AbstractIsaacFacade {
      *            - the maximums number of results to return
      * @param showActiveOnly
      *            - true will impose filtering on the results. False will not. Defaults to false.
+     * @param showInactiveOnly
+     *            - true will impose filtering on the results. False will not. Defaults to false.
      * @return a Response containing a list of events objects or containing a SegueErrorResponse.
      */
     @GET
@@ -862,7 +930,8 @@ public class EventsFacade extends AbstractIsaacFacade {
     public final Response getEventOverviews(@Context final HttpServletRequest request,
                                     @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
                                     @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit,
-                                    @QueryParam("show_active_only") final Boolean showActiveOnly) {
+                                    @QueryParam("show_active_only") final Boolean showActiveOnly,
+                                    @QueryParam("show_inactive_only") final Boolean showInactiveOnly) {
         Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 
         Integer newLimit = null;
@@ -876,16 +945,27 @@ public class EventsFacade extends AbstractIsaacFacade {
         }
 
         final Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
-        sortInstructions.put(EVENT_DATE_FIELDNAME, SortOrder.DESC);
+        sortInstructions.put(DATE_FIELDNAME, SortOrder.DESC);
 
         fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(EVENT_TYPE));
 
         Map<String, AbstractFilterInstruction> filterInstructions = null;
-        if (null == showActiveOnly || showActiveOnly) {
+        if (showActiveOnly != null && showActiveOnly && showInactiveOnly != null && showInactiveOnly) {
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                    "You cannot request both show active and inactive only.").toResponse();
+        }
+        if ((showActiveOnly == null && showInactiveOnly == null) // default case
+                || (showActiveOnly != null && showActiveOnly)) {
             filterInstructions = Maps.newHashMap();
             DateRangeFilterInstruction anyEventsFromNow = new DateRangeFilterInstruction(new Date(), null);
-            filterInstructions.put(EVENT_ENDDATE_FIELDNAME, anyEventsFromNow);
-            sortInstructions.put(EVENT_DATE_FIELDNAME, SortOrder.ASC);
+            filterInstructions.put(ENDDATE_FIELDNAME, anyEventsFromNow);
+            sortInstructions.put(DATE_FIELDNAME, SortOrder.ASC);
+        }
+        if (showInactiveOnly != null && showInactiveOnly) {
+            filterInstructions = Maps.newHashMap();
+            DateRangeFilterInstruction anyEventsToNow = new DateRangeFilterInstruction(null, new Date());
+            filterInstructions.put(ENDDATE_FIELDNAME, anyEventsToNow);
+            sortInstructions.put(DATE_FIELDNAME, SortOrder.DESC);
         }
 
         try {
@@ -924,6 +1004,10 @@ public class EventsFacade extends AbstractIsaacFacade {
                         this.bookingManager.countNumberOfBookingsWithStatus(e.getId(), BookingStatus.CONFIRMED));
                 eventOverviewBuilder.put("numberOfWaitingListBookings",
                         this.bookingManager.countNumberOfBookingsWithStatus(e.getId(), BookingStatus.WAITING_LIST));
+                eventOverviewBuilder.put("numberAttended",
+                        this.bookingManager.countNumberOfBookingsWithStatus(e.getId(), BookingStatus.ATTENDED));
+                eventOverviewBuilder.put("numberAbsent",
+                        this.bookingManager.countNumberOfBookingsWithStatus(e.getId(), BookingStatus.ABSENT));
 
                 if (null != e.getNumberOfPlaces()) {
                     eventOverviewBuilder.put("numberOfPlaces", e.getNumberOfPlaces());
@@ -984,7 +1068,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         }
 
         final Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
-        sortInstructions.put(EVENT_DATE_FIELDNAME, SortOrder.DESC);
+        sortInstructions.put(DATE_FIELDNAME, SortOrder.DESC);
 
         fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(EVENT_TYPE));
 
@@ -992,8 +1076,8 @@ public class EventsFacade extends AbstractIsaacFacade {
         if (null == showActiveOnly || showActiveOnly) {
             filterInstructions = Maps.newHashMap();
             DateRangeFilterInstruction anyEventsFromNow = new DateRangeFilterInstruction(new Date(), null);
-            filterInstructions.put(EVENT_ENDDATE_FIELDNAME, anyEventsFromNow);
-            sortInstructions.put(EVENT_DATE_FIELDNAME, SortOrder.ASC);
+            filterInstructions.put(ENDDATE_FIELDNAME, anyEventsFromNow);
+            sortInstructions.put(DATE_FIELDNAME, SortOrder.ASC);
         }
 
         try {

@@ -26,34 +26,6 @@ services:
     ports:
       - "9200-9400:9200-9400"
 
-  kafka:
-    network_mode: bridge
-    container_name: kafka
-    image: ucamcldtg/kafka-standalone
-    links:
-      - zookeeper:zookeeper
-    build:
-      context: ./kafka
-      dockerfile: Dockerfile-kafka
-    volumes:
-#      - ../kafka-data:/kafka-data:rw
-      - ./kafka/server.properties.local:/opt/kafka/config/server.properties:ro
-    depends_on:
-      - zookeeper
-    ports:
-      - "9092:9092"
-
-  zookeeper:
-    network_mode: bridge
-    container_name: zookeeper
-    image: ucamcldtg/zookeeper-standalone
-    build:
-      context: ./kafka
-      dockerfile: Dockerfile-zookeeper
-    volumes:
-#      - ../zookeeper-data:/zookeeper-data:rw
-      - ./kafka/zoo.cfg:/opt/zookeeper/conf/zoo.cfg:ro
-
   postgres:
     network_mode: bridge
     container_name: postgres
@@ -63,7 +35,7 @@ services:
   app-physics:
     network_mode: bridge
     container_name: app-physics
-    image: nginx:1.13.8
+    image: nginx:1.13.12
     volumes:
       - "../isaac-app/app:/usr/share/nginx/html:ro"
       - "../isaac-app/nginx.conf:/etc/nginx/nginx.conf:ro"
@@ -72,7 +44,7 @@ services:
   app-chemistry:
     network_mode: bridge
     container_name: app-chemistry
-    image: nginx:1.13.8
+    image: nginx:1.13.12
     volumes:
       - "../isaac-app/app:/usr/share/nginx/html:ro"
       - "../isaac-app/nginx.conf:/etc/nginx/nginx.conf:ro"
@@ -81,7 +53,7 @@ services:
   app-biology:
     network_mode: bridge
     container_name: app-biology
-    image: nginx:1.13.8
+    image: nginx:1.13.12
     volumes:
       - "../isaac-app/app:/usr/share/nginx/html:ro"
       - "../isaac-app/nginx.conf:/etc/nginx/nginx.conf:ro"

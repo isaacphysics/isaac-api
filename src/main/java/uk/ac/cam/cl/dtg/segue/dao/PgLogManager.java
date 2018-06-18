@@ -46,6 +46,7 @@ import com.google.api.client.util.Sets;
 import com.google.inject.name.Named;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.api.Constants.LogType;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dos.LogEvent;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
@@ -88,8 +89,28 @@ public class PgLogManager implements ILogManager {
     }
 
     @Override
-    public void logEvent(final AbstractSegueUserDTO user, final HttpServletRequest httpRequest,
-            final String eventType, final Object eventDetails) {
+    public void logEvent(final AbstractSegueUserDTO user, final HttpServletRequest httpRequest, final LogType eventType,
+                         final Object eventDetails) {
+        Validate.notNull(user);
+        try {
+            if (user instanceof RegisteredUserDTO) {
+                this.persistLogEvent(((RegisteredUserDTO) user).getId().toString(), null, eventType.name(), eventDetails,
+                        RequestIPExtractor.getClientIpAddr(httpRequest));
+            } else {
+                this.persistLogEvent(null, ((AnonymousUserDTO) user).getSessionId(), eventType.name(), eventDetails,
+                        RequestIPExtractor.getClientIpAddr(httpRequest));
+            }
+
+        } catch (JsonProcessingException e) {
+            log.error("Unable to serialize eventDetails as json string", e);
+        } catch (SegueDatabaseException e) {
+            log.error("Unable to save log event to the database", e);
+        }
+    }
+
+    @Override
+    public void logExternalEvent(final AbstractSegueUserDTO user, final HttpServletRequest httpRequest,
+                         final String eventType, final Object eventDetails) {
         Validate.notNull(user);
         try {
             if (user instanceof RegisteredUserDTO) {
@@ -108,14 +129,14 @@ public class PgLogManager implements ILogManager {
     }
 
     @Override
-    public void logInternalEvent(final AbstractSegueUserDTO user, final String eventType, final Object eventDetails) {
+    public void logInternalEvent(final AbstractSegueUserDTO user, final LogType eventType, final Object eventDetails) {
         Validate.notNull(user);
         try {
             if (user instanceof RegisteredUserDTO) {
-                this.persistLogEvent(((RegisteredUserDTO) user).getId().toString(), null, eventType, eventDetails,
+                this.persistLogEvent(((RegisteredUserDTO) user).getId().toString(), null, eventType.name(), eventDetails,
                         null);
             } else {
-                this.persistLogEvent(null, ((AnonymousUserDTO) user).getSessionId(), eventType, eventDetails, null);
+                this.persistLogEvent(null, ((AnonymousUserDTO) user).getSessionId(), eventType.name(), eventDetails, null);
             }
 
         } catch (JsonProcessingException e) {

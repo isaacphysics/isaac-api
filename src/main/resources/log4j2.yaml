@@ -27,15 +27,6 @@ Configutation:
         PatternLayout:
           pattern: "[%d{yyyy-MM-dd HH:mm:ss}] [%-5p] %m%n"
 
-      - name: Kafka_Appender
-        fileName: ${sys:log.path}/kafka.log
-        filePattern: ${sys:log.path}/kafka.log.%d{yyyy-MM-dd}.gz
-        Policies:
-          TimeBasedTriggeringPolicy:
-            interval: 10
-        PatternLayout:
-          pattern: "[%d{yyyy-MM-dd HH:mm:ss}] [%-5p] %m%n"
-
   Loggers:
 
       Root:
@@ -44,9 +35,6 @@ Configutation:
           - ref: Console_Appender
 
       Logger:
-        - name: org.apache.kafka
-          level: warn
-
         - name: uk.ac.cam.cl.dtg
           level: info
           AppenderRef:
@@ -56,8 +44,3 @@ Configutation:
           level: warn
           AppenderRef:
             - ref: Perf_Appender
-
-        - name: kafkaStreamsLogger
-          level: debug
-          AppenderRef:
-            - ref: Kafka_Appender

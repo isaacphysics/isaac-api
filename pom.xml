@@ -10,7 +10,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<segue.version>2.4.6-SNAPSHOT</segue.version>
+		<segue.version>2.5.4-SNAPSHOT</segue.version>
 		<resteasy.version>3.0.11.Final</resteasy.version>
 		<powermock.version>1.5.2</powermock.version>
 		<postgresql.version>9.3-1104-jdbc41</postgresql.version>
@@ -117,12 +117,12 @@
 		<dependency>
 			<groupId>com.google.oauth-client</groupId>
 			<artifactId>google-oauth-client</artifactId>
-			<version>1.17.0-rc</version>
+			<version>1.23.0</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.oauth-client</groupId>
 			<artifactId>google-oauth-client-servlet</artifactId>
-			<version>1.17.0-rc</version>
+			<version>1.23.0</version>
 			<exclusions>
 				<exclusion>
 					<artifactId>servlet-api</artifactId>
@@ -134,12 +134,12 @@
 		<dependency>
 			<groupId>com.google.http-client</groupId>
 			<artifactId>google-http-client-jackson2</artifactId>
-			<version>1.15.0-rc</version>
+			<version>1.23.0</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.apis</groupId>
 			<artifactId>google-api-services-oauth2</artifactId>
-			<version>v2-rev64-1.17.0-rc</version>
+			<version>v2-rev134-1.23.0</version>
 		</dependency>
 
 		<dependency>
@@ -279,33 +279,6 @@
 			<groupId>net.sf.biweekly</groupId>
 			<artifactId>biweekly</artifactId>
 			<version>0.6.1</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.kafka</groupId>
-			<artifactId>kafka-clients</artifactId>
-			<version>0.11.0.0</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.kafka</groupId>
-			<artifactId>kafka-streams</artifactId>
-			<version>0.11.0.0</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.kafka</groupId>
-			<artifactId>kafka-streams</artifactId>
-			<version>0.11.0.0</version>
-			<classifier>test</classifier>
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.kafka</groupId>
-			<artifactId>kafka-clients</artifactId>
-			<version>0.11.0.0</version>
-			<classifier>test</classifier>
-			<scope>test</scope>
 		</dependency>
 
 		<!--Jetty JSR-356 Websocket server side dependency -->
