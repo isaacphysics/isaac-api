@@ -2,7 +2,7 @@
 -- Merge and Delete Users
 --
 -- Authors: Stephen Cummins, James Sharkey
--- Last Modified: 2018-04-20
+-- Last Modified: 2018-06-13
 --
 
 CREATE OR REPLACE FUNCTION mergeuser(targetuseridtokeep integer, targetuseridtodelete integer) RETURNS boolean
@@ -25,6 +25,14 @@ BEGIN
   UPDATE gameboards
   SET owner_user_id = targetUserIdToKeep
   WHERE owner_user_id = targetUserIdToDelete;
+
+  BEGIN
+    UPDATE group_additional_managers
+    SET user_id = targetUserIdToKeep
+    WHERE user_id = targetUserIdToDelete;
+    EXCEPTION WHEN unique_violation THEN
+    -- Ignore duplicate inserts.
+  END;
 
   BEGIN
     UPDATE group_memberships
