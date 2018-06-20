@@ -713,7 +713,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Path("/assign/groups")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    public Response getAssignedGroups(@Context final HttpServletRequest request,
+    public Response getAssignedGroupsByGameboards(@Context final HttpServletRequest request,
             @QueryParam("gameboard_ids") final String gameboardIdsQueryParam) {
         try {
 
