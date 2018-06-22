@@ -116,9 +116,34 @@ public class PgAssociationDataManager implements IAssociationDataManager {
             pst.setTimestamp(3, new Timestamp(new Date().getTime()));
             
             if (pst.executeUpdate() == 0) {
-                throw new SegueDatabaseException("Unable to create association token.");
+                throw new SegueDatabaseException("Unable to create association.");
             }
             
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        }
+    }
+
+    @Override
+    public void createAssociation(final Long userIdReceivingAccess, final Long userIdGrantingAccess)
+            throws SegueDatabaseException {
+        Validate.notNull(userIdReceivingAccess);
+
+        try (Connection conn = database.getDatabaseConnection()) {
+            PreparedStatement pst;
+            pst = conn
+                    .prepareStatement("INSERT INTO "
+                            + "user_associations(user_id_granting_permission, user_id_receiving_permission, created) "
+                            + "VALUES (?, ?, ?);");
+
+            pst.setLong(1, userIdGrantingAccess);
+            pst.setLong(2, userIdReceivingAccess);
+            pst.setTimestamp(3, new Timestamp(new Date().getTime()));
+
+            if (pst.executeUpdate() == 0) {
+                throw new SegueDatabaseException("Unable to create association.");
+            }
+
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
@@ -128,7 +153,7 @@ public class PgAssociationDataManager implements IAssociationDataManager {
     public void deleteAssociation(final Long userIdWhoGrantedAccess, final Long userIdWithAccess)
             throws SegueDatabaseException {
         if (null == userIdWhoGrantedAccess || null == userIdWithAccess) {
-            throw new SegueDatabaseException("Unable to locate the group requested to delete.");
+            throw new SegueDatabaseException("Unable to locate the association requested to delete.");
         }
 
         try (Connection conn = database.getDatabaseConnection()) {
@@ -143,6 +168,16 @@ public class PgAssociationDataManager implements IAssociationDataManager {
         } catch (SQLException e1) {
             throw new SegueDatabaseException("Postgres exception", e1);
         }
+    }
+
+    @Override
+    public void deleteAssociationsByOwner(Long ownerUserId) throws SegueDatabaseException {
+        this.deleteAssociations(ownerUserId, true);
+    }
+
+    @Override
+    public void deleteAssociationsByRecipient(Long recipientUserId) throws SegueDatabaseException {
+        this.deleteAssociations(recipientUserId, false);
     }
 
     @Override
@@ -292,5 +327,39 @@ public class PgAssociationDataManager implements IAssociationDataManager {
     private AssociationToken convertFromSQLToToken(final ResultSet results) throws SQLException {
         return new AssociationToken(results.getString("token"),
                 results.getLong("owner_user_id"), results.getLong("group_id"));
-    }    
+    }
+
+    /**
+     * Helper function to allow deletion of all associations for a given user.
+     * @param userIdOfInterest - the user id of interest
+     * @param isOwner - if true the it will delete all cases where the user is the data owner and has shared,
+     *                if false it will delete all cases where the user is the recipient.
+     * @throws SegueDatabaseException - if a data base error occurs.
+     */
+    private void deleteAssociations(final Long userIdOfInterest, final boolean isOwner)
+            throws SegueDatabaseException {
+        if (null == userIdOfInterest ) {
+            throw new SegueDatabaseException("No user Id specified for requested delete association operation.");
+        }
+
+        try (Connection conn = database.getDatabaseConnection()) {
+            PreparedStatement pst;
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("DELETE FROM user_associations WHERE ");
+
+            if (isOwner) {
+                sb.append("user_id_granting_permission = ?");
+            } else {
+                sb.append("user_id_receiving_permission = ?");
+            }
+
+            pst = conn.prepareStatement(sb.toString());
+            pst.setLong(1, userIdOfInterest);
+            pst.execute();
+
+        } catch (SQLException e1) {
+            throw new SegueDatabaseException("Postgres exception", e1);
+        }
+    }
 }

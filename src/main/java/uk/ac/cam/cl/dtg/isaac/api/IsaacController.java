@@ -15,9 +15,9 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.GLOBAL_SITE_SEARCH;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.PROXY_PATH;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.VIEW_USER_PROGRESS;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacLogType;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueLogType;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 import com.google.common.base.Supplier;
@@ -55,7 +55,6 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.IStatisticsManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
@@ -114,7 +113,7 @@ public class IsaacController extends AbstractIsaacFacade {
                 public void run() {
                     try {
                         log.info("Triggering question answer count query.");
-                        lastQuestionCount = statsManager.getLogCount(ANSWER_QUESTION);
+                        lastQuestionCount = statsManager.getLogCount(SegueLogType.ANSWER_QUESTION.name());
                         log.info("Question answer count query complete.");
                     } catch (SegueDatabaseException e) {
                         lastQuestionCount = 0L;
@@ -231,7 +230,7 @@ public class IsaacController extends AbstractIsaacFacade {
                 .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
 
         getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
-                GLOBAL_SITE_SEARCH, logMap);
+                IsaacLogType.GLOBAL_SITE_SEARCH, logMap);
 
         return Response
                 .ok(this.extractContentSummaryFromResultsWrapper(searchResults,
@@ -323,7 +322,7 @@ public class IsaacController extends AbstractIsaacFacade {
 
                 userProgressInformation.put("userSnapshot", userSnapshot);
 
-                this.getLogManager().logEvent(user, request, VIEW_USER_PROGRESS,
+                this.getLogManager().logEvent(user, request, IsaacLogType.VIEW_USER_PROGRESS,
                         ImmutableMap.of(USER_ID_FKEY_FIELDNAME, userOfInterestFull.getId()));
 
                 return Response.ok(userProgressInformation).build();

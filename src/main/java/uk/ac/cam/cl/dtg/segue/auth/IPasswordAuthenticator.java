@@ -148,5 +148,5 @@ public interface IPasswordAuthenticator extends IAuthenticator {
 
      * @return - the validity of the token
      */
-    boolean isValidEmailVerificationToken(final RegisteredUser user, final String email, final String token);
+    boolean isValidEmailVerificationToken(final RegisteredUser user, final String token);
 }

@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.segue.api.managers;
 import static org.junit.Assert.*;
 import static org.easymock.EasyMock.*;
 
+import com.google.api.client.util.Sets;
 import org.easymock.Capture;
 import org.junit.Before;
 import org.junit.Test;
@@ -123,12 +124,14 @@ public class UserAssociationManagerTest {
 		expectLastCall().once();
 		
 		UserGroupDTO groupToAddUserTo = createMock(UserGroupDTO.class);
+		expect(groupToAddUserTo.getAdditionalManagersUserIds()).andReturn(Sets.newHashSet()).atLeastOnce();
+
 		expect(dummyGroupDataManager.getGroupById(someAssociatedGroupId)).andReturn(groupToAddUserTo).once();
 		
 		dummyGroupDataManager.addUserToGroup(groupToAddUserTo, someRegisteredUserGrantingAccess);
 		expectLastCall().once();
 		
-		replay(dummyAssociationDataManager, dummyGroupDataManager);
+		replay(dummyAssociationDataManager, dummyGroupDataManager, groupToAddUserTo);
 
 		try {
 			managerUnderTest.createAssociationWithToken(someToken.getToken(), someRegisteredUserGrantingAccess);
@@ -167,12 +170,13 @@ public class UserAssociationManagerTest {
 						someUserIdGrantingAccess)).andReturn(true);
 		
 		UserGroupDTO groupToAddUserTo = createMock(UserGroupDTO.class);
+		expect(groupToAddUserTo.getAdditionalManagersUserIds()).andReturn(Sets.newHashSet()).atLeastOnce();
 		expect(dummyGroupDataManager.getGroupById(someAssociatedGroupId)).andReturn(groupToAddUserTo).once();
 		
 		dummyGroupDataManager.addUserToGroup(groupToAddUserTo, someRegisteredUserGrantingAccess);
 		expectLastCall().once();
 		
-		replay(dummyAssociationDataManager, dummyGroupDataManager);
+		replay(dummyAssociationDataManager, dummyGroupDataManager, groupToAddUserTo);
 
 		try {
 			managerUnderTest.createAssociationWithToken(someToken.getToken(), someRegisteredUserGrantingAccess);

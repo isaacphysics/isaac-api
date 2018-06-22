@@ -377,7 +377,7 @@ public class AdminFacade extends AbstractSegueFacade {
                 RegisteredUserDTO user = this.userManager.getUserDTOById(userid);
                 Role oldRole = user.getRole();
                 this.userManager.updateUserRole(userid, requestedRole);
-                this.getLogManager().logEvent(requestingUser, request, Constants.CHANGE_USER_ROLE,
+                this.getLogManager().logEvent(requestingUser, request, SegueLogType.CHANGE_USER_ROLE,
                         ImmutableMap.of(USER_ID_FKEY_FIELDNAME, user.getId(),
                                         "oldRole", oldRole,
                                         "newRole", requestedRole));
@@ -901,7 +901,7 @@ public class AdminFacade extends AbstractSegueFacade {
             
             this.userManager.deleteUserAccount(userToDelete);
             
-            getLogManager().logEvent(currentlyLoggedInUser, httpServletRequest, DELETE_USER_ACCOUNT,
+            getLogManager().logEvent(currentlyLoggedInUser, httpServletRequest, SegueLogType.DELETE_USER_ACCOUNT,
                     ImmutableMap.of(USER_ID_FKEY_FIELDNAME, userToDelete.getId()));
             
             log.info("Admin User: " + currentlyLoggedInUser.getEmail() + " has just deleted the user account with id: "
@@ -1447,37 +1447,6 @@ public class AdminFacade extends AbstractSegueFacade {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You must be logged in as an admin to access this function.").toResponse();
             }
-
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        }
-    }
-
-
-    /**
-     * TODO: This requires re-wiring to function using the new PG user streaks
-     * @param request
-     * @param userId
-     * @param streakValue
-     * @return
-     */
-    @POST
-    @Path("/change_user_streak/{user_id}")
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    public synchronized Response changeUserStreak(@Context final HttpServletRequest request,
-                                                  @PathParam("user_id") final Long userId, final Long streakValue) {
-
-        Map<String, Object> eventDetails = ImmutableMap.of("user_id", userId, "new_streak_length", streakValue);
-
-        try {
-            if (!isUserAnAdmin(request)) {
-                return new SegueErrorResponse(Status.FORBIDDEN,
-                        "You must be logged in as an admin to access this function.").toResponse();
-            }
-
-            getLogManager().logEvent(userManager.getCurrentRegisteredUser(request), request, "ADMIN_UPDATE_USER_STREAK", eventDetails);
-            return Response.ok(eventDetails).build();
 
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();

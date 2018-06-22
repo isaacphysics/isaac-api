@@ -20,6 +20,8 @@ import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_MINUTE;
+
 /**
  * Handler to deal with email verification requests.
  * 
@@ -34,7 +36,7 @@ public class EmailVerificationRequestMisuseHandler implements IMisuseHandler {
 
     public static final Integer SOFT_THRESHOLD = 2;
     public static final Integer HARD_THRESHOLD = 4;
-    public static final Integer ACCOUNTING_INTERVAL = 360;
+    public static final Integer ACCOUNTING_INTERVAL = 6 * NUMBER_SECONDS_IN_MINUTE;
     
     /**
      * 

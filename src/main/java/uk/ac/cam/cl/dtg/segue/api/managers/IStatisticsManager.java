@@ -1,36 +1,19 @@
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
-import com.google.api.client.util.Lists;
-import com.google.api.client.util.Maps;
-import com.google.api.client.util.Sets;
-import com.google.common.collect.ImmutableMap;
-import org.apache.commons.lang3.Validate;
 import org.joda.time.LocalDate;
-import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
-import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
-import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
-import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
-import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 import uk.ac.cam.cl.dtg.util.locations.Location;
 
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.*;
-
-import static com.google.common.collect.Maps.immutableEntry;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.FAST_TRACK_QUESTION_TYPE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_TYPE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.VIEW_QUESTION;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by du220 on 19/07/2017.

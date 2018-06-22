@@ -15,9 +15,11 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
-import com.google.common.collect.ImmutableSet;
+import uk.ac.cam.cl.dtg.segue.api.Constants.LogType;
 
+import java.util.Arrays;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Utility class to provide common isaac-specific constants.
@@ -92,37 +94,37 @@ public final class Constants {
     public static final Integer SEARCH_MAX_WINDOW_SIZE = 10000;
 
     // Log events
-    public static final String VIEW_QUESTION = "VIEW_QUESTION";
     public static final String QUESTION_ID_LOG_FIELDNAME = "questionId";
-    public static final String ADD_BOARD_TO_PROFILE = "ADD_BOARD_TO_PROFILE";
-    public static final String DELETE_BOARD_FROM_PROFILE = "ADD_BOARD_TO_PROFILE";
-    public static final String GLOBAL_SITE_SEARCH = "GLOBAL_SITE_SEARCH";
-    public static final String VIEW_CONCEPT = "VIEW_CONCEPT";
     public static final String CONCEPT_ID_LOG_FIELDNAME = "conceptId";
-    public static final String VIEW_PAGE = "VIEW_PAGE";
     public static final String PAGE_ID_LOG_FIELDNAME = "pageId";
+    public static final String FRAGMENT_ID_LOG_FIELDNAME = "pageFragmentId";
 
-    public static final String VIEW_GROUPS_ASSIGNMENTS = "VIEW_GROUPS_ASSIGNMENTS";
-    public static final String VIEW_ASSIGNMENT_PROGRESS = "VIEW_ASSIGNMENT_PROGRESS";
-    public static final String DOWNLOAD_ASSIGNMENT_PROGRESS_CSV = "DOWNLOAD_ASSIGNMENT_PROGRESS_CSV";
-    public static final String DOWNLOAD_GROUP_PROGRESS_CSV = "DOWNLOAD_GROUP_PROGRESS_CSV";
-    public static final String SET_NEW_ASSIGNMENT = "SET_NEW_ASSIGNMENT";
-    public static final String DELETE_ASSIGNMENT = "DELETE_ASSIGNMENT";
-
-    public static final String VIEW_MY_BOARDS_PAGE = "VIEW_MY_BOARDS_PAGE";
-
-    public static final String VIEW_USER_PROGRESS = "VIEW_USER_PROGRESS";
-
-    public static final String CREATE_GAMEBOARD = "CREATE_GAMEBOARD";
+    /**
+     * Class to represent Isaac log types.
+     */
+    public enum IsaacLogType implements LogType {
+        ADD_BOARD_TO_PROFILE,
+        CREATE_GAMEBOARD,
+        DELETE_ASSIGNMENT,
+        DELETE_BOARD_FROM_PROFILE,
+        DOWNLOAD_ASSIGNMENT_PROGRESS_CSV,
+        DOWNLOAD_GROUP_PROGRESS_CSV,
+        GLOBAL_SITE_SEARCH,
+        SET_NEW_ASSIGNMENT,
+        VIEW_ASSIGNMENT_PROGRESS,
+        VIEW_CONCEPT,
+        VIEW_GROUPS_ASSIGNMENTS,
+        VIEW_MY_BOARDS_PAGE,
+        VIEW_PAGE,
+        VIEW_PAGE_FRAGMENT,
+        VIEW_QUESTION,
+        VIEW_USER_PROGRESS
+    }
+    public static final Set<String> ISAAC_LOG_TYPES = Arrays.stream(IsaacLogType.values()).map(IsaacLogType::name).collect(Collectors.toSet());
 
     public enum IsaacUserPreferences {
         SUBJECT_INTEREST, BETA_FEATURE
     }
-
-    public static final Set<String> ISAAC_LOG_EVENT_TYPES = ImmutableSet.of(ADD_BOARD_TO_PROFILE, CREATE_GAMEBOARD,
-            DELETE_ASSIGNMENT, DELETE_BOARD_FROM_PROFILE, DOWNLOAD_ASSIGNMENT_PROGRESS_CSV, DOWNLOAD_GROUP_PROGRESS_CSV,
-            GLOBAL_SITE_SEARCH, SET_NEW_ASSIGNMENT, VIEW_ASSIGNMENT_PROGRESS, VIEW_CONCEPT, VIEW_GROUPS_ASSIGNMENTS,
-            VIEW_MY_BOARDS_PAGE, VIEW_PAGE, VIEW_QUESTION, VIEW_USER_PROGRESS);
 
     /**
      * Private constructor to prevent this class being created.

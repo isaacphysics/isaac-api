@@ -16,10 +16,8 @@
 package uk.ac.cam.cl.dtg.isaac.dao;
 
 import java.sql.*;
-import java.util.Calendar;
+import java.util.*;
 import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.List;
 
 import ma.glasnost.orika.MapperFacade;
 
@@ -64,11 +62,9 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
 
         PreparedStatement pst;
         try (Connection conn = database.getDatabaseConnection()) {
-            pst = conn
-                    .prepareStatement(
-                            "INSERT INTO assignments(gameboard_id, group_id, owner_user_id, creation_date, due_date)"
-                            + " VALUES (?, ?, ?, ?, ?);",
-                            Statement.RETURN_GENERATED_KEYS);
+            pst = conn.prepareStatement(
+                    "INSERT INTO assignments(gameboard_id, group_id, owner_user_id, creation_date, due_date)"
+                    + " VALUES (?, ?, ?, ?, ?);", Statement.RETURN_GENERATED_KEYS);
 
             pst.setString(1, assignmentToSave.getGameboardId());
             pst.setLong(2, assignmentToSave.getGroupId());
@@ -146,7 +142,7 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
     public List<AssignmentDTO> getAssignmentsByGroupId(final Long groupId) throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM assignments WHERE group_id = ?");
+            pst = conn.prepareStatement("SELECT * FROM assignments WHERE group_id = ? ORDER BY creation_date");
 
             pst.setLong(1, groupId);
             
@@ -171,8 +167,8 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
 
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM assignments WHERE owner_user_id = ? AND group_id = ?"
-                    + " ORDER BY creation_date");
+            pst = conn.prepareStatement(
+                    "SELECT * FROM assignments WHERE owner_user_id = ? AND group_id = ? ORDER BY creation_date");
 
             pst.setLong(1, assignmentOwnerId);
             pst.setLong(2, groupId);
@@ -198,7 +194,8 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
             throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM assignments WHERE gameboard_id = ? AND group_id = ?");
+            pst = conn.prepareStatement(
+                    "SELECT * FROM assignments WHERE gameboard_id = ? AND group_id = ? ORDER BY creation_date");
 
             pst.setString(1, gameboardId);
             pst.setLong(2, groupId);
@@ -238,6 +235,39 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
 
         } catch (SQLException e) {
             throw new SegueDatabaseException("Unable to find assignment by owner", e);
+        }
+    }
+
+    @Override
+    public List<AssignmentDTO> getAssignmentsByGroupList(Collection<Long> groupIds) throws SegueDatabaseException {
+        try (Connection conn = database.getDatabaseConnection()) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("SELECT * FROM assignments WHERE group_id IN (");
+
+            for (int i = 0; i < groupIds.size(); i++) {
+                sb.append("?").append(i < groupIds.size() - 1 ? ", " : "");
+            }
+            sb.append(") ORDER BY creation_date");
+
+            PreparedStatement pst;
+            pst = conn.prepareStatement(sb.toString());
+            int i = 1;
+            for (Long id : groupIds) {
+                pst.setLong(i, id);
+                i++;
+            }
+
+            ResultSet results = pst.executeQuery();
+            List<AssignmentDTO> listOfResults = Lists.newArrayList();
+
+            while (results.next()) {
+                listOfResults.add(this.convertToAssignmentDTO(this.convertFromSQLToAssignmentDO(results)));
+            }
+
+            return listOfResults;
+
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Unable to find assignment by group list", e);
         }
     }
 

@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.isaac.dao;
 
+import java.util.Collection;
 import java.util.List;
 
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
@@ -79,6 +80,18 @@ public interface IAssignmentPersistenceManager {
      *             - if there is an error when accessing the database.
      */
     List<AssignmentDTO> getAssignmentsByOwner(Long ownerId) throws SegueDatabaseException;
+
+    /**
+     * getAssignmentsByGroupList.
+     *
+     * @param groupIds
+     *            - the group Ids to collect all assignments for.
+     * @return list of assignments
+     * @throws SegueDatabaseException
+     *             - if there is an error when accessing the database.
+     */
+    List<AssignmentDTO> getAssignmentsByGroupList(Collection<Long> groupIds) throws SegueDatabaseException;
+
 
     /**
      * deleteAssignment.

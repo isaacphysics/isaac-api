@@ -42,4 +42,12 @@ public interface IGroupObserver {
      */
     void onMemberAddedToGroup(UserGroupDTO group, RegisteredUserDTO user);
 
+    /**
+     * @param group
+     *            - the group that the additional manager was added to
+     * @param additionalManagerUser
+     *            - the additional manager added to the group
+     */
+    void onAdditionalManagerAddedToGroup(UserGroupDTO group, RegisteredUserDTO additionalManagerUser);
+
 }

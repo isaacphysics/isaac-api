@@ -50,8 +50,9 @@ import java.util.regex.Pattern;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_VERSION_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_TIME_LOCALITY;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SEND_MASS_EMAIL;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueLogType;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueUserPreferences;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_LIST_FKEY_FIELDNAME;
 
 /**
  * EmailManager
@@ -69,7 +70,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
     private static final Logger log = LoggerFactory.getLogger(EmailManager.class);
     private static final int MINIMUM_TAG_LENGTH = 4;
-    private static final DateFormat FULL_DATE_FORMAT = new SimpleDateFormat("EEE d MMM yyyy h:mm aaa z");
+    private static final DateFormat FULL_DATE_FORMAT = new SimpleDateFormat("EEE d MMM yyyy h:mm aaa");
 
     /**
      * @param communicator
@@ -243,7 +244,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             ImmutableMap<String, Object> eventDetails = new ImmutableMap.Builder<String, Object>()
                     .put("userId", user.getId()).put("email", e.getRecipientAddress()).put("type", emailType)
                     .build();
-            logManager.logInternalEvent(user, Constants.SENT_EMAIL, eventDetails);
+            logManager.logInternalEvent(user, SegueLogType.SENT_EMAIL, eventDetails);
 
             // add to the queue without using filterByPreferencesAndAddToQueue as we've already filtered for preferences
             super.addToQueue(e);
@@ -255,10 +256,10 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             ids.add(userDTO.getId());
         }
 
-        ImmutableMap<String, Object> eventDetails = new ImmutableMap.Builder<String, Object>().put("userIds", ids)
+        ImmutableMap<String, Object> eventDetails = new ImmutableMap.Builder<String, Object>().put(USER_ID_LIST_FKEY_FIELDNAME, ids)
                 .put("contentObjectId", contentObjectId)
                 .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
-        this.logManager.logInternalEvent(sendingUser, SEND_MASS_EMAIL, eventDetails);
+        this.logManager.logInternalEvent(sendingUser, SegueLogType.SEND_MASS_EMAIL, eventDetails);
         log.info(String.format("Admin user (%s) added %d emails to the queue. %d were filtered.", sendingUser.getEmail(),
                 allSelectedUsers.size(), numberOfUnfilteredUsers - allSelectedUsers.size()));
     }
@@ -294,7 +295,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         // if this is an email type that cannot have a preference, send it and log as appropriate
         if (!email.getEmailType().isValidEmailPreference()) {
-            logManager.logInternalEvent(userDTO, Constants.SENT_EMAIL, eventDetails);
+            logManager.logInternalEvent(userDTO, SegueLogType.SENT_EMAIL, eventDetails);
             addToQueue(email);
             return;
         }
@@ -303,7 +304,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             UserPreference preference = userPreferenceManager.getUserPreference(SegueUserPreferences.EMAIL_PREFERENCE.name(), email.getEmailType().name(), userDTO.getId());
             // If no preference is present, send the email. This is consistent with sendCustomEmail(...) above.
             if (preference == null || preference.getPreferenceValue()) {
-                logManager.logInternalEvent(userDTO, Constants.SENT_EMAIL, eventDetails);
+                logManager.logInternalEvent(userDTO, SegueLogType.SENT_EMAIL, eventDetails);
                 addToQueue(email);
             }
         } catch (SegueDatabaseException e1) {

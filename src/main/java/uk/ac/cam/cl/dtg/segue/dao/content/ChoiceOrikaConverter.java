@@ -15,10 +15,12 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.content;
 
+import uk.ac.cam.cl.dtg.segue.dos.content.GraphChoice;
 import uk.ac.cam.cl.dtg.segue.dos.content.ChemicalFormula;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Formula;
 import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
+import uk.ac.cam.cl.dtg.segue.dto.content.GraphChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.dos.content.StringChoice;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChemicalFormulaDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
@@ -56,6 +58,8 @@ public class ChoiceOrikaConverter extends BidirectionalConverter<Choice, ChoiceD
             return super.mapperFacade.map(source, FormulaDTO.class);
         } else if (source instanceof ChemicalFormula) {
             return super.mapperFacade.map(source, ChemicalFormulaDTO.class);
+        } else if (source instanceof GraphChoice) {
+            return super.mapperFacade.map(source, GraphChoiceDTO.class);
         } else if (source instanceof StringChoice) {
             return super.mapperFacade.map(source, StringChoiceDTO.class);
         } else {
@@ -79,6 +83,8 @@ public class ChoiceOrikaConverter extends BidirectionalConverter<Choice, ChoiceD
             return super.mapperFacade.map(source, Formula.class);
         } else if (source instanceof ChemicalFormulaDTO) {
             return super.mapperFacade.map(source, ChemicalFormula.class);
+        } else if (source instanceof GraphChoiceDTO) {
+            return super.mapperFacade.map(source, GraphChoice.class);
         } else if (source instanceof StringChoiceDTO) {
             return super.mapperFacade.map(source, StringChoice.class);
         } else {

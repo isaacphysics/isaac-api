@@ -15,8 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTACT_US_FORM_USED;
-
 import com.google.common.collect.ImmutableMap;
 import io.swagger.annotations.Api;
 
@@ -34,6 +32,7 @@ import javax.ws.rs.core.Response.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.segue.api.Constants.SegueLogType;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
@@ -123,7 +122,7 @@ public class ContactFacade extends AbstractSegueFacade {
                             .put("replyToName", String.format("%s %s", form.get("firstName"), form.get("lastName")))
                             .build());
 
-            getLogManager().logEvent(userManager.getCurrentUser(request), request, CONTACT_US_FORM_USED,
+            getLogManager().logEvent(userManager.getCurrentUser(request), request, SegueLogType.CONTACT_US_FORM_USED,
                     ImmutableMap.of("message", String.format("%s %s (%s) - %s", form.get("firstName"), form.get("lastName"),
                             form.get("emailAddress"), form.get("message"))));
 
