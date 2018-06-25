@@ -25,6 +25,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
@@ -237,10 +238,15 @@ public class InfoFacade extends AbstractSegueFacade {
         return Response.ok(result).build();
     }
 
+    /**
+     * This method checks the status of the symbolic checker live dependency.
+     *
+     * @return json success true or false
+     */
     @GET
     @Path("symbolic_checker/ping")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response pingEqualityChecker(@Context final HttpServletRequest request) {
+    public Response pingEqualityChecker() {
 
         HttpClient httpClient = new DefaultHttpClient();
         HttpGet httpGet = new HttpGet("http://" + this.getProperties().getProperty(Constants.EQUALITY_CHECKER_HOST)
@@ -261,10 +267,15 @@ public class InfoFacade extends AbstractSegueFacade {
 
     }
 
+    /**
+     * This method checks the status of the chemistry checker live dependency.
+     *
+     * @return json success true or false
+     */
     @GET
     @Path("chemistry_checker/ping")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response pingChemistryChecker(@Context final HttpServletRequest request) {
+    public Response pingChemistryChecker() {
 
         HttpClient httpClient = new DefaultHttpClient();
         HttpGet httpGet = new HttpGet("http://" + this.getProperties().getProperty(Constants.CHEMISTRY_CHECKER_HOST)
@@ -285,11 +296,15 @@ public class InfoFacade extends AbstractSegueFacade {
 
     }
 
+    /**
+     * This method checks the status of the ETL live dependency.
+     *
+     * @return json success true or false
+     */
     @GET
     @Path("etl/ping")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response pingETLServer(@Context final HttpServletRequest request) {
-
+    public Response pingETLServer() {
         HttpClient httpClient = new DefaultHttpClient();
         HttpGet httpGet = new HttpGet("http://" + getProperties().getProperty("ETL_HOSTNAME") + ":"
                 + getProperties().getProperty("ETL_PORT") + "/isaac-api/api/etl/ping");
@@ -309,4 +324,34 @@ public class InfoFacade extends AbstractSegueFacade {
 
     }
 
+    /**
+     * This method checks the status of the elasticsearch live dependency.
+     *
+     * @return json success true or false
+     */
+    @GET
+    @Path("elasticsearch/ping")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response pingElasticSearch() {
+
+        HttpClient httpClient = new DefaultHttpClient();
+        HttpGet httpGet = new HttpGet("http://" + getProperties().getProperty("SEARCH_CLUSTER_ADDRESS") + ":"
+                + getProperties().getProperty("SEARCH_CLUSTER_INFO_PORT") + "/_cat/health");
+
+        HttpResponse httpResponse = null;
+        try {
+            httpResponse = httpClient.execute(httpGet);
+        } catch (IOException e) {
+            log.warn("Error when checking status of elasticsearch: " + e.toString());
+        }
+
+        // FIXME - this assumes a 200 means all is ok.
+        // It's likely that a real problem with clustering would also lead to a 200!
+        if (httpResponse != null && httpResponse.getStatusLine().getStatusCode() == 200) {
+            return Response.ok(ImmutableMap.of("success", true)).build();
+        } else {
+            return Response.ok(ImmutableMap.of("success", false)).build();
+        }
+
+    }
 }

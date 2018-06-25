@@ -253,4 +253,11 @@ public class SegueErrorResponse implements Serializable {
                 .toResponse();
     }
 
+    /**
+     * @param message - the message for the user.
+     * @return error response.
+     */
+    public static Response getBadRequestResponse(final String message) {
+        return new SegueErrorResponse(Status.BAD_REQUEST, message).toResponse();
+    }
 }

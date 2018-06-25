@@ -17,9 +17,11 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
 import org.joda.time.LocalDate;
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dos.LogEvent;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.api.Constants.LogType;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
@@ -61,30 +63,42 @@ public abstract class LogManagerEventPublisher implements ILogManager {
     /**Method Overrides*/
 
     @Override
-    public void logEvent(final AbstractSegueUserDTO user, final HttpServletRequest httpRequest, final String eventType, final Object eventDetails) {
+    public void logEvent(final AbstractSegueUserDTO user, final HttpServletRequest httpRequest, final LogType eventType, final Object eventDetails) {
 
         this.logManager.logEvent(user, httpRequest, eventType, eventDetails);
 
         if (null != logListeners) {
 
-            for (LoggingEventHandler listener: logListeners
-                    ) {
+            for (LoggingEventHandler listener: logListeners) {
+                listener.handleEvent(user, httpRequest, eventType.name(), eventDetails);
+            }
+
+        }
+    }
+
+    @Override
+    public void logExternalEvent(final AbstractSegueUserDTO user, final HttpServletRequest httpRequest, final String eventType, final Object eventDetails) {
+
+        this.logManager.logExternalEvent(user, httpRequest, eventType, eventDetails);
+
+        if (null != logListeners) {
+
+            for (LoggingEventHandler listener: logListeners) {
                 listener.handleEvent(user, httpRequest, eventType, eventDetails);
             }
 
         }
-    };
+    }
 
     @Override
-    public void logInternalEvent(final AbstractSegueUserDTO user, final String eventType, final Object eventDetails) {
+    public void logInternalEvent(final AbstractSegueUserDTO user, final LogType eventType, final Object eventDetails) {
 
         this.logManager.logInternalEvent(user, eventType, eventDetails);
 
         if (null != logListeners) {
 
-            for (LoggingEventHandler listener: logListeners
-                    ) {
-                listener.handleEvent(user, null, eventType, eventDetails);
+            for (LoggingEventHandler listener: logListeners) {
+                listener.handleEvent(user, null, eventType.name(), eventDetails);
             }
 
         }
@@ -98,8 +112,7 @@ public abstract class LogManagerEventPublisher implements ILogManager {
 
         if (null != logListeners) {
 
-            for (LoggingEventHandler listener: logListeners
-                    ) {
+            for (LoggingEventHandler listener: logListeners) {
                 listener.transferLogEventsToRegisteredUser(oldUserId, newUserId);
             }
 
