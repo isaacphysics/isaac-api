@@ -628,9 +628,9 @@ public class PgLogManager implements ILogManager {
         result.put("activeUsersLastThirtyDays", doQuery("SELECT role, count(1) FROM users WHERE last_seen >= now() - INTERVAL '30 DAY' GROUP BY role"));
         result.put("activeUsersLastNinetyDays", doQuery("SELECT role, count(1) FROM users WHERE last_seen >= now() - INTERVAL '90 DAY' GROUP BY role"));
 
-        result.put("answeringUsersLastSevenDays", doQuery("SELECT role, count(DISTINCT users.id) FROM logged_events LEFT OUTER JOIN users ON user_id=users.id::TEXT WHERE timestamp > now() - INTERVAL '7 DAY' AND event_type='ANSWER_QUESTION' GROUP BY role"));
-        result.put("answeringUsersLastThirtyDays", doQuery("SELECT role, count(DISTINCT users.id) FROM logged_events LEFT OUTER JOIN users ON user_id=users.id::TEXT WHERE timestamp > now() - INTERVAL '30 DAY' AND event_type='ANSWER_QUESTION' GROUP BY role"));
-        result.put("answeringUsersLastNinetyDays", doQuery("SELECT role, count(DISTINCT users.id) FROM logged_events LEFT OUTER JOIN users ON user_id=users.id::TEXT WHERE timestamp > now() - INTERVAL '90 DAY' AND event_type='ANSWER_QUESTION' GROUP BY role"));
+        result.put("answeringUsersLastSevenDays", doQuery("SELECT role, count(DISTINCT users.id) FROM question_attempts LEFT OUTER JOIN users ON user_id=users.id WHERE timestamp > now() - INTERVAL '7 DAY' GROUP BY role"));
+        result.put("answeringUsersLastThirtyDays", doQuery("SELECT role, count(DISTINCT users.id) FROM question_attempts LEFT OUTER JOIN users ON user_id=users.id WHERE timestamp > now() - INTERVAL '30 DAY' GROUP BY role"));
+        result.put("answeringUsersLastNinetyDays", doQuery("SELECT role, count(DISTINCT users.id) FROM question_attempts LEFT OUTER JOIN users ON user_id=users.id WHERE timestamp > now() - INTERVAL '90 DAY' GROUP BY role"));
 
         result.put("groupCount", doQuery("SELECT count(*) FROM groups").get(0));
 
