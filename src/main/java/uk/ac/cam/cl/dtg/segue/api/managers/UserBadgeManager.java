@@ -85,16 +85,22 @@ public class UserBadgeManager {
     public UserBadge getOrCreateBadge(RegisteredUserDTO user, Badge badgeName)
             throws SegueDatabaseException {
 
+        String resource = user.getId().toString() + "-" + badgeName.name();
+
         // start database transaction to ensure atomicity of badge state update (if required)
-        ITransaction transaction = transactionManager.getTransaction();
-        UserBadge badge = userBadgePersistenceManager.getBadge(user, badgeName, transaction);
+        //ITransaction transaction = transactionManager.getTransaction();
+        userBadgePersistenceManager.acquireDistributedLock(resource);
+        //UserBadge badge = userBadgePersistenceManager.getBadge(user, badgeName, transaction);
+        UserBadge badge = userBadgePersistenceManager.getBadge(user, badgeName, null);
 
         if (null == badge.getState()) {
-            badge.setState(badgePolicies.get(badgeName).initialiseState(user, transaction));
-            userBadgePersistenceManager.updateBadge(badge, transaction);
+            badge.setState(badgePolicies.get(badgeName).initialiseState(user, null));
+            //userBadgePersistenceManager.updateBadge(badge, transaction);
+            userBadgePersistenceManager.updateBadge(badge, null);
         }
 
-        transaction.commit();
+        //transaction.commit();
+        userBadgePersistenceManager.releaseDistributedLock(resource);
         return badge;
     }
 
@@ -110,10 +116,14 @@ public class UserBadgeManager {
     public UserBadge updateBadge(RegisteredUserDTO user, Badge badgeName, String event)
             throws SegueDatabaseException {
 
-        // start a database transaction as an update occurs across two queries
-        ITransaction transaction = transactionManager.getTransaction();
+        String resource = user.getId().toString() + "-" + badgeName.name();
 
-        UserBadge badge = userBadgePersistenceManager.getBadge(user, badgeName, transaction);
+        // start a database transaction as an update occurs across two queries
+        ///ITransaction transaction = transactionManager.getTransaction();
+        userBadgePersistenceManager.acquireDistributedLock(resource);
+
+        //UserBadge badge = userBadgePersistenceManager.getBadge(user, badgeName, transaction);
+        UserBadge badge = userBadgePersistenceManager.getBadge(user, badgeName, null);
 
         if (null != badge.getState()) {
 
@@ -130,13 +140,16 @@ public class UserBadgeManager {
             badge.setState(newState);
 
         } else {
-            badge.setState(badgePolicies.get(badgeName).initialiseState(user, transaction));
+            //badge.setState(badgePolicies.get(badgeName).initialiseState(user, transaction));
+            badge.setState(badgePolicies.get(badgeName).initialiseState(user, null));
         }
 
-        userBadgePersistenceManager.updateBadge(badge, transaction);
+        //userBadgePersistenceManager.updateBadge(badge, transaction);
+        userBadgePersistenceManager.updateBadge(badge, null);
 
         // commit the badge state update to the database
-        transaction.commit();
+        //transaction.commit();
+        userBadgePersistenceManager.releaseDistributedLock(resource);
 
         return badge;
     }
@@ -156,6 +169,7 @@ public class UserBadgeManager {
                 UserBadge badge = getOrCreateBadge(user, badgeName);
                 badges.put(badge.getBadgeName().name(),
                         badgePolicies.get(badge.getBadgeName()).getLevel(badge.getState()));
+                break;
             }
         } catch (SegueDatabaseException e) {
             e.printStackTrace();

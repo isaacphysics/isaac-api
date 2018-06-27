@@ -36,4 +36,9 @@ public interface IUserBadgePersistenceManager {
      */
     public void updateBadge(UserBadge badge, ITransaction transaction) throws SegueDatabaseException;
 
+
+    void acquireDistributedLock(final String resourceId) throws SegueDatabaseException;
+
+    void releaseDistributedLock(final String resourceId) throws SegueDatabaseException;
+
 }
