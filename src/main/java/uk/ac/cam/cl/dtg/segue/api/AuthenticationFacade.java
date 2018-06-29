@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.segue.api;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_AUTH_EMAIL_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_AUTH_PASSWORD_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.REDIRECT_URL;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueLogType;
 import io.swagger.annotations.Api;
 
 import java.io.IOException;
@@ -182,7 +183,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     }
 
     /**
-     * End point that allows the user to logout - i.e. destroy our cookie.
+     * End point that allows the user to remove a third party auth provider.
      * 
      * @param request
      *            - request so we can authenticate the user.
@@ -358,7 +359,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     public final Response userLogout(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response) {
 
-        this.getLogManager().logEvent(this.userManager.getCurrentUser(request), request, Constants.LOG_OUT,
+        this.getLogManager().logEvent(this.userManager.getCurrentUser(request), request, SegueLogType.LOG_OUT,
                 Maps.newHashMap());
 
         userManager.logUserOut(request, response);

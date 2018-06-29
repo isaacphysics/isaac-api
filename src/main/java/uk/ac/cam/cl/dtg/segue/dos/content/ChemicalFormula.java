@@ -34,7 +34,7 @@ public class ChemicalFormula extends Choice {
     }
 
     /**
-     * @param mhchemExpression the pythonExpression to set
+     * @param mhchemExpression the mhchemExpression to set
      */
     public void setMhchemExpression(final String mhchemExpression) {
         this.mhchemExpression = mhchemExpression;

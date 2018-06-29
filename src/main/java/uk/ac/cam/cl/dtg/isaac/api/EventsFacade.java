@@ -397,7 +397,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                     = this.bookingManager.promoteFromWaitingListOrCancelled(event, userOfInterest);
 
             this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
-                    Constants.ADMIN_EVENT_WAITING_LIST_PROMOTION, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId(),
+                    SegueLogType.ADMIN_EVENT_WAITING_LIST_PROMOTION, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId(),
                                                                          USER_ID_FKEY_FIELDNAME, userId));
             return Response.ok(eventBookingDTO).build();
         } catch (NoUserLoggedInException e) {
@@ -502,11 +502,13 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             EventBookingDTO booking = bookingManager.createBookingOrAddToWaitingList(event, bookedUser, additionalInformation);
             this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
-                    Constants.ADMIN_EVENT_BOOKING_CREATED,
-                    ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId(),
-                            USER_ID_FKEY_FIELDNAME, userId,
-                            BOOKING_STATUS_FIELDNAME, booking.getBookingStatus().toString(),
-                            ADMIN_BOOKING_REASON_FIELDNAME, additionalInformation.get("authorisation") == null ? "NOT_PROVIDED" : additionalInformation.get("authorisation")));
+                    SegueLogType.ADMIN_EVENT_BOOKING_CREATED,
+                    ImmutableMap.of(
+                        EVENT_ID_FKEY_FIELDNAME, event.getId(),
+                        USER_ID_FKEY_FIELDNAME, userId,
+                        BOOKING_STATUS_FIELDNAME, booking.getBookingStatus().toString(),
+                        ADMIN_BOOKING_REASON_FIELDNAME, additionalInformation.get("authorisation") == null ? "NOT_PROVIDED" : additionalInformation.get("authorisation")
+                    ));
 
             return Response.ok(booking).build();
         } catch (NoUserLoggedInException e) {
@@ -548,7 +550,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
 
-            if (EventStatus.CLOSED.equals(event.getEventStatus())){
+            if (EventStatus.CLOSED.equals(event.getEventStatus())) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "Sorry booking for this event is closed. Please try again later.")
                     .toResponse();
             }
@@ -566,7 +568,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             EventBookingDTO eventBookingDTO = bookingManager.requestBooking(event, user, additionalInformation);
 
             this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
-                    Constants.EVENT_BOOKING, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId()));
+                    SegueLogType.EVENT_BOOKING, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId()));
 
             return Response.ok(eventBookingDTO).build();
         } catch (NoUserLoggedInException e) {
@@ -625,7 +627,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             EventBookingDTO eventBookingDTO = bookingManager.requestWaitingListBooking(event, user, additionalInformation);
             this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
-                    Constants.EVENT_WAITING_LIST_BOOKING, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId()));
+                    SegueLogType.EVENT_WAITING_LIST_BOOKING, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId()));
 
             return Response.ok(eventBookingDTO).build();
         } catch (NoUserLoggedInException e) {
@@ -725,10 +727,10 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             if (!userOwningBooking.equals(userLoggedIn)) {
                 this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
-                        Constants.ADMIN_EVENT_BOOKING_CANCELLED, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId(), USER_ID_FKEY_FIELDNAME, userOwningBooking.getId()));
+                        SegueLogType.ADMIN_EVENT_BOOKING_CANCELLED, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId(), USER_ID_FKEY_FIELDNAME, userOwningBooking.getId()));
             } else {
                 this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
-                        Constants.EVENT_BOOKING_CANCELLED, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId()));
+                        SegueLogType.EVENT_BOOKING_CANCELLED, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId()));
             }
 
             return Response.noContent().build();
@@ -829,7 +831,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             bookingManager.deleteBooking(event, user);
 
             this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
-                    Constants.ADMIN_EVENT_BOOKING_DELETED, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, eventId, USER_ID_FKEY_FIELDNAME, userId));
+                    SegueLogType.ADMIN_EVENT_BOOKING_DELETED, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, eventId, USER_ID_FKEY_FIELDNAME, userId));
 
             return Response.noContent().build();
         } catch (NoUserLoggedInException e) {
@@ -879,12 +881,14 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             EventBookingDTO eventBookingDTO = this.bookingManager.recordAttendance(event, userOfInterest, attended);
             this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
-                    ADMIN_EVENT_ATTENDANCE_RECORDED, ImmutableMap.of(
-                            EVENT_ID_FKEY_FIELDNAME, event.getId(),
-                            USER_ID_FKEY_FIELDNAME, userId,
-                            ATTENDED_FIELDNAME, attended,
-                            EVENT_DATE_FIELDNAME, event.getDate(),
-                            EVENT_TAGS_FIELDNAME, event.getTags()));
+                    SegueLogType.ADMIN_EVENT_ATTENDANCE_RECORDED,
+                    ImmutableMap.of(
+                        EVENT_ID_FKEY_FIELDNAME, event.getId(),
+                        USER_ID_FKEY_FIELDNAME, userId,
+                        ATTENDED_FIELDNAME, attended,
+                        EVENT_DATE_FIELDNAME, event.getDate(),
+                        EVENT_TAGS_FIELDNAME, event.getTags()
+                    ));
 
             if (event.getTags().contains("teacher")) {
                 this.userBadgeManager.updateBadge(userOfInterest,

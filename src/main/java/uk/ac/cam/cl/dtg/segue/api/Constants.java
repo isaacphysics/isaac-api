@@ -15,9 +15,9 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
-import com.google.common.collect.ImmutableSet;
-
+import java.util.Arrays;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Utility class to provide common segue-specific constants.
@@ -141,11 +141,13 @@ public final class Constants {
      * Constant representing the key for the HMAC Salt - used in HMAC calculations.
      */
     public static final String HMAC_SALT = "HMAC_SALT";
+    public static final int TRUNCATED_TOKEN_LENGTH = 8;
 
     // Search stuff
     public static final String SEARCH_CLUSTER_NAME = "SEARCH_CLUSTER_NAME";
     public static final String SEARCH_CLUSTER_ADDRESS = "SEARCH_CLUSTER_ADDRESS";
     public static final String SEARCH_CLUSTER_PORT = "SEARCH_CLUSTER_PORT";
+    public static final String SEARCH_CLUSTER_INFO_PORT = "SEARCH_CLUSTER_INFO_PORT";
 
     /**
      * Suffix to append to raw fields (minus dot separator) - these are fields that the search engine should not do any
@@ -220,48 +222,53 @@ public final class Constants {
     // Logging component
     public static final String LOGGING_ENABLED = "LOGGING_ENABLED";
     public static final Integer MAX_LOG_REQUEST_BODY_SIZE_IN_BYTES = 1000000;
-    public static final String ANSWER_QUESTION = "ANSWER_QUESTION";
-    public static final String QUESTION_ATTEMPT_RATE_LIMITED = "QUESTION_ATTEMPT_RATE_LIMITED";
-    public static final String MERGE_USER = "MERGE_USER";
-    public static final String USER_REGISTRATION = "USER_REGISTRATION";
-    public static final String LOG_OUT = "LOG_OUT";
-    public static final String DELETE_USER_ACCOUNT = "DELETE_USER_ACCOUNT";
-    public static final String CREATE_USER_ASSOCIATION = "CREATE_USER_ASSOCIATION";
-    public static final String REVOKE_USER_ASSOCIATION = "REVOKE_USER_ASSOCIATION";
-    public static final String EMAIL_VERIFICATION_REQUEST_RECEIVED = "EMAIL_VERIFICATION_REQUEST_RECEIVED";
-    public static final String PASSWORD_RESET_REQUEST_RECEIVED = "PASSWORD_RESET_REQUEST_RECEIVED";
-    public static final String PASSWORD_RESET_REQUEST_SUCCESSFUL = "PASSWORD_RESET_REQUEST_SUCCESSFUL";
-    public static final String CONTACT_US_FORM_USED = "CONTACT_US_FORM_USED";
-    public static final String CREATE_USER_GROUP = "CREATE_USER_GROUP";
-    public static final String DELETE_USER_GROUP = "DELETE_USER_GROUP";
-    public static final String SENT_EMAIL = "SENT_EMAIL";
-    public static final String SEND_MASS_EMAIL = "SEND_MASS_EMAIL";
-    public static final String USER_SCHOOL_CHANGE = "USER_SCHOOL_CHANGE";
-    public static final String EVENT_BOOKING = "EVENT_BOOKING";
-    public static final String EVENT_WAITING_LIST_BOOKING = "EVENT_WAITING_LIST_BOOKING";
-    public static final String EVENT_BOOKING_CANCELLED = "EVENT_BOOKING_CANCELLED";
-    public static final String ADMIN_EVENT_BOOKING_CANCELLED = "ADMIN_EVENT_BOOKING_CANCELLED";
-    public static final String ADMIN_EVENT_BOOKING_CREATED = "ADMIN_EVENT_BOOKING_CREATED";
-    public static final String ADMIN_EVENT_WAITING_LIST_PROMOTION = "ADMIN_EVENT_WAITING_LIST_PROMOTION";
-    public static final String ADMIN_EVENT_BOOKING_DELETED = "ADMIN_EVENT_BOOKING_DELETED";
-    public static final String ADMIN_EVENT_ATTENDANCE_RECORDED = "ADMIN_EVENT_ATTENDANCE_RECORDED";
-    public static final String ADMIN_CHANGE_USER_SCHOOL = "ADMIN_CHANGE_USER_SCHOOL";
-    public static final String CHANGE_USER_ROLE = "CHANGE_USER_ROLE";
-    public static final String REMOVE_USER_FROM_GROUP = "REMOVE_USER_FROM_GROUP";
-    public static final String NOTIFICATION_VIEW_LIST = "NOTIFICATION_VIEW_LIST";
-    public static final String NOTIFICATION_CLICK = "NOTIFICATION_CLICK";
-    public static final String NOTIFICATION_DISMISS = "NOTIFICATION_DISMISS";
-    public static final String LONGEST_STREAK_REACHED = "LONGEST_STREAK_REACHED";
 
-    public static final Set<String> SEGUE_LOG_EVENT_TYPES = ImmutableSet.of(ADMIN_CHANGE_USER_SCHOOL,
-            ADMIN_EVENT_ATTENDANCE_RECORDED, ADMIN_EVENT_BOOKING_CANCELLED, ADMIN_EVENT_BOOKING_CREATED,
-            ADMIN_EVENT_BOOKING_DELETED, ADMIN_EVENT_WAITING_LIST_PROMOTION, ANSWER_QUESTION, CHANGE_USER_ROLE,
-            CREATE_USER_ASSOCIATION, CREATE_USER_GROUP, DELETE_USER_ACCOUNT, DELETE_USER_GROUP,
-            EMAIL_VERIFICATION_REQUEST_RECEIVED, EVENT_BOOKING, EVENT_BOOKING_CANCELLED, EVENT_WAITING_LIST_BOOKING,
-            LOG_OUT, MERGE_USER, PASSWORD_RESET_REQUEST_RECEIVED, PASSWORD_RESET_REQUEST_SUCCESSFUL,
-            QUESTION_ATTEMPT_RATE_LIMITED, REMOVE_USER_FROM_GROUP, REVOKE_USER_ASSOCIATION, SENT_EMAIL, SEND_MASS_EMAIL,
-            USER_REGISTRATION, USER_SCHOOL_CHANGE, NOTIFICATION_CLICK, NOTIFICATION_DISMISS, NOTIFICATION_VIEW_LIST,
-            LONGEST_STREAK_REACHED);
+    public interface LogType {
+        /**
+         * Get the string value of the log Enum.
+         * @return name of the log type
+         */
+        String name();
+    }
+
+    /**
+     *  Class to represent Segue Log Types.
+     */
+    public enum SegueLogType implements LogType {
+        ADD_ADDITIONAL_GROUP_MANAGER,
+        ADMIN_CHANGE_USER_SCHOOL,
+        ADMIN_EVENT_ATTENDANCE_RECORDED,
+        ADMIN_EVENT_BOOKING_CANCELLED,
+        ADMIN_EVENT_BOOKING_CREATED,
+        ADMIN_EVENT_BOOKING_DELETED,
+        ADMIN_EVENT_WAITING_LIST_PROMOTION,
+        ANSWER_QUESTION,
+        CHANGE_USER_ROLE,
+        CONTACT_US_FORM_USED,
+        CREATE_USER_ASSOCIATION,
+        CREATE_USER_GROUP,
+        DELETE_ADDITIONAL_GROUP_MANAGER,
+        DELETE_USER_ACCOUNT,
+        DELETE_USER_GROUP,
+        EMAIL_VERIFICATION_REQUEST_RECEIVED,
+        EVENT_BOOKING,
+        EVENT_BOOKING_CANCELLED,
+        EVENT_WAITING_LIST_BOOKING,
+        LOG_OUT,
+        MERGE_USER,
+        PASSWORD_RESET_REQUEST_RECEIVED,
+        PASSWORD_RESET_REQUEST_SUCCESSFUL,
+        QUESTION_ATTEMPT_RATE_LIMITED,
+        RELEASE_USER_ASSOCIATION,
+        REMOVE_USER_FROM_GROUP,
+        REVOKE_USER_ASSOCIATION,
+        SEND_MASS_EMAIL,
+        SENT_EMAIL,
+        USER_REGISTRATION,
+        USER_SCHOOL_CHANGE
+    }
+
+    public static final Set<String> SEGUE_LOG_TYPES = Arrays.stream(SegueLogType.values()).map(SegueLogType::name).collect(Collectors.toSet());
 
     // IP Geocoding stuff
     public static final String IP_INFO_DB_API_KEY = "IP_INFO_DB_API_KEY";
@@ -287,6 +294,7 @@ public final class Constants {
     public static final String LEVEL_FIELDNAME = "level";
 
     public static final String USER_ID_FKEY_FIELDNAME = "userId";
+    public static final String USER_ID_LIST_FKEY_FIELDNAME = "userIds";
     public static final String EVENT_ID_FKEY_FIELDNAME = "eventId";
     public static final String BOOKING_STATUS_FIELDNAME = "bookingStatus";
     public static final String ADMIN_BOOKING_REASON_FIELDNAME = "authorisationReason";

@@ -41,6 +41,7 @@ public class RegisteredUser extends AbstractSegueUser {
     private Integer defaultLevel;
 
     private String emailVerificationToken;
+    private String emailToVerify;
     private EmailVerificationStatus emailVerificationStatus;
 
     private Date lastUpdated;
@@ -67,6 +68,8 @@ public class RegisteredUser extends AbstractSegueUser {
      *            - date of registration
      * @param lastUpdated
      *            - the date this user was last updated.
+     * @param emailToVerify
+     *            - the most recent email for which a token has been generated
      * @param emailVerificationToken
      *            - the most recent token generated to verify email addresses
      * @param emailVerificationStatus
@@ -79,6 +82,7 @@ public class RegisteredUser extends AbstractSegueUser {
             @JsonProperty("dateOfBirth") final Date dateOfBirth, @JsonProperty("gender") final Gender gender,
             @JsonProperty("registrationDate") final Date registrationDate,
             @JsonProperty("lastUpdated") final Date lastUpdated,
+            @JsonProperty("emailToVerify") final String emailToVerify,
             @JsonProperty("emailVerificationToken") final String emailVerificationToken,
             @JsonProperty("emailVerificationStatus") final EmailVerificationStatus emailVerificationStatus) {
         this.id = id;
@@ -90,6 +94,7 @@ public class RegisteredUser extends AbstractSegueUser {
         this.gender = gender;
         this.registrationDate = registrationDate;
         this.lastUpdated = lastUpdated;
+        this.emailToVerify = emailToVerify;
         this.emailVerificationToken = emailVerificationToken;
         this.emailVerificationStatus = emailVerificationStatus;
     }
@@ -312,6 +317,29 @@ public class RegisteredUser extends AbstractSegueUser {
      */
     public void setDefaultLevel(final Integer defaultLevel) {
         this.defaultLevel = defaultLevel;
+    }
+
+    /**
+     * Gets the email.
+     *
+     * @return the email to verify
+     */
+    public final String getEmailToVerify() {
+        return emailToVerify;
+    }
+
+    /**
+     * Sets the email.
+     *
+     * @param emailToVerify
+     *            the email to verify
+     */
+    public final void setEmailToVerify(final String emailToVerify) {
+        if (emailToVerify != null) {
+            this.emailToVerify = emailToVerify.trim();
+        } else {
+            this.emailToVerify = emailToVerify;
+        }
     }
 
     /**

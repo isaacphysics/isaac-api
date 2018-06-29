@@ -15,12 +15,10 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_FKEY_FIELDNAME;
-
 import io.swagger.annotations.Api;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
@@ -38,19 +36,27 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.monitors.GroupManagerLookupMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
+import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.DetailedUserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * GroupsFacade. This is responsible for exposing group management functionality.
@@ -65,53 +71,47 @@ public class GroupsFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(GroupsFacade.class);
     private final GroupManager groupManager;
     private final UserAssociationManager associationManager;
+    private IMisuseMonitor misuseMonitor;
     private final UserBadgeManager userBadgeManager;
 
     /**
      * Create an instance of the authentication Facade.
-     * 
-     * @param properties
-     *            - properties loader for the application
-     * @param userManager
-     *            - user manager for the application
-     * @param logManager
-     *            - so we can log interesting events.
-     * @param groupManager
-     *            - so that we can manage groups.
-     * @param associationsManager
-     *            - so we can decide what information is allowed to be exposed.
+     *
+     * @param properties          - properties loader for the application
+     * @param userManager         - user manager for the application
+     * @param logManager          - so we can log interesting events.
+     * @param groupManager        - so that we can manage groups.
+     * @param associationsManager - so we can decide what information is allowed to be exposed.
      */
     @Inject
     public GroupsFacade(final PropertiesLoader properties, final UserAccountManager userManager,
                         final ILogManager logManager, final GroupManager groupManager,
-                        final UserAssociationManager associationsManager,
+                        final UserAssociationManager associationsManager, final IMisuseMonitor misuseMonitor,
                         final UserBadgeManager userBadgeManager) {
         super(properties, logManager);
         this.userManager = userManager;
         this.groupManager = groupManager;
         this.associationManager = associationsManager;
+        this.misuseMonitor = misuseMonitor;
         this.userBadgeManager = userBadgeManager;
     }
 
     /**
-     * Get all groups owned by the current user.
-     * 
-     * @param request
-     *            - so we can identify the current user.
-     * @param cacheRequest
-     *            - so that we can control caching of this endpoint
-     * @param archivedGroupsOnly
-     *            - include archived groups in response - default is false - i.e. show only unarchived
+     * Get all groups owned by or available to the current user.
+     *
+     * @param request            - so we can identify the current user.
+     * @param cacheRequest       - so that we can control caching of this endpoint
+     * @param archivedGroupsOnly - include archived groups in response - default is false - i.e. show only unarchived
      * @return List of groups for the current user.
      */
     @GET
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getGroupsForCurrentUser(@Context final HttpServletRequest request,
-            @Context final Request cacheRequest, @QueryParam("archived_groups_only") final boolean archivedGroupsOnly) {
+                                            @Context final Request cacheRequest, @QueryParam("archived_groups_only") final boolean archivedGroupsOnly) {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
-            List<UserGroupDTO> groups = groupManager.getGroupsByOwner(user, archivedGroupsOnly);
+            List<UserGroupDTO> groups = groupManager.getAllGroupsOwnedAndManagedByUser(user, archivedGroupsOnly);
 
             // Calculate the ETag based user id and groups they own
             EntityTag etag = new EntityTag(user.getId().hashCode() + groups.toString().hashCode() + "");
@@ -131,24 +131,20 @@ public class GroupsFacade extends AbstractSegueFacade {
         }
     }
 
-
-
     /**
      * Get all groups owned by the user id provided.
-     * 
+     * <p>
      * ADMIN Only end point.
-     * 
-     * @param request
-     *            - so we can identify the current user.
-     * @param userId
-     *            - so we can lookup the group ownership information.
+     *
+     * @param request - so we can identify the current user.
+     * @param userId  - so we can lookup the group ownership information.
      * @return List of user associations.
      */
     @GET
     @Path("/{user_id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getGroupsForGivenUser(@Context final HttpServletRequest request,
-            @PathParam("user_id") final Long userId) {
+                                          @PathParam("user_id") final Long userId) {
         try {
             if (null == userId) {
                 return new SegueErrorResponse(Status.BAD_REQUEST,
@@ -176,11 +172,9 @@ public class GroupsFacade extends AbstractSegueFacade {
 
     /**
      * Function to allow users to create a group. This function requires the group DTO to be provided.
-     * 
-     * @param request
-     *            - so we can find out who the current user is
-     * @param groupDTO
-     *            - Containing required information to create a group
+     *
+     * @param request  - so we can find out who the current user is
+     * @param groupDTO - Containing required information to create a group
      * @return a Response containing the group
      */
     @POST
@@ -201,7 +195,7 @@ public class GroupsFacade extends AbstractSegueFacade {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
             UserGroupDTO group = groupManager.createUserGroup(groupDTO.getGroupName(), user);
 
-            this.getLogManager().logEvent(user, request, Constants.CREATE_USER_GROUP,
+            this.getLogManager().logEvent(user, request, SegueLogType.CREATE_USER_GROUP,
                     ImmutableMap.of(Constants.GROUP_FK, group.getId()));
 
             this.userBadgeManager.updateBadge(user, UserBadgeManager.Badge.TEACHER_GROUPS_CREATED,
@@ -218,21 +212,18 @@ public class GroupsFacade extends AbstractSegueFacade {
 
     /**
      * Function to allow users to edit a group. This function requires the group DTO to be provided.
-     * 
-     * @param request
-     *            - so we can find out who the current user is
-     * @param groupDTO
-     *            - Containing required information to create a group
-     * @param groupId
-     *            - Id of the group to edit.
+     *
+     * @param request  - so we can find out who the current user is
+     * @param groupDTO - Containing required information to create a group
+     * @param groupId  - Id of the group to edit.
      * @return a Response containing the group
      */
     @POST
     @Path("/{group_id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response editGroup(@Context final HttpServletRequest request, final UserGroup groupDTO,
-            @PathParam("group_id") final Long groupId) {
+    public Response editGroup(@Context final HttpServletRequest request, final UserGroupDTO groupDTO,
+                              @PathParam("group_id") final Long groupId) {
         if (null == groupDTO.getGroupName() || groupDTO.getGroupName().isEmpty()) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Group name must be specified.").toResponse();
         }
@@ -274,20 +265,17 @@ public class GroupsFacade extends AbstractSegueFacade {
 
     /**
      * List all group membership.
-     * 
-     * @param request
-     *            - for authentication
-     * @param cacheRequest
-     *            - so that we can control caching of this endpoint
-     * @param groupId
-     *            - to look up info for a group.
+     *
+     * @param request      - for authentication
+     * @param cacheRequest - so that we can control caching of this endpoint
+     * @param groupId      - to look up info for a group.
      * @return List of registered users.
      */
     @GET
     @Path("{group_id}/membership/")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getUsersInGroup(@Context final HttpServletRequest request, @Context final Request cacheRequest,
-            @PathParam("group_id") final Long groupId) {
+                                    @PathParam("group_id") final Long groupId) {
         if (null == groupId) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Group name must be specified.").toResponse();
         }
@@ -297,8 +285,8 @@ public class GroupsFacade extends AbstractSegueFacade {
 
             UserGroupDTO group = groupManager.getGroupById(groupId);
 
-            if (!group.getOwnerId().equals(user.getId()) && !isUserAnAdmin(userManager, request)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You are not the owner of this group").toResponse();
+            if (!GroupManager.isOwnerOrAdditionalManager(group, user.getId())) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "Only owners, admins or managers can view membership of groups").toResponse();
             }
 
             List<UserSummaryDTO> summarisedMemberInfo = userManager.convertToUserSummaryObjectList(groupManager
@@ -326,13 +314,10 @@ public class GroupsFacade extends AbstractSegueFacade {
 
     /**
      * Add User to Group.
-     * 
-     * @param request
-     *            - for authentication
-     * @param groupId
-     *            - group of interest.
-     * @param userId
-     *            - user to add.
+     *
+     * @param request - for authentication
+     * @param groupId - group of interest.
+     * @param userId  - user to add.
      * @return 200 or error response
      */
     @POST
@@ -340,14 +325,16 @@ public class GroupsFacade extends AbstractSegueFacade {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response addUserToGroup(@Context final HttpServletRequest request,
-            @PathParam("group_id") final Long groupId, @PathParam("user_id") final Long userId) {
+                                   @PathParam("group_id") final Long groupId, @PathParam("user_id") final Long userId) {
         if (null == groupId) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Group name must be specified.").toResponse();
         }
 
         try {
-            // ensure there is a user currently logged in.
-            userManager.getCurrentRegisteredUser(request);
+            if (!isUserAnAdmin(userManager, request)) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "Only admin's can directly add a user to a group without a token").toResponse();
+            }
 
             UserGroupDTO groupBasedOnId = groupManager.getGroupById(groupId);
 
@@ -368,15 +355,11 @@ public class GroupsFacade extends AbstractSegueFacade {
 
     /**
      * Remove User from a Group.
-     * 
-     * @param request
-     *            - for authentication
-     * @param cacheRequest
-     *            - so that we can control caching of this endpoint
-     * @param groupId
-     *            - group of interest.
-     * @param userId
-     *            - user to remove.
+     *
+     * @param request      - for authentication
+     * @param cacheRequest - so that we can control caching of this endpoint
+     * @param groupId      - group of interest.
+     * @param userId       - user to remove.
      * @return 200 containing new list of users in the group or error response
      */
     @DELETE
@@ -384,7 +367,7 @@ public class GroupsFacade extends AbstractSegueFacade {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response removeUserFromGroup(@Context final HttpServletRequest request, @Context final Request cacheRequest,
-            @PathParam("group_id") final Long groupId, @PathParam("user_id") final Long userId) {
+                                        @PathParam("group_id") final Long groupId, @PathParam("user_id") final Long userId) {
         if (null == groupId) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Group name must be specified.").toResponse();
         }
@@ -395,17 +378,17 @@ public class GroupsFacade extends AbstractSegueFacade {
 
             UserGroupDTO groupBasedOnId = groupManager.getGroupById(groupId);
 
-            if (!currentRegisteredUser.getId().equals(groupBasedOnId.getOwnerId())) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You are not the owner of this group").toResponse();
+            if (!GroupManager.isOwnerOrAdditionalManager(groupBasedOnId, currentRegisteredUser.getId())) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You are not the owner or manager of this group").toResponse();
             }
 
             RegisteredUserDTO userToRemove = userManager.getUserDTOById(userId);
 
             groupManager.removeUserFromGroup(groupBasedOnId, userToRemove);
 
-            this.getLogManager().logEvent(currentRegisteredUser, request, Constants.REMOVE_USER_FROM_GROUP,
+            this.getLogManager().logEvent(currentRegisteredUser, request, SegueLogType.REMOVE_USER_FROM_GROUP,
                     ImmutableMap.of(Constants.GROUP_FK, groupBasedOnId.getId(),
-                                    USER_ID_FKEY_FIELDNAME, userToRemove.getId()));
+                            USER_ID_FKEY_FIELDNAME, userToRemove.getId()));
 
             return this.getUsersInGroup(request, cacheRequest, groupId);
         } catch (SegueDatabaseException e) {
@@ -420,19 +403,17 @@ public class GroupsFacade extends AbstractSegueFacade {
 
     /**
      * Delete group.
-     * 
-     * @param request
-     *            - for authentication
-     * @param groupId
-     *            - group to delete.
+     *
+     * @param request - for authentication
+     * @param groupId - group to delete.
      * @return NO Content response or error response
      */
     @DELETE
     @Path("/{group_id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response deleteGroup(@Context final HttpServletRequest request, 
-            @PathParam("group_id") final Long groupId) {
+    public Response deleteGroup(@Context final HttpServletRequest request,
+                                @PathParam("group_id") final Long groupId) {
         if (null == groupId) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Group name must be specified.").toResponse();
         }
@@ -445,13 +426,13 @@ public class GroupsFacade extends AbstractSegueFacade {
 
             if (!currentUser.getId().equals(groupBasedOnId.getOwnerId())) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
-                        "You are not the owner of this group, and therefore do not have permission to delete it.")
+                        "You must be the owner of the group in order to delete it.")
                         .toResponse();
             }
 
             groupManager.deleteGroup(groupBasedOnId);
 
-            this.getLogManager().logEvent(currentUser, request, Constants.DELETE_USER_GROUP,
+            this.getLogManager().logEvent(currentUser, request, SegueLogType.DELETE_USER_GROUP,
                     ImmutableMap.of(Constants.GROUP_FK, groupBasedOnId.getId()));
 
         } catch (SegueDatabaseException e) {
@@ -460,7 +441,123 @@ public class GroupsFacade extends AbstractSegueFacade {
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
-        
+
         return Response.noContent().build();
+    }
+
+    /**
+     * Add an additional manager to a group.
+     *
+     * @param request - for authentication
+     * @param groupId - group to delete the manager from
+     * @param responseMap - a map containing the email of the user to add
+     * @return No Content response or error response
+     */
+    @POST
+    @Path("{group_id}/manager")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response addAdditionalManagerToGroup(@Context final HttpServletRequest request,
+                                                @PathParam("group_id") final Long groupId,
+                                                final Map<String, String> responseMap) {
+        if (null == groupId) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "The group must be specified.").toResponse();
+        }
+
+        if (null == responseMap || !responseMap.containsKey("email") || responseMap.get("email").isEmpty()) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "The email of the user to add must be specified.").toResponse();
+        }
+
+        try {
+            RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+
+            // Check for abuse of this endpoint:
+            misuseMonitor.notifyEvent(user.getId().toString(), GroupManagerLookupMisuseHandler.class.toString());
+
+            RegisteredUserDTO userToAdd = this.userManager.getUserDTOByEmail(responseMap.get("email"));
+            UserGroupDTO group = groupManager.getGroupById(groupId);
+
+            if (null == group || !(group.getOwnerId().equals(user.getId()) || isUserAnAdmin(userManager, request))) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "Only group owners can modify additional group managers!").toResponse();
+            }
+
+            if (null == userToAdd || Role.STUDENT.equals(userToAdd.getRole())) {
+                // deliberately be vague about whether the account exists or they don't have a teacher account to avoid account scanning.
+                return new SegueErrorResponse(Status.BAD_REQUEST, "There was a problem adding the user specified. Please make sure their email address is correct and they have a teacher account.").toResponse();
+            }
+
+            if (group.getOwnerId().equals(userToAdd.getId())) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "The group owner cannot be added as an additional manager!").toResponse();
+            }
+
+            if (GroupManager.isInAdditionalManagerList(group, userToAdd.getId())) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "This user is already an additional manager").toResponse();
+            }
+
+            this.getLogManager().logEvent(user, request, SegueLogType.ADD_ADDITIONAL_GROUP_MANAGER,
+                    ImmutableMap.of(GROUP_FK, group.getId(), USER_ID_FKEY_FIELDNAME, userToAdd.getId()));
+
+            return Response.ok(this.groupManager.addUserToManagerList(group, userToAdd)).build();
+        } catch (SegueDatabaseException e) {
+            log.error("Database error while trying to add manager to a group. ", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (NoUserException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "There was a problem adding the user specified. Please make sure their email address is correct and they have a teacher account.").toResponse();
+        } catch (SegueResourceMisuseException e) {
+            String message = "You have exceeded the number of requests allowed for this endpoint. "
+                    + "Please try again later.";
+            return SegueErrorResponse.getRateThrottledResponse(message);
+        }
+
+    }
+
+    /**
+     * Delete an additional manager from a group.
+     *
+     * @param request - for authentication
+     * @param groupId - group to delete the manager from
+     * @param userId - the additional manager to delete
+     * @return No Content response or error response
+     */
+    @DELETE
+    @Path("{group_id}/manager/{user_id}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response removeAdditionalManagerFromGroup(@Context final HttpServletRequest request,
+                                                @PathParam("group_id") final Long groupId,
+                                                   @PathParam("user_id") final Long userId) {
+        if (null == groupId) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "The group must be specified.").toResponse();
+        }
+
+        if (null == userId) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "The ID of the user to remove must be specified.").toResponse();
+        }
+
+        try {
+            RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+
+            UserGroupDTO group = groupManager.getGroupById(groupId);
+
+            if (!group.getOwnerId().equals(user.getId()) && !isUserAnAdmin(userManager, request)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "Only group owners can modify additional group managers!").toResponse();
+            }
+
+            RegisteredUserDTO userToRemove = this.userManager.getUserDTOById(userId);
+
+            this.getLogManager().logEvent(user, request, SegueLogType.DELETE_ADDITIONAL_GROUP_MANAGER,
+                    ImmutableMap.of(GROUP_FK, group.getId(), USER_ID_FKEY_FIELDNAME, userId));
+
+            return Response.ok(this.groupManager.removeUserFromManagerList(group, userToRemove)).build();
+        } catch (SegueDatabaseException e) {
+            log.error("Database error while trying to remove manager from a group. ", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (NoUserException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "User specified does not exist.").toResponse();
+        }
     }
 }
