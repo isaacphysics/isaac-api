@@ -531,14 +531,14 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             UserGroupDTO group;
             group = this.groupManager.getGroupById(groupId);
 
-            // Check the group owner:
+            // Check the user has permission to access this group:
             if (!GroupManager.isOwnerOrAdditionalManager(group, currentlyLoggedInUser.getId())
                 && !isUserAnAdmin(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
             }
 
-            // Fetch the assignments owned by the currently logged in user that are assigned to the requested group
+            // Fetch all assignments set to the requested group:
             List<AssignmentDTO> assignments;
             assignments = this.assignmentManager.getAllAssignmentsForSpecificGroups(Collections.singletonList(group));
 
