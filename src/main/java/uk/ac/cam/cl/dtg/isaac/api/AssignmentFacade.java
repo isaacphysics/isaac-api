@@ -540,7 +540,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             // Fetch the assignments owned by the currently logged in user that are assigned to the requested group
             List<AssignmentDTO> assignments;
-            assignments = this.assignmentManager.getAllAssignmentsSetByUserToGroup(currentlyLoggedInUser, group);
+            assignments = this.assignmentManager.getAllAssignmentsForSpecificGroups(Collections.singletonList(group));
 
             // Fetch the members of the requested group
             List<RegisteredUserDTO> groupMembers;
