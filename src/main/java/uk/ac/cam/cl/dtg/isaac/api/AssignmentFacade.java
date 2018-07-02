@@ -103,6 +103,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
     private final QuestionManager questionManager;
 
+    private final String NOT_SHARING = "NOT_SHARING";
+
     /**
      * Creates an instance of the AssignmentFacade controller which provides the REST endpoints for the isaac api.
      * 
@@ -465,7 +467,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     resultRow.add(userSummary.getFamilyName());
                     resultRow.add(userSummary.getGivenName());
                     for (@SuppressWarnings("unused") String questionId : questionIds) {
-                        resultRow.add("ACCESS_REVOKED");
+                        resultRow.add(NOT_SHARING);
                     }
                 }
                 Collections.addAll(resultRows, resultRow.toArray(new String[0]));
@@ -617,6 +619,10 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             rows.add(headerRow.toArray(new String[0]));
 
             for (RegisteredUserDTO groupMember : groupMembers) {
+
+                UserSummaryDTO userSummary = associationManager.enforceAuthorisationPrivacy(currentlyLoggedInUser,
+                        userManager.convertToUserSummaryObject(groupMember));
+
                 ArrayList<String> row = Lists.newArrayList();
                 Map<GameboardDTO, Map<String, Integer>> userAssignments = grandTable.get(groupMember);
                 List<Float> assignmentPercentages = Lists.newArrayList();
@@ -654,18 +660,31 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 float overallTotal = (100f * totalQPartsCorrect) / totalQPartsCount;
 
                 // The next three lines could be a little better if I were not this sleepy...
-                row.add(groupMember.getFamilyName());
-                row.add(groupMember.getGivenName());
-                row.add(String.format("%.0f", overallTotal));
-                for (Float assignmentPercentage : assignmentPercentages) {
-                    row.add(String.format("%.0f", assignmentPercentage));
-                }
-                row.add("");
-                for (Integer mark : marks) {
-                    if (null != mark) {
-                        row.add(String.format("%d", mark));
-                    } else {
-                        row.add("");
+                row.add(userSummary.getFamilyName());
+                row.add(userSummary.getGivenName());
+
+                if (userSummary.isAuthorisedFullAccess()) {
+                    row.add(String.format("%.0f", overallTotal));
+                    for (Float assignmentPercentage : assignmentPercentages) {
+                        row.add(String.format("%.0f", assignmentPercentage));
+                    }
+                    row.add("");
+                    for (Integer mark : marks) {
+                        if (null != mark) {
+                            row.add(String.format("%d", mark));
+                        } else {
+                            row.add("");
+                        }
+                    }
+
+                } else {
+                    row.add(NOT_SHARING);
+                    for (@SuppressWarnings("unused") Float assignmentPercentage : assignmentPercentages) {
+                        row.add(NOT_SHARING);
+                    }
+                    row.add("");
+                    for (@SuppressWarnings("unused") Integer mark : marks) {
+                        row.add(NOT_SHARING);
                     }
                 }
                 rows.add(row.toArray(new String[0]));
