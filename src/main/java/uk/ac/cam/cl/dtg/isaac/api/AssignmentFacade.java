@@ -103,6 +103,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
     private final QuestionManager questionManager;
 
+    private final String NOT_SHARING = "NOT_SHARING";
+
     /**
      * Creates an instance of the AssignmentFacade controller which provides the REST endpoints for the isaac api.
      * 
@@ -465,7 +467,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     resultRow.add(userSummary.getFamilyName());
                     resultRow.add(userSummary.getGivenName());
                     for (@SuppressWarnings("unused") String questionId : questionIds) {
-                        resultRow.add("ACCESS_REVOKED");
+                        resultRow.add(NOT_SHARING);
                     }
                 }
                 Collections.addAll(resultRows, resultRow.toArray(new String[0]));
@@ -531,16 +533,16 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             UserGroupDTO group;
             group = this.groupManager.getGroupById(groupId);
 
-            // Check the group owner:
+            // Check the user has permission to access this group:
             if (!GroupManager.isOwnerOrAdditionalManager(group, currentlyLoggedInUser.getId())
                 && !isUserAnAdmin(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
             }
 
-            // Fetch the assignments owned by the currently logged in user that are assigned to the requested group
+            // Fetch all assignments set to the requested group:
             List<AssignmentDTO> assignments;
-            assignments = this.assignmentManager.getAllAssignmentsSetByUserToGroup(currentlyLoggedInUser, group);
+            assignments = this.assignmentManager.getAllAssignmentsForSpecificGroups(Collections.singletonList(group));
 
             // Fetch the members of the requested group
             List<RegisteredUserDTO> groupMembers;
@@ -617,6 +619,10 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             rows.add(headerRow.toArray(new String[0]));
 
             for (RegisteredUserDTO groupMember : groupMembers) {
+
+                UserSummaryDTO userSummary = associationManager.enforceAuthorisationPrivacy(currentlyLoggedInUser,
+                        userManager.convertToUserSummaryObject(groupMember));
+
                 ArrayList<String> row = Lists.newArrayList();
                 Map<GameboardDTO, Map<String, Integer>> userAssignments = grandTable.get(groupMember);
                 List<Float> assignmentPercentages = Lists.newArrayList();
@@ -654,18 +660,31 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 float overallTotal = (100f * totalQPartsCorrect) / totalQPartsCount;
 
                 // The next three lines could be a little better if I were not this sleepy...
-                row.add(groupMember.getFamilyName());
-                row.add(groupMember.getGivenName());
-                row.add(String.format("%.0f", overallTotal));
-                for (Float assignmentPercentage : assignmentPercentages) {
-                    row.add(String.format("%.0f", assignmentPercentage));
-                }
-                row.add("");
-                for (Integer mark : marks) {
-                    if (null != mark) {
-                        row.add(String.format("%d", mark));
-                    } else {
-                        row.add("");
+                row.add(userSummary.getFamilyName());
+                row.add(userSummary.getGivenName());
+
+                if (userSummary.isAuthorisedFullAccess()) {
+                    row.add(String.format("%.0f", overallTotal));
+                    for (Float assignmentPercentage : assignmentPercentages) {
+                        row.add(String.format("%.0f", assignmentPercentage));
+                    }
+                    row.add("");
+                    for (Integer mark : marks) {
+                        if (null != mark) {
+                            row.add(String.format("%d", mark));
+                        } else {
+                            row.add("");
+                        }
+                    }
+
+                } else {
+                    row.add(NOT_SHARING);
+                    for (@SuppressWarnings("unused") Float assignmentPercentage : assignmentPercentages) {
+                        row.add(NOT_SHARING);
+                    }
+                    row.add("");
+                    for (@SuppressWarnings("unused") Integer mark : marks) {
+                        row.add(NOT_SHARING);
                     }
                 }
                 rows.add(row.toArray(new String[0]));
@@ -701,24 +720,36 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     }
 
     /**
-     * Allows a user to get all groups that have been assigned to a given board.
-     * 
+     * Allows a user to get all groups that have been assigned to a given list of boards.
+     *
      * @param request
      *            - so that we can identify the current user.
-     * @param gameboardId
-     *            - the id of the game board of interest.
+     * @param gameboardIdsQueryParam
+     *            - The comma seperated list of gameboard ids.
      * @return the assignment object.
      */
     @GET
-    @Path("/assign/{gameboard_id}")
+    @Path("/assign/groups")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    public Response getAssignedGroups(@Context final HttpServletRequest request,
-            @PathParam("gameboard_id") final String gameboardId) {
+    public Response getAssignedGroupsByGameboards(@Context final HttpServletRequest request,
+            @QueryParam("gameboard_ids") final String gameboardIdsQueryParam) {
         try {
-            RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
 
-            return Response.ok(assignmentManager.findGroupsByGameboard(currentlyLoggedInUser, gameboardId))
+            if (null == gameboardIdsQueryParam || gameboardIdsQueryParam.isEmpty() ) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a comma separated list of gameboard_ids in the query param")
+                        .toResponse();
+            }
+
+            RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
+            Map<String, Object> gameboardGroups = Maps.newHashMap();
+
+
+            for (String gameboardId : gameboardIdsQueryParam.split(",")) {
+                gameboardGroups.put(gameboardId, assignmentManager.findGroupsByGameboard(currentlyLoggedInUser, gameboardId));
+            }
+
+            return Response.ok(gameboardGroups)
                     .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
