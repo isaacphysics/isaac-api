@@ -7,7 +7,6 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Striped;
 import com.google.inject.Inject;
-import javafx.util.Pair;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.StatusCode;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
@@ -16,6 +15,7 @@ import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.IStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
@@ -26,6 +26,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.IUserAlert;
 import uk.ac.cam.cl.dtg.segue.dos.IUserAlerts;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.io.IOException;
 import java.net.HttpCookie;
@@ -34,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
-import java.util.function.Function;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
@@ -52,10 +52,9 @@ public class UserAlertsWebSocket implements IAlertListener {
     private final IUserAlerts userAlerts;
     private final ILogManager logManager;
     private final IStatisticsManager statisticsManager;
+    private final PropertiesLoader properties;
     private Session session;
     private static ObjectMapper objectMapper = new ObjectMapper();
-
-    private static final int MAX_CONCURRENT_WEB_SOCKETS_PER_USER = 10;
 
     // Named unsafeConnectedSockets because, although non-aggregate operations on the concurrent hash map are fine,
     // operations on the user sets of websockets are unsafe unless used with the matching user lock.
@@ -99,12 +98,14 @@ public class UserAlertsWebSocket implements IAlertListener {
     public UserAlertsWebSocket(final UserAccountManager userManager,
                                final IUserAlerts userAlerts,
                                final ILogManager logManager,
-                               final IStatisticsManager statisticsManager) {
+                               final IStatisticsManager statisticsManager,
+                               final PropertiesLoader properties) {
 
         this.userManager = userManager;
         this.userAlerts = userAlerts;
         this.logManager = logManager;
         this.statisticsManager = statisticsManager;
+        this.properties = properties;
     }
 
 
@@ -164,7 +165,8 @@ public class UserAlertsWebSocket implements IAlertListener {
                     addedUser = null == nullIfNewUser;
                     Set<UserAlertsWebSocket> unsafeUsersSockets = unsafeConnectedSockets.get(connectedUserId);
 
-                    addedSocket = unsafeUsersSockets.size() < MAX_CONCURRENT_WEB_SOCKETS_PER_USER;
+                    addedSocket = unsafeUsersSockets.size() <= Integer.parseInt(
+                            this.properties.getProperty(Constants.MAX_CONCURRENT_WEB_SOCKETS_PER_USER));
                     if (addedSocket) {
                         unsafeUsersSockets.add(this);
                     }

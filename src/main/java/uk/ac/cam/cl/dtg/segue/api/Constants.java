@@ -270,6 +270,9 @@ public final class Constants {
 
     public static final Set<String> SEGUE_LOG_TYPES = Arrays.stream(SegueLogType.values()).map(SegueLogType::name).collect(Collectors.toSet());
 
+    // Websocket Component
+    public static final String MAX_CONCURRENT_WEB_SOCKETS_PER_USER = "MAX_CONCURRENT_WEB_SOCKETS_PER_USER";
+
     // Metrics Component
     public static final String API_METRICS_EXPORT_PORT = "API_METRICS_EXPORT_PORT";
 
