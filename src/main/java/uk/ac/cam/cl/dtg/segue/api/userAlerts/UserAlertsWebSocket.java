@@ -60,7 +60,8 @@ public class UserAlertsWebSocket implements IAlertListener {
     // Named unsafeConnectedSockets because, although non-aggregate operations on the concurrent hash map are fine,
     // operations on the user sets of websockets are unsafe unless used with the matching user lock.
     private static Map<Long, Set<UserAlertsWebSocket>> unsafeConnectedSockets = Maps.newConcurrentMap();
-    private static final int MAX_NUMBER_OF_CONCURRENT_USER_TAB_OPERATIONS = 200; // ~ max number of concurrent users
+    private static final int MAX_NUMBER_OF_CONCURRENT_USER_TAB_OPERATIONS = 200;
+    // If we move to supporting connections across multiple APIs, we could use postgres for a distributed lock.
     private static Striped<Lock> userLocks = Striped.lazyWeakLock(MAX_NUMBER_OF_CONCURRENT_USER_TAB_OPERATIONS);
 
     private static final Logger log = LoggerFactory.getLogger(UserAlertsWebSocket.class);

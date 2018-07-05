@@ -1396,7 +1396,11 @@ public class AdminFacade extends AbstractSegueFacade {
         return Response.ok().build();
     }
 
-
+    /**
+     * Returns some metrics relating to the running Java API process.
+     * @deprecated use Graphana to monitor these values instead of calling the endpoint.
+     */
+    @Deprecated
     @GET
     @Path("/diagnostics")
     @Produces(MediaType.APPLICATION_JSON)

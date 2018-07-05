@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.userAlerts.IAlertListener;
 import uk.ac.cam.cl.dtg.segue.api.userAlerts.UserAlertsWebSocket;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
@@ -20,6 +22,7 @@ import java.util.Map;
  * Created by du220 on 16/04/2018.
  */
 public class PgUserStreakManager implements IUserStreaksManager {
+    private static final Logger log = LoggerFactory.getLogger(PgUserStreakManager.class);
 
     private final PostgresSqlDb database;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -97,7 +100,8 @@ public class PgUserStreakManager implements IUserStreaksManager {
 
             UserAlertsWebSocket.notifyUserOfAlert(userId, alert);
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            log.error(String.format("Unable to serialize user streak change JSON for user {}: {}",
+                    user.getId(), e.getMessage()));
         }
     }
 
