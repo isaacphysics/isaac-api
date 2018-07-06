@@ -137,15 +137,13 @@ public interface ISearchProvider {
      *            - start index for results
      * @param limit
      *            - the maximum number of results to return.
-     * @param randomSeed
-     *            - random seed.
      * @param filterInstructions
      *            - post search filter instructions e.g. remove content of a certain type.
      * @return results in a random order for a given match search.
      */
     ResultsWrapper<String> randomisedMatchSearch(String index, String indexType,
             Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch, 
-            int startIndex, int limit, Long randomSeed, Map<String, AbstractFilterInstruction> filterInstructions) throws SegueSearchException;
+            int startIndex, int limit, Map<String, AbstractFilterInstruction> filterInstructions) throws SegueSearchException;
 
     /**
      * Query for a list of Results that match a given id prefix.

@@ -34,7 +34,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.index.query.*;
 import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
@@ -105,18 +105,18 @@ public class ElasticSearchProvider implements ISearchProvider {
     @Override
     public final ResultsWrapper<String> randomisedMatchSearch(final String index, final String indexType,
                                                               final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch, final int startIndex,
-                                                              final int limit, final Long randomSeed, final Map<String, AbstractFilterInstruction> filterInstructions)
+                                                              final int limit, final Map<String, AbstractFilterInstruction> filterInstructions)
             throws SegueSearchException {
         // build up the query from the fieldsToMatch map
         QueryBuilder query = generateBoolMatchQuery(fieldsToMatch);
 
-        query = QueryBuilders.functionScoreQuery(query, ScoreFunctionBuilders.randomFunction(randomSeed));
+        query = QueryBuilders.functionScoreQuery(query, ScoreFunctionBuilders.randomFunction());
 
         if (filterInstructions != null) {
             query = QueryBuilders.boolQuery().must(query).filter(generateFilterQuery(filterInstructions));
         }
 
-        log.debug("Randomised Query, with seed: " + randomSeed + ", to be sent to elasticsearch is : " + query);
+        log.debug("Randomised Query, to be sent to elasticsearch is : " + query);
 
         return this.executeBasicQuery(index, indexType, query, startIndex, limit);
     }
@@ -209,7 +209,7 @@ public class ElasticSearchProvider implements ISearchProvider {
     public static Client getTransportClient(final String clusterName, final String address, final int port) throws UnknownHostException {
         TransportClient client = new PreBuiltTransportClient(Settings.builder().put("cluster.name", clusterName)
                 .put("client.transport.ping_timeout", "180s").build())
-                .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(address), port));
+                .addTransportAddress(new TransportAddress(InetAddress.getByName(address), port));
 
         log.info("Elastic Search Transport client created: " + address + ":" + port);
         return client;
@@ -362,7 +362,7 @@ public class ElasticSearchProvider implements ISearchProvider {
                     if (operatorForThisField.equals(Constants.BooleanOperator.OR)) {
                         shouldMatchSet.add(pair.getKey().getValue());
                         query.should(QueryBuilders.matchQuery(pair.getKey().getValue(), queryItem))
-                                .minimumNumberShouldMatch(shouldMatchSet.size());
+                                .minimumShouldMatch(shouldMatchSet.size());
                     } else {
                         query.must(QueryBuilders.matchQuery(pair.getKey().getValue(), queryItem));
                     }

@@ -329,13 +329,8 @@ public class GitContentManager implements IContentManager {
         ResultsWrapper<ContentDTO> finalResults;
 
         ResultsWrapper<String> searchHits;
-        if (null == randomSeed) {
-            searchHits = searchProvider.randomisedMatchSearch(version, CONTENT_TYPE, fieldsToMatch, startIndex, limit,
-                    randomNumberGenerator.nextLong(), this.getUnpublishedFilter());
-        } else {
-            searchHits = searchProvider.randomisedMatchSearch(version, CONTENT_TYPE, fieldsToMatch, startIndex, limit,
-                    randomSeed, this.getUnpublishedFilter());
-        }
+        searchHits = searchProvider.randomisedMatchSearch(version, CONTENT_TYPE, fieldsToMatch, startIndex, limit,
+                this.getUnpublishedFilter());
 
         // setup object mapper to use pre-configured deserializer module.
         // Required to deal with type polymorphism
@@ -431,7 +426,7 @@ public class GitContentManager implements IContentManager {
         SearchHits hits = r.getHits();
         ArrayList<String> units = new ArrayList<>((int) hits.getTotalHits());
         for (SearchHit hit : hits) {
-            units.add((String) hit.getSource().get("unit"));
+            units.add((String) hit.getSourceAsMap().get("unit"));
         }
 
         return units;
@@ -460,7 +455,7 @@ public class GitContentManager implements IContentManager {
         for (SearchHit hit : hits) {
 
             Content partialContentWithErrors = new Content();
-            Map src = hit.getSource();
+            Map src = hit.getSourceAsMap();
             partialContentWithErrors.setId((String) src.get("id"));
             partialContentWithErrors.setTitle((String) src.get("title"));
             //partialContentWithErrors.setTags(pair.getKey().getTags()); // TODO: Support tags
@@ -468,7 +463,7 @@ public class GitContentManager implements IContentManager {
             partialContentWithErrors.setCanonicalSourceFile((String) src.get("canonicalSourceFile"));
 
             ArrayList<String> errors = new ArrayList<>();
-            for (Object v : (List) hit.getSource().get("errors")) {
+            for (Object v : (List) hit.getSourceAsMap().get("errors")) {
                 errors.add((String) v);
             }
 

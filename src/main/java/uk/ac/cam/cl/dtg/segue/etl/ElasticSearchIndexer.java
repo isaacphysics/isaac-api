@@ -21,6 +21,7 @@ import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
@@ -38,7 +39,7 @@ import java.util.Map;
  */
 class ElasticSearchIndexer extends ElasticSearchProvider {
     private static final Logger log = LoggerFactory.getLogger(ElasticSearchIndexer.class);
-    private final Map<String,List<String>> rawFieldsListByType = new HashMap<>();
+    private final Map<String, List<String>> rawFieldsListByType = new HashMap<>();
 
     /**
      * Constructor for creating an instance of the ElasticSearchProvider Object.
@@ -99,7 +100,9 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
         }
 
         try {
-            IndexResponse indexResponse = client.prepareIndex(index, indexType, uniqueId).setSource(content).execute()
+            IndexResponse indexResponse = client.prepareIndex(index, indexType, uniqueId)
+                    .setSource(content, XContentType.JSON)
+                    .execute()
                     .actionGet();
             log.debug("Document: " + indexResponse.getId() + " indexed.");
 
@@ -228,9 +231,9 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
                     log.debug("Sending raw mapping correction for " + fieldName + "."
                             + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX);
 
-                    mappingBuilder.startObject(fieldName).field("type", "keyword").field("index", "analyzed")
+                    mappingBuilder.startObject(fieldName).field("type", "keyword").field("index", "true")
                             .startObject("fields").startObject(Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX)
-                            .field("type", "keyword").field("index", "not_analyzed").endObject().endObject().endObject();
+                            .field("type", "keyword").field("index", "false").endObject().endObject().endObject();
                 }
                 // close off json structure
                 mappingBuilder.endObject().endObject().endObject();
