@@ -65,7 +65,7 @@ class SchoolIndexer {
 
         File f = new File(schoolsListPath);
         try {
-            es.indexObject(SCHOOLS_SEARCH_INDEX, "metadata", objectMapper.writeValueAsString(ImmutableMap.of("lastModified", f.lastModified())), "sourceFile");
+            es.indexObject(SCHOOLS_SEARCH_INDEX + "_metadata", "metadata", objectMapper.writeValueAsString(ImmutableMap.of("lastModified", f.lastModified())), "sourceFile");
         } catch (SegueSearchException e) {
             log.error("Unable to index school list metadata.", e);
         } catch (JsonProcessingException e) {

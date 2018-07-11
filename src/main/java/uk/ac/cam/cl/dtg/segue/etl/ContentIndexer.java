@@ -3,6 +3,7 @@ package uk.ac.cam.cl.dtg.segue.etl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.CaseFormat;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -46,6 +47,30 @@ import static com.google.common.collect.Maps.immutableEntry;
 public class ContentIndexer {
     private static final Logger log = LoggerFactory.getLogger(Content.class);
 
+    private enum IndexType {
+        METADATA("metadata"),
+        UNIT("unit"),
+        PUBLISHED_UNIT("publishedUnit"),
+        CONTENT("content"),
+        CONTENT_ERROR("contentError");
+
+        private static final String DELIMITER = "_";
+        private String delimtedSuffix;
+        private String name;
+
+        IndexType(String typeName) {
+            name = typeName;
+            delimtedSuffix = DELIMITER + CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, typeName);
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getSuffix() {
+            return delimtedSuffix;
+        }
+    }
 
     private static ConcurrentHashMap<String, Boolean> versionLocks = new ConcurrentHashMap<>();
 
@@ -77,7 +102,7 @@ public class ContentIndexer {
             database.fetchLatestFromRemote();
 
             // now we have acquired the lock check if someone else has indexed this.
-            boolean searchIndexed = es.hasIndex(version);
+            boolean searchIndexed = es.hasIndex(version + IndexType.CONTENT.getSuffix());
             if (searchIndexed) {
                 //log.info("Index already exists. Deleting.");
                 //es.expungeIndexFromSearchCache(version);
@@ -102,7 +127,7 @@ public class ContentIndexer {
             buildElasticSearchIndex(version, contentCache, tagsList, allUnits, publishedUnits, indexProblemCache);
 
             // Verify the version requested is now available
-            if (!es.hasIndex(version)) {
+            if (!es.hasIndex(version + IndexType.CONTENT.getSuffix())) {
                 throw new Exception(String.format("Failed to index version %s. Don't know why.", version));
             }
 
@@ -115,12 +140,13 @@ public class ContentIndexer {
     }
 
     void setNamedVersion(String alias, String version) {
-        es.addOrMoveIndexAlias(alias, version);
+        es.addOrMoveIndexAlias(alias, version + IndexType.CONTENT.getSuffix()); // TODO MT this might be a problem...
     }
 
     void setLatestVersion(String version) {
         this.setNamedVersion("latest", version);
     }
+
     /**
      * This method will populate the internal gitCache based on the content object files found for a given SHA.
      *
@@ -133,11 +159,11 @@ public class ContentIndexer {
      */
     private synchronized void buildGitContentIndex(final String sha,
                                                    final boolean includeUnpublished,
-                                                   Map<String, Content> contentCache,
-                                                   Set<String> tagsList,
-                                                   Map<String, String> allUnits,
-                                                   Map<String, String> publishedUnits,
-                                                   Map<Content, List<String>> indexProblemCache)
+                                                   final Map<String, Content> contentCache,
+                                                   final Set<String> tagsList,
+                                                   final Map<String, String> allUnits,
+                                                   final Map<String, String> publishedUnits,
+                                                   final Map<Content, List<String>> indexProblemCache)
             throws ContentManagerException {
 
         if (null == sha) {
@@ -523,9 +549,6 @@ public class ContentIndexer {
         }
     }
 
-
-
-
     /**
      * This method will send off the information in the git cache to the search provider for indexing.
      *
@@ -536,16 +559,18 @@ public class ContentIndexer {
      */
     private synchronized void buildElasticSearchIndex(final String sha,
                                                       final Map<String, Content> gitCache,
-                                                      Set<String> tagsList,
-                                                      Map<String, String> allUnits,
-                                                      Map<String, String> publishedUnits,
-                                                      Map<Content, List<String>> indexProblemCache) {
-        if (es.hasIndex(sha)) {
-            log.info("Deleting existing index for version " + sha);
-            es.expungeIndexFromSearchCache(sha);
+                                                      final Set<String> tagsList,
+                                                      final Map<String, String> allUnits,
+                                                      final Map<String, String> publishedUnits,
+                                                      final Map<Content, List<String>> indexProblemCache) {
+        if (es.hasIndex(sha + IndexType.CONTENT.getSuffix())) {
+            log.info("Deleting existing indexes for version " + sha);
+            for (IndexType indexType : IndexType.values()) {
+                es.expungeIndexFromSearchCache(sha + indexType.getSuffix());
+            }
         }
 
-        log.info("Building search index for: " + sha);
+        log.info("Building search indexes for: " + sha);
 
         // setup object mapper to use pre-configured deserializer module.
         // Required to deal with type polymorphism
@@ -564,25 +589,30 @@ public class ContentIndexer {
 
 
         try {
-            es.indexObject(sha, "metadata", objectMapper.writeValueAsString(ImmutableMap.of("version", sha, "created", new Date().toString())), "general");
-            es.indexObject(sha, "metadata", objectMapper.writeValueAsString(ImmutableMap.of("tags", tagsList)), "tags");
+            es.indexObject(sha + IndexType.METADATA.getSuffix(), IndexType.METADATA.getName(),
+                    objectMapper.writeValueAsString(ImmutableMap.of("version", sha, "created", new Date().toString())), "general");
+            es.indexObject(sha + IndexType.METADATA.getSuffix(), IndexType.METADATA.getName(),
+                    objectMapper.writeValueAsString(ImmutableMap.of("tags", tagsList)), "tags");
 
             // TODO: Should probably bulk index these
             for (String k : allUnits.keySet()) {
-                es.indexObject(sha, "unit", objectMapper.writeValueAsString(ImmutableMap.of("cleanKey", k, "unit", allUnits.get(k))));
+                es.indexObject(sha + IndexType.UNIT.getSuffix(), IndexType.UNIT.getName(),
+                        objectMapper.writeValueAsString(ImmutableMap.of("cleanKey", k, "unit", allUnits.get(k))));
             }
             for (String k : publishedUnits.keySet()) {
-                es.indexObject(sha, "publishedUnit", objectMapper.writeValueAsString(ImmutableMap.of("cleanKey", k, "unit", publishedUnits.get(k))));
+                es.indexObject(sha + IndexType.PUBLISHED_UNIT.getSuffix(), IndexType.PUBLISHED_UNIT.getName(),
+                        objectMapper.writeValueAsString(ImmutableMap.of("cleanKey", k, "unit", publishedUnits.get(k))));
             }
 
             for (Content c: indexProblemCache.keySet()) {
-                es.indexObject(sha, "contentError", objectMapper.writeValueAsString(ImmutableMap.of(
-                        "canonicalSourceFile", c.getCanonicalSourceFile(),
-                        "id", c.getId() == null ? "" : c.getId(),
-                        "title", c.getTitle() == null ? "" : c.getTitle(),
-                        // "tags", c.getTags(), // TODO: Add tags
-                        "published", c.getPublished() == null ? "" : c.getPublished(),
-                        "errors", indexProblemCache.get(c).toArray())));
+                es.indexObject(sha + IndexType.CONTENT_ERROR.getSuffix(), IndexType.CONTENT_ERROR.getName(),
+                        objectMapper.writeValueAsString(ImmutableMap.of(
+                                "canonicalSourceFile", c.getCanonicalSourceFile(),
+                                "id", c.getId() == null ? "" : c.getId(),
+                                "title", c.getTitle() == null ? "" : c.getTitle(),
+                                // "tags", c.getTags(), // TODO: Add tags
+                                "published", c.getPublished() == null ? "" : c.getPublished(),
+                                "errors", indexProblemCache.get(c).toArray())));
             }
         } catch (JsonProcessingException e) {
             log.error("Unable to serialise sha, tags, units or content errors.");
@@ -592,7 +622,7 @@ public class ContentIndexer {
 
 
         try {
-            es.bulkIndex(sha, "content", contentToIndex);
+            es.bulkIndex(sha + IndexType.CONTENT.getSuffix(), IndexType.CONTENT.getName(), contentToIndex);
             log.info("Search index request sent for: " + sha);
         } catch (SegueSearchException e) {
             log.error("Error whilst trying to perform bulk index operation.", e);
@@ -602,7 +632,7 @@ public class ContentIndexer {
     }
 
 
-    /*
+    /**
      * This method will attempt to traverse the cache to ensure that all content references are valid.
      *
      * @param sha

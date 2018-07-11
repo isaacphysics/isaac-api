@@ -19,8 +19,10 @@ import org.elasticsearch.cluster.metadata.AliasMetaData;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,8 +73,8 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
         // build bulk request
         BulkRequestBuilder bulkRequest = client.prepareBulk();
         for (Map.Entry<String, String> itemToIndex : dataToIndex) {
-            bulkRequest.add(client.prepareIndex(index, indexType, itemToIndex.getKey()).setSource(
-                    itemToIndex.getValue()));
+            bulkRequest.add(client.prepareIndex(index, indexType, itemToIndex.getKey())
+                    .setSource(itemToIndex.getValue(), XContentType.JSON)); // TODO MT this might not be what we want seeing as it is complaining about 1000 field limit
         }
 
         try {
@@ -183,7 +185,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
 
         for(ObjectObjectCursor<String, IndexMetaData> c: indices) {
             if (c.value.getAliases().size() == 0) {
-                log.info("Index " + c.key + " has no aliases. Removing.");
+                log.info("Index " + c.key + " has no aliases. Removing."); // TODO MT We need aliases for everything... maybe the new type_ field is better
                 this.expungeIndexFromSearchCache(c.key);
             }
         }
@@ -216,13 +218,12 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
      * @param index
      *            - index to send the mapping corrections to.
      */
-    private void sendMappingCorrections(final String index) {
+    private void sendMappingCorrections(final String index) {// TODO MT if we are using this in any way we might have broken it by separating it into separate indices
         try {
-
-            CreateIndexRequestBuilder indexBuilder = client.admin().indices().prepareCreate(index).setSettings(Settings.builder().put("index.mapping.total_fields.limit", "9999").build());
-
             for (String indexType : this.rawFieldsListByType.keySet()) {
-
+                CreateIndexRequestBuilder indexBuilder = client.admin().indices()
+                        .prepareCreate(index + "_raw_" + indexType)
+                        .setSettings(Settings.builder().put("index.mapping.total_fields.limit", "9999").build());
 
                 final XContentBuilder mappingBuilder = XContentFactory.jsonBuilder().startObject().startObject(indexType)
                         .startObject("properties");
@@ -239,11 +240,9 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
                 mappingBuilder.endObject().endObject().endObject();
                 indexBuilder.addMapping(indexType, mappingBuilder);
 
+                // Send Mapping information
+                indexBuilder.execute().actionGet();
             }
-
-            // Send Mapping information
-            indexBuilder.execute().actionGet();
-
         } catch (IOException e) {
             log.error("Error while sending mapping correction " + "instructions to the ElasticSearch Server", e);
         }
