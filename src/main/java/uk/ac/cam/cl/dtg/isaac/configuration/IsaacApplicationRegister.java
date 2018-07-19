@@ -74,7 +74,6 @@ public class IsaacApplicationRegister extends Application {
             mapper.registerJsonTypes(segueConfigurationModule.getContentDataTransferObjectMap());
         }
         
-        setupMetricsExporter();
         setupSwaggerApiAdvertiser();
     }
 
@@ -146,12 +145,5 @@ public class IsaacApplicationRegister extends Application {
         
         beanConfig.setResourcePackage("uk.ac.cam.cl.dtg");
         beanConfig.setScan(true);        
-    }
-
-    /**
-     * Set-up metrics exporter. Only needs to be created once per process.
-     */
-    private void setupMetricsExporter() {
-        injector.getInstance(IMetricsExporter.class);
     }
 }
