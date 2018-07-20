@@ -31,6 +31,7 @@ public class UserGroup {
     private Long id;
     private String groupName;
     private Long ownerId;
+    private GroupStatus status;
     private Date created;
     private boolean archived;
     private Date lastUpdated;
@@ -54,11 +55,12 @@ public class UserGroup {
      * @param created
      *            - date created.
      */
-    public UserGroup(@Nullable final Long id, final String groupName, final Long ownerId, final Date created,
+    public UserGroup(@Nullable final Long id, final String groupName, final Long ownerId, final GroupStatus status, final Date created,
                      final boolean archived, final Date lastUpdated) {
         this.id = id;
         this.groupName = groupName;
         this.ownerId = ownerId;
+        this.status = status;
         this.created = created;
         this.archived = archived;
         this.lastUpdated = lastUpdated;
@@ -123,6 +125,23 @@ public class UserGroup {
      */
     public void setOwnerId(final Long ownerId) {
         this.ownerId = ownerId;
+    }
+
+
+    /**
+     * Get the status of the group
+     * @return the status of the group - i.e. active or deleted
+     */
+    public GroupStatus getStatus() {
+        return status;
+    }
+
+    /**
+     * Set the status of the group
+     * @param status e.g. active or deleted.
+     */
+    public void setStatus(GroupStatus status) {
+        this.status = status;
     }
 
     /**

@@ -33,20 +33,19 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
+import uk.ac.cam.cl.dtg.segue.dos.GroupStatus;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 
 import javax.annotation.Nullable;
-import javax.validation.constraints.Null;
 
 /**
- * PgAssociationDataManager.
- * 
+ * PgUserGroupPersistenceManager.
+ * Postgres implementation of the IUserGroupPersistenceManager
  */
 public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManager {
     private static final Logger log = LoggerFactory.getLogger(PgUserGroupPersistenceManager.class);
-
     private final PostgresSqlDb database;
 
     /**
@@ -369,8 +368,10 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
      *             - if we cannot extract a required property from the results set.
      */
     private UserGroup buildGroup(final ResultSet set) throws SQLException {
+
         return new UserGroup(set.getLong("id"), set.getString("group_name"), set.getLong("owner_id"),
-                set.getDate("created"), set.getBoolean("archived"), set.getDate("last_updated"));
+                GroupStatus.valueOf(set.getString("status")), set.getDate("created"),
+                set.getBoolean("archived"), set.getDate("last_updated"));
     }
 
     private List<UserGroup> getGroupsBySQLPst(final String pstString, final Long userId, @Nullable final Boolean archivedGroupsOnly) throws SegueDatabaseException {

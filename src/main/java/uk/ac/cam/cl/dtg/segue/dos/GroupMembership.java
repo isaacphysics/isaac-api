@@ -30,6 +30,8 @@ public class GroupMembership {
     private String id;
     private String groupId;
     private String userId;
+    private GroupMembershipStatus status;
+    private Date updated;
     private Date created;
 
     /**
@@ -110,6 +112,41 @@ public class GroupMembership {
      */
     public void setUserId(final String userId) {
         this.userId = userId;
+    }
+
+    /**
+     * Get the status of the group membership
+     * @return the group status
+     */
+    public GroupMembershipStatus getStatus() {
+        return status;
+    }
+
+    /**
+     * set the status of the group membership
+     * @param status to set
+     */
+    public void setStatus(GroupMembershipStatus status) {
+        this.status = status;
+    }
+
+    /**
+     * Gets the updated date.
+     *
+     * @return the updated date
+     */
+    public Date getUpdated() {
+        return updated;
+    }
+
+    /**
+     * Sets the updated date.
+     *
+     * @param updated
+     *            the updated date to set
+     */
+    public void setUpdated(final Date updated) {
+        this.updated = updated;
     }
 
     /**
