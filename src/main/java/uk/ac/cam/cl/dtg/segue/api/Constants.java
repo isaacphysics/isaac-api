@@ -282,6 +282,8 @@ public final class Constants {
     public static final Integer DEFAULT_RESULTS_LIMIT = 10;
     public static final String DEFAULT_RESULTS_LIMIT_AS_STRING = "10";
 
+    public static final String DEFAULT_SEARCH_RESULT_LIMIT_AS_STRING = "25";
+
     public static final Integer NO_SEARCH_LIMIT = -1;
 
     // Content model specific stuff
