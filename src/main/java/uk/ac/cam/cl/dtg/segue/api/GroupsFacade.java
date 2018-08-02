@@ -39,19 +39,21 @@ import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+
 import uk.ac.cam.cl.dtg.segue.api.monitors.GroupManagerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
+
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
+
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.DetailedUserSummaryDTO;
+
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -71,8 +73,9 @@ public class GroupsFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(GroupsFacade.class);
     private final GroupManager groupManager;
     private final UserAssociationManager associationManager;
-    private IMisuseMonitor misuseMonitor;
+
     private final UserBadgeManager userBadgeManager;
+    private IMisuseMonitor misuseMonitor;
 
     /**
      * Create an instance of the authentication Facade.
@@ -86,14 +89,15 @@ public class GroupsFacade extends AbstractSegueFacade {
     @Inject
     public GroupsFacade(final PropertiesLoader properties, final UserAccountManager userManager,
                         final ILogManager logManager, final GroupManager groupManager,
-                        final UserAssociationManager associationsManager, final IMisuseMonitor misuseMonitor,
-                        final UserBadgeManager userBadgeManager) {
+                        final UserAssociationManager associationsManager,
+                        final UserBadgeManager userBadgeManager,
+                        final IMisuseMonitor misuseMonitor) {
         super(properties, logManager);
         this.userManager = userManager;
         this.groupManager = groupManager;
         this.associationManager = associationsManager;
-        this.misuseMonitor = misuseMonitor;
         this.userBadgeManager = userBadgeManager;
+        this.misuseMonitor = misuseMonitor;
     }
 
     /**
