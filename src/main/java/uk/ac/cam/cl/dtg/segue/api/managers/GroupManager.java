@@ -15,23 +15,14 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
-
+import com.google.api.client.util.Lists;
 import com.google.api.client.util.Sets;
-
 import com.google.common.collect.ComparisonChain;
+import com.google.inject.Inject;
 import ma.glasnost.orika.MapperFacade;
-
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.api.client.util.Lists;
-import com.google.inject.Inject;
-
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -40,6 +31,12 @@ import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.DetailedUserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+
+import java.util.Comparator;
+import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * GroupManager. Responsible for managing group related logic.
@@ -155,10 +152,8 @@ public class GroupManager {
      */
     private void orderUsersByName(final List<RegisteredUserDTO> users) {
         users.sort((userA, userB) -> ComparisonChain.start().
-                compare(userA.getFamilyName(), userB.getFamilyName(), String.CASE_INSENSITIVE_ORDER).
-                compare(userA.getFamilyName(), userB.getFamilyName()).
-                compare(userA.getGivenName(), userB.getGivenName(), String.CASE_INSENSITIVE_ORDER).
-                compare(userB.getFamilyName(), userB.getGivenName()).
+                compare(userA.getFamilyName(), userB.getFamilyName(), Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)).
+                compare(userA.getGivenName(), userB.getGivenName(), Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)).
                 result());
     }
 
