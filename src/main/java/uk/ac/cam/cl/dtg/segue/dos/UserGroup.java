@@ -23,7 +23,7 @@ import org.mongojack.ObjectId;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * UserGroupDO - this object represents a group or label assigned to users who have been placed into a group.
+ * UserGroupDO - this object represents a group or collection of users
  * 
  * This allows users to be organised by class / project and for teachers (or those granted permission) to view progress.
  */

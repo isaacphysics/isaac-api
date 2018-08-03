@@ -27,6 +27,8 @@ import org.mongojack.ObjectId;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithEmailAddressDTO;
+import uk.ac.cam.cl.dtg.segue.dos.GroupStatus;
+import uk.ac.cam.cl.dtg.segue.dto.users.DetailedUserSummaryDTO;
 
 /**
  * UserGroupDTO - this object represents a group or label assigned to users who have been placed into a group.
@@ -40,8 +42,9 @@ public class UserGroupDTO {
     private Date created;
     private String token;
     private boolean archived;
-    private UserSummaryWithEmailAddressDTO ownerSummary;
-    private Set<UserSummaryWithEmailAddressDTO> additionalManagers;
+    private DetailedUserSummaryDTO ownerSummary;
+    private Set<DetailedUserSummaryDTO> additionalManagers;
+    private GroupStatus status;
 
     /**
      * Default Constructor.
@@ -227,6 +230,23 @@ public class UserGroupDTO {
         this.additionalManagers = additionalManagers;
     }
 
+    /**
+     * Get the status of the group
+     *
+     * @return the status of the group
+     */
+    public GroupStatus getStatus() {
+        return status;
+    }
+
+    /**
+     * Set the status of the group
+     * @param status status to set
+     */
+    public void setStatus(GroupStatus status) {
+        this.status = status;
+    }
+
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -270,4 +290,5 @@ public class UserGroupDTO {
     public Set<Long> getAdditionalManagersUserIds() {
         return additionalManagers.stream().map(UserSummaryWithEmailAddressDTO::getId).collect(Collectors.toSet());
     }
+
 }
