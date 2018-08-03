@@ -27,16 +27,22 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupPersistenceManager;
+
 import uk.ac.cam.cl.dtg.segue.dos.GroupStatus;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithEmailAddressDTO;
+import uk.ac.cam.cl.dtg.segue.dos.GroupMembership;
+import uk.ac.cam.cl.dtg.segue.dto.users.GroupMembershipDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithGroupMembershipDTO;
 
 import java.util.Comparator;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -146,6 +152,17 @@ public class GroupManager {
         List<RegisteredUserDTO> users = userManager.findUsers(groupMemberIds);
         this.orderUsersByName(users);
         return users;
+    }
+
+    /**
+     * Get a map representing the current membership of a given group.
+     * @param groupId - group of interest
+     * @return map of user id to membership record.
+     * @throws SegueDatabaseException
+     *              - If an error occurred while interacting with the database.
+     */
+    public Map<Long, GroupMembership> getUserMembershipMapforGroup(Long groupId) throws SegueDatabaseException {
+        return this.groupDatabase.getGroupMembershipMap(groupId);
     }
 
     /**
@@ -291,7 +308,7 @@ public class GroupManager {
      *             - if there is a database error.
      */
     public UserGroupDTO getGroupById(final Long groupId) throws ResourceNotFoundException, SegueDatabaseException {
-        UserGroup group = groupDatabase.findById(groupId);
+        UserGroup group = groupDatabase.findGroupById(groupId);
 
         if (null == group) {
             throw new ResourceNotFoundException("The group id specified (" + groupId.toString() + ") does not exist.");
@@ -356,7 +373,7 @@ public class GroupManager {
      */
     public boolean isValidGroup(final Long groupId) {
         try {
-            return this.groupDatabase.findById(groupId) != null;
+            return this.groupDatabase.findGroupById(groupId) != null;
         } catch (SegueDatabaseException e) {
             log.error("Database error while validating group: failing validation silently");
             return false;
@@ -457,4 +474,25 @@ public class GroupManager {
         return result;
     }
 
+    /**
+     * Mutates the list to include group membership information
+     *
+     * @param group group to look up membership info
+     * @param summarisedMemberInfo - the list containing summarised user objects - this will be replaced with summarised user objects that include membership information
+     * @throws SegueDatabaseException - if there is an error.
+     */
+    public void convertToUserSummaryGroupMembership(UserGroupDTO group, List<UserSummaryDTO> summarisedMemberInfo) throws SegueDatabaseException {
+        List<UserSummaryWithGroupMembershipDTO> result = Lists.newArrayList();
+        Map<Long, GroupMembership> userMembershipMapforMap = this.getUserMembershipMapforGroup(group.getId());
+
+        for(UserSummaryDTO dto : summarisedMemberInfo) {
+            UserSummaryWithGroupMembershipDTO newDTO = dtoMapper.map(dto, UserSummaryWithGroupMembershipDTO.class);
+            GroupMembership groupMembershipDO = userMembershipMapforMap.get(newDTO.getId());
+            newDTO.setGroupMembershipInformation(dtoMapper.map(groupMembershipDO, GroupMembershipDTO.class));
+            result.add(newDTO);
+        }
+
+        summarisedMemberInfo.clear();
+        summarisedMemberInfo.addAll(result);
+    }
 }

@@ -45,7 +45,6 @@ import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
@@ -302,6 +301,8 @@ public class GroupsFacade extends AbstractSegueFacade {
             }
 
             associationManager.enforceAuthorisationPrivacy(user, summarisedMemberInfo);
+
+            groupManager.convertToUserSummaryGroupMembership(group, summarisedMemberInfo);
 
             return Response.ok(summarisedMemberInfo).tag(etag)
                     .cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();

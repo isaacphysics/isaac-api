@@ -21,6 +21,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +39,8 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dos.GroupMembership;
+import uk.ac.cam.cl.dtg.segue.dos.GroupMembershipStatus;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -112,7 +115,7 @@ public class AssignmentManager implements IGroupObserver {
 
         List<AssignmentDTO> assignments = Lists.newArrayList();
         for (UserGroupDTO group : groups) {
-            assignments.addAll(this.assignmentPersistenceManager.getAssignmentsByGroupId(group.getId()));
+            assignments.addAll(this.filterAssignmentsBasedOnGroupMembershipContext(this.assignmentPersistenceManager.getAssignmentsByGroupId(group.getId()), user.getId()));
         }
 
         return assignments;
@@ -167,21 +170,23 @@ public class AssignmentManager implements IGroupObserver {
         newAssignment.setId(this.assignmentPersistenceManager.saveAssignment(newAssignment));
 
         UserGroupDTO userGroupDTO = groupManager.getGroupById(newAssignment.getGroupId());
-        List<RegisteredUserDTO> users = groupManager.getUsersInGroup(userGroupDTO);
-        
+        List<RegisteredUserDTO> usersToEmail = Lists.newArrayList();
+        Map<Long, GroupMembership> userMembershipMapforGroup = this.groupManager.getUserMembershipMapforGroup(userGroupDTO.getId());
         GameboardDTO gameboard = gameManager.getGameboard(newAssignment.getGameboardId());
         
-        //filter users so those that have revoked access to their data aren't emailed
+        //filter users so those that have revoked access (or are inactive) to their data aren't emailed
         try {
 			RegisteredUserDTO assignmentOwner = userManager.getUserDTOById(newAssignment.getOwnerUserId());
-			
-			for (Iterator<RegisteredUserDTO> iterator = users.iterator(); iterator.hasNext();) {
-				RegisteredUserDTO user = iterator.next();
-				UserSummaryDTO userSummary = userManager.convertToUserSummaryObject(user);
-				if (!userAssociationManager.hasPermission(assignmentOwner, userSummary)) {
-					iterator.remove();
-				}
-			}
+
+			for(RegisteredUserDTO user : groupManager.getUsersInGroup(userGroupDTO)) {
+                UserSummaryDTO userSummary = userManager.convertToUserSummaryObject(user);
+
+                //TODO do we need to check if they have permission anymore with new inactive flag?
+                if (GroupMembershipStatus.ACTIVE.equals(userMembershipMapforGroup.get(user.getId()).getStatus())
+                        && userAssociationManager.hasPermission(assignmentOwner, userSummary) ) {
+                    usersToEmail.add(user);
+                }
+            }
 			
 		} catch (NoUserException e1) {
 			log.error(String.format("Could not find assignment owner (%s) for assignment (%s)", 
@@ -204,7 +209,7 @@ public class AssignmentManager implements IGroupObserver {
                 gameboardName = gameboard.getTitle();
             }
 
-            for (RegisteredUserDTO userDTO : users) {
+            for (RegisteredUserDTO userDTO : usersToEmail) {
                 emailManager.sendTemplatedEmailToUser(userDTO,
                         emailManager.getEmailTemplateDTO("email-template-group-assignment"),
                         ImmutableMap.of("gameboardURL", gameboardURL,
@@ -494,6 +499,25 @@ public class AssignmentManager implements IGroupObserver {
                 .put("accountURL", accountURL)
                 .put("assignmentsInfo", plainTextSB.toString())
                 .put("assignmentsInfo_HTML", htmlSB.toString()).build();
+    }
+
+    private List<AssignmentDTO> filterAssignmentsBasedOnGroupMembershipContext(List<AssignmentDTO> assignments, Long userId) throws SegueDatabaseException {
+        Map<Long, Map<Long, GroupMembership>> groupIdToUserMembershipInfoMap = Maps.newHashMap();
+        List<AssignmentDTO> results = Lists.newArrayList();
+
+        for (AssignmentDTO assignment : assignments) {
+            if (!groupIdToUserMembershipInfoMap.containsKey(assignment.getGroupId())) {
+                groupIdToUserMembershipInfoMap.put(assignment.getGroupId(), this.groupManager.getUserMembershipMapforGroup(assignment.getGroupId()));
+            }
+            GroupMembership membershipRecord = groupIdToUserMembershipInfoMap.get(assignment.getGroupId()).get(userId);
+            if (GroupMembershipStatus.INACTIVE.equals(membershipRecord.getStatus())
+                    && membershipRecord.getUpdated().before(assignment.getCreationDate()) ) {
+                continue;
+            }
+            // if they are inactive we have to do stuff if not we can carry on
+            results.add(assignment);
+        }
+        return results;
     }
 
 }
