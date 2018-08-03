@@ -15,7 +15,7 @@ ALTER TABLE public.group_memberships ALTER COLUMN status SET DEFAULT 'ACTIVE'::t
 
 -- Column: status
 
--- ALTER TABLE public.groups DROP COLUMN status;
+-- ALTER TABLE public.groups DROP COLUMN group_status;
 
-ALTER TABLE public.groups ADD COLUMN status text;
-ALTER TABLE public.groups ALTER COLUMN status SET DEFAULT 'ACTIVE'::text;
+ALTER TABLE public.groups ADD COLUMN group_status text;
+ALTER TABLE public.groups ALTER COLUMN group_status SET DEFAULT 'ACTIVE'::text;
