@@ -36,6 +36,7 @@ import uk.ac.cam.cl.dtg.segue.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.segue.dos.UserPreference;
 import uk.ac.cam.cl.dtg.segue.dos.content.ExternalReference;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
+import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.EmailTemplateDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -47,6 +48,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_VERSION_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_TIME_LOCALITY;
@@ -206,77 +208,64 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     public void sendCustomEmail(final RegisteredUserDTO sendingUser, final String contentObjectId,
             final List<RegisteredUserDTO> allSelectedUsers, final EmailType emailType) throws SegueDatabaseException,
             ContentManagerException {
-        //TODO: this needs refactoring.
         Validate.notNull(allSelectedUsers);
         Validate.notNull(contentObjectId);
 
         EmailTemplateDTO emailContent = getEmailTemplateDTO(contentObjectId);
 
-        Map<Long, List<UserPreference>> allUserPreferences = this.userPreferenceManager
-                .getUserPreferences(SegueUserPreferences.EMAIL_PREFERENCE.name(), allSelectedUsers);
-
-        int numberOfUnfilteredUsers = allSelectedUsers.size();
-        Iterator<RegisteredUserDTO> userIterator = allSelectedUsers.iterator();
-        while (userIterator.hasNext()) {
-            RegisteredUserDTO user = userIterator.next();
-
-            // Don't continue if user has preference against this type of email. If no preference found, send the email.
-            // This is consistent with filterByPreferencesAndAddToQueue(...) below.
-            if (allUserPreferences.containsKey(user.getId())) {
-                Map<EmailType, Boolean> emailPreferences = convertUserPreferencesToEmailPreferences(allUserPreferences.get(user.getId()));
-                if (emailPreferences.containsKey(emailType) && !emailPreferences.get(emailType)) {
-                    userIterator.remove();
-                    continue;
-                }
-            }
-
+        int numberOfFilteredUsers = 0;
+        for (RegisteredUserDTO user : allSelectedUsers) {
             Properties p = new Properties();
             p.putAll(this.globalStringTokens);
+
+            // Add all properties in the user DTO (preserving types) so they are available to email templates.
+            Map userPropertiesMap = new org.apache.commons.beanutils.BeanMap(user);
+            p.putAll(this.flattenTokenMap(userPropertiesMap, Maps.newHashMap(), ""));
+
+            // TODO - Remove once content templates have all been replaced with correct tokens
             p.put("givenname", user.getGivenName() == null ? "" : user.getGivenName());
             p.put("familyname", user.getFamilyName() == null ? "" : user.getFamilyName());
-            p.put("email", user.getEmail());
-            // FIXME - why is this even necessary? For the "preview email" endpoint these are all added automatically!
             p.put("id", user.getId().toString());
 
             EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(), emailContent, p,
                     emailType, null);
 
-            ImmutableMap<String, Object> eventDetails = new ImmutableMap.Builder<String, Object>()
-                    .put("userId", user.getId()).put("email", e.getRecipientAddress()).put("type", emailType)
-                    .build();
-            logManager.logInternalEvent(user, SegueLogType.SENT_EMAIL, eventDetails);
-
-            // add to the queue without using filterByPreferencesAndAddToQueue as we've already filtered for preferences
-            super.addToQueue(e);
+            // add to the queue
+            boolean emailAddedToSendQueue = this.filterByPreferencesAndAddToQueue(user, e);
+            if (!emailAddedToSendQueue) {
+                numberOfFilteredUsers++;
+            }
         }
 
-        // Create a list of Ids
-        ArrayList<Long> ids = Lists.newArrayList();
-        for (RegisteredUserDTO userDTO : allSelectedUsers) {
-            ids.add(userDTO.getId());
-        }
+        List<Long> ids = Lists.newArrayList();
+        allSelectedUsers.stream().map(RegisteredUserDTO::getId).forEach(ids::add);
 
         ImmutableMap<String, Object> eventDetails = new ImmutableMap.Builder<String, Object>().put(USER_ID_LIST_FKEY_FIELDNAME, ids)
                 .put("contentObjectId", contentObjectId)
                 .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
+
         this.logManager.logInternalEvent(sendingUser, SegueLogType.SEND_MASS_EMAIL, eventDetails);
         log.info(String.format("Admin user (%s) added %d emails to the queue. %d were filtered.", sendingUser.getEmail(),
-                allSelectedUsers.size(), numberOfUnfilteredUsers - allSelectedUsers.size()));
+                allSelectedUsers.size() - numberOfFilteredUsers, numberOfFilteredUsers));
     }
     
     
     /**
      * This method checks the database for the user's email preferences and either adds them to 
      * the queue, or filters them out.
+     *
+     * This method will also check to see if the email type is allowed to be filtered by preference first
+     * e.g. SYSTEM emails cannot be filtered
      * 
      * @param userDTO
      * 		- the userDTO used for logging. Must not be null. 
      * @param email
      * 		- the email we want to send. Must be non-null and have an associated non-null user id
+     * @return boolean - true if the email was added to the queue false if it was filtered for some reason
      * @throws SegueDatabaseException
      *             - the content was of incorrect type
      */
-    private void filterByPreferencesAndAddToQueue(final RegisteredUserDTO userDTO,
+    private boolean filterByPreferencesAndAddToQueue(final RegisteredUserDTO userDTO,
                     final EmailCommunicationMessage email) throws SegueDatabaseException {
         Validate.notNull(email);
         Validate.notNull(userDTO);
@@ -290,14 +279,14 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         // don't send an email if we know it has failed before
         if (userDTO.getEmailVerificationStatus() == EmailVerificationStatus.DELIVERY_FAILED) {
             log.info("Email sending abandoned - verification status is DELIVERY_FAILED");
-            return;
+            return false;
         }
 
         // if this is an email type that cannot have a preference, send it and log as appropriate
         if (!email.getEmailType().isValidEmailPreference()) {
             logManager.logInternalEvent(userDTO, SegueLogType.SENT_EMAIL, eventDetails);
             addToQueue(email);
-            return;
+            return true;
         }
 
         try {
@@ -306,7 +295,10 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             if (preference == null || preference.getPreferenceValue()) {
                 logManager.logInternalEvent(userDTO, SegueLogType.SENT_EMAIL, eventDetails);
                 addToQueue(email);
+                return true;
             }
+
+            return false;
         } catch (SegueDatabaseException e1) {
             throw new SegueDatabaseException(String.format("Email of type %s cannot be sent - "
                     + "error accessing preferences in database", email.getEmailType().toString()));

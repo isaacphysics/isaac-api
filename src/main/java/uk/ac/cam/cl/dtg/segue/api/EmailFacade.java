@@ -132,10 +132,7 @@ public class EmailFacade extends AbstractSegueFacade {
      * Get the number of emails left on the queue.
      * 
      * This method will return the current number of emails left on the email queue
-     *     
-     * @return the current length of the queue
-     */
-    /**
+     *
      * @param request
      * 			- the request 
      * @return the size of the queue
