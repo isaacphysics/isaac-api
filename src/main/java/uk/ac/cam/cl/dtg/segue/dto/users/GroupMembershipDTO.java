@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Stephen Cummins
+ * Copyright 2017 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.segue.dos;
+package uk.ac.cam.cl.dtg.segue.dto.users;
+
+import uk.ac.cam.cl.dtg.segue.dos.GroupMembershipStatus;
 
 import java.util.Date;
 
 
 /**
- * GroupMembership Object - this object represents a users membership to a group.
+ * GroupMembership DTO - this object represents a users membership to a group
  *
  */
-public class GroupMembership {
+public class GroupMembershipDTO {
     private Long groupId;
     private Long userId;
     private GroupMembershipStatus status;
@@ -32,7 +34,7 @@ public class GroupMembership {
     /**
      * Default Constructor.
      */
-    public GroupMembership() {
+    public GroupMembershipDTO() {
 
     }
 
@@ -40,7 +42,7 @@ public class GroupMembership {
      * @param groupId - the group id
      * @param userId - the user id
      */
-    public GroupMembership(final Long groupId, final Long userId, final GroupMembershipStatus status, final Date created, final Date updated) {
+    public GroupMembershipDTO(final Long groupId, final Long userId, final GroupMembershipStatus status, final Date created, final Date updated) {
         this.groupId = groupId;
         this.userId = userId;
         this.status = status;
@@ -50,7 +52,7 @@ public class GroupMembership {
 
     /**
      * Gets the groupId.
-     * 
+     *
      * @return the groupId
      */
     public Long getGroupId() {
@@ -59,7 +61,7 @@ public class GroupMembership {
 
     /**
      * Sets the groupId.
-     * 
+     *
      * @param groupId
      *            the groupId to set
      */
@@ -69,7 +71,7 @@ public class GroupMembership {
 
     /**
      * Gets the userId.
-     * 
+     *
      * @return the userId
      */
     public Long getUserId() {
@@ -78,7 +80,7 @@ public class GroupMembership {
 
     /**
      * Sets the userId.
-     * 
+     *
      * @param userId
      *            the userId to set
      */
@@ -123,7 +125,7 @@ public class GroupMembership {
 
     /**
      * Gets the created.
-     * 
+     *
      * @return the created
      */
     public Date getCreated() {
@@ -132,7 +134,7 @@ public class GroupMembership {
 
     /**
      * Sets the created.
-     * 
+     *
      * @param created
      *            the created to set
      */
