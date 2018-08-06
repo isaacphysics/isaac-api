@@ -607,9 +607,10 @@ public class EmailManagerTest {
         allSelectedUsers.add(userDTOWithNulls);
         allSelectedUsers.add(userDTOWithNulls);
 
-        Map<Long, List<UserPreference>> preferenceMap = Maps.newHashMap();
+        UserPreference userPreference = new UserPreference(userDTOWithNulls.getId(), SegueUserPreferences.EMAIL_PREFERENCE.name(), "ASSIGNMENTS", false);
         try {
-            EasyMock.expect(userPreferenceManager.getUserPreferences(SegueUserPreferences.EMAIL_PREFERENCE.name(), allSelectedUsers)).andReturn(preferenceMap);
+            EasyMock.expect(userPreferenceManager.getUserPreference(SegueUserPreferences.EMAIL_PREFERENCE.name(), "ASSIGNMENTS", userDTOWithNulls.getId())).andReturn(userPreference);
+            EasyMock.expect(userPreferenceManager.getUserPreference(SegueUserPreferences.EMAIL_PREFERENCE.name(), "ASSIGNMENTS", userDTOWithNulls.getId())).andReturn(userPreference);
         } catch (SegueDatabaseException e1) {
             e1.printStackTrace();
             Assert.fail();
