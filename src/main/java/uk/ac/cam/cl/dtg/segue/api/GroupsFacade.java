@@ -39,21 +39,18 @@ import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
-
+import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.GroupManagerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
-
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-
+import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
-
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -73,7 +70,6 @@ public class GroupsFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(GroupsFacade.class);
     private final GroupManager groupManager;
     private final UserAssociationManager associationManager;
-
     private final UserBadgeManager userBadgeManager;
     private IMisuseMonitor misuseMonitor;
 
