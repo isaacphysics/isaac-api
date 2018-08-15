@@ -7,22 +7,22 @@ import org.apache.commons.lang3.Validate;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequestBuilder;
 import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
+import org.elasticsearch.action.admin.indices.alias.get.GetAliasesResponse;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.metadata.AliasMetaData;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,25 +56,29 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
     }
 
 
-    public void indexObject(final String index, final String indexType, final String content)
+    public void indexObject(final String indexBase, final String indexType, final String content)
             throws SegueSearchException {
-        indexObject(index, indexType, content, null);
+        indexObject(indexBase, indexType, content, null);
     }
 
 
-    void bulkIndex(final String index, final String indexType, final List<Map.Entry<String, String>> dataToIndex)
+    void bulkIndex(final String indexBase, final String indexType, final List<Map.Entry<String, String>> dataToIndex)
             throws SegueSearchException {
 
+        String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
+
         // check index already exists if not execute any initialisation steps.
-        if (!this.hasIndex(index)) {
-            this.sendMappingCorrections(index);
+        if (!this.hasIndex(indexBase, indexType)) {
+            if (this.rawFieldsListByType.containsKey(indexType)) {
+                this.sendMappingCorrections(typedIndex, indexType);
+            }
         }
 
         // build bulk request
         BulkRequestBuilder bulkRequest = client.prepareBulk();
         for (Map.Entry<String, String> itemToIndex : dataToIndex) {
-            bulkRequest.add(client.prepareIndex(index, indexType, itemToIndex.getKey())
-                    .setSource(itemToIndex.getValue(), XContentType.JSON)); // TODO MT this might not be what we want seeing as it is complaining about 1000 field limit
+            bulkRequest.add(client.prepareIndex(typedIndex, indexType, itemToIndex.getKey())
+                    .setSource(itemToIndex.getValue(), XContentType.JSON));
         }
 
         try {
@@ -94,15 +98,18 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
     }
 
 
-    void indexObject(final String index, final String indexType, final String content, final String uniqueId)
+    void indexObject(final String indexBase, final String indexType, final String content, final String uniqueId)
             throws SegueSearchException {
+        String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
         // check index already exists if not execute any initialisation steps.
-        if (!this.hasIndex(index)) {
-            this.sendMappingCorrections(index);
+        if (!this.hasIndex(indexBase, indexType)) {
+            if (this.rawFieldsListByType.containsKey(indexType)) {
+                this.sendMappingCorrections(typedIndex, indexType);
+            }
         }
 
         try {
-            IndexResponse indexResponse = client.prepareIndex(index, indexType, uniqueId)
+            IndexResponse indexResponse = client.prepareIndex(typedIndex, indexType, uniqueId)
                     .setSource(content, XContentType.JSON)
                     .execute()
                     .actionGet();
@@ -114,66 +121,85 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
     }
 
     public boolean expungeEntireSearchCache() {
-        return this.expungeIndexFromSearchCache("_all");
+        return this.expungeTypedIndexFromSearchCache("_all");
     }
 
-
-    boolean expungeIndexFromSearchCache(final String index) {
-        Validate.notBlank(index);
-
+    boolean expungeTypedIndexFromSearchCache(final String typedIndex) {
         try {
-            log.info("Sending delete request to ElasticSearch for search index: " + index);
-            client.admin().indices().delete(new DeleteIndexRequest(index)).actionGet();
+            log.info("Sending delete request to ElasticSearch for search index: " + typedIndex);
+            client.admin().indices().delete(new DeleteIndexRequest(typedIndex)).actionGet();
         } catch (ElasticsearchException e) {
-            log.error("ElasticSearch exception while trying to delete index " + index, e);
+            log.error("ElasticSearch exception while trying to delete index " + typedIndex, e);
             return false;
         }
 
         return true;
     }
 
-    boolean addOrMoveIndexAlias(final String alias, final String targetIndex) {
+    boolean expungeIndexFromSearchCache(final String indexBase, final String indexType) {
+        Validate.notBlank(indexBase);
+        Validate.notBlank(indexType);
+        String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
+        return this.expungeTypedIndexFromSearchCache(typedIndex);
+    }
 
-
-        String indexWithPrevious = null; // This is the index that has the <alias>-previous alias
+    boolean addOrMoveIndexAlias(final String aliasBase, final String indexBaseTarget, final List<String> indexTypeTargets) {
+        String indexWithPrevious = null; // This is the index that has the <alias>_previous alias
         String indexWithCurrent = null; // This is the index that has the <alias> alias.
 
-        // First, find where <alias>-previous points.
-        ImmutableOpenMap<String, List<AliasMetaData>> aliasesPrev = client.admin().indices().getAliases(new GetAliasesRequest(alias + "-previous")).actionGet().getAliases();
-        Iterator<String> i = aliasesPrev.keysIt();
-        if (i.hasNext()) {
-            indexWithPrevious = i.next();
-        }
+        for (String indexTypeTarget : indexTypeTargets) {
+            String typedAlias = ElasticSearchProvider.produceTypedIndexName(aliasBase, indexTypeTarget);
+            String typedIndexTarget = ElasticSearchProvider.produceTypedIndexName(indexBaseTarget, indexTypeTarget);
 
-        // Now find where <alias> points
-        ImmutableOpenMap<String, List<AliasMetaData>> aliases = client.admin().indices().getAliases(new GetAliasesRequest(alias)).actionGet().getAliases();
-        i = aliases.keysIt();
-        if (i.hasNext()) {
-            indexWithCurrent = i.next();
-        }
+            // First, find where <alias>_previous points.
+            ImmutableOpenMap<String, List<AliasMetaData>> returnedPreviousAliases =
+                    client.admin().indices().getAliases(new GetAliasesRequest().aliases(typedAlias + "_previous")).actionGet().getAliases();
 
-
-        if (indexWithCurrent != null && indexWithCurrent.equals(targetIndex)) {
-            log.info("Not moving alias '" + alias + "' - it already points to the right index.");
-        } else {
-            IndicesAliasesRequestBuilder reqBuilder = client.admin().indices().prepareAliases();
-
-            if (indexWithCurrent != null) {
-                // Remove the alias from the place it's currently pointing
-                reqBuilder.removeAlias(indexWithCurrent, alias);
-                if (indexWithPrevious != null) {
-                    // Remove <alias>-previous from wherever it's currently pointing.
-                    reqBuilder.removeAlias(indexWithPrevious, alias + "-previous");
+            Iterator<String> indexIterator = returnedPreviousAliases.keysIt();
+            while (indexIterator.hasNext()) {
+                String indexName = indexIterator.next();
+                for (AliasMetaData aliasMetaData : returnedPreviousAliases.get(indexName)) {
+                    if (aliasMetaData.alias().equals(typedAlias + "_previous")) {
+                        indexWithPrevious = indexName;
+                    }
                 }
-                // Move <alias>-previous to wherever <alias> was pointing.
-                reqBuilder.addAlias(indexWithCurrent, alias + "-previous");
             }
 
-            // Point <alias> to the right place.
-            reqBuilder.addAlias(targetIndex, alias);
-            reqBuilder.execute().actionGet();
-        }
+            // Now find where <alias> points
+            ImmutableOpenMap<String, List<AliasMetaData>> returnedAliases =
+                    client.admin().indices().getAliases(new GetAliasesRequest().aliases(typedAlias)).actionGet().getAliases();
+            
+            indexIterator = returnedAliases.keysIt();
+            while (indexIterator.hasNext()) {
+                String indexName = indexIterator.next();
+                for (AliasMetaData aliasMetadata : returnedAliases.get(indexName)) {
+                    if (aliasMetadata.alias().equals(typedAlias)) {
+                        indexWithCurrent = indexName;
+                    }
+                }
+            }
 
+            if (indexWithCurrent != null && indexWithCurrent.equals(typedIndexTarget)) {
+                log.info("Not moving alias '" + typedAlias + "' - it already points to the right index.");
+            } else {
+                IndicesAliasesRequestBuilder reqBuilder = client.admin().indices().prepareAliases();
+
+                if (indexWithCurrent != null) {
+                    // Remove the alias from the place it's currently pointing
+                    reqBuilder.removeAlias(indexWithCurrent, typedAlias);
+                    if (indexWithPrevious != null) {
+                        // Remove <alias>_previous from wherever it's currently pointing.
+                        reqBuilder.removeAlias(indexWithPrevious, typedAlias + "_previous");
+                    }
+                    // Move <alias>_previous to wherever <alias> was pointing.
+                    reqBuilder.addAlias(indexWithCurrent, typedAlias + "_previous");
+                }
+
+                // Point <alias> to the right place.
+                reqBuilder.addAlias(typedIndexTarget, typedAlias);
+                reqBuilder.execute().actionGet();
+            }
+        }
         this.expungeOldIndices();
         return true;
     }
@@ -185,8 +211,8 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
 
         for(ObjectObjectCursor<String, IndexMetaData> c: indices) {
             if (c.value.getAliases().size() == 0) {
-                log.info("Index " + c.key + " has no aliases. Removing."); // TODO MT We need aliases for everything... maybe the new type_ field is better
-                this.expungeIndexFromSearchCache(c.key);
+                log.info("Index " + c.key + " has no aliases. Removing.");
+                this.expungeTypedIndexFromSearchCache(c.key);
             }
         }
     }
@@ -215,34 +241,31 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
      *
      * This is useful if we want to query the original data without ElasticSearch having messed with it.
      *
-     * @param index
-     *            - index to send the mapping corrections to.
+     * @param typedIndex
+     *            - type suffixed index to send the mapping corrections to.
      */
-    private void sendMappingCorrections(final String index) {// TODO MT if we are using this in any way we might have broken it by separating it into separate indices
+    private void sendMappingCorrections(final String typedIndex, String indexType) {
         try {
-            for (String indexType : this.rawFieldsListByType.keySet()) {
-                CreateIndexRequestBuilder indexBuilder = client.admin().indices()
-                        .prepareCreate(index + "_raw_" + indexType)
-                        .setSettings(Settings.builder().put("index.mapping.total_fields.limit", "9999").build());
+            CreateIndexRequestBuilder indexBuilder = client.admin().indices().prepareCreate(typedIndex).setSettings(Settings.builder().put("index.mapping.total_fields.limit", "9999").build());
 
-                final XContentBuilder mappingBuilder = XContentFactory.jsonBuilder().startObject().startObject(indexType)
-                        .startObject("properties");
+            final XContentBuilder mappingBuilder = XContentFactory.jsonBuilder().startObject().startObject(indexType)
+                    .startObject("properties");
 
-                for (String fieldName : this.rawFieldsListByType.get(indexType)) {
-                    log.debug("Sending raw mapping correction for " + fieldName + "."
-                            + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX);
+            for (String fieldName : this.rawFieldsListByType.get(indexType)) {
+                log.debug("Sending raw mapping correction for " + fieldName + "."
+                        + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX);
 
-                    mappingBuilder.startObject(fieldName).field("type", "keyword").field("index", "true")
-                            .startObject("fields").startObject(Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX)
-                            .field("type", "keyword").field("index", "false").endObject().endObject().endObject();
-                }
-                // close off json structure
-                mappingBuilder.endObject().endObject().endObject();
-                indexBuilder.addMapping(indexType, mappingBuilder);
-
-                // Send Mapping information
-                indexBuilder.execute().actionGet();
+                mappingBuilder.startObject(fieldName).field("type", "keyword").field("index", "true")
+                        .startObject("fields").startObject(Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX)
+                        .field("type", "keyword").endObject().endObject().endObject();
             }
+            // close off json structure
+            mappingBuilder.endObject().endObject().endObject();
+            indexBuilder.addMapping(indexType, mappingBuilder);
+
+            // Send Mapping information
+            indexBuilder.execute().actionGet();
+
         } catch (IOException e) {
             log.error("Error while sending mapping correction " + "instructions to the ElasticSearch Server", e);
         }

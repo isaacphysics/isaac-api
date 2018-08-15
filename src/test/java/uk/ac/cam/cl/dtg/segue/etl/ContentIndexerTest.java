@@ -30,6 +30,7 @@ import org.powermock.reflect.Whitebox;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
@@ -98,7 +99,7 @@ public class ContentIndexerTest {
 //		searchProvider.registerRawStringFields((List<String>) anyObject());
 //		expectLastCall().once();
 
-		expect(searchProvider.hasIndex(INITIAL_VERSION)).andReturn(false)
+		expect(searchProvider.hasIndex(INITIAL_VERSION, Constants.CONTENT_INDEX_TYPE.CONTENT.toString())).andReturn(false)
 				.once();
 		expect(contentMapper.generateNewPreconfiguredContentMapper()).andReturn(objectMapper)
 				.once();

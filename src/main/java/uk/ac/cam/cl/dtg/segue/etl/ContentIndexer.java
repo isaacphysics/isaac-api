@@ -3,7 +3,6 @@ package uk.ac.cam.cl.dtg.segue.etl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.CaseFormat;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -38,39 +37,16 @@ import java.lang.reflect.Method;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import static com.google.common.collect.Maps.immutableEntry;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX_TYPE;
 
 /**
  * Created by Ian on 17/10/2016.
  */
 public class ContentIndexer {
     private static final Logger log = LoggerFactory.getLogger(Content.class);
-
-    private enum IndexType {
-        METADATA("metadata"),
-        UNIT("unit"),
-        PUBLISHED_UNIT("publishedUnit"),
-        CONTENT("content"),
-        CONTENT_ERROR("contentError");
-
-        private static final String DELIMITER = "_";
-        private String delimtedSuffix;
-        private String name;
-
-        IndexType(String typeName) {
-            name = typeName;
-            delimtedSuffix = DELIMITER + CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, typeName);
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public String getSuffix() {
-            return delimtedSuffix;
-        }
-    }
 
     private static ConcurrentHashMap<String, Boolean> versionLocks = new ConcurrentHashMap<>();
 
@@ -102,7 +78,7 @@ public class ContentIndexer {
             database.fetchLatestFromRemote();
 
             // now we have acquired the lock check if someone else has indexed this.
-            boolean searchIndexed = es.hasIndex(version + IndexType.CONTENT.getSuffix());
+            boolean searchIndexed = es.hasIndex(version, CONTENT_INDEX_TYPE.CONTENT.toString());
             if (searchIndexed) {
                 //log.info("Index already exists. Deleting.");
                 //es.expungeIndexFromSearchCache(version);
@@ -127,7 +103,7 @@ public class ContentIndexer {
             buildElasticSearchIndex(version, contentCache, tagsList, allUnits, publishedUnits, indexProblemCache);
 
             // Verify the version requested is now available
-            if (!es.hasIndex(version + IndexType.CONTENT.getSuffix())) {
+            if (!es.hasIndex(version, CONTENT_INDEX_TYPE.CONTENT.toString())) {
                 throw new Exception(String.format("Failed to index version %s. Don't know why.", version));
             }
 
@@ -140,7 +116,9 @@ public class ContentIndexer {
     }
 
     void setNamedVersion(String alias, String version) {
-        es.addOrMoveIndexAlias(alias, version + IndexType.CONTENT.getSuffix()); // TODO MT this might be a problem...
+        List<String> allContentTypes = Arrays.stream(CONTENT_INDEX_TYPE.values())
+                .map((contentIndexType) -> contentIndexType.toString()).collect(Collectors.toList());
+        es.addOrMoveIndexAlias(alias, version, allContentTypes);
     }
 
     void setLatestVersion(String version) {
@@ -563,10 +541,10 @@ public class ContentIndexer {
                                                       final Map<String, String> allUnits,
                                                       final Map<String, String> publishedUnits,
                                                       final Map<Content, List<String>> indexProblemCache) {
-        if (es.hasIndex(sha + IndexType.CONTENT.getSuffix())) {
+        if (es.hasIndex(sha, CONTENT_INDEX_TYPE.CONTENT.toString())) {
             log.info("Deleting existing indexes for version " + sha);
-            for (IndexType indexType : IndexType.values()) {
-                es.expungeIndexFromSearchCache(sha + indexType.getSuffix());
+            for (CONTENT_INDEX_TYPE contentIndexType : CONTENT_INDEX_TYPE.values()) {
+                es.expungeIndexFromSearchCache(sha, contentIndexType.toString());
             }
         }
 
@@ -589,23 +567,23 @@ public class ContentIndexer {
 
 
         try {
-            es.indexObject(sha + IndexType.METADATA.getSuffix(), IndexType.METADATA.getName(),
+            es.indexObject(sha, CONTENT_INDEX_TYPE.METADATA.toString(),
                     objectMapper.writeValueAsString(ImmutableMap.of("version", sha, "created", new Date().toString())), "general");
-            es.indexObject(sha + IndexType.METADATA.getSuffix(), IndexType.METADATA.getName(),
+            es.indexObject(sha, CONTENT_INDEX_TYPE.METADATA.toString(),
                     objectMapper.writeValueAsString(ImmutableMap.of("tags", tagsList)), "tags");
 
             // TODO: Should probably bulk index these
             for (String k : allUnits.keySet()) {
-                es.indexObject(sha + IndexType.UNIT.getSuffix(), IndexType.UNIT.getName(),
+                es.indexObject(sha, CONTENT_INDEX_TYPE.UNIT.toString(),
                         objectMapper.writeValueAsString(ImmutableMap.of("cleanKey", k, "unit", allUnits.get(k))));
             }
             for (String k : publishedUnits.keySet()) {
-                es.indexObject(sha + IndexType.PUBLISHED_UNIT.getSuffix(), IndexType.PUBLISHED_UNIT.getName(),
+                es.indexObject(sha, CONTENT_INDEX_TYPE.PUBLISHED_UNIT.toString(),
                         objectMapper.writeValueAsString(ImmutableMap.of("cleanKey", k, "unit", publishedUnits.get(k))));
             }
 
             for (Content c: indexProblemCache.keySet()) {
-                es.indexObject(sha + IndexType.CONTENT_ERROR.getSuffix(), IndexType.CONTENT_ERROR.getName(),
+                es.indexObject(sha, CONTENT_INDEX_TYPE.CONTENT_ERROR.toString(),
                         objectMapper.writeValueAsString(ImmutableMap.of(
                                 "canonicalSourceFile", c.getCanonicalSourceFile(),
                                 "id", c.getId() == null ? "" : c.getId(),
@@ -622,7 +600,7 @@ public class ContentIndexer {
 
 
         try {
-            es.bulkIndex(sha + IndexType.CONTENT.getSuffix(), IndexType.CONTENT.getName(), contentToIndex);
+            es.bulkIndex(sha, CONTENT_INDEX_TYPE.CONTENT.toString(), contentToIndex);
             log.info("Search index request sent for: " + sha);
         } catch (SegueSearchException e) {
             log.error("Error whilst trying to perform bulk index operation.", e);
