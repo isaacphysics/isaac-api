@@ -77,7 +77,7 @@ public class GameManager {
 
     private final IContentManager contentManager;
     private final String contentIndex;
-    
+
     private final QuestionManager questionManager;
 
     /**
@@ -558,19 +558,32 @@ public class GameManager {
             final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttempts) {
         Map<String, QuestionPartConceptDTO> conceptMap = Maps.newHashMap();
         for (ContentDTO question : conceptQuestions) {
-            String conceptName = question.getTitle();
-            conceptMap.putIfAbsent(conceptName, new QuestionPartConceptDTO(conceptName));
-            QuestionPartConceptDTO previousConcept = conceptMap.get(conceptName);
-            FastTrackConceptState currentConceptLevel = FastTrackConceptState.getStateFromTags(question.getTags());
-            if (currentConceptLevel != null) {
-                if (previousConcept.getBestLevel() == null
-                        || currentConceptLevel.compareTo(previousConcept.getBestLevel()) > 0) {
+            String thisQuestionsConceptName = question.getTitle();
+            conceptMap.putIfAbsent(thisQuestionsConceptName, new QuestionPartConceptDTO(thisQuestionsConceptName));
+            QuestionPartConceptDTO concept = conceptMap.get(thisQuestionsConceptName);
+            FastTrackConceptState thisQuestionsConceptLevel = FastTrackConceptState.getStateFromTags(question.getTags());
+            if (thisQuestionsConceptLevel != null) {
+                // update questionPartConceptDTO with the highest level of completed question
+                if (concept.getBestLevel() == null || thisQuestionsConceptLevel.compareTo(concept.getBestLevel()) > 0) {
                     if (this.questionIsAnsweredCorrectly(question, questionAttempts.get(question.getId()))) {
-                        previousConcept.setBestLevel(currentConceptLevel);
+                        concept.setBestLevel(thisQuestionsConceptLevel);
                     }
                 }
+                // add question to the list of upper or lower concept questions
+                if (thisQuestionsConceptLevel.equals(FastTrackConceptState.ft_upper)) {
+                    List<GameboardItem> upperQuestions = concept.getUpperQuestions();
+                    upperQuestions.add(this.gameboardPersistenceManager.convertToGameboardItem(question));
+                    concept.setUpperQuestions(upperQuestions);
+                } else if (thisQuestionsConceptLevel.equals(FastTrackConceptState.ft_lower)) {
+                    List<GameboardItem> lowerQuestions = concept.getLowerQuestions();
+                    lowerQuestions.add(this.gameboardPersistenceManager.convertToGameboardItem(question));
+                    concept.setLowerQuestions(lowerQuestions);
+                }
+            } else {
+                log.error("FastTrack question (" + question.getId() + ") is not tagged correctly");
             }
         }
+        log.info("TODO MT concept map", conceptMap);
         return conceptMap;
     }
 
@@ -600,7 +613,7 @@ public class GameManager {
                 boardAssociatedQuestions, questionAttemptsFromUser);
         List<FastTrackGameboardItem> fastTrackQuestions = Lists.newArrayList();
         for (GameboardItem question : gameboardDTO.getQuestions()) {
-            FastTrackGameboardItem fastTrackQuestion = new FastTrackGameboardItem(question);
+            FastTrackGameboardItem topTenQuestion = new FastTrackGameboardItem(question);
             List<ContentDTO> questionParts = Lists.newArrayList();
             depthFirstQuestionSearch(idIndexedContent.get(question.getId()), questionParts);
             List<QuestionPartConceptDTO> questionPartConcepts = Lists.newArrayList();
@@ -616,10 +629,10 @@ public class GameManager {
                         log.error("FastTrack question " + question.getId()
                                 + " references a related content id which is not correctly tagged " + relatedContentId);
                     }
-                } // the FastTrack question part has no related content i.e. quick question
+                } // else: the question part has no related content i.e. is a quick question
             }
-            fastTrackQuestion.setQuestionPartConcepts(questionPartConcepts);
-            fastTrackQuestions.add(fastTrackQuestion);
+            topTenQuestion.setQuestionPartConcepts(questionPartConcepts);
+            fastTrackQuestions.add(topTenQuestion);
         }
         List<GameboardItem> questions = gameboardDTO.getQuestions();
         questions.clear();
