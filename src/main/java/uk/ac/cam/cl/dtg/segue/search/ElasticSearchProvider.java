@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.search;
 
 import com.carrotsearch.hppc.cursors.ObjectObjectCursor;
+import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;
 import com.google.common.base.CaseFormat;
@@ -146,17 +147,24 @@ public class ElasticSearchProvider implements ISearchProvider {
         BoolQueryBuilder query = QueryBuilders.boolQuery();
         Set boostFields = ImmutableSet.builder().add("id").add("title").add("tags").build();
 
+        List<String> searchTerms = Lists.newArrayList();
+        searchTerms.addAll(Arrays.asList(searchString.split(" ")));
+        if (searchTerms.size() > 1) {
+            searchTerms.add(searchString);
+        }
+
         for (String f : fields) {
             float boost = boostFields.contains(f) ? 2f : 1f;
 
-            QueryBuilder initialFuzzySearch = QueryBuilders.matchQuery(f, searchString)
-                    .fuzziness(Fuzziness.AUTO)
-                    .prefixLength(0)
-                    .boost(boost);
-            query.should(initialFuzzySearch);
-
-            QueryBuilder regexSearch = QueryBuilders.wildcardQuery(f, "*" + searchString + "*").boost(boost);
-            query.should(regexSearch);
+            for (String searchTerm : searchTerms) {
+                QueryBuilder initialFuzzySearch = QueryBuilders.matchQuery(f, searchTerm)
+                        .fuzziness(Fuzziness.AUTO)
+                        .prefixLength(0)
+                        .boost(boost);
+                query.should(initialFuzzySearch);
+                QueryBuilder regexSearch = QueryBuilders.wildcardQuery(f, "*" + searchTerm + "*").boost(boost);
+                query.should(regexSearch);
+            }
         }
 
         // this query is just a bit smarter than the regex search above.
