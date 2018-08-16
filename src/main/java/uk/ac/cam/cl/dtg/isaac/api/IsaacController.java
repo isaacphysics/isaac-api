@@ -192,7 +192,7 @@ public class IsaacController extends AbstractIsaacFacade {
     public final Response search(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
             @PathParam("searchString") final String searchString, @QueryParam("types") final String types,
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
-            @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
+            @DefaultValue(DEFAULT_SEARCH_RESULT_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
 
         if (null == types) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "No search types were provided.").toResponse();
