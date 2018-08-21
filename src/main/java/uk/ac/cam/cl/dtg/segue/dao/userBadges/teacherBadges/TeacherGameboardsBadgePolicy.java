@@ -39,7 +39,8 @@ public class TeacherGameboardsBadgePolicy implements IUserBadgePolicy {
             for (GameboardDTO gameboard : gameManager.getUsersGameboards(user, 0,
                     null, null, null).getResults()) {
 
-                if (gameboard.getCreationMethod().equals(GameboardCreationMethod.BUILDER)) {
+                if (user.getId().equals(gameboard.getOwnerUserId())
+                        && GameboardCreationMethod.BUILDER.equals(gameboard.getCreationMethod())) {
                     gameboards.add(gameboard.getId());
                 }
             }
