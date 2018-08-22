@@ -270,11 +270,11 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
                 mappingBuilder
                         .startObject(fieldName)
                             .field("type", "text")
-                            .field("index", "analyzed")
+                            .field("index", "true")
                             .startObject("fields")
                                 .startObject(Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX)
                                     .field("type", "keyword")
-                                    .field("index", "not_analyzed")
+                                    .field("index", "true")
                                 .endObject()
                             .endObject()
                         .endObject();
