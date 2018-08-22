@@ -17,8 +17,6 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import io.swagger.annotations.Api;
 
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -41,6 +39,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.GroupManagerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
@@ -71,6 +70,7 @@ public class GroupsFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(GroupsFacade.class);
     private final GroupManager groupManager;
     private final UserAssociationManager associationManager;
+    private final UserBadgeManager userBadgeManager;
     private IMisuseMonitor misuseMonitor;
 
     /**
@@ -85,11 +85,14 @@ public class GroupsFacade extends AbstractSegueFacade {
     @Inject
     public GroupsFacade(final PropertiesLoader properties, final UserAccountManager userManager,
                         final ILogManager logManager, final GroupManager groupManager,
-                        final UserAssociationManager associationsManager, final IMisuseMonitor misuseMonitor) {
+                        final UserAssociationManager associationsManager,
+                        final UserBadgeManager userBadgeManager,
+                        final IMisuseMonitor misuseMonitor) {
         super(properties, logManager);
         this.userManager = userManager;
         this.groupManager = groupManager;
         this.associationManager = associationsManager;
+        this.userBadgeManager = userBadgeManager;
         this.misuseMonitor = misuseMonitor;
     }
 
@@ -194,6 +197,9 @@ public class GroupsFacade extends AbstractSegueFacade {
 
             this.getLogManager().logEvent(user, request, SegueLogType.CREATE_USER_GROUP,
                     ImmutableMap.of(Constants.GROUP_FK, group.getId()));
+
+            this.userBadgeManager.updateBadge(user, UserBadgeManager.Badge.TEACHER_GROUPS_CREATED,
+                    group.getId().toString());
 
             return Response.ok(group).build();
         } catch (SegueDatabaseException e) {

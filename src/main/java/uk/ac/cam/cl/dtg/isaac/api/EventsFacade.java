@@ -50,6 +50,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
@@ -83,6 +84,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
     private final IContentManager contentManager;
     private final String contentIndex;
+    private final UserBadgeManager userBadgeManager;
 
     /**
      * EventsFacade.
@@ -101,12 +103,15 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Inject
     public EventsFacade(final PropertiesLoader properties, final ILogManager logManager,
                         final EventBookingManager bookingManager,
-                        final UserAccountManager userManager, final IContentManager contentManager, @Named(Constants.CONTENT_INDEX) final String contentIndex) {
+                        final UserAccountManager userManager, final IContentManager contentManager,
+                        @Named(Constants.CONTENT_INDEX) final String contentIndex,
+                        final UserBadgeManager userBadgeManager) {
         super(properties, logManager);
         this.bookingManager = bookingManager;
         this.userManager = userManager;
         this.contentManager = contentManager;
         this.contentIndex = contentIndex;
+        this.userBadgeManager = userBadgeManager;
     }
 
     /**
@@ -884,6 +889,11 @@ public class EventsFacade extends AbstractIsaacFacade {
                         EVENT_DATE_FIELDNAME, event.getDate(),
                         EVENT_TAGS_FIELDNAME, event.getTags()
                     ));
+
+            if (event.getTags().contains("teacher")) {
+                this.userBadgeManager.updateBadge(userOfInterest,
+                        UserBadgeManager.Badge.TEACHER_CPD_EVENTS_ATTENDED, eventId);
+            }
 
             return Response.ok(eventBookingDTO).build();
 

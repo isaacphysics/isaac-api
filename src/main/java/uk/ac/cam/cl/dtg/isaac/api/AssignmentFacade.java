@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.opencsv.CSVWriter;
 import io.swagger.annotations.Api;
@@ -63,6 +64,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -102,6 +104,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     private final UserAssociationManager associationManager;
 
     private final QuestionManager questionManager;
+    private final UserBadgeManager userBadgeManager;
+    protected final List<String> bookTags = ImmutableList.of("phys_book_gcse", "physics_skills_14", "chemistry_16");
 
     private final String NOT_SHARING = "NOT_SHARING";
 
@@ -127,9 +131,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
      */
     @Inject
     public AssignmentFacade(final AssignmentManager assignmentManager, final QuestionManager questionManager,
-            final UserAccountManager userManager, final GroupManager groupManager,
-            final PropertiesLoader propertiesLoader, final GameManager gameManager, final ILogManager logManager,
-            final UserAssociationManager associationManager) {
+                            final UserAccountManager userManager, final GroupManager groupManager,
+                            final PropertiesLoader propertiesLoader, final GameManager gameManager, final ILogManager logManager,
+                            final UserAssociationManager associationManager, final UserBadgeManager userBadgeManager) {
         super(propertiesLoader, logManager);
         this.questionManager = questionManager;
         this.userManager = userManager;
@@ -137,6 +141,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
         this.groupManager = groupManager;
         this.assignmentManager = assignmentManager;
         this.associationManager = associationManager;
+        this.userBadgeManager = userBadgeManager;
     }
 
     /**
@@ -811,6 +816,21 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             eventDetails.put(ASSIGNMENT_FK, assignmentWithID.getId());
             eventDetails.put(ASSIGNMENT_DUEDATE_FK, assignmentWithID.getDueDate());
             this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacLogType.SET_NEW_ASSIGNMENT, eventDetails);
+
+            this.userBadgeManager.updateBadge(currentlyLoggedInUser,
+                    UserBadgeManager.Badge.TEACHER_ASSIGNMENTS_SET, assignmentWithID.getId().toString());
+
+            tagsLoop:
+            for (String tag : bookTags) {
+
+                for (GameboardItem item : gameboard.getQuestions()) {
+                    if (item.getTags().contains(tag)) {
+                        this.userBadgeManager.updateBadge(currentlyLoggedInUser,
+                                UserBadgeManager.Badge.TEACHER_BOOK_PAGES_SET, assignmentWithID.getId().toString());
+                        break tagsLoop;
+                    }
+                }
+            }
 
             return Response.ok(assignmentDTOFromClient).build();
         } catch (NoUserLoggedInException e) {
