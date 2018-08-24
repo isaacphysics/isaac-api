@@ -1,6 +1,7 @@
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import com.google.inject.Inject;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dos.ITransaction;
 import uk.ac.cam.cl.dtg.segue.dos.PgTransaction;
@@ -21,7 +22,7 @@ public class PgTransactionManager implements ITransactionManager {
     }
 
     @Override
-    public PgTransaction getTransaction() {
+    public PgTransaction getTransaction() throws SegueDatabaseException {
         return new PgTransaction(postgresSqlDb);
     }
 }

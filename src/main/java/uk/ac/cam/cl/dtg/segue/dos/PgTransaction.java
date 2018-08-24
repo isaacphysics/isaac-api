@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.segue.dos;
 
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 import java.sql.Connection;
@@ -10,17 +11,14 @@ import java.sql.SQLException;
  */
 public class PgTransaction implements ITransaction {
 
-    private final PostgresSqlDb postgresSqlDb;
-    private Connection conn = null;
+    private Connection conn;
 
-    public PgTransaction(PostgresSqlDb postgresSqlDb) {
-        this.postgresSqlDb = postgresSqlDb;
-
+    public PgTransaction(final PostgresSqlDb postgresSqlDb) throws SegueDatabaseException {
         try {
             conn = postgresSqlDb.getDatabaseConnection();
             conn.setAutoCommit(false);
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new SegueDatabaseException("Failure to obtain a connection for a transaction!", e);
         }
     }
 
@@ -30,11 +28,15 @@ public class PgTransaction implements ITransaction {
     }
 
     @Override
-    public void commit() {
+    public void commit() throws SegueDatabaseException {
         try {
-            conn.commit();
+            try {
+                conn.commit();
+            } finally {
+                conn.close();
+            }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new SegueDatabaseException("Transaction Commit Failure!", e);
         }
     }
 }

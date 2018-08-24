@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.ITransaction;
 
 /**
@@ -7,6 +8,6 @@ import uk.ac.cam.cl.dtg.segue.dos.ITransaction;
  */
 public interface ITransactionManager {
 
-    ITransaction getTransaction();
+    ITransaction getTransaction() throws SegueDatabaseException;
 
 }
