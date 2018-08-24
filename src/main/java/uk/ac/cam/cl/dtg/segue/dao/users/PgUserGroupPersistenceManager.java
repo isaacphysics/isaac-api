@@ -111,6 +111,9 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
     @Override
     public UserGroup editGroup(final UserGroup group) throws SegueDatabaseException {
         Validate.notNull(group.getId());
+        if (group.getStatus() == null) {
+            group.setStatus(GroupStatus.ACTIVE);
+        }
         
         PreparedStatement pst;
         try (Connection conn = database.getDatabaseConnection()) {

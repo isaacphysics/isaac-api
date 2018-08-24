@@ -67,13 +67,34 @@ public class UserGroup {
     }
 
     /**
+     * Gets the id.
+     *
+     * @return the id
+     */
+    @JsonProperty("id")
+    public Long getId() {
+        return id;
+    }
+
+    /**
+     * Gets the id.
+     *
+     * @return the id
+     */
+    @JsonProperty("id")
+    public void setId(final Long id) {
+        this.id = id;
+    }
+
+    /**
      * Gets the _id.
      * 
      * @return the _id
      */
     @JsonProperty("_id")
     @ObjectId
-    public Long getId() {
+    @Deprecated
+    public Long getMongoId() {
         return id;
     }
 
@@ -85,7 +106,8 @@ public class UserGroup {
      */
     @JsonProperty("_id")
     @ObjectId
-    public void setId(final Long id) {
+    @Deprecated
+    public void setMongoId(final Long id) {
         this.id = id;
     }
 
@@ -126,7 +148,6 @@ public class UserGroup {
     public void setOwnerId(final Long ownerId) {
         this.ownerId = ownerId;
     }
-
 
     /**
      * Get the status of the group

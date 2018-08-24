@@ -178,7 +178,7 @@ public class GroupsFacade extends AbstractSegueFacade {
     public Response changeGroupMembershipStatus(@Context final HttpServletRequest request, @Context final Request cacheRequest,
                                                 @PathParam("group_id") final Long groupId, @PathParam("new_status")  final String newStatus) {
         if (null == groupId) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Group name must be specified.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Group id must be specified.").toResponse();
         }
 
         try {
@@ -355,7 +355,7 @@ public class GroupsFacade extends AbstractSegueFacade {
     public Response getUsersInGroup(@Context final HttpServletRequest request, @Context final Request cacheRequest,
                                     @PathParam("group_id") final Long groupId) {
         if (null == groupId) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Group name must be specified.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Group id must be specified.").toResponse();
         }
 
         try {
@@ -407,7 +407,7 @@ public class GroupsFacade extends AbstractSegueFacade {
     public Response addUserToGroup(@Context final HttpServletRequest request,
                                    @PathParam("group_id") final Long groupId, @PathParam("user_id") final Long userId) {
         if (null == groupId) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Group name must be specified.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Group id must be specified.").toResponse();
         }
 
         try {
@@ -449,7 +449,7 @@ public class GroupsFacade extends AbstractSegueFacade {
     public Response removeUserFromGroup(@Context final HttpServletRequest request, @Context final Request cacheRequest,
                                         @PathParam("group_id") final Long groupId, @PathParam("user_id") final Long userId) {
         if (null == groupId) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Group name must be specified.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Group id must be specified.").toResponse();
         }
 
         try {
@@ -495,7 +495,7 @@ public class GroupsFacade extends AbstractSegueFacade {
     public Response deleteGroup(@Context final HttpServletRequest request,
                                 @PathParam("group_id") final Long groupId) {
         if (null == groupId) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Group name must be specified.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Group id must be specified.").toResponse();
         }
 
         try {

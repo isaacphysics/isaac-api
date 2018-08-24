@@ -88,6 +88,19 @@ public class UserGroupDTO {
     }
 
     /**
+     * Sets the _id.
+     *
+     * @param id
+     *            the _id to set
+     */
+    @JsonProperty("_id")
+    @ObjectId
+    @Deprecated
+    public void setMongoId(final Long id) {
+        this.id = id;
+    }
+
+    /**
      * Gets the id.
      *
      * @return the id
@@ -98,13 +111,11 @@ public class UserGroupDTO {
     }
 
     /**
-     * Sets the _id.
-     * 
-     * @param id
-     *            the _id to set
+     * Gets the id.
+     *
+     * @return the id
      */
-    @JsonProperty("_id")
-    @ObjectId
+    @JsonProperty("id")
     public void setId(final Long id) {
         this.id = id;
     }

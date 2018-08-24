@@ -172,9 +172,8 @@ public class AssignmentManager implements IGroupObserver {
         Map<Long, GroupMembershipDTO> userMembershipMapforGroup = this.groupManager.getUserMembershipMapforGroup(userGroupDTO.getId());
         GameboardDTO gameboard = gameManager.getGameboard(newAssignment.getGameboardId());
         
-        //filter users so those that have revoked access (or are inactive) to their data aren't emailed
+        // filter users so those who are inactive in the group aren't emailed
         for(RegisteredUserDTO user : groupManager.getUsersInGroup(userGroupDTO)) {
-
             if (GroupMembershipStatus.ACTIVE.equals(userMembershipMapforGroup.get(user.getId()).getStatus())) {
                 usersToEmail.add(user);
             }
@@ -319,23 +318,14 @@ public class AssignmentManager implements IGroupObserver {
         Validate.notNull(user);
         Validate.notBlank(gameboardId);
 
-        List<AssignmentDTO> allAssignments = this.getAllAssignmentsSetByUser(user);
+        List<UserGroupDTO> allGroupsForUser = this.groupManager.getAllGroupsOwnedAndManagedByUser(user, false);
+        List<AssignmentDTO> allAssignmentsForMyGroups = this.getAllAssignmentsForSpecificGroups(allGroupsForUser);
+
         List<UserGroupDTO> groups = Lists.newArrayList();
 
-        for (AssignmentDTO assignment : allAssignments) {
+        for(AssignmentDTO assignment : allAssignmentsForMyGroups) {
             if (assignment.getGameboardId().equals(gameboardId)) {
-                try {
-                    // make sure the user has a reason to see the assignment still
-                    UserGroupDTO group = groupManager.getGroupById(assignment.getGroupId());
-                    if (GroupManager.isOwnerOrAdditionalManager(group, user.getId())) {
-                        groups.add(group);
-                    }
-                } catch (ResourceNotFoundException e) {
-                    // skip group as it no longer exists.
-                    log.warn(String.format(
-                            "Group (%s) that no longer exists referenced by assignment (%s). Skipping.",
-                            assignment.getGroupId(), assignment.getId()));
-                }
+                groups.add(groupManager.getGroupById(assignment.getGroupId()));
             }
         }
 
@@ -498,12 +488,12 @@ public class AssignmentManager implements IGroupObserver {
             }
 
             GroupMembershipDTO membershipRecord = groupIdToUserMembershipInfoMap.get(assignment.getGroupId()).get(userId);
+            // if they are inactive and they became inactive before the assignment was sent we want to skip the assignment.
             if (GroupMembershipStatus.INACTIVE.equals(membershipRecord.getStatus())
                     && membershipRecord.getUpdated().before(assignment.getCreationDate()) ) {
                 continue;
             }
 
-            // if they are inactive we have to do stuff if not we can carry on
             results.add(assignment);
         }
         return results;
