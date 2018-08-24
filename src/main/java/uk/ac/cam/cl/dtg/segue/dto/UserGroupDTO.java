@@ -44,7 +44,7 @@ public class UserGroupDTO {
     private boolean archived;
     private DetailedUserSummaryDTO ownerSummary;
     private Set<DetailedUserSummaryDTO> additionalManagers;
-    private GroupStatus status;
+
 
     /**
      * Default Constructor.
@@ -239,23 +239,6 @@ public class UserGroupDTO {
      */
     public void setAdditionalManagers(Set<UserSummaryWithEmailAddressDTO> additionalManagers) {
         this.additionalManagers = additionalManagers;
-    }
-
-    /**
-     * Get the status of the group
-     *
-     * @return the status of the group
-     */
-    public GroupStatus getStatus() {
-        return status;
-    }
-
-    /**
-     * Set the status of the group
-     * @param status status to set
-     */
-    public void setStatus(GroupStatus status) {
-        this.status = status;
     }
 
     @Override
