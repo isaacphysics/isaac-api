@@ -39,12 +39,10 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dos.GroupMembership;
 import uk.ac.cam.cl.dtg.segue.dos.GroupMembershipStatus;
-import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.GroupMembershipDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
@@ -175,23 +173,12 @@ public class AssignmentManager implements IGroupObserver {
         GameboardDTO gameboard = gameManager.getGameboard(newAssignment.getGameboardId());
         
         //filter users so those that have revoked access (or are inactive) to their data aren't emailed
-        try {
-			RegisteredUserDTO assignmentOwner = userManager.getUserDTOById(newAssignment.getOwnerUserId());
+        for(RegisteredUserDTO user : groupManager.getUsersInGroup(userGroupDTO)) {
 
-			for(RegisteredUserDTO user : groupManager.getUsersInGroup(userGroupDTO)) {
-                UserSummaryDTO userSummary = userManager.convertToUserSummaryObject(user);
-
-                //TODO do we need to check if they have permission anymore with new inactive flag?
-                if (GroupMembershipStatus.ACTIVE.equals(userMembershipMapforGroup.get(user.getId()).getStatus())
-                        && userAssociationManager.hasPermission(assignmentOwner, userSummary) ) {
-                    usersToEmail.add(user);
-                }
+            if (GroupMembershipStatus.ACTIVE.equals(userMembershipMapforGroup.get(user.getId()).getStatus())) {
+                usersToEmail.add(user);
             }
-			
-		} catch (NoUserException e1) {
-			log.error(String.format("Could not find assignment owner (%s) for assignment (%s)", 
-							newAssignment.getOwnerUserId(), newAssignment.getId()));
-		}
+        }
 
 		// inform all members of the group that there is now an assignment for them.
         try {
