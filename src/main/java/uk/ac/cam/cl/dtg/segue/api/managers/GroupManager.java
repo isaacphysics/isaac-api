@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.segue.api.managers;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Sets;
 import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.Validate;
@@ -27,7 +28,8 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupPersistenceManager;
-
+import uk.ac.cam.cl.dtg.segue.dos.GroupMembership;
+import uk.ac.cam.cl.dtg.segue.dos.GroupMembershipStatus;
 import uk.ac.cam.cl.dtg.segue.dos.GroupStatus;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
@@ -161,8 +163,22 @@ public class GroupManager {
      * @throws SegueDatabaseException
      *              - If an error occurred while interacting with the database.
      */
-    public Map<Long, GroupMembership> getUserMembershipMapforGroup(Long groupId) throws SegueDatabaseException {
-        return this.groupDatabase.getGroupMembershipMap(groupId);
+    public Map<Long, GroupMembershipDTO> getUserMembershipMapforGroup(Long groupId) throws SegueDatabaseException {
+        Map<Long, GroupMembershipDTO> result = Maps.newHashMap();
+        for(Map.Entry<Long, GroupMembership> entry : this.groupDatabase.getGroupMembershipMap(groupId).entrySet()) {
+            result.put(entry.getKey(), dtoMapper.map(entry.getValue(), GroupMembershipDTO.class));
+        }
+        return result;
+    }
+
+    /**
+     * Get an individual users groupMembershipStatus
+     * @param userId - userId
+     * @param groupId - groupId
+     * @return the membership status
+     */
+    public GroupMembershipStatus getGroupMembershipStatus(Long userId, Long groupId) throws SegueDatabaseException {
+        return this.getUserMembershipMapforGroup(groupId).get(userId).getStatus();
     }
 
     /**
@@ -273,6 +289,27 @@ public class GroupManager {
             log.info(String.format("User (%s) is already a member of the group with id %s. Skipping.",
                     userToAdd.getId(), group.getId()));
         }
+    }
+
+    /**
+     * Change users group membership status
+     *
+     * @param group
+     *            - that should be affected
+     * @param user
+     *            - user that should be affected.
+     * @param newStatus
+     *            - the new membership status
+     * @throws SegueDatabaseException
+     *             - If an error occurred while interacting with the database.
+     */
+    public void setMembershipStatus(final UserGroupDTO group, final RegisteredUserDTO user, GroupMembershipStatus newStatus)
+            throws SegueDatabaseException {
+        Validate.notNull(group);
+        Validate.notNull(user);
+        // we don't want people to delete user membership via this route as observers are not notified.
+        Validate.isTrue(!GroupMembershipStatus.DELETED.equals(newStatus), "Deletion of a group membership should not use this route.");
+        groupDatabase.setUsersGroupMembershipStatus(user.getId(), group.getId(), newStatus);
     }
 
     /**
@@ -483,12 +520,12 @@ public class GroupManager {
      */
     public void convertToUserSummaryGroupMembership(UserGroupDTO group, List<UserSummaryDTO> summarisedMemberInfo) throws SegueDatabaseException {
         List<UserSummaryWithGroupMembershipDTO> result = Lists.newArrayList();
-        Map<Long, GroupMembership> userMembershipMapforMap = this.getUserMembershipMapforGroup(group.getId());
+        Map<Long, GroupMembershipDTO> userMembershipMapforMap = this.getUserMembershipMapforGroup(group.getId());
 
         for(UserSummaryDTO dto : summarisedMemberInfo) {
             UserSummaryWithGroupMembershipDTO newDTO = dtoMapper.map(dto, UserSummaryWithGroupMembershipDTO.class);
-            GroupMembership groupMembershipDO = userMembershipMapforMap.get(newDTO.getId());
-            newDTO.setGroupMembershipInformation(dtoMapper.map(groupMembershipDO, GroupMembershipDTO.class));
+            GroupMembershipDTO groupMembershipDTO = userMembershipMapforMap.get(newDTO.getId());
+            newDTO.setGroupMembershipInformation(dtoMapper.map(groupMembershipDTO, GroupMembershipDTO.class));
             result.add(newDTO);
         }
 

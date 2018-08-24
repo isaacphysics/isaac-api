@@ -174,7 +174,7 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
             pst = conn
-                    .prepareStatement("UPDATE group_memberships SET status=?,updated=? WHERE user_id = ? AND group_id = ?");
+                    .prepareStatement("UPDATE group_memberships SET status=? ,updated=? WHERE user_id = ? AND group_id = ?");
             pst.setString(1, newStatus.name());
             pst.setTimestamp(2, new Timestamp(new Date().getTime()));
             pst.setLong(3, userId);

@@ -171,7 +171,7 @@ public class AssignmentManager implements IGroupObserver {
 
         UserGroupDTO userGroupDTO = groupManager.getGroupById(newAssignment.getGroupId());
         List<RegisteredUserDTO> usersToEmail = Lists.newArrayList();
-        Map<Long, GroupMembership> userMembershipMapforGroup = this.groupManager.getUserMembershipMapforGroup(userGroupDTO.getId());
+        Map<Long, GroupMembershipDTO> userMembershipMapforGroup = this.groupManager.getUserMembershipMapforGroup(userGroupDTO.getId());
         GameboardDTO gameboard = gameManager.getGameboard(newAssignment.getGameboardId());
         
         //filter users so those that have revoked access (or are inactive) to their data aren't emailed
@@ -502,18 +502,20 @@ public class AssignmentManager implements IGroupObserver {
     }
 
     private List<AssignmentDTO> filterAssignmentsBasedOnGroupMembershipContext(List<AssignmentDTO> assignments, Long userId) throws SegueDatabaseException {
-        Map<Long, Map<Long, GroupMembership>> groupIdToUserMembershipInfoMap = Maps.newHashMap();
+        Map<Long, Map<Long, GroupMembershipDTO>> groupIdToUserMembershipInfoMap = Maps.newHashMap();
         List<AssignmentDTO> results = Lists.newArrayList();
 
         for (AssignmentDTO assignment : assignments) {
             if (!groupIdToUserMembershipInfoMap.containsKey(assignment.getGroupId())) {
                 groupIdToUserMembershipInfoMap.put(assignment.getGroupId(), this.groupManager.getUserMembershipMapforGroup(assignment.getGroupId()));
             }
-            GroupMembership membershipRecord = groupIdToUserMembershipInfoMap.get(assignment.getGroupId()).get(userId);
+
+            GroupMembershipDTO membershipRecord = groupIdToUserMembershipInfoMap.get(assignment.getGroupId()).get(userId);
             if (GroupMembershipStatus.INACTIVE.equals(membershipRecord.getStatus())
                     && membershipRecord.getUpdated().before(assignment.getCreationDate()) ) {
                 continue;
             }
+
             // if they are inactive we have to do stuff if not we can carry on
             results.add(assignment);
         }

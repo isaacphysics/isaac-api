@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -82,6 +82,17 @@ public class UserGroupDTO {
      */
     @JsonProperty("_id")
     @ObjectId
+    @Deprecated
+    public Long getMongoId() {
+        return id;
+    }
+
+    /**
+     * Gets the id.
+     *
+     * @return the id
+     */
+    @JsonProperty("id")
     public Long getId() {
         return id;
     }

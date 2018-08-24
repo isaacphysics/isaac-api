@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 package uk.ac.cam.cl.dtg.segue.api;
-
+import com.google.common.collect.Lists;
 import io.swagger.annotations.Api;
 
 import java.util.List;
@@ -46,6 +46,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dos.GroupMembershipStatus;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
@@ -127,6 +128,84 @@ public class GroupsFacade extends AbstractSegueFacade {
         } catch (SegueDatabaseException e) {
             log.error("Database error while trying to get user group. ", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
+        }
+    }
+
+    /**
+     * Get all groups where the user is a member.
+     *
+     * @param request            - so we can identify the current user.
+     * @param cacheRequest       - so that we can control caching of this endpoint
+     * @param archivedGroupsOnly - include archived groups in response - default is false - i.e. show only unarchived
+     * @return List of groups for the current user.
+     */
+    @GET
+    @Path("/membership")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getGroupMembership(@Context final HttpServletRequest request,
+                                            @Context final Request cacheRequest, @QueryParam("archived_groups_only") final boolean archivedGroupsOnly) {
+        try {
+            RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+            List<UserGroupDTO> groups = groupManager.getGroupMembershipList(user);
+
+            List<Map<String, Object>> results = Lists.newArrayList();
+            for(UserGroupDTO group : groups) {
+                ImmutableMap<String, Object> map = ImmutableMap.of("group", group, "membershipStatus", this.groupManager.getGroupMembershipStatus(user.getId(), group.getId()).name());
+                results.add(map);
+            }
+
+            return Response.ok(results).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            log.error("Database error while trying to get user group. ", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
+        }
+    }
+
+    /**
+     * Change user's group membership status
+     *
+     * @param request      - for authentication
+     * @param cacheRequest - so that we can control caching of this endpoint
+     * @param groupId      - group of interest.
+     * @param newStatus - containing the new status for the user's membership
+     * @return 200 containing new list of users in the group or error response
+     */
+    @POST
+    @Path("/membership/{group_id}/{new_status}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response changeGroupMembershipStatus(@Context final HttpServletRequest request, @Context final Request cacheRequest,
+                                                @PathParam("group_id") final Long groupId, @PathParam("new_status")  final String newStatus) {
+        if (null == groupId) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Group name must be specified.").toResponse();
+        }
+
+        try {
+            // ensure there is a user currently logged in.
+            RegisteredUserDTO currentRegisteredUser = userManager.getCurrentRegisteredUser(request);
+            UserGroupDTO groupBasedOnId = groupManager.getGroupById(groupId);
+
+            GroupMembershipStatus newStatusEnum = GroupMembershipStatus.valueOf(newStatus);
+            if (newStatusEnum.equals(GroupMembershipStatus.DELETED)) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You are not allowed to completely delete yourself from a group").toResponse();
+            }
+
+            this.groupManager.setMembershipStatus(groupBasedOnId, currentRegisteredUser, newStatusEnum);
+
+            this.getLogManager().logEvent(currentRegisteredUser, request, SegueLogType.CHANGE_GROUP_MEMBERSHIP_STATUS,
+                    ImmutableMap.of(Constants.GROUP_FK, groupBasedOnId.getId(),
+                            USER_ID_FKEY_FIELDNAME, currentRegisteredUser.getId(),
+                            "newStatus", newStatusEnum.name()));
+
+            return Response.ok().build();
+        } catch (SegueDatabaseException e) {
+            log.error("Database error while trying to add user to a group. ", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (IllegalArgumentException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "The new status provided is not valid.").toResponse();
         }
     }
 
