@@ -218,7 +218,7 @@ public class GroupManager {
      *            if true then only archived groups will be returned,
      *            if false then only unarchived groups will be returned.
      * @return List of groups or empty list.
-     * @throws SegueDatabaseException if there is a db error
+     * @throws SegueDatabaseException - if there is a db error
      */
     public List<UserGroupDTO> getAllGroupsOwnedAndManagedByUser(final RegisteredUserDTO ownerUser, boolean archivedGroupsOnly) throws SegueDatabaseException {
         Validate.notNull(ownerUser);
