@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.inject.name.Named;
@@ -98,6 +97,7 @@ import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryForAdminUsersDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.etl.GithubPushEventPayload;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
@@ -822,7 +822,9 @@ public class AdminFacade extends AbstractSegueFacade {
             log.info(String.format("%s user (%s) did a search across all users based on user prototype {%s}",
                     currentUser.getRole(), currentUser.getEmail(), userPrototype));
 
-            return Response.ok(findUsers).tag(etag).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
+            return Response.ok(this.userManager.convertToDetailedUserSummaryObjectList(findUsers, UserSummaryForAdminUsersDTO.class))
+                    .tag(etag)
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
                     .build();
         } catch (SegueDatabaseException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
