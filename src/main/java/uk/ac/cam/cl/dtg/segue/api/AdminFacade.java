@@ -211,7 +211,7 @@ public class AdminFacade extends AbstractSegueFacade {
                         .toResponse();
             }
 
-            return Response.ok(userManager.getCountsForUsersByRole())
+            return Response.ok(ImmutableMap.of("role", userManager.getCountsForUsersByRole()))
                     .cacheControl(getCacheControl(NUMBER_SECONDS_IN_MINUTE, false)).build();
         } catch (SegueDatabaseException e) {
             log.error("Unable to load general statistics.", e);
