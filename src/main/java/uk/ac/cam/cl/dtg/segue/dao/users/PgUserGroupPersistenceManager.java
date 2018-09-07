@@ -114,7 +114,7 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
         if (group.getStatus() == null) {
             group.setStatus(GroupStatus.ACTIVE);
         }
-        
+
         PreparedStatement pst;
         try (Connection conn = database.getDatabaseConnection()) {
             pst = conn.prepareStatement(
@@ -377,7 +377,7 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
 
-            pst = conn.prepareStatement("SELECT COUNT(1) AS TOTAL FROM groups WHERE group_id = ? AND user_id = ?");
+            pst = conn.prepareStatement("SELECT COUNT(1) AS TOTAL FROM group_memberships WHERE group_id = ? AND user_id = ?");
             pst.setLong(1, groupId);
             pst.setLong(2, userId);
             ResultSet results = pst.executeQuery();
