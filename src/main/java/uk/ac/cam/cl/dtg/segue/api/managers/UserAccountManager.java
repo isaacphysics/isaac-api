@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins & Nick Rogers.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -127,7 +127,7 @@ public class UserAccountManager implements IUserAccountManager {
             final UserAuthenticationManager userAuthenticationManager) {
         this(database, questionDb, properties, providersToRegister, dtoMapper, emailQueue, CacheBuilder.newBuilder()
                 .expireAfterAccess(ANONYMOUS_SESSION_DURATION_IN_MINUTES, TimeUnit.MINUTES)
-                .<String, AnonymousUser> build(), logManager, userAuthenticationManager);
+                .build(), logManager, userAuthenticationManager);
     }
 
     /**
@@ -158,7 +158,7 @@ public class UserAccountManager implements IUserAccountManager {
             final Cache<String, AnonymousUser> temporaryUserCache, final ILogManager logManager,
             final UserAuthenticationManager userAuthenticationManager) {
         Validate.notNull(properties.getProperty(HMAC_SALT));
-        Validate.notNull(Integer.parseInt(properties.getProperty(SESSION_EXPIRY_SECONDS)));
+        Validate.notNull(properties.getProperty(SESSION_EXPIRY_SECONDS));
         Validate.notNull(properties.getProperty(HOST_NAME));
 
         this.properties = properties;
@@ -1149,6 +1149,14 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     /**
+     * Method to retrieve the number of users by role from the Database.
+     * @return a map of role to counter
+     */
+    public Map<Role, Integer> getCountsForUsersByRole() throws SegueDatabaseException {
+        return this.database.countUsersByRole();
+    }
+
+    /**
      * Sends verification email for the user's current email address. The destination will match the userDTO's email.
      * @param userDTO - user to which the email is to be sent.
      * @param emailVerificationToken - the generated email verification token.
@@ -1494,9 +1502,9 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     /**
-     * @param userDTO
-     * @param emailVerificationToken
-     * @return
+     * @param userDTO the userDTO of interest
+     * @param emailVerificationToken the verifcation token
+     * @return verification URL
      */
     private String generateEmailVerificationURL(final RegisteredUserDTO userDTO, final String emailVerificationToken) {
         List<NameValuePair> urlParamPairs = Lists.newArrayList();
@@ -1508,17 +1516,13 @@ public class UserAccountManager implements IUserAccountManager {
         return String.format("https://%s/verifyemail?%s", properties.getProperty(HOST_NAME), urlParams);
     }
 
-
-
     public Boolean isValidUserFromSession(final Map<String, String> sessionInformation) {
 
         return this.userAuthenticationManager.isValidUsersSession(sessionInformation);
     }
 
-
     public Long getNumberOfAnonymousUsers() {
         return temporaryUserCache.size();
     }
-
 
 }

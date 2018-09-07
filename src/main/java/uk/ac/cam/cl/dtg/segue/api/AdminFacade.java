@@ -194,6 +194,34 @@ public class AdminFacade extends AbstractSegueFacade {
     }
 
     /**
+     * Statistics endpoint.
+     *
+     * @param request
+     *            - to determine access.
+     * @return stats
+     */
+    @GET
+    @Path("/stats/users")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public Response countUsersByRole(@Context final HttpServletRequest request) {
+        try {
+            if (!isUserStaff(request)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin to access this endpoint.")
+                        .toResponse();
+            }
+
+            return Response.ok(userManager.getCountsForUsersByRole())
+                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_MINUTE, false)).build();
+        } catch (SegueDatabaseException e) {
+            log.error("Unable to load general statistics.", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
+    }
+
+    /**
      * Locations stats.
      * 
      * @param request
