@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
@@ -292,33 +293,11 @@ public class GameManager {
         return gameboardFound;
     }
 
-    /**
-     * Get a gameboard by its id and augment with user information and FastTrack progress.
-     *
-     * @param gameboardId
-     *            - to look up.
-     * @param user
-     *            - This allows state information to be retrieved.
-     * @param userQuestionAttempts
-     *            - so that we can augment the gameboard.
-     * @return the gameboard or null.
-     * @throws SegueDatabaseException
-     *             - if there is a problem retrieving the gameboard in the database or updating the users gameboard link
-     *             table.
-     * @throws ContentManagerException
-     *             - if there is an error retrieving the content requested.
-     */
-    public final GameboardDTO getFastTrackGameboard(final String gameboardId, final AbstractSegueUserDTO user,
-            final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts)
-            throws SegueDatabaseException, ContentManagerException {
-
+    public final List<GameboardItem> getFastTrackConceptProgress(final String gameboardId, final String conceptTitle,
+             final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts)
+            throws ContentManagerException {
         List<ContentDTO> fastTrackAssociatedQuestions = this.getQuestionsWithTag(gameboardId);
-        GameboardDTO unAugmentedGameboard = this.gameboardPersistenceManager.getGameboardById(gameboardId);
-        GameboardDTO userInfoAugmentedGameboard = this.augmentGameboardWithUserInformation(
-                unAugmentedGameboard, userQuestionAttempts, user);
-        GameboardDTO fastTrackGameboard = this.augmentGameboardWithFastTrackInformation(
-                userInfoAugmentedGameboard, fastTrackAssociatedQuestions, userQuestionAttempts);
-        return fastTrackGameboard;
+        return this.getConceptQuestionProgress(fastTrackAssociatedQuestions, conceptTitle, userQuestionAttempts);
     }
 
     /**
@@ -487,7 +466,7 @@ public class GameManager {
         }
 
         boolean gameboardStarted = false;
-        List<GameboardItem> questions = (List<GameboardItem>) gameboardDTO.getQuestions();
+        List<GameboardItem> questions = gameboardDTO.getQuestions();
         int totalNumberOfQuestionsParts = 0;
         int totalNumberOfCorrectQuestionParts = 0;
         for (GameboardItem gameItem : questions) {
@@ -507,7 +486,7 @@ public class GameManager {
             totalNumberOfCorrectQuestionParts += gameItem.getQuestionPartsCorrect();
         }
         float boardPercentage = 100f * totalNumberOfCorrectQuestionParts / totalNumberOfQuestionsParts;
-        gameboardDTO.setPercentageCompleted((int) Math.round(boardPercentage));
+        gameboardDTO.setPercentageCompleted(Math.round(boardPercentage));
         
         if (user instanceof RegisteredUserDTO) {
             gameboardDTO
@@ -517,127 +496,31 @@ public class GameManager {
         return gameboardDTO;
     }
 
-    private Map<String, ContentDTO> indexContentOnId(final List<ContentDTO> contents) {
-        Map<String, ContentDTO> idIndexedContent = Maps.newHashMap(); 
-        for (ContentDTO content : contents) {
-            idIndexedContent.put(content.getId(), content);
-        }
-        return idIndexedContent;
-    }
-
-    private boolean questionIsAnsweredCorrectly(final ContentDTO question,
-            final Map<String, List<QuestionValidationResponse>> questionAttempts) {
-        List<ContentDTO> questionParts = Lists.newArrayList();
-        this.depthFirstQuestionSearch(question, questionParts);
-        boolean allQuestionPartsCompleted = true;
-        for (ContentDTO questionPart : this.filterQuestionParts(questionParts)) {
-            if (questionAttempts != null) {
-                List<QuestionValidationResponse> attemptsAtQuestionPart = questionAttempts.get(questionPart.getId());
-                Boolean questionPartCompleted = this.hasCorrectAnsweredCorrectly(attemptsAtQuestionPart);
-                allQuestionPartsCompleted &= questionPartCompleted != null && questionPartCompleted;
-            } else {
-                allQuestionPartsCompleted = false;
-            }
-            if (!allQuestionPartsCompleted) {
-                break; //early exit on incorrect question part
-            }
-        }
-        return allQuestionPartsCompleted;
-    }
-
     /**
-     * Construct a concept map which is used to evaluate the best level of question completed in the question attempts -
-     * upper, lower or none. This information is used for the FastTrack progress bar.
-     * @param conceptQuestions
-     *            - a list of all the concept questions to be considered.
-     * @param questionAttempts
-     *            - the question attempt history.
-     * @return a concept map from concept title to QuestionPartConceptDTO.
-     */
-    private Map<String, QuestionPartConceptDTO> createConceptMapFromQuestions(final List<ContentDTO> conceptQuestions,
-            final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttempts) {
-        Map<String, QuestionPartConceptDTO> conceptMap = Maps.newHashMap();
-        for (ContentDTO question : conceptQuestions) {
-            String thisQuestionsConceptName = question.getTitle();
-            conceptMap.putIfAbsent(thisQuestionsConceptName, new QuestionPartConceptDTO(thisQuestionsConceptName));
-            QuestionPartConceptDTO concept = conceptMap.get(thisQuestionsConceptName);
-            FastTrackConceptState thisQuestionsConceptLevel = FastTrackConceptState.getStateFromTags(question.getTags());
-            if (thisQuestionsConceptLevel != null) {
-                // update questionPartConceptDTO with the highest level of completed question
-                if (concept.getBestLevel() == null || thisQuestionsConceptLevel.compareTo(concept.getBestLevel()) > 0) {
-                    if (this.questionIsAnsweredCorrectly(question, questionAttempts.get(question.getId()))) {
-                        concept.setBestLevel(thisQuestionsConceptLevel);
-                    }
-                }
-                // add question to the list of upper or lower concept questions
-                if (thisQuestionsConceptLevel.equals(FastTrackConceptState.ft_upper)) {
-                    List<GameboardItem> upperQuestions = concept.getUpperQuestions();
-                    upperQuestions.add(this.gameboardPersistenceManager.convertToGameboardItem(question));
-                    concept.setUpperQuestions(upperQuestions);
-                } else if (thisQuestionsConceptLevel.equals(FastTrackConceptState.ft_lower)) {
-                    List<GameboardItem> lowerQuestions = concept.getLowerQuestions();
-                    lowerQuestions.add(this.gameboardPersistenceManager.convertToGameboardItem(question));
-                    concept.setLowerQuestions(lowerQuestions);
-                }
-            } else {
-                log.error("FastTrack question (" + question.getId() + ") is not tagged correctly");
-            }
-        }
-        log.info("TODO MT concept map", conceptMap);
-        return conceptMap;
-    }
-
-    /**
-     * Augments the gameboard with FastTrack progress information.
+     * Converts a list of ContentDTOs into a content-title-filtered, ordered list of gameboard items, each augmented by
+     * the user's question attempts.
      *
-     * @param gameboardDTO
-     *            - the gameboardDTO to be modified.
-     * @param boardAssociatedQuestions
-     *            - a list of questions associated with the board.
-     * @param questionAttemptsFromUser
-     *            - the user's question data
-     * @return the augmented gamebaord.
+     * @param fastTrackAssociatedQuestions list of all questions associated with a FastTrack board.
+     * @param conceptTitle which will be used to filter for the relevant questions.
+     * @param userQuestionAttempts the user's question attempt history.
+     * @return gameboard item list of all questions for that concept type.
      */
-    private GameboardDTO augmentGameboardWithFastTrackInformation(final GameboardDTO gameboardDTO,
-            final List<ContentDTO> boardAssociatedQuestions,
-            final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser) {
-        if (null == gameboardDTO) {
-            return null;
-        }
-        if (gameboardDTO.getQuestions().size() == 0) {
-            return gameboardDTO;
-        }
+    private List<GameboardItem> getConceptQuestionProgress(List<ContentDTO> fastTrackAssociatedQuestions,
+            final String conceptTitle,
+            final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts) {
 
-        Map<String, ContentDTO> idIndexedContent = indexContentOnId(boardAssociatedQuestions);
-        Map<String, QuestionPartConceptDTO> conceptMap = createConceptMapFromQuestions(
-                boardAssociatedQuestions, questionAttemptsFromUser);
-        List<FastTrackGameboardItem> fastTrackQuestions = Lists.newArrayList();
-        for (GameboardItem question : gameboardDTO.getQuestions()) {
-            FastTrackGameboardItem topTenQuestion = new FastTrackGameboardItem(question);
-            List<ContentDTO> questionParts = Lists.newArrayList();
-            depthFirstQuestionSearch(idIndexedContent.get(question.getId()), questionParts);
-            List<QuestionPartConceptDTO> questionPartConcepts = Lists.newArrayList();
-            for (ContentDTO questionPart : questionParts) {
-                List<ContentSummaryDTO> relatedContentSummary = questionPart.getRelatedContent();
-                if (relatedContentSummary != null) {
-                    String relatedContentId = relatedContentSummary.get(0).getId();
-                    ContentDTO relatedContent = idIndexedContent.get(relatedContentId);
-                    if (relatedContent != null) {
-                        String conceptTitle = relatedContent.getTitle();
-                        questionPartConcepts.add(conceptMap.get(conceptTitle));
-                    } else {
-                        log.error("FastTrack question " + question.getId()
-                                + " references a related content id which is not correctly tagged " + relatedContentId);
+        return fastTrackAssociatedQuestions.stream()
+                .filter(questionContent -> questionContent.getTitle().equalsIgnoreCase(conceptTitle))
+                .map(this.gameboardPersistenceManager::convertToGameboardItem)
+                .map(questionItem -> {
+                    try {
+                        this.augmentGameItemWithAttemptInformation(questionItem, userQuestionAttempts);
+                    } catch (ContentManagerException | ResourceNotFoundException e) {
+                        log.error("Unable to augment '" + questionItem.getId() + "' with user attempt information");
                     }
-                } // else: the question part has no related content i.e. is a quick question
-            }
-            topTenQuestion.setQuestionPartConcepts(questionPartConcepts);
-            fastTrackQuestions.add(topTenQuestion);
-        }
-        List<GameboardItem> questions = gameboardDTO.getQuestions();
-        questions.clear();
-        questions.addAll(fastTrackQuestions);
-        return gameboardDTO;
+                    return questionItem;
+                }).sorted(Comparator.comparing(GameboardItem::getId))
+                .collect(Collectors.toList());
     }
 
     /**
@@ -804,9 +687,9 @@ public class GameManager {
                     
                     List<QuestionValidationResponse> listOfAttempts = questionPageAttempts.get(question.getId());
                  
-                    if (hasCorrectAnsweredCorrectly(listOfAttempts) == null) {
+                    if (hasCorrectQuestionAttempt(listOfAttempts) == null) {
                         questionResultMap.put(question.getId(), null);
-                    } else if (hasCorrectAnsweredCorrectly(listOfAttempts)) {
+                    } else if (hasCorrectQuestionAttempt(listOfAttempts)) {
                         questionResultMap.put(question.getId(), 1);
                     } else {
                         questionResultMap.put(question.getId(), 0);
@@ -1152,6 +1035,7 @@ public class GameManager {
         Validate.notNull(gameItem, "gameItem cannot be null");
         Validate.notNull(questionAttemptsFromUser, "questionAttemptsFromUser cannot be null");
 
+        List<QuestionPartState> questionPartStates = Lists.newArrayList();
         int questionPartsCorrect = 0;
         int questionPartsIncorrect = 0;
         int questionPartsNotAttempted = 0;
@@ -1176,16 +1060,21 @@ public class GameManager {
                         }
                     }
                     if (foundCorrectForThisQuestion) {
+                        questionPartStates.add(QuestionPartState.CORRECT);
                         questionPartsCorrect++;
                     } else {
+                        questionPartStates.add(QuestionPartState.INCORRECT);
                         questionPartsIncorrect++;
                     }
                 } else {
+                    questionPartStates.add(QuestionPartState.NOT_ATTEMPTED);
                     questionPartsNotAttempted++;
                 }
             }
         } else {
             questionPartsNotAttempted = listOfQuestionParts.size();
+            questionPartStates = listOfQuestionParts.stream()
+                    .map(_q -> QuestionPartState.NOT_ATTEMPTED).collect(Collectors.toList());
         }
 
         // Get the pass mark for the question page
@@ -1200,6 +1089,7 @@ public class GameManager {
         gameItem.setQuestionPartsCorrect(questionPartsCorrect);
         gameItem.setQuestionPartsIncorrect(questionPartsIncorrect);
         gameItem.setQuestionPartsNotAttempted(questionPartsNotAttempted);
+        gameItem.setQuestionPartStates(questionPartStates);
         Integer questionPartsTotal = questionPartsCorrect + questionPartsIncorrect + questionPartsNotAttempted;
         gameItem.setQuestionPartsTotal(questionPartsTotal);
         Float percentCorrect = 100f * new Float(questionPartsCorrect) / questionPartsTotal;
@@ -1226,7 +1116,7 @@ public class GameManager {
      * @param questionAttempts - to check
      * @return true or false
      */
-    private Boolean hasCorrectAnsweredCorrectly(final List<QuestionValidationResponse> questionAttempts) {
+    private Boolean hasCorrectQuestionAttempt(final List<QuestionValidationResponse> questionAttempts) {
         if (null == questionAttempts || questionAttempts.size() == 0) {
             return null;
         }
