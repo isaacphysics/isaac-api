@@ -370,6 +370,18 @@ CREATE TABLE user_associations_tokens (
 
 ALTER TABLE user_associations_tokens OWNER TO rutherford;
 
+--
+-- Name: user_badges; Type: TABLE; Schema: public; Owner: rutherford
+--
+
+CREATE TABLE user_badges (
+    user_id integer,
+    badge text,
+    state jsonb
+);
+
+
+ALTER TABLE user_badges OWNER TO rutherford;
 
 --
 -- Name: user_credentials; Type: TABLE; Schema: public; Owner: rutherford
@@ -860,6 +872,13 @@ CREATE INDEX question_attempts_by_timestamp ON question_attempts USING btree ("t
 --
 
 CREATE UNIQUE INDEX "unique email case insensitive" ON users USING btree (lower(email));
+
+
+--
+-- Name: user_badges_user_id_badge_unique; Type: INDEX; Schema: public; Owner: rutherford
+--
+
+CREATE UNIQUE INDEX user_badges_user_id_badge_unique ON user_badges USING btree (user_id, badge);
 
 
 --
