@@ -15,14 +15,14 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner:
 --
 
 CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 
 
 --
--- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner:
 --
 
 COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
@@ -134,9 +134,9 @@ ALTER TABLE gameboards OWNER TO rutherford;
 --
 
 CREATE TABLE group_additional_managers (
-  user_id integer NOT NULL,
-  group_id integer NOT NULL,
-  created timestamp with time zone DEFAULT now()
+    user_id integer NOT NULL,
+    group_id integer NOT NULL,
+    created timestamp with time zone DEFAULT now()
 );
 
 
@@ -345,6 +345,38 @@ CREATE TABLE uk_post_codes (
 ALTER TABLE uk_post_codes OWNER TO rutherford;
 
 --
+-- Name: user_alerts_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE user_alerts_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE user_alerts_id_seq OWNER TO postgres;
+
+--
+-- Name: user_alerts; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE user_alerts (
+    id integer DEFAULT nextval('user_alerts_id_seq'::regclass) NOT NULL,
+    user_id integer NOT NULL,
+    message text,
+    link text,
+    created timestamp without time zone DEFAULT now() NOT NULL,
+    seen timestamp without time zone,
+    clicked timestamp without time zone,
+    dismissed timestamp without time zone
+);
+
+
+ALTER TABLE user_alerts OWNER TO postgres;
+
+--
 -- Name: user_associations; Type: TABLE; Schema: public; Owner: rutherford
 --
 
@@ -505,8 +537,8 @@ CREATE TABLE users (
     email_verification_status character varying(255),
     last_seen timestamp without time zone,
     default_level integer,
-    email_to_verify text,
-    email_verification_token text
+    email_verification_token text,
+    email_to_verify text
 );
 
 
@@ -531,29 +563,6 @@ ALTER TABLE users_id_seq OWNER TO rutherford;
 --
 
 ALTER SEQUENCE users_id_seq OWNED BY users.id;
-
-
-CREATE SEQUENCE user_alerts_id_seq
-START WITH 1
-INCREMENT BY 1
-NO MINVALUE
-NO MAXVALUE
-CACHE 1;
-
-
-CREATE TABLE user_alerts
-(
-    id INTEGER DEFAULT nextval('user_alerts_id_seq'::regclass) PRIMARY KEY NOT NULL,
-    user_id INTEGER NOT NULL,
-    message TEXT,
-    link TEXT,
-    created TIMESTAMP DEFAULT now() NOT NULL,
-    seen TIMESTAMP,
-    clicked TIMESTAMP,
-    dismissed TIMESTAMP
-);
-CREATE UNIQUE INDEX user_alerts_id_uindex ON user_alerts (id);
-
 
 
 --
@@ -614,6 +623,14 @@ ALTER TABLE ONLY users
 
 
 --
+-- Name: group_additional_managers ck_user_group_manager; Type: CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY group_additional_managers
+    ADD CONSTRAINT ck_user_group_manager PRIMARY KEY (user_id, group_id);
+
+
+--
 -- Name: assignments composite pkey assignments; Type: CONSTRAINT; Schema: public; Owner: rutherford
 --
 
@@ -643,14 +660,6 @@ ALTER TABLE ONLY event_bookings
 
 ALTER TABLE ONLY gameboards
     ADD CONSTRAINT "gameboard-id-pkey" PRIMARY KEY (id);
-
-
---
--- Name: group_additional_managers ck_user_group_manager; Type: CONSTRAINT; Schema: public; Owner: rutherford
---
-
-ALTER TABLE ONLY group_additional_managers
-  ADD CONSTRAINT ck_user_group_manager PRIMARY KEY (user_id, group_id);
 
 
 --
@@ -739,6 +748,14 @@ ALTER TABLE ONLY uk_post_codes
 
 ALTER TABLE ONLY users
     ADD CONSTRAINT "unique sha id" UNIQUE (_id);
+
+
+--
+-- Name: user_alerts user_alerts_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY user_alerts
+    ADD CONSTRAINT user_alerts_pkey PRIMARY KEY (id);
 
 
 --
@@ -872,6 +889,13 @@ CREATE INDEX question_attempts_by_timestamp ON question_attempts USING btree ("t
 --
 
 CREATE UNIQUE INDEX "unique email case insensitive" ON users USING btree (lower(email));
+
+
+--
+-- Name: user_alerts_id_uindex; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX user_alerts_id_uindex ON user_alerts USING btree (id);
 
 
 --
