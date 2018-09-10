@@ -1043,7 +1043,7 @@ public class GameManager {
 
         // get all question parts in the question page: depends on each question
         // having an id that starts with the question page id.
-        Collection<QuestionDTO> listOfQuestionParts = getAllMarkableQuestionParts(questionPageId);
+        Collection<QuestionDTO> listOfQuestionParts = getAllMarkableQuestionPartsDFSOrder(questionPageId);
         Map<String, List<QuestionValidationResponse>> questionAttempts = questionAttemptsFromUser.get(questionPageId);
         if (questionAttempts != null) {
             for (ContentDTO questionPart : listOfQuestionParts) {
