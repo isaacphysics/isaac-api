@@ -153,11 +153,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                 = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), emailContentTemplate, propertiesToReplace,
                 emailType, attachments);
 
-        if (emailType.equals(EmailType.SYSTEM)) {
-                addSystemEmailToQueue(emailCommunicationMessage);
-        } else {
-            this.filterByPreferencesAndAddToQueue(userDTO, emailCommunicationMessage);
-        }
+        this.filterByPreferencesAndAddToQueue(userDTO, emailCommunicationMessage);
     }
 
     /**
