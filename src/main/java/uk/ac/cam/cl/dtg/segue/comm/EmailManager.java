@@ -280,6 +280,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         // if this is an email type that cannot have a preference, send it and log as appropriate
         if (!email.getEmailType().isValidEmailPreference()) {
+            log.info(String.format("Added %s email to the queue with subject: %s", email.getEmailType().toString().toLowerCase(), email.getSubject()));
             logManager.logInternalEvent(userDTO, SegueLogType.SENT_EMAIL, eventDetails);
             addToQueue(email);
             return true;
