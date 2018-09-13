@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,7 +20,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 
 /**
- * User Summary object.
+ * Minimal view of a User object.
  */
 public class UserSummaryDTO extends AbstractSegueUserDTO {
     private String databaseId;
@@ -62,6 +62,7 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
      * @return the databaseId
      */
     @JsonProperty("_id")
+    @Deprecated
     public String getLegacyDbId() {
         return databaseId;
     }
@@ -73,6 +74,7 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
      *            the databaseId to set
      */
     @JsonProperty("_id")
+    @Deprecated
     public void setLegacyDbId(final String databaseId) {
         this.databaseId = databaseId;
     }
