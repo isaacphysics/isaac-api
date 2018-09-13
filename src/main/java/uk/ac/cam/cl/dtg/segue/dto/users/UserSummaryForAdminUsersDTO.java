@@ -24,6 +24,8 @@ public class UserSummaryForAdminUsersDTO extends UserSummaryWithEmailAddressDTO 
     private Date lastUpdated;
     private Date lastSeen;
     private Date registrationDate;
+    private String schoolId;
+    private String schoolOther;
 
     /**
      * UserSummaryDTO.
@@ -89,12 +91,51 @@ public class UserSummaryForAdminUsersDTO extends UserSummaryWithEmailAddressDTO 
         this.registrationDate = registrationDate;
     }
 
+    /**
+     * Gets the schoolId.
+     *
+     * @return the schoolId
+     */
+    public String getSchoolId() {
+        return schoolId;
+    }
+
+    /**
+     * Sets the schoolId.
+     *
+     * @param schoolId
+     *            the schoolId to set
+     */
+    public void setSchoolId(final String schoolId) {
+        this.schoolId = schoolId;
+    }
+
+    /**
+     * Gets the schoolOther.
+     *
+     * @return the schoolOther
+     */
+    public String getSchoolOther() {
+        return schoolOther;
+    }
+
+    /**
+     * Sets the schoolOther.
+     *
+     * @param schoolOther
+     *            the schoolOther to set
+     */
+    public void setSchoolOther(final String schoolOther) {
+        this.schoolOther = schoolOther;
+    }
+
     @Override
     public String toString() {
-        return "UserSummaryForAdminUsersDTO{" +
-                "lastUpdated=" + lastUpdated +
-                ", lastSeen=" + lastSeen +
-                ", registrationDate=" + registrationDate +
-                '}';
+        return "lastUpdated=" + "UserSummaryForAdminUsersDTO{" + lastUpdated
+                + ", lastSeen=" + lastSeen
+                + ", registrationDate=" + registrationDate
+                + ", schoolId=" + schoolId
+                + ", schoolOther=" + schoolOther
+                + '}';
     }
 }
