@@ -273,6 +273,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                    .build();
 
         // don't send an email if we know it has failed before
+        // FIXME - should system emails ignore this setting to avoid abuse?
         if (userDTO.getEmailVerificationStatus() == EmailVerificationStatus.DELIVERY_FAILED) {
             log.info("Email sending abandoned - verification status is DELIVERY_FAILED");
             return false;

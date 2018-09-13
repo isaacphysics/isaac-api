@@ -1201,6 +1201,7 @@ public class UserAccountManager implements IUserAccountManager {
         // Defensive copy to ensure old email address is preserved (shouldn't change until new email is verified)
         RegisteredUserDTO temporaryUser = this.dtoMapper.map(userDTO, RegisteredUserDTO.class);
         temporaryUser.setEmail(newEmail);
+        temporaryUser.setEmailVerificationStatus(EmailVerificationStatus.NOT_VERIFIED);
         this.sendVerificationEmailForCurrentEmail(temporaryUser, newEmailToken);
     }
 
