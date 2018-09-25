@@ -54,7 +54,6 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -296,8 +295,8 @@ public class GameManager {
     public final List<GameboardItem> getFastTrackConceptProgress(final String gameboardId, final String conceptTitle,
              final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts)
             throws ContentManagerException {
-        List<ContentDTO> fastTrackAssociatedQuestions = this.getQuestionsWithTag(gameboardId);
-        return this.getConceptQuestionProgress(fastTrackAssociatedQuestions, conceptTitle, userQuestionAttempts);
+        List<ContentDTO> fastTrackAssociatedQuestions = this.getFastTrackConceptQuestions(gameboardId, conceptTitle);
+        return this.getGameboardItemProgress(fastTrackAssociatedQuestions, userQuestionAttempts);
     }
 
     /**
@@ -497,20 +496,15 @@ public class GameManager {
     }
 
     /**
-     * Converts a list of ContentDTOs into a content-title-filtered, ordered list of gameboard items, each augmented by
-     * the user's question attempts.
-     *
-     * @param fastTrackAssociatedQuestions list of all questions associated with a FastTrack board.
-     * @param conceptTitle which will be used to filter for the relevant questions.
+     * Convert a list of questions to gameboard items and augment with user question attempt information.
+     * @param questions list of questions.
      * @param userQuestionAttempts the user's question attempt history.
-     * @return gameboard item list of all questions for that concept type.
+     * @return list of augmented gameboard items.
      */
-    private List<GameboardItem> getConceptQuestionProgress(List<ContentDTO> fastTrackAssociatedQuestions,
-            final String conceptTitle,
-            final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts) {
+    private List<GameboardItem> getGameboardItemProgress(List<ContentDTO> questions,
+                                                         final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts) {
 
-        return fastTrackAssociatedQuestions.stream()
-                .filter(questionContent -> questionContent.getTitle().equalsIgnoreCase(conceptTitle))
+        return questions.stream()
                 .map(this.gameboardPersistenceManager::convertToGameboardItem)
                 .map(questionItem -> {
                     try {
@@ -519,8 +513,7 @@ public class GameManager {
                         log.error("Unable to augment '" + questionItem.getId() + "' with user attempt information");
                     }
                     return questionItem;
-                }).sorted(Comparator.comparing(GameboardItem::getId))
-                .collect(Collectors.toList());
+                }).collect(Collectors.toList());
     }
 
     /**
@@ -946,23 +939,31 @@ public class GameManager {
     }
 
     /**
-     * Retrieve content which includes a specified tag, up to the SEARCH_MAX_WINDOW_SIZE.
+     * Queries the search provider for questions tagged with this board name and concept title.
+     * The result is returned sorted.
      *
-     * @param tag
-     *            - the tag string to search for.
-     * @return a list of content with the specified tag
-     * @throws ContentManagerException
-     *            - if there is a problem accessing the content repository.
+     * @param boardTag the tag which marks question's association with a certain board - the board's ID.
+     * @param conceptTitle the title of the concept which is being searched for.
+     * @return ordered list of concept questions associated with the board.
+     * @throws ContentManagerException if there is a problem with the content manager (i.e. Elasticsearch)
      */
-    private List<ContentDTO> getQuestionsWithTag(String tag) throws ContentManagerException {
+    private List<ContentDTO> getFastTrackConceptQuestions(final String boardTag, final String conceptTitle)
+            throws ContentManagerException {
         Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
-        fieldsToMap.put(immutableEntry(BooleanOperator.OR, TYPE_FIELDNAME),
-                Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
-        fieldsToMap.put(immutableEntry(BooleanOperator.OR, TAGS_FIELDNAME), Collections.singletonList(tag));
-        ResultsWrapper<ContentDTO> results = this.contentManager.findByFieldNames(
-                this.contentIndex, fieldsToMap, 0, SEARCH_MAX_WINDOW_SIZE);
-        List<ContentDTO> questionsForGameboard = results.getResults();
-        return questionsForGameboard;
+
+        fieldsToMap.put(immutableEntry(
+                BooleanOperator.OR, TYPE_FIELDNAME), Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
+        fieldsToMap.put(immutableEntry(
+                BooleanOperator.AND, TITLE_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX), Collections.singletonList(conceptTitle));
+        fieldsToMap.put(immutableEntry(
+                BooleanOperator.AND, TAGS_FIELDNAME), Collections.singletonList(boardTag));
+
+        Map<String, SortOrder> sortInstructions = Maps.newHashMap();
+        sortInstructions.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, SortOrder.ASC);
+
+        List<ContentDTO> conceptQuestions = this.contentManager.findByFieldNames(
+                    this.contentIndex, fieldsToMap, 0, SEARCH_MAX_WINDOW_SIZE, sortInstructions).getResults();
+        return conceptQuestions;
     }
 
     /**
