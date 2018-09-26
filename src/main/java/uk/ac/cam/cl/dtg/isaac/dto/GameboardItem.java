@@ -44,6 +44,9 @@ public class GameboardItem {
     // optional field if we want to use the gameboard item outside of the context of a board.
     @Nullable
     private String boardId;
+    // Optional record of the question ID which supersedes this one.
+    @Nullable
+    private String supersededBy;
     
     /**
      * Generic constructor.
@@ -312,6 +315,22 @@ public class GameboardItem {
      */
     public void setBoardId(final String boardId) {
         this.boardId = boardId;
+    }
+
+    /**
+     * Gets the supersededBy question.
+     * @return the supersededBy question
+     */
+    public String getSupersededBy() {
+        return supersededBy;
+    }
+
+    /**
+     * Sets the supersededBy question.
+     * @param supersededBy the ID of the question that supersedes this one to set
+     */
+    public void setSupersededBy(final String supersededBy) {
+        this.supersededBy = supersededBy;
     }
 
     @Override

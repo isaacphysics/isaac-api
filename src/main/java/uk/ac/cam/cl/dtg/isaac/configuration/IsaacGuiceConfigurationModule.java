@@ -21,6 +21,8 @@ import ma.glasnost.orika.MapperFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.IAssignmentPersistenceManager;
@@ -28,6 +30,10 @@ import uk.ac.cam.cl.dtg.isaac.dao.PgAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicChemistryValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicValidator;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
+import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
@@ -54,6 +60,7 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
 
     private static GameboardPersistenceManager gameboardPersistenceManager = null;
     private SchoolListReader schoolListReader = null;
+    private static AssignmentManager assignmentManager = null;
 
     /**
      * Creates a new isaac guice configuration module.
@@ -104,6 +111,43 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
         }
 
         return gameboardPersistenceManager;
+    }
+
+    /**
+     * Gets an assignment manager.
+     *
+     * This needs to be a singleton because operations like emailing are run for each IGroupObserver, the
+     * assignment manager should only be one observer.
+     *
+     * @param assignmentPersistenceManager
+     *            - to save assignments
+     * @param groupManager
+     *            - to allow communication with the group manager.
+     * @param emailManager
+     *            - email manager
+     * @param userManager
+     *            - the user manager object
+     * @param gameManager
+     *            - the game manager object
+     * @param userAssociationManager
+     *            - the userAssociationManager manager object
+     * @param properties
+     *            - properties loader for the service's hostname
+     * @return Assignment manager object.
+     */
+    @Inject
+    @Provides
+    @Singleton
+    private static AssignmentManager getAssignmentManager(
+                final IAssignmentPersistenceManager assignmentPersistenceManager, final GroupManager groupManager,
+                final EmailManager emailManager, final UserAccountManager userManager, final GameManager gameManager,
+                final UserAssociationManager userAssociationManager, final PropertiesLoader properties) {
+        if (null == assignmentManager) {
+            assignmentManager =  new AssignmentManager(assignmentPersistenceManager, groupManager, emailManager,
+                    userManager, gameManager, userAssociationManager, properties);
+            log.info("Creating Singleton AssignmentManager");
+        }
+        return assignmentManager;
     }
 
     /**

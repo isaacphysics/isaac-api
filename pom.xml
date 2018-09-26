@@ -10,7 +10,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<segue.version>2.5.6-SNAPSHOT</segue.version>
+		<segue.version>2.6.5-SNAPSHOT</segue.version>
 		<resteasy.version>3.0.11.Final</resteasy.version>
 		<powermock.version>1.5.2</powermock.version>
 		<postgresql.version>9.3-1104-jdbc41</postgresql.version>
@@ -99,7 +99,7 @@
 		<dependency>
 			<groupId>org.eclipse.jgit</groupId>
 			<artifactId>org.eclipse.jgit</artifactId>
-			<version>4.10.0.201712302008-r</version>
+			<version>5.0.2.201807311906-r</version>
 		</dependency>
 
 		<dependency>

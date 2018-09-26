@@ -49,6 +49,8 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
+import uk.ac.cam.cl.dtg.segue.dao.userBadges.IUserBadgePersistenceManager;
+import uk.ac.cam.cl.dtg.segue.dao.userBadges.PgUserBadgePersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.*;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
@@ -103,6 +105,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 	private static GroupManager groupManager = null;
 	private static IUserAlerts userAlerts = null;
 	private static IUserStreaksManager userStreaksManager = null;
+	private static IUserBadgePersistenceManager userBadgePersitenceManager = null;
 
     private static Collection<Class<? extends ServletContextListener>> contextListeners;
     private static Map<String, Reflections> reflections = com.google.common.collect.Maps.newHashMap();
@@ -252,6 +255,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         bind(IUserAlerts.class).to(PgUserAlerts.class);
 
         bind(IStatisticsManager.class).to(StatisticsManager.class);
+
+        bind(ITransactionManager.class).to(PgTransactionManager.class);
     }
 
 
@@ -677,10 +682,33 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         return postgresDB;
     }
 
+    /**
+     * Gets instance of user badge database liason manager
+     *
+     * @param postgresDB database
+     * @return concrete instance of IUserBadgePersistenceManager
+     */
     @Provides
     @Singleton
     @Inject
-    private static IUserStreaksManager getUserStreaksManager(final PostgresSqlDb postgresDB) {
+    private static IUserBadgePersistenceManager getUserBadgePersistenceManager(final PostgresSqlDb postgresDB) {
+
+        if (null == userBadgePersitenceManager) {
+            userBadgePersitenceManager = new PgUserBadgePersistenceManager(postgresDB);
+        }
+        return userBadgePersitenceManager;
+    }
+
+
+    /**
+     * Gets instance of the user streaks manager
+     *
+     * @param postgresDB database
+     * @return concrete instance of IUserStreaksManager
+     */
+    @Provides
+    @Singleton
+    @Inject    private static IUserStreaksManager getUserStreaksManager(final PostgresSqlDb postgresDB) {
 
         if (null == userStreaksManager) {
             userStreaksManager = new PgUserStreakManager(postgresDB);

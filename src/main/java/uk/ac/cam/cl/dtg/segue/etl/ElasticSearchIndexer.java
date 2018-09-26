@@ -215,22 +215,42 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
      */
     private void sendMappingCorrections(final String index) {
         try {
-
-            CreateIndexRequestBuilder indexBuilder = client.admin().indices().prepareCreate(index).setSettings(Settings.builder().put("index.mapping.total_fields.limit", "9999").build());
+            CreateIndexRequestBuilder indexBuilder = client.admin().indices().prepareCreate(index).setSettings(
+                    XContentFactory.jsonBuilder()
+                            .startObject()
+                                .field("index.mapping.total_fields.limit", "9999")
+//                                // To apply the english analyzer as default (performs stemming)
+//                                .startObject("analysis")
+//                                    .startObject("analyzer")
+//                                        .startObject("default")
+//                                            .field("type", "english")
+//                                        .endObject()
+//                                    .endObject()
+//                                .endObject()
+                            .endObject());
 
             for (String indexType : this.rawFieldsListByType.keySet()) {
 
-
-                final XContentBuilder mappingBuilder = XContentFactory.jsonBuilder().startObject().startObject(indexType)
-                        .startObject("properties");
+                final XContentBuilder mappingBuilder = XContentFactory.jsonBuilder()
+                        .startObject()
+                            .startObject(indexType)
+                                .startObject("properties");
 
                 for (String fieldName : this.rawFieldsListByType.get(indexType)) {
                     log.debug("Sending raw mapping correction for " + fieldName + "."
                             + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX);
 
-                    mappingBuilder.startObject(fieldName).field("type", "keyword").field("index", "analyzed")
-                            .startObject("fields").startObject(Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX)
-                            .field("type", "keyword").field("index", "not_analyzed").endObject().endObject().endObject();
+                    mappingBuilder
+                            .startObject(fieldName)
+                                .field("type", "text")
+                                .field("index", "analyzed")
+                                .startObject("fields")
+                                    .startObject(Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX)
+                                        .field("type", "keyword")
+                                        .field("index", "not_analyzed")
+                                    .endObject()
+                                .endObject()
+                            .endObject();
                 }
                 // close off json structure
                 mappingBuilder.endObject().endObject().endObject();

@@ -111,6 +111,7 @@ public class RegisteredUser extends AbstractSegueUser {
      * @return the id
      */
     @JsonProperty("_id")
+    //TODO: Deprecate all usage of old mongo ids e.g. _id
     public Long getId() {
         return id;
     }
