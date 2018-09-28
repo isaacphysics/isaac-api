@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -105,7 +105,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
      * Gets the id.
      * @return the id
      */
-    @JsonProperty("_id")
+    @JsonProperty("id")
     public Long getId() {
         return id;
     }
@@ -115,8 +115,29 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
      * Sets the id.
      * @param id the id to set
      */
-    @JsonProperty("_id")
+    @JsonProperty("id")
     public void setId(final Long id) {
+        this.id = id;
+    }
+
+    /**
+     * Gets the id.
+     * @return the id
+     */
+    @JsonProperty("_id")
+    @Deprecated
+    public Long getLegacyId() {
+        return id;
+    }
+
+
+    /**
+     * Sets the id.
+     * @param id the id to set
+     */
+    @JsonProperty("_id")
+    @Deprecated
+    public void setLegacyId(final Long id) {
         this.id = id;
     }
 

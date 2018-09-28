@@ -15,15 +15,19 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.users;
 
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import com.google.common.hash.Hashing;
 import org.apache.commons.lang3.Validate;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
@@ -42,7 +46,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.Role;
  *
  */
 public class PgUsers implements IUserDataManager {
-    private static final String MASTER_ID = "_id";
+    private static final String LEGACY_ID = "_id";
     //private static final Logger log = LoggerFactory.getLogger(PgUsers.class);
             
     private final PostgresSqlDb database;
@@ -114,7 +118,7 @@ public class PgUsers implements IUserDataManager {
             throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("Select * FROM linked_accounts WHERE provider = ? AND provider_user_id = ?");
+            pst = conn.prepareStatement("SELECT * FROM linked_accounts WHERE provider = ? AND provider_user_id = ?");
             pst.setString(1, provider.name());
             pst.setString(2, providerUserId);
 
@@ -192,7 +196,7 @@ public class PgUsers implements IUserDataManager {
         // TODO Currently this uses the old mongo id for look ups.
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM users WHERE " + MASTER_ID + " = ?");
+            pst = conn.prepareStatement("SELECT * FROM users WHERE " + LEGACY_ID + " = ?");
             pst.setString(1, id);
 
             ResultSet results = pst.executeQuery();
@@ -210,7 +214,7 @@ public class PgUsers implements IUserDataManager {
     /**
      * @param id the id of the user to find
      * @return a user object or null if none found.
-     * @throws SegueDatabaseException
+     * @throws SegueDatabaseException - if there is a database error
      */
     @Override
     public RegisteredUser getById(final Long id) throws SegueDatabaseException {
@@ -220,7 +224,7 @@ public class PgUsers implements IUserDataManager {
         
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM users WHERE id = ?");
+            pst = conn.prepareStatement("SELECT * FROM users WHERE id = ? AND deleted <> TRUE ");
             pst.setLong(1, id);
 
             ResultSet results = pst.executeQuery();
@@ -236,7 +240,7 @@ public class PgUsers implements IUserDataManager {
         Validate.notBlank(email);
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM users WHERE lower(email)=lower(?)");
+            pst = conn.prepareStatement("SELECT * FROM users WHERE lower(email)=lower(?) AND deleted <> TRUE");
             pst.setString(1, email);
 
             ResultSet results = pst.executeQuery();
@@ -278,8 +282,9 @@ public class PgUsers implements IUserDataManager {
             PreparedStatement pst;
             
             StringBuilder sb = new StringBuilder();
+            sb.append(" WHERE deleted <> TRUE");
             if (fieldsOfInterest.entrySet().size() != 0) {
-                sb.append(" WHERE ");
+                sb.append(" AND ");
             }
             
             int index = 0;
@@ -335,7 +340,7 @@ public class PgUsers implements IUserDataManager {
             }
             
             pst = conn.prepareStatement(
-                    String.format("SELECT * FROM users WHERE id IN (%s) ORDER BY family_name, given_name",
+                    String.format("SELECT * FROM users WHERE id IN (%s) AND deleted <> TRUE ORDER BY family_name, given_name",
                             inParams.toString()));
 
             int index = 1;
@@ -375,7 +380,7 @@ public class PgUsers implements IUserDataManager {
     public RegisteredUser getByEmailVerificationToken(final String token) throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM users WHERE email_verification_token = ?");
+            pst = conn.prepareStatement("SELECT * FROM users WHERE email_verification_token = ? AND deleted <> TRUE");
             pst.setString(1, token);
 
             ResultSet results = pst.executeQuery();
@@ -411,17 +416,34 @@ public class PgUsers implements IUserDataManager {
 
         try (Connection conn = database.getDatabaseConnection()) {
             try {
+
                 conn.setAutoCommit(false);
+
+                // Hash all linked account provider IDs to prevent clashes if the user creates a new account.
                 PreparedStatement deleteLinkedAccounts;
-                deleteLinkedAccounts = conn.prepareStatement("DELETE FROM linked_accounts WHERE user_id = ?");
+                deleteLinkedAccounts = conn.prepareStatement(
+                        "UPDATE linked_accounts " +
+                        "SET provider_user_id = md5((SELECT linked_accounts.provider_user_id FROM linked_accounts" +
+                        " WHERE linked_accounts.provider=linked_accounts.provider AND linked_accounts.provider_user_id=linked_accounts.provider_user_id)) " +
+                                "WHERE user_id = ?");
                 deleteLinkedAccounts.setLong(1, userToDelete.getId());
                 deleteLinkedAccounts.execute();
-                
-                PreparedStatement deleteUserAccount;
-                deleteUserAccount = conn.prepareStatement("DELETE FROM users WHERE id = ?");
-                deleteUserAccount.setLong(1, userToDelete.getId());
-                deleteUserAccount.execute();
-                
+
+                // Hash all PII in user object
+                removePIIFromUserDO(userToDelete);
+
+                // save it
+                this.updateUser(userToDelete);
+
+                // Hash all linked account provider IDs to prevent clashes if the user creates a new account.
+                PreparedStatement markUserAsDeleted;
+                deleteLinkedAccounts = conn.prepareStatement(
+                        "UPDATE users" +
+                                " SET deleted = TRUE" +
+                                " WHERE id = ?");
+                deleteLinkedAccounts.setLong(1, userToDelete.getId());
+                deleteLinkedAccounts.execute();
+
                 conn.commit();
             } catch (SQLException e) {
                 conn.rollback();
@@ -431,7 +453,7 @@ public class PgUsers implements IUserDataManager {
             }
         } catch (SQLException e1) {
             throw new SegueDatabaseException("Postgres exception", e1);
-        } 
+        }
     }
 
     @Override
@@ -481,6 +503,7 @@ public class PgUsers implements IUserDataManager {
                             + "last_seen, default_level, email_verification_token, email_to_verify) "
                     + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
                             Statement.RETURN_GENERATED_KEYS);
+
             // TODO: Change this to annotations or something to rely exclusively on the pojo.
             setValueHelper(pst, 1, userToCreate.getFamilyName());
             setValueHelper(pst, 2, userToCreate.getGivenName());
@@ -666,7 +689,7 @@ public class PgUsers implements IUserDataManager {
      * @param pst - prepared statement - already initialised
      * @param index - index of the value to be replaced in the pst
      * @param value - value
-     * @throws SQLException 
+     * @throws SQLException if there is a db error
      */
     private void setValueHelper(final PreparedStatement pst, final int index, final Object value) throws SQLException {
         if (null == value) {
@@ -693,5 +716,28 @@ public class PgUsers implements IUserDataManager {
         if (value instanceof Date) {
             pst.setTimestamp(index, new java.sql.Timestamp(((Date) value).getTime()));
         }
+    }
+
+    /**
+     * Helper function to remove PII and set tombstone flag for a Registered User.
+     * Note: This function mutates the object that it was provided.
+     *
+     * @return User object to be persisted that no longer has PII
+     */
+    private static RegisteredUser removePIIFromUserDO(RegisteredUser user) {
+        user.setFamilyName(null);
+        user.setGivenName(null);
+        user.setEmail(Hashing.sha256().hashString(user.getEmail(), StandardCharsets.UTF_8).toString());
+        user.setEmailVerificationToken(null);
+        user.setEmailToVerify(null);
+
+        if (user.getDateOfBirth() != null) {
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(user.getDateOfBirth());
+            calendar.set(Calendar.DATE, 1);
+            user.setDateOfBirth(calendar.getTime());
+        }
+
+        return user;
     }
 }
