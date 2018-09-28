@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
@@ -53,7 +54,6 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -77,7 +77,7 @@ public class GameManager {
 
     private final IContentManager contentManager;
     private final String contentIndex;
-    
+
     private final QuestionManager questionManager;
 
     /**
@@ -292,33 +292,11 @@ public class GameManager {
         return gameboardFound;
     }
 
-    /**
-     * Get a gameboard by its id and augment with user information and FastTrack progress.
-     *
-     * @param gameboardId
-     *            - to look up.
-     * @param user
-     *            - This allows state information to be retrieved.
-     * @param userQuestionAttempts
-     *            - so that we can augment the gameboard.
-     * @return the gameboard or null.
-     * @throws SegueDatabaseException
-     *             - if there is a problem retrieving the gameboard in the database or updating the users gameboard link
-     *             table.
-     * @throws ContentManagerException
-     *             - if there is an error retrieving the content requested.
-     */
-    public final GameboardDTO getFastTrackGameboard(final String gameboardId, final AbstractSegueUserDTO user,
-            final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts)
-            throws SegueDatabaseException, ContentManagerException {
-
-        List<ContentDTO> fastTrackAssociatedQuestions = this.getQuestionsWithTag(gameboardId);
-        GameboardDTO unAugmentedGameboard = this.gameboardPersistenceManager.getGameboardById(gameboardId);
-        GameboardDTO userInfoAugmentedGameboard = this.augmentGameboardWithUserInformation(
-                unAugmentedGameboard, userQuestionAttempts, user);
-        GameboardDTO fastTrackGameboard = this.augmentGameboardWithFastTrackInformation(
-                userInfoAugmentedGameboard, fastTrackAssociatedQuestions, userQuestionAttempts);
-        return fastTrackGameboard;
+    public final List<GameboardItem> getFastTrackConceptProgress(final String gameboardId, final String conceptTitle,
+             final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts)
+            throws ContentManagerException {
+        List<ContentDTO> fastTrackAssociatedQuestions = this.getFastTrackConceptQuestions(gameboardId, conceptTitle);
+        return this.getGameboardItemProgress(fastTrackAssociatedQuestions, userQuestionAttempts);
     }
 
     /**
@@ -487,7 +465,7 @@ public class GameManager {
         }
 
         boolean gameboardStarted = false;
-        List<GameboardItem> questions = (List<GameboardItem>) gameboardDTO.getQuestions();
+        List<GameboardItem> questions = gameboardDTO.getQuestions();
         int totalNumberOfQuestionsParts = 0;
         int totalNumberOfCorrectQuestionParts = 0;
         for (GameboardItem gameItem : questions) {
@@ -507,7 +485,7 @@ public class GameManager {
             totalNumberOfCorrectQuestionParts += gameItem.getQuestionPartsCorrect();
         }
         float boardPercentage = 100f * totalNumberOfCorrectQuestionParts / totalNumberOfQuestionsParts;
-        gameboardDTO.setPercentageCompleted((int) Math.round(boardPercentage));
+        gameboardDTO.setPercentageCompleted(Math.round(boardPercentage));
         
         if (user instanceof RegisteredUserDTO) {
             gameboardDTO
@@ -517,114 +495,25 @@ public class GameManager {
         return gameboardDTO;
     }
 
-    private Map<String, ContentDTO> indexContentOnId(final List<ContentDTO> contents) {
-        Map<String, ContentDTO> idIndexedContent = Maps.newHashMap(); 
-        for (ContentDTO content : contents) {
-            idIndexedContent.put(content.getId(), content);
-        }
-        return idIndexedContent;
-    }
-
-    private boolean questionIsAnsweredCorrectly(final ContentDTO question,
-            final Map<String, List<QuestionValidationResponse>> questionAttempts) {
-        List<ContentDTO> questionParts = Lists.newArrayList();
-        this.depthFirstQuestionSearch(question, questionParts);
-        boolean allQuestionPartsCompleted = true;
-        for (ContentDTO questionPart : this.filterQuestionParts(questionParts)) {
-            if (questionAttempts != null) {
-                List<QuestionValidationResponse> attemptsAtQuestionPart = questionAttempts.get(questionPart.getId());
-                Boolean questionPartCompleted = this.hasCorrectAnsweredCorrectly(attemptsAtQuestionPart);
-                allQuestionPartsCompleted &= questionPartCompleted != null && questionPartCompleted;
-            } else {
-                allQuestionPartsCompleted = false;
-            }
-            if (!allQuestionPartsCompleted) {
-                break; //early exit on incorrect question part
-            }
-        }
-        return allQuestionPartsCompleted;
-    }
-
     /**
-     * Construct a concept map which is used to evaluate the best level of question completed in the question attempts -
-     * upper, lower or none. This information is used for the FastTrack progress bar.
-     * @param conceptQuestions
-     *            - a list of all the concept questions to be considered.
-     * @param questionAttempts
-     *            - the question attempt history.
-     * @return a concept map from concept title to QuestionPartConceptDTO.
+     * Convert a list of questions to gameboard items and augment with user question attempt information.
+     * @param questions list of questions.
+     * @param userQuestionAttempts the user's question attempt history.
+     * @return list of augmented gameboard items.
      */
-    private Map<String, QuestionPartConceptDTO> createConceptMapFromQuestions(final List<ContentDTO> conceptQuestions,
-            final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttempts) {
-        Map<String, QuestionPartConceptDTO> conceptMap = Maps.newHashMap();
-        for (ContentDTO question : conceptQuestions) {
-            String conceptName = question.getTitle();
-            conceptMap.putIfAbsent(conceptName, new QuestionPartConceptDTO(conceptName));
-            QuestionPartConceptDTO previousConcept = conceptMap.get(conceptName);
-            FastTrackConceptState currentConceptLevel = FastTrackConceptState.getStateFromTags(question.getTags());
-            if (currentConceptLevel != null) {
-                if (previousConcept.getBestLevel() == null
-                        || currentConceptLevel.compareTo(previousConcept.getBestLevel()) > 0) {
-                    if (this.questionIsAnsweredCorrectly(question, questionAttempts.get(question.getId()))) {
-                        previousConcept.setBestLevel(currentConceptLevel);
-                    }
-                }
-            }
-        }
-        return conceptMap;
-    }
+    private List<GameboardItem> getGameboardItemProgress(List<ContentDTO> questions,
+                                                         final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts) {
 
-    /**
-     * Augments the gameboard with FastTrack progress information.
-     *
-     * @param gameboardDTO
-     *            - the gameboardDTO to be modified.
-     * @param boardAssociatedQuestions
-     *            - a list of questions associated with the board.
-     * @param questionAttemptsFromUser
-     *            - the user's question data
-     * @return the augmented gamebaord.
-     */
-    private GameboardDTO augmentGameboardWithFastTrackInformation(final GameboardDTO gameboardDTO,
-            final List<ContentDTO> boardAssociatedQuestions,
-            final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser) {
-        if (null == gameboardDTO) {
-            return null;
-        }
-        if (gameboardDTO.getQuestions().size() == 0) {
-            return gameboardDTO;
-        }
-
-        Map<String, ContentDTO> idIndexedContent = indexContentOnId(boardAssociatedQuestions);
-        Map<String, QuestionPartConceptDTO> conceptMap = createConceptMapFromQuestions(
-                boardAssociatedQuestions, questionAttemptsFromUser);
-        List<FastTrackGameboardItem> fastTrackQuestions = Lists.newArrayList();
-        for (GameboardItem question : gameboardDTO.getQuestions()) {
-            FastTrackGameboardItem fastTrackQuestion = new FastTrackGameboardItem(question);
-            List<ContentDTO> questionParts = Lists.newArrayList();
-            depthFirstQuestionSearch(idIndexedContent.get(question.getId()), questionParts);
-            List<QuestionPartConceptDTO> questionPartConcepts = Lists.newArrayList();
-            for (ContentDTO questionPart : questionParts) {
-                List<ContentSummaryDTO> relatedContentSummary = questionPart.getRelatedContent();
-                if (relatedContentSummary != null) {
-                    String relatedContentId = relatedContentSummary.get(0).getId();
-                    ContentDTO relatedContent = idIndexedContent.get(relatedContentId);
-                    if (relatedContent != null) {
-                        String conceptTitle = relatedContent.getTitle();
-                        questionPartConcepts.add(conceptMap.get(conceptTitle));
-                    } else {
-                        log.error("FastTrack question " + question.getId()
-                                + " references a related content id which is not correctly tagged " + relatedContentId);
+        return questions.stream()
+                .map(this.gameboardPersistenceManager::convertToGameboardItem)
+                .map(questionItem -> {
+                    try {
+                        this.augmentGameItemWithAttemptInformation(questionItem, userQuestionAttempts);
+                    } catch (ContentManagerException | ResourceNotFoundException e) {
+                        log.error("Unable to augment '" + questionItem.getId() + "' with user attempt information");
                     }
-                } // the FastTrack question part has no related content i.e. quick question
-            }
-            fastTrackQuestion.setQuestionPartConcepts(questionPartConcepts);
-            fastTrackQuestions.add(fastTrackQuestion);
-        }
-        List<GameboardItem> questions = gameboardDTO.getQuestions();
-        questions.clear();
-        questions.addAll(fastTrackQuestions);
-        return gameboardDTO;
+                    return questionItem;
+                }).collect(Collectors.toList());
     }
 
     /**
@@ -791,9 +680,9 @@ public class GameManager {
                     
                     List<QuestionValidationResponse> listOfAttempts = questionPageAttempts.get(question.getId());
                  
-                    if (hasCorrectAnsweredCorrectly(listOfAttempts) == null) {
+                    if (hasCorrectQuestionAttempt(listOfAttempts) == null) {
                         questionResultMap.put(question.getId(), null);
-                    } else if (hasCorrectAnsweredCorrectly(listOfAttempts)) {
+                    } else if (hasCorrectQuestionAttempt(listOfAttempts)) {
                         questionResultMap.put(question.getId(), 1);
                     } else {
                         questionResultMap.put(question.getId(), 0);
@@ -1050,23 +939,31 @@ public class GameManager {
     }
 
     /**
-     * Retrieve content which includes a specified tag, up to the SEARCH_MAX_WINDOW_SIZE.
+     * Queries the search provider for questions tagged with this board name and concept title.
+     * The result is returned sorted.
      *
-     * @param tag
-     *            - the tag string to search for.
-     * @return a list of content with the specified tag
-     * @throws ContentManagerException
-     *            - if there is a problem accessing the content repository.
+     * @param boardTag the tag which marks question's association with a certain board - the board's ID.
+     * @param conceptTitle the title of the concept which is being searched for.
+     * @return ordered list of concept questions associated with the board.
+     * @throws ContentManagerException if there is a problem with the content manager (i.e. Elasticsearch)
      */
-    private List<ContentDTO> getQuestionsWithTag(String tag) throws ContentManagerException {
+    private List<ContentDTO> getFastTrackConceptQuestions(final String boardTag, final String conceptTitle)
+            throws ContentManagerException {
         Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
-        fieldsToMap.put(immutableEntry(BooleanOperator.OR, TYPE_FIELDNAME),
-                Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
-        fieldsToMap.put(immutableEntry(BooleanOperator.OR, TAGS_FIELDNAME), Collections.singletonList(tag));
-        ResultsWrapper<ContentDTO> results = this.contentManager.findByFieldNames(
-                this.contentIndex, fieldsToMap, 0, SEARCH_MAX_WINDOW_SIZE);
-        List<ContentDTO> questionsForGameboard = results.getResults();
-        return questionsForGameboard;
+
+        fieldsToMap.put(immutableEntry(
+                BooleanOperator.OR, TYPE_FIELDNAME), Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
+        fieldsToMap.put(immutableEntry(
+                BooleanOperator.AND, TITLE_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX), Collections.singletonList(conceptTitle));
+        fieldsToMap.put(immutableEntry(
+                BooleanOperator.AND, TAGS_FIELDNAME), Collections.singletonList(boardTag));
+
+        Map<String, SortOrder> sortInstructions = Maps.newHashMap();
+        sortInstructions.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, SortOrder.ASC);
+
+        List<ContentDTO> conceptQuestions = this.contentManager.findByFieldNames(
+                    this.contentIndex, fieldsToMap, 0, SEARCH_MAX_WINDOW_SIZE, sortInstructions).getResults();
+        return conceptQuestions;
     }
 
     /**
@@ -1139,6 +1036,7 @@ public class GameManager {
         Validate.notNull(gameItem, "gameItem cannot be null");
         Validate.notNull(questionAttemptsFromUser, "questionAttemptsFromUser cannot be null");
 
+        List<QuestionPartState> questionPartStates = Lists.newArrayList();
         int questionPartsCorrect = 0;
         int questionPartsIncorrect = 0;
         int questionPartsNotAttempted = 0;
@@ -1146,7 +1044,7 @@ public class GameManager {
 
         // get all question parts in the question page: depends on each question
         // having an id that starts with the question page id.
-        Collection<QuestionDTO> listOfQuestionParts = getAllMarkableQuestionParts(questionPageId);
+        Collection<QuestionDTO> listOfQuestionParts = getAllMarkableQuestionPartsDFSOrder(questionPageId);
         Map<String, List<QuestionValidationResponse>> questionAttempts = questionAttemptsFromUser.get(questionPageId);
         if (questionAttempts != null) {
             for (ContentDTO questionPart : listOfQuestionParts) {
@@ -1163,16 +1061,21 @@ public class GameManager {
                         }
                     }
                     if (foundCorrectForThisQuestion) {
+                        questionPartStates.add(QuestionPartState.CORRECT);
                         questionPartsCorrect++;
                     } else {
+                        questionPartStates.add(QuestionPartState.INCORRECT);
                         questionPartsIncorrect++;
                     }
                 } else {
+                    questionPartStates.add(QuestionPartState.NOT_ATTEMPTED);
                     questionPartsNotAttempted++;
                 }
             }
         } else {
             questionPartsNotAttempted = listOfQuestionParts.size();
+            questionPartStates = listOfQuestionParts.stream()
+                    .map(_q -> QuestionPartState.NOT_ATTEMPTED).collect(Collectors.toList());
         }
 
         // Get the pass mark for the question page
@@ -1187,6 +1090,7 @@ public class GameManager {
         gameItem.setQuestionPartsCorrect(questionPartsCorrect);
         gameItem.setQuestionPartsIncorrect(questionPartsIncorrect);
         gameItem.setQuestionPartsNotAttempted(questionPartsNotAttempted);
+        gameItem.setQuestionPartStates(questionPartStates);
         Integer questionPartsTotal = questionPartsCorrect + questionPartsIncorrect + questionPartsNotAttempted;
         gameItem.setQuestionPartsTotal(questionPartsTotal);
         Float percentCorrect = 100f * new Float(questionPartsCorrect) / questionPartsTotal;
@@ -1213,7 +1117,7 @@ public class GameManager {
      * @param questionAttempts - to check
      * @return true or false
      */
-    private Boolean hasCorrectAnsweredCorrectly(final List<QuestionValidationResponse> questionAttempts) {
+    private Boolean hasCorrectQuestionAttempt(final List<QuestionValidationResponse> questionAttempts) {
         if (null == questionAttempts || questionAttempts.size() == 0) {
             return null;
         }
