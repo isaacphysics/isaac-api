@@ -153,11 +153,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                 = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), emailContentTemplate, propertiesToReplace,
                 emailType, attachments);
 
-        if (emailType.equals(EmailType.SYSTEM)) {
-                addSystemEmailToQueue(emailCommunicationMessage);
-        } else {
-            this.filterByPreferencesAndAddToQueue(userDTO, emailCommunicationMessage);
-        }
+        this.filterByPreferencesAndAddToQueue(userDTO, emailCommunicationMessage);
     }
 
     /**
@@ -277,6 +273,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                    .build();
 
         // don't send an email if we know it has failed before
+        // FIXME - should system emails ignore this setting to avoid abuse?
         if (userDTO.getEmailVerificationStatus() == EmailVerificationStatus.DELIVERY_FAILED) {
             log.info("Email sending abandoned - verification status is DELIVERY_FAILED");
             return false;
@@ -284,6 +281,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         // if this is an email type that cannot have a preference, send it and log as appropriate
         if (!email.getEmailType().isValidEmailPreference()) {
+            log.info(String.format("Added %s email to the queue with subject: %s", email.getEmailType().toString().toLowerCase(), email.getSubject()));
             logManager.logInternalEvent(userDTO, SegueLogType.SENT_EMAIL, eventDetails);
             addToQueue(email);
             return true;

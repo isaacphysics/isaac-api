@@ -37,6 +37,7 @@ public class ContentSummaryDTO {
     private String url;
     private Boolean correct;
     private List<String> questionPartIds;
+    private String supersededBy;
 
     /**
      * Private constructor required for Dozer.
@@ -217,4 +218,18 @@ public class ContentSummaryDTO {
     public void setQuestionPartIds(List<String> questionPartIds) {
         this.questionPartIds = questionPartIds;
     }
+
+    /**
+     * Gets the superseding question ID if this is a superseded question
+     *
+     * @return superseding question ID, or null
+     */
+    public String getSupersededBy() { return this.supersededBy; }
+
+    /**
+     * Sets the superseding question ID if this is a superseded question
+     *
+     * @param supersededBy superseding question ID
+     */
+    public void setSupersededBy(String supersededBy) { this.supersededBy = supersededBy; }
 }

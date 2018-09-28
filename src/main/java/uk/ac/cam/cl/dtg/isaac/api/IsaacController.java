@@ -57,12 +57,14 @@ import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.IStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
@@ -97,6 +99,8 @@ public class IsaacController extends AbstractIsaacFacade {
     private final URIManager uriManager;
     private final String contentIndex;
     private final IContentManager contentManager;
+    private final UserBadgeManager userBadgeManager;
+    private final IUserStreaksManager userStreaksManager;
 
     private static long lastQuestionCount = 0L;
 
@@ -148,7 +152,9 @@ public class IsaacController extends AbstractIsaacFacade {
                            final ILogManager logManager, final MapperFacade mapper, final IStatisticsManager statsManager,
                            final UserAccountManager userManager, final IContentManager contentManager,
                            final UserAssociationManager associationManager, final URIManager uriManager,
-                           @Named(CONTENT_INDEX) final String contentIndex) {
+                           @Named(CONTENT_INDEX) final String contentIndex,
+                           final IUserStreaksManager userStreaksManager,
+                           final UserBadgeManager userBadgeManager) {
         super(propertiesLoader, logManager);
         this.api = api;
         this.mapper = mapper;
@@ -158,6 +164,8 @@ public class IsaacController extends AbstractIsaacFacade {
         this.uriManager = uriManager;
         this.contentIndex = contentIndex;
         this.contentManager = contentManager;
+        this.userBadgeManager = userBadgeManager;
+        this.userStreaksManager = userStreaksManager;
     }
 
     /**
@@ -304,7 +312,15 @@ public class IsaacController extends AbstractIsaacFacade {
                         .getUserQuestionInformation(userOfInterestFull);
 
                 // augment details with user snapshot data (perhaps one day we will replace the entire endpoint with this call)
-                userProgressInformation.put("userSnapshot", statsManager.getDetailedUserStatistics(userOfInterestFull));
+                Map<String, Object> streakRecord = userStreaksManager.getCurrentStreakRecord(userOfInterestFull);
+                streakRecord.put("largestStreak", userStreaksManager.getLongestStreak(userOfInterestFull));
+
+                Map<String, Object> userSnapshot = ImmutableMap.of(
+                        "streakRecord", streakRecord,
+                        "achievementsRecord", userBadgeManager.getAllUserBadges(userOfInterestFull)
+                );
+
+                userProgressInformation.put("userSnapshot", userSnapshot);
 
                 this.getLogManager().logEvent(user, request, IsaacLogType.VIEW_USER_PROGRESS,
                         ImmutableMap.of(USER_ID_FKEY_FIELDNAME, userOfInterestFull.getId()));

@@ -15,7 +15,10 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto;
 
+import com.google.api.client.util.Lists;
 import uk.ac.cam.cl.dtg.isaac.api.Constants.FastTrackConceptState;
+
+import java.util.List;
 
 /**
  * Construct to hold the title of a FastTrack concept with the value of the best level achieved for that concept.
@@ -23,11 +26,16 @@ import uk.ac.cam.cl.dtg.isaac.api.Constants.FastTrackConceptState;
 public class QuestionPartConceptDTO {
     private String title;
     private FastTrackConceptState bestLevel;
+    private List<GameboardItem> upperQuestions;
+    private List<GameboardItem> lowerQuestions;
 
     /**
      * Generic constructor.
      */
-    public QuestionPartConceptDTO() {}
+    public QuestionPartConceptDTO() {
+        upperQuestions = Lists.newArrayList();
+        lowerQuestions = Lists.newArrayList();
+    }
 
     /**
      * Constructor which sets title.
@@ -77,4 +85,19 @@ public class QuestionPartConceptDTO {
         this.bestLevel = bestLevel;
     }
 
+    public final List<GameboardItem> getUpperQuestions() {
+        return this.upperQuestions;
+    }
+
+    public final void setUpperQuestions(final List<GameboardItem> upperQuestions) {
+        this.upperQuestions = upperQuestions;
+    }
+
+    public final List<GameboardItem> getLowerQuestions() {
+        return this.lowerQuestions;
+    }
+
+    public final void setLowerQuestions(final List<GameboardItem> lowerQuestions) {
+        this.lowerQuestions = lowerQuestions;
+    }
 }

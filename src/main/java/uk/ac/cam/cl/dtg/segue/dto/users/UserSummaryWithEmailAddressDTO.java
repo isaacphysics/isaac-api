@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2017 James Sharkey
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,15 +16,15 @@
 package uk.ac.cam.cl.dtg.segue.dto.users;
 
 /**
- * Teacher User Summary object, which contains additional information (email).
+ * View of a User Summary object, which contains additional information (email). Usually used where a sharing relationship has or will be created.
  */
-public class DetailedUserSummaryDTO extends UserSummaryDTO {
+public class UserSummaryWithEmailAddressDTO extends UserSummaryDTO {
     private String email;
 
     /**
      * UserSummaryDTO.
      */
-    public DetailedUserSummaryDTO() {
+    public UserSummaryWithEmailAddressDTO() {
 
     }
 

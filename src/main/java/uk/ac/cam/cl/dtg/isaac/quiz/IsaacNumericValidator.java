@@ -203,6 +203,8 @@ public class IsaacNumericValidator implements IValidator {
             return o1Val - o2Val;
         });
 
+        String unitsFromUser = answerFromUser.getUnits().trim();
+
         for (Choice c : orderedChoices) {
             if (c instanceof Quantity) {
                 Quantity quantityFromQuestion = (Quantity) c;
@@ -213,23 +215,23 @@ public class IsaacNumericValidator implements IValidator {
                     continue;
                 }
 
+                String unitsFromChoice = quantityFromQuestion.getUnits().trim();
+
                 boolean numericValuesMatched = numericValuesMatch(quantityFromQuestion.getValue(), answerFromUser.getValue(),
                         sigFigsToValidateWith);
                 // match known choices
-                if (numericValuesMatched && answerFromUser.getUnits().equals(quantityFromQuestion.getUnits())) {
+                if (numericValuesMatched && unitsFromUser.equals(unitsFromChoice)) {
 
                     // exact match
                     bestResponse = new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
                             quantityFromQuestion.isCorrect(), (Content) quantityFromQuestion.getExplanation(),
                             quantityFromQuestion.isCorrect(), quantityFromQuestion.isCorrect(), new Date());
                     break;
-                } else if (numericValuesMatched && !answerFromUser.getUnits().equals(quantityFromQuestion.getUnits())
-                        && quantityFromQuestion.isCorrect()) {
+                } else if (numericValuesMatched && !unitsFromUser.equals(unitsFromChoice) && quantityFromQuestion.isCorrect()) {
                     // matches value but not units of a correct choice.
                     bestResponse = new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
                             false, new Content(DEFAULT_WRONG_UNIT_VALIDATION_RESPONSE), true, false, new Date());
-                } else if (!numericValuesMatched && answerFromUser.getUnits().equals(quantityFromQuestion.getUnits())
-                        && quantityFromQuestion.isCorrect()) {
+                } else if (!numericValuesMatched && unitsFromUser.equals(unitsFromChoice) && quantityFromQuestion.isCorrect()) {
                     // matches units but not value of a correct choice.
                     bestResponse = new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
                             false, new Content(DEFAULT_VALIDATION_RESPONSE), false, true, new Date());
