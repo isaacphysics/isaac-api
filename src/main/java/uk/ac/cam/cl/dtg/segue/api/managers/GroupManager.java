@@ -163,7 +163,7 @@ public class GroupManager {
      * @throws SegueDatabaseException
      *              - If an error occurred while interacting with the database.
      */
-    public Map<Long, GroupMembershipDTO> getUserMembershipMapforGroup(Long groupId) throws SegueDatabaseException {
+    public Map<Long, GroupMembershipDTO> getUserMembershipMapForGroup(Long groupId) throws SegueDatabaseException {
         Map<Long, GroupMembershipDTO> result = Maps.newHashMap();
         for(Map.Entry<Long, GroupMembership> entry : this.groupDatabase.getGroupMembershipMap(groupId).entrySet()) {
             result.put(entry.getKey(), dtoMapper.map(entry.getValue(), GroupMembershipDTO.class));
@@ -178,7 +178,7 @@ public class GroupManager {
      * @return the membership status
      */
     public GroupMembershipStatus getGroupMembershipStatus(Long userId, Long groupId) throws SegueDatabaseException {
-        return this.getUserMembershipMapforGroup(groupId).get(userId).getStatus();
+        return this.getUserMembershipMapForGroup(groupId).get(userId).getStatus();
     }
 
     /**
@@ -522,7 +522,7 @@ public class GroupManager {
      */
     public void convertToUserSummaryGroupMembership(UserGroupDTO group, List<UserSummaryDTO> summarisedMemberInfo) throws SegueDatabaseException {
         List<UserSummaryWithGroupMembershipDTO> result = Lists.newArrayList();
-        Map<Long, GroupMembershipDTO> userMembershipMapforMap = this.getUserMembershipMapforGroup(group.getId());
+        Map<Long, GroupMembershipDTO> userMembershipMapforMap = this.getUserMembershipMapForGroup(group.getId());
 
         for(UserSummaryDTO dto : summarisedMemberInfo) {
             UserSummaryWithGroupMembershipDTO newDTO = dtoMapper.map(dto, UserSummaryWithGroupMembershipDTO.class);

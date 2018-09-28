@@ -36,7 +36,6 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
-import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.GroupMembershipStatus;
@@ -169,7 +168,7 @@ public class AssignmentManager implements IGroupObserver {
 
         UserGroupDTO userGroupDTO = groupManager.getGroupById(newAssignment.getGroupId());
         List<RegisteredUserDTO> usersToEmail = Lists.newArrayList();
-        Map<Long, GroupMembershipDTO> userMembershipMapforGroup = this.groupManager.getUserMembershipMapforGroup(userGroupDTO.getId());
+        Map<Long, GroupMembershipDTO> userMembershipMapforGroup = this.groupManager.getUserMembershipMapForGroup(userGroupDTO.getId());
         GameboardDTO gameboard = gameManager.getGameboard(newAssignment.getGameboardId());
         
         // filter users so those who are inactive in the group aren't emailed
@@ -484,7 +483,7 @@ public class AssignmentManager implements IGroupObserver {
 
         for (AssignmentDTO assignment : assignments) {
             if (!groupIdToUserMembershipInfoMap.containsKey(assignment.getGroupId())) {
-                groupIdToUserMembershipInfoMap.put(assignment.getGroupId(), this.groupManager.getUserMembershipMapforGroup(assignment.getGroupId()));
+                groupIdToUserMembershipInfoMap.put(assignment.getGroupId(), this.groupManager.getUserMembershipMapForGroup(assignment.getGroupId()));
             }
 
             GroupMembershipDTO membershipRecord = groupIdToUserMembershipInfoMap.get(assignment.getGroupId()).get(userId);
