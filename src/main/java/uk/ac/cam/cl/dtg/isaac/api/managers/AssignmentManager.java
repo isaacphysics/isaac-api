@@ -229,25 +229,6 @@ public class AssignmentManager implements IGroupObserver {
     }
 
     /**
-     * Assignments set by user and group.
-     * 
-     * @param user
-     *            - who set the assignments
-     * @param group
-     *            - the group that was assigned the work.
-     * @return the assignments.
-     * @throws SegueDatabaseException
-     *             - if we cannot complete a required database operation.
-     */
-    public List<AssignmentDTO> getAllAssignmentsSetByUserToGroup(final RegisteredUserDTO user, final UserGroupDTO group)
-            throws SegueDatabaseException {
-        Validate.notNull(user);
-        Validate.notNull(group);
-        return this.assignmentPersistenceManager
-                .getAssignmentsByOwnerIdAndGroupId(user.getId(), group.getId());
-    }
-
-    /**
      * deleteAssignment.
      * 
      * @param assignment
@@ -330,8 +311,7 @@ public class AssignmentManager implements IGroupObserver {
         // Try to email user to let them know
         try {
         	RegisteredUserDTO groupOwner = this.userManager.getUserDTOById(group.getOwnerId());
-
-            List<AssignmentDTO> existingAssignments = this.getAllAssignmentsSetByUserToGroup(groupOwner, group);
+            List<AssignmentDTO> existingAssignments = this.getAllAssignmentsForSpecificGroups(Arrays.asList(group));
 
             emailManager.sendTemplatedEmailToUser(user,
                     emailManager.getEmailTemplateDTO("email-template-group-welcome"),
