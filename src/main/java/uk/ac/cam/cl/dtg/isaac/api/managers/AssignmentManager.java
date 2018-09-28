@@ -211,20 +211,6 @@ public class AssignmentManager implements IGroupObserver {
     }
 
     /**
-     * Assignments set by user.
-     * 
-     * @param user
-     *            - who set the assignments
-     * @return the assignments.
-     * @throws SegueDatabaseException
-     *             - if we cannot complete a required database operation.
-     */
-    public List<AssignmentDTO> getAllAssignmentsSetByUser(final RegisteredUserDTO user) throws SegueDatabaseException {
-        Validate.notNull(user);
-        return this.assignmentPersistenceManager.getAssignmentsByOwner(user.getId());
-    }
-
-    /**
      * Get all assignments for a list of groups
      *
      * @param groups to include in the search
