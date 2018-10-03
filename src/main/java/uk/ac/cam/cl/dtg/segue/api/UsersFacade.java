@@ -311,10 +311,10 @@ public class UsersFacade extends AbstractSegueFacade {
     }
 
     /**
-     * An endpoint for group owners (often teachers) to send a password reset request email to their students' accounts
-     * without having to know the student's account email.
+     * An endpoint for group managers (often teachers) to send a password reset request email to group members without
+     * having to know the group members account email.
      *
-     * @param request - request information used for caching.
+     * @param request - request information used for caching
      * @param httpServletRequest - the request, to work ou the current user
      * @param userIdOfInterest - userId of interest - usually a the teacher's student
      * @return a successful response regardless of whether the email exists or an error code if there is a technical
@@ -350,7 +350,7 @@ public class UsersFacade extends AbstractSegueFacade {
                     .logEvent(currentUser, httpServletRequest, SegueLogType.PASSWORD_RESET_REQUEST_RECEIVED,
                             ImmutableMap.of(
                                     LOCAL_AUTH_EMAIL_FIELDNAME, userOfInterest.getEmail(),
-                                    LOCAL_AUTH_GROUP_OWNER_INITIATED_FIELDNAME, true));
+                                    LOCAL_AUTH_GROUP_MANAGER_INITIATED_FIELDNAME, true));
             return Response.ok().build();
 
         } catch (NoUserException e) {
