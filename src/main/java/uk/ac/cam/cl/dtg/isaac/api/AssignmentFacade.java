@@ -23,6 +23,7 @@ import io.swagger.annotations.Api;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -572,10 +573,20 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 }
             }
 
+            // Add a header row with due dates
+            ArrayList<String> dueDateRow = Lists.newArrayList();
+            Collections.addAll(dueDateRow, "", "Due", "");
+            SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy");
+
             ArrayList<String> headerRow = Lists.newArrayList();
             Collections.addAll(headerRow, "Last Name,First Name,% Correct Overall".split(","));
             List<String> gameboardTitles = Lists.newArrayList();
             for (AssignmentDTO assignment : assignments) {
+                if (null != assignment.getDueDate()) {
+                    dueDateRow.add(dateFormatter.format(assignment.getDueDate()));
+                } else {
+                    dueDateRow.add(""); // No due date set
+                }
                 GameboardDTO gameboard = gameManager.getGameboard(assignment.getGameboardId());
                 String gameboardTitle = gameboard.getTitle();
                 if (null != gameboardTitle) {
@@ -587,7 +598,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             for (String gameboardTitle : gameboardTitles) {
                 headerRow.add("% Correct for '" + gameboardTitle + "'");
             }
+            dueDateRow.add("");
             headerRow.add("");
+
             Map<GameboardDTO, List<String>> gameboardQuestionIds = Maps.newHashMap();
             for (AssignmentDTO assignment : assignments) {
                 GameboardDTO gameboard = gameManager.getGameboard(assignment.getGameboardId());
@@ -614,6 +627,11 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                             s.append(gameboard.getId());
                         }
                         b++;
+                        if (null != assignment.getDueDate()) {
+                            dueDateRow.add(dateFormatter.format(assignment.getDueDate()));
+                        } else {
+                            dueDateRow.add(""); // No due date set
+                        }
                         headerRow.add(s.toString());
                     }
                 }
@@ -621,6 +639,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             // Moving on to actual rows...
             ArrayList<String[]> rows = Lists.newArrayList();
+            rows.add(dueDateRow.toArray(new String[0]));
             rows.add(headerRow.toArray(new String[0]));
 
             for (RegisteredUserDTO groupMember : groupMembers) {
