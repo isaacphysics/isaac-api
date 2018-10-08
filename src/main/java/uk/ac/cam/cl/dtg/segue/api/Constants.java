@@ -351,6 +351,9 @@ public final class Constants {
     public static final String ASSIGNMENT_FK = "assignmentId";
     public static final String ASSIGNMENT_DUEDATE_FK = "dueDate";
 
+    public static final String GRAPH_CHECKER_HOST = "GRAPH_CHECKER_HOST";
+    public static final String GRAPH_CHECKER_PORT = "GRAPH_CHECKER_PORT";
+
     public static final String EQUALITY_CHECKER_HOST = "EQUALITY_CHECKER_HOST";
     public static final String EQUALITY_CHECKER_PORT = "EQUALITY_CHECKER_PORT";
 

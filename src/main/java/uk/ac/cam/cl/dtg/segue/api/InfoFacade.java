@@ -239,6 +239,35 @@ public class InfoFacade extends AbstractSegueFacade {
     }
 
     /**
+     * This method checks the status of the graph checker live dependency.
+     *
+     * @return json success true or false
+     */
+    @GET
+    @Path("graph_checker/ping")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response pingGraphChecker() {
+
+        HttpClient httpClient = new DefaultHttpClient();
+        HttpGet httpGet = new HttpGet("http://" + this.getProperties().getProperty(Constants.GRAPH_CHECKER_HOST)
+                                      + ":" + this.getProperties().getProperty(Constants.GRAPH_CHECKER_PORT) +  "/");
+
+        HttpResponse httpResponse = null;
+        try {
+            httpResponse = httpClient.execute(httpGet);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if (httpResponse != null && httpResponse.getStatusLine().getStatusCode() == 200) {
+            return Response.ok(ImmutableMap.of("success", true)).build();
+        } else {
+            return Response.ok(ImmutableMap.of("success", false)).build();
+        }
+
+    }
+
+    /**
      * This method checks the status of the symbolic checker live dependency.
      *
      * @return json success true or false

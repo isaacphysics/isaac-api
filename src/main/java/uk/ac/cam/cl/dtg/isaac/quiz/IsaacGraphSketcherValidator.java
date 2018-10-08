@@ -34,12 +34,9 @@ import java.util.*;
  * Created by hhrl2 on 01/08/2016.
  */
 public class IsaacGraphSketcherValidator implements IValidator {
-
-    /**
-     * Private logger for printing error messages on console.
-     */
     private static final Logger log = LoggerFactory.getLogger(IsaacGraphSketcherValidator.class);
 
+<<<<<<< Updated upstream
     private static final String DEFAULT_VALIDATION_RESPONSE = "TODO incorrect placeholder";
 
 
@@ -114,5 +111,36 @@ public class IsaacGraphSketcherValidator implements IValidator {
         //feedback = new Content("This is Ben looking at your answer");
 
         return new QuestionValidationResponse(graphSketcherQuestion.getId(), answer, responseCorrect, feedback, new Date());
+=======
+    private final String hostname;
+    private final String port;
+
+    public IsaacGraphSketcherValidator(final String hostname, final String port) {
+        this.hostname = hostname;
+        this.port = port;
+    }
+
+    @Override
+    public final QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer) throws ValidatorUnavailableException {
+        Validate.notNull(question);
+        Validate.notNull(answer);
+
+        if (!(question instanceof IsaacGraphSketcherQuestion)) {
+            throw new IllegalArgumentException(String.format(
+                    "This validator only works with Isaac Graph Sketcher Questions... (%s is not Graph Sketching)",
+                    question.getId()));
+        }
+
+        if (!(answer instanceof GraphChoice)) {
+            throw new IllegalArgumentException(String.format(
+                    "Expected GraphChoice for IsaacGraphSketcherQuestion: %s. Received (%s) ", question.getId(),
+                    answer.getClass()));
+        }
+
+        IsaacGraphSketcherQuestion graphSketcherQuestion = (IsaacGraphSketcherQuestion) question;
+        GraphChoice submittedGraph = (GraphChoice) answer;
+
+        return new QuestionValidationResponse(question.getId(), answer, false, answer, new Date());
+>>>>>>> Stashed changes
     }
 }

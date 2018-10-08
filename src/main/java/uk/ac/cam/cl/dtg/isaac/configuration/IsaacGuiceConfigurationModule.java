@@ -30,6 +30,7 @@ import uk.ac.cam.cl.dtg.isaac.dao.IAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicChemistryValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicValidator;
+import uk.ac.cam.cl.dtg.isaac.quiz.IsaacGraphSketcherValidator;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -144,6 +145,20 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
             log.info("Creating Singleton AssignmentManager");
         }
         return assignmentManager;
+    }
+
+    /**
+     * Gets an instance of the graph sketcher question validator.
+     *
+     * @return IsaacGraphSketcherValidator preconfigured to work with the specified checker.
+     */
+    @Provides
+    @Singleton
+    @Inject
+    private static IsaacGraphSketcherValidator getGraphSketcherValidator(PropertiesLoader properties) {
+
+        return new IsaacGraphSketcherValidator(properties.getProperty(Constants.GRAPH_CHECKER_HOST),
+                properties.getProperty(Constants.GRAPH_CHECKER_PORT));
     }
 
     /**

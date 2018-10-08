@@ -16,6 +16,10 @@ public class GraphChoice extends Choice {
      */
     private String graphData;
 
+    public GraphChoice() {
+
+    }
+
     /**
      * @return the graph data
      */
