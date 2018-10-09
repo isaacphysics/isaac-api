@@ -2,6 +2,7 @@
 # If `sysctl vm.max_map_count` is < 262144, then `sysctl -w vm.max_map_count=262144` and set vm.max_map_count in /etc/sysctl.conf to the same value # elasticsearch(lx) had 16777215
 version: '2'
 services:
+
   equality-checker:
     container_name: equality-checker
     image: ucamcldtg/equality-checker
@@ -10,26 +11,25 @@ services:
       options:
         tag: equality-checker
     restart: always
+
   chemistry-checker:
     container_name: chemistry-checker
     image: ucamcldtg/chemistry-checker
     restart: always
 
-
   elasticsearch:
     # container configuration https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html
     container_name: elasticsearch
     image: docker.elastic.co/elasticsearch/elasticsearch-oss:6.4.1
-    environmnet:
+    environment:
       - cluster.name=isaac-search
-      - node.name=${HOSTNAME}-search
       - network.host=0.0.0.0
       - "discovery.zen.ping.unicast.hosts=[${LOCAL_RED_NETWORK_IP}, ${REMOTE_RED_NETWORK_IP}]"
       - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
-      - bootstrap.memory_lock=true # disable swap
+      - bootstrap.memory_lock=true # part of disabling swap
     ulimits:
-      memlock: -1 # disable swap
-      nproc: unlimited # doc suggestion: at least 2,048
+      memlock: -1 # part of disabling swap
+      nproc: -1 # doc suggestion: at least 2,048 our docker default is unlimited
       nofile: 1048576 # doc suggestion: at least 65,536
     volumes:
       - es-data:/usr/share/elasticsearch/data
