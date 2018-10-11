@@ -17,14 +17,14 @@ services:
     image: ucamcldtg/chemistry-checker
     restart: always
 
-  elasticsearch:
+  elasticsearch-live:
     # container configuration https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html
     container_name: elasticsearch
     image: docker.elastic.co/elasticsearch/elasticsearch-oss:6.4.1
     environment:
-      - cluster.name=isaac-search
-      - network.host=0.0.0.0
-      - "discovery.zen.ping.unicast.hosts=[${LOCAL_RED_NETWORK_IP}, ${REMOTE_RED_NETWORK_IP}]"
+      - cluster.name=isaac-live-search
+      - "network.host=${LOCAL_ELASTICSEARCH_IP}"
+      - "discovery.zen.ping.unicast.hosts=${REMOTE_ELASTICSEARCH_IP},${LOCAL_ELASTICSEARCH_IP}"
       - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
       - bootstrap.memory_lock=true # part of disabling swap
     ulimits:
@@ -33,9 +33,9 @@ services:
       nofile: 1048576 # doc suggestion: at least 65,536
     volumes:
       - es-data:/usr/share/elasticsearch/data
-    ports:
-      - "${LOCAL_RED_NETWORK_IP}:9200:9200"
-      - "${LOCAL_RED_NETWORK_IP}:9300:9300"
+    networks:
+      default:
+        ipv4_address: "${LOCAL_ELASTICSEARCH_IP}"
     restart: always
 
 volumes:
