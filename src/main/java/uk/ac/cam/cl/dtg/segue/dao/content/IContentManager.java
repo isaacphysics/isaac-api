@@ -312,21 +312,6 @@ public interface IContentManager {
     boolean isValidVersion(String version);
 
     /**
-     * Will build and add the content for the version specified to the cache if it does not already exist.
-     * 
-     * This method will throw an exception if there is a problem.
-     * 
-     * Note: it is the responsibility of the caller to manage the cache size.
-     * 
-     * @param version
-     *            - version to make sure exists.
-     * @throws ContentManagerException
-     *             - if there is an error retrieving the content requested.
-     * @throws IOException 
-     */
-    void ensureCache(String version) throws ContentManagerException;
-
-    /**
      * This method will compare two versions to determine which is the newer.
      * 
      * @param version1
