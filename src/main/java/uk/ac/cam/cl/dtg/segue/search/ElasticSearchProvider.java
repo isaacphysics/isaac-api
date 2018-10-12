@@ -113,7 +113,7 @@ public class ElasticSearchProvider implements ISearchProvider {
                                                               final int limit, final Map<String, AbstractFilterInstruction> filterInstructions)
             throws SegueSearchException {
         // build up the query from the fieldsToMatch map
-        QueryBuilder query = generateBoolMatchQuery(fieldsToMatch);
+        QueryBuilder query = QueryBuilders.constantScoreQuery(generateBoolMatchQuery(fieldsToMatch));
 
         query = QueryBuilders.functionScoreQuery(query, ScoreFunctionBuilders.randomFunction());
 
