@@ -26,8 +26,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.UUID;
 
-import com.google.common.hash.Hashing;
 import org.apache.commons.lang3.Validate;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
@@ -416,33 +416,33 @@ public class PgUsers implements IUserDataManager {
 
         try (Connection conn = database.getDatabaseConnection()) {
             try {
-
                 conn.setAutoCommit(false);
 
-                // Hash all linked account provider IDs to prevent clashes if the user creates a new account.
-                PreparedStatement deleteLinkedAccounts;
-                deleteLinkedAccounts = conn.prepareStatement(
-                        "UPDATE linked_accounts " +
-                        "SET provider_user_id = md5((SELECT linked_accounts.provider_user_id FROM linked_accounts" +
-                        " WHERE linked_accounts.provider=linked_accounts.provider AND linked_accounts.provider_user_id=linked_accounts.provider_user_id)) " +
-                                "WHERE user_id = ?");
-                deleteLinkedAccounts.setLong(1, userToDelete.getId());
-                deleteLinkedAccounts.execute();
-
+                // TODO: this could be done as part of the transaction
                 // Hash all PII in user object
                 removePIIFromUserDO(userToDelete);
 
                 // save it
                 this.updateUser(userToDelete);
 
+                // Replace all linked providers with a uid account provider IDs to prevent clashes if the user creates a new account.
+                PreparedStatement deleteLinkedAccounts;
+                deleteLinkedAccounts = conn.prepareStatement(
+                        "UPDATE linked_accounts " +
+                        "SET provider_user_id = ? " +
+                                "WHERE user_id = ?");
+                deleteLinkedAccounts.setString(1, UUID.randomUUID().toString());
+                deleteLinkedAccounts.setLong(2, userToDelete.getId());
+                deleteLinkedAccounts.execute();
+
                 // Hash all linked account provider IDs to prevent clashes if the user creates a new account.
                 PreparedStatement markUserAsDeleted;
-                deleteLinkedAccounts = conn.prepareStatement(
+                markUserAsDeleted = conn.prepareStatement(
                         "UPDATE users" +
                                 " SET deleted = TRUE" +
                                 " WHERE id = ?");
-                deleteLinkedAccounts.setLong(1, userToDelete.getId());
-                deleteLinkedAccounts.execute();
+                markUserAsDeleted.setLong(1, userToDelete.getId());
+                markUserAsDeleted.execute();
 
                 conn.commit();
             } catch (SQLException e) {
@@ -727,7 +727,7 @@ public class PgUsers implements IUserDataManager {
     private static RegisteredUser removePIIFromUserDO(RegisteredUser user) {
         user.setFamilyName(null);
         user.setGivenName(null);
-        user.setEmail(Hashing.sha256().hashString(user.getEmail(), StandardCharsets.UTF_8).toString());
+        user.setEmail(UUID.randomUUID().toString());
         user.setEmailVerificationToken(null);
         user.setEmailToVerify(null);
 
