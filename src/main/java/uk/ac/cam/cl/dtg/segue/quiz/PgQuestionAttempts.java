@@ -203,7 +203,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
         PreparedStatement pst;
         try (Connection conn = database.getDatabaseConnection()) {
             StringBuilder query = new StringBuilder();
-            query.append("Select * FROM question_attempts WHERE");
+            query.append("SELECT id, user_id, question_id, correct, timestamp FROM question_attempts WHERE");
             
             // add all of the user ids we are interested in.
             if (userIds != null && !userIds.isEmpty()) {
@@ -241,17 +241,22 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             for (int i = 0; i < userIds.size(); i++) {
                 pst.setLong(index++, userIds.get(i));
                 mapToReturn.put(userIds.get(i),
-                        new HashMap<String, Map<String, List<QuestionValidationResponse>>>());
+                        new HashMap<>());
             }
 
             pst.setString(index++, questionIdsSB.toString());
             
             ResultSet results = pst.executeQuery();
             while (results.next()) {
-                QuestionValidationResponse questionAttempt = objectMapper.readValue(
-                        results.getString("question_attempt"), QuestionValidationResponse.class);
-                String questionPageId = questionAttempt.getQuestionId().split("\\|")[0];
-                String questionId = questionAttempt.getQuestionId();
+                //TODO: maybe create a lightweight object instead of only partially populating this one?
+                QuestionValidationResponse partialQuestionAttempt = new QuestionValidationResponse();
+
+                partialQuestionAttempt.setCorrect(results.getBoolean("correct"));
+                partialQuestionAttempt.setQuestionId(results.getString("question_id"));
+                partialQuestionAttempt.setDateAttempted(results.getTimestamp("timestamp"));
+
+                String questionPageId = partialQuestionAttempt.getQuestionId().split("\\|")[0];
+                String questionId = partialQuestionAttempt.getQuestionId();
                 
                 Map<String, Map<String, List<QuestionValidationResponse>>> mapOfQuestionAttemptsByPage 
                     = mapToReturn
@@ -271,14 +276,12 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
                     attemptsForThisQuestionPage.put(questionId, listOfResponses);
                 }
 
-                listOfResponses.add(questionAttempt);
+                listOfResponses.add(partialQuestionAttempt);
             }
             
             return mapToReturn;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
-        } catch (IOException e) {
-            throw new SegueDatabaseException("Exception while parsing json", e);
         }
     }
     
@@ -289,8 +292,6 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
   *            - containing the question attempts.
   * @param registeredUserId
   *            - the account to merge with.
-  * @throws NoUserLoggedInException
-  *             - Unable to merge as the user is still anonymous.
   * @throws SegueDatabaseException
   *             - if we are unable to locate the questions attempted by this user already.
   */
