@@ -538,7 +538,8 @@ CREATE TABLE users (
     last_seen timestamp without time zone,
     default_level integer,
     email_verification_token text,
-    email_to_verify text
+    email_to_verify text,
+    session_token integer NOT NULL DEFAULT 0
 );
 
 
