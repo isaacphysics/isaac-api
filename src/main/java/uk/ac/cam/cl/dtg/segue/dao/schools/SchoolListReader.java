@@ -22,7 +22,6 @@ import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
@@ -30,7 +29,14 @@ import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 import java.io.IOException;
 import java.util.List;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOLS_INDEX_BASE;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOL_ESTABLISHMENT_NAME_FIELDNAME_POJO;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOLS_INDEX_TYPE;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOL_POSTCODE_FIELDNAME_POJO;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOL_URN_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOL_URN_FIELDNAME_POJO;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX;
 
 /**
  * Class responsible for reading the local school list csv file.
@@ -58,8 +64,8 @@ public class SchoolListReader {
     public SchoolListReader(final ISearchProvider searchProvider) {
         this.searchProvider = searchProvider;
 
-        dataSourceModificationDate = searchProvider.getById(Constants.SCHOOLS_SEARCH_INDEX, "metadata", "sourceFile")
-                .getSource().get("lastModified").toString();
+        dataSourceModificationDate = searchProvider.getById(
+                SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.METADATA.toString(), "sourceFile").getSource().get("lastModified").toString();
     }
 
     /**
@@ -77,9 +83,9 @@ public class SchoolListReader {
             throw new UnableToIndexSchoolsException("unable to ensure the cache has been populated");
         }
 
-        List<String> schoolSearchResults = searchProvider.fuzzySearch(SCHOOLS_SEARCH_INDEX, SCHOOLS_SEARCH_TYPE,
-                searchQuery, 0, DEFAULT_RESULTS_LIMIT, null, null, Constants.SCHOOL_URN_FIELDNAME_POJO,
-                Constants.SCHOOL_ESTABLISHMENT_NAME_FIELDNAME_POJO, Constants.SCHOOL_POSTCODE_FIELDNAME_POJO)
+        List<String> schoolSearchResults = searchProvider.fuzzySearch(SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString(),
+                searchQuery, 0, DEFAULT_RESULTS_LIMIT, null, null, SCHOOL_URN_FIELDNAME_POJO,
+                SCHOOL_ESTABLISHMENT_NAME_FIELDNAME_POJO, SCHOOL_POSTCODE_FIELDNAME_POJO)
                 .getResults();
 
         List<School> resultList = Lists.newArrayList();
@@ -120,8 +126,8 @@ public class SchoolListReader {
 
         List<String> matchingSchoolList;
         
-        matchingSchoolList = searchProvider.findByPrefix(SCHOOLS_SEARCH_INDEX, SCHOOLS_SEARCH_TYPE,
-                SCHOOL_URN_FIELDNAME.toLowerCase() + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
+        matchingSchoolList = searchProvider.findByPrefix(SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString(),
+                SCHOOL_URN_FIELDNAME.toLowerCase() + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX,
                 schoolURN, 0, DEFAULT_RESULTS_LIMIT, null).getResults();
 
         if (matchingSchoolList.isEmpty()) {
@@ -145,7 +151,7 @@ public class SchoolListReader {
      *             - If there is a problem indexing.
      */
     private boolean ensureSchoolList() throws UnableToIndexSchoolsException {
-        return searchProvider.hasIndex(SCHOOLS_SEARCH_INDEX);
+        return searchProvider.hasIndex(SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString());
     }
 
 
@@ -155,7 +161,6 @@ public class SchoolListReader {
      * @return date when the data source was last modified.
      */
     public String getDataLastModifiedDate() {
-        
         return this.dataSourceModificationDate;
     }
 }
