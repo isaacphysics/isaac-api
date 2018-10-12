@@ -94,6 +94,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static GitContentManager contentManager = null;
     private static Client elasticSearchClient = null;
     private static UserAccountManager userManager = null;
+    private static UserAuthenticationManager userAuthenticationManager = null;
     private static IQuestionAttemptManager questionPersistenceManager = null;
     //private static ILogManager logManager;
     private static LogManagerEventPublisher logManager;
@@ -458,6 +459,38 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             log.info("Creating singleton of EmailCommunicationQueue");
         }
         return emailCommunicationQueue;
+    }
+
+    /**
+     * This provides a singleton of the UserManager for various facades.
+     *
+     * Note: This has to be a a singleton as the User Manager keeps a temporary cache of anonymous users.
+     *
+     * @param database
+     *            - the user persistence manager.
+     * @param properties
+     *            - properties loader
+     * @param providersToRegister
+     *            - list of known providers.
+     * @param emailQueue
+     *            - so that we can send e-mails.
+     * @param mapperFacade
+     *            - for DO and DTO mapping.
+     * @return Content version controller with associated dependencies.
+     */
+    @Inject
+    @Provides
+    @Singleton
+    private UserAuthenticationManager getUserAuthenticationManager(final IUserDataManager database, final PropertiesLoader properties,
+                                              final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
+                                              final EmailManager emailQueue, final MapperFacade mapperFacade) {
+        if (null == userAuthenticationManager) {
+            userAuthenticationManager = new UserAuthenticationManager(database, properties, providersToRegister,
+                    mapperFacade, emailQueue);
+            log.info("Creating singleton of UserManager");
+        }
+
+        return userAuthenticationManager;
     }
 
     /**
