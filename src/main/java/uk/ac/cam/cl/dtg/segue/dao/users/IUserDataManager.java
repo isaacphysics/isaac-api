@@ -17,10 +17,12 @@ package uk.ac.cam.cl.dtg.segue.dao.users;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
+import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 
 /**
  * Interface for managing and persisting user specific data in segue.
@@ -168,6 +170,14 @@ public interface IUserDataManager {
      *             - if there is a problem with the database.
      */
     List<RegisteredUser> findUsers(List<Long> usersToLocate) throws SegueDatabaseException;
+
+    /**
+     * Count all the users by role and return a map
+     * @return map of user role to integers
+     * @throws SegueDatabaseException
+     *             - if there is a problem with the database.
+     */
+    Map<Role, Integer> countUsersByRole() throws SegueDatabaseException;
 
     /**
      * Get a user by email verification token.

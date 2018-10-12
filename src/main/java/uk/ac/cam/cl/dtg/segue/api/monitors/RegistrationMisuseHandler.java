@@ -38,7 +38,7 @@ public class RegistrationMisuseHandler implements IMisuseHandler {
     private static final Logger log = LoggerFactory.getLogger(RegistrationMisuseHandler.class);
 
     private static final Integer SOFT_THRESHOLD = 30;
-    private static final Integer HARD_THRESHOLD = 100;
+    private static final Integer HARD_THRESHOLD = 120;
     private static final Integer ACCOUNTING_INTERVAL = Constants.NUMBER_SECONDS_IN_ONE_HOUR;
 
     private PropertiesLoader properties;

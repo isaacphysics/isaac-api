@@ -37,6 +37,7 @@ import uk.ac.cam.cl.dtg.segue.api.SegueDefaultFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -58,6 +59,7 @@ public class GameboardsFacadeTest {
 	private UserAccountManager userManager;
 	private UserAssociationManager userAssociationManager;
     private QuestionManager questionManager;
+    private UserBadgeManager userBadgeManager;
 
 	/**
 	 * Initial configuration of tests.
@@ -74,6 +76,7 @@ public class GameboardsFacadeTest {
 		this.userManager = createMock(UserAccountManager.class);
 	    this.questionManager = createMock(QuestionManager.class);
 		this.userAssociationManager = createMock(UserAssociationManager.class);
+		this.userBadgeManager = createMock(UserBadgeManager.class);
 		expect(this.dummyPropertiesLoader.getProperty(Constants.FASTTRACK_GAMEBOARD_WHITELIST))
 				.andReturn("ft_board_1,ft_board_2").anyTimes();
 		replay(this.dummyPropertiesLoader);
@@ -91,7 +94,7 @@ public class GameboardsFacadeTest {
 			throws NoWildcardException, SegueDatabaseException, NoUserLoggedInException,
 			ContentManagerException {
 		GameboardsFacade gameboardFacade = new GameboardsFacade(dummyPropertiesLoader, dummyLogManager,
-				dummyGameManager, questionManager, userManager, userAssociationManager);
+				dummyGameManager, questionManager, userManager, userAssociationManager, userBadgeManager);
 
 		HttpServletRequest dummyRequest = createMock(HttpServletRequest.class);
 		String subjects = "physics";

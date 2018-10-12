@@ -37,11 +37,10 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.DetailedUserSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
@@ -95,7 +94,7 @@ public class GroupManagerTest {
 		Capture<UserGroup> capturedGroup = new Capture<UserGroup>();
 
 		List<RegisteredUserDTO> someListOfUsers = Lists.newArrayList();
-		List<DetailedUserSummaryDTO> someListOfUsersDTOs = Lists.newArrayList();
+		List<UserSummaryWithEmailAddressDTO> someListOfUsersDTOs = Lists.newArrayList();
 
 		UserGroup resultFromDB = new UserGroup();
 		resultFromDB.setId(2L);
@@ -109,7 +108,7 @@ public class GroupManagerTest {
 			expect(this.groupDataManager.getAdditionalManagerSetByGroupId(anyObject()))
 					.andReturn(someSetOfManagers).atLeastOnce();
 			expect(this.userManager.findUsers(someSetOfManagers)).andReturn(someListOfUsers);
-			expect(this.userManager.convertToDetailedUserSummaryObjectList(someListOfUsers)).andReturn(someListOfUsersDTOs);
+			expect(this.userManager.convertToDetailedUserSummaryObjectList(someListOfUsers, UserSummaryWithEmailAddressDTO.class)).andReturn(someListOfUsersDTOs);
 			expect(this.dummyMapper.map(resultFromDB, UserGroupDTO.class)).andReturn(mappedGroup).atLeastOnce();
 
 			replay(this.userManager, this.groupDataManager, this.dummyMapper);

@@ -38,7 +38,7 @@ import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.segue.dos.UserAssociation;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.DetailedUserSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
@@ -121,7 +121,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
                 userIdsWithAccess.add(a.getUserIdReceivingPermission());
             }
 
-            return Response.ok(userManager.convertToDetailedUserSummaryObjectList(userManager.findUsers(userIdsWithAccess)))
+            return Response.ok(userManager.convertToDetailedUserSummaryObjectList(userManager.findUsers(userIdsWithAccess), UserSummaryWithEmailAddressDTO.class))
                     .cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
@@ -381,8 +381,8 @@ public class AuthorisationFacade extends AbstractSegueFacade {
                     TokenOwnerLookupMisuseHandler.class.toString());
 
             // add owner
-            List<DetailedUserSummaryDTO> usersLinkedToToken = Lists.newArrayList();
-            usersLinkedToToken.add(userManager.convertToDetailedUserSummaryObject(userManager.getUserDTOById(associationToken.getOwnerUserId())));
+            List<UserSummaryWithEmailAddressDTO> usersLinkedToToken = Lists.newArrayList();
+            usersLinkedToToken.add(userManager.convertToDetailedUserSummaryObject(userManager.getUserDTOById(associationToken.getOwnerUserId()), UserSummaryWithEmailAddressDTO.class));
 
             // add additional managers
             usersLinkedToToken.addAll(group.getAdditionalManagers());

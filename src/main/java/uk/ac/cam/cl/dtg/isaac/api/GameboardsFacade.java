@@ -61,11 +61,13 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.NoWildcardException;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -86,6 +88,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     private GameManager gameManager;
     private UserAccountManager userManager;
     private UserAssociationManager associationManager;
+    private UserBadgeManager userBadgeManager;
 
     private static final Logger log = LoggerFactory.getLogger(GameboardsFacade.class);
     private final QuestionManager questionManager;
@@ -110,9 +113,11 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     @Inject
     public GameboardsFacade(final PropertiesLoader properties, final ILogManager logManager,
             final GameManager gameManager, final QuestionManager questionManager, final UserAccountManager userManager,
-            final UserAssociationManager associationManager) {
+            final UserAssociationManager associationManager,
+                            UserBadgeManager userBadgeManager) {
         super(properties, logManager);
 
+        this.userBadgeManager = userBadgeManager;
         this.gameManager = gameManager;
         this.questionManager = questionManager;
         this.userManager = userManager;
@@ -274,27 +279,26 @@ public class GameboardsFacade extends AbstractIsaacFacade {
         }
     }
 
-
     /**
-     * REST end point to retrieve FastTrack gameboard progress by ID.
+     * REST endpoint to retrieve every question (and its status) associated with a particular FastTrack gamebaord and
+     * concept.
      *
-     * @param request
-     *             - so that we can deal with caching and etags.
-     * @param httpServletRequest
-     *            - so that we can extract the users session information if available.
-     * @param gameboardId
-     *            - the unique ID of the FastTrack gameboard to be requested, checked against a whitelist.
-     * @return a Response containing a gameboard object or a SequeErrorResponse.
+     * @param request usually used for caching.
+     * @param httpServletRequest so that we can extract the users session information if available.
+     * @param gameboardId the unique id of the FastTrack gameboard which links the questions.
+     * @param conceptTitle the title of the concept which the client wants.
+     * @return a Response containing a list of augmented gameboard items for the gamebaord-concept pair or an error.
      */
     @GET
-    @Path("gameboards/fasttrack/{gameboard_id}")
+    @Path("fasttrack/{gameboard_id}/concepts/")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    public final Response getFastTrackGameboard(@Context final Request request,
-            @Context final HttpServletRequest httpServletRequest, @PathParam("gameboard_id") final String gameboardId) {
+    public final Response getFastTrackConceptProgress(@Context final Request request,
+                                                      @Context final HttpServletRequest httpServletRequest,
+                                                      @PathParam("gameboard_id") final String gameboardId,
+                                                      @QueryParam("concept") final String conceptTitle) {
 
         try {
-            GameboardDTO gameboard;
             if (!fastTrackGamebaordIds.contains(gameboardId)) {
                 return new SegueErrorResponse(Status.NOT_FOUND, "Gameboard id not a valid FastTrack gameboard id.")
                         .toResponse();
@@ -303,32 +307,12 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts = this.questionManager
                     .getQuestionAttemptsByUser(randomUser);
 
-            GameboardDTO unAugmentedGameboard = gameManager.getGameboard(gameboardId);
-            if (null == unAugmentedGameboard) {
-                return new SegueErrorResponse(Status.NOT_FOUND, "No Gameboard found for the id specified.")
-                        .toResponse();
-            }
-
-            // Calculate the ETag
-            EntityTag etag = new EntityTag(unAugmentedGameboard.toString().hashCode()
-                    + userQuestionAttempts.toString().hashCode() + "");
-
-            Response cachedResponse = generateCachedResponse(request, etag, NEVER_CACHE_WITHOUT_ETAG_CHECK);
-            if (cachedResponse != null) {
-                return cachedResponse;
-            }
-
             // attempt to augment the gameboard with user information.
-            gameboard = gameManager.getFastTrackGameboard(gameboardId, randomUser, userQuestionAttempts);
+            List<GameboardItem> conceptQuestionsProgress = gameManager.getFastTrackConceptProgress(gameboardId, conceptTitle, userQuestionAttempts);
 
-            // We decided not to log this on the backend as the front end uses this lots.
-            return Response.ok(gameboard).cacheControl(
-                    getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).tag(etag).build();
-        } catch (IllegalArgumentException e) {
-            return new SegueErrorResponse(
-                    Status.BAD_REQUEST, "Your FastTrack gameboard filter request is invalid.").toResponse();
+            return Response.ok(conceptQuestionsProgress).build();
         } catch (SegueDatabaseException e) {
-            String message = "Error whilst trying to access the FastTrack gameboard in the database.";
+            String message = "Error whilst trying to access the FastTrack progress in the database.";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (ContentManagerException e1) {
@@ -454,6 +438,12 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
         try {
             persistedGameboard = gameManager.saveNewGameboard(newGameboardObject, user);
+
+            if (persistedGameboard.getCreationMethod().equals(GameboardCreationMethod.BUILDER)) {
+                this.userBadgeManager.updateBadge(user, UserBadgeManager.Badge.TEACHER_GAMEBOARDS_CREATED,
+                        persistedGameboard.getId());
+            }
+
         } catch (NoWildcardException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "No wildcard available. Unable to construct gameboard.")
                     .toResponse();
