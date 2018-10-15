@@ -66,18 +66,21 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
             PreparedStatement pst;
             pst = conn
                     .prepareStatement(
-                            "INSERT INTO groups(group_name, owner_id, created)"
-                            + " VALUES (?, ?, ?);",
+                            "INSERT INTO groups(group_name, owner_id, created, last_updated)"
+                            + " VALUES (?, ?, ?, ?);",
                             Statement.RETURN_GENERATED_KEYS);
             pst.setString(1, group.getGroupName());
             pst.setLong(2, group.getOwnerId());
-            
+
+            Timestamp created;
             if (group.getCreated() != null) {
-                pst.setTimestamp(3, new Timestamp(group.getCreated().getTime()));    
+                created = new Timestamp(group.getCreated().getTime());
             } else {
-                pst.setTimestamp(3, new Timestamp(new Date().getTime()));
+                created = new Timestamp(new Date().getTime());
             }
-            
+            pst.setTimestamp(3, created);
+            pst.setTimestamp(4, created);
+
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save group.");
             }
@@ -105,13 +108,14 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
         
         PreparedStatement pst;
         try (Connection conn = database.getDatabaseConnection()) {
-            pst = conn
-                    .prepareStatement("UPDATE groups SET group_name=?, owner_id=?, created=?, archived=? WHERE id = ?;");
+            pst = conn.prepareStatement(
+                    "UPDATE groups SET group_name=?, owner_id=?, created=?, archived=?, last_updated=? WHERE id = ?;");
             pst.setString(1, group.getGroupName());
             pst.setLong(2, group.getOwnerId());
             pst.setTimestamp(3, new Timestamp(group.getCreated().getTime()));
             pst.setBoolean(4, group.isArchived());
-            pst.setLong(5, group.getId());
+            pst.setTimestamp(5, new Timestamp(group.getLastUpdated().getTime()));
+            pst.setLong(6, group.getId());
             
             log.debug(pst.toString());
             
@@ -366,7 +370,7 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
      */
     private UserGroup buildGroup(final ResultSet set) throws SQLException {
         return new UserGroup(set.getLong("id"), set.getString("group_name"), set.getLong("owner_id"),
-                set.getDate("created"), set.getBoolean("archived"));
+                set.getDate("created"), set.getBoolean("archived"), set.getDate("last_updated"));
     }
 
     private List<UserGroup> getGroupsBySQLPst(final String pstString, final Long userId, @Nullable final Boolean archivedGroupsOnly) throws SegueDatabaseException {
