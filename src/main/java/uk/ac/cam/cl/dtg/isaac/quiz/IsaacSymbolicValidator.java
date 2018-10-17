@@ -1,5 +1,5 @@
-/**
- * Copyright 2016 Alistair Stead
+/*
+ * Copyright 2016 Alistair Stead, James Sharkey, Ian Davies
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,9 +45,7 @@ import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatorUnavailableException;
 
 /**
- * Validator that only provides functionality to validate symbolic questions.
- *
- * @author Alistair Stead
+ * Validator that provides functionality to validate symbolic questions.
  *
  */
 public class IsaacSymbolicValidator implements IValidator {
