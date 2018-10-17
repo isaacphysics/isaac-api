@@ -123,7 +123,7 @@ public class IsaacSymbolicValidator implements IValidator {
 
                 // ... that are of the Formula type, ...
                 if (!(c instanceof Formula)) {
-                    log.error("Isaac Symbolic Validator for questionId: " + symbolicQuestion.getId()
+                    log.error("Validator for questionId: " + symbolicQuestion.getId()
                             + " expected there to be a Formula. Instead it found a Choice.");
                     continue;
                 }
