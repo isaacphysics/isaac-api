@@ -226,9 +226,15 @@ public class IsaacSymbolicValidator implements IValidator {
                             log.error("Failed to check formula \"" + submittedFormula.getPythonExpression()
                                     + "\" against \"" + formulaChoice.getPythonExpression() + "\": "
                                     + response.get("error"));
+                        } else if (response.containsKey("syntax_error")) {
+                            // There's a syntax error in the "test" expression, no use checking it further:
+                            closestMatch = null;
+                            feedback = new Content("Your answer does not seem to be valid maths.<br>"
+                                        + "Check for things like mismatched brackets or misplaced symbols.");
+                            feedback.setTags(new HashSet<>(Collections.singletonList("syntax_error")));
+                            responseCorrect = false;
+                            break;
                         } else {
-                            // If it doesn't contain a code, it wasn't a fatal error in the checker; probably only a
-                            // problem with the submitted answer.
                             log.warn("Problem checking formula \"" + submittedFormula.getPythonExpression()
                                     + "\" for (" + symbolicQuestion.getId() + ") with symbolic checker: " + response.get("error"));
                         }
