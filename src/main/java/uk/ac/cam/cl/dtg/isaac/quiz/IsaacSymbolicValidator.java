@@ -275,6 +275,7 @@ public class IsaacSymbolicValidator implements IValidator {
                 if (closestMatchType != MatchType.EXACT && closestMatch.getRequiresExactMatch()) {
                     if (closestMatch.isCorrect()) {
                         feedback = new Content("Your answer is not in the form we expected. Can you rearrange or simplify it?");
+                        feedback.setTags(new HashSet<>(Collections.singletonList("required_exact")));
                         responseCorrect = false;
                         responseMatchType = closestMatchType;
 
