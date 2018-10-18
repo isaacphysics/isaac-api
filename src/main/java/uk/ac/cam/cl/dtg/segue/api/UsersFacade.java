@@ -343,7 +343,7 @@ public class UsersFacade extends AbstractSegueFacade {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
-            misuseMonitor.notifyEvent(currentUser.getEmail(), PasswordResetRequestMisuseHandler.class.toString());
+            misuseMonitor.notifyEvent(currentUser.getEmail() + "_group_member_reset", PasswordResetRequestMisuseHandler.class.toString());
             userManager.resetPasswordRequest(userOfInterest);
 
             this.getLogManager()
