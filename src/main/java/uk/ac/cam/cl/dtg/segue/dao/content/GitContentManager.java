@@ -329,13 +329,8 @@ public class GitContentManager implements IContentManager {
         ResultsWrapper<ContentDTO> finalResults;
 
         ResultsWrapper<String> searchHits;
-        if (null == randomSeed) {
-            searchHits = searchProvider.randomisedMatchSearch(version, CONTENT_TYPE, fieldsToMatch, startIndex, limit,
-                    randomNumberGenerator.nextLong(), this.getUnpublishedFilter());
-        } else {
-            searchHits = searchProvider.randomisedMatchSearch(version, CONTENT_TYPE, fieldsToMatch, startIndex, limit,
-                    randomSeed, this.getUnpublishedFilter());
-        }
+        searchHits = searchProvider.randomisedMatchSearch(version, CONTENT_TYPE, fieldsToMatch, startIndex, limit,
+                this.getUnpublishedFilter());
 
         // setup object mapper to use pre-configured deserializer module.
         // Required to deal with type polymorphism
@@ -402,7 +397,7 @@ public class GitContentManager implements IContentManager {
         for (String index : this.searchProvider.getAllIndices()) {
             // check to see if index looks like a content sha otherwise we will get loads of other search indexes come
             // back.
-            if (index.matches("[a-fA-F0-9]{40}")) {
+            if (index.matches("[a-fA-F0-9]{40}_.*")) {
                 builder.add(index);
             }
         }
@@ -413,8 +408,8 @@ public class GitContentManager implements IContentManager {
     public final Set<String> getTagsList(final String version) throws ContentManagerException {
         Validate.notBlank(version);
 
-        List<Object> tagObjects = (List<Object>) searchProvider.getById(version, "metadata", "tags")
-                .getSource().get("tags");
+        List<Object> tagObjects = (List<Object>) searchProvider.getById(
+                version, Constants.CONTENT_INDEX_TYPE.METADATA.toString(), "tags").getSource().get("tags");
 
         return new HashSet<>(Lists.transform(tagObjects, Functions.toStringFunction()));
     }
@@ -423,44 +418,31 @@ public class GitContentManager implements IContentManager {
     public final Collection<String> getAllUnits(final String version) throws ContentManagerException {
         Validate.notBlank(version);
 
-        String unitType = "unit";
+        String unitType = Constants.CONTENT_INDEX_TYPE.UNIT.toString();
         if (globalProperties.getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(Constants.EnvironmentType.PROD.name())) {
-            unitType = "publishedUnit";
+            unitType = Constants.CONTENT_INDEX_TYPE.PUBLISHED_UNIT.toString();
         }
         SearchResponse r =  searchProvider.getAllByType(globalProperties.getProperty(Constants.CONTENT_INDEX), unitType);
         SearchHits hits = r.getHits();
         ArrayList<String> units = new ArrayList<>((int) hits.getTotalHits());
         for (SearchHit hit : hits) {
-            units.add((String) hit.getSource().get("unit"));
+            units.add((String) hit.getSourceAsMap().get("unit"));
         }
 
         return units;
     }
 
     @Override
-    public void ensureCache(final String version) throws ContentManagerException {
-        if (null == version) {
-            throw new ContentVersionUnavailableException(
-                    "You must specify a non-null version to make sure it is cached.");
-        }
-
-        if (!searchProvider.hasIndex(version)) {
-            throw new ContentVersionUnavailableException(String.format("Version %s does not exist in the searchIndex.",
-                    version));
-        }
-    }
-
-    @Override
     public final Map<Content, List<String>> getProblemMap(final String version) {
         SearchResponse r = searchProvider.getAllByType(globalProperties.getProperty(Constants.CONTENT_INDEX),
-                "contentError");
+                Constants.CONTENT_INDEX_TYPE.CONTENT_ERROR.toString());
 
         SearchHits hits = r.getHits();
         Map<Content, List<String>> map = new HashMap<>();
         for (SearchHit hit : hits) {
 
             Content partialContentWithErrors = new Content();
-            Map src = hit.getSource();
+            Map src = hit.getSourceAsMap();
             partialContentWithErrors.setId((String) src.get("id"));
             partialContentWithErrors.setTitle((String) src.get("title"));
             //partialContentWithErrors.setTags(pair.getKey().getTags()); // TODO: Support tags
@@ -468,7 +450,7 @@ public class GitContentManager implements IContentManager {
             partialContentWithErrors.setCanonicalSourceFile((String) src.get("canonicalSourceFile"));
 
             ArrayList<String> errors = new ArrayList<>();
-            for (Object v : (List) hit.getSource().get("errors")) {
+            for (Object v : (List) hit.getSourceAsMap().get("errors")) {
                 errors.add((String) v);
             }
 
@@ -542,8 +524,8 @@ public class GitContentManager implements IContentManager {
 
     @Override
     public String getCurrentContentSHA() {
-        GetResponse r = searchProvider.getById(globalProperties.getProperty(Constants.CONTENT_INDEX), "metadata",
-                "general");
+        GetResponse r = searchProvider.getById(globalProperties.getProperty(Constants.CONTENT_INDEX),
+                Constants.CONTENT_INDEX_TYPE.METADATA.toString(), "general");
         return (String) r.getSource().get("version");
     }
 

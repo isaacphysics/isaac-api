@@ -68,6 +68,8 @@ import static com.google.common.collect.Maps.*;
 public class GameManager {
     private static final Logger log = LoggerFactory.getLogger(GameManager.class);
 
+    private static final float DEFAULT_QUESTION_PASS_MARK = 75;
+
     private static final int MAX_QUESTIONS_TO_SEARCH = 20;
     private static final String HIDE_FROM_FILTER_TAG = "nofilter";
 
@@ -1085,7 +1087,7 @@ public class GameManager {
             throw new ResourceNotFoundException(String.format("Unable to locate the question: %s for augmenting",
                     questionPageId));
         }
-        float passMark = questionPage.getPassMark() != null ? questionPage.getPassMark() : 100f;
+        float passMark = questionPage.getPassMark() != null ? questionPage.getPassMark() : DEFAULT_QUESTION_PASS_MARK;
         gameItem.setPassMark(passMark);
         gameItem.setQuestionPartsCorrect(questionPartsCorrect);
         gameItem.setQuestionPartsIncorrect(questionPartsIncorrect);
