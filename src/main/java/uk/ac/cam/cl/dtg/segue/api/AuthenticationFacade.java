@@ -234,7 +234,9 @@ public class AuthenticationFacade extends AbstractSegueFacade {
             @Context final HttpServletResponse response, @PathParam("provider") final String signinProvider) {
 
         try {
-            return Response.ok(userManager.authenticateCallback(request, response, signinProvider)).build();
+            RegisteredUserDTO userToReturn = userManager.authenticateCallback(request, response, signinProvider);
+            this.getLogManager().logEvent(userToReturn, request, SegueLogType.LOG_IN, Maps.newHashMap());
+            return Response.ok(userToReturn).build();
         } catch (IOException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Exception while trying to authenticate a user" + " - during callback step.", e);
@@ -316,9 +318,9 @@ public class AuthenticationFacade extends AbstractSegueFacade {
 
         // ok we need to hand over to user manager
         try {
-            return Response
-                    .ok(userManager.authenticateWithCredentials(request, response, signinProvider, email, password))
-                    .build();
+            RegisteredUserDTO userToReturn = userManager.authenticateWithCredentials(request, response, signinProvider, email, password);
+            this.getLogManager().logEvent(userToReturn, request, SegueLogType.LOG_IN, Maps.newHashMap());
+            return Response.ok(userToReturn).build();
         } catch (AuthenticationProviderMappingException e) {
             String errorMsg = "Unable to locate the provider specified";
             log.error(errorMsg, e);
