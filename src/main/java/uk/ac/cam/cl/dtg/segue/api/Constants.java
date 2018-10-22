@@ -245,6 +245,7 @@ public final class Constants {
     public static final String LOCAL_AUTH_PASSWORD_FIELDNAME = "password";
     public static final String LOCAL_AUTH_EMAIL_VERIFICATION_TOKEN_FIELDNAME = "emailVerificationToken";
     public static final String LOCAL_AUTH_GROUP_MANAGER_INITIATED_FIELDNAME = "groupManagerInitiated";
+    public static final String LOCAL_AUTH_GROUP_MANAGER_EMAIL_FIELDNAME = "groupManagerEmail";
 
     // Database properties
     public static final String SEGUE_DB_NAME = "SEGUE_DB_NAME";

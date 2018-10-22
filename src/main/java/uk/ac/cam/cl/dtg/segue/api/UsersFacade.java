@@ -350,6 +350,7 @@ public class UsersFacade extends AbstractSegueFacade {
                     .logEvent(currentUser, httpServletRequest, SegueLogType.PASSWORD_RESET_REQUEST_RECEIVED,
                             ImmutableMap.of(
                                     LOCAL_AUTH_EMAIL_FIELDNAME, userOfInterest.getEmail(),
+                                    LOCAL_AUTH_GROUP_MANAGER_EMAIL_FIELDNAME, currentUser.getEmail(),
                                     LOCAL_AUTH_GROUP_MANAGER_INITIATED_FIELDNAME, true));
             return Response.ok().build();
 
