@@ -27,13 +27,14 @@ import java.text.SimpleDateFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.HashMap;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Arrays;
 import java.util.ArrayList;
-import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -398,8 +399,20 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             GameboardDTO gameboard = this.gameManager.getGameboard(assignment.getGameboardId());
 
             List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group);
-            List<String> questionIds = Lists.newArrayList();
 
+            List<String> questionPageIds = Lists.newArrayList();
+            for (GameboardItem questionPage : gameboard.getQuestions()) {
+                questionPageIds.add(questionPage.getId());
+            }
+            Map<Long, Map<String, Map<String, List<QuestionValidationResponse>>>> questionAttempts;
+            questionAttempts = this.questionManager.getMatchingQuestionAttempts(groupMembers, questionPageIds);
+
+            Map<RegisteredUserDTO, Map<String, Map<String, List<QuestionValidationResponse>>>> questionAttemptsForAllUsersOfInterest = new HashMap<>();
+            for (RegisteredUserDTO user : groupMembers) {
+                questionAttemptsForAllUsersOfInterest.put(user, questionAttempts.get(user.getId()));
+            }
+
+            List<String> questionIds = Lists.newArrayList();
             List<String[]> rows = Lists.newArrayList();
             StringWriter stringWriter = new StringWriter();
             CSVWriter csvWriter = new CSVWriter(stringWriter);
@@ -434,8 +447,32 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             List<String> totalsRow = Lists.newArrayList();
             Collections.addAll(totalsRow, ",Correct %".split(","));
 
-            Map<RegisteredUserDTO, Map<String, Integer>> userQuestionDataMap = this.gameManager
-                    .getDetailedGameProgressData(groupMembers, gameboard);
+            Map<RegisteredUserDTO, Map<String, Integer>> userQuestionDataMap = new HashMap<>();
+
+            // This is properly horrible, can someone rewrite this whole thing?
+            questionAttemptsForAllUsersOfInterest.forEach((user, attempts) -> {
+                Map<String, List<QuestionValidationResponse>> userAttempts;
+                List<Map<String, List<QuestionValidationResponse>>> l = attempts.entrySet().stream().map(Entry::getValue).collect(Collectors.toList());
+                // This is even worse than horrible. Is this the real Java? Is this just fantasy?
+                if (l.isEmpty()) {
+                    userAttempts = new HashMap<>();
+                } else {
+                    userAttempts = l.get(0);
+                }
+                Map<String, Integer> userAttemptsSummary = userAttempts.entrySet().stream().collect(
+                    Collectors.toMap(
+                        Entry::getKey,
+                        e -> e.getValue().stream().map(QuestionValidationResponse::isCorrect).reduce(false, (a, b) -> a || b)
+                    )
+                ).entrySet().stream().collect(Collectors.toMap(
+                    Entry::getKey,
+                    e -> e.getValue() ? 1 : 0
+                ));
+                // This could be better handled with yet another stream, but my eyes are already crossing,
+                // I'd rather not cross the streams too...
+                userQuestionDataMap.put(user, userAttemptsSummary);
+            });
+
 
             List<String[]> resultRows = Lists.newArrayList();
             int[] columnTotals = new int[questionIds.size()];
@@ -452,23 +489,23 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     int columnNumber = 0;
                     for (String questionId : questionIds) {
                         Integer resultForQuestion = userQuestionDataMap.get(user).get(questionId);
-                        
+
                         if (null == resultForQuestion) {
                             resultRow.add("");
                         } else {
                             resultRow.add(String.format("%d", resultForQuestion));
                         }
-                        
+
                         if (resultForQuestion != null && resultForQuestion == 1) {
                             totalCorrect++;
                             columnTotals[columnNumber] += 1;
                         }
                         columnNumber++;
                     }
-                    
+
                     double percentageCorrect = ((double) totalCorrect / questionIds.size()) * 100F;
                     resultRow.add(percentageFormat.format(percentageCorrect));
-                    
+
                 } else {
                     resultRow.add(userSummary.getFamilyName());
                     resultRow.add(userSummary.getGivenName());
@@ -481,7 +518,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacLogType.DOWNLOAD_ASSIGNMENT_PROGRESS_CSV,
                     ImmutableMap.of("assignmentId", assignmentId));
-            
+
             // ignore name columns
 
             for (int i = 0; i < questionIds.size(); i++) {
