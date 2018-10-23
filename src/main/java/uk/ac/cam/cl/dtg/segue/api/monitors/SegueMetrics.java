@@ -22,21 +22,22 @@ import io.prometheus.client.guava.cache.CacheMetricsCollector;
 /**
  * Created by mlt47 on 09/03/2018.
  * Use this class to register public static final Counters, Gauges and other metrics types used by Segue.
+ * Metric and label naming conventions can be found here: https://prometheus.io/docs/practices/naming/
  */
 public final class SegueMetrics {
     public static final CacheMetricsCollector CACHE_METRICS_COLLECTOR = new CacheMetricsCollector().register();
 
     // Websocket Metrics
     public static final Gauge CURRENT_OPEN_WEBSOCKETS = Gauge.build()
-            .name("segue_current_open_websockets").help("Currently open websockets.").register();
+            .name("segue_websockets").help("Currently open websockets.").register();
     public static final Counter WEBSOCKETS_OPENED = Counter.build()
-            .name("segue_opened_websockets").help("Websockets opened since process start.").register();
+            .name("segue_websocket_open_total").help("Websockets opened since process start.").register();
     public static final Counter WEBSOCKETS_CLOSED = Counter.build()
-            .name("segue_closed_websockets").help("Websockets closed since process start.").register();
+            .name("segue_websocket_close_total").help("Websockets closed since process start.").register();
 
     // User Metrics
     public static final Gauge CURRENT_WEBSOCKET_USERS = Gauge.build()
-            .name("segue_current_websocket_users").help("Currently number of websocket users/browsers.").register();
+            .name("segue_websocket_users").help("Currently number of websocket users/browsers.").register();
     // Anonymous user stats are calculated using metrics on the guava cache which holds a reference to each active user
 
     /**
