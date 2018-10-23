@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 
 /**
@@ -55,8 +56,9 @@ public interface IQuestionAttemptManager {
      * @throws SegueDatabaseException
      *             - if a database error occurrs
      */
-    Map<Long, Map<String, Map<String, List<QuestionValidationResponse>>>> getQuestionAttemptsByUsersAndQuestionPrefix(
-            List<Long> userIds, List<String> questionPage) throws SegueDatabaseException;
+    Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>>
+            getQuestionAttemptsByUsersAndQuestionPrefix(List<Long> userIds, List<String> questionPage)
+            throws SegueDatabaseException;
     
     /**
      * @param userId

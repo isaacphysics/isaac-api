@@ -72,6 +72,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
@@ -404,10 +405,11 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             for (GameboardItem questionPage : gameboard.getQuestions()) {
                 questionPageIds.add(questionPage.getId());
             }
-            Map<Long, Map<String, Map<String, List<QuestionValidationResponse>>>> questionAttempts;
+            Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> questionAttempts;
             questionAttempts = this.questionManager.getMatchingQuestionAttempts(groupMembers, questionPageIds);
 
-            Map<RegisteredUserDTO, Map<String, Map<String, List<QuestionValidationResponse>>>> questionAttemptsForAllUsersOfInterest = new HashMap<>();
+            Map<RegisteredUserDTO, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>>
+                    questionAttemptsForAllUsersOfInterest = new HashMap<>();
             for (RegisteredUserDTO user : groupMembers) {
                 questionAttemptsForAllUsersOfInterest.put(user, questionAttempts.get(user.getId()));
             }
@@ -451,8 +453,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             // This is properly horrible, can someone rewrite this whole thing?
             questionAttemptsForAllUsersOfInterest.forEach((user, attempts) -> {
-                Map<String, List<QuestionValidationResponse>> userAttempts;
-                List<Map<String, List<QuestionValidationResponse>>> l = attempts.entrySet().stream().map(Entry::getValue).collect(Collectors.toList());
+                Map<String, List<LightweightQuestionValidationResponse>> userAttempts;
+                List<Map<String, List<LightweightQuestionValidationResponse>>> l =
+                        attempts.entrySet().stream().map(Entry::getValue).collect(Collectors.toList());
                 // This is even worse than horrible. Is this the real Java? Is this just fantasy?
                 if (l.isEmpty()) {
                     userAttempts = new HashMap<>();
@@ -462,7 +465,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 Map<String, Integer> userAttemptsSummary = userAttempts.entrySet().stream().collect(
                     Collectors.toMap(
                         Entry::getKey,
-                        e -> e.getValue().stream().map(QuestionValidationResponse::isCorrect).reduce(false, (a, b) -> a || b)
+                        e -> e.getValue().stream().map(LightweightQuestionValidationResponse::isCorrect)
+                                .reduce(false, (a, b) -> a || b)
                     )
                 ).entrySet().stream().collect(Collectors.toMap(
                     Entry::getKey,
