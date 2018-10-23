@@ -451,6 +451,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             Map<RegisteredUserDTO, Map<String, Integer>> userQuestionDataMap = new HashMap<>();
 
+            // FIXME vvv This is duplicated code vvv
             // This is properly horrible, can someone rewrite this whole thing?
             questionAttemptsForAllUsersOfInterest.forEach((user, attempts) -> {
                 Map<String, List<LightweightQuestionValidationResponse>> userAttempts;
@@ -476,7 +477,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 // I'd rather not cross the streams too...
                 userQuestionDataMap.put(user, userAttemptsSummary);
             });
-
+            // FIXME ^^^ This is duplicated code ^^^
 
             List<String[]> resultRows = Lists.newArrayList();
             int[] columnTotals = new int[questionIds.size()];
@@ -599,11 +600,52 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             // Integer: question part result
             Map<RegisteredUserDTO, Map<GameboardDTO, Map<String, Integer>>> grandTable = Maps.newHashMap();
             // Retrieve each user's progress data and cram everything into a Grand Table for later consumption
+            List<GameboardDTO> gameboards = new ArrayList<>();
+            Map<AssignmentDTO, GameboardDTO> assignmentGameboards = new HashMap<>();
             for (AssignmentDTO assignment : assignments) {
+                // FIXME This could be improved if we could get the gameboards given a list of ids
                 GameboardDTO gameboard = gameManager.getGameboard(assignment.getGameboardId());
+                gameboards.add(gameboard);
+                // Create an assignment -> gameboard mapping to avoid repeatedly querying the DB later on. All the efficiency!
+                assignmentGameboards.put(assignment, gameboard);
+            }
+            List<GameboardItem> gameboardItems = gameboards.stream().map(GameboardDTO::getQuestions).flatMap(Collection::stream).collect(Collectors.toList());
+            List<String> questionPageIds = gameboardItems.stream().map(GameboardItem::getId).collect(Collectors.toList());
+            Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> questionAttempts;
+            questionAttempts = this.questionManager.getMatchingQuestionAttempts(groupMembers, questionPageIds);
+            Map<RegisteredUserDTO, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> questionAttemptsForAllUsersOfInterest = new HashMap<>();
+            for (RegisteredUserDTO user : groupMembers) {
+                questionAttemptsForAllUsersOfInterest.put(user, questionAttempts.get(user.getId()));
+            }
 
-                Map<RegisteredUserDTO, Map<String, Integer>> userQuestionDataMap;
-                userQuestionDataMap = this.gameManager.getDetailedGameProgressData(groupMembers, gameboard);
+            for (GameboardDTO gameboard : gameboards) {
+                Map<RegisteredUserDTO, Map<String, Integer>> userQuestionDataMap = new HashMap<>();
+
+                // FIXME vvv This is duplicated code vvv
+                // This is properly horrible, can someone rewrite this whole thing?
+                questionAttemptsForAllUsersOfInterest.forEach((user, attempts) -> {
+                    Map<String, List<LightweightQuestionValidationResponse>> userAttempts;
+                    List<Map<String, List<LightweightQuestionValidationResponse>>> l = attempts.entrySet().stream().map(Entry::getValue).collect(Collectors.toList());
+                    // This is even worse than horrible. Is this the real Java? Is this just fantasy?
+                    if (l.isEmpty()) {
+                        userAttempts = new HashMap<>();
+                    } else {
+                        userAttempts = l.get(0);
+                    }
+                    Map<String, Integer> userAttemptsSummary = userAttempts.entrySet().stream().collect(
+                            Collectors.toMap(
+                                    Entry::getKey,
+                                    e -> e.getValue().stream().map(LightweightQuestionValidationResponse::isCorrect).reduce(false, (a, b) -> a || b)
+                            )
+                    ).entrySet().stream().collect(Collectors.toMap(
+                            Entry::getKey,
+                            e -> e.getValue() ? 1 : 0
+                    ));
+                    // This could be better handled with yet another stream, but my eyes are already crossing,
+                    // I'd rather not cross the streams too...
+                    userQuestionDataMap.put(user, userAttemptsSummary);
+                });
+                // FIXME ^^^ This is duplicated code ^^^
                 for (RegisteredUserDTO student : userQuestionDataMap.keySet()) {
                     Map<GameboardDTO, Map<String, Integer>> entry = grandTable.get(student);
                     if (null == entry) {
@@ -622,13 +664,13 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             ArrayList<String> headerRow = Lists.newArrayList();
             Collections.addAll(headerRow, "Last Name,First Name,% Correct Overall".split(","));
             List<String> gameboardTitles = Lists.newArrayList();
-            for (AssignmentDTO assignment : assignments) {
+            for (AssignmentDTO assignment : assignmentGameboards.keySet()) {
                 if (null != assignment.getDueDate()) {
                     dueDateRow.add(dateFormatter.format(assignment.getDueDate()));
                 } else {
                     dueDateRow.add(""); // No due date set
                 }
-                GameboardDTO gameboard = gameManager.getGameboard(assignment.getGameboardId());
+                GameboardDTO gameboard = assignmentGameboards.get(assignment);
                 String gameboardTitle = gameboard.getTitle();
                 if (null != gameboardTitle) {
                     gameboardTitles.add(gameboardTitle);
@@ -643,8 +685,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             headerRow.add("");
 
             Map<GameboardDTO, List<String>> gameboardQuestionIds = Maps.newHashMap();
-            for (AssignmentDTO assignment : assignments) {
-                GameboardDTO gameboard = gameManager.getGameboard(assignment.getGameboardId());
+            for (AssignmentDTO assignment : assignmentGameboards.keySet()) {
+                GameboardDTO gameboard = assignmentGameboards.get(assignment);
                 for (GameboardItem questionPage : gameboard.getQuestions()) {
                     int b = 1;
                     for (QuestionDTO question : gameManager.getAllMarkableQuestionPartsDFSOrder(questionPage.getId())) {
@@ -769,7 +811,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     ImmutableMap.of("groupId", groupId));
 
             return Response.ok(headerBuilder)
-                    .header("Content-Disposition", "attachment; filename=group_progress.csv")
+//                    .header("Content-Disposition", "attachment; filename=group_progress.csv")
                     .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
 
         } catch (NoUserLoggedInException e) {
