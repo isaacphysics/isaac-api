@@ -249,7 +249,6 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             
             ResultSet results = pst.executeQuery();
             while (results.next()) {
-                //TODO: maybe create a lightweight object instead of only partially populating this one?
                 LightweightQuestionValidationResponse partialQuestionAttempt = new QuestionValidationResponse();
 
                 partialQuestionAttempt.setCorrect(results.getBoolean("correct"));
