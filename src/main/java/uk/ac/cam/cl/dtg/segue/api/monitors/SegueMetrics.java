@@ -40,6 +40,14 @@ public final class SegueMetrics {
             .name("segue_websocket_users").help("Currently number of websocket users/browsers.").register();
     // Anonymous user stats are calculated using metrics on the guava cache which holds a reference to each active user
 
+    // Login Metrics
+    public static final Counter LOG_IN_ATTEMPT = Counter.build()
+            .name("segue_log_in_attempt_total").help("Log in attempt since process start.").register();
+    public static final Counter LOG_IN = Counter.build()
+            .name("segue_log_in_total").help("Successful log in since process start.").register();
+    public static final Counter LOG_OUT = Counter.build()
+            .name("segue_log_out_total").help("Log out since preocess start.").register();
+
     /**
      *  Private constructor as it does not make sense to instantiate this class.
      */

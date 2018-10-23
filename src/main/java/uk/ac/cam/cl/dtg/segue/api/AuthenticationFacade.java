@@ -50,6 +50,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AccountAlreadyLinkedException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationCodeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
@@ -304,7 +305,8 @@ public class AuthenticationFacade extends AbstractSegueFacade {
         
         String email = credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME);
         String password = credentials.get(LOCAL_AUTH_PASSWORD_FIELDNAME);
-        
+        SegueMetrics.LOG_IN_ATTEMPT.inc();
+
         final String rateThrottleMessage = "There have been too many attempts to login to this account. "
                 + "Please try again after 10 minutes.";
 
@@ -320,6 +322,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
         try {
             RegisteredUserDTO userToReturn = userManager.authenticateWithCredentials(request, response, signinProvider, email, password);
             this.getLogManager().logEvent(userToReturn, request, SegueLogType.LOG_IN, Maps.newHashMap());
+            SegueMetrics.LOG_IN.inc();
             return Response.ok(userToReturn).build();
         } catch (AuthenticationProviderMappingException e) {
             String errorMsg = "Unable to locate the provider specified";
@@ -363,6 +366,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
 
         this.getLogManager().logEvent(this.userManager.getCurrentUser(request), request, SegueLogType.LOG_OUT,
                 Maps.newHashMap());
+        SegueMetrics.LOG_OUT.inc();
 
         userManager.logUserOut(request, response);
 
