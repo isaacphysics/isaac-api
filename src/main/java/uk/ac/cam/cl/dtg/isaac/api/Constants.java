@@ -54,20 +54,27 @@ public final class Constants {
      * GameboardItemState Represents the potential states of a gameboard item.
      */
     public enum GameboardItemState {
-        PERFECT, PASSED, IN_PROGRESS, NOT_ATTEMPTED, FAILED
+        PERFECT, PASSED, IN_PROGRESS, NOT_ATTEMPTED, FAILED;
+    }
+
+    public enum QuestionPartState {
+        CORRECT, INCORRECT, NOT_ATTEMPTED;
     }
 
     public enum FastTrackConceptState {
+        ft_top_ten,
         ft_upper,
         ft_lower;
         public static FastTrackConceptState getStateFromTags(Set<String> tags) {
-            if (tags.contains("ft_upper")) {
-                return ft_upper;
+            FastTrackConceptState state = null;
+            if (tags.contains("ft_top_ten")) {
+                state = ft_top_ten;
+            } else if (tags.contains("ft_upper")) {
+                state = ft_upper;
             } else if (tags.contains("ft_lower")) {
-                return ft_lower;
-            } else {
-                return null;
+                state = ft_lower;
             }
+            return state;
         }
     }
     public static final String FASTTRACK_GAMEBOARD_WHITELIST = "FASTTRACK_GAMEBOARD_WHITELIST";

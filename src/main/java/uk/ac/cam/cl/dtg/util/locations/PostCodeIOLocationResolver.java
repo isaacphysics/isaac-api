@@ -24,6 +24,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import io.netty.handler.codec.http.HttpResponseStatus;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -32,7 +33,6 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 
-import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -240,7 +240,7 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
 
         List<PostCode> returnList = Lists.newArrayList();
         int responseCode = (int) response.get("status");
-        if (responseCode == HttpResponseStatus.OK.getCode()) {
+        if (responseCode == HttpResponseStatus.OK.code()) {
             ArrayList<HashMap<String, Object>> responseResult = (ArrayList<HashMap<String, Object>>) response
                     .get("result");
 

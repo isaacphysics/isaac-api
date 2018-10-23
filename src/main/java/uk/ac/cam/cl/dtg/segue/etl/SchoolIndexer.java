@@ -18,10 +18,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
+
 import static com.google.common.collect.Maps.*;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOLS_SEARCH_INDEX;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOLS_SEARCH_TYPE;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOLS_INDEX_BASE;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOLS_INDEX_TYPE;
 
 /**
  * Created by Ian on 17/10/2016.
@@ -45,9 +47,11 @@ class SchoolIndexer {
      *             - when there is a problem building the index of schools.
      */
     synchronized void indexSchoolsWithSearchProvider() throws UnableToIndexSchoolsException {
-        if (es.hasIndex(SCHOOLS_SEARCH_INDEX)) {
+        if (es.hasIndex(SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString())) {
             log.info("Schools index already exists. Expunging.");
-            es.expungeIndexFromSearchCache(SCHOOLS_SEARCH_INDEX);
+            for (SCHOOLS_INDEX_TYPE schoolIndexType : SCHOOLS_INDEX_TYPE.values()) {
+                es.expungeIndexFromSearchCache(SCHOOLS_INDEX_BASE, schoolIndexType.toString());
+            }
         }
 
         log.info("Creating schools index with search provider.");
@@ -65,7 +69,8 @@ class SchoolIndexer {
 
         File f = new File(schoolsListPath);
         try {
-            es.indexObject(SCHOOLS_SEARCH_INDEX, "metadata", objectMapper.writeValueAsString(ImmutableMap.of("lastModified", f.lastModified())), "sourceFile");
+            es.indexObject(SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.METADATA.toString(), objectMapper.writeValueAsString(
+                    ImmutableMap.of("lastModified", f.lastModified())), "sourceFile");
         } catch (SegueSearchException e) {
             log.error("Unable to index school list metadata.", e);
         } catch (JsonProcessingException e) {
@@ -73,14 +78,16 @@ class SchoolIndexer {
         }
 
         try {
-            es.bulkIndex(SCHOOLS_SEARCH_INDEX, SCHOOLS_SEARCH_TYPE, indexList);
+            es.bulkIndex(SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString(), indexList);
             log.info("School list index request complete.");
         } catch (SegueSearchException e) {
             log.error("Unable to complete bulk index operation for schools list.", e);
         }
 
         // Create an alias (could be anything) to prevent this schools index from being garbage-collected by ElasticSearchIndexer.expungeOldIndices
-        es.addOrMoveIndexAlias("schools-latest", SCHOOLS_SEARCH_INDEX);
+        List<String> allSchoolTypes = Arrays.stream(SCHOOLS_INDEX_TYPE.values())
+                .map((schoolIndexType) -> schoolIndexType.toString()).collect(Collectors.toList());
+        es.addOrMoveIndexAlias("schools-latest", SCHOOLS_INDEX_BASE, allSchoolTypes);
     }
 
     /**

@@ -1,4 +1,4 @@
-FROM java:openjdk-8-jdk
+FROM openjdk:8-jdk
 
 ENV MAVEN_VERSION 3.3.9
 ENV MAVEN_OPTS -Xms2g -Xmx2g

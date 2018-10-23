@@ -171,8 +171,41 @@ public final class Constants {
         AND, OR
     };
 
-    public static final String SCHOOLS_SEARCH_INDEX = "schools";
-    public static final String SCHOOLS_SEARCH_TYPE = "school";
+    public static final String SCHOOLS_INDEX_BASE = "schools";
+    public enum SCHOOLS_INDEX_TYPE {
+        METADATA("metadata"),
+        SCHOOL_SEARCH("school");
+
+        private String typeName;
+
+        SCHOOLS_INDEX_TYPE(final String typeName) {
+            this.typeName = typeName;
+        }
+
+        @Override
+        public String toString() {
+            return this.typeName;
+        }
+    }
+
+    public enum CONTENT_INDEX_TYPE {
+        METADATA("metadata"),
+        UNIT("unit"),
+        PUBLISHED_UNIT("publishedUnit"),
+        CONTENT("content"),
+        CONTENT_ERROR("contentError");
+
+        private String typeName;
+
+        CONTENT_INDEX_TYPE(final String typeName) {
+            this.typeName = typeName;
+        }
+
+        @Override
+        public String toString() {
+            return this.typeName;
+        }
+    }
 
     // Federated Authentication Stuff
     /**
@@ -254,6 +287,7 @@ public final class Constants {
         EVENT_BOOKING,
         EVENT_BOOKING_CANCELLED,
         EVENT_WAITING_LIST_BOOKING,
+        LOG_IN,
         LOG_OUT,
         MERGE_USER,
         PASSWORD_RESET_REQUEST_RECEIVED,

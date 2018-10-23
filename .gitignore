@@ -4,7 +4,6 @@
 target
 .idea/
 *.iml
-.vagrant/
 .env
 grafana
 prometheus/data

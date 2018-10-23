@@ -19,6 +19,8 @@ import java.util.List;
 
 import javax.annotation.Nullable;
 
+import com.google.common.collect.Lists;
+import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.api.Constants.GameboardItemState;
 
 /**
@@ -40,6 +42,7 @@ public class GameboardItem {
     private Integer questionPartsTotal;
     private Float passMark;
     private GameboardItemState state;
+    private List<Constants.QuestionPartState> questionPartStates = Lists.newArrayList();
     
     // optional field if we want to use the gameboard item outside of the context of a board.
     @Nullable
@@ -187,6 +190,16 @@ public class GameboardItem {
         this.level = level;
     }
 
+    public final List<Constants.QuestionPartState> getQuestionPartStates(){
+        return this.questionPartStates;
+    }
+
+    public final void setQuestionPartStates(final List<Constants.QuestionPartState> questionPartStates) {
+        this.questionPartStates = questionPartStates;
+    }
+
+    // TODO in time we should be able to remove the question part counters and just use questionPartStates instead,
+    // that will require altering some of the front end code - the assignment progress page in particular.
     /**
      * Gets the number of questionPartsCorrect.
      * 
