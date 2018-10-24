@@ -1,12 +1,12 @@
 /**
  * Copyright 2014 Stephen Cummins
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
@@ -90,9 +91,9 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * AssignmentFacade
- * 
+ *
  * This class provides endpoints to support assigning work to users.
- * 
+ *
  */
 @Path("/assignments")
 @Api(value = "/assignments")
@@ -114,7 +115,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
     /**
      * Creates an instance of the AssignmentFacade controller which provides the REST endpoints for the isaac api.
-     * 
+     *
      * @param assignmentManager
      *            - Instance of assignment Manager
      * @param questionManager
@@ -149,7 +150,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
     /**
      * Endpoint that will return a list of boards assigned to the current user.
-     * 
+     *
      * @param request
      *            - so that we can identify the current user.
      * @param assignmentStatus
@@ -162,7 +163,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @GZIP
     public Response getAssignments(@Context final HttpServletRequest request,
 
-            @QueryParam("assignmentStatus") final GameboardState assignmentStatus) {
+                                   @QueryParam("assignmentStatus") final GameboardState assignmentStatus) {
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
 
@@ -199,7 +200,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     if (assignment.getGameboard() == null) {
                         continue;
                     }
-                    
+
                     if (assignmentStatus.equals(GameboardState.COMPLETED)
                             && assignment.getGameboard().getPercentageCompleted() == 100) {
                         newList.add(assignment);
@@ -227,7 +228,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
     /**
      * Allows a user to get all assignments they have set.
-     * 
+     *
      * @param request
      *            - so that we can identify the current user.
      * @param groupIdOfInterest
@@ -239,7 +240,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public Response getAssigned(@Context final HttpServletRequest request,
-            @QueryParam("group") final Long groupIdOfInterest) {
+                                @QueryParam("group") final Long groupIdOfInterest) {
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
 
@@ -285,7 +286,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
     /**
      * Allows the user to view results of an assignment they have set.
-     * 
+     *
      * @param assignmentId
      *            - the id of the assignment to be looked up.
      * @param request
@@ -297,7 +298,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public Response getAssignmentProgress(@Context final HttpServletRequest request,
-            @PathParam("assignment_id") final Long assignmentId) {
+                                          @PathParam("assignment_id") final Long assignmentId) {
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
 
@@ -366,7 +367,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
     /**
      * Allows the user to view results of an assignment they have set as a detailed csv file.
-     * 
+     *
      * @param assignmentId
      *            - the id of the assignment to be looked up.
      * @param request
@@ -379,11 +380,11 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @GZIP
     @Consumes(MediaType.WILDCARD)
     public Response getAssignmentProgressDownloadCSV(@Context final HttpServletRequest request,
-            @PathParam("assignment_id") final Long assignmentId) {
-       
+                                                     @PathParam("assignment_id") final Long assignmentId) {
+
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
-            
+
             AssignmentDTO assignment = this.assignmentManager.getAssignmentById(assignmentId);
             if (null == assignment) {
                 return SegueErrorResponse.getResourceNotFoundResponse("The assignment requested cannot be found");
@@ -396,7 +397,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
             }
-            
+
             GameboardDTO gameboard = this.gameManager.getGameboard(assignment.getGameboardId());
 
             List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group);
@@ -429,7 +430,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             for (GameboardItem questionPage : gameboard.getQuestions()) {
                 int index = 0;
-                
+
                 for (QuestionDTO question : gameManager.getAllMarkableQuestionPartsDFSOrder(questionPage.getId())) {
                     //int newCharIndex = 'A' + index; // decided not to try and match the front end.
                     int newCharIndex = index + 1;
@@ -464,14 +465,14 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     userAttempts = l.get(0);
                 }
                 Map<String, Integer> userAttemptsSummary = userAttempts.entrySet().stream().collect(
-                    Collectors.toMap(
-                        Entry::getKey,
-                        e -> e.getValue().stream().map(LightweightQuestionValidationResponse::isCorrect)
-                                .reduce(false, (a, b) -> a || b)
-                    )
+                        Collectors.toMap(
+                                Entry::getKey,
+                                e -> e.getValue().stream().map(LightweightQuestionValidationResponse::isCorrect)
+                                        .reduce(false, (a, b) -> a || b)
+                        )
                 ).entrySet().stream().collect(Collectors.toMap(
-                    Entry::getKey,
-                    e -> e.getValue() ? 1 : 0
+                        Entry::getKey,
+                        e -> e.getValue() ? 1 : 0
                 ));
                 // This could be better handled with yet another stream, but my eyes are already crossing,
                 // I'd rather not cross the streams too...
@@ -570,7 +571,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @GZIP
     @Consumes(MediaType.WILDCARD)
     public Response getGroupAssignmentsProgressDownloadCSV(@Context final HttpServletRequest request,
-            @PathParam("group_id") final Long groupId) {
+                                                           @PathParam("group_id") final Long groupId) {
 
         try {
             // Fetch the currently logged in user
@@ -583,7 +584,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             // Check the user has permission to access this group:
             if (!GroupManager.isOwnerOrAdditionalManager(group, currentlyLoggedInUser.getId())
-                && !isUserAnAdmin(userManager, request)) {
+                    && !isUserAnAdmin(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
             }
@@ -600,11 +601,13 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             // Integer: question part result
             Map<RegisteredUserDTO, Map<GameboardDTO, Map<String, Integer>>> grandTable = Maps.newHashMap();
             // Retrieve each user's progress data and cram everything into a Grand Table for later consumption
-            List<GameboardDTO> gameboards = new ArrayList<>();
+            List<String> gameboardsIds = assignments.stream().map(AssignmentDTO::getGameboardId).collect(Collectors.toList());
+            List<GameboardDTO> gameboards = gameManager.getGameboards(gameboardsIds);
+            Map<String, GameboardDTO> gameboardsIdMap = gameboards.stream().collect(Collectors.toMap(GameboardDTO::getId, Function.identity()));
+
             Map<AssignmentDTO, GameboardDTO> assignmentGameboards = new HashMap<>();
             for (AssignmentDTO assignment : assignments) {
-                // FIXME This could be improved if we could get the gameboards given a list of ids
-                GameboardDTO gameboard = gameManager.getGameboard(assignment.getGameboardId());
+                GameboardDTO gameboard = gameboardsIdMap.get(assignment.getGameboardId());
                 gameboards.add(gameboard);
                 // Create an assignment -> gameboard mapping to avoid repeatedly querying the DB later on. All the efficiency!
                 assignmentGameboards.put(assignment, gameboard);
@@ -726,7 +729,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             rows.add(headerRow.toArray(new String[0]));
 
             for (RegisteredUserDTO groupMember : groupMembers) {
-
+                // FIXME Some room for improvement here, as we can retrieve all the users with a single query.
+                // FIXME Not urgent, as the dominating query is the one that retrieves question attempts above.
                 UserSummaryDTO userSummary = associationManager.enforceAuthorisationPrivacy(currentlyLoggedInUser,
                         userManager.convertToUserSummaryObject(groupMember));
 
@@ -737,7 +741,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 int totalQPartsCorrect = 0;
                 int totalQPartsCount = 0;
                 for (AssignmentDTO assignment : assignments) {
-                    GameboardDTO gameboard = gameManager.getGameboard(assignment.getGameboardId());
+                    GameboardDTO gameboard = assignmentGameboards.get(assignment);
                     int assignmentQPartsCorrect = 0;
                     int assignmentQPartsCount = 0;
                     List<String> questionIds = gameboardQuestionIds.get(gameboard);
@@ -840,10 +844,10 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public Response getAssignedGroupsByGameboards(@Context final HttpServletRequest request,
-            @QueryParam("gameboard_ids") final String gameboardIdsQueryParam) {
+                                                  @QueryParam("gameboard_ids") final String gameboardIdsQueryParam) {
         try {
 
-            if (null == gameboardIdsQueryParam || gameboardIdsQueryParam.isEmpty() ) {
+            if (null == gameboardIdsQueryParam || gameboardIdsQueryParam.isEmpty()) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a comma separated list of gameboard_ids in the query param")
                         .toResponse();
             }
@@ -868,7 +872,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
     /**
      * Allows a user to assign a gameboard to group of users.
-     * 
+     *
      * @param request
      *            - so that we can identify the current user.
      * @param assignmentDTOFromClient a partially completed DTO for the assignment.
@@ -879,7 +883,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public Response assignGameBoard(@Context final HttpServletRequest request,
-            final AssignmentDTO assignmentDTOFromClient) {
+                                    final AssignmentDTO assignmentDTOFromClient) {
 
         if (assignmentDTOFromClient.getGameboardId() == null || assignmentDTOFromClient.getGroupId() == null) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "A required field was missing. Must provide group and gameboard ids").toResponse();
@@ -947,7 +951,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
     /**
      * Allows a user to delete an assignment.
-     * 
+     *
      * @param request
      *            - so that we can identify the current user.
      * @param gameboardId
@@ -961,7 +965,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public Response deleteAssignment(@Context final HttpServletRequest request,
-            @PathParam("gameboard_id") final String gameboardId, @PathParam("group_id") final Long groupId) {
+                                     @PathParam("gameboard_id") final String gameboardId, @PathParam("group_id") final Long groupId) {
 
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);

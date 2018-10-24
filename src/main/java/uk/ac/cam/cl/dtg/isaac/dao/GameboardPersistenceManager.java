@@ -820,8 +820,8 @@ public class GameboardPersistenceManager {
         // Then, go for the database
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM gameboards WHERE id IN ?;");
-            Array gameboardIdsPreparedArray = conn.createArrayOf("varchar", gameboardIds.toArray());
+            pst = conn.prepareStatement("SELECT * FROM gameboards WHERE id = ANY (?);");
+            Array gameboardIdsPreparedArray = conn.createArrayOf("varchar", gameboardIdsForQuery.toArray());
             pst.setArray(1, gameboardIdsPreparedArray);
 
             ResultSet results = pst.executeQuery();
