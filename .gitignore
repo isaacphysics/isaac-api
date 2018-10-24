@@ -1,6 +1,9 @@
 .project
 .settings
 .classpath
-/target
+target
 .idea/
 *.iml
+.env
+grafana
+prometheus/data
