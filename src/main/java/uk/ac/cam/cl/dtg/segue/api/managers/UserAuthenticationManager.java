@@ -296,6 +296,7 @@ public class UserAuthenticationManager {
      * @return either a user or null if we couldn't find the user for whatever reason.
      */
     public RegisteredUser getUserFromSession(final HttpServletRequest request) {
+        // WARNING: There are two public getUserFromSession methods: ensure you check both!
         Validate.notNull(request);
 
         Map<String, String> currentSessionInformation;
@@ -330,26 +331,7 @@ public class UserAuthenticationManager {
             }
         }
 
-        // retrieve the user from database.
-        try {
-            // Get the user the cookie claims to belong to from the session information:
-            long currentUserId = Long.parseLong(currentSessionInformation.get(SESSION_USER_ID));
-            RegisteredUser userToReturn =  database.getById(currentUserId);
-
-            // Check that the user's session is indeed valid:
-            if (!this.isValidUsersSession(currentSessionInformation, userToReturn)) {
-                log.debug("User session has failed validation. Treating as logged out. Session: " + currentSessionInformation);
-                return null;
-            }
-            
-            return userToReturn;
-        } catch (SegueDatabaseException e) {
-            log.error("Internal Database error. Failed to resolve current user.", e);
-            return null;
-        } catch (NumberFormatException e) {
-            log.info("Invalid user id detected in session. " + currentSessionInformation.get(SESSION_USER_ID));
-            return null;            
-        }
+        return getUserFromSessionInformationMap(currentSessionInformation);
     }
 
     /**
@@ -357,6 +339,7 @@ public class UserAuthenticationManager {
      *           related by interfaces or inheritance and so require duplicated methods!
      */
     public RegisteredUser getUserFromSession(final UpgradeRequest request) {
+        // WARNING: There are two public getUserFromSession methods: ensure you check both!
         Validate.notNull(request);
 
         Map<String, String> currentSessionInformation;
@@ -371,7 +354,20 @@ public class UserAuthenticationManager {
             return null;
         }
 
-        // retrieve the user from database.
+        return getUserFromSessionInformationMap(currentSessionInformation);
+    }
+
+    /**
+     * This method tries to address some of the duplication when extracting a user from a request.
+     *
+     * @see #getUserFromSession(HttpServletRequest) - there are two types of "request" and they have identical methods
+     * @see #getUserFromSession(UpgradeRequest) -     but unrelated by interfaces/inheritance, so require duplication!
+     *
+     * @param currentSessionInformation - the session information map extracted from the cookie.
+     * @return either the valid user from the cookie, or null if no valid user
+     */
+    private RegisteredUser getUserFromSessionInformationMap(final Map<String, String> currentSessionInformation) {
+        // Retrieve the user from database.
         try {
             // Get the user the cookie claims to belong to from the session information:
             long currentUserId = Long.parseLong(currentSessionInformation.get(SESSION_USER_ID));
@@ -946,6 +942,7 @@ public class UserAuthenticationManager {
      */
     private Map<String, String> getSegueSessionFromRequest(final HttpServletRequest request) throws IOException,
             InvalidSessionException {
+        // WARNING: There are two getSegueSessionFromRequest methods: ensure you update both!
         Cookie segueAuthCookie = null;
         if (request.getCookies() == null) {
             throw new InvalidSessionException("There are no cookies set.");
@@ -975,6 +972,7 @@ public class UserAuthenticationManager {
      */
     private Map<String, String> getSegueSessionFromRequest(final UpgradeRequest request) throws IOException,
             InvalidSessionException {
+        // WARNING: There are two getSegueSessionFromRequest methods: ensure you update both!
         HttpCookie segueAuthCookie = null;
         if (request.getCookies() == null) {
             throw new InvalidSessionException("There are no cookies set.");
