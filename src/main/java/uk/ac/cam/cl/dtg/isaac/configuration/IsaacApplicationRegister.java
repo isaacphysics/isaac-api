@@ -33,7 +33,6 @@ import uk.ac.cam.cl.dtg.isaac.api.PagesFacade;
 import uk.ac.cam.cl.dtg.segue.api.*;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.PerformanceMonitor;
-import uk.ac.cam.cl.dtg.segue.configuration.SchoolLookupConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -65,8 +64,7 @@ public class IsaacApplicationRegister extends Application {
         SegueGuiceConfigurationModule segueGuiceConfigurationModule = new SegueGuiceConfigurationModule();
         IsaacGuiceConfigurationModule isaacGuiceConfigurationModule = new IsaacGuiceConfigurationModule();
         
-        injector = Guice.createInjector(new SchoolLookupConfigurationModule(),
-                isaacGuiceConfigurationModule, segueGuiceConfigurationModule);
+        injector = Guice.createInjector(isaacGuiceConfigurationModule, segueGuiceConfigurationModule);
         
         SegueConfigurationModule segueConfigurationModule = injector.getInstance(SegueConfigurationModule.class);
         ContentMapper mapper = injector.getInstance(ContentMapper.class);

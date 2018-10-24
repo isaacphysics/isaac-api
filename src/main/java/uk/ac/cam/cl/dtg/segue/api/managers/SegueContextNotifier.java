@@ -10,6 +10,7 @@ import javax.servlet.annotation.WebListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.segue.api.monitors.IMetricsExporter;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 
 import com.google.api.client.util.Lists;
@@ -29,6 +30,7 @@ public class SegueContextNotifier implements ServletContextListener {
 
     public static Injector injector;
 
+    private final IMetricsExporter metricsExporter;
     private final List<ServletContextListener> listeners;
 
     /**
@@ -37,6 +39,9 @@ public class SegueContextNotifier implements ServletContextListener {
      */
     public SegueContextNotifier() {
         injector = Guice.createInjector(new SegueGuiceConfigurationModule());
+
+        // Instantiate metrics exporter on process startup
+        metricsExporter = injector.getInstance(IMetricsExporter.class);
 
         listeners = Lists.newArrayList();
         Collection<Class<? extends ServletContextListener>> registeredContextListenerClasses 

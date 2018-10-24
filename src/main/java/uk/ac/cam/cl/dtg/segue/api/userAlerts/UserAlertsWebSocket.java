@@ -3,14 +3,22 @@ package uk.ac.cam.cl.dtg.segue.api.userAlerts;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.Striped;
 import com.google.inject.Inject;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.StatusCode;
-import org.eclipse.jetty.websocket.api.annotations.*;
+import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
+import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
+import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
+import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.IStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidSessionException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -18,12 +26,15 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.IUserAlert;
 import uk.ac.cam.cl.dtg.segue.dos.IUserAlerts;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.io.IOException;
 import java.net.HttpCookie;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.locks.Lock;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
@@ -35,20 +46,43 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  */
 @WebSocket
 public class UserAlertsWebSocket implements IAlertListener {
+
     private UserAccountManager userManager;
     private RegisteredUserDTO connectedUser;
     private final IUserAlerts userAlerts;
     private final ILogManager logManager;
     private final IStatisticsManager statisticsManager;
+    private final PropertiesLoader properties;
     private Session session;
     private static ObjectMapper objectMapper = new ObjectMapper();
 
-    public static ConcurrentHashMap<Long, ConcurrentLinkedQueue<UserAlertsWebSocket>> connectedSockets = new ConcurrentHashMap<>();
-    private static Long websocketsOpened = 0L;
-    private static Long websocketsClosed = 0L;
+    // Named unsafeConnectedSockets because, although non-aggregate operations on the concurrent hash map are fine,
+    // operations on the user sets of websockets are unsafe unless used with the matching user lock.
+    private static Map<Long, Set<UserAlertsWebSocket>> unsafeConnectedSockets = Maps.newConcurrentMap();
+    private static final int MAX_NUMBER_OF_CONCURRENT_USER_TAB_OPERATIONS = 200;
+    // If we move to supporting connections across multiple APIs, we could use postgres for a distributed lock.
+    private static Striped<Lock> userLocks = Striped.lazyWeakLock(MAX_NUMBER_OF_CONCURRENT_USER_TAB_OPERATIONS);
 
     private static final Logger log = LoggerFactory.getLogger(UserAlertsWebSocket.class);
-    private static final int MaxConcurrentWebSocketsPerUser = 10;
+
+    /**
+     * This static method obtains a user lock and sends an alert to each of that user's websockets.
+     * @param userId ID of the user to send the messages, we do not check its validity here.
+     * @param alert the alert to send to the user.
+     */
+    public static void notifyUserOfAlert(final long userId, final IUserAlert alert) {
+        Lock userLock = userLocks.get(userId);
+        userLock.lock();
+        try {
+            if (unsafeConnectedSockets.containsKey(userId)) {
+                for (UserAlertsWebSocket listener : unsafeConnectedSockets.get(userId)) {
+                    listener.sendAlert(alert);
+                }
+            }
+        } finally {
+            userLock.unlock();
+        }
+    }
 
     /**
      * Injectable constructor
@@ -64,12 +98,14 @@ public class UserAlertsWebSocket implements IAlertListener {
     public UserAlertsWebSocket(final UserAccountManager userManager,
                                final IUserAlerts userAlerts,
                                final ILogManager logManager,
-                               final IStatisticsManager statisticsManager) {
+                               final IStatisticsManager statisticsManager,
+                               final PropertiesLoader properties) {
 
         this.userManager = userManager;
         this.userAlerts = userAlerts;
         this.logManager = logManager;
         this.statisticsManager = statisticsManager;
+        this.properties = properties;
     }
 
 
@@ -116,29 +152,51 @@ public class UserAlertsWebSocket implements IAlertListener {
 
                 connectedUser = userManager.getUserDTOById(Long.parseLong(sessionInformation.get(SESSION_USER_ID)));
 
-                // Do not let one user open too many WebSockets:
-                if (connectedSockets.containsKey(connectedUser.getId())
-                        && (connectedSockets.get(connectedUser.getId()).size() >= MaxConcurrentWebSocketsPerUser)) {
-                    log.debug("User " + connectedUser.getId() + " attempted to open too many simultaneous WebSockets; sending TRY_AGAIN_LATER.");
+                long connectedUserId = connectedUser.getId();
+                boolean addedSocket;
+                boolean addedUser;
+                int numberOfUserSockets;
+
+                // We use boolean values to track state change so that logging is not done while holding the lock
+                Lock userLock = userLocks.get(connectedUserId);
+                userLock.lock();
+                try {
+                    Object nullIfNewUser = unsafeConnectedSockets.putIfAbsent(connectedUserId, Sets.newHashSet());
+                    addedUser = null == nullIfNewUser;
+                    Set<UserAlertsWebSocket> unsafeUsersSockets = unsafeConnectedSockets.get(connectedUserId);
+
+                    addedSocket = unsafeUsersSockets.size() <= Integer.parseInt(
+                            this.properties.getProperty(Constants.MAX_CONCURRENT_WEB_SOCKETS_PER_USER));
+                    if (addedSocket) {
+                        unsafeUsersSockets.add(this);
+                    }
+                    numberOfUserSockets = unsafeUsersSockets.size();
+                } finally {
+                    userLock.unlock();
+                }
+
+                // Report on state change
+                if (addedUser) {
+                    log.debug("User " + connectedUserId + " started a new websocket session.");
+                    SegueMetrics.CURRENT_WEBSOCKET_USERS.inc();
+                }
+
+                if (addedSocket) {
+                    log.debug("User " + connectedUserId + " opened new websocket. Total open: " + numberOfUserSockets);
+                    SegueMetrics.CURRENT_OPEN_WEBSOCKETS.inc();
+                    SegueMetrics.WEBSOCKETS_OPENED.inc();
+                } else {
+                    log.debug("User " + connectedUserId
+                            + " attempted to open too many simultaneous WebSockets; sending TRY_AGAIN_LATER.");
                     session.close(StatusCode.NORMAL, "TRY_AGAIN_LATER");
                     return;
                 }
 
-                connectedSockets.putIfAbsent(connectedUser.getId(), new ConcurrentLinkedQueue<>());
-
-                connectedSockets.get(connectedUser.getId()).add(this);
-                log.debug("User " + connectedUser.getId() + " opened new websocket. Total open: " + connectedSockets.get(connectedUser.getId()).size());
-
                 // For now, we hijack this websocket class to deliver user streak information
                 sendUserSnapshotData();
+                // Send initial data
+                sendInitialNotifications(connectedUserId);
 
-                // TODO: Send initial set of notifications.
-                List<IUserAlert> persistedAlerts = userAlerts.getUserAlerts(connectedUser.getId());
-                if (!persistedAlerts.isEmpty()) {
-                    session.getRemote().sendString(objectMapper.writeValueAsString(ImmutableMap.of("notifications", persistedAlerts)));
-                }
-
-                websocketsOpened++;
             } else {
                 log.debug("WebSocket connection failed! Expired or invalid session.");
                 session.close(StatusCode.POLICY_VIOLATION, "Expired or invalid session!");
@@ -171,23 +229,36 @@ public class UserAlertsWebSocket implements IAlertListener {
      */
     @OnWebSocketClose
     public void onClose(final Session session, final int status, final String reason) {
-        connectedSockets.get(connectedUser.getId()).remove(this);
-        log.debug("User " + connectedUser.getId() + " closed a websocket. Total still open: " + connectedSockets.get(connectedUser.getId()).size());
+        long connectedUserId = connectedUser.getId();
+        boolean removeUser;
+        int numberOfUserSockets;
 
-        // if the user has no websocket conenctions open, remove them from the map
-        /*synchronized (connectedSockets) {
-            if (connectedSockets.containsKey(connectedUser.getId()) && connectedSockets.get(connectedUser.getId()).isEmpty()) {
-                connectedSockets.remove(connectedUser.getId(), connectedSockets.get(connectedUser.getId()));
+        // We use boolean values to track state change so that logging is not done while holding the lock
+        Lock userLock = userLocks.get(connectedUserId);
+        userLock.lock();
+        try {
+            Set unsafeUsersSockets = unsafeConnectedSockets.get(connectedUserId);
+            unsafeUsersSockets.remove(this);
+            numberOfUserSockets = unsafeUsersSockets.size();
+            removeUser = numberOfUserSockets == 0;
+            if (removeUser) {
+                unsafeConnectedSockets.remove(connectedUserId);
             }
+        } finally {
+            userLock.unlock();
         }
 
-        if (connectedSockets.containsKey(connectedUser.getId()) && connectedSockets.get(connectedUser.getId()).isEmpty()) {
-            log.info("User " + connectedUser.getId() + " has no websocket connections but still contains entry in hashmap!");
-        }*/
+        // Report on state change
+        SegueMetrics.CURRENT_OPEN_WEBSOCKETS.dec();
+        SegueMetrics.WEBSOCKETS_CLOSED.inc();
 
-        websocketsClosed++;
+        if (removeUser) {
+            log.debug("User " + connectedUserId + " closed all of its open websockets");
+            SegueMetrics.CURRENT_WEBSOCKET_USERS.dec();
+        } else {
+            log.debug("User " + connectedUserId + " closed a websocket. Total still open: " + numberOfUserSockets);
+        }
     }
-
 
     /**
      * Sends a payload to the connected client notifying them of an important event
@@ -195,8 +266,7 @@ public class UserAlertsWebSocket implements IAlertListener {
      * @param alert
      *          - user alert instance containg details about the event
      */
-    @Override
-    public void notifyAlert(final IUserAlert alert) {
+    private void sendAlert(final IUserAlert alert) {
         try {
             this.session.getRemote().sendString(objectMapper.writeValueAsString(
                     ImmutableMap.of(
@@ -225,7 +295,20 @@ public class UserAlertsWebSocket implements IAlertListener {
                 )));
     }
 
-
+    /**
+     * Send any notifications or alerts registered in the database down this websocket
+     * @param userId the Id of the user's alerts which will be sent.
+     * @throws SegueDatabaseException can be thrown while getting the user's alerts from the database.
+     * @throws IOException can be thrown when sending the notifications down the connection.
+     */
+    private void sendInitialNotifications(final long userId) throws SegueDatabaseException, IOException {
+        // TODO: Send initial set of notifications.
+        List<IUserAlert> persistedAlerts = userAlerts.getUserAlerts(userId);
+        if (!persistedAlerts.isEmpty()) {
+            session.getRemote().sendString(
+                    objectMapper.writeValueAsString(ImmutableMap.of("notifications", persistedAlerts)));
+        }
+    }
 
     /**
      * Extracts the segue session information from the given session.
@@ -257,20 +340,9 @@ public class UserAlertsWebSocket implements IAlertListener {
         }
 
         @SuppressWarnings("unchecked")
-        Map<String, String> sessionInformation = objectMapper.readValue(segueAuthCookie.getValue(),
-                HashMap.class);
+        Map<String, String> sessionInformation = objectMapper.readValue(segueAuthCookie.getValue(), HashMap.class);
 
         return sessionInformation;
-
-    }
-
-    /**
-     *  Access stats about WebSocket usage.
-     *
-     * @return a count of how many WebSockets opened and closed
-     */
-    public static Map<String, Long> getWebsocketCounts() {
-        return ImmutableMap.of("numWebsocketsOpenedOverTime", websocketsOpened, "numWebsocketsClosedOverTime", websocketsClosed);
 
     }
 
