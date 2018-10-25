@@ -164,7 +164,8 @@ CREATE TABLE groups (
     group_name text,
     owner_id integer,
     created timestamp without time zone,
-    archived boolean DEFAULT false NOT NULL
+    archived boolean DEFAULT false NOT NULL,
+    last_updated timestamp without time zone DEFAULT NULL
 );
 
 
