@@ -151,6 +151,12 @@ public class GroupsFacade extends AbstractSegueFacade {
             List<Map<String, Object>> results = Lists.newArrayList();
             for(UserGroupDTO group : groups) {
                 ImmutableMap<String, Object> map = ImmutableMap.of("group", group, "membershipStatus", this.groupManager.getGroupMembershipStatus(user.getId(), group.getId()).name());
+
+                // check if the group doesn't have a last updated date if not it means that we shouldn't show students the group name as teachers may not have realised the names are public..
+                if (group.getLastUpdated() == null) {
+                    group.setGroupName(null);
+                }
+
                 results.add(map);
             }
 
