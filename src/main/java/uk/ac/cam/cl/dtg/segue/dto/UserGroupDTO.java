@@ -39,6 +39,7 @@ public class UserGroupDTO {
     private String groupName;
     private Long ownerId;
     private Date created;
+    private Date lastUpdated;
     private String token;
     private boolean archived;
     private UserSummaryWithEmailAddressDTO ownerSummary;
@@ -64,12 +65,13 @@ public class UserGroupDTO {
      * @param created
      *            - date created.
      */
-    public UserGroupDTO(@Nullable final Long id, final String groupName, final Long ownerId, final Date created,
+    public UserGroupDTO(@Nullable final Long id, final String groupName, final Long ownerId, final Date created, final Date lastUpdated,
                         final boolean archived) {
         this.id = id;
         this.groupName = groupName;
         this.ownerId = ownerId;
         this.created = created;
+        this.lastUpdated = lastUpdated;
         this.archived = archived;
         this.additionalManagers = Sets.newHashSet();
     }
@@ -174,6 +176,25 @@ public class UserGroupDTO {
      */
     public void setCreated(final Date created) {
         this.created = created;
+    }
+
+    /**
+     * Gets the last updated.
+     *
+     * @return the created
+     */
+    public Date getLastUpdated() {
+        return lastUpdated;
+    }
+
+    /**
+     * Sets the last updated date.
+     *
+     * @param lastUpdated
+     *            the created to set
+     */
+    public void setLastUpdated(final Date lastUpdated) {
+        this.lastUpdated = lastUpdated;
     }
 
     /**
