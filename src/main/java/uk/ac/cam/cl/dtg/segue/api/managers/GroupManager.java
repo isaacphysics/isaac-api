@@ -145,7 +145,7 @@ public class GroupManager {
      */
     public List<RegisteredUserDTO> getUsersInGroup(final UserGroupDTO group) throws SegueDatabaseException {
         Validate.notNull(group);
-        List<Long> groupMemberIds = groupDatabase.getGroupMemberIds(group.getId());
+        List<Long> groupMemberIds = Lists.newArrayList(groupDatabase.getGroupMemberIds(group.getId()));
 
         if (groupMemberIds.isEmpty()) {
             return Lists.newArrayList();

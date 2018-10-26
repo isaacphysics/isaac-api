@@ -172,7 +172,7 @@ public interface IUserGroupPersistenceManager {
      * @return list of user ids.
      * @throws SegueDatabaseException - if there is a database error
      */
-    List<Long> getGroupMemberIds(Long groupId) throws SegueDatabaseException;
+    Collection<Long> getGroupMemberIds(Long groupId) throws SegueDatabaseException;
 
     /**
      * Create a map of user id to membership status so that group membership information can be used to change behaviour.

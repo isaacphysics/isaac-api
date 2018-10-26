@@ -149,9 +149,7 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
         }
 
         try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-
-            pst = conn
+            PreparedStatement pst = conn
                     .prepareStatement(
                             "INSERT INTO group_memberships(group_id, user_id, status, created, updated) VALUES (?, ?, ?, ?, ?);",
                             Statement.RETURN_GENERATED_KEYS);
@@ -225,9 +223,12 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
     @Override
     public List<UserGroup> getGroupsByAdditionalManager(final Long additionalManagerId, @Nullable final Boolean archivedGroupsOnly) throws SegueDatabaseException {
         String pstString = "SELECT * FROM groups WHERE id IN (SELECT group_id FROM group_additional_managers WHERE user_id = ?)";
+
         if (archivedGroupsOnly != null) {
             pstString = pstString +  " AND archived = ?";
         }
+
+        pstString = pstString + " AND group_status <> '" + GroupStatus.DELETED.name() + "'";
 
         return getGroupsBySQLPst(pstString, additionalManagerId, archivedGroupsOnly);
     }
@@ -319,27 +320,8 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
     }
 
     @Override
-    public List<Long> getGroupMemberIds(final Long groupId) throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-
-            pst = conn.prepareStatement("SELECT * FROM group_memberships " +
-                    "WHERE group_id = ? AND status <> ?");
-
-            pst.setLong(1, groupId);
-            pst.setString(2, GroupMembershipStatus.DELETED.name());
-
-            ResultSet results = pst.executeQuery();
-
-            List<Long> listOfResults = Lists.newArrayList();
-            while (results.next()) {
-                listOfResults.add(results.getLong("user_id"));
-            }
-
-            return listOfResults;
-        } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
-        }
+    public Collection<Long> getGroupMemberIds(final Long groupId) throws SegueDatabaseException {
+        return this.getGroupMembershipMap(groupId).keySet();
     }
 
     @Override
@@ -347,11 +329,12 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
 
-            pst = conn.prepareStatement("SELECT * FROM group_memberships " +
-                    "WHERE group_id = ? AND status <> ?");
+            pst = conn.prepareStatement("SELECT * FROM group_memberships INNER JOIN groups ON " +
+                    "groups.id = group_memberships.group_id WHERE group_id = ? AND status <> ? AND group_status <> ?");
 
             pst.setLong(1, groupId);
             pst.setString(2, GroupMembershipStatus.DELETED.name());
+            pst.setString(3, GroupStatus.DELETED.name());
 
             ResultSet results = pst.executeQuery();
 
@@ -367,7 +350,7 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
     }
 
     /**
-     * Will look for shallow deleted group membership
+     * Will include shallow deleted group membership as we should reuse their group entry in the db
      * @param groupId group to check
      * @param userId user to check
      * @return true if they ever had a recorded membership entry in the db.
@@ -396,9 +379,10 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
             pst = conn
                     .prepareStatement("SELECT * FROM groups INNER JOIN group_memberships"
                             + " ON groups.id = group_memberships.group_id"
-                            + " WHERE user_id = ? AND status <> ?");
+                            + " WHERE user_id = ? AND status <> ? AND group_status <> ?");
             pst.setLong(1, userId);
             pst.setString(2, GroupMembershipStatus.DELETED.name());
+            pst.setString(3, GroupStatus.DELETED.name());
             ResultSet results = pst.executeQuery();
             
             List<UserGroup> listOfResults = Lists.newArrayList();
@@ -420,6 +404,8 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
                     .prepareStatement("SELECT * FROM group_additional_managers"
                             + " WHERE group_id = ?");
             pst.setLong(1, groupId);
+
+            // on this occasion we do not care if the group is deleted.
 
             ResultSet results = pst.executeQuery();
 
@@ -481,12 +467,13 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
      */
     private UserGroup buildGroup(final ResultSet set) throws SQLException {
         return new UserGroup(set.getLong("id"), set.getString("group_name"), set.getLong("owner_id"),
-                GroupStatus.valueOf(set.getString("status")), set.getDate("created"),
+                GroupStatus.valueOf(set.getString("group_status")), set.getDate("created"),
                 set.getBoolean("archived"), set.getDate("last_updated"));
     }
 
     private GroupMembership buildMembershipRecord(final ResultSet set) throws SQLException {
-        return new GroupMembership(set.getLong("group_id"), set.getLong("user_id"), GroupMembershipStatus.valueOf(set.getString("status")), set.getDate("created"), set.getDate("updated"));
+        return new GroupMembership(set.getLong("group_id"), set.getLong("user_id"),
+                GroupMembershipStatus.valueOf(set.getString("status")), set.getDate("created"), set.getDate("updated"));
     }
 
     private List<UserGroup> getGroupsBySQLPst(final String pstString, final Long userId, @Nullable final Boolean archivedGroupsOnly) throws SegueDatabaseException {
@@ -496,7 +483,7 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
             pst.setLong(1, userId);
 
             if (archivedGroupsOnly != null) {
-                pst.setBoolean(2, archivedGroupsOnly);
+                pst.setBoolean(3, archivedGroupsOnly);
             }
 
             ResultSet results = pst.executeQuery();
