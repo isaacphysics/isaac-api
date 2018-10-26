@@ -27,8 +27,7 @@ import org.mongojack.ObjectId;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithEmailAddressDTO;
-import uk.ac.cam.cl.dtg.segue.dos.GroupStatus;
-import uk.ac.cam.cl.dtg.segue.dto.users.DetailedUserSummaryDTO;
+
 
 /**
  * UserGroupDTO - this object represents a group or label assigned to users who have been placed into a group.
@@ -42,8 +41,8 @@ public class UserGroupDTO {
     private Date created;
     private String token;
     private boolean archived;
-    private DetailedUserSummaryDTO ownerSummary;
-    private Set<DetailedUserSummaryDTO> additionalManagers;
+    private UserSummaryWithEmailAddressDTO ownerSummary;
+    private Set<UserSummaryWithEmailAddressDTO> additionalManagers;
 
 
     /**
