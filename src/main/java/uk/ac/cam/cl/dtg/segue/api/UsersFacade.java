@@ -311,6 +311,74 @@ public class UsersFacade extends AbstractSegueFacade {
     }
 
     /**
+     * An endpoint for group managers (often teachers) to send a password reset request email to group members without
+     * having to know the group members account email.
+     *
+     * @param request - request information used for caching
+     * @param httpServletRequest - the request, to work ou the current user
+     * @param userIdOfInterest - userId of interest - usually a the teacher's student
+     * @return a successful response regardless of whether the email exists or an error code if there is a technical
+     *         fault
+     */
+    @POST
+    @Path("users/{user_id}/resetpassword")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @GZIP
+    public Response generatePasswordResetTokenForOtherUser(@Context final Request request,
+                                                           @Context final HttpServletRequest httpServletRequest,
+                                                           @PathParam("user_id") final Long userIdOfInterest) {
+        try {
+            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
+
+            RegisteredUserDTO userOfInterest = userManager.getUserDTOById(userIdOfInterest);
+            if (userOfInterest == null) {
+                throw new NoUserException("No user found with this ID.");
+            }
+
+            UserSummaryDTO userOfInterestSummaryObject = userManager.convertToUserSummaryObject(userOfInterest);
+
+            // decide if the user is allowed to view this data.
+            if (!currentUser.getId().equals(userIdOfInterest)
+                    && !userAssociationManager.hasPermission(currentUser, userOfInterestSummaryObject)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
+            misuseMonitor.notifyEvent(currentUser.getEmail() + "_group_member_reset", PasswordResetRequestMisuseHandler.class.toString());
+            userManager.resetPasswordRequest(userOfInterest);
+
+            this.getLogManager()
+                    .logEvent(currentUser, httpServletRequest, SegueLogType.PASSWORD_RESET_REQUEST_RECEIVED,
+                            ImmutableMap.of(
+                                    LOCAL_AUTH_EMAIL_FIELDNAME, userOfInterest.getEmail(),
+                                    LOCAL_AUTH_GROUP_MANAGER_EMAIL_FIELDNAME, currentUser.getEmail(),
+                                    LOCAL_AUTH_GROUP_MANAGER_INITIATED_FIELDNAME, true));
+            return Response.ok().build();
+
+        } catch (NoUserException e) {
+            log.warn("Password reset requested for account that does not exist: " + e.getMessage());
+            // Return OK so we don't leak account existence.
+            return Response.ok().build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (CommunicationException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Error sending reset message.", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        } catch (SegueDatabaseException | InvalidKeySpecException | NoSuchAlgorithmException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Error generating password reset token.", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        } catch (SegueResourceMisuseException e) {
+            String message = "You have exceeded the number of requests allowed for this endpoint. "
+                    + "Please try again later.";
+            return SegueErrorResponse.getRateThrottledResponse(message);
+        }
+    }
+
+
+    /**
      * End point that allows a local user to generate a password reset request.
      *
      * Step 1 of password reset process - send user an e-mail

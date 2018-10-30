@@ -90,7 +90,8 @@ public class GroupManager {
         Validate.notBlank(groupName);
         Validate.notNull(groupOwner);
 
-        UserGroup group = new UserGroup(null, groupName, groupOwner.getId(), new Date(), false);
+        Date now = new Date();
+        UserGroup group = new UserGroup(null, groupName, groupOwner.getId(), now, false, now);
 
         return this.convertGroupToDTO(groupDatabase.createGroup(group));
     }
@@ -106,8 +107,9 @@ public class GroupManager {
      */
     public UserGroupDTO editUserGroup(final UserGroupDTO groupToEdit) throws SegueDatabaseException {
         Validate.notNull(groupToEdit);
-
-        return this.convertGroupToDTO(groupDatabase.editGroup(dtoMapper.map(groupToEdit, UserGroup.class)));
+        UserGroup userGroup = dtoMapper.map(groupToEdit, UserGroup.class);
+        userGroup.setLastUpdated(new Date());
+        return this.convertGroupToDTO(groupDatabase.editGroup(userGroup));
     }
 
     /**

@@ -1,0 +1,1 @@
+ALTER TABLE groups ADD COLUMN last_updated timestamp without time zone DEFAULT NULL;
