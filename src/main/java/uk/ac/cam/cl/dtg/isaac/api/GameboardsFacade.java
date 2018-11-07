@@ -354,23 +354,15 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                 }
             }
 
-            Collections.sort(resultList, new Comparator<Map<String, Object>>() {
-                /**
-                 * Descending numerical order
-                 */
-                @Override
-                public int compare(final Map<String, Object> o1, final Map<String, Object> o2) {
-
-                    if ((Integer) o1.get(connections) < (Integer) o2.get(connections)) {
-                        return 1;
-                    }
-
-                    if ((Integer) o1.get(connections) > (Integer) o2.get(connections)) {
-                        return -1;
-                    }
-
-                    return 0;
+            resultList.sort((o1, o2) -> {
+                // Descending numerical order
+                if ((Integer) o1.get(connections) < (Integer) o2.get(connections)) {
+                    return 1;
                 }
+                if ((Integer) o1.get(connections) > (Integer) o2.get(connections)) {
+                    return -1;
+                }
+                return 0;
             });
 
             Integer sharedBoards = 0;
@@ -633,11 +625,11 @@ public class GameboardsFacade extends AbstractIsaacFacade {
         // sort instructions
         if (sortInstructions != null && !sortInstructions.isEmpty()) {
             parsedSortInstructions = Lists.newArrayList();
-            for (String instruction : Arrays.asList(sortInstructions.toLowerCase().split(","))) {
+            for (String instruction : sortInstructions.toLowerCase().split(",")) {
                 SortOrder s = SortOrder.ASC;
                 if (instruction.startsWith("-")) {
                     s = SortOrder.DESC;
-                    instruction = instruction.substring(1, instruction.length());
+                    instruction = instruction.substring(1);
                 }
 
                 if (instruction.equals("created")) {

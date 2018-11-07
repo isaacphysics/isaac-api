@@ -622,7 +622,7 @@ public class UsersFacade extends AbstractSegueFacade {
                         .toResponse();
             }
 
-            if (null == userIdsQueryParam || userIdsQueryParam.isEmpty() ) {
+            if (null == userIdsQueryParam || userIdsQueryParam.isEmpty()) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a comma separated list of user_ids in the query param")
                         .toResponse();
             }
@@ -630,8 +630,8 @@ public class UsersFacade extends AbstractSegueFacade {
             String[] userIdsAsList = userIdsQueryParam.split(",");
             List<Long> userLongIds = Lists.newArrayList();
 
-            for(int i = 0; i < userIdsAsList.length; i++) {
-                userLongIds.add(Long.parseLong(userIdsAsList[i]));
+            for (String anUserIdsAsList : userIdsAsList) {
+                userLongIds.add(Long.parseLong(anUserIdsAsList));
             }
 
             final List<RegisteredUserDTO> users = this.userManager.findUsers(userLongIds);
@@ -655,10 +655,7 @@ public class UsersFacade extends AbstractSegueFacade {
         } catch (SegueDatabaseException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while looking up users", e)
                     .toResponse();
-        } catch (IOException e) {
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while looking up schools", e)
-                    .toResponse();
-        } catch (UnableToIndexSchoolsException | SegueSearchException e) {
+        } catch (IOException | UnableToIndexSchoolsException | SegueSearchException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while looking up schools", e)
                     .toResponse();
         }
