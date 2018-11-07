@@ -22,6 +22,7 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -145,6 +146,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "List events matching the provided criteria.")
     public final Response getEvents(@Context final HttpServletRequest request, @QueryParam("tags") final String tags,
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
             @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit,
@@ -284,6 +286,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Path("/{event_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get details about a specific event.")
     public final Response getEvent(@Context final HttpServletRequest request,
             @PathParam("event_id") final String eventId) {
         try {
@@ -314,6 +317,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Path("/bookings")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "List all event bookings.")
     public final Response getAllEventBookings(@Context final HttpServletRequest request,
             @QueryParam("count_only") final Boolean countOnly) {
         try {
@@ -349,6 +353,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Path("/bookings/{booking_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get details about an event booking.")
     public final Response getEventBookingById(@Context final HttpServletRequest request,
             @PathParam("booking_id") final String bookingId) {
         try {
@@ -388,6 +393,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Path("{event_id}/bookings/{user_id}/promote")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Move a user from an event waiting list to a confirmed booking.")
     public final Response promoteUserFromWaitingList(@Context final HttpServletRequest request,
                                                      @PathParam("event_id") final String eventId,
                                                      @PathParam("user_id") final Long userId, final Map<String, String> additionalInformation) {
@@ -454,6 +460,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Path("{event_id}/bookings")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "List event bookings for a specific event.")
     public final Response getEventBookingByEventId(@Context final HttpServletRequest request,
             @PathParam("event_id") final String eventId) {
         try {
@@ -491,6 +498,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Path("{event_id}/bookings/{user_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Create an event booking for a user.")
     public final Response createBookingForGivenUser(@Context final HttpServletRequest request,
             @PathParam("event_id") final String eventId, @PathParam("user_id") final Long userId, final Map<String, String> additionalInformation) {
         try {
@@ -551,6 +559,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Path("{event_id}/bookings")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Create an event booking for the current user.")
     public final Response createBookingForMe(@Context final HttpServletRequest request,
                                              @PathParam("event_id") final String eventId, final Map<String, String> additionalInformation) {
         try {
@@ -621,6 +630,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Path("{event_id}/waiting_list")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Add the current user to an event waiting list.")
     public final Response addMeToWaitingList(@Context final HttpServletRequest request,
                                              @PathParam("event_id") final String eventId, final Map<String, String> additionalInformation) {
         try {
@@ -680,6 +690,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Path("{event_id}/bookings/cancel")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Cancel the current user's booking on an event.")
     public final Response cancelBooking(@Context final HttpServletRequest request,
                                         @PathParam("event_id") final String eventId) {
         return this.cancelBooking(request, eventId, null);
@@ -700,6 +711,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Path("{event_id}/bookings/{user_id}/cancel")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Cancel a user's booking on an event.")
     public final Response cancelBooking(@Context final HttpServletRequest request,
                                         @PathParam("event_id") final String eventId, @PathParam("user_id") final Long userId) {
         try {
@@ -772,6 +784,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Path("{event_id}/bookings/{user_id}/resend_confirmation")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Resend an event booking confirmation to a user.")
     public final Response resendEventEmail(@Context final HttpServletRequest request,
                                         @PathParam("event_id") final String eventId, @PathParam("user_id") final Long userId) {
         try {
@@ -820,6 +833,8 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Path("{event_id}/bookings/{user_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Erase a user's booking on an event.",
+                  notes = "This method removes the booking entirely, rather than recording the booking as cancelled.")
     public final Response deleteBooking(@Context final HttpServletRequest request,
             @PathParam("event_id") final String eventId, @PathParam("user_id") final Long userId) {
         try {
@@ -874,6 +889,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Path("{event_id}/bookings/{user_id}/record_attendance")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Update the attendance status of a user for an event.")
     public final Response recordEventAttendance(@Context final HttpServletRequest request,
                                                 @PathParam("event_id") final String eventId,
                                                 @PathParam("user_id") final Long userId,
@@ -945,6 +961,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Path("/overview")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "List summary information of events matching the provided criteria.")
     public final Response getEventOverviews(@Context final HttpServletRequest request,
                                     @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
                                     @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit,
@@ -1065,6 +1082,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Path("/map_data")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "List summary details suitable for mapping for events matching the provided criteria.")
     public final Response getEventMapData(@Context final HttpServletRequest request, @QueryParam("tags") final String tags,
                                             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
                                             @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit,

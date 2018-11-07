@@ -19,6 +19,7 @@ import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -142,6 +143,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     @Path("gameboards")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get a temporary board of questions matching provided constraints.")
     public final Response generateTemporaryGameboard(@Context final HttpServletRequest request,
             @QueryParam("title") final String title, @QueryParam("subjects") final String subjects,
             @QueryParam("fields") final String fields, @QueryParam("topics") final String topics,
@@ -227,6 +229,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     @Path("gameboards/{gameboard_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get the details of a gameboard.")
     public final Response getGameboard(@Context final Request request,
             @Context final HttpServletRequest httpServletRequest, @PathParam("gameboard_id") final String gameboardId) {
 
@@ -286,6 +289,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     @Path("fasttrack/{gameboard_id}/concepts/")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get the progress of the current user at a FastTrack gameboard.")
     public final Response getFastTrackConceptProgress(@Context final Request request,
                                                       @Context final HttpServletRequest httpServletRequest,
                                                       @PathParam("gameboard_id") final String gameboardId,
@@ -326,6 +330,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     @GET
     @Path("gameboards/popular")
     @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Get a temporary board of questions matching provided constraints.")
     public Response getBoardPopularityList(@Context final HttpServletRequest request) {
         final String connections = "connections";
         try {
@@ -397,6 +402,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     @Path("gameboards")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Create a new gameboard from a template GameboardDTO.",
+                  notes = "Only staff users can provide custom IDs, wildcards or tags.")
     public final Response createGameboard(
             @Context final HttpServletRequest request,
             final GameboardDTO newGameboardObject) {
@@ -475,6 +482,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     @Path("gameboards/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Create or update a gameboard and link the current user to it.",
+                  notes = "It is only possible to change the name of a gameboard.")
     public final Response updateGameboard(@Context final HttpServletRequest request,
             @PathParam("id") final String gameboardId, final GameboardDTO newGameboardObject) {
 
@@ -570,6 +579,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     @Path("users/current_user/gameboards")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "List all gameboards linked to the current user.")
     public final Response getGameboardsByCurrentUser(@Context final HttpServletRequest request,
             @QueryParam("start_index") final String startIndex, @QueryParam("limit") final String limit,
             @QueryParam("sort") final String sortInstructions, @QueryParam("show_only") final String showCriteria) {
@@ -688,6 +698,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
      */
     @POST
     @Path("users/current_user/gameboards/{gameboard_id}")
+    @ApiOperation(value = "Link a gameboard to the current user.",
+                  notes = "This will save a persistent copy of the gameboard if it was a temporary board.")
     public final Response linkUserToGameboard(@Context final HttpServletRequest request,
             @PathParam("gameboard_id") final String gameboardId) {
         // TODO: change endpoint path to be more consistent with the gameboards facade
@@ -741,6 +753,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     @DELETE
     @Path("users/current_user/gameboards/{gameboard_id}")
     @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Unlink the current user from a gameboard.",
+                  notes = "This will not delete or modify the gameboard.")
     public Response unlinkUserFromGameboard(@Context final HttpServletRequest request,
             @PathParam("gameboard_id") final String gameboardId) {
         // TODO: change endpoint path to be more consistent with the gameboards facade
@@ -788,6 +802,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     @Path("gameboards/wildcards")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "List all possible gameboard wildcards.")
     public final Response getWildCards(@Context final Request request) {
 
         try {

@@ -21,6 +21,7 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -131,6 +132,7 @@ public class QuestionFacade extends AbstractSegueFacade {
      */
     @GET
     @Path("{question_id}/answer")
+    @ApiOperation(value = "Provide users who try to cheat with a guide to the location of our help page.")
     public Response getQuestionAnswer(@Context final HttpServletRequest request, @PathParam("question_id") final String questionId) {
         String errorMessage = String.format("We do not provide answers to questions. See https://%s/solving_problems for more help!",
                                             getProperties().getProperty(HOST_NAME));
@@ -160,6 +162,8 @@ public class QuestionFacade extends AbstractSegueFacade {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Submit an answer to a question.",
+                  notes = "The answer must be the correct Choice subclass for the question with the provided ID.")
     public Response answerQuestion(@Context final HttpServletRequest request,
             @PathParam("question_id") final String questionId, final String jsonAnswer) {
         if (null == jsonAnswer || jsonAnswer.isEmpty()) {

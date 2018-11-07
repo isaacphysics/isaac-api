@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.opencsv.CSVWriter;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
@@ -153,6 +154,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "List all boards assigned to the current user.")
     public Response getAssignments(@Context final HttpServletRequest request,
 
             @QueryParam("assignmentStatus") final GameboardState assignmentStatus) {
@@ -231,6 +233,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Path("/assign")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "List all assignments set by the current user.")
     public Response getAssigned(@Context final HttpServletRequest request,
             @QueryParam("group") final Long groupIdOfInterest) {
         try {
@@ -289,6 +292,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Path("/assign/{assignment_id}/progress")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "View the progress of a specific assignment.")
     public Response getAssignmentProgress(@Context final HttpServletRequest request,
             @PathParam("assignment_id") final Long assignmentId) {
         try {
@@ -371,6 +375,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Produces("text/csv")
     @GZIP
     @Consumes(MediaType.WILDCARD)
+    @ApiOperation(value = "Download the progress of a specific assignment.")
     public Response getAssignmentProgressDownloadCSV(@Context final HttpServletRequest request,
             @PathParam("assignment_id") final Long assignmentId) {
        
@@ -522,6 +527,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Produces("text/plain")
     @GZIP
     @Consumes(MediaType.WILDCARD)
+    @ApiOperation(value = "Download the progress of a group on all assignments set.")
     public Response getGroupAssignmentsProgressDownloadCSV(@Context final HttpServletRequest request,
             @PathParam("group_id") final Long groupId) {
 
@@ -751,6 +757,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Path("/assign/groups")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "List all groups assigned boards from a list of boards.",
+                  notes = "The list of boards should be comma separated.")
     public Response getAssignedGroupsByGameboards(@Context final HttpServletRequest request,
             @QueryParam("gameboard_ids") final String gameboardIdsQueryParam) {
         try {
@@ -790,6 +798,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Path("/assign/")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Create a new assignment.")
     public Response assignGameBoard(@Context final HttpServletRequest request,
             final AssignmentDTO assignmentDTOFromClient) {
 
@@ -872,6 +881,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Path("/assign/{gameboard_id}/{group_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Delete an assignment by board ID and group ID.")
     public Response deleteAssignment(@Context final HttpServletRequest request,
             @PathParam("gameboard_id") final String gameboardId, @PathParam("group_id") final Long groupId) {
 

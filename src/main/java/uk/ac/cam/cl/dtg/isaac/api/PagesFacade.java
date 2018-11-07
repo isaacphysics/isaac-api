@@ -151,7 +151,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Path("/concepts")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Gets the list of concept pages")
+    @ApiOperation(value = "List all concept page objects matching the provided criteria.")
     public final Response getConceptList(@Context final Request request, @QueryParam("ids") final String ids,
             @QueryParam("tags") final String tags,
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
@@ -219,6 +219,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Path("/concepts/{concept_page_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get a concept page object by ID.")
     public final Response getConcept(@Context final Request request, @Context final HttpServletRequest servletRequest,
             @PathParam("concept_page_id") final String conceptId) {
         if (null == conceptId || conceptId.isEmpty()) {
@@ -286,6 +287,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Path("/questions")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "List all question page objects matching the provided criteria.")
     public final Response getQuestionList(@Context final Request request, @QueryParam("ids") final String ids,
             @QueryParam("searchString") final String searchString, @QueryParam("tags") final String tags,
             @QueryParam("levels") final String level, @DefaultValue("false") @QueryParam("fasttrack") final Boolean fasttrack,
@@ -388,6 +390,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Path("/questions/{question_page_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get a question page object by ID.")
     public final Response getQuestion(@Context final Request request,
             @Context final HttpServletRequest httpServletRequest, 
             @PathParam("question_page_id") final String questionId) {
@@ -467,6 +470,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @Deprecated
+    @ApiOperation(value = "Get the question summary page content.")
     public final Response getQuestionSummaryPage(@Context final Request request,
             @Context final HttpServletRequest httpServletRequest, @PathParam("page") final String pageId) {
         // Calculate the ETag on current live version of the content
@@ -546,6 +550,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Path("/{page}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get a content page object by ID.")
     public final Response getPage(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
             @PathParam("page") final String pageId) {
         // Calculate the ETag on current live version of the content
@@ -599,6 +604,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Path("/fragments/{fragment_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get a content page fragment by ID.")
     public final Response getPageFragment(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
             @PathParam("fragment_id") final String fragmentId) {
 
@@ -637,6 +643,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Path("/pods/{subject}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "List pods matching the subject provided.")
     public final Response getPodList(@Context final Request request,
                                      @PathParam("subject") final String subject) {
         // Calculate the ETag on current live version of the content

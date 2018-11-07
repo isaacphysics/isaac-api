@@ -17,6 +17,7 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.jboss.resteasy.annotations.cache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,6 +91,7 @@ public class SegueDefaultFacade extends AbstractSegueFacade {
     @Produces(MediaType.TEXT_HTML)
     @Cache
     @Deprecated
+    @ApiOperation(value = "Redirect to Swagger.")
     public Response redirectToSwagger(@Context final HttpServletRequest request) throws URISyntaxException {
         String hostname = getProperties().getProperty(HOST_NAME);
         String proxyPath = getProperties().getProperty(PROXY_PATH);

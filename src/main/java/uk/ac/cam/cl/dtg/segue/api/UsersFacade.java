@@ -46,6 +46,7 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import io.swagger.annotations.ApiOperation;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.Validate;
 import org.jboss.resteasy.annotations.GZIP;
@@ -187,6 +188,7 @@ public class UsersFacade extends AbstractSegueFacade {
     @Path("users/current_user")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get information about the current user.")
     public Response getCurrentUserEndpoint(@Context final Request request,
                                            @Context final HttpServletRequest httpServletRequest) {
         try {
@@ -224,6 +226,7 @@ public class UsersFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Create a new user or update an existing user.")
     public Response createOrUpdateUserSettings(@Context final HttpServletRequest request,
                                                @Context final HttpServletResponse response, final String userObjectString) {
 
@@ -285,6 +288,7 @@ public class UsersFacade extends AbstractSegueFacade {
     @Path("users/user_preferences")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get the user preferences of the current user.")
     public Response getUserPreferences(@Context final HttpServletRequest httpServletRequest) {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
@@ -324,6 +328,7 @@ public class UsersFacade extends AbstractSegueFacade {
     @Path("users/{user_id}/resetpassword")
     @Consumes(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Request password reset for another user.")
     public Response generatePasswordResetTokenForOtherUser(@Context final Request request,
                                                            @Context final HttpServletRequest httpServletRequest,
                                                            @PathParam("user_id") final Long userIdOfInterest) {
@@ -394,6 +399,8 @@ public class UsersFacade extends AbstractSegueFacade {
     @Path("users/resetpassword")
     @Consumes(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Request password reset for an email address.",
+                  notes = "The email address must be provided as a RegisteredUserDTO object, although only the 'email' field is required.")
     public Response generatePasswordResetToken(final RegisteredUserDTO userObject,
                                                @Context final HttpServletRequest request) {
         if (null == userObject) {
@@ -445,6 +452,7 @@ public class UsersFacade extends AbstractSegueFacade {
     @Path("users/resetpassword/{token}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Verify a password reset token is valid for use.")
     public Response validatePasswordResetRequest(@PathParam("token") final String token) {
         try {
             if (userManager.validatePasswordResetToken(token)) {
@@ -477,6 +485,8 @@ public class UsersFacade extends AbstractSegueFacade {
     @Path("users/resetpassword/{token}")
     @Consumes(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Reset an account password using a reset token.",
+                  notes = "The 'token' should be generated using one of the endpoints for requesting a password reset.")
     public Response resetPassword(@PathParam("token") final String token, final Map<String, String> clientResponse,
                                   @Context final HttpServletRequest request) {
         try {
@@ -529,6 +539,7 @@ public class UsersFacade extends AbstractSegueFacade {
     @Path("users/{user_id}/event_data/over_time")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get log data counts for a specific user.")
     public Response getEventDataForUser(@Context final Request request,
                                         @Context final HttpServletRequest httpServletRequest, @PathParam("user_id") final Long userIdOfInterest,
                                         @QueryParam("from_date") final Long fromDate, @QueryParam("to_date") final Long toDate,
@@ -614,6 +625,7 @@ public class UsersFacade extends AbstractSegueFacade {
     @Path("users/school_lookup")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get the school information of specified users.")
     public Response getUserIdToSchoolMap(@Context final HttpServletRequest httpServletRequest,
                                          @QueryParam("user_ids") final String userIdsQueryParam) {
         try {
@@ -673,6 +685,8 @@ public class UsersFacade extends AbstractSegueFacade {
     @Path("users/schools_other")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get a list of all custom provided schools.",
+                  notes = "This data only contains schools listed in the 'School (Other)' field on user accounts.")
     public Response getAllSchoolOtherResponses(@Context final Request request) {
 
         Set<School> schoolOthers = schoolOtherSupplier.get();

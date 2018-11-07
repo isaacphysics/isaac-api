@@ -17,6 +17,7 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,6 +80,7 @@ public class SchoolLookupServiceFacade {
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "List all schools matching provided criteria.")
     public Response schoolSearch(@Context final Request request, @QueryParam("query") final String searchQuery,
             @QueryParam("urn") final String schoolURN) {
 

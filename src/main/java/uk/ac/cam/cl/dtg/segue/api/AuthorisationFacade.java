@@ -19,6 +19,7 @@ import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -112,6 +113,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "List all users granted access to the current user's data.")
     public Response getUsersWithAccess(@Context final HttpServletRequest request) {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
@@ -145,6 +147,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @Path("/{userId}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Revoke a specific user's access to the current user's data.")
     public Response revokeOwnerAssociation(@Context final HttpServletRequest request,
             @PathParam("userId") final Long userIdToRevoke) {
         if (null == userIdToRevoke) {
@@ -183,6 +186,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Revoke all users granted access to the current user's data.")
     public Response revokeAllOwnerAssociations(@Context final HttpServletRequest request) {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
@@ -220,6 +224,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @Path("release/{userId}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Release the current user's access to another user's data.")
     public Response releaseAssociation(@Context final HttpServletRequest request,
                                        @PathParam("userId") final Long associationOwner) {
         if (null == associationOwner) {
@@ -260,6 +265,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @Path("release")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Release the current user's access to all other users's data.")
     public Response releaseAllAssociations(@Context final HttpServletRequest request) {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
@@ -292,6 +298,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @Path("/other_users")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "List all users the current user has been granted access by.")
     public Response getCurrentAccessRights(@Context final HttpServletRequest request) {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
@@ -326,6 +333,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @Path("/token/{groupId}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get the group join token for the specified group.")
     public Response getAssociationToken(@Context final HttpServletRequest request,
             @PathParam("groupId") final Long groupId) {
         if (null == groupId) {
@@ -363,6 +371,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "List the users a group join token will grant access to.")
     public Response getTokenOwnerUserSummary(@Context final HttpServletRequest request,
             @PathParam("token") final String token) {
         if (null == token || token.isEmpty()) {
@@ -423,6 +432,8 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Use a group join token to authorise users and join a group.",
+                  notes = "This should be used after listing the group owners and managers and asking the user's permission to share data.")
     public Response useToken(@Context final HttpServletRequest request, @PathParam("token") final String token) {
         if (null == token || token.isEmpty()) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Token value must be specified.").toResponse();

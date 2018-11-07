@@ -17,6 +17,7 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
@@ -88,6 +89,8 @@ public class LogEventFacade extends AbstractSegueFacade {
     @POST
     @Path("/")
     @Consumes(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Record a new log event from the current user.",
+                  notes = "The 'type' field must be provided and must not be a reserved value.")
     public Response postLog(@Context final HttpServletRequest httpRequest, final Map<String, Object> eventJSON) {
         if (null == eventJSON || eventJSON.get(TYPE_FIELDNAME) == null) {
             log.error("Error during log operation, no event type specified. Event: " + eventJSON);

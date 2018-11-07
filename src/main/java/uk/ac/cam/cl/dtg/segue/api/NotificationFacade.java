@@ -88,7 +88,8 @@ public class NotificationFacade extends AbstractSegueFacade {
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Gets any notifications for the current user - e.g. user study requests / achievements etc.")
+    @ApiOperation(value = "List any notifications for the current user.",
+                  notes = "This is the old notification delivery method. Newer notifications may be WebSocket based.")
     public Response getMyNotifications(@Context final HttpServletRequest request) {
         try {
             List<ContentDTO> listOfNotifications;
@@ -123,7 +124,7 @@ public class NotificationFacade extends AbstractSegueFacade {
     @Path("/{notification_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Gets a notification by id - e.g. user study requests / achievements etc.")
+    @ApiOperation(value = "Get a specific notification by id.")
     public Response getNotificationById(@Context final HttpServletRequest request,
             @PathParam("notification_id") final String notificationId) {
         if (!userManager.isRegisteredUserLoggedIn(request)) {
@@ -158,7 +159,8 @@ public class NotificationFacade extends AbstractSegueFacade {
     @Path("/{notification_id}/{response_from_user}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Allow users to respond to a notification with either: DISMISSED, POSTPONED or DISABLED")
+    @ApiOperation(value = "Record user response to a notification.",
+                  notes = "The response should be one of: ACKNOWLEDGED, POSTPONED, DISABLED.")
     public Response updateNotificationStatus(@Context final HttpServletRequest request,
             @PathParam("notification_id") final String notificationId,
             @PathParam("response_from_user") final String responseFromUser) {

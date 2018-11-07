@@ -20,6 +20,7 @@ import com.google.common.io.Files;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.Cache;
 import org.slf4j.Logger;
@@ -124,6 +125,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
     @GET
     @Path("{version}")
     @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "List content objects matching the provided criteria.")
     public final Response getContentListByVersion(@PathParam("version") final String version,
             @QueryParam("tags") final String tags, @QueryParam("type") final String type,
             @QueryParam("start_index") final String startIndex, @QueryParam("limit") final String limit) {
@@ -294,6 +296,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @Deprecated
+    @ApiOperation(value = "Get a content object by content version and ID.")
     public final Response getContentById(@Context final HttpServletRequest request,
             @PathParam("version") final String version, @PathParam("id") final String id) {
 
@@ -358,6 +361,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @Deprecated
+    @ApiOperation(value = "Return a list of content objects matching the provided criteria.")
     public final Response search(@PathParam("searchString") final String searchString,
             @PathParam("version") final String version, @QueryParam("types") final String types,
             @QueryParam("start_index") final Integer startIndex, @QueryParam("limit") final Integer limit) {
@@ -435,6 +439,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
     @Path("tags")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "List all tags currently in use.")
     public final Response getTagListByLiveVersion(@Context final Request request) {
         try {
             return this.getTagListByVersion(this.contentIndex, request);
@@ -461,6 +466,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
     @Path("tags/{version}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "List all tags in use by a specific content version.")
     public final Response getTagListByVersion(@PathParam("version") final String version,
             @Context final Request request) throws ContentManagerException {
         // Calculate the ETag on last modified date of tags list
@@ -489,6 +495,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
     @Path("units")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "List all units currently in use by numeric questions.")
     public final Response getAllUnitsByLiveVersion(@Context final Request request) {
         return this.getAllUnitsByVersion(request, this.contentIndex);
     }
@@ -506,6 +513,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
     @Path("units/{version}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "List all units in use by numeric questions for a specific content version.")
     public final Response getAllUnitsByVersion(@Context final Request request,
             @PathParam("version") final String version) {
         // Calculate the ETag on last modified date of tags list
@@ -555,6 +563,8 @@ public class SegueContentFacade extends AbstractSegueFacade {
     @Produces("*/*")
     @Cache
     @GZIP
+    @ApiOperation(value = "Get a binary object from the content of a specific version.",
+                  notes = "This can only be used to get images from the content database.")
     public final Response getImageFileContent(@Context final Request request,
             @PathParam("version") final String version, @PathParam("path") final String path) {
 

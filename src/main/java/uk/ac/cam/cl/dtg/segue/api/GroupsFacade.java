@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.segue.api;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
@@ -109,6 +110,7 @@ public class GroupsFacade extends AbstractSegueFacade {
     @GET
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "List all groups owned or managed by the current user.")
     public Response getGroupsForCurrentUser(@Context final HttpServletRequest request,
                                             @Context final Request cacheRequest, @QueryParam("archived_groups_only") final boolean archivedGroupsOnly) {
         try {
@@ -145,6 +147,7 @@ public class GroupsFacade extends AbstractSegueFacade {
     @GET
     @Path("/{user_id}")
     @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "List all groups owned or managed by another user.")
     public Response getGroupsForGivenUser(@Context final HttpServletRequest request,
                                           @PathParam("user_id") final Long userId) {
         try {
@@ -183,6 +186,8 @@ public class GroupsFacade extends AbstractSegueFacade {
     @Path("/")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Create a new group.",
+                  notes = "The group information must be a GroupDTO object, although only 'groupName' is used.")
     public Response createGroup(@Context final HttpServletRequest request, final UserGroup groupDTO) {
         if (null == groupDTO.getGroupName() || groupDTO.getGroupName().isEmpty()) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Group name must be specified.").toResponse();
@@ -224,6 +229,8 @@ public class GroupsFacade extends AbstractSegueFacade {
     @Path("/{group_id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Update an existing group.",
+                  notes = "The 'group_id' parameter must match the group ID in the request body.")
     public Response editGroup(@Context final HttpServletRequest request, final UserGroupDTO groupDTO,
                               @PathParam("group_id") final Long groupId) {
         if (null == groupDTO.getGroupName() || groupDTO.getGroupName().isEmpty()) {
@@ -276,6 +283,7 @@ public class GroupsFacade extends AbstractSegueFacade {
     @GET
     @Path("{group_id}/membership/")
     @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "List all members of a group.")
     public Response getUsersInGroup(@Context final HttpServletRequest request, @Context final Request cacheRequest,
                                     @PathParam("group_id") final Long groupId) {
         if (null == groupId) {
@@ -326,6 +334,8 @@ public class GroupsFacade extends AbstractSegueFacade {
     @Path("{group_id}/membership/{user_id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Add a user to a group without approval.",
+                  notes = "This endpoint does not grant group owners access to the user's data.")
     public Response addUserToGroup(@Context final HttpServletRequest request,
                                    @PathParam("group_id") final Long groupId, @PathParam("user_id") final Long userId) {
         if (null == groupId) {
@@ -368,6 +378,7 @@ public class GroupsFacade extends AbstractSegueFacade {
     @Path("{group_id}/membership/{user_id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Remove a user from a group.")
     public Response removeUserFromGroup(@Context final HttpServletRequest request, @Context final Request cacheRequest,
                                         @PathParam("group_id") final Long groupId, @PathParam("user_id") final Long userId) {
         if (null == groupId) {
@@ -414,6 +425,7 @@ public class GroupsFacade extends AbstractSegueFacade {
     @Path("/{group_id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Delete a group.")
     public Response deleteGroup(@Context final HttpServletRequest request,
                                 @PathParam("group_id") final Long groupId) {
         if (null == groupId) {
@@ -459,6 +471,8 @@ public class GroupsFacade extends AbstractSegueFacade {
     @Path("{group_id}/manager")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Add an additional manager to a group.",
+                  notes = "The email of the user to add must be provided as 'email' in the request body and they must have a teacher account.")
     public Response addAdditionalManagerToGroup(@Context final HttpServletRequest request,
                                                 @PathParam("group_id") final Long groupId,
                                                 final Map<String, String> responseMap) {
@@ -527,6 +541,7 @@ public class GroupsFacade extends AbstractSegueFacade {
     @Path("{group_id}/manager/{user_id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Remove an additional manager from a group.")
     public Response removeAdditionalManagerFromGroup(@Context final HttpServletRequest request,
                                                 @PathParam("group_id") final Long groupId,
                                                    @PathParam("user_id") final Long userId) {

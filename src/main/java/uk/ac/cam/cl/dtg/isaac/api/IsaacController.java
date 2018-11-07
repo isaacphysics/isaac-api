@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import ma.glasnost.orika.MapperFacade;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
@@ -182,6 +183,7 @@ public class IsaacController extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("search/{searchString}")
     @GZIP
+    @ApiOperation(value = "Search for content objects matching the provided criteria.")
     public final Response search(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
             @PathParam("searchString") final String searchString, @QueryParam("types") final String types,
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
@@ -245,6 +247,8 @@ public class IsaacController extends AbstractIsaacFacade {
     @Produces("*/*")
     @Path("images/{path:.*}")
     @GZIP
+    @ApiOperation(value = "Get a binary object from the current content version.",
+                  notes = "This can only be used to get images from the content database.")
     public final Response getImageByPath(@Context final Request request, @PathParam("path") final String path) {
         // entity tags etc are already added by segue
         return api.getImageFileContent(request, this.contentIndex, path);
@@ -261,6 +265,7 @@ public class IsaacController extends AbstractIsaacFacade {
     @Path("users/current_user/progress")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get progress information for the current user.")
     public final Response getCurrentUserProgressInformation(@Context final HttpServletRequest request) {
         RegisteredUserDTO user;
         try {
@@ -287,6 +292,7 @@ public class IsaacController extends AbstractIsaacFacade {
     @Path("users/{user_id}/progress")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get progress information for a specified user.")
     public final Response getUserProgressInformation(@Context final HttpServletRequest request,
             @PathParam("user_id") final Long userIdOfInterest) {
         RegisteredUserDTO user;
@@ -349,6 +355,8 @@ public class IsaacController extends AbstractIsaacFacade {
     @Path("stats/questions_answered/count")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get the total number of questions attempted on the platform.",
+                  notes = "For performance reasons, this number is cached server-side for 10 minutes.")
     public Response getQuestionCount(@Context final HttpServletRequest request) {
         // Update the question count if it's expired
         questionCountCache.get();

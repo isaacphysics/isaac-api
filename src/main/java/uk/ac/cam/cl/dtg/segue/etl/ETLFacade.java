@@ -2,6 +2,7 @@ package uk.ac.cam.cl.dtg.segue.etl;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.AbstractSegueFacade;
@@ -41,6 +42,8 @@ public class ETLFacade extends AbstractSegueFacade {
     @POST
     @Path("/set_version_alias/{alias}/{version}")
     @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Update a content version alias.",
+                  notes = "This is primarily used to set the 'live' content version.")
     public Response setLiveVersion(@PathParam("alias") final String alias, @PathParam("version") final String version) {
 
         try {
@@ -59,6 +62,7 @@ public class ETLFacade extends AbstractSegueFacade {
     @Path("/new_version_alert/{version}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Notify the ETL server of a new content version to index.")
     public Response newVersionAlert(@PathParam("version") final String newVersion) {
         etlManager.notifyNewVersion(newVersion);
         log.info("Finished processing ETL request");
@@ -68,6 +72,7 @@ public class ETLFacade extends AbstractSegueFacade {
     @GET
     @Path("/ping")
     @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Check the status of the ETL server.")
     public Response statusCheck() {
         return Response.ok().entity("{\"code\" : 200}").build();
     }
