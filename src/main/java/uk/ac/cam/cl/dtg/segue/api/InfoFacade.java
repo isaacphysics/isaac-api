@@ -93,6 +93,7 @@ public class InfoFacade extends AbstractSegueFacade {
     @Path("content_versions")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @Deprecated
     public final Response getVersionsList(@QueryParam("limit") final String limit) {
         // try to parse the integer
         Integer limitAsInt = null;

@@ -293,6 +293,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
     @Path("{version}/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @Deprecated
     public final Response getContentById(@Context final HttpServletRequest request,
             @PathParam("version") final String version, @PathParam("id") final String id) {
 
@@ -356,6 +357,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
     @Path("search/{version}/{searchString}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @Deprecated
     public final Response search(@PathParam("searchString") final String searchString,
             @PathParam("version") final String version, @QueryParam("types") final String types,
             @QueryParam("start_index") final Integer startIndex, @QueryParam("limit") final Integer limit) {

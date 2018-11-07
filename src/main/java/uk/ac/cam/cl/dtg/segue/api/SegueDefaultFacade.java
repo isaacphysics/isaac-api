@@ -89,6 +89,7 @@ public class SegueDefaultFacade extends AbstractSegueFacade {
     @Path("/")
     @Produces(MediaType.TEXT_HTML)
     @Cache
+    @Deprecated
     public Response redirectToSwagger(@Context final HttpServletRequest request) throws URISyntaxException {
         String hostname = getProperties().getProperty(HOST_NAME);
         String proxyPath = getProperties().getProperty(PROXY_PATH);

@@ -466,6 +466,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Path("question_summary/{page}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @Deprecated
     public final Response getQuestionSummaryPage(@Context final Request request,
             @Context final HttpServletRequest httpServletRequest, @PathParam("page") final String pageId) {
         // Calculate the ETag on current live version of the content
