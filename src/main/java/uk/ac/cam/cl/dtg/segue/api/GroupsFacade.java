@@ -153,7 +153,7 @@ public class GroupsFacade extends AbstractSegueFacade {
                         "You must provide a valid user id to access this endpoint.").toResponse();
             }
 
-            if (!isUserStaff(userManager, request)) {
+            if (!isUserAnAdmin(userManager, request)) {
                 SegueErrorResponse.getIncorrectRoleResponse();
             }
 

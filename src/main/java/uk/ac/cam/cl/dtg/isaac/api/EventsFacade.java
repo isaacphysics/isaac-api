@@ -317,7 +317,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     public final Response getAllEventBookings(@Context final HttpServletRequest request,
             @QueryParam("count_only") final Boolean countOnly) {
         try {
-            if (!isUserStaff(userManager, request)) {
+            if (!isUserAnAdminOrEventManager(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
                         .toResponse();
             }
@@ -494,7 +494,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     public final Response createBookingForGivenUser(@Context final HttpServletRequest request,
             @PathParam("event_id") final String eventId, @PathParam("user_id") final Long userId, final Map<String, String> additionalInformation) {
         try {
-            if (!isUserStaff(userManager, request)) {
+            if (!isUserAnAdminOrEventManager(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
                         .toResponse();
             }
