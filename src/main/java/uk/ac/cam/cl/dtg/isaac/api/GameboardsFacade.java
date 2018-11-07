@@ -273,7 +273,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     }
 
     /**
-     * REST endpoint to retrieve every question (and its status) associated with a particular FastTrack gamebaord and
+     * REST endpoint to retrieve every question (and its status) associated with a particular FastTrack gameboard and
      * concept.
      *
      * @param request usually used for caching.
@@ -778,11 +778,11 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     }
 
     /**
-     * REST end point to retrieve a specific gameboard by Id.
+     * REST end point to list all possible wildcards.
      * 
      * @param request
      *            - so that we can deal with caching and etags.
-     * @return a Response containing a gameboard object or containing a SegueErrorResponse.
+     * @return a Response containing wildcard objects or containing a SegueErrorResponse.
      */
     @GET
     @Path("gameboards/wildcards")

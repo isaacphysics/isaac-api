@@ -278,7 +278,7 @@ public class UsersFacade extends AbstractSegueFacade {
 
     /**
      * Provides access to user preferences, mapping preference types to an inner map of preference names and values
-     * @param httpServletRequest - the request, to work ou the current user
+     * @param httpServletRequest - the request, to work out the current user
      * @return user preference map
      */
     @GET

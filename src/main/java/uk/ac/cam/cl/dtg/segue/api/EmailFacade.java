@@ -150,6 +150,9 @@ public class EmailFacade extends AbstractSegueFacade {
      * GetEmailInBrowserById from the database.
      * 
      * This method will return serialised html that displays an email object
+     *
+     * FIXME - this cannot be used for more complicated templated emails, only those using account info!
+     * (i.e. events emails or assignment emails cannot be previewed like this!)
      * 
      * @param request
      *            - so that we can allow only logged in users to view their own data.

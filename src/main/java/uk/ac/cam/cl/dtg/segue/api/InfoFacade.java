@@ -148,7 +148,9 @@ public class InfoFacade extends AbstractSegueFacade {
     }
 
     /**
-     * Gets the current version of the segue application.
+     * Lists all existing log event types in the database.
+     *
+     * FIXME - this will run slowly and should be removed or cached!
      * 
      * @param request
      *            for caching

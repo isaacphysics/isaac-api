@@ -62,8 +62,6 @@ public class SegueDefaultFacade extends AbstractSegueFacade {
      *            - The Content mapper object used for polymorphic mapping of content objects.
      * @param segueConfigurationModule
      *            - The Guice DI configuration module.
-     * @param contentVersionController
-     *            - The content version controller used by the api.
      * @param userManager
      *            - The manager object responsible for users.
      * @param emailManager

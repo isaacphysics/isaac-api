@@ -231,11 +231,11 @@ public class GroupsFacade extends AbstractSegueFacade {
         }
 
         if (null == groupId) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Group Id must be specified.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Group ID must be specified.").toResponse();
         }
 
         if (!groupId.equals(groupDTO.getId())) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Group Id in request url must match data object.")
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Group ID in request url must match data object.")
                     .toResponse();
         }
 
@@ -279,7 +279,7 @@ public class GroupsFacade extends AbstractSegueFacade {
     public Response getUsersInGroup(@Context final HttpServletRequest request, @Context final Request cacheRequest,
                                     @PathParam("group_id") final Long groupId) {
         if (null == groupId) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Group name must be specified.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Group ID must be specified.").toResponse();
         }
 
         try {
@@ -329,13 +329,13 @@ public class GroupsFacade extends AbstractSegueFacade {
     public Response addUserToGroup(@Context final HttpServletRequest request,
                                    @PathParam("group_id") final Long groupId, @PathParam("user_id") final Long userId) {
         if (null == groupId) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Group name must be specified.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Group ID must be specified.").toResponse();
         }
 
         try {
             if (!isUserAnAdmin(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
-                        "Only admin's can directly add a user to a group without a token").toResponse();
+                        "Only admins can directly add a user to a group without a token").toResponse();
             }
 
             UserGroupDTO groupBasedOnId = groupManager.getGroupById(groupId);
@@ -371,7 +371,7 @@ public class GroupsFacade extends AbstractSegueFacade {
     public Response removeUserFromGroup(@Context final HttpServletRequest request, @Context final Request cacheRequest,
                                         @PathParam("group_id") final Long groupId, @PathParam("user_id") final Long userId) {
         if (null == groupId) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Group name must be specified.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Group ID must be specified.").toResponse();
         }
 
         try {
@@ -417,7 +417,7 @@ public class GroupsFacade extends AbstractSegueFacade {
     public Response deleteGroup(@Context final HttpServletRequest request,
                                 @PathParam("group_id") final Long groupId) {
         if (null == groupId) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Group name must be specified.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Group ID must be specified.").toResponse();
         }
 
         try {
@@ -531,7 +531,7 @@ public class GroupsFacade extends AbstractSegueFacade {
                                                 @PathParam("group_id") final Long groupId,
                                                    @PathParam("user_id") final Long userId) {
         if (null == groupId) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "The group must be specified.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "The group ID must be specified.").toResponse();
         }
 
         if (null == userId) {
