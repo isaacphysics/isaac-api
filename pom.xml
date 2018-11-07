@@ -14,7 +14,7 @@
 		<resteasy.version>3.0.11.Final</resteasy.version>
 		<powermock.version>1.5.2</powermock.version>
 		<postgresql.version>9.3-1104-jdbc41</postgresql.version>
-		<swagger-ui-version>2.1.0</swagger-ui-version>
+		<swagger-ui-version>3.19.5</swagger-ui-version>
         <jetty.port.api>8080</jetty.port.api>
         <jetty.port.etl>8090</jetty.port.etl>
         <config.location>/local/data/rutherford/conf/segue-config.properties</config.location>
@@ -111,7 +111,7 @@
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
-			<version>19.0</version>
+			<version>27.0-jre</version>
 		</dependency>
 
 		<dependency>
@@ -151,13 +151,13 @@
 		<dependency>
 			<groupId>org.reflections</groupId>
 			<artifactId>reflections</artifactId>
-			<version>0.9.10</version>
+			<version>0.9.11</version>
 		</dependency>
 
         <dependency>
 			<groupId>io.swagger</groupId>
 			<artifactId>swagger-jaxrs</artifactId>
-			<version>1.5.0</version>
+			<version>1.5.21</version>
 			<exclusions>
 				<exclusion>
 					<artifactId>reflections</artifactId>
@@ -228,12 +228,12 @@
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
-			<version>3.1</version>
+			<version>3.8.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-collections4</artifactId>
-			<version>4.0</version>
+			<version>4.2</version>
 		</dependency>
 
 		<dependency>
