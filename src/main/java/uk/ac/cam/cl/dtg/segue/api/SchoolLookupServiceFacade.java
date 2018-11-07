@@ -15,11 +15,16 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
+import com.google.inject.Inject;
 import io.swagger.annotations.Api;
-
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
+import org.jboss.resteasy.annotations.GZIP;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
+import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
+import uk.ac.cam.cl.dtg.segue.dos.users.School;
+import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -33,18 +38,9 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
-
-import org.jboss.resteasy.annotations.GZIP;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
-import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
-import uk.ac.cam.cl.dtg.segue.dos.users.School;
-import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
-
-import com.google.inject.Inject;
-import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Segue School Lookup service.
