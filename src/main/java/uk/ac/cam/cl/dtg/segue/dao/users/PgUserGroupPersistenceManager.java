@@ -483,7 +483,7 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
             pst.setLong(1, userId);
 
             if (archivedGroupsOnly != null) {
-                pst.setBoolean(3, archivedGroupsOnly);
+                pst.setBoolean(2, archivedGroupsOnly);
             }
 
             ResultSet results = pst.executeQuery();
