@@ -55,7 +55,7 @@ import com.google.inject.Inject;
 public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
     private static final Logger log = LoggerFactory.getLogger(PostCodeIOLocationResolver.class);
 
-    private final String url = "http://api.postcodes.io/postcodes";
+    private final String url = "https://api.postcodes.io/postcodes";
     private final int POSTCODEIO_MAX_REQUESTS = 100;
     
     private final LocationHistory locationHistory;
