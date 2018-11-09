@@ -82,60 +82,6 @@ public class InfoFacade extends AbstractSegueFacade {
     }
 
     /**
-     * This method returns all versions as an immutable map version_list.
-     * 
-     * @param limit
-     *            parameter if not null will set the limit of the number entries to return the default is the latest 10
-     *            (indices starting at 0).
-     * 
-     * @return a Response containing an immutable map version_list: [x..y..]
-     */
-    @GET
-    @Path("content_versions")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @Deprecated
-    @ApiOperation(value = "List content commit SHAs the API is aware of with the most recent first.")
-    public final Response getVersionsList(@QueryParam("limit") final String limit) {
-        // try to parse the integer
-        Integer limitAsInt = null;
-
-        try {
-            if (null == limit) {
-                limitAsInt = DEFAULT_RESULTS_LIMIT;
-            } else {
-                limitAsInt = Integer.parseInt(limit);
-            }
-        } catch (NumberFormatException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
-                    "The limit requested is not a valid number.");
-            log.debug(error.getErrorMessage());
-            return error.toResponse();
-        }
-
-        List<String> allVersions = this.contentManager.listAvailableVersions();
-        List<String> limitedVersions;
-        try {
-            limitedVersions = new ArrayList<String>(allVersions.subList(0, limitAsInt));
-        } catch (IndexOutOfBoundsException e) {
-            // they have requested a stupid limit so just give them what we have
-            // got.
-            limitedVersions = allVersions;
-            log.debug("Bad index requested for version number." + " Using maximum index instead.");
-        } catch (IllegalArgumentException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid limit specified: " + limit,
-                    e);
-            log.debug(error.getErrorMessage(), e);
-            return error.toResponse();
-        }
-
-        ImmutableMap<String, Collection<String>> result = new ImmutableMap.Builder<String, Collection<String>>().put(
-                "version_list", limitedVersions).build();
-
-        return Response.ok(result).build();
-    }
-
-    /**
      * Gets the current version of the segue application.
      * 
      * @return segue version as a string wrapped in a response.
