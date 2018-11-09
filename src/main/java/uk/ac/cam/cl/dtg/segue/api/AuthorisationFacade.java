@@ -312,7 +312,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     }
 
     /**
-     * Function to allow users to create an AssociationToken.
+     * Function to allow users to create or get an existing AssociationToken.
      * 
      * This token can be used by another user to grant view permissions to their user data.
      * 
@@ -333,7 +333,18 @@ public class AuthorisationFacade extends AbstractSegueFacade {
         }
 
         try {
+            // verify the user requesting a token is allowed to do so for this group
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+            UserGroupDTO group = this.groupManager.getGroupById(groupId);
+            if (null == group) {
+                return new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the group requested.").toResponse();
+            }
+
+            if (!GroupManager.isOwnerOrAdditionalManager(group, user.getId())) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to create or request a group token for this group. " +
+                        "Only owners or additional managers can.").toResponse();
+            }
+
             AssociationToken token = associationManager.generateAssociationToken(user, groupId);
 
             return Response.ok(token).cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
