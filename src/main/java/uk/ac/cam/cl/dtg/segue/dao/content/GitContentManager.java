@@ -398,7 +398,8 @@ public class GitContentManager implements IContentManager {
             // check to see if index looks like a content sha otherwise we will get loads of other search indexes come
             // back.
             if (index.matches("[a-fA-F0-9]{40}_.*")) {
-                builder.add(index);
+                // We just want the commit SHA, not the type description after the underscore:
+                builder.add(index.replaceAll("_.*$", ""));
             }
         }
         return builder.build();
