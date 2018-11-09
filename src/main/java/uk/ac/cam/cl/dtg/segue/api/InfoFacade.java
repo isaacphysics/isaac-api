@@ -29,7 +29,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -95,39 +94,6 @@ public class InfoFacade extends AbstractSegueFacade {
                 SegueGuiceConfigurationModule.getSegueVersion()).build();
 
         return Response.ok(result).build();
-    }
-
-    /**
-     * Lists all existing log event types in the database.
-     *
-     * FIXME - this will run slowly and should be removed or cached!
-     * 
-     * @param request
-     *            for caching
-     * @return segue version as a string wrapped in a response.
-     */
-    @GET
-    @Path("log_event_types")
-    @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "List all existing log event types in the database.")
-    public final Response getLogEventTypes(@Context final Request request) {
-        ImmutableMap<String, Collection<String>> result;
-        try {
-            result = new ImmutableMap.Builder<String, Collection<String>>().put("results",
-                    getLogManager().getAllEventTypes()).build();
-        } catch (SegueDatabaseException e) {
-            log.error("Database error has occurred", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "A database error has occurred.").toResponse();
-        }
-
-        EntityTag etag = new EntityTag(result.toString().hashCode() + "");
-        Response cachedResponse = generateCachedResponse(request, etag, NUMBER_SECONDS_IN_ONE_DAY);
-        if (cachedResponse != null) {
-            return cachedResponse;
-        }
-
-        return Response.ok(result).tag(etag).cacheControl(this.getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, false))
-                .build();
     }
 
     /**
