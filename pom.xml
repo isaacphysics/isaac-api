@@ -370,6 +370,7 @@
 					<systemPropertyVariables>
 						<log.path>${log.path}</log.path>
 					</systemPropertyVariables>
+                    <useSystemClassLoader>false</useSystemClassLoader>
 				</configuration>
 			</plugin>
 
