@@ -31,6 +31,7 @@ import uk.ac.cam.cl.dtg.segue.api.monitors.TokenOwnerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.UserGroupNotFoundException;
@@ -336,9 +337,6 @@ public class AuthorisationFacade extends AbstractSegueFacade {
             // verify the user requesting a token is allowed to do so for this group
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
             UserGroupDTO group = this.groupManager.getGroupById(groupId);
-            if (null == group) {
-                return new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the group requested.").toResponse();
-            }
 
             if (!GroupManager.isOwnerOrAdditionalManager(group, user.getId())) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to create or request a group token for this group. " +
@@ -349,6 +347,8 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 
             return Response.ok(token).cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
                     .build();
+        } catch (ResourceNotFoundException e) {
+            return new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the group requested.").toResponse();
         } catch (SegueDatabaseException e) {
             log.error("Database error while trying to get association token. ", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
