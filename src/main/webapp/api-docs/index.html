@@ -39,7 +39,7 @@
     window.onload = function() {
 
       // Work out where Isaac is running and where to find swagger.json:
-      var url = window.location.href.replace(/api-docs.*/, "swagger.json");
+      var url = window.location.href.replace(/api-docs.*/, "/api/swagger.json");
 
       if (document.location.hostname === "localhost") {
           url ="http://" + window.location.host + "/isaac-api/api/swagger.json";
