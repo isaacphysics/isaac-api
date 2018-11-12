@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,48 +15,23 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.PROXY_PATH;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacLogType;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueLogType;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
-
+import com.google.api.client.util.Maps;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
+import com.google.common.collect.ImmutableMap;
+import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.EntityTag;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Request;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-
+import io.swagger.annotations.ApiOperation;
 import ma.glasnost.orika.MapperFacade;
-
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.IStatisticsManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
@@ -73,9 +48,28 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import com.google.api.client.util.Maps;
-import com.google.common.collect.ImmutableMap;
-import com.google.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.EntityTag;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Request;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Isaac Controller
@@ -189,6 +183,7 @@ public class IsaacController extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("search/{searchString}")
     @GZIP
+    @ApiOperation(value = "Search for content objects matching the provided criteria.")
     public final Response search(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
             @PathParam("searchString") final String searchString, @QueryParam("types") final String types,
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
@@ -252,6 +247,8 @@ public class IsaacController extends AbstractIsaacFacade {
     @Produces("*/*")
     @Path("images/{path:.*}")
     @GZIP
+    @ApiOperation(value = "Get a binary object from the current content version.",
+                  notes = "This can only be used to get images from the content database.")
     public final Response getImageByPath(@Context final Request request, @PathParam("path") final String path) {
         // entity tags etc are already added by segue
         return api.getImageFileContent(request, this.contentIndex, path);
@@ -268,6 +265,7 @@ public class IsaacController extends AbstractIsaacFacade {
     @Path("users/current_user/progress")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get progress information for the current user.")
     public final Response getCurrentUserProgressInformation(@Context final HttpServletRequest request) {
         RegisteredUserDTO user;
         try {
@@ -294,6 +292,7 @@ public class IsaacController extends AbstractIsaacFacade {
     @Path("users/{user_id}/progress")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get progress information for a specified user.")
     public final Response getUserProgressInformation(@Context final HttpServletRequest request,
             @PathParam("user_id") final Long userIdOfInterest) {
         RegisteredUserDTO user;
@@ -356,6 +355,8 @@ public class IsaacController extends AbstractIsaacFacade {
     @Path("stats/questions_answered/count")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get the total number of questions attempted on the platform.",
+                  notes = "For performance reasons, this number is cached server-side for 10 minutes.")
     public Response getQuestionCount(@Context final HttpServletRequest request) {
         // Update the question count if it's expired
         questionCountCache.get();

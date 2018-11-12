@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,48 +15,18 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
+import com.google.api.client.util.Lists;
+import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.inject.Inject;
 import com.opencsv.CSVWriter;
 import io.swagger.annotations.Api;
-
-import java.io.IOException;
-import java.io.StringWriter;
-import java.text.DecimalFormat;
-import java.text.SimpleDateFormat;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.HashMap;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Arrays;
-import java.util.ArrayList;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-
+import io.swagger.annotations.ApiOperation;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import uk.ac.cam.cl.dtg.isaac.api.Constants.GameboardItemState;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateAssignmentException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
@@ -65,8 +35,8 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
@@ -82,9 +52,35 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import com.google.api.client.util.Lists;
-import com.google.api.client.util.Maps;
-import com.google.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -161,6 +157,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "List all boards assigned to the current user.")
     public Response getAssignments(@Context final HttpServletRequest request,
 
                                    @QueryParam("assignmentStatus") final GameboardState assignmentStatus) {
@@ -239,6 +236,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Path("/assign")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "List all assignments set by the current user.")
     public Response getAssigned(@Context final HttpServletRequest request,
                                 @QueryParam("group") final Long groupIdOfInterest) {
         try {
@@ -297,6 +295,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Path("/assign/{assignment_id}/progress")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "View the progress of a specific assignment.")
     public Response getAssignmentProgress(@Context final HttpServletRequest request,
                                           @PathParam("assignment_id") final Long assignmentId) {
         try {
@@ -379,6 +378,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Produces("text/csv")
     @GZIP
     @Consumes(MediaType.WILDCARD)
+    @ApiOperation(value = "Download the progress of a specific assignment.")
     public Response getAssignmentProgressDownloadCSV(@Context final HttpServletRequest request,
                                                      @PathParam("assignment_id") final Long assignmentId) {
 
@@ -570,6 +570,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Produces("text/plain")
     @GZIP
     @Consumes(MediaType.WILDCARD)
+    @ApiOperation(value = "Download the progress of a group on all assignments set.")
     public Response getGroupAssignmentsProgressDownloadCSV(@Context final HttpServletRequest request,
                                                            @PathParam("group_id") final Long groupId) {
 
@@ -843,6 +844,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Path("/assign/groups")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "List all groups assigned boards from a list of boards.",
+                  notes = "The list of boards should be comma separated.")
     public Response getAssignedGroupsByGameboards(@Context final HttpServletRequest request,
                                                   @QueryParam("gameboard_ids") final String gameboardIdsQueryParam) {
         try {
@@ -882,6 +885,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Path("/assign/")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Create a new assignment.")
     public Response assignGameBoard(@Context final HttpServletRequest request,
                                     final AssignmentDTO assignmentDTOFromClient) {
 
@@ -964,6 +968,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Path("/assign/{gameboard_id}/{group_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Delete an assignment by board ID and group ID.")
     public Response deleteAssignment(@Context final HttpServletRequest request,
                                      @PathParam("gameboard_id") final String gameboardId, @PathParam("group_id") final Long groupId) {
 
