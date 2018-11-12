@@ -816,7 +816,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     ImmutableMap.of("groupId", groupId));
 
             return Response.ok(headerBuilder)
-//                    .header("Content-Disposition", "attachment; filename=group_progress.csv")
+                    .header("Content-Disposition", "attachment; filename=group_progress.csv")
                     .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
 
         } catch (NoUserLoggedInException e) {
