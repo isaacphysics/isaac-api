@@ -455,16 +455,16 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             // FIXME vvv This is duplicated code vvv
             // This is properly horrible, can someone rewrite this whole thing?
             questionAttemptsForAllUsersOfInterest.forEach((user, attempts) -> {
-                Map<String, List<LightweightQuestionValidationResponse>> userAttempts;
-                List<Map<String, List<LightweightQuestionValidationResponse>>> l =
-                        attempts.entrySet().stream().map(Entry::getValue).collect(Collectors.toList());
-                // This is even worse than horrible. Is this the real Java? Is this just fantasy?
-                if (l.isEmpty()) {
-                    userAttempts = new HashMap<>();
-                } else {
-                    userAttempts = l.get(0);
+                Map<String, List<LightweightQuestionValidationResponse>> attemptsByQuestionId = new HashMap<>();
+                for (String pageId : attempts.keySet()) {
+                    Map<String, List<LightweightQuestionValidationResponse>> a = attempts.get(pageId);
+                    for (String questionId : a.keySet()) {
+                        List l = a.get(questionId);
+                        attemptsByQuestionId.put(questionId, l);
+                    }
+                    System.out.println(a);
                 }
-                Map<String, Integer> userAttemptsSummary = userAttempts.entrySet().stream().collect(
+                Map<String, Integer> userAttemptsSummary = attemptsByQuestionId.entrySet().stream().collect(
                         Collectors.toMap(
                                 Entry::getKey,
                                 e -> e.getValue().stream().map(LightweightQuestionValidationResponse::isCorrect)
@@ -474,11 +474,14 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                         Entry::getKey,
                         e -> e.getValue() ? 1 : 0
                 ));
-                // This could be better handled with yet another stream, but my eyes are already crossing,
-                // I'd rather not cross the streams too...
                 userQuestionDataMap.put(user, userAttemptsSummary);
             });
             // FIXME ^^^ This is duplicated code ^^^
+            userQuestionDataMap.forEach((user, outcome) -> {
+                questionIds.forEach(questionId -> {
+                    outcome.putIfAbsent(questionId, null);
+                });
+            });
 
             List<String[]> resultRows = Lists.newArrayList();
             int[] columnTotals = new int[questionIds.size()];
@@ -541,7 +544,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             headerBuilder.append(stringWriter.toString());
             // get game manager completion information for this assignment.
             return Response.ok(headerBuilder.toString())
-                    .header("Content-Disposition", "attachment; filename=assignment_progress.csv")
+                    //.header("Content-Disposition", "attachment; filename=assignment_progress.csv")
+                    .header("Content-Type", "text/plain")
                     .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
 
         } catch (NoUserLoggedInException e) {
@@ -628,25 +632,25 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 // FIXME vvv This is duplicated code vvv
                 // This is properly horrible, can someone rewrite this whole thing?
                 questionAttemptsForAllUsersOfInterest.forEach((user, attempts) -> {
-                    Map<String, List<LightweightQuestionValidationResponse>> userAttempts;
-                    List<Map<String, List<LightweightQuestionValidationResponse>>> l = attempts.entrySet().stream().map(Entry::getValue).collect(Collectors.toList());
-                    // This is even worse than horrible. Is this the real Java? Is this just fantasy?
-                    if (l.isEmpty()) {
-                        userAttempts = new HashMap<>();
-                    } else {
-                        userAttempts = l.get(0);
+                    Map<String, List<LightweightQuestionValidationResponse>> attemptsByQuestionId = new HashMap<>();
+                    for (String pageId : attempts.keySet()) {
+                        Map<String, List<LightweightQuestionValidationResponse>> a = attempts.get(pageId);
+                        for (String questionId : a.keySet()) {
+                            List l = a.get(questionId);
+                            attemptsByQuestionId.put(questionId, l);
+                        }
+                        System.out.println(a);
                     }
-                    Map<String, Integer> userAttemptsSummary = userAttempts.entrySet().stream().collect(
+                    Map<String, Integer> userAttemptsSummary = attemptsByQuestionId.entrySet().stream().collect(
                             Collectors.toMap(
                                     Entry::getKey,
-                                    e -> e.getValue().stream().map(LightweightQuestionValidationResponse::isCorrect).reduce(false, (a, b) -> a || b)
+                                    e -> e.getValue().stream().map(LightweightQuestionValidationResponse::isCorrect)
+                                            .reduce(false, (a, b) -> a || b)
                             )
                     ).entrySet().stream().collect(Collectors.toMap(
                             Entry::getKey,
                             e -> e.getValue() ? 1 : 0
                     ));
-                    // This could be better handled with yet another stream, but my eyes are already crossing,
-                    // I'd rather not cross the streams too...
                     userQuestionDataMap.put(user, userAttemptsSummary);
                 });
                 // FIXME ^^^ This is duplicated code ^^^
