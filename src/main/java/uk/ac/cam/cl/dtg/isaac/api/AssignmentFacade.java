@@ -544,8 +544,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             headerBuilder.append(stringWriter.toString());
             // get game manager completion information for this assignment.
             return Response.ok(headerBuilder.toString())
-                    //.header("Content-Disposition", "attachment; filename=assignment_progress.csv")
-                    .header("Content-Type", "text/plain")
+                    .header("Content-Disposition", "attachment; filename=assignment_progress.csv")
                     .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
 
         } catch (NoUserLoggedInException e) {
