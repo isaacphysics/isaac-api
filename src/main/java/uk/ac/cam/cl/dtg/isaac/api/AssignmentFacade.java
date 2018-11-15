@@ -603,23 +603,31 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             // String: question part id
             // Integer: question part result
-            Map<RegisteredUserDTO, Map<GameboardDTO, Map<String, Integer>>> grandTable = Maps.newHashMap();
+            Map<RegisteredUserDTO, Map<GameboardDTO, Map<String, Integer>>> grandTable = new HashMap<>();
             // Retrieve each user's progress data and cram everything into a Grand Table for later consumption
             List<String> gameboardsIds = assignments.stream().map(AssignmentDTO::getGameboardId).collect(Collectors.toList());
-            List<GameboardDTO> gameboards = gameManager.getGameboards(gameboardsIds);
+            List<GameboardDTO> gameboards;
+            if (gameboardsIds.isEmpty()) {
+                gameboards = new ArrayList<>();
+            } else {
+                gameboards = gameManager.getGameboards(gameboardsIds);
+            }
             Map<String, GameboardDTO> gameboardsIdMap = gameboards.stream().collect(Collectors.toMap(GameboardDTO::getId, Function.identity()));
 
             Map<AssignmentDTO, GameboardDTO> assignmentGameboards = new HashMap<>();
             for (AssignmentDTO assignment : assignments) {
                 GameboardDTO gameboard = gameboardsIdMap.get(assignment.getGameboardId());
-                gameboards.add(gameboard);
                 // Create an assignment -> gameboard mapping to avoid repeatedly querying the DB later on. All the efficiency!
                 assignmentGameboards.put(assignment, gameboard);
             }
             List<GameboardItem> gameboardItems = gameboards.stream().map(GameboardDTO::getQuestions).flatMap(Collection::stream).collect(Collectors.toList());
             List<String> questionPageIds = gameboardItems.stream().map(GameboardItem::getId).collect(Collectors.toList());
             Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> questionAttempts;
-            questionAttempts = this.questionManager.getMatchingQuestionAttempts(groupMembers, questionPageIds);
+            try {
+                questionAttempts = this.questionManager.getMatchingQuestionAttempts(groupMembers, questionPageIds);
+            } catch (IllegalArgumentException e) {
+                questionAttempts = new HashMap<>();
+            }
             Map<RegisteredUserDTO, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> questionAttemptsForAllUsersOfInterest = new HashMap<>();
             for (RegisteredUserDTO user : groupMembers) {
                 questionAttemptsForAllUsersOfInterest.put(user, questionAttempts.get(user.getId()));
