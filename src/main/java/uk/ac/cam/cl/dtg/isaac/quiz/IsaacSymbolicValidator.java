@@ -1,5 +1,5 @@
-/**
- * Copyright 2016 Alistair Stead
+/*
+ * Copyright 2016 Alistair Stead, James Sharkey, Ian Davies
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 package uk.ac.cam.cl.dtg.isaac.quiz;
-
-import java.io.*;
-import java.util.*;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -33,7 +30,6 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicQuestion;
 import uk.ac.cam.cl.dtg.segue.dos.FormulaValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
@@ -44,10 +40,16 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatorUnavailableException;
 
+import java.io.IOException;
+import java.io.StringWriter;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+
 /**
- * Validator that only provides functionality to validate symbolic questions.
- *
- * @author Alistair Stead
+ * Validator that provides functionality to validate symbolic questions.
  *
  */
 public class IsaacSymbolicValidator implements IValidator {
@@ -123,7 +125,7 @@ public class IsaacSymbolicValidator implements IValidator {
 
                 // ... that are of the Formula type, ...
                 if (!(c instanceof Formula)) {
-                    log.error("Isaac Symbolic Validator for questionId: " + symbolicQuestion.getId()
+                    log.error("Validator for questionId: " + symbolicQuestion.getId()
                             + " expected there to be a Formula. Instead it found a Choice.");
                     continue;
                 }
@@ -159,13 +161,10 @@ public class IsaacSymbolicValidator implements IValidator {
             // Sort the choices so that we match incorrect choices last, taking precedence over correct ones.
             List<Choice> orderedChoices = Lists.newArrayList(symbolicQuestion.getChoices());
 
-            Collections.sort(orderedChoices, new Comparator<Choice>() {
-                @Override
-                public int compare(Choice o1, Choice o2) {
-                    int o1Val = o1.isCorrect() ? 0 : 1;
-                    int o2Val = o2.isCorrect() ? 0 : 1;
-                    return o1Val - o2Val;
-                }
+            orderedChoices.sort((o1, o2) -> {
+                int o1Val = o1.isCorrect() ? 0 : 1;
+                int o2Val = o2.isCorrect() ? 0 : 1;
+                return o1Val - o2Val;
             });
 
             // For all the choices on this question...
@@ -226,9 +225,15 @@ public class IsaacSymbolicValidator implements IValidator {
                             log.error("Failed to check formula \"" + submittedFormula.getPythonExpression()
                                     + "\" against \"" + formulaChoice.getPythonExpression() + "\": "
                                     + response.get("error"));
+                        } else if (response.containsKey("syntax_error")) {
+                            // There's a syntax error in the "test" expression, no use checking it further:
+                            closestMatch = null;
+                            feedback = new Content("Your answer does not seem to be valid maths.<br>"
+                                        + "Check for things like mismatched brackets or misplaced symbols.");
+                            feedback.setTags(new HashSet<>(Collections.singletonList("syntax_error")));
+                            responseCorrect = false;
+                            break;
                         } else {
-                            // If it doesn't contain a code, it wasn't a fatal error in the checker; probably only a
-                            // problem with the submitted answer.
                             log.warn("Problem checking formula \"" + submittedFormula.getPythonExpression()
                                     + "\" for (" + symbolicQuestion.getId() + ") with symbolic checker: " + response.get("error"));
                         }
@@ -270,6 +275,7 @@ public class IsaacSymbolicValidator implements IValidator {
                 if (closestMatchType != MatchType.EXACT && closestMatch.getRequiresExactMatch()) {
                     if (closestMatch.isCorrect()) {
                         feedback = new Content("Your answer is not in the form we expected. Can you rearrange or simplify it?");
+                        feedback.setTags(new HashSet<>(Collections.singletonList("required_exact")));
                         responseCorrect = false;
                         responseMatchType = closestMatchType;
 

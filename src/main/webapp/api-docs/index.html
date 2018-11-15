@@ -39,18 +39,18 @@
     window.onload = function() {
 
       // Work out where Isaac is running and where to find swagger.json:
-      var url = window.location.href.replace(/api-docs.*/, "api/swagger.json");
+      var baseUrl = window.location.href.replace(/api-docs.*/, "api");
 
       if (document.location.hostname === "localhost") {
-          url ="http://" + window.location.host + "/isaac-api/api/swagger.json";
+          baseUrl ="http://" + window.location.host + "/isaac-api/api";
       } else if (document.location.hostname.indexOf(".eu.ngrok.io") > -1) {
           // Have reserved domains on ngrok.io, hardcode them for ease of use:
-          url = "https://isaacscience.eu.ngrok.io/isaac-api/api/swagger.json";
+          baseUrl = "https://isaacscience.eu.ngrok.io/isaac-api/api";
       }
 
       // Begin Swagger UI call region
       const ui = SwaggerUIBundle({
-        url: url,
+        url: baseUrl + "/swagger.json",
         dom_id: '#swagger-ui',
         deepLinking: true,
         presets: [
@@ -61,7 +61,14 @@
           SwaggerUIBundle.plugins.DownloadUrl
         ],
         layout: "StandaloneLayout",
-        docExpansion: "none"
+        docExpansion: "none",
+        requestInterceptor: function(request) {
+          // The basePath and host in swagger.json are incorrect, because the API does not
+          // know how it is being accessed. We can forcibly correct this here:
+          request.url = request.url.replace(/.*?(\/api\/.*?)?\/api/, baseUrl);
+          console.log(request.url);
+          return request;
+        }
       });
       // End Swagger UI call region
 
