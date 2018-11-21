@@ -35,6 +35,8 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
@@ -92,6 +94,7 @@ import uk.ac.cam.cl.dtg.segue.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.segue.dos.UserPreference;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
+import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
@@ -751,24 +754,25 @@ public class AdminFacade extends AbstractSegueFacade {
                 userPrototype.setSchoolId(schoolURN);
             }
 
-            List<RegisteredUserDTO> findUsers;
+            List<RegisteredUserDTO> foundUsers;
 
             // If a unique email address (without wildcards) provided, look up using this email immediately:
             if (null != email && !email.isEmpty() && !(email.contains("%") || email.contains("_"))) {
                 try {
-                    findUsers = Collections.singletonList(this.userManager.getUserDTOByEmail(email));
+                    foundUsers = Collections.singletonList(this.userManager.getUserDTOByEmail(email));
                 } catch (NoUserException e) {
-                    findUsers = Collections.emptyList();
+                    foundUsers = Collections.emptyList();
                 }
             } else {
-                findUsers = this.userManager.findUsers(userPrototype);
+                foundUsers = this.userManager.findUsers(userPrototype);
             }
+            Map<Long, RegisteredUserDTO> userMapById = foundUsers.parallelStream().collect(Collectors.toMap(RegisteredUserDTO::getId, Function.identity()));
 
             // if postcode is set, filter found users
             if (null != postcode) {
                 try {
                     Map<String, List<Long>> postCodeAndUserIds = Maps.newHashMap();
-                    for (RegisteredUserDTO userDTO : findUsers) {
+                    for (RegisteredUserDTO userDTO : foundUsers) {
                         if (userDTO.getSchoolId() != null) {
                             School school = this.schoolReader.findSchoolById(userDTO.getSchoolId());
                             if (school != null) {
@@ -793,12 +797,12 @@ public class AdminFacade extends AbstractSegueFacade {
                     // Make sure the list returned is users who have schools in our postcode radius
                     List<RegisteredUserDTO> nearbyUsers = new ArrayList<>();
                     for (Long id : userIdsWithinRadius) {
-                        RegisteredUserDTO user = this.userManager.getUserDTOById(id);
+                        RegisteredUserDTO user = userMapById.get(id); //this.userManager.getUserDTOById(id);
                         if (user != null) {
                             nearbyUsers.add(user);
                         }
                     }
-                    findUsers = nearbyUsers;
+                    foundUsers = nearbyUsers;
 
                 } catch (LocationServerException e) {
                     log.error("Location service unavailable. ", e);
@@ -816,18 +820,15 @@ public class AdminFacade extends AbstractSegueFacade {
                     log.error("Problem parsing school", e);
                     return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                             "IOException while trying to communicate with the school service.").toResponse();
-                } catch (NoUserException e) {
-                    log.error("User cannot be found from user Id", e);
                 }
-                
             }
 
             // FIXME - this shouldn't really be in a segue class!
             if (subjectOfInterest != null && !subjectOfInterest.isEmpty()) {
                 List<RegisteredUserDTO> subjectFilteredUsers = new ArrayList<>();
-                Map<Long, List<UserPreference>> userPreferences = userPreferenceManager.getUserPreferences(IsaacUserPreferences.SUBJECT_INTEREST.name(), findUsers);
+                Map<Long, List<UserPreference>> userPreferences = userPreferenceManager.getUserPreferences(IsaacUserPreferences.SUBJECT_INTEREST.name(), foundUsers);
 
-                for (RegisteredUserDTO userToFilter: findUsers) {
+                for (RegisteredUserDTO userToFilter: foundUsers) {
                     if (userPreferences.containsKey(userToFilter.getId())) {
                         for (UserPreference pref : userPreferences.get(userToFilter.getId())) {
                             if (pref.getPreferenceName().equals(subjectOfInterest) && pref.getPreferenceValue()) {
@@ -836,11 +837,11 @@ public class AdminFacade extends AbstractSegueFacade {
                         }
                     }
                 }
-                findUsers = subjectFilteredUsers;
+                foundUsers = subjectFilteredUsers;
             }
 
             // Calculate the ETag
-            EntityTag etag = new EntityTag(findUsers.size() + findUsers.toString().hashCode()
+            EntityTag etag = new EntityTag(foundUsers.size() + foundUsers.toString().hashCode()
                     + userPrototype.toString().hashCode() + "");
 
             Response cachedResponse = generateCachedResponse(request, etag);
@@ -851,7 +852,7 @@ public class AdminFacade extends AbstractSegueFacade {
             log.info(String.format("%s user (%s) did a search across all users based on user prototype {%s}",
                     currentUser.getRole(), currentUser.getEmail(), userPrototype));
 
-            return Response.ok(this.userManager.convertToDetailedUserSummaryObjectList(findUsers, UserSummaryForAdminUsersDTO.class))
+            return Response.ok(this.userManager.convertToDetailedUserSummaryObjectList(foundUsers, UserSummaryForAdminUsersDTO.class))
                     .tag(etag)
                     .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
                     .build();
