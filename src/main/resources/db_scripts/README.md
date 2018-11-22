@@ -1,8 +1,6 @@
 # Isaac Docker Database Configuration
 
 ### Scripts
-Running `build-pg-image.sh` will create or update the `isaac-pg` PostgreSQL image that will initialise itself with a blank 'rutherford' database on first start.
-It is used for local development and non-production databases on the server. 
 
 `dump-db.sh` is a script for dumping one of the server databases and takes the environment as its first argument. The command it contains can be adapted to dump a local database if required by replacing `pg-$1` with `postgres`.
 
