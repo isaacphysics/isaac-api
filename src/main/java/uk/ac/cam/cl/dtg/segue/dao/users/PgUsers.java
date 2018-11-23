@@ -418,12 +418,11 @@ public class PgUsers implements IUserDataManager {
             try {
                 conn.setAutoCommit(false);
 
-                // TODO: this could be done as part of the transaction
                 // Hash all PII in user object
                 removePIIFromUserDO(userToDelete);
 
-                // save it
-                this.updateUser(userToDelete);
+                // save it using this connection with auto commit turned off
+                this.updateUser(conn, userToDelete);
 
                 // Replace all linked providers with a uid account provider IDs to prevent clashes if the user creates a new account.
                 PreparedStatement deleteLinkedAccounts;
@@ -431,6 +430,7 @@ public class PgUsers implements IUserDataManager {
                         "UPDATE linked_accounts " +
                         "SET provider_user_id = ? " +
                                 "WHERE user_id = ?");
+
                 deleteLinkedAccounts.setString(1, UUID.randomUUID().toString());
                 deleteLinkedAccounts.setLong(2, userToDelete.getId());
                 deleteLinkedAccounts.execute();
@@ -441,6 +441,7 @@ public class PgUsers implements IUserDataManager {
                         "UPDATE users" +
                                 " SET deleted = TRUE" +
                                 " WHERE id = ?");
+
                 markUserAsDeleted.setLong(1, userToDelete.getId());
                 markUserAsDeleted.execute();
 
@@ -539,55 +540,72 @@ public class PgUsers implements IUserDataManager {
             throw new SegueDatabaseException("Postgres exception", e);
         }
     }
-    
+
     /**
+     * Update a user in the database.
+     *
      * @param userToCreate - user object to save.
      * @return the user as from the database
-     * @throws SegueDatabaseException
+     * @throws SegueDatabaseException - if there is a database problem
      */
     private RegisteredUser updateUser(final RegisteredUser userToCreate) throws SegueDatabaseException {
         RegisteredUser existingUserRecord = this.getById(userToCreate.getId());
         if (null == existingUserRecord) {
             throw new SegueDatabaseException("The user you have tried to update does not exist.");
         }
-        
-        PreparedStatement pst;
-        try (Connection conn = database.getDatabaseConnection()) {
-            pst = conn
-                    .prepareStatement(
-                            "UPDATE users SET family_name = ?, given_name = ?, email = ?, role = ?, "
-                            + "date_of_birth = ?, gender = ?, registration_date = ?, school_id = ?, "
-                            + "school_other = ?, last_updated = ?, email_verification_status = ?, "
-                            + "last_seen = ?, default_level = ?, email_verification_token = ?, email_to_verify = ? "
-                            + "WHERE id = ?;");
-            
-            setValueHelper(pst, 1, userToCreate.getFamilyName());
-            setValueHelper(pst, 2, userToCreate.getGivenName());
-            setValueHelper(pst, 3, userToCreate.getEmail());
-            setValueHelper(pst, 4, userToCreate.getRole());
-            setValueHelper(pst, 5, userToCreate.getDateOfBirth());
-            setValueHelper(pst, 6, userToCreate.getGender());
-            setValueHelper(pst, 7, userToCreate.getRegistrationDate());
-            setValueHelper(pst, 8, userToCreate.getSchoolId());
-            setValueHelper(pst, 9, userToCreate.getSchoolOther());
-            setValueHelper(pst, 10, userToCreate.getLastUpdated());
-            setValueHelper(pst, 11,  userToCreate.getEmailVerificationStatus());
-            setValueHelper(pst, 12, userToCreate.getLastSeen());
-            setValueHelper(pst, 13, userToCreate.getDefaultLevel());
-            setValueHelper(pst, 14, userToCreate.getEmailVerificationToken());
-            setValueHelper(pst, 15, userToCreate.getEmailToVerify());
-            setValueHelper(pst, 16, userToCreate.getId());
-            
-            if (pst.executeUpdate() == 0) {
-                throw new SegueDatabaseException("Unable to save user.");
-            }
 
-            return this.getById(existingUserRecord.getId());
+        try (Connection conn = database.getDatabaseConnection()) {
+            return this.updateUser(conn, userToCreate);
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
-        
-        
+    }
+
+    /**
+     * Helper method that enables a connection configured for transactions to be passed in.
+     *
+     * @param conn  - A pre-created sql connection object - ideal if you want to pre configure auto commit to be turned off.
+     * @param userToCreate - user object to save.
+     * @return the user as from the database
+     * @throws SQLException - if there is a database problem
+     */
+    private RegisteredUser updateUser(Connection conn, final RegisteredUser userToCreate) throws SegueDatabaseException, SQLException {
+        RegisteredUser existingUserRecord = this.getById(userToCreate.getId());
+        if (null == existingUserRecord) {
+            throw new SegueDatabaseException("The user you have tried to update does not exist.");
+        }
+
+        PreparedStatement pst = conn
+                .prepareStatement(
+                        "UPDATE users SET family_name = ?, given_name = ?, email = ?, role = ?, "
+                        + "date_of_birth = ?, gender = ?, registration_date = ?, school_id = ?, "
+                        + "school_other = ?, last_updated = ?, email_verification_status = ?, "
+                        + "last_seen = ?, default_level = ?, email_verification_token = ?, email_to_verify = ? "
+                        + "WHERE id = ?;");
+
+        // TODO: Change this to annotations or something to rely exclusively on the pojo.
+        setValueHelper(pst, 1, userToCreate.getFamilyName());
+        setValueHelper(pst, 2, userToCreate.getGivenName());
+        setValueHelper(pst, 3, userToCreate.getEmail());
+        setValueHelper(pst, 4, userToCreate.getRole());
+        setValueHelper(pst, 5, userToCreate.getDateOfBirth());
+        setValueHelper(pst, 6, userToCreate.getGender());
+        setValueHelper(pst, 7, userToCreate.getRegistrationDate());
+        setValueHelper(pst, 8, userToCreate.getSchoolId());
+        setValueHelper(pst, 9, userToCreate.getSchoolOther());
+        setValueHelper(pst, 10, userToCreate.getLastUpdated());
+        setValueHelper(pst, 11,  userToCreate.getEmailVerificationStatus());
+        setValueHelper(pst, 12, userToCreate.getLastSeen());
+        setValueHelper(pst, 13, userToCreate.getDefaultLevel());
+        setValueHelper(pst, 14, userToCreate.getEmailVerificationToken());
+        setValueHelper(pst, 15, userToCreate.getEmailToVerify());
+        setValueHelper(pst, 16, userToCreate.getId());
+
+        if (pst.executeUpdate() == 0) {
+            throw new SegueDatabaseException("Unable to save user.");
+        }
+
+        return this.getById(existingUserRecord.getId());
     }
     
     /**
