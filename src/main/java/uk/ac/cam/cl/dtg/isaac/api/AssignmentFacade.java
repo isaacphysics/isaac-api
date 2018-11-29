@@ -462,7 +462,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                         List l = a.get(questionId);
                         attemptsByQuestionId.put(questionId, l);
                     }
-                    System.out.println(a);
                 }
                 Map<String, Integer> userAttemptsSummary = attemptsByQuestionId.entrySet().stream().collect(
                         Collectors.toMap(
@@ -646,7 +645,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                             List l = a.get(questionId);
                             attemptsByQuestionId.put(questionId, l);
                         }
-                        System.out.println(a);
                     }
                     Map<String, Integer> userAttemptsSummary = attemptsByQuestionId.entrySet().stream().collect(
                             Collectors.toMap(
