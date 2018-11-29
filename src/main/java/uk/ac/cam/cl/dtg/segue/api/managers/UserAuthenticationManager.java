@@ -814,7 +814,7 @@ public class UserAuthenticationManager {
         String hmacKey = properties.getProperty(HMAC_SALT);
 
         String userId = sessionInformation.get(SESSION_USER_ID);
-        String sessionCreationDate = sessionInformation.get(DATE_SIGNED);
+        String sessionCreationDate = sessionInformation.getOrDefault(DATE_SIGNED, "INVALID DATE");
         String sessionHMAC = sessionInformation.get(HMAC);
 
         String ourHMAC = this.calculateSessionHMAC(hmacKey, userId, sessionCreationDate);
@@ -835,6 +835,7 @@ public class UserAuthenticationManager {
                 return false;
             }
         } catch (ParseException e) {
+            // This will catch hopefully rare cookies (with "INVALID DATE") from newer API's using a different format!
             return false;
         }
 
