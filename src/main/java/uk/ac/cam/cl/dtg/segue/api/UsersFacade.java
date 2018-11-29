@@ -46,6 +46,7 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import io.swagger.annotations.ApiOperation;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.Validate;
 import org.jboss.resteasy.annotations.GZIP;
@@ -187,6 +188,7 @@ public class UsersFacade extends AbstractSegueFacade {
     @Path("users/current_user")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get information about the current user.")
     public Response getCurrentUserEndpoint(@Context final Request request,
                                            @Context final HttpServletRequest httpServletRequest) {
         try {
@@ -224,6 +226,7 @@ public class UsersFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Create a new user or update an existing user.")
     public Response createOrUpdateUserSettings(@Context final HttpServletRequest request,
                                                @Context final HttpServletResponse response, final String userObjectString) {
 
@@ -278,13 +281,14 @@ public class UsersFacade extends AbstractSegueFacade {
 
     /**
      * Provides access to user preferences, mapping preference types to an inner map of preference names and values
-     * @param httpServletRequest - the request, to work ou the current user
+     * @param httpServletRequest - the request, to work out the current user
      * @return user preference map
      */
     @GET
     @Path("users/user_preferences")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get the user preferences of the current user.")
     public Response getUserPreferences(@Context final HttpServletRequest httpServletRequest) {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
@@ -311,6 +315,75 @@ public class UsersFacade extends AbstractSegueFacade {
     }
 
     /**
+     * An endpoint for group managers (often teachers) to send a password reset request email to group members without
+     * having to know the group members account email.
+     *
+     * @param request - request information used for caching
+     * @param httpServletRequest - the request, to work ou the current user
+     * @param userIdOfInterest - userId of interest - usually a the teacher's student
+     * @return a successful response regardless of whether the email exists or an error code if there is a technical
+     *         fault
+     */
+    @POST
+    @Path("users/{user_id}/resetpassword")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @GZIP
+    @ApiOperation(value = "Request password reset for another user.")
+    public Response generatePasswordResetTokenForOtherUser(@Context final Request request,
+                                                           @Context final HttpServletRequest httpServletRequest,
+                                                           @PathParam("user_id") final Long userIdOfInterest) {
+        try {
+            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
+
+            RegisteredUserDTO userOfInterest = userManager.getUserDTOById(userIdOfInterest);
+            if (userOfInterest == null) {
+                throw new NoUserException("No user found with this ID.");
+            }
+
+            UserSummaryDTO userOfInterestSummaryObject = userManager.convertToUserSummaryObject(userOfInterest);
+
+            // decide if the user is allowed to view this data.
+            if (!currentUser.getId().equals(userIdOfInterest)
+                    && !userAssociationManager.hasPermission(currentUser, userOfInterestSummaryObject)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
+            misuseMonitor.notifyEvent(currentUser.getEmail() + "_group_member_reset", PasswordResetRequestMisuseHandler.class.toString());
+            userManager.resetPasswordRequest(userOfInterest);
+
+            this.getLogManager()
+                    .logEvent(currentUser, httpServletRequest, SegueLogType.PASSWORD_RESET_REQUEST_RECEIVED,
+                            ImmutableMap.of(
+                                    LOCAL_AUTH_EMAIL_FIELDNAME, userOfInterest.getEmail(),
+                                    LOCAL_AUTH_GROUP_MANAGER_EMAIL_FIELDNAME, currentUser.getEmail(),
+                                    LOCAL_AUTH_GROUP_MANAGER_INITIATED_FIELDNAME, true));
+            return Response.ok().build();
+
+        } catch (NoUserException e) {
+            log.warn("Password reset requested for account that does not exist: " + e.getMessage());
+            // Return OK so we don't leak account existence.
+            return Response.ok().build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (CommunicationException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Error sending reset message.", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        } catch (SegueDatabaseException | InvalidKeySpecException | NoSuchAlgorithmException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Error generating password reset token.", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        } catch (SegueResourceMisuseException e) {
+            String message = "You have exceeded the number of requests allowed for this endpoint. "
+                    + "Please try again later.";
+            return SegueErrorResponse.getRateThrottledResponse(message);
+        }
+    }
+
+
+    /**
      * End point that allows a local user to generate a password reset request.
      *
      * Step 1 of password reset process - send user an e-mail
@@ -326,6 +399,8 @@ public class UsersFacade extends AbstractSegueFacade {
     @Path("users/resetpassword")
     @Consumes(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Request password reset for an email address.",
+                  notes = "The email address must be provided as a RegisteredUserDTO object, although only the 'email' field is required.")
     public Response generatePasswordResetToken(final RegisteredUserDTO userObject,
                                                @Context final HttpServletRequest request) {
         if (null == userObject) {
@@ -377,6 +452,7 @@ public class UsersFacade extends AbstractSegueFacade {
     @Path("users/resetpassword/{token}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Verify a password reset token is valid for use.")
     public Response validatePasswordResetRequest(@PathParam("token") final String token) {
         try {
             if (userManager.validatePasswordResetToken(token)) {
@@ -409,6 +485,8 @@ public class UsersFacade extends AbstractSegueFacade {
     @Path("users/resetpassword/{token}")
     @Consumes(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Reset an account password using a reset token.",
+                  notes = "The 'token' should be generated using one of the endpoints for requesting a password reset.")
     public Response resetPassword(@PathParam("token") final String token, final Map<String, String> clientResponse,
                                   @Context final HttpServletRequest request) {
         try {
@@ -461,6 +539,7 @@ public class UsersFacade extends AbstractSegueFacade {
     @Path("users/{user_id}/event_data/over_time")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get log data counts for a specific user.")
     public Response getEventDataForUser(@Context final Request request,
                                         @Context final HttpServletRequest httpServletRequest, @PathParam("user_id") final Long userIdOfInterest,
                                         @QueryParam("from_date") final Long fromDate, @QueryParam("to_date") final Long toDate,
@@ -546,6 +625,7 @@ public class UsersFacade extends AbstractSegueFacade {
     @Path("users/school_lookup")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get the school information of specified users.")
     public Response getUserIdToSchoolMap(@Context final HttpServletRequest httpServletRequest,
                                          @QueryParam("user_ids") final String userIdsQueryParam) {
         try {
@@ -554,7 +634,7 @@ public class UsersFacade extends AbstractSegueFacade {
                         .toResponse();
             }
 
-            if (null == userIdsQueryParam || userIdsQueryParam.isEmpty() ) {
+            if (null == userIdsQueryParam || userIdsQueryParam.isEmpty()) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a comma separated list of user_ids in the query param")
                         .toResponse();
             }
@@ -562,8 +642,8 @@ public class UsersFacade extends AbstractSegueFacade {
             String[] userIdsAsList = userIdsQueryParam.split(",");
             List<Long> userLongIds = Lists.newArrayList();
 
-            for(int i = 0; i < userIdsAsList.length; i++) {
-                userLongIds.add(Long.parseLong(userIdsAsList[i]));
+            for (String anUserIdsAsList : userIdsAsList) {
+                userLongIds.add(Long.parseLong(anUserIdsAsList));
             }
 
             final List<RegisteredUserDTO> users = this.userManager.findUsers(userLongIds);
@@ -587,10 +667,7 @@ public class UsersFacade extends AbstractSegueFacade {
         } catch (SegueDatabaseException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while looking up users", e)
                     .toResponse();
-        } catch (IOException e) {
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while looking up schools", e)
-                    .toResponse();
-        } catch (UnableToIndexSchoolsException | SegueSearchException e) {
+        } catch (IOException | UnableToIndexSchoolsException | SegueSearchException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while looking up schools", e)
                     .toResponse();
         }
@@ -608,6 +685,8 @@ public class UsersFacade extends AbstractSegueFacade {
     @Path("users/schools_other")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get a list of all custom provided schools.",
+                  notes = "This data only contains schools listed in the 'School (Other)' field on user accounts.")
     public Response getAllSchoolOtherResponses(@Context final Request request) {
 
         Set<School> schoolOthers = schoolOtherSupplier.get();

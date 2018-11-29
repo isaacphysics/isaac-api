@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,39 +15,16 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
-import static com.google.common.collect.Maps.immutableEntry;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
-
+import com.google.api.client.util.Maps;
+import com.google.common.io.Files;
+import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import javax.annotation.Nullable;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.EntityTag;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Request;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-
+import io.swagger.annotations.ApiOperation;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
@@ -61,9 +38,29 @@ import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import com.google.api.client.util.Maps;
-import com.google.common.io.Files;
-import com.google.inject.Inject;
+import javax.annotation.Nullable;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.EntityTag;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Request;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import static com.google.common.collect.Maps.immutableEntry;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Segue Content Facade
@@ -128,6 +125,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
     @GET
     @Path("{version}")
     @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "List content objects matching the provided criteria.")
     public final Response getContentListByVersion(@PathParam("version") final String version,
             @QueryParam("tags") final String tags, @QueryParam("type") final String type,
             @QueryParam("start_index") final String startIndex, @QueryParam("limit") final String limit) {
@@ -297,6 +295,8 @@ public class SegueContentFacade extends AbstractSegueFacade {
     @Path("{version}/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @Deprecated
+    @ApiOperation(value = "Get a content object by content version and ID.")
     public final Response getContentById(@Context final HttpServletRequest request,
             @PathParam("version") final String version, @PathParam("id") final String id) {
 
@@ -360,6 +360,8 @@ public class SegueContentFacade extends AbstractSegueFacade {
     @Path("search/{version}/{searchString}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @Deprecated
+    @ApiOperation(value = "Return a list of content objects matching the provided criteria.")
     public final Response search(@PathParam("searchString") final String searchString,
             @PathParam("version") final String version, @QueryParam("types") final String types,
             @QueryParam("start_index") final Integer startIndex, @QueryParam("limit") final Integer limit) {
@@ -437,6 +439,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
     @Path("tags")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "List all tags currently in use.")
     public final Response getTagListByLiveVersion(@Context final Request request) {
         try {
             return this.getTagListByVersion(this.contentIndex, request);
@@ -463,6 +466,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
     @Path("tags/{version}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "List all tags in use by a specific content version.")
     public final Response getTagListByVersion(@PathParam("version") final String version,
             @Context final Request request) throws ContentManagerException {
         // Calculate the ETag on last modified date of tags list
@@ -491,6 +495,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
     @Path("units")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "List all units currently in use by numeric questions.")
     public final Response getAllUnitsByLiveVersion(@Context final Request request) {
         return this.getAllUnitsByVersion(request, this.contentIndex);
     }
@@ -508,6 +513,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
     @Path("units/{version}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "List all units in use by numeric questions for a specific content version.")
     public final Response getAllUnitsByVersion(@Context final Request request,
             @PathParam("version") final String version) {
         // Calculate the ETag on last modified date of tags list
@@ -557,6 +563,8 @@ public class SegueContentFacade extends AbstractSegueFacade {
     @Produces("*/*")
     @Cache
     @GZIP
+    @ApiOperation(value = "Get a binary object from the content of a specific version.",
+                  notes = "This can only be used to get images from the content database.")
     public final Response getImageFileContent(@Context final Request request,
             @PathParam("version") final String version, @PathParam("path") final String path) {
 

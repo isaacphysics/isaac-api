@@ -236,7 +236,7 @@ public class PgUsers implements IUserDataManager {
         Validate.notBlank(email);
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM users WHERE email ILIKE ?");
+            pst = conn.prepareStatement("SELECT * FROM users WHERE lower(email)=lower(?)");
             pst.setString(1, email);
 
             ResultSet results = pst.executeQuery();

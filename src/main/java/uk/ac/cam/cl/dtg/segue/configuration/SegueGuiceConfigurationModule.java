@@ -100,6 +100,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static LogManagerEventPublisher logManager;
     private static EmailManager emailCommunicationQueue = null;
     private static IMisuseMonitor misuseMonitor = null;
+    private static IMetricsExporter metricsExporter = null;
     private static StatisticsManager statsManager = null;
     //private static IStatisticsManager statsManager = null;
 	private static GroupManager groupManager = null;
@@ -163,6 +164,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         this.bindConstantToProperty(Constants.SCHOOL_CSV_LIST_PATH, globalProperties);
 
         this.bindConstantToProperty(CONTENT_INDEX, globalProperties);
+
+        this.bindConstantToProperty(Constants.API_METRICS_EXPORT_PORT, globalProperties);
     }
 
     /**
@@ -255,6 +258,26 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         bind(IStatisticsManager.class).to(StatisticsManager.class);
 
         bind(ITransactionManager.class).to(PgTransactionManager.class);
+    }
+
+
+    @Inject
+    @Provides
+    @Singleton
+    private static IMetricsExporter getMetricsExporter(
+            @Named(Constants.API_METRICS_EXPORT_PORT) final int port) {
+        if (null == metricsExporter) {
+            try {
+                log.info("Creating MetricsExporter on port (" + port + ")");
+                metricsExporter = new PrometheusMetricsExporter(port);
+                log.info("Exporting default JVM metrics.");
+                metricsExporter.exposeJvmMetrics();
+            } catch (IOException e) {
+                log.error("Could not create MetricsExporter on port (" + port + ")");
+                return null;
+            }
+        }
+        return metricsExporter;
     }
 
     /**

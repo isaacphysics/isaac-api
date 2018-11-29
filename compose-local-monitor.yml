@@ -1,0 +1,66 @@
+# suggested usage:
+# docker-compose -f compose-local-deps.yml -f compose-local-monitor.yml up -d
+version: '2'
+services:
+  elasticsearch-exporter:
+    image: justwatch/elasticsearch_exporter:1.0.2
+    container_name: elasticsearch-exporter
+    command:
+     - '-es.uri=http://elasticsearch:9200'
+    network_mode: bridge
+    links:
+      - elasticsearch:elasticsearch
+    ports:
+      - 9108:9108
+
+  postgres-exporter:
+    # if this isn't working run ./initialise_local_environment.sh
+    network_mode: bridge
+    image: wrouesnel/postgres_exporter
+    container_name: postgres-exporter
+    environment:
+      - DATA_SOURCE_URI=postgres:5432/rutherford?sslmode=disable
+      - DATA_SOURCE_USER=$POSTGRES_DB_USER
+      - DATA_SOURCE_PASS=$POSTGRES_DB_PASSWORD
+    links:
+      - postgres:postgres
+    ports:
+      - 9187:9187
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    command:
+      - --storage.tsdb.retention=90d
+      - --storage.tsdb.path=/prometheus/data
+      - --config.file=/prometheus/prometheus.yml
+    volumes:
+      - ./prometheus:/prometheus
+    network_mode: bridge
+    links:
+      - postgres-exporter:postgres-exporter
+      - elasticsearch-exporter:elasticsearch-exporter
+    ports:
+      - 9090:9090
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=grafana
+      - GF_SECURITY_ADMIN_PASSWORD=grafana
+      - GF_DATABASE_TYPE=sqlite3
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_AUTH_BASIC_ENABLED=false
+    volumes:
+      - ./grafana:/var/lib/grafana
+    network_mode: bridge
+    links:
+      - prometheus:prometheus
+    ports:
+      - 3000:3000
+
+networks:
+  default:
+    external:
+      name: bridge

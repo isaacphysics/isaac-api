@@ -254,6 +254,8 @@ public final class Constants {
     public static final String LOCAL_AUTH_EMAIL_FIELDNAME = "email";
     public static final String LOCAL_AUTH_PASSWORD_FIELDNAME = "password";
     public static final String LOCAL_AUTH_EMAIL_VERIFICATION_TOKEN_FIELDNAME = "emailVerificationToken";
+    public static final String LOCAL_AUTH_GROUP_MANAGER_INITIATED_FIELDNAME = "groupManagerInitiated";
+    public static final String LOCAL_AUTH_GROUP_MANAGER_EMAIL_FIELDNAME = "groupManagerEmail";
 
     // Database properties
     public static final String SEGUE_DB_NAME = "SEGUE_DB_NAME";
@@ -297,6 +299,7 @@ public final class Constants {
         EVENT_BOOKING,
         EVENT_BOOKING_CANCELLED,
         EVENT_WAITING_LIST_BOOKING,
+        LOG_IN,
         LOG_OUT,
         MERGE_USER,
         PASSWORD_RESET_REQUEST_RECEIVED,
@@ -312,6 +315,12 @@ public final class Constants {
     }
 
     public static final Set<String> SEGUE_LOG_TYPES = Arrays.stream(SegueLogType.values()).map(SegueLogType::name).collect(Collectors.toSet());
+
+    // Websocket Component
+    public static final String MAX_CONCURRENT_WEB_SOCKETS_PER_USER = "MAX_CONCURRENT_WEB_SOCKETS_PER_USER";
+
+    // Metrics Component
+    public static final String API_METRICS_EXPORT_PORT = "API_METRICS_EXPORT_PORT";
 
     // IP Geocoding stuff
     public static final String IP_INFO_DB_API_KEY = "IP_INFO_DB_API_KEY";
