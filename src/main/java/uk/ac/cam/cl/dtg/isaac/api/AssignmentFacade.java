@@ -1,12 +1,12 @@
 /*
  * Copyright 2014 Stephen Cummins
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -43,6 +43,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
@@ -78,15 +79,17 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * AssignmentFacade
- * 
+ *
  * This class provides endpoints to support assigning work to users.
- * 
+ *
  */
 @Path("/assignments")
 @Api(value = "/assignments")
@@ -108,7 +111,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
     /**
      * Creates an instance of the AssignmentFacade controller which provides the REST endpoints for the isaac api.
-     * 
+     *
      * @param assignmentManager
      *            - Instance of assignment Manager
      * @param questionManager
@@ -143,7 +146,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
     /**
      * Endpoint that will return a list of boards assigned to the current user.
-     * 
+     *
      * @param request
      *            - so that we can identify the current user.
      * @param assignmentStatus
@@ -157,7 +160,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @ApiOperation(value = "List all boards assigned to the current user.")
     public Response getAssignments(@Context final HttpServletRequest request,
 
-            @QueryParam("assignmentStatus") final GameboardState assignmentStatus) {
+                                   @QueryParam("assignmentStatus") final GameboardState assignmentStatus) {
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
 
@@ -194,7 +197,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     if (assignment.getGameboard() == null) {
                         continue;
                     }
-                    
+
                     if (assignmentStatus.equals(GameboardState.COMPLETED)
                             && assignment.getGameboard().getPercentageCompleted() == 100) {
                         newList.add(assignment);
@@ -222,7 +225,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
     /**
      * Allows a user to get all assignments they have set.
-     * 
+     *
      * @param request
      *            - so that we can identify the current user.
      * @param groupIdOfInterest
@@ -235,7 +238,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @GZIP
     @ApiOperation(value = "List all assignments set by the current user.")
     public Response getAssigned(@Context final HttpServletRequest request,
-            @QueryParam("group") final Long groupIdOfInterest) {
+                                @QueryParam("group") final Long groupIdOfInterest) {
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
 
@@ -281,7 +284,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
     /**
      * Allows the user to view results of an assignment they have set.
-     * 
+     *
      * @param assignmentId
      *            - the id of the assignment to be looked up.
      * @param request
@@ -294,7 +297,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @GZIP
     @ApiOperation(value = "View the progress of a specific assignment.")
     public Response getAssignmentProgress(@Context final HttpServletRequest request,
-            @PathParam("assignment_id") final Long assignmentId) {
+                                          @PathParam("assignment_id") final Long assignmentId) {
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
 
@@ -363,7 +366,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
     /**
      * Allows the user to view results of an assignment they have set as a detailed csv file.
-     * 
+     *
      * @param assignmentId
      *            - the id of the assignment to be looked up.
      * @param request
@@ -377,11 +380,11 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Consumes(MediaType.WILDCARD)
     @ApiOperation(value = "Download the progress of a specific assignment.")
     public Response getAssignmentProgressDownloadCSV(@Context final HttpServletRequest request,
-            @PathParam("assignment_id") final Long assignmentId) {
-       
+                                                     @PathParam("assignment_id") final Long assignmentId) {
+
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
-            
+
             AssignmentDTO assignment = this.assignmentManager.getAssignmentById(assignmentId);
             if (null == assignment) {
                 return SegueErrorResponse.getResourceNotFoundResponse("The assignment requested cannot be found");
@@ -394,12 +397,25 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
             }
-            
+
             GameboardDTO gameboard = this.gameManager.getGameboard(assignment.getGameboardId());
 
             List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group);
-            List<String> questionIds = Lists.newArrayList();
 
+            List<String> questionPageIds = Lists.newArrayList();
+            for (GameboardItem questionPage : gameboard.getQuestions()) {
+                questionPageIds.add(questionPage.getId());
+            }
+            Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> questionAttempts;
+            questionAttempts = this.questionManager.getMatchingQuestionAttempts(groupMembers, questionPageIds);
+
+            Map<RegisteredUserDTO, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>>
+                    questionAttemptsForAllUsersOfInterest = new HashMap<>();
+            for (RegisteredUserDTO user : groupMembers) {
+                questionAttemptsForAllUsersOfInterest.put(user, questionAttempts.get(user.getId()));
+            }
+
+            List<String> questionIds = Lists.newArrayList();
             List<String[]> rows = Lists.newArrayList();
             StringWriter stringWriter = new StringWriter();
             CSVWriter csvWriter = new CSVWriter(stringWriter);
@@ -414,7 +430,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             for (GameboardItem questionPage : gameboard.getQuestions()) {
                 int index = 0;
-                
+
                 for (QuestionDTO question : gameManager.getAllMarkableQuestionPartsDFSOrder(questionPage.getId())) {
                     //int newCharIndex = 'A' + index; // decided not to try and match the front end.
                     int newCharIndex = index + 1;
@@ -434,8 +450,37 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             List<String> totalsRow = Lists.newArrayList();
             Collections.addAll(totalsRow, ",Correct %".split(","));
 
-            Map<RegisteredUserDTO, Map<String, Integer>> userQuestionDataMap = this.gameManager
-                    .getDetailedGameProgressData(groupMembers, gameboard);
+            Map<RegisteredUserDTO, Map<String, Integer>> userQuestionDataMap = new HashMap<>();
+
+            // FIXME vvv This is duplicated code vvv
+            // This is properly horrible, can someone rewrite this whole thing?
+            questionAttemptsForAllUsersOfInterest.forEach((user, attempts) -> {
+                Map<String, List<LightweightQuestionValidationResponse>> attemptsByQuestionId = new HashMap<>();
+                for (String pageId : attempts.keySet()) {
+                    Map<String, List<LightweightQuestionValidationResponse>> a = attempts.get(pageId);
+                    for (String questionId : a.keySet()) {
+                        List l = a.get(questionId);
+                        attemptsByQuestionId.put(questionId, l);
+                    }
+                }
+                Map<String, Integer> userAttemptsSummary = attemptsByQuestionId.entrySet().stream().collect(
+                        Collectors.toMap(
+                                Entry::getKey,
+                                e -> e.getValue().stream().map(LightweightQuestionValidationResponse::isCorrect)
+                                        .reduce(false, (a, b) -> a || b)
+                        )
+                ).entrySet().stream().collect(Collectors.toMap(
+                        Entry::getKey,
+                        e -> e.getValue() ? 1 : 0
+                ));
+                userQuestionDataMap.put(user, userAttemptsSummary);
+            });
+            // FIXME ^^^ This is duplicated code ^^^
+            userQuestionDataMap.forEach((user, outcome) -> {
+                questionIds.forEach(questionId -> {
+                    outcome.putIfAbsent(questionId, null);
+                });
+            });
 
             List<String[]> resultRows = Lists.newArrayList();
             int[] columnTotals = new int[questionIds.size()];
@@ -452,23 +497,23 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     int columnNumber = 0;
                     for (String questionId : questionIds) {
                         Integer resultForQuestion = userQuestionDataMap.get(user).get(questionId);
-                        
+
                         if (null == resultForQuestion) {
                             resultRow.add("");
                         } else {
                             resultRow.add(String.format("%d", resultForQuestion));
                         }
-                        
+
                         if (resultForQuestion != null && resultForQuestion == 1) {
                             totalCorrect++;
                             columnTotals[columnNumber] += 1;
                         }
                         columnNumber++;
                     }
-                    
+
                     double percentageCorrect = ((double) totalCorrect / questionIds.size()) * 100F;
                     resultRow.add(percentageFormat.format(percentageCorrect));
-                    
+
                 } else {
                     resultRow.add(userSummary.getFamilyName());
                     resultRow.add(userSummary.getGivenName());
@@ -481,7 +526,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacLogType.DOWNLOAD_ASSIGNMENT_PROGRESS_CSV,
                     ImmutableMap.of("assignmentId", assignmentId));
-            
+
             // ignore name columns
 
             for (int i = 0; i < questionIds.size(); i++) {
@@ -529,7 +574,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Consumes(MediaType.WILDCARD)
     @ApiOperation(value = "Download the progress of a group on all assignments set.")
     public Response getGroupAssignmentsProgressDownloadCSV(@Context final HttpServletRequest request,
-            @PathParam("group_id") final Long groupId) {
+                                                           @PathParam("group_id") final Long groupId) {
 
         try {
             // Fetch the currently logged in user
@@ -542,7 +587,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             // Check the user has permission to access this group:
             if (!GroupManager.isOwnerOrAdditionalManager(group, currentlyLoggedInUser.getId())
-                && !isUserAnAdmin(userManager, request)) {
+                    && !isUserAnAdmin(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
             }
@@ -557,13 +602,63 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             // String: question part id
             // Integer: question part result
-            Map<RegisteredUserDTO, Map<GameboardDTO, Map<String, Integer>>> grandTable = Maps.newHashMap();
+            Map<RegisteredUserDTO, Map<GameboardDTO, Map<String, Integer>>> grandTable = new HashMap<>();
             // Retrieve each user's progress data and cram everything into a Grand Table for later consumption
-            for (AssignmentDTO assignment : assignments) {
-                GameboardDTO gameboard = gameManager.getGameboard(assignment.getGameboardId());
+            List<String> gameboardsIds = assignments.stream().map(AssignmentDTO::getGameboardId).collect(Collectors.toList());
+            List<GameboardDTO> gameboards;
+            if (gameboardsIds.isEmpty()) {
+                gameboards = new ArrayList<>();
+            } else {
+                gameboards = gameManager.getGameboards(gameboardsIds);
+            }
+            Map<String, GameboardDTO> gameboardsIdMap = gameboards.stream().collect(Collectors.toMap(GameboardDTO::getId, Function.identity()));
 
-                Map<RegisteredUserDTO, Map<String, Integer>> userQuestionDataMap;
-                userQuestionDataMap = this.gameManager.getDetailedGameProgressData(groupMembers, gameboard);
+            Map<AssignmentDTO, GameboardDTO> assignmentGameboards = new HashMap<>();
+            for (AssignmentDTO assignment : assignments) {
+                GameboardDTO gameboard = gameboardsIdMap.get(assignment.getGameboardId());
+                // Create an assignment -> gameboard mapping to avoid repeatedly querying the DB later on. All the efficiency!
+                assignmentGameboards.put(assignment, gameboard);
+            }
+            List<GameboardItem> gameboardItems = gameboards.stream().map(GameboardDTO::getQuestions).flatMap(Collection::stream).collect(Collectors.toList());
+            List<String> questionPageIds = gameboardItems.stream().map(GameboardItem::getId).collect(Collectors.toList());
+            Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> questionAttempts;
+            try {
+                questionAttempts = this.questionManager.getMatchingQuestionAttempts(groupMembers, questionPageIds);
+            } catch (IllegalArgumentException e) {
+                questionAttempts = new HashMap<>();
+            }
+            Map<RegisteredUserDTO, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> questionAttemptsForAllUsersOfInterest = new HashMap<>();
+            for (RegisteredUserDTO user : groupMembers) {
+                questionAttemptsForAllUsersOfInterest.put(user, questionAttempts.get(user.getId()));
+            }
+
+            for (GameboardDTO gameboard : gameboards) {
+                Map<RegisteredUserDTO, Map<String, Integer>> userQuestionDataMap = new HashMap<>();
+
+                // FIXME vvv This is duplicated code vvv
+                // This is properly horrible, can someone rewrite this whole thing?
+                questionAttemptsForAllUsersOfInterest.forEach((user, attempts) -> {
+                    Map<String, List<LightweightQuestionValidationResponse>> attemptsByQuestionId = new HashMap<>();
+                    for (String pageId : attempts.keySet()) {
+                        Map<String, List<LightweightQuestionValidationResponse>> a = attempts.get(pageId);
+                        for (String questionId : a.keySet()) {
+                            List l = a.get(questionId);
+                            attemptsByQuestionId.put(questionId, l);
+                        }
+                    }
+                    Map<String, Integer> userAttemptsSummary = attemptsByQuestionId.entrySet().stream().collect(
+                            Collectors.toMap(
+                                    Entry::getKey,
+                                    e -> e.getValue().stream().map(LightweightQuestionValidationResponse::isCorrect)
+                                            .reduce(false, (a, b) -> a || b)
+                            )
+                    ).entrySet().stream().collect(Collectors.toMap(
+                            Entry::getKey,
+                            e -> e.getValue() ? 1 : 0
+                    ));
+                    userQuestionDataMap.put(user, userAttemptsSummary);
+                });
+                // FIXME ^^^ This is duplicated code ^^^
                 for (RegisteredUserDTO student : userQuestionDataMap.keySet()) {
                     Map<GameboardDTO, Map<String, Integer>> entry = grandTable.get(student);
                     if (null == entry) {
@@ -582,13 +677,13 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             ArrayList<String> headerRow = Lists.newArrayList();
             Collections.addAll(headerRow, "Last Name,First Name,% Correct Overall".split(","));
             List<String> gameboardTitles = Lists.newArrayList();
-            for (AssignmentDTO assignment : assignments) {
+            for (AssignmentDTO assignment : assignmentGameboards.keySet()) {
                 if (null != assignment.getDueDate()) {
                     dueDateRow.add(dateFormatter.format(assignment.getDueDate()));
                 } else {
                     dueDateRow.add(""); // No due date set
                 }
-                GameboardDTO gameboard = gameManager.getGameboard(assignment.getGameboardId());
+                GameboardDTO gameboard = assignmentGameboards.get(assignment);
                 String gameboardTitle = gameboard.getTitle();
                 if (null != gameboardTitle) {
                     gameboardTitles.add(gameboardTitle);
@@ -603,8 +698,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             headerRow.add("");
 
             Map<GameboardDTO, List<String>> gameboardQuestionIds = Maps.newHashMap();
-            for (AssignmentDTO assignment : assignments) {
-                GameboardDTO gameboard = gameManager.getGameboard(assignment.getGameboardId());
+            for (AssignmentDTO assignment : assignmentGameboards.keySet()) {
+                GameboardDTO gameboard = assignmentGameboards.get(assignment);
                 for (GameboardItem questionPage : gameboard.getQuestions()) {
                     int b = 1;
                     for (QuestionDTO question : gameManager.getAllMarkableQuestionPartsDFSOrder(questionPage.getId())) {
@@ -644,7 +739,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             rows.add(headerRow.toArray(new String[0]));
 
             for (RegisteredUserDTO groupMember : groupMembers) {
-
+                // FIXME Some room for improvement here, as we can retrieve all the users with a single query.
+                // FIXME Not urgent, as the dominating query is the one that retrieves question attempts above.
                 UserSummaryDTO userSummary = associationManager.enforceAuthorisationPrivacy(currentlyLoggedInUser,
                         userManager.convertToUserSummaryObject(groupMember));
 
@@ -655,7 +751,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 int totalQPartsCorrect = 0;
                 int totalQPartsCount = 0;
                 for (AssignmentDTO assignment : assignments) {
-                    GameboardDTO gameboard = gameManager.getGameboard(assignment.getGameboardId());
+                    GameboardDTO gameboard = assignmentGameboards.get(assignment);
                     int assignmentQPartsCorrect = 0;
                     int assignmentQPartsCount = 0;
                     List<String> questionIds = gameboardQuestionIds.get(gameboard);
@@ -760,10 +856,10 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @ApiOperation(value = "List all groups assigned boards from a list of boards.",
                   notes = "The list of boards should be comma separated.")
     public Response getAssignedGroupsByGameboards(@Context final HttpServletRequest request,
-            @QueryParam("gameboard_ids") final String gameboardIdsQueryParam) {
+                                                  @QueryParam("gameboard_ids") final String gameboardIdsQueryParam) {
         try {
 
-            if (null == gameboardIdsQueryParam || gameboardIdsQueryParam.isEmpty() ) {
+            if (null == gameboardIdsQueryParam || gameboardIdsQueryParam.isEmpty()) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a comma separated list of gameboard_ids in the query param")
                         .toResponse();
             }
@@ -788,7 +884,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
     /**
      * Allows a user to assign a gameboard to group of users.
-     * 
+     *
      * @param request
      *            - so that we can identify the current user.
      * @param assignmentDTOFromClient a partially completed DTO for the assignment.
@@ -800,7 +896,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @GZIP
     @ApiOperation(value = "Create a new assignment.")
     public Response assignGameBoard(@Context final HttpServletRequest request,
-            final AssignmentDTO assignmentDTOFromClient) {
+                                    final AssignmentDTO assignmentDTOFromClient) {
 
         if (assignmentDTOFromClient.getGameboardId() == null || assignmentDTOFromClient.getGroupId() == null) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "A required field was missing. Must provide group and gameboard ids").toResponse();
@@ -868,7 +964,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
     /**
      * Allows a user to delete an assignment.
-     * 
+     *
      * @param request
      *            - so that we can identify the current user.
      * @param gameboardId
@@ -883,7 +979,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @GZIP
     @ApiOperation(value = "Delete an assignment by board ID and group ID.")
     public Response deleteAssignment(@Context final HttpServletRequest request,
-            @PathParam("gameboard_id") final String gameboardId, @PathParam("group_id") final Long groupId) {
+                                     @PathParam("gameboard_id") final String gameboardId, @PathParam("group_id") final Long groupId) {
 
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
