@@ -186,10 +186,11 @@ public class UserAlertsWebSocket implements IAlertListener {
                     SegueMetrics.CURRENT_WEBSOCKET_USERS.inc();
                 }
 
+                // A websocket must be created for this object to be instantiated - we close it early if they have too many
+                SegueMetrics.CURRENT_OPEN_WEBSOCKETS.inc();
                 if (addedSocket) {
                     log.debug("User " + connectedUserId + " opened new websocket. Total open: " + numberOfUserSockets);
-                    SegueMetrics.CURRENT_OPEN_WEBSOCKETS.inc();
-                    SegueMetrics.WEBSOCKETS_OPENED.inc();
+                    SegueMetrics.WEBSOCKETS_OPENED_SUCCESSFULLY.inc();
                 } else {
                     log.debug("User " + connectedUserId
                             + " attempted to open too many simultaneous WebSockets; sending TRY_AGAIN_LATER.");
