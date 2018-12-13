@@ -374,7 +374,7 @@ public class UserAuthenticationManager {
             RegisteredUser userToReturn =  database.getById(currentUserId);
 
             // Check that the user's session is indeed valid:
-            if (!this.isValidUsersSession(currentSessionInformation, userToReturn)) {
+            if (null == userToReturn || !this.isValidUsersSession(currentSessionInformation, userToReturn)) {
                 log.debug("User session has failed validation. Treating as logged out. Session: " + currentSessionInformation);
                 return null;
             }
@@ -835,6 +835,7 @@ public class UserAuthenticationManager {
      */
     public boolean isValidUsersSession(final Map<String, String> sessionInformation, final RegisteredUser userFromDatabase) {
         Validate.notNull(sessionInformation);
+        Validate.notNull(userFromDatabase);
 
         Integer sessionExpiryTimeInSeconds = Integer.parseInt(properties.getProperty(SESSION_EXPIRY_SECONDS));
 
