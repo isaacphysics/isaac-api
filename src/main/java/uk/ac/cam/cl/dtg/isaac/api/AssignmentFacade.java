@@ -677,7 +677,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             ArrayList<String> headerRow = Lists.newArrayList();
             Collections.addAll(headerRow, "Last Name,First Name,% Correct Overall".split(","));
             List<String> gameboardTitles = Lists.newArrayList();
-            for (AssignmentDTO assignment : assignmentGameboards.keySet()) {
+            for (AssignmentDTO assignment : assignments) {
                 if (null != assignment.getDueDate()) {
                     dueDateRow.add(dateFormatter.format(assignment.getDueDate()));
                 } else {
@@ -698,7 +698,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             headerRow.add("");
 
             Map<GameboardDTO, List<String>> gameboardQuestionIds = Maps.newHashMap();
-            for (AssignmentDTO assignment : assignmentGameboards.keySet()) {
+            for (AssignmentDTO assignment : assignments) {
                 GameboardDTO gameboard = assignmentGameboards.get(assignment);
                 for (GameboardItem questionPage : gameboard.getQuestions()) {
                     int b = 1;
