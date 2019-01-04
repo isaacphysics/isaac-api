@@ -33,7 +33,15 @@ import java.util.Date;
 public class IsaacFreeTextValidator implements IValidator {
     private static final Logger log = LoggerFactory.getLogger(IsaacFreeTextValidator.class);
 
-    private void validateInputs(final Question question, final Choice answer) {
+    private static String extractAnswerValue(Choice answer, FreeTextRule rule) {
+        return rule.isCaseInsensitive() ? answer.getValue().toLowerCase() : answer.getValue();
+    }
+
+    private static String extractRuleValue(FreeTextRule rule) {
+        return rule.isCaseInsensitive() ? rule.getValue().toLowerCase() : rule.getValue();
+    }
+
+    private static void validateInputs(final Question question, final Choice answer) {
         Validate.notNull(question);
         Validate.notNull(answer);
 
@@ -47,9 +55,7 @@ public class IsaacFreeTextValidator implements IValidator {
         }
     }
 
-    private String evaluateMatchingOptions(final FreeTextRule rule) {
-        // TODO MT something like this might be a good idea - if (rule.getCustomMatchingOptions()) {}
-        // TODO MT I would like to add case insensitivity here but that requires altering the library
+    private static String evaluateMatchingOptions(final FreeTextRule rule) {
         StringBuilder result = new StringBuilder();
         if (rule.getAllowsMisspelling()) { result.append('m'); }
         if (rule.getAllowsAnyOrder()) { result.append('o'); }
@@ -62,13 +68,14 @@ public class IsaacFreeTextValidator implements IValidator {
         validateInputs(question, answer);
         IsaacFreeTextQuestion freeTextQuestion = (IsaacFreeTextQuestion)question;
 
-        PMatch questionAnswerMatcher = new PMatch(answer.getValue());
         boolean isCorrectResponse = false;
         Content feedback = null;
         for (Choice rule : freeTextQuestion.getChoices()) {
             if (rule instanceof FreeTextRule) {
-                String matchingParamaters = evaluateMatchingOptions((FreeTextRule) rule);
-                if (questionAnswerMatcher.match(matchingParamaters, rule.getValue())) {
+                FreeTextRule freeTextRule = (FreeTextRule) rule;
+                PMatch questionAnswerMatcher = new PMatch(extractAnswerValue(answer, freeTextRule));
+                String matchingParamaters = evaluateMatchingOptions(freeTextRule);
+                if (questionAnswerMatcher.match(matchingParamaters, extractRuleValue(freeTextRule))) {
                     isCorrectResponse = rule.isCorrect();
                     feedback = (Content) rule.getExplanation();
                     break; // on first matching rule
