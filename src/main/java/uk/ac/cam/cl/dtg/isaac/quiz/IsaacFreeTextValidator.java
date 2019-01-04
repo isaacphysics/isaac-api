@@ -1,0 +1,82 @@
+/**
+ * Copyright 2018 Meurig Thomas
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * You may obtain a copy of the License at
+ * 		http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package uk.ac.cam.cl.dtg.isaac.quiz;
+
+import om.helper.PMatch;
+import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacFreeTextQuestion;
+import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
+import uk.ac.cam.cl.dtg.segue.dos.content.Content;
+import uk.ac.cam.cl.dtg.segue.dos.content.FreeTextRule;
+import uk.ac.cam.cl.dtg.segue.dos.content.Question;
+import uk.ac.cam.cl.dtg.segue.dos.content.StringChoice;
+import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
+
+import java.util.Date;
+
+public class IsaacFreeTextValidator implements IValidator {
+    private static final Logger log = LoggerFactory.getLogger(IsaacFreeTextValidator.class);
+
+    private void validateInputs(final Question question, final Choice answer) {
+        Validate.notNull(question);
+        Validate.notNull(answer);
+
+        if (!(question instanceof IsaacFreeTextQuestion)) {
+            throw new IllegalArgumentException(question.getId() + " is not free-text question");
+        }
+
+        if (!(answer instanceof StringChoice)) {
+            throw new IllegalArgumentException(
+                    answer.getClass() + " is not of expected type StringChoice for (" + question.getId() + ")");
+        }
+    }
+
+    private String evaluateMatchingOptions(final FreeTextRule rule) {
+        // TODO MT something like this might be a good idea - if (rule.getCustomMatchingOptions()) {}
+        // TODO MT I would like to add case insensitivity here but that requires altering the library
+        StringBuilder result = new StringBuilder();
+        if (rule.getAllowsMisspelling()) { result.append('m'); }
+        if (rule.getAllowsAnyOrder()) { result.append('o'); }
+        if (rule.getAllowsExtraWords()) { result.append('w'); }
+        return result.toString();
+    }
+
+    @Override
+    public final QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
+        validateInputs(question, answer);
+        IsaacFreeTextQuestion freeTextQuestion = (IsaacFreeTextQuestion)question;
+
+        PMatch questionAnswerMatcher = new PMatch(answer.getValue());
+        boolean isCorrectResponse = false;
+        Content feedback = null;
+        for (Choice rule : freeTextQuestion.getChoices()) {
+            if (rule instanceof FreeTextRule) {
+                String matchingParamaters = evaluateMatchingOptions((FreeTextRule) rule);
+                if (questionAnswerMatcher.match(matchingParamaters, rule.getValue())) {
+                    isCorrectResponse = rule.isCorrect();
+                    feedback = (Content) rule.getExplanation();
+                    break; // on first matching rule
+                }
+            } else {
+                log.error("QuestionId: " + question.getId() + " contains a choice which is not a FreeTextRule.");
+            }
+        }
+        return new QuestionValidationResponse(question.getId(), answer, isCorrectResponse, feedback, new Date());
+    }
+}
