@@ -77,12 +77,7 @@ public class IsaacStringMatchValidator implements IValidator {
         if (null == feedback) {
 
             // Sort the choices so that we match incorrect choices last, taking precedence over correct ones.
-            List<Choice> orderedChoices = Lists.newArrayList(stringMatchQuestion.getChoices());
-            orderedChoices.sort((o1, o2) -> {
-                int o1Val = o1.isCorrect() ? 0 : 1;
-                int o2Val = o2.isCorrect() ? 0 : 1;
-                return o1Val - o2Val;
-            });
+            List<Choice> orderedChoices = getOrderedChoices(stringMatchQuestion.getChoices());
 
             // For all the choices on this question...
             for (Choice c : orderedChoices) {
@@ -120,6 +115,24 @@ public class IsaacStringMatchValidator implements IValidator {
         }
 
         return new QuestionValidationResponse(question.getId(), answer, responseCorrect, feedback, new Date());
+    }
+
+    /**
+     * Create a new list of the Choice objects, sorted into correct-first order for checking.
+     *
+     * @param choices - the Choices from a Question
+     * @return the ordered list of Choices
+     */
+    private List<Choice> getOrderedChoices(final List<Choice> choices) {
+        List<Choice> orderedChoices = Lists.newArrayList(choices);
+
+        orderedChoices.sort((o1, o2) -> {
+            int o1Val = o1.isCorrect() ? 0 : 1;
+            int o2Val = o2.isCorrect() ? 0 : 1;
+            return o1Val - o2Val;
+        });
+
+        return orderedChoices;
     }
 
 }

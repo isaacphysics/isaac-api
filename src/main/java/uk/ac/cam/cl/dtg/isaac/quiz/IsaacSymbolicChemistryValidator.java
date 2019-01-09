@@ -218,16 +218,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
             boolean balancedKnownFlag = false;
 
             // Sort the choices so that we match incorrect choices last, taking precedence over correct ones.
-            List<Choice> orderedChoices = Lists.newArrayList(symbolicQuestion.getChoices());
-
-            Collections.sort(orderedChoices, new Comparator<Choice>() {
-                @Override
-                public int compare(final Choice o1, final Choice o2) {
-                    int o1Val = o1.isCorrect() ? 0 : 1;
-                    int o2Val = o2.isCorrect() ? 0 : 1;
-                    return o1Val - o2Val;
-                }
-            });
+            List<Choice> orderedChoices = getOrderedChoices(chemistryQuestion.getChoices());
 
             // For all the choices on this question...
             for (Choice c : orderedChoices) {
@@ -500,5 +491,23 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
         }
 
         return new QuestionValidationResponse(symbolicQuestion.getId(), answer, responseCorrect, feedback, new Date());
+
+    /**
+     * Create a new list of the Choice objects, sorted into correct-first order for checking.
+     *
+     * @param choices - the Choices from a Question
+     * @return the ordered list of Choices
+     */
+    private List<Choice> getOrderedChoices(final List<Choice> choices) {
+        List<Choice> orderedChoices = Lists.newArrayList(choices);
+
+        orderedChoices.sort((o1, o2) -> {
+            int o1Val = o1.isCorrect() ? 0 : 1;
+            int o2Val = o2.isCorrect() ? 0 : 1;
+            return o1Val - o2Val;
+        });
+
+        return orderedChoices;
+    }
     }
 }

@@ -195,16 +195,9 @@ public class IsaacNumericValidator implements IValidator {
         int sigFigsToValidateWith = numberOfSignificantFiguresToValidateWith(answerFromUser.getValue(),
                       isaacNumericQuestion.getSignificantFiguresMin(), isaacNumericQuestion.getSignificantFiguresMax());
 
-        List<Choice> orderedChoices = Lists.newArrayList(isaacNumericQuestion.getChoices());
-
-        Collections.sort(orderedChoices, (o1, o2) -> {
-            int o1Val = o1.isCorrect() ? 0 : 1;
-            int o2Val = o2.isCorrect() ? 0 : 1;
-            return o1Val - o2Val;
-        });
-
         String unitsFromUser = answerFromUser.getUnits().trim();
 
+        List<Choice> orderedChoices = getOrderedChoices(isaacNumericQuestion.getChoices());
         for (Choice c : orderedChoices) {
             if (c instanceof Quantity) {
                 Quantity quantityFromQuestion = (Quantity) c;
@@ -267,13 +260,7 @@ public class IsaacNumericValidator implements IValidator {
         int sigFigsToValidateWith = numberOfSignificantFiguresToValidateWith(answerFromUser.getValue(),
                 isaacNumericQuestion.getSignificantFiguresMin(), isaacNumericQuestion.getSignificantFiguresMax());
 
-        List<Choice> orderedChoices = Lists.newArrayList(isaacNumericQuestion.getChoices());
-
-        Collections.sort(orderedChoices, (o1, o2) -> {
-            int o1Val = o1.isCorrect() ? 0 : 1;
-            int o2Val = o2.isCorrect() ? 0 : 1;
-            return o1Val - o2Val;
-        });
+        List<Choice> orderedChoices = getOrderedChoices(isaacNumericQuestion.getChoices());
 
         for (Choice c : orderedChoices) {
             if (c instanceof Quantity) {
@@ -305,6 +292,24 @@ public class IsaacNumericValidator implements IValidator {
         } else {
             return bestResponse;
         }
+    }
+
+    /**
+     * Create a new list of the Choice objects, sorted into correct-first order for checking.
+     *
+     * @param choices - the Choices from a Question
+     * @return the ordered list of Choices
+     */
+    private List<Choice> getOrderedChoices(final List<Choice> choices) {
+        List<Choice> orderedChoices = Lists.newArrayList(choices);
+
+        orderedChoices.sort((o1, o2) -> {
+            int o1Val = o1.isCorrect() ? 0 : 1;
+            int o2Val = o2.isCorrect() ? 0 : 1;
+            return o1Val - o2Val;
+        });
+
+        return orderedChoices;
     }
 
     /**

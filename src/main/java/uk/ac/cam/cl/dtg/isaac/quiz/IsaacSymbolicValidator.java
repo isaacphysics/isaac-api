@@ -159,13 +159,7 @@ public class IsaacSymbolicValidator implements IValidator {
             MatchType closestMatchType = MatchType.NONE;
 
             // Sort the choices so that we match incorrect choices last, taking precedence over correct ones.
-            List<Choice> orderedChoices = Lists.newArrayList(symbolicQuestion.getChoices());
-
-            orderedChoices.sort((o1, o2) -> {
-                int o1Val = o1.isCorrect() ? 0 : 1;
-                int o2Val = o2.isCorrect() ? 0 : 1;
-                return o1Val - o2Val;
-            });
+            List<Choice> orderedChoices = getOrderedChoices(symbolicQuestion.getChoices());
 
             // For all the choices on this question...
             for (Choice c : orderedChoices) {
@@ -308,5 +302,23 @@ public class IsaacSymbolicValidator implements IValidator {
         // If we got this far and feedback is still null, they were wrong. There's no useful feedback we can give at this point.
 
         return new FormulaValidationResponse(symbolicQuestion.getId(), answer, feedback, responseCorrect, responseMatchType.toString(), new Date());
+    }
+
+    /**
+     * Create a new list of the Choice objects, sorted into correct-first order for checking.
+     *
+     * @param choices - the Choices from a Question
+     * @return the ordered list of Choices
+     */
+    private List<Choice> getOrderedChoices(final List<Choice> choices) {
+        List<Choice> orderedChoices = Lists.newArrayList(choices);
+
+        orderedChoices.sort((o1, o2) -> {
+            int o1Val = o1.isCorrect() ? 0 : 1;
+            int o2Val = o2.isCorrect() ? 0 : 1;
+            return o1Val - o2Val;
+        });
+
+        return orderedChoices;
     }
 }
