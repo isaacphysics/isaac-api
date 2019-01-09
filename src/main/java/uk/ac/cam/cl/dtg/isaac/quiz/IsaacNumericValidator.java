@@ -274,10 +274,6 @@ public class IsaacNumericValidator implements IValidator {
                             quantityFromQuestion.isCorrect(), (Content) quantityFromQuestion.getExplanation(),
                             quantityFromQuestion.isCorrect(), null, new Date());
                     break;
-                } else {
-                    // value doesn't match this choice
-                    bestResponse = new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
-                            false, new Content(DEFAULT_VALIDATION_RESPONSE), false, null, new Date());
                 }
             } else {
                 log.error("Isaac Numeric Validator expected there to be a Quantity in ("
@@ -286,9 +282,9 @@ public class IsaacNumericValidator implements IValidator {
         }
 
         if (null == bestResponse) {
-            // tell them they got it wrong but we cannot find any more detailed feedback for them.
-            return new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser, false, null,
-                    false, false, new Date());
+            // No matches; tell them they got it wrong but we cannot find any more detailed feedback for them.
+            return new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
+                    false, new Content(DEFAULT_VALIDATION_RESPONSE), false, null, new Date());
         } else {
             return bestResponse;
         }
