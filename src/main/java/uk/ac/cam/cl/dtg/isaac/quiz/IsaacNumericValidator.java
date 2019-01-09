@@ -50,6 +50,7 @@ public class IsaacNumericValidator implements IValidator {
     // Also allow ^ or ** for powers. Allow e or E. Allow optional brackets around the powers of 10.
     // Extract exponent as either group <exp1> or <exp2> (the other will become '').
     private static final String NUMERIC_QUESTION_PARSE_REGEX = "[ ]?((\\*|x|X|×|\\\\times)[ ]?10(\\^|\\*\\*)|e|E)([({](?<exp1>-?[0-9]+)[)}]|(?<exp2>-?[0-9]+))";
+    private static final String INVALID_NEGATIVE_STANDARD_FORM = ".*?10-([0-9]+).*?";
 
     /**
      *  A class to represent the significant figures a number has, noting if it is ambiguous and the range if so.
@@ -174,8 +175,13 @@ public class IsaacNumericValidator implements IValidator {
         } catch (NumberFormatException e) {
             log.debug("Validation failed for '" + answerFromUser.getValue() + " " + answerFromUser.getUnits() + "': "
                     + "cannot parse as number!");
-            return new QuantityValidationResponse(question.getId(), answerFromUser, false, new Content(
-                    "The answer you provided is not a valid number."), false, false, new Date());
+
+            String feedback = "The answer you provided is not a valid number.";
+            if (answerFromUser.getValue().matches(INVALID_NEGATIVE_STANDARD_FORM)) {
+                feedback += "<br>When writing standard form, you must include a `^` between the 10 and the exponent.";
+            }
+            return new QuantityValidationResponse(question.getId(), answerFromUser, false, new Content(feedback),
+                    false, false, new Date());
         }
     }
 
