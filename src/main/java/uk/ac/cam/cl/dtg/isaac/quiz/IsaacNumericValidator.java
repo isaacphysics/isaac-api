@@ -15,16 +15,9 @@
  */
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
-import java.math.BigDecimal;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-
 import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
 import uk.ac.cam.cl.dtg.segue.dos.QuantityValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
@@ -33,6 +26,12 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
+
+import java.math.BigDecimal;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;

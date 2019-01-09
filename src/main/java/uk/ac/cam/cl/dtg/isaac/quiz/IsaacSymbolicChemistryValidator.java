@@ -41,12 +41,9 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatorUnavailableException;
 
 import java.io.IOException;
 import java.io.StringWriter;
-
-import java.util.HashMap;
-import java.util.Collections;
-import java.util.List;
-import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
