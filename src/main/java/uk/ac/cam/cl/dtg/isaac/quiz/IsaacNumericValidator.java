@@ -202,8 +202,7 @@ public class IsaacNumericValidator implements IValidator {
                 Quantity quantityFromQuestion = (Quantity) c;
 
                 if (quantityFromQuestion.getUnits() == null) {
-                    log.error("Expected units and no units can be found for question id: "
-                            + isaacNumericQuestion.getId());
+                    log.error("Expected units and no units can be found for question id: " + isaacNumericQuestion.getId());
                     continue;
                 }
 
@@ -211,20 +210,20 @@ public class IsaacNumericValidator implements IValidator {
 
                 boolean numericValuesMatched = numericValuesMatch(quantityFromQuestion.getValue(), answerFromUser.getValue(),
                         sigFigsToValidateWith);
-                // match known choices
-                if (numericValuesMatched && unitsFromUser.equals(unitsFromChoice)) {
 
-                    // exact match
+                // What sort of match do we have:
+                if (numericValuesMatched && unitsFromUser.equals(unitsFromChoice)) {
+                    // Exact match: nothing else can do better.
                     bestResponse = new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
                             quantityFromQuestion.isCorrect(), (Content) quantityFromQuestion.getExplanation(),
                             quantityFromQuestion.isCorrect(), quantityFromQuestion.isCorrect(), new Date());
                     break;
                 } else if (numericValuesMatched && !unitsFromUser.equals(unitsFromChoice) && quantityFromQuestion.isCorrect()) {
-                    // matches value but not units of a correct choice.
+                    // Matches value but not units of a correct choice.
                     bestResponse = new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
                             false, new Content(DEFAULT_WRONG_UNIT_VALIDATION_RESPONSE), true, false, new Date());
                 } else if (!numericValuesMatched && unitsFromUser.equals(unitsFromChoice) && quantityFromQuestion.isCorrect()) {
-                    // matches units but not value of a correct choice.
+                    // Matches units but not value of a correct choice.
                     bestResponse = new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
                             false, new Content(DEFAULT_VALIDATION_RESPONSE), false, true, new Date());
                 }
@@ -235,7 +234,7 @@ public class IsaacNumericValidator implements IValidator {
         }
 
         if (null == bestResponse) {
-            // tell them they got it wrong but we cannot find any more detailed feedback for them.
+            // No matches; tell them they got it wrong but we cannot find any more detailed feedback for them.
             return new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser, false, new Content(
                     DEFAULT_VALIDATION_RESPONSE), false, false, new Date());
         } else {
@@ -265,10 +264,8 @@ public class IsaacNumericValidator implements IValidator {
             if (c instanceof Quantity) {
                 Quantity quantityFromQuestion = (Quantity) c;
 
-                // match known choices
+                // Do we have a match? Since only comparing values, either an exact match or not a match at all.
                 if (numericValuesMatch(quantityFromQuestion.getValue(), answerFromUser.getValue(), sigFigsToValidateWith)) {
-
-                    // value match
                     bestResponse = new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
                             quantityFromQuestion.isCorrect(), (Content) quantityFromQuestion.getExplanation(),
                             quantityFromQuestion.isCorrect(), null, new Date());
@@ -465,8 +462,8 @@ public class IsaacNumericValidator implements IValidator {
     }
     
     /**
-     * Sometimes we want to do an exact string wise match before we do sig fig checks etc. This method is intended to
-     * work for this case.
+     * To save validation effort, if we have string equality between the submitted value and an answer then we
+     * can be sure this match is the best possible.
      * 
      * @param isaacNumericQuestion
      *            - question content object

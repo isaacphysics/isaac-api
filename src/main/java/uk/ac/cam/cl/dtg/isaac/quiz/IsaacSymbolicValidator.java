@@ -201,8 +201,7 @@ public class IsaacSymbolicValidator implements IValidator {
                     if (response.containsKey("error")) {
                         if (response.containsKey("code")) {
                             log.error("Failed to check formula \"" + submittedFormula.getPythonExpression()
-                                    + "\" against \"" + formulaChoice.getPythonExpression() + "\": "
-                                    + response.get("error"));
+                                    + "\" against \"" + formulaChoice.getPythonExpression() + "\": " + response.get("error"));
                         } else if (response.containsKey("syntax_error")) {
                             // There's a syntax error in the "test" expression, no use checking it further:
                             closestMatch = null;
@@ -246,7 +245,6 @@ public class IsaacSymbolicValidator implements IValidator {
                 }
             }
 
-
             if (null != closestMatch) {
                 // We found a decent match. Of course, it still might be wrong.
 
@@ -275,9 +273,6 @@ public class IsaacSymbolicValidator implements IValidator {
                             + "for question " + symbolicQuestion.getId() + ". Choice: "
                             + closestMatch.getPythonExpression() + ", submitted: "
                             + submittedFormula.getPythonExpression());
-
-                    // TODO: Decide whether we want to add something to the explanation along the lines of "you got it
-                    //       right, but only numerically.
                 }
 
             }

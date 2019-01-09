@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2016 Ian Davies, James Sharkey, Ryan Lau
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -48,8 +48,6 @@ import java.util.Map;
 
 /**
  * Validator that only provides functionality to validate symbolic chemistry questions.
- *
- * @author Ian Davies
  *
  */
 public class IsaacSymbolicChemistryValidator implements IValidator {
@@ -290,21 +288,17 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                         if (response.get("expectedType").equals("equation") && response.get("sameArrow").equals(true)) {
                             counter++;
                         }
-
-
                         matchType = MatchType.valueOf("WEAK" + counter);
                     } else {
 
                         // Response & Answer have type NuclearEquation or NuclearExpression.
                         if (response.get("weaklyEquivalent").equals(false)) {
-
-                            // current choice is not a good match.
+                            // This is not a match
                             continue;
                         }
 
                         // Measure the 'weakness' level. (0 is the weakest)
                         int counter = 0;
-
                         // FIXME: Nuclear Equations and Expressions don't have 'sameCoefficient' property?!
                         // So ignore this for now!
 //                        if (response.get("sameCoefficient").equals(true)) {
