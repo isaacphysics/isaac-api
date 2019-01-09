@@ -95,7 +95,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                     answer.getClass()));
         }
 
-        IsaacSymbolicChemistryQuestion symbolicQuestion = (IsaacSymbolicChemistryQuestion) question;
+        IsaacSymbolicChemistryQuestion chemistryQuestion = (IsaacSymbolicChemistryQuestion) question;
         ChemicalFormula submittedFormula = (ChemicalFormula) answer;
 
         // These variables store the important features of the response we'll send.
@@ -116,7 +116,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
         // STEP 0: Do we even have any answers for this question? Always do this check, because we know we
         //         won't have feedback yet.
 
-        if (null == symbolicQuestion.getChoices() || symbolicQuestion.getChoices().isEmpty()) {
+        if (null == chemistryQuestion.getChoices() || chemistryQuestion.getChoices().isEmpty()) {
             log.error("Question does not have any answers. " + question.getId() + " src: "
                     + question.getCanonicalSourceFile());
 
@@ -135,11 +135,11 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
         if (null == feedback) {
 
             // For all the choices on this question...
-            for (Choice c : symbolicQuestion.getChoices()) {
+            for (Choice c : chemistryQuestion.getChoices()) {
 
                 // ... that are of the ChemicalFormula type, ...
                 if (!(c instanceof ChemicalFormula)) {
-                    log.error("Isaac Symbolic Chemistry Validator for questionId: " + symbolicQuestion.getId()
+                    log.error("Isaac Symbolic Chemistry Validator for questionId: " + chemistryQuestion.getId()
                             + " expected there to be a ChemicalFormula. Instead it found a Choice.");
                     continue;
                 }
@@ -149,7 +149,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                 // ... and that have a mhchem expression ...
                 if (null == formulaChoice.getMhchemExpression() || formulaChoice.getMhchemExpression().isEmpty()) {
                     log.error("Expected python expression, but none found in choice for question id: "
-                            + symbolicQuestion.getId());
+                            + chemistryQuestion.getId());
                     continue;
                 }
 
@@ -206,7 +206,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                     HashMap<String, String> req = Maps.newHashMap();
                     req.put("target", formulaChoice.getMhchemExpression());
                     req.put("test", submittedFormula.getMhchemExpression());
-                    req.put("description", symbolicQuestion.getId());
+                    req.put("description", chemistryQuestion.getId());
 
                     response = getResponseFromExternalValidator(req);
 
@@ -449,7 +449,8 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
             }
         }
 
-        return new QuestionValidationResponse(symbolicQuestion.getId(), answer, responseCorrect, feedback, new Date());
+        return new QuestionValidationResponse(chemistryQuestion.getId(), answer, responseCorrect, feedback, new Date());
+    }
 
     /**
      * Create a new list of the Choice objects, sorted into correct-first order for checking.
