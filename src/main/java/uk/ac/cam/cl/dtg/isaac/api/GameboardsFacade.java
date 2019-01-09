@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2015 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,19 +15,37 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
-import static com.google.common.collect.Maps.immutableEntry;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import com.google.api.client.util.Lists;
+import com.google.common.collect.ImmutableMap;
+import com.google.inject.Inject;
 import io.swagger.annotations.Api;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
+import io.swagger.annotations.ApiOperation;
+import org.jboss.resteasy.annotations.GZIP;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateGameboardException;
+import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.InvalidGameboardException;
+import uk.ac.cam.cl.dtg.isaac.api.managers.NoWildcardException;
+import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
+import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
+import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -44,38 +62,16 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
-import org.jboss.resteasy.annotations.GZIP;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.api.client.util.Lists;
-import com.google.common.collect.ImmutableMap;
-import com.google.inject.Inject;
-
-import uk.ac.cam.cl.dtg.isaac.api.Constants.GameboardState;
-import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateGameboardException;
-import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
-import uk.ac.cam.cl.dtg.isaac.api.managers.InvalidGameboardException;
-import uk.ac.cam.cl.dtg.isaac.api.managers.NoWildcardException;
-import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
-import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
-import uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
-import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
-import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
-import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import static com.google.common.collect.Maps.immutableEntry;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Games boards Facade.
@@ -86,6 +82,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     private GameManager gameManager;
     private UserAccountManager userManager;
     private UserAssociationManager associationManager;
+    private UserBadgeManager userBadgeManager;
 
     private static final Logger log = LoggerFactory.getLogger(GameboardsFacade.class);
     private final QuestionManager questionManager;
@@ -110,9 +107,11 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     @Inject
     public GameboardsFacade(final PropertiesLoader properties, final ILogManager logManager,
             final GameManager gameManager, final QuestionManager questionManager, final UserAccountManager userManager,
-            final UserAssociationManager associationManager) {
+            final UserAssociationManager associationManager,
+                            UserBadgeManager userBadgeManager) {
         super(properties, logManager);
 
+        this.userBadgeManager = userBadgeManager;
         this.gameManager = gameManager;
         this.questionManager = questionManager;
         this.userManager = userManager;
@@ -144,6 +143,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     @Path("gameboards")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get a temporary board of questions matching provided constraints.")
     public final Response generateTemporaryGameboard(@Context final HttpServletRequest request,
             @QueryParam("title") final String title, @QueryParam("subjects") final String subjects,
             @QueryParam("fields") final String fields, @QueryParam("topics") final String topics,
@@ -229,6 +229,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     @Path("gameboards/{gameboard_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get the details of a gameboard.")
     public final Response getGameboard(@Context final Request request,
             @Context final HttpServletRequest httpServletRequest, @PathParam("gameboard_id") final String gameboardId) {
 
@@ -274,27 +275,27 @@ public class GameboardsFacade extends AbstractIsaacFacade {
         }
     }
 
-
     /**
-     * REST end point to retrieve FastTrack gameboard progress by ID.
+     * REST endpoint to retrieve every question (and its status) associated with a particular FastTrack gameboard and
+     * concept.
      *
-     * @param request
-     *             - so that we can deal with caching and etags.
-     * @param httpServletRequest
-     *            - so that we can extract the users session information if available.
-     * @param gameboardId
-     *            - the unique ID of the FastTrack gameboard to be requested, checked against a whitelist.
-     * @return a Response containing a gameboard object or a SequeErrorResponse.
+     * @param request usually used for caching.
+     * @param httpServletRequest so that we can extract the users session information if available.
+     * @param gameboardId the unique id of the FastTrack gameboard which links the questions.
+     * @param conceptTitle the title of the concept which the client wants.
+     * @return a Response containing a list of augmented gameboard items for the gamebaord-concept pair or an error.
      */
     @GET
-    @Path("gameboards/fasttrack/{gameboard_id}")
+    @Path("fasttrack/{gameboard_id}/concepts/")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    public final Response getFastTrackGameboard(@Context final Request request,
-            @Context final HttpServletRequest httpServletRequest, @PathParam("gameboard_id") final String gameboardId) {
+    @ApiOperation(value = "Get the progress of the current user at a FastTrack gameboard.")
+    public final Response getFastTrackConceptProgress(@Context final Request request,
+                                                      @Context final HttpServletRequest httpServletRequest,
+                                                      @PathParam("gameboard_id") final String gameboardId,
+                                                      @QueryParam("concept") final String conceptTitle) {
 
         try {
-            GameboardDTO gameboard;
             if (!fastTrackGamebaordIds.contains(gameboardId)) {
                 return new SegueErrorResponse(Status.NOT_FOUND, "Gameboard id not a valid FastTrack gameboard id.")
                         .toResponse();
@@ -303,32 +304,12 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts = this.questionManager
                     .getQuestionAttemptsByUser(randomUser);
 
-            GameboardDTO unAugmentedGameboard = gameManager.getGameboard(gameboardId);
-            if (null == unAugmentedGameboard) {
-                return new SegueErrorResponse(Status.NOT_FOUND, "No Gameboard found for the id specified.")
-                        .toResponse();
-            }
-
-            // Calculate the ETag
-            EntityTag etag = new EntityTag(unAugmentedGameboard.toString().hashCode()
-                    + userQuestionAttempts.toString().hashCode() + "");
-
-            Response cachedResponse = generateCachedResponse(request, etag, NEVER_CACHE_WITHOUT_ETAG_CHECK);
-            if (cachedResponse != null) {
-                return cachedResponse;
-            }
-
             // attempt to augment the gameboard with user information.
-            gameboard = gameManager.getFastTrackGameboard(gameboardId, randomUser, userQuestionAttempts);
+            List<GameboardItem> conceptQuestionsProgress = gameManager.getFastTrackConceptProgress(gameboardId, conceptTitle, userQuestionAttempts);
 
-            // We decided not to log this on the backend as the front end uses this lots.
-            return Response.ok(gameboard).cacheControl(
-                    getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).tag(etag).build();
-        } catch (IllegalArgumentException e) {
-            return new SegueErrorResponse(
-                    Status.BAD_REQUEST, "Your FastTrack gameboard filter request is invalid.").toResponse();
+            return Response.ok(conceptQuestionsProgress).build();
         } catch (SegueDatabaseException e) {
-            String message = "Error whilst trying to access the FastTrack gameboard in the database.";
+            String message = "Error whilst trying to access the FastTrack progress in the database.";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (ContentManagerException e1) {
@@ -349,6 +330,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     @GET
     @Path("gameboards/popular")
     @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Get a temporary board of questions matching provided constraints.")
     public Response getBoardPopularityList(@Context final HttpServletRequest request) {
         final String connections = "connections";
         try {
@@ -377,23 +359,15 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                 }
             }
 
-            Collections.sort(resultList, new Comparator<Map<String, Object>>() {
-                /**
-                 * Descending numerical order
-                 */
-                @Override
-                public int compare(final Map<String, Object> o1, final Map<String, Object> o2) {
-
-                    if ((Integer) o1.get(connections) < (Integer) o2.get(connections)) {
-                        return 1;
-                    }
-
-                    if ((Integer) o1.get(connections) > (Integer) o2.get(connections)) {
-                        return -1;
-                    }
-
-                    return 0;
+            resultList.sort((o1, o2) -> {
+                // Descending numerical order
+                if ((Integer) o1.get(connections) < (Integer) o2.get(connections)) {
+                    return 1;
                 }
+                if ((Integer) o1.get(connections) > (Integer) o2.get(connections)) {
+                    return -1;
+                }
+                return 0;
             });
 
             Integer sharedBoards = 0;
@@ -428,6 +402,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     @Path("gameboards")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Create a new gameboard from a template GameboardDTO.",
+                  notes = "Only staff users can provide custom IDs, wildcards or tags.")
     public final Response createGameboard(
             @Context final HttpServletRequest request,
             final GameboardDTO newGameboardObject) {
@@ -454,6 +430,12 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
         try {
             persistedGameboard = gameManager.saveNewGameboard(newGameboardObject, user);
+
+            if (persistedGameboard.getCreationMethod().equals(GameboardCreationMethod.BUILDER)) {
+                this.userBadgeManager.updateBadge(user, UserBadgeManager.Badge.TEACHER_GAMEBOARDS_CREATED,
+                        persistedGameboard.getId());
+            }
+
         } catch (NoWildcardException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "No wildcard available. Unable to construct gameboard.")
                     .toResponse();
@@ -500,6 +482,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     @Path("gameboards/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Create or update a gameboard and link the current user to it.",
+                  notes = "It is only possible to change the name of a gameboard.")
     public final Response updateGameboard(@Context final HttpServletRequest request,
             @PathParam("id") final String gameboardId, final GameboardDTO newGameboardObject) {
 
@@ -595,6 +579,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     @Path("users/current_user/gameboards")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "List all gameboards linked to the current user.")
     public final Response getGameboardsByCurrentUser(@Context final HttpServletRequest request,
             @QueryParam("start_index") final String startIndex, @QueryParam("limit") final String limit,
             @QueryParam("sort") final String sortInstructions, @QueryParam("show_only") final String showCriteria) {
@@ -650,11 +635,11 @@ public class GameboardsFacade extends AbstractIsaacFacade {
         // sort instructions
         if (sortInstructions != null && !sortInstructions.isEmpty()) {
             parsedSortInstructions = Lists.newArrayList();
-            for (String instruction : Arrays.asList(sortInstructions.toLowerCase().split(","))) {
+            for (String instruction : sortInstructions.toLowerCase().split(",")) {
                 SortOrder s = SortOrder.ASC;
                 if (instruction.startsWith("-")) {
                     s = SortOrder.DESC;
-                    instruction = instruction.substring(1, instruction.length());
+                    instruction = instruction.substring(1);
                 }
 
                 if (instruction.equals("created")) {
@@ -713,6 +698,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
      */
     @POST
     @Path("users/current_user/gameboards/{gameboard_id}")
+    @ApiOperation(value = "Link a gameboard to the current user.",
+                  notes = "This will save a persistent copy of the gameboard if it was a temporary board.")
     public final Response linkUserToGameboard(@Context final HttpServletRequest request,
             @PathParam("gameboard_id") final String gameboardId) {
         // TODO: change endpoint path to be more consistent with the gameboards facade
@@ -766,6 +753,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     @DELETE
     @Path("users/current_user/gameboards/{gameboard_id}")
     @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Unlink the current user from a gameboard.",
+                  notes = "This will not delete or modify the gameboard.")
     public Response unlinkUserFromGameboard(@Context final HttpServletRequest request,
             @PathParam("gameboard_id") final String gameboardId) {
         // TODO: change endpoint path to be more consistent with the gameboards facade
@@ -803,16 +792,17 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     }
 
     /**
-     * REST end point to retrieve a specific gameboard by Id.
+     * REST end point to list all possible wildcards.
      * 
      * @param request
      *            - so that we can deal with caching and etags.
-     * @return a Response containing a gameboard object or containing a SegueErrorResponse.
+     * @return a Response containing wildcard objects or containing a SegueErrorResponse.
      */
     @GET
     @Path("gameboards/wildcards")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "List all possible gameboard wildcards.")
     public final Response getWildCards(@Context final Request request) {
 
         try {

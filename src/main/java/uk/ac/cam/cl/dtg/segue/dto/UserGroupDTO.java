@@ -16,7 +16,6 @@
 package uk.ac.cam.cl.dtg.segue.dto;
 
 import java.util.Date;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -27,7 +26,7 @@ import com.google.api.client.util.Sets;
 import org.mongojack.ObjectId;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import uk.ac.cam.cl.dtg.segue.dto.users.DetailedUserSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithEmailAddressDTO;
 
 /**
  * UserGroupDTO - this object represents a group or label assigned to users who have been placed into a group.
@@ -41,8 +40,8 @@ public class UserGroupDTO {
     private Date created;
     private String token;
     private boolean archived;
-    private DetailedUserSummaryDTO ownerSummary;
-    private Set<DetailedUserSummaryDTO> additionalManagers;
+    private UserSummaryWithEmailAddressDTO ownerSummary;
+    private Set<UserSummaryWithEmailAddressDTO> additionalManagers;
 
     /**
      * Default Constructor.
@@ -196,7 +195,7 @@ public class UserGroupDTO {
      *
      * @return the owner summary object
      */
-    public DetailedUserSummaryDTO getOwnerSummary() {
+    public UserSummaryWithEmailAddressDTO getOwnerSummary() {
         return ownerSummary;
     }
 
@@ -206,7 +205,7 @@ public class UserGroupDTO {
      * @param ownerSummary
      *            the detailed owner summary object
      */
-    public void setOwnerSummary(final DetailedUserSummaryDTO ownerSummary) {
+    public void setOwnerSummary(final UserSummaryWithEmailAddressDTO ownerSummary) {
         this.ownerSummary = ownerSummary;
     }
 
@@ -215,7 +214,7 @@ public class UserGroupDTO {
      *
      * @return list of user ids
      */
-    public Set<DetailedUserSummaryDTO> getAdditionalManagers() {
+    public Set<UserSummaryWithEmailAddressDTO> getAdditionalManagers() {
         return additionalManagers;
     }
 
@@ -224,7 +223,7 @@ public class UserGroupDTO {
      *
      * @param additionalManagers - those users who should have access to this group.
      */
-    public void setAdditionalManagers(Set<DetailedUserSummaryDTO> additionalManagers) {
+    public void setAdditionalManagers(Set<UserSummaryWithEmailAddressDTO> additionalManagers) {
         this.additionalManagers = additionalManagers;
     }
 
@@ -269,6 +268,6 @@ public class UserGroupDTO {
      */
     @JsonIgnore
     public Set<Long> getAdditionalManagersUserIds() {
-        return additionalManagers.stream().map(DetailedUserSummaryDTO::getId).collect(Collectors.toSet());
+        return additionalManagers.stream().map(UserSummaryWithEmailAddressDTO::getId).collect(Collectors.toSet());
     }
 }

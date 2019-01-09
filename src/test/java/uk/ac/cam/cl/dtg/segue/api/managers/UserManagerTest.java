@@ -15,42 +15,29 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
-import static org.easymock.EasyMock.*;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.IOException;
-import java.net.URI;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import ma.glasnost.orika.MapperFacade;
-
 import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.reflect.Whitebox;
-
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.auth.*;
+import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
+import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
+import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
-import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.users.AnonymousUser;
@@ -64,11 +51,28 @@ import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.ImmutableMap;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.io.IOException;
+import java.net.URI;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import static org.easymock.EasyMock.anyObject;
+import static org.easymock.EasyMock.createMock;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.expectLastCall;
+import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.verify;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test class for the user manager class.
@@ -170,14 +174,17 @@ public class UserManagerTest {
         HttpServletRequest request = createMock(HttpServletRequest.class);
 
         Long validUserId = 533L;
-        String validDateString = sdf.format(new Date());
-
-        Map<String, String> sessionInformation = getSessionInformationAsAMap(authManager, validUserId.toString(), validDateString);
-        Cookie[] cookieWithSessionInfo = getCookieArray(sessionInformation);
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.SECOND, 500);
+        String validDateString = sdf.format(calendar.getTime());
 
         RegisteredUser returnUser = new RegisteredUser(validUserId, "TestFirstName", "TestLastName", "", Role.STUDENT,
                 new Date(), Gender.MALE, new Date(), null, null, null,null);
         returnUser.setId(validUserId);
+        returnUser.setSessionToken(0);
+
+        Map<String, String> sessionInformation = getSessionInformationAsAMap(authManager, validUserId.toString(), validDateString, returnUser.getSessionToken());
+        Cookie[] cookieWithSessionInfo = getCookieArray(sessionInformation);
        
         dummyDatabase.updateUserLastSeen(returnUser);
         expectLastCall();
@@ -317,7 +324,9 @@ public class UserManagerTest {
         someAnonymousUserDTO.setSessionId(someSegueAnonymousUserId);
 
         String validOAuthProvider = "test";
-        String validDateString = sdf.format(new Date());
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.SECOND, 500);
+        String validDateString = sdf.format(calendar.getTime());
 
         expect(request.getSession()).andReturn(dummySession).atLeastOnce();
 
@@ -359,6 +368,7 @@ public class UserManagerTest {
 
         RegisteredUser mappedUser = new RegisteredUser(null, "TestFirstName", "testLastName", "test@test.com", Role.STUDENT,
                 new Date(), Gender.MALE, new Date(), null, null,null, null);
+        mappedUser.setSessionToken(0);
 
         expect(dummyDatabase.getAuthenticationProvidersByUser(mappedUser)).andReturn(
                 Lists.newArrayList(AuthenticationProvider.GOOGLE)).atLeastOnce();
@@ -382,7 +392,7 @@ public class UserManagerTest {
         expect(dummyDatabase.getById(someSegueUserId)).andReturn(mappedUser);
 
         Map<String, String> sessionInformation = getSessionInformationAsAMap(authManager, someSegueUserId.toString(),
-                validDateString);
+                validDateString, mappedUser.getSessionToken());
         Cookie[] cookieWithSessionInfo = getCookieArray(sessionInformation);
 
         // Expect a session to be created
@@ -411,17 +421,10 @@ public class UserManagerTest {
 
     /**
      * Verify that a bad CSRF response from the authentication provider causes an error response.
-     * 
-     * @throws IOException
-     *             - test exceptions
-     * @throws CodeExchangeException
-     *             - test exceptions
-     * @throws NoUserException
-     *             - test exceptions
+     *
      */
     @Test
-    public final void authenticateCallback_checkInvalidCSRF_throwsCSRFException() throws IOException,
-            CodeExchangeException, NoUserException {
+    public final void authenticateCallback_checkInvalidCSRF_throwsCSRFException() {
         UserAccountManager userManager = buildTestUserManager();
 
         HttpSession dummySession = createMock(HttpSession.class);
@@ -462,17 +465,10 @@ public class UserManagerTest {
 
     /**
      * Verify that a bad (null) CSRF response from the authentication provider causes an error response.
-     * 
-     * @throws IOException
-     *             - test exceptions
-     * @throws CodeExchangeException
-     *             - test exceptions
-     * @throws NoUserException
-     *             - test exceptions
+     *
      */
     @Test
-    public final void authenticateCallback_checkWhenNoCSRFProvided_throwsCSRFException() throws IOException,
-            CodeExchangeException, NoUserException {
+    public final void authenticateCallback_checkWhenNoCSRFProvided_throwsCSRFException() {
         UserAccountManager userManager = buildTestUserManager();
 
         // method param setup for method under test
@@ -520,24 +516,29 @@ public class UserManagerTest {
      */
     @Test
     public final void validateUsersSession_checkForValidHMAC_shouldReturnAsCorrect() throws Exception {
-        UserAccountManager userManager = buildTestUserManager();
         UserAuthenticationManager authManager = buildTestAuthenticationManager();
         
         // method param setup for method under test
         HttpSession dummySession = createMock(HttpSession.class);
         HttpServletRequest request = createMock(HttpServletRequest.class);
 
-        String validUserId = "533ee66842f639e95ce35e29";
-        String validDateString = sdf.format(new Date());
+        RegisteredUser mappedUser = new RegisteredUser(null, "TestFirstName", "testLastName", "test@test.com", Role.STUDENT,
+                new Date(), Gender.MALE, new Date(), null, null,null, null);
+        mappedUser.setSessionToken(0);
 
-        Map<String, String> sessionInformation = getSessionInformationAsAMap(authManager, validUserId, validDateString);
+        String validUserId = "123";
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.SECOND, 500);
+        String validDateString = sdf.format(calendar.getTime());
+
+        Map<String, String> sessionInformation = getSessionInformationAsAMap(authManager, validUserId, validDateString, mappedUser.getSessionToken());
 
         replay(dummySession);
         replay(request);
         replay(dummyQuestionDatabase);
 
         // Act
-        boolean valid = Whitebox.<Boolean> invokeMethod(authManager, "isValidUsersSession", sessionInformation);
+        boolean valid = Whitebox.<Boolean> invokeMethod(authManager, "isValidUsersSession", sessionInformation, mappedUser);
 
         // Assert
         verify(dummyQuestionDatabase, dummySession, request);
@@ -551,18 +552,23 @@ public class UserManagerTest {
      */
     @Test
     public final void validateUsersSession_badUsersSession_shouldReturnAsIncorrect() throws Exception {
-        UserAccountManager userManager = buildTestUserManager();
         UserAuthenticationManager authManager = buildTestAuthenticationManager();
         
         // method param setup for method under test
         HttpSession dummySession = createMock(HttpSession.class);
         HttpServletRequest request = createMock(HttpServletRequest.class);
 
-        String validUserId = "533ee66842f639e95ce35e29";
-        String validDateString = sdf.format(new Date());
+        String validUserId = "123";
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.SECOND, 500);
+        String validDateString = sdf.format(calendar.getTime());
+
+        RegisteredUser mappedUser = new RegisteredUser(null, "TestFirstName", "testLastName", "test@test.com", Role.STUDENT,
+                new Date(), Gender.MALE, new Date(), null, null,null, null);
+        mappedUser.setSessionToken(0);
 
         Map<String, String> validSessionInformation = getSessionInformationAsAMap(authManager, validUserId,
-                validDateString);
+                validDateString, mappedUser.getSessionToken());
 
         Map<String, String> tamperedSessionInformation = ImmutableMap.of(Constants.SESSION_USER_ID, validUserId,
                 Constants.DATE_SIGNED, validDateString + "1", Constants.HMAC,
@@ -573,7 +579,7 @@ public class UserManagerTest {
         replay(dummyQuestionDatabase);
 
         // Act
-        boolean valid = Whitebox.<Boolean> invokeMethod(authManager, "isValidUsersSession", tamperedSessionInformation);
+        boolean valid = Whitebox.<Boolean> invokeMethod(authManager, "isValidUsersSession", tamperedSessionInformation, mappedUser);
 
         // Assert
         verify(dummyQuestionDatabase, dummySession, request);
@@ -587,25 +593,68 @@ public class UserManagerTest {
      */
     @Test
     public final void validateUsersSession_expiredUsersSession_shouldReturnAsIncorrect() throws Exception {
-        UserAccountManager userManager = buildTestUserManager();
         UserAuthenticationManager authManager = buildTestAuthenticationManager();
         
         // method param setup for method under test
         HttpSession dummySession = createMock(HttpSession.class);
         HttpServletRequest request = createMock(HttpServletRequest.class);
 
-        String validUserId = "533ee66842f639e95ce35e29";
-        String validDateString = sdf.format(sdf.parse("Mon Oct 06 15:36:27 +0100 2013"));
+        String validUserId = "123";
+        RegisteredUser mappedUser = new RegisteredUser(null, "TestFirstName", "testLastName", "test@test.com", Role.STUDENT,
+                new Date(), Gender.MALE, new Date(), null, null,null, null);
+        mappedUser.setSessionToken(0);
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.SECOND, -60); // Expired 60 seconds ago
+        String expiredDateString = sdf.format(calendar.getTime());
 
         Map<String, String> validSessionInformation = getSessionInformationAsAMap(authManager, validUserId,
-                validDateString);
+                expiredDateString, mappedUser.getSessionToken());
 
         replay(dummySession);
         replay(request);
         replay(dummyQuestionDatabase);
 
         // Act
-        boolean valid = Whitebox.<Boolean> invokeMethod(authManager, "isValidUsersSession", validSessionInformation);
+        boolean valid = Whitebox.<Boolean> invokeMethod(authManager, "isValidUsersSession", validSessionInformation, mappedUser);
+
+        // Assert
+        verify(dummyQuestionDatabase, dummySession, request);
+        assertTrue(!valid);
+    }
+
+    /**
+     * Verify that a changed session token is detected.
+     *
+     * @throws Exception
+     */
+    @Test
+    public final void validateUsersSession_incorrectSessionToken_shouldReturnAsIncorrect() throws Exception {
+        UserAuthenticationManager authManager = buildTestAuthenticationManager();
+
+        // method param setup for method under test
+        HttpSession dummySession = createMock(HttpSession.class);
+        HttpServletRequest request = createMock(HttpServletRequest.class);
+
+        String validUserId = "123";
+        RegisteredUser mappedUser = new RegisteredUser(null, "TestFirstName", "testLastName", "test@test.com", Role.STUDENT,
+                new Date(), Gender.MALE, new Date(), null, null,null, null);
+        mappedUser.setSessionToken(1);
+        Integer incorrectSessionToken = 0;
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.SECOND, 500);
+        String validDateString = sdf.format(calendar.getTime());
+
+        Map<String, String> sessionInformationWithTokenMismatch = getSessionInformationAsAMap(authManager, validUserId,
+                validDateString, incorrectSessionToken);
+
+        replay(dummySession);
+        replay(request);
+        replay(dummyQuestionDatabase);
+
+        // Act
+        boolean valid = Whitebox.<Boolean> invokeMethod(authManager, "isValidUsersSession", sessionInformationWithTokenMismatch, mappedUser);
 
         // Assert
         verify(dummyQuestionDatabase, dummySession, request);
@@ -652,12 +701,12 @@ public class UserManagerTest {
                 dummyQueue);
     }
 
-    private Map<String, String> getSessionInformationAsAMap(UserAuthenticationManager userAuthManager, String userId, String dateCreated)
+    private Map<String, String> getSessionInformationAsAMap(UserAuthenticationManager userAuthManager, String userId, String dateExpires, Integer sessionToken)
             throws Exception {
         String validHMAC = Whitebox.<String> invokeMethod(userAuthManager, "calculateSessionHMAC", dummyHMACSalt, userId,
-                dateCreated);
-        return ImmutableMap.of(Constants.SESSION_USER_ID, userId, Constants.DATE_SIGNED, dateCreated, Constants.HMAC,
-                validHMAC);
+                dateExpires, sessionToken.toString());
+        return ImmutableMap.of(Constants.SESSION_USER_ID, userId, Constants.DATE_EXPIRES, dateExpires, Constants.HMAC,
+                validHMAC, Constants.SESSION_TOKEN, sessionToken.toString());
     }
 
     private Cookie[] getCookieArray(Map<String, String> sessionInformation) throws JsonProcessingException {

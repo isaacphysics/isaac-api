@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,41 +15,18 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_AUTH_EMAIL_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_AUTH_PASSWORD_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.REDIRECT_URL;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueLogType;
-import io.swagger.annotations.Api;
-
-import java.io.IOException;
-import java.net.URI;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AccountAlreadyLinkedException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationCodeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
@@ -67,6 +44,25 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import java.io.IOException;
+import java.net.URI;
+import java.util.Map;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * AuthenticationFacade.
@@ -114,6 +110,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     @GET
     @Path("/{provider}/authenticate")
     @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Get the SSO login redirect URL for an authentication provider.")
     public final Response authenticate(@Context final HttpServletRequest request,
             @PathParam("provider") final String signinProvider) {
         
@@ -156,6 +153,8 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     @GET
     @Path("/{provider}/link")
     @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Get the SSO redirect URL for an authentication provider.",
+                  notes = "Very similar to the login case, but records this is a link request not an account creation request.")
     public final Response linkExistingUserToProvider(@Context final HttpServletRequest request,
             @PathParam("provider") final String authProviderAsString) {
         if (!this.userManager.isRegisteredUserLoggedIn(request)) {
@@ -194,6 +193,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     @DELETE
     @Path("/{provider}/link")
     @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Remove an SSO provider from the current user's account.")
     public final Response unlinkUserFromProvider(@Context final HttpServletRequest request,
             @PathParam("provider") final String authProviderAsString) {
         try {
@@ -230,11 +230,14 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/{provider}/callback")
+    @ApiOperation(value = "SSO callback URL for a given provider.")
     public final Response authenticationCallback(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response, @PathParam("provider") final String signinProvider) {
 
         try {
-            return Response.ok(userManager.authenticateCallback(request, response, signinProvider)).build();
+            RegisteredUserDTO userToReturn = userManager.authenticateCallback(request, response, signinProvider);
+            this.getLogManager().logEvent(userToReturn, request, SegueLogType.LOG_IN, Maps.newHashMap());
+            return Response.ok(userToReturn).build();
         } catch (IOException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Exception while trying to authenticate a user" + " - during callback step.", e);
@@ -286,6 +289,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     @Path("/{provider}/authenticate")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Initiate login with an email address and password.")
     public final Response authenticateWithCredentials(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response, @PathParam("provider") final String signinProvider,
             final Map<String, String> credentials) {
@@ -302,7 +306,8 @@ public class AuthenticationFacade extends AbstractSegueFacade {
         
         String email = credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME);
         String password = credentials.get(LOCAL_AUTH_PASSWORD_FIELDNAME);
-        
+        SegueMetrics.LOG_IN_ATTEMPT.inc();
+
         final String rateThrottleMessage = "There have been too many attempts to login to this account. "
                 + "Please try again after 10 minutes.";
 
@@ -316,9 +321,10 @@ public class AuthenticationFacade extends AbstractSegueFacade {
 
         // ok we need to hand over to user manager
         try {
-            return Response
-                    .ok(userManager.authenticateWithCredentials(request, response, signinProvider, email, password))
-                    .build();
+            RegisteredUserDTO userToReturn = userManager.authenticateWithCredentials(request, response, signinProvider, email, password);
+            this.getLogManager().logEvent(userToReturn, request, SegueLogType.LOG_IN, Maps.newHashMap());
+            SegueMetrics.LOG_IN.inc();
+            return Response.ok(userToReturn).build();
         } catch (AuthenticationProviderMappingException e) {
             String errorMsg = "Unable to locate the provider specified";
             log.error(errorMsg, e);
@@ -356,11 +362,13 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.WILDCARD)
     @Path("/logout")
+    @ApiOperation(value = "Initiate logout for the current user.")
     public final Response userLogout(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response) {
 
         this.getLogManager().logEvent(this.userManager.getCurrentUser(request), request, SegueLogType.LOG_OUT,
                 Maps.newHashMap());
+        SegueMetrics.LOG_OUT.inc();
 
         userManager.logUserOut(request, response);
 

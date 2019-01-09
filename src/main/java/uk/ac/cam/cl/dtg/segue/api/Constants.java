@@ -123,6 +123,11 @@ public final class Constants {
     public static final String DATE_SIGNED = "DATE_SIGNED";
 
     /**
+     * Constant representing the key for the expiry date property - used in HMAC calculations.
+     */
+    public static final String DATE_EXPIRES = "DATE_EXPIRES";
+
+    /**
      * Constant representing the key for the HMAC property - used in HMAC calculations.
      */
     public static final String HMAC = "HMAC";
@@ -136,6 +141,11 @@ public final class Constants {
      * Constant representing the key for the SESSION USER ID - used in HMAC calculations.
      */
     public static final String SESSION_USER_ID = "currentUserId";
+
+    /**
+     * Constant representing the key for the SESSION TOKEN - used in HMAC calculations.
+     */
+    public static final String SESSION_TOKEN = "token";
 
     /**
      * Constant representing the key for the HMAC Salt - used in HMAC calculations.
@@ -171,8 +181,41 @@ public final class Constants {
         AND, OR
     };
 
-    public static final String SCHOOLS_SEARCH_INDEX = "schools";
-    public static final String SCHOOLS_SEARCH_TYPE = "school";
+    public static final String SCHOOLS_INDEX_BASE = "schools";
+    public enum SCHOOLS_INDEX_TYPE {
+        METADATA("metadata"),
+        SCHOOL_SEARCH("school");
+
+        private String typeName;
+
+        SCHOOLS_INDEX_TYPE(final String typeName) {
+            this.typeName = typeName;
+        }
+
+        @Override
+        public String toString() {
+            return this.typeName;
+        }
+    }
+
+    public enum CONTENT_INDEX_TYPE {
+        METADATA("metadata"),
+        UNIT("unit"),
+        PUBLISHED_UNIT("publishedUnit"),
+        CONTENT("content"),
+        CONTENT_ERROR("contentError");
+
+        private String typeName;
+
+        CONTENT_INDEX_TYPE(final String typeName) {
+            this.typeName = typeName;
+        }
+
+        @Override
+        public String toString() {
+            return this.typeName;
+        }
+    }
 
     // Federated Authentication Stuff
     /**
@@ -211,6 +254,8 @@ public final class Constants {
     public static final String LOCAL_AUTH_EMAIL_FIELDNAME = "email";
     public static final String LOCAL_AUTH_PASSWORD_FIELDNAME = "password";
     public static final String LOCAL_AUTH_EMAIL_VERIFICATION_TOKEN_FIELDNAME = "emailVerificationToken";
+    public static final String LOCAL_AUTH_GROUP_MANAGER_INITIATED_FIELDNAME = "groupManagerInitiated";
+    public static final String LOCAL_AUTH_GROUP_MANAGER_EMAIL_FIELDNAME = "groupManagerEmail";
 
     // Database properties
     public static final String SEGUE_DB_NAME = "SEGUE_DB_NAME";
@@ -254,6 +299,7 @@ public final class Constants {
         EVENT_BOOKING,
         EVENT_BOOKING_CANCELLED,
         EVENT_WAITING_LIST_BOOKING,
+        LOG_IN,
         LOG_OUT,
         MERGE_USER,
         PASSWORD_RESET_REQUEST_RECEIVED,
@@ -270,6 +316,12 @@ public final class Constants {
 
     public static final Set<String> SEGUE_LOG_TYPES = Arrays.stream(SegueLogType.values()).map(SegueLogType::name).collect(Collectors.toSet());
 
+    // Websocket Component
+    public static final String MAX_CONCURRENT_WEB_SOCKETS_PER_USER = "MAX_CONCURRENT_WEB_SOCKETS_PER_USER";
+
+    // Metrics Component
+    public static final String API_METRICS_EXPORT_PORT = "API_METRICS_EXPORT_PORT";
+
     // IP Geocoding stuff
     public static final String IP_INFO_DB_API_KEY = "IP_INFO_DB_API_KEY";
 
@@ -281,6 +333,8 @@ public final class Constants {
 
     public static final Integer DEFAULT_RESULTS_LIMIT = 10;
     public static final String DEFAULT_RESULTS_LIMIT_AS_STRING = "10";
+
+    public static final String DEFAULT_SEARCH_RESULT_LIMIT_AS_STRING = "25";
 
     public static final Integer NO_SEARCH_LIMIT = -1;
 

@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.inject.name.Named;
@@ -77,6 +76,7 @@ import com.google.inject.Inject;
 import uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.api.userAlerts.UserAlertsWebSocket;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
@@ -98,6 +98,7 @@ import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryForAdminUsersDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.etl.GithubPushEventPayload;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
@@ -185,6 +186,34 @@ public class AdminFacade extends AbstractSegueFacade {
 
             return Response.ok(statsManager.outputGeneralStatistics())
                     .cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false)).build();
+        } catch (SegueDatabaseException e) {
+            log.error("Unable to load general statistics.", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
+    }
+
+    /**
+     * Statistics endpoint.
+     *
+     * @param request
+     *            - to determine access.
+     * @return stats
+     */
+    @GET
+    @Path("/stats/users")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public Response countUsersByRole(@Context final HttpServletRequest request) {
+        try {
+            if (!isUserStaff(request)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin to access this endpoint.")
+                        .toResponse();
+            }
+
+            return Response.ok(ImmutableMap.of("role", userManager.getCountsForUsersByRole()))
+                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_MINUTE, false)).build();
         } catch (SegueDatabaseException e) {
             log.error("Unable to load general statistics.", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
@@ -822,7 +851,9 @@ public class AdminFacade extends AbstractSegueFacade {
             log.info(String.format("%s user (%s) did a search across all users based on user prototype {%s}",
                     currentUser.getRole(), currentUser.getEmail(), userPrototype));
 
-            return Response.ok(findUsers).tag(etag).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
+            return Response.ok(this.userManager.convertToDetailedUserSummaryObjectList(findUsers, UserSummaryForAdminUsersDTO.class))
+                    .tag(etag)
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
                     .build();
         } catch (SegueDatabaseException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
@@ -1395,7 +1426,11 @@ public class AdminFacade extends AbstractSegueFacade {
         return Response.ok().build();
     }
 
-
+    /**
+     * Returns some metrics relating to the running Java API process.
+     * @deprecated use Graphana to monitor these values instead of calling the endpoint.
+     */
+    @Deprecated
     @GET
     @Path("/diagnostics")
     @Produces(MediaType.APPLICATION_JSON)
@@ -1410,23 +1445,11 @@ public class AdminFacade extends AbstractSegueFacade {
                 Map<String, Object> diagnosticReport = Maps.newHashMap();
                 Map<String, Object> websocketReport = Maps.newHashMap();
                 Map<String, Object> runtimeReport = Maps.newHashMap();
-                Integer numCurrentWebSockets = 0;
-                Integer numCurrentWebSocketUsers = 0;
 
-                // websocket reporting
-                for (ConcurrentLinkedQueue<UserAlertsWebSocket> queue : UserAlertsWebSocket.connectedSockets.values()) {
-                    numCurrentWebSockets += queue.size();
-                    if (queue.size() > 0) {
-                        numCurrentWebSocketUsers++;
-                    }
-                }
-
-                websocketReport.put("currentWebsocketsOpen", numCurrentWebSockets);
-                websocketReport.put("usersCurrent", numCurrentWebSocketUsers);
-                websocketReport.put("usersTotal", UserAlertsWebSocket.connectedSockets.size());
-                websocketReport.put("totalWebsocketsOpened", UserAlertsWebSocket.getWebsocketCounts().get("numWebsocketsOpenedOverTime"));
-                websocketReport.put("totalWebsocketsClosed", UserAlertsWebSocket.getWebsocketCounts().get("numWebsocketsClosedOverTime"));
-
+                websocketReport.put("currentWebsocketsOpen", SegueMetrics.CURRENT_OPEN_WEBSOCKETS.get());
+                websocketReport.put("usersCurrent", SegueMetrics.CURRENT_WEBSOCKET_USERS.get());
+                websocketReport.put("totalWebsocketsOpened", SegueMetrics.WEBSOCKETS_OPENED_SUCCESSFULLY.get());
+                websocketReport.put("totalWebsocketsClosed", SegueMetrics.WEBSOCKETS_CLOSED.get());
                 diagnosticReport.put("websockets", websocketReport);
 
                 // runtime reporting

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.userAlerts.IAlertListener;
 import uk.ac.cam.cl.dtg.segue.api.userAlerts.UserAlertsWebSocket;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
@@ -20,6 +22,7 @@ import java.util.Map;
  * Created by du220 on 16/04/2018.
  */
 public class PgUserStreakManager implements IUserStreaksManager {
+    private static final Logger log = LoggerFactory.getLogger(PgUserStreakManager.class);
 
     private final PostgresSqlDb database;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -46,7 +49,8 @@ public class PgUserStreakManager implements IUserStreaksManager {
             PreparedStatement pst;
             pst = conn.prepareStatement("SELECT * FROM"
                     + " user_streaks_current_progress(?) LEFT JOIN user_streaks(?)"
-                    + " ON user_streaks_current_progress.currentdate - user_streaks.enddate <= 1");
+                    + " ON user_streaks_current_progress.currentdate - user_streaks.enddate <= 1"
+                    + " AND user_streaks.startdate <= user_streaks_current_progress.currentdate");
 
             pst.setLong(1, user.getId());
             pst.setLong(2, user.getId());
@@ -89,19 +93,16 @@ public class PgUserStreakManager implements IUserStreaksManager {
     public void notifyUserOfStreakChange(final RegisteredUserDTO user) {
         // FIXME - it is unlikely that this is the best location for this code!
         // It is better than in the already bloated facade method, however!
-        if (null != UserAlertsWebSocket.connectedSockets && UserAlertsWebSocket.connectedSockets.containsKey(user.getId())) {
+        long userId = user.getId();
+        try {
+            IUserAlert alert = new PgUserAlert(null, userId,
+                    objectMapper.writeValueAsString(ImmutableMap.of("streakRecord", this.getCurrentStreakRecord(user))),
+                    "progress", new Timestamp(System.currentTimeMillis()), null, null, null);
 
-            try {
-                IUserAlert alert = new PgUserAlert(null, user.getId(),
-                        objectMapper.writeValueAsString(ImmutableMap.of("streakRecord", this.getCurrentStreakRecord(user))),
-                        "progress", new Timestamp(System.currentTimeMillis()), null, null, null);
-
-                for (IAlertListener listener : UserAlertsWebSocket.connectedSockets.get(user.getId())) {
-                    listener.notifyAlert(alert);
-                }
-            } catch (JsonProcessingException e) {
-                e.printStackTrace();
-            }
+            UserAlertsWebSocket.notifyUserOfAlert(userId, alert);
+        } catch (JsonProcessingException e) {
+            log.error(String.format("Unable to serialize user streak change JSON for user {}: {}",
+                    user.getId(), e.getMessage()));
         }
     }
 

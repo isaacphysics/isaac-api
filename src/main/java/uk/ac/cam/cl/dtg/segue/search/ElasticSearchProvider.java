@@ -16,8 +16,10 @@
 package uk.ac.cam.cl.dtg.segue.search;
 
 import com.carrotsearch.hppc.cursors.ObjectObjectCursor;
+import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;
+import com.google.common.base.CaseFormat;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableSet;
@@ -34,7 +36,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.index.query.*;
 import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
@@ -74,6 +76,9 @@ public class ElasticSearchProvider implements ISearchProvider {
     // used to optimise index setting retrieval as these probably don't change every request.
     private final Cache<String, String> settingsCache;
 
+    public static String produceTypedIndexName(final String indexName, final String typeName) {
+        return indexName + "_" + CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, typeName);
+    }
 
     /**
      * Constructor for creating an instance of the ElasticSearchProvider Object.
@@ -88,7 +93,7 @@ public class ElasticSearchProvider implements ISearchProvider {
     }
 
     @Override
-    public ResultsWrapper<String> matchSearch(final String index, final String indexType,
+    public ResultsWrapper<String> matchSearch(final String indexBase, final String indexType,
                                               final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch, final int startIndex,
                                               final int limit, final Map<String, Constants.SortOrder> sortInstructions,
                                               @Nullable final Map<String, AbstractFilterInstruction> filterInstructions) throws SegueSearchException {
@@ -99,35 +104,35 @@ public class ElasticSearchProvider implements ISearchProvider {
             query = QueryBuilders.boolQuery().must(query).filter(generateFilterQuery(filterInstructions));
         }
 
-        return this.executeBasicQuery(index, indexType, query, startIndex, limit, sortInstructions);
+        return this.executeBasicQuery(indexBase, indexType, query, startIndex, limit, sortInstructions);
     }
 
     @Override
-    public final ResultsWrapper<String> randomisedMatchSearch(final String index, final String indexType,
+    public final ResultsWrapper<String> randomisedMatchSearch(final String indexBase, final String indexType,
                                                               final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch, final int startIndex,
-                                                              final int limit, final Long randomSeed, final Map<String, AbstractFilterInstruction> filterInstructions)
+                                                              final int limit, final Map<String, AbstractFilterInstruction> filterInstructions)
             throws SegueSearchException {
         // build up the query from the fieldsToMatch map
-        QueryBuilder query = generateBoolMatchQuery(fieldsToMatch);
+        QueryBuilder query = QueryBuilders.constantScoreQuery(generateBoolMatchQuery(fieldsToMatch));
 
-        query = QueryBuilders.functionScoreQuery(query, ScoreFunctionBuilders.randomFunction(randomSeed));
+        query = QueryBuilders.functionScoreQuery(query, ScoreFunctionBuilders.randomFunction());
 
         if (filterInstructions != null) {
             query = QueryBuilders.boolQuery().must(query).filter(generateFilterQuery(filterInstructions));
         }
 
-        log.debug("Randomised Query, with seed: " + randomSeed + ", to be sent to elasticsearch is : " + query);
+        log.debug("Randomised Query, to be sent to elasticsearch is : " + query);
 
-        return this.executeBasicQuery(index, indexType, query, startIndex, limit);
+        return this.executeBasicQuery(indexBase, indexType, query, startIndex, limit);
     }
 
     @Override
-    public ResultsWrapper<String> fuzzySearch(final String index, final String indexType, final String searchString,
+    public ResultsWrapper<String> fuzzySearch(final String indexBase, final String indexType, final String searchString,
                                               final Integer startIndex, final Integer limit,
                                               @Nullable final Map<String, List<String>> fieldsThatMustMatch,
                                               @Nullable final Map<String, AbstractFilterInstruction> filterInstructions,
                                               final String... fields) throws SegueSearchException {
-        if (null == index || null == indexType || null == searchString || null == fields) {
+        if (null == indexBase || null == indexType || null == searchString || null == fields) {
             log.warn("A required field is missing. Unable to execute search.");
             return null;
         }
@@ -142,17 +147,24 @@ public class ElasticSearchProvider implements ISearchProvider {
         BoolQueryBuilder query = QueryBuilders.boolQuery();
         Set boostFields = ImmutableSet.builder().add("id").add("title").add("tags").build();
 
+        List<String> searchTerms = Lists.newArrayList();
+        searchTerms.addAll(Arrays.asList(searchString.split(" ")));
+        if (searchTerms.size() > 1) {
+            searchTerms.add(searchString);
+        }
+
         for (String f : fields) {
             float boost = boostFields.contains(f) ? 2f : 1f;
 
-            QueryBuilder initialFuzzySearch = QueryBuilders.matchQuery(f, searchString)
-                    .fuzziness(Fuzziness.AUTO)
-                    .prefixLength(0)
-                    .boost(boost);
-            query.should(initialFuzzySearch);
-
-            QueryBuilder regexSearch = QueryBuilders.wildcardQuery(f, "*" + searchString + "*").boost(boost);
-            query.should(regexSearch);
+            for (String searchTerm : searchTerms) {
+                QueryBuilder initialFuzzySearch = QueryBuilders.matchQuery(f, searchTerm)
+                        .fuzziness(Fuzziness.AUTO)
+                        .prefixLength(0)
+                        .boost(boost);
+                query.should(initialFuzzySearch);
+                QueryBuilder regexSearch = QueryBuilders.wildcardQuery(f, "*" + searchTerm + "*").boost(boost);
+                query.should(regexSearch);
+            }
         }
 
         // this query is just a bit smarter than the regex search above.
@@ -166,15 +178,15 @@ public class ElasticSearchProvider implements ISearchProvider {
             masterQuery.filter(generateFilterQuery(filterInstructions));
         }
 
-        return this.executeBasicQuery(index, indexType, masterQuery, startIndex, limit);
+        return this.executeBasicQuery(indexBase, indexType, masterQuery, startIndex, limit);
     }
 
     @Override
-    public ResultsWrapper<String> termSearch(final String index, final String indexType,
+    public ResultsWrapper<String> termSearch(final String indexBase, final String indexType,
                                              final String searchTerm, final String field, final int startIndex, final int limit,
                                              @Nullable final Map<String, AbstractFilterInstruction> filterInstructions)
             throws SegueSearchException {
-        if (null == index || null == indexType || (null == searchTerm && null != field)) {
+        if (null == indexBase || null == indexType || (null == searchTerm && null != field)) {
             log.error("A required field or field combination is missing. Unable to execute search.");
             return null;
         }
@@ -192,7 +204,7 @@ public class ElasticSearchProvider implements ISearchProvider {
             throw new SegueSearchException("This method requires either searchTerm or filter instructions.");
         }
 
-        return this.executeBasicQuery(index, indexType, query, startIndex, limit);
+        return this.executeBasicQuery(indexBase, indexType, query, startIndex, limit);
     }
 
     /**
@@ -209,16 +221,18 @@ public class ElasticSearchProvider implements ISearchProvider {
     public static Client getTransportClient(final String clusterName, final String address, final int port) throws UnknownHostException {
         TransportClient client = new PreBuiltTransportClient(Settings.builder().put("cluster.name", clusterName)
                 .put("client.transport.ping_timeout", "180s").build())
-                .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(address), port));
+                .addTransportAddress(new TransportAddress(InetAddress.getByName(address), port));
 
         log.info("Elastic Search Transport client created: " + address + ":" + port);
         return client;
     }
 
     @Override
-    public boolean hasIndex(final String index) {
-        Validate.notNull(index);
-        return client.admin().indices().exists(new IndicesExistsRequest(index)).actionGet().isExists();
+    public boolean hasIndex(final String indexBase, final String indexType) {
+        Validate.notNull(indexBase);
+        Validate.notNull(indexType);
+        String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
+        return client.admin().indices().exists(new IndicesExistsRequest(typedIndex)).actionGet().isExists();
     }
 
     @Override
@@ -227,7 +241,7 @@ public class ElasticSearchProvider implements ISearchProvider {
     }
 
     @Override
-    public ResultsWrapper<String> findByPrefix(final String index, final String indexType, final String fieldname,
+    public ResultsWrapper<String> findByPrefix(final String indexBase, final String indexType, final String fieldname,
                                                final String prefix, final int startIndex, final int limit, final Map<String, AbstractFilterInstruction> filterInstructions)
             throws SegueSearchException {
         ResultsWrapper<String> resultList;
@@ -238,13 +252,13 @@ public class ElasticSearchProvider implements ISearchProvider {
             query = QueryBuilders.boolQuery().must(query).filter(generateFilterQuery(filterInstructions));
         }
 
-        resultList = this.executeBasicQuery(index, indexType, query, startIndex, limit);
+        resultList = this.executeBasicQuery(indexBase, indexType, query, startIndex, limit);
 
         return resultList;
     }
 
     @Override
-    public ResultsWrapper<String> findByRegEx(final String index, final String indexType, final String fieldname,
+    public ResultsWrapper<String> findByRegEx(final String indexBase, final String indexType, final String fieldname,
                                               final String regex, final int startIndex, final int limit,
                                               final Map<String, AbstractFilterInstruction> filterInstructions)
             throws SegueSearchException {
@@ -256,7 +270,7 @@ public class ElasticSearchProvider implements ISearchProvider {
             query = QueryBuilders.boolQuery().must(query).filter(generateFilterQuery(filterInstructions));
         }
 
-        resultList = this.executeBasicQuery(index, indexType, query, startIndex, limit);
+        resultList = this.executeBasicQuery(indexBase, indexType, query, startIndex, limit);
 
         return resultList;
     }
@@ -362,7 +376,7 @@ public class ElasticSearchProvider implements ISearchProvider {
                     if (operatorForThisField.equals(Constants.BooleanOperator.OR)) {
                         shouldMatchSet.add(pair.getKey().getValue());
                         query.should(QueryBuilders.matchQuery(pair.getKey().getValue(), queryItem))
-                                .minimumNumberShouldMatch(shouldMatchSet.size());
+                                .minimumShouldMatch(shouldMatchSet.size());
                     } else {
                         query.must(QueryBuilders.matchQuery(pair.getKey().getValue(), queryItem));
                     }
@@ -382,8 +396,8 @@ public class ElasticSearchProvider implements ISearchProvider {
      * This method does not provide any way of controlling sort order or limiting information returned. It is most
      * useful for doing simple searches with fewer results e.g. by id.
      *
-     * @param index
-     *            - search index to execute the query against.
+     * @param indexBase
+     *            - search index base string to execute the query against.
      * @param indexType
      *            - index type to execute the query against.
      * @param query
@@ -394,10 +408,10 @@ public class ElasticSearchProvider implements ISearchProvider {
      *            - the maximum number of results to return -1 will attempt to return all results.
      * @return list of the search results
      */
-    private ResultsWrapper<String> executeBasicQuery(final String index, final String indexType,
+    private ResultsWrapper<String> executeBasicQuery(final String indexBase, final String indexType,
                                                      final QueryBuilder query, final int startIndex, final int limit)
             throws SegueSearchException {
-        return this.executeBasicQuery(index, indexType, query, startIndex, limit, null);
+        return this.executeBasicQuery(indexBase, indexType, query, startIndex, limit, null);
     }
 
     /**
@@ -406,8 +420,8 @@ public class ElasticSearchProvider implements ISearchProvider {
      * This method does not provide any way of controlling sort order or limiting information returned. It is most
      * useful for doing simple searches with fewer results e.g. by id.
      *
-     * @param index
-     *            - search index to execute the query against.
+     * @param indexBase
+     *            - search index base string to execute the query against.
      * @param indexType
      *            - index type to execute the query against.
      * @param query
@@ -418,17 +432,18 @@ public class ElasticSearchProvider implements ISearchProvider {
      *            - the maximum number of results to return -1 will attempt to return all results.
      * @return list of the search results
      */
-    private ResultsWrapper<String> executeBasicQuery(final String index, final String indexType,
+    private ResultsWrapper<String> executeBasicQuery(final String indexBase, final String indexType,
                                                      final QueryBuilder query, final int startIndex, final int limit,
                                                      @Nullable final Map<String, Constants.SortOrder> sortInstructions) throws SegueSearchException {
         int newLimit = limit;
+        String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
         boolean isUnlimitedSearch = limit == -1;
 
         if (isUnlimitedSearch) {
             newLimit = LARGE_LIMIT;
         }
 
-        SearchRequestBuilder configuredSearchRequestBuilder = client.prepareSearch(index).setTypes(indexType)
+        SearchRequestBuilder configuredSearchRequestBuilder = client.prepareSearch(typedIndex).setTypes(indexType)
                 .setQuery(query).setSize(newLimit).setFrom(startIndex);
 
         if (sortInstructions != null) {
@@ -441,13 +456,13 @@ public class ElasticSearchProvider implements ISearchProvider {
         // execute another query to get all results as this is an unlimited
         // query.
         if (isUnlimitedSearch && (results.getResults().size() < results.getTotalResults())) {
-            if (results.getTotalResults() > this.getMaxResultSize(index)) {
+            if (results.getTotalResults() > this.getMaxResultSize(indexBase, indexType)) {
                 throw new SegueSearchException(String.format("The search you have requested " +
                         "exceeds the maximum number of results that can be returned at once (%s).",
-                        this.getMaxResultSize(index)));
+                        this.getMaxResultSize(indexBase, indexType)));
             }
 
-            configuredSearchRequestBuilder = client.prepareSearch(index).setTypes(indexType).setQuery(query)
+            configuredSearchRequestBuilder = client.prepareSearch(typedIndex).setTypes(indexType).setQuery(query)
                     .setSize(results.getTotalResults().intValue()).setFrom(startIndex);
 
             results = executeQuery(configuredSearchRequestBuilder);
@@ -512,13 +527,15 @@ public class ElasticSearchProvider implements ISearchProvider {
         return result;
     }
 
-    public GetResponse getById(String index, String type, String id) {
-        GetRequestBuilder grb = client.prepareGet(index, type, id).setFetchSource(true);
+    public GetResponse getById(final String indexBase, final String indexType, final String id) {
+        String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
+        GetRequestBuilder grb = client.prepareGet(typedIndex, indexType, id).setFetchSource(true);
         return grb.execute().actionGet();
     }
 
-    public SearchResponse getAllByType(String index, String type) {
-        return client.prepareSearch(index).setTypes(type).setSize(10000).setFetchSource(true).execute().actionGet();
+    public SearchResponse getAllByType(final String indexBase, final String indexType) {
+        String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
+        return client.prepareSearch(typedIndex).setTypes(indexType).setSize(10000).setFetchSource(true).execute().actionGet();
     }
 
     /**
@@ -529,23 +546,24 @@ public class ElasticSearchProvider implements ISearchProvider {
      *
      * TODO: we may want to selectively upgrade queries to scroll requests if exceeding this limit.
      *
-     * @param index - to look up
+     * @param indexBase - to look up
      * @return the configured index max window size or a default,
      * if a request exceeds this an error will be thrown. (or we should use the scroll api.
      */
-    private int getMaxResultSize(final String index) {
-        final String MAX_WINDOW_SIZE_KEY = index + "_" + "MAX_WINDOW_SIZE";
+    private int getMaxResultSize(final String indexBase, final String indexType) {
+        final String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
+        final String MAX_WINDOW_SIZE_KEY = typedIndex + "_" + "MAX_WINDOW_SIZE";
         String max_window_size = this.settingsCache.getIfPresent(MAX_WINDOW_SIZE_KEY);
         if (null == max_window_size) {
             GetSettingsResponse response = client.admin().indices()
-                    .prepareGetSettings(index).get();
+                    .prepareGetSettings(typedIndex).get();
             for (ObjectObjectCursor<String, Settings> cursor : response.getIndexToSettings()) {
                 Settings settings = cursor.value;
                 if (null == settings) {
                     continue;
                 }
 
-                this.settingsCache.put(MAX_WINDOW_SIZE_KEY, settings.get(index + ".max_result_window",
+                this.settingsCache.put(MAX_WINDOW_SIZE_KEY, settings.get(typedIndex + ".max_result_window",
                         Integer.toString(SEARCH_MAX_WINDOW_SIZE)));
             }
         }

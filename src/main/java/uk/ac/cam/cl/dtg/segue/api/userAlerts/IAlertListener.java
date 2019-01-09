@@ -1,7 +1,6 @@
 package uk.ac.cam.cl.dtg.segue.api.userAlerts;
 
-import uk.ac.cam.cl.dtg.segue.dos.IUserAlert;
-
 public interface IAlertListener {
-    void notifyAlert(IUserAlert alert);
+    // Useful listener methods are static because each user can have multiple alert listeners (one for each tab).
+    // We can't get the same polymorphism gains for static methods so, for now, we probably don't need this interface.
 }

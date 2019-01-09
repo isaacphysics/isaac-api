@@ -591,11 +591,14 @@ public class StatisticsManager implements IStatisticsManager {
     @Override
     public Map<String, Object> getDetailedUserStatistics(RegisteredUserDTO userOfInterest) {
 
-        //user streak info
+        // user streak info
         Map<String, Object> userStreakRecord = userStreaksManager.getCurrentStreakRecord(userOfInterest);
         userStreakRecord.put("largestStreak", userStreaksManager.getLongestStreak(userOfInterest));
 
-        return ImmutableMap.of("streakRecord", userStreakRecord);
+        Map<String, Object> result = Maps.newHashMap();
+        result.put("streakRecord", userStreakRecord);
+
+        return result;
     }
 
     /**

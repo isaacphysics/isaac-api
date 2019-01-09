@@ -33,6 +33,7 @@ public class UserGroup {
     private Long ownerId;
     private Date created;
     private boolean archived;
+    private Date lastUpdated;
 
     /**
      * Default Constructor.
@@ -54,12 +55,13 @@ public class UserGroup {
      *            - date created.
      */
     public UserGroup(@Nullable final Long id, final String groupName, final Long ownerId, final Date created,
-                     final boolean archived) {
+                     final boolean archived, final Date lastUpdated) {
         this.id = id;
         this.groupName = groupName;
         this.ownerId = ownerId;
         this.created = created;
         this.archived = archived;
+        this.lastUpdated = lastUpdated;
     }
 
     /**
@@ -178,5 +180,24 @@ public class UserGroup {
 
     public void setArchived(boolean archived) {
         this.archived = archived;
+    }
+
+    /**
+     * Gets the last updated date.
+     *
+     * @return the last updated date
+     */
+    public Date getLastUpdated() {
+        return lastUpdated;
+    }
+
+    /**
+     * Sets the last updated date.
+     *
+     * @param lastUpdated
+     *            the last updated date to set
+     */
+    public void setLastUpdated(final Date lastUpdated) {
+        this.lastUpdated = lastUpdated;
     }
 }

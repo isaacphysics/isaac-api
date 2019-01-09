@@ -29,8 +29,8 @@ public class IPQuestionAttemptMisuseHandler implements IMisuseHandler {
 
     private static final Logger log = LoggerFactory.getLogger(IPQuestionAttemptMisuseHandler.class);
 
-    private static final Integer SOFT_THRESHOLD = 120;  // Two attempts minute for an hour, or 24 anonymous users.
-    private static final Integer HARD_THRESHOLD = 1200;  // One every three seconds for an hour; far too high!
+    private static final Integer SOFT_THRESHOLD = 120;  // Two attempts per minute for an hour, or 24 anonymous users.
+    private static final Integer HARD_THRESHOLD = 600;  // One every six seconds for an hour; far too high!
     private static final Integer ACCOUNTING_INTERVAL = Constants.NUMBER_SECONDS_IN_ONE_HOUR;
 
     private PropertiesLoader properties;

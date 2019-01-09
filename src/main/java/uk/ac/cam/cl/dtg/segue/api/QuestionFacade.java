@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,12 +21,14 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.AnonQuestionAttemptMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IPQuestionAttemptMisuseHandler;
@@ -50,7 +52,12 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -58,9 +65,7 @@ import javax.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.util.List;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueLogType;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Question Facade
@@ -78,6 +83,7 @@ public class QuestionFacade extends AbstractSegueFacade {
     private final String contentIndex;
     private final UserAccountManager userManager;
     private final QuestionManager questionManager;
+    private final UserBadgeManager userBadgeManager;
     private IMisuseMonitor misuseMonitor;
     private IUserStreaksManager userStreaksManager;
 
@@ -103,6 +109,7 @@ public class QuestionFacade extends AbstractSegueFacade {
                           final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final UserAccountManager userManager,
                           final QuestionManager questionManager,
                           final ILogManager logManager, final IMisuseMonitor misuseMonitor,
+                          final UserBadgeManager userBadgeManager,
                           final IUserStreaksManager userStreaksManager) {
         super(properties, logManager);
 
@@ -113,6 +120,7 @@ public class QuestionFacade extends AbstractSegueFacade {
         this.userManager = userManager;
         this.misuseMonitor = misuseMonitor;
         this.userStreaksManager = userStreaksManager;
+        this.userBadgeManager = userBadgeManager;
     }
 
     /**
@@ -124,6 +132,7 @@ public class QuestionFacade extends AbstractSegueFacade {
      */
     @GET
     @Path("{question_id}/answer")
+    @ApiOperation(value = "Provide users who try to cheat with a guide to the location of our help page.")
     public Response getQuestionAnswer(@Context final HttpServletRequest request, @PathParam("question_id") final String questionId) {
         String errorMessage = String.format("We do not provide answers to questions. See https://%s/solving_problems for more help!",
                                             getProperties().getProperty(HOST_NAME));
@@ -153,6 +162,8 @@ public class QuestionFacade extends AbstractSegueFacade {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Submit an answer to a question.",
+                  notes = "The answer must be the correct Choice subclass for the question with the provided ID.")
     public Response answerQuestion(@Context final HttpServletRequest request,
             @PathParam("question_id") final String questionId, final String jsonAnswer) {
         if (null == jsonAnswer || jsonAnswer.isEmpty()) {
@@ -248,7 +259,6 @@ public class QuestionFacade extends AbstractSegueFacade {
             }
 
             // If we get to this point, this is a valid question attempt. Record it.
-
             if (response.getEntity() instanceof QuestionValidationResponseDTO) {
                 questionManager.recordQuestionAttempt(currentUser,
                         (QuestionValidationResponseDTO) response.getEntity());

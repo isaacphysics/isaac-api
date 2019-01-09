@@ -47,6 +47,8 @@ public class RegisteredUser extends AbstractSegueUser {
     private Date lastUpdated;
     private Date lastSeen;
 
+    private Integer sessionToken;
+
     /**
      * Full constructor for the User object.
      * 
@@ -111,6 +113,7 @@ public class RegisteredUser extends AbstractSegueUser {
      * @return the id
      */
     @JsonProperty("_id")
+    //TODO: Deprecate all usage of old mongo ids e.g. _id
     public Long getId() {
         return id;
     }
@@ -412,6 +415,25 @@ public class RegisteredUser extends AbstractSegueUser {
      */
     public void setLastSeen(final Date lastSeen) {
         this.lastSeen = lastSeen;
+    }
+
+    /**
+     * Gets the sessionToken.
+     *
+     * @return the sessionToken
+     */
+    public Integer getSessionToken() {
+        return sessionToken;
+    }
+
+    /**
+     * Sets the sessionToken.
+     *
+     * @param sessionToken
+     *            the sessionToken to set
+     */
+    public void setSessionToken(final Integer sessionToken) {
+        this.sessionToken = sessionToken;
     }
 
     @Override

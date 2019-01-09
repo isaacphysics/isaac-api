@@ -49,6 +49,8 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
+import uk.ac.cam.cl.dtg.segue.dao.userBadges.IUserBadgePersistenceManager;
+import uk.ac.cam.cl.dtg.segue.dao.userBadges.PgUserBadgePersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.*;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
@@ -92,16 +94,19 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static GitContentManager contentManager = null;
     private static Client elasticSearchClient = null;
     private static UserAccountManager userManager = null;
+    private static UserAuthenticationManager userAuthenticationManager = null;
     private static IQuestionAttemptManager questionPersistenceManager = null;
     //private static ILogManager logManager;
     private static LogManagerEventPublisher logManager;
     private static EmailManager emailCommunicationQueue = null;
     private static IMisuseMonitor misuseMonitor = null;
+    private static IMetricsExporter metricsExporter = null;
     private static StatisticsManager statsManager = null;
     //private static IStatisticsManager statsManager = null;
 	private static GroupManager groupManager = null;
 	private static IUserAlerts userAlerts = null;
 	private static IUserStreaksManager userStreaksManager = null;
+	private static IUserBadgePersistenceManager userBadgePersitenceManager = null;
 
     private static Collection<Class<? extends ServletContextListener>> contextListeners;
     private static Map<String, Reflections> reflections = com.google.common.collect.Maps.newHashMap();
@@ -159,6 +164,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         this.bindConstantToProperty(Constants.SCHOOL_CSV_LIST_PATH, globalProperties);
 
         this.bindConstantToProperty(CONTENT_INDEX, globalProperties);
+
+        this.bindConstantToProperty(Constants.API_METRICS_EXPORT_PORT, globalProperties);
     }
 
     /**
@@ -249,6 +256,28 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         bind(IUserAlerts.class).to(PgUserAlerts.class);
 
         bind(IStatisticsManager.class).to(StatisticsManager.class);
+
+        bind(ITransactionManager.class).to(PgTransactionManager.class);
+    }
+
+
+    @Inject
+    @Provides
+    @Singleton
+    private static IMetricsExporter getMetricsExporter(
+            @Named(Constants.API_METRICS_EXPORT_PORT) final int port) {
+        if (null == metricsExporter) {
+            try {
+                log.info("Creating MetricsExporter on port (" + port + ")");
+                metricsExporter = new PrometheusMetricsExporter(port);
+                log.info("Exporting default JVM metrics.");
+                metricsExporter.exposeJvmMetrics();
+            } catch (IOException e) {
+                log.error("Could not create MetricsExporter on port (" + port + ")");
+                return null;
+            }
+        }
+        return metricsExporter;
     }
 
     /**
@@ -462,6 +491,38 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *
      * @param database
      *            - the user persistence manager.
+     * @param properties
+     *            - properties loader
+     * @param providersToRegister
+     *            - list of known providers.
+     * @param emailQueue
+     *            - so that we can send e-mails.
+     * @param mapperFacade
+     *            - for DO and DTO mapping.
+     * @return Content version controller with associated dependencies.
+     */
+    @Inject
+    @Provides
+    @Singleton
+    private UserAuthenticationManager getUserAuthenticationManager(final IUserDataManager database, final PropertiesLoader properties,
+                                              final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
+                                              final EmailManager emailQueue, final MapperFacade mapperFacade) {
+        if (null == userAuthenticationManager) {
+            userAuthenticationManager = new UserAuthenticationManager(database, properties, providersToRegister,
+                    mapperFacade, emailQueue);
+            log.info("Creating singleton of UserManager");
+        }
+
+        return userAuthenticationManager;
+    }
+
+    /**
+     * This provides a singleton of the UserManager for various facades.
+     *
+     * Note: This has to be a a singleton as the User Manager keeps a temporary cache of anonymous users.
+     *
+     * @param database
+     *            - the user persistence manager.
      * @param questionManager
      *            - IUserManager
      * @param properties
@@ -654,10 +715,33 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         return postgresDB;
     }
 
+    /**
+     * Gets instance of user badge database liason manager
+     *
+     * @param postgresDB database
+     * @return concrete instance of IUserBadgePersistenceManager
+     */
     @Provides
     @Singleton
     @Inject
-    private static IUserStreaksManager getUserStreaksManager(final PostgresSqlDb postgresDB) {
+    private static IUserBadgePersistenceManager getUserBadgePersistenceManager(final PostgresSqlDb postgresDB) {
+
+        if (null == userBadgePersitenceManager) {
+            userBadgePersitenceManager = new PgUserBadgePersistenceManager(postgresDB);
+        }
+        return userBadgePersitenceManager;
+    }
+
+
+    /**
+     * Gets instance of the user streaks manager
+     *
+     * @param postgresDB database
+     * @return concrete instance of IUserStreaksManager
+     */
+    @Provides
+    @Singleton
+    @Inject    private static IUserStreaksManager getUserStreaksManager(final PostgresSqlDb postgresDB) {
 
         if (null == userStreaksManager) {
             userStreaksManager = new PgUserStreakManager(postgresDB);

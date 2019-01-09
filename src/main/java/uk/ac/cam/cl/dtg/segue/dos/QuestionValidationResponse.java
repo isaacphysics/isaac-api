@@ -27,18 +27,15 @@ import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
  *
  */
 @DTOMapping(QuestionValidationResponseDTO.class)
-public class QuestionValidationResponse {
-    private String questionId;
+public class QuestionValidationResponse extends LightweightQuestionValidationResponse {
     private Choice answer;
-    private Boolean correct;
     private Content explanation;
-    private Date dateAttempted;
 
     /**
      * Default Constructor for mappers.
      */
     public QuestionValidationResponse() {
-
+        super();
     }
 
     /**
@@ -57,30 +54,9 @@ public class QuestionValidationResponse {
      */
     public QuestionValidationResponse(final String questionId, final Choice answer, final Boolean correct,
             final Content explanation, final Date dateAttempted) {
-        this.questionId = questionId;
+        super(questionId, correct, dateAttempted);
         this.answer = answer;
-        this.correct = correct;
         this.explanation = explanation;
-        this.dateAttempted = dateAttempted;
-    }
-
-    /**
-     * Gets the questionId.
-     * 
-     * @return the questionId
-     */
-    public final String getQuestionId() {
-        return questionId;
-    }
-
-    /**
-     * Sets the questionId.
-     * 
-     * @param questionId
-     *            the questionId to set
-     */
-    public final void setQuestionId(final String questionId) {
-        this.questionId = questionId;
     }
 
     /**
@@ -103,25 +79,6 @@ public class QuestionValidationResponse {
     }
 
     /**
-     * Gets the correct.
-     * 
-     * @return the correct
-     */
-    public final Boolean isCorrect() {
-        return correct;
-    }
-
-    /**
-     * Sets the correct.
-     * 
-     * @param correct
-     *            the correct to set
-     */
-    public final void setCorrect(final Boolean correct) {
-        this.correct = correct;
-    }
-
-    /**
      * Gets the explanation.
      * 
      * @return the explanation
@@ -140,29 +97,11 @@ public class QuestionValidationResponse {
         this.explanation = explanation;
     }
 
-    /**
-     * Gets the dateAttempted.
-     * 
-     * @return the dateAttempted
-     */
-    public Date getDateAttempted() {
-        return dateAttempted;
-    }
-
-    /**
-     * Sets the dateAttempted.
-     * 
-     * @param dateAttempted
-     *            the dateAttempted to set
-     */
-    public void setDateAttempted(final Date dateAttempted) {
-        this.dateAttempted = dateAttempted;
-    }
-
     @Override
     public String toString() {
-        return "QuestionValidationResponse [questionId=" + questionId + ", answer=" + answer + ", correct=" + correct
-                + ", explanation=" + explanation + ", dateAttempted=" + dateAttempted + "]";
+        return "QuestionValidationResponse [questionId=" + super.getQuestionId() + ", answer=" + answer +
+                ", correct=" + super.isCorrect() + ", explanation=" + explanation +
+                ", dateAttempted=" + super.getDateAttempted() + "]";
     }
 
 }

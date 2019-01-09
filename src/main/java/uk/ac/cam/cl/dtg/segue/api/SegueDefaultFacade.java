@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,12 +15,19 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.PROXY_PATH;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
+import com.google.inject.Inject;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import org.jboss.resteasy.annotations.cache.Cache;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
+import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
+import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
@@ -29,18 +36,11 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.jboss.resteasy.annotations.cache.Cache;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.net.URI;
+import java.net.URISyntaxException;
 
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
-import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
-import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
-import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
-
-import com.google.inject.Inject;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Segue Default Api Facade.
@@ -63,8 +63,6 @@ public class SegueDefaultFacade extends AbstractSegueFacade {
      *            - The Content mapper object used for polymorphic mapping of content objects.
      * @param segueConfigurationModule
      *            - The Guice DI configuration module.
-     * @param contentVersionController
-     *            - The content version controller used by the api.
      * @param userManager
      *            - The manager object responsible for users.
      * @param emailManager
@@ -92,6 +90,8 @@ public class SegueDefaultFacade extends AbstractSegueFacade {
     @Path("/")
     @Produces(MediaType.TEXT_HTML)
     @Cache
+    @Deprecated
+    @ApiOperation(value = "Redirect to Swagger.")
     public Response redirectToSwagger(@Context final HttpServletRequest request) throws URISyntaxException {
         String hostname = getProperties().getProperty(HOST_NAME);
         String proxyPath = getProperties().getProperty(PROXY_PATH);

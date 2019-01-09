@@ -15,40 +15,18 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-
-import com.google.common.collect.Sets;
-import com.google.inject.name.Named;
-import io.swagger.annotations.Api;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Request;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-
-import org.apache.commons.lang3.EnumUtils;
-import org.jboss.resteasy.annotations.GZIP;
-
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-
+import com.google.inject.name.Named;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import org.apache.commons.lang3.EnumUtils;
+import org.jboss.resteasy.annotations.GZIP;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisuseHandler;
@@ -74,12 +52,27 @@ import uk.ac.cam.cl.dtg.segue.dto.content.EmailTemplateDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 
-
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueLogType;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * An email facade front end.
@@ -132,10 +125,7 @@ public class EmailFacade extends AbstractSegueFacade {
      * Get the number of emails left on the queue.
      * 
      * This method will return the current number of emails left on the email queue
-     *     
-     * @return the current length of the queue
-     */
-    /**
+     *
      * @param request
      * 			- the request 
      * @return the size of the queue
@@ -161,6 +151,9 @@ public class EmailFacade extends AbstractSegueFacade {
      * GetEmailInBrowserById from the database.
      * 
      * This method will return serialised html that displays an email object
+     *
+     * FIXME - this cannot be used for more complicated templated emails, only those using account info!
+     * (i.e. events emails or assignment emails cannot be previewed like this!)
      * 
      * @param request
      *            - so that we can allow only logged in users to view their own data.
@@ -172,6 +165,8 @@ public class EmailFacade extends AbstractSegueFacade {
     @Path("/email/viewinbrowser/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get an email by ID.",
+                  notes =  "The details of the current user will be used to fill in template fields.")
     public final Response getEmailInBrowserById(@Context final HttpServletRequest request,
             @PathParam("id") final String id) {
     	
@@ -266,6 +261,7 @@ public class EmailFacade extends AbstractSegueFacade {
     @Path("/email/preferences")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "List the valid email preference types.")
     public final Response getEmailTypes(@Context final HttpServletRequest request) {
     	EmailType [] types = EmailType.values();
     	List<Map<String, Object>> resultList = Lists.newArrayList();
@@ -294,6 +290,7 @@ public class EmailFacade extends AbstractSegueFacade {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Verify an email verification token is valid for use.")
     public Response validateEmailVerificationRequest(@PathParam("userid") final Long userId,
                                                      @PathParam("token") final String token) {
 
@@ -332,6 +329,8 @@ public class EmailFacade extends AbstractSegueFacade {
     @Path("/users/verifyemail")
     @Consumes(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Initiate an email verification request.",
+                  notes = "The email to verify must be provided as 'email' in the request body.")
     public Response generateEmailVerificationToken(@Context final HttpServletRequest request,
                                                    final Map<String, String> payload) {
         try {
@@ -388,6 +387,7 @@ public class EmailFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Send an email to all users of a specific role.")
     public final Response sendEmails(@Context final HttpServletRequest request,
 		    		@PathParam("contentid") final String contentId, 
 		    		@PathParam("emailtype") final String emailTypeString,
@@ -472,6 +472,7 @@ public class EmailFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Send an email to a list of user IDs.")
     public final Response sendEmailsToUserIds(@Context final HttpServletRequest request,
             @PathParam("contentid") final String contentId, @PathParam("emailtype") final String emailTypeString,
             final List<Long> userIds) {

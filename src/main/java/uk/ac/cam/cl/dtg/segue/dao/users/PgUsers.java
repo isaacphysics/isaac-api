@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2015 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -236,7 +236,7 @@ public class PgUsers implements IUserDataManager {
         Validate.notBlank(email);
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM users WHERE email ILIKE ?");
+            pst = conn.prepareStatement("SELECT * FROM users WHERE lower(email)=lower(?)");
             pst.setString(1, email);
 
             ResultSet results = pst.executeQuery();
@@ -350,6 +350,25 @@ public class PgUsers implements IUserDataManager {
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }  
+    }
+
+    @Override
+    public Map<Role, Integer> countUsersByRole() throws SegueDatabaseException {
+        try (Connection conn = database.getDatabaseConnection()) {
+            PreparedStatement pst;
+            pst = conn.prepareStatement("select role, count(1) from users group by role;");
+
+            ResultSet results = pst.executeQuery();
+            Map<Role, Integer> resultToReturn = Maps.newHashMap();
+
+            while (results.next()) {
+                resultToReturn.put(Role.valueOf(results.getString("role")), results.getInt("count"));
+            }
+
+            return resultToReturn;
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        }
     }
 
     @Override
@@ -587,7 +606,8 @@ public class PgUsers implements IUserDataManager {
         u.setEmailVerificationToken(results.getString("email_verification_token"));
         u.setEmailVerificationStatus(results.getString("email_verification_status") != null ? EmailVerificationStatus
                 .valueOf(results.getString("email_verification_status")) : null);
-        
+        u.setSessionToken(results.getInt("session_token"));
+
         return u;
     }
 

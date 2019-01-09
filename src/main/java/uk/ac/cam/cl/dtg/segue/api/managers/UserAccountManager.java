@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins & Nick Rogers.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -39,6 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IPasswordAuthenticator;
@@ -60,7 +61,6 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
@@ -74,7 +74,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.DetailedUserSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.google.api.client.util.Lists;
@@ -127,8 +127,8 @@ public class UserAccountManager implements IUserAccountManager {
             final MapperFacade dtoMapper, final EmailManager emailQueue, final ILogManager logManager,
             final UserAuthenticationManager userAuthenticationManager) {
         this(database, questionDb, properties, providersToRegister, dtoMapper, emailQueue, CacheBuilder.newBuilder()
-                .expireAfterAccess(ANONYMOUS_SESSION_DURATION_IN_MINUTES, TimeUnit.MINUTES)
-                .<String, AnonymousUser> build(), logManager, userAuthenticationManager);
+                .expireAfterAccess(ANONYMOUS_SESSION_DURATION_IN_MINUTES, TimeUnit.MINUTES).recordStats()
+                .build(), logManager, userAuthenticationManager);
     }
 
     /**
@@ -159,7 +159,7 @@ public class UserAccountManager implements IUserAccountManager {
             final Cache<String, AnonymousUser> temporaryUserCache, final ILogManager logManager,
             final UserAuthenticationManager userAuthenticationManager) {
         Validate.notNull(properties.getProperty(HMAC_SALT));
-        Validate.notNull(Integer.parseInt(properties.getProperty(SESSION_EXPIRY_SECONDS)));
+        Validate.notNull(properties.getProperty(SESSION_EXPIRY_SECONDS));
         Validate.notNull(properties.getProperty(HOST_NAME));
 
         this.properties = properties;
@@ -167,6 +167,7 @@ public class UserAccountManager implements IUserAccountManager {
         this.database = database;
         this.questionAttemptDb = questionDb;
         this.temporaryUserCache = temporaryUserCache;
+        SegueMetrics.CACHE_METRICS_COLLECTOR.addCache("anonymous_user_cache", temporaryUserCache);
         this.logManager = logManager;
 
         this.registeredAuthProviders = providersToRegister;
@@ -1092,7 +1093,7 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     /**
-     * Helper method to convert a user object into a cutdown userSummary DTO.
+     * Helper method to convert a user object into a userSummary DTO with as little detail as possible about the user.
      * 
      * @param userToConvert
      *            - full user object.
@@ -1103,14 +1104,16 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     /**
-     * Helper method to convert a user object into a cutdown detailedUserSummary DTO.
+     * Helper method to convert a user object into a more detailed summary object depending on the dto provided.
      *
      * @param userToConvert
      *            - full user object.
+     * @param detailedDTOClass
+     *            - The level of detail required for the conversion
      * @return a summarised object with reduced personal information
      */
-    public DetailedUserSummaryDTO convertToDetailedUserSummaryObject(final RegisteredUserDTO userToConvert) {
-        return this.dtoMapper.map(userToConvert, DetailedUserSummaryDTO.class);
+    public UserSummaryWithEmailAddressDTO convertToDetailedUserSummaryObject(final RegisteredUserDTO userToConvert, final Class<? extends UserSummaryWithEmailAddressDTO> detailedDTOClass) {
+        return this.dtoMapper.map(userToConvert, detailedDTOClass);
     }
 
     /**
@@ -1134,15 +1137,25 @@ public class UserAccountManager implements IUserAccountManager {
      *
      * @param userListToConvert
      *            - full user objects.
+     * @param detailedDTO
+     *            - The level of detail required for the conversion
      * @return a list of summarised objects with reduced personal information
      */
-    public List<DetailedUserSummaryDTO> convertToDetailedUserSummaryObjectList(final List<RegisteredUserDTO> userListToConvert) {
+    public List<UserSummaryWithEmailAddressDTO> convertToDetailedUserSummaryObjectList(final List<RegisteredUserDTO> userListToConvert, final Class<? extends UserSummaryWithEmailAddressDTO> detailedDTO) {
         Validate.notNull(userListToConvert);
-        List<DetailedUserSummaryDTO> resultList = Lists.newArrayList();
+        List<UserSummaryWithEmailAddressDTO> resultList = Lists.newArrayList();
         for (RegisteredUserDTO user : userListToConvert) {
-            resultList.add(this.convertToDetailedUserSummaryObject(user));
+            resultList.add(this.convertToDetailedUserSummaryObject(user, detailedDTO));
         }
         return resultList;
+    }
+
+    /**
+     * Method to retrieve the number of users by role from the Database.
+     * @return a map of role to counter
+     */
+    public Map<Role, Integer> getCountsForUsersByRole() throws SegueDatabaseException {
+        return this.database.countUsersByRole();
     }
 
     /**
@@ -1190,6 +1203,7 @@ public class UserAccountManager implements IUserAccountManager {
         // Defensive copy to ensure old email address is preserved (shouldn't change until new email is verified)
         RegisteredUserDTO temporaryUser = this.dtoMapper.map(userDTO, RegisteredUserDTO.class);
         temporaryUser.setEmail(newEmail);
+        temporaryUser.setEmailVerificationStatus(EmailVerificationStatus.NOT_VERIFIED);
         this.sendVerificationEmailForCurrentEmail(temporaryUser, newEmailToken);
     }
 
@@ -1491,9 +1505,9 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     /**
-     * @param userDTO
-     * @param emailVerificationToken
-     * @return
+     * @param userDTO the userDTO of interest
+     * @param emailVerificationToken the verifcation token
+     * @return verification URL
      */
     private String generateEmailVerificationURL(final RegisteredUserDTO userDTO, final String emailVerificationToken) {
         List<NameValuePair> urlParamPairs = Lists.newArrayList();
@@ -1505,17 +1519,8 @@ public class UserAccountManager implements IUserAccountManager {
         return String.format("https://%s/verifyemail?%s", properties.getProperty(HOST_NAME), urlParams);
     }
 
-
-
-    public Boolean isValidUserFromSession(final Map<String, String> sessionInformation) {
-
-        return this.userAuthenticationManager.isValidUsersSession(sessionInformation);
-    }
-
-
     public Long getNumberOfAnonymousUsers() {
         return temporaryUserCache.size();
     }
-
 
 }

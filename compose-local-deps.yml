@@ -20,16 +20,23 @@ services:
   elasticsearch:
     network_mode: bridge
     container_name: elasticsearch
-    image: elasticsearch:5.0.1
-    volumes:
-      - ./elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
+    image: docker.elastic.co/elasticsearch/elasticsearch-oss:6.4.1
+    environment:
+      - cluster.name=isaac
+      - "network.host=0.0.0.0"
     ports:
       - "9200-9400:9200-9400"
-
   postgres:
     network_mode: bridge
     container_name: postgres
-    image: isaac-pg
+    image: postgres:9.6
+    volumes:
+      - pg-local:/var/lib/postgresql/data
+      - ./src/main/resources/db_scripts/postgres-rutherford-create-script.sql:/docker-entrypoint-initdb.d/00-isaac-create.sql:ro
+      - ./src/main/resources/db_scripts/postgres-rutherford-functions.sql:/docker-entrypoint-initdb.d/01-isaac-functions.sql:ro
+    environment:
+      POSTGRES_USER: rutherford
+      POSTGRES_PASSWORD: rutherf0rd
     ports:
       - "5432:5432"
   app-physics:
@@ -63,3 +70,6 @@ networks:
   default:
     external:
       name: bridge
+volumes:
+  pg-local:
+    external: true

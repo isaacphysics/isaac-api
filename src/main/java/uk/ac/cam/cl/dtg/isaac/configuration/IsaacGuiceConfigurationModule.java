@@ -16,12 +16,13 @@
 package uk.ac.cam.cl.dtg.isaac.configuration;
 
 import com.google.inject.name.Named;
-import com.google.inject.name.Names;
 import ma.glasnost.orika.MapperFacade;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.IAssignmentPersistenceManager;
@@ -29,15 +30,23 @@ import uk.ac.cam.cl.dtg.isaac.dao.PgAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicChemistryValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicValidator;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
+import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+
+import java.io.IOException;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 
@@ -50,6 +59,8 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
     private static final Logger log = LoggerFactory.getLogger(IsaacGuiceConfigurationModule.class);
 
     private static GameboardPersistenceManager gameboardPersistenceManager = null;
+    private SchoolListReader schoolListReader = null;
+    private static AssignmentManager assignmentManager = null;
 
     /**
      * Creates a new isaac guice configuration module.
@@ -103,6 +114,43 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
     }
 
     /**
+     * Gets an assignment manager.
+     *
+     * This needs to be a singleton because operations like emailing are run for each IGroupObserver, the
+     * assignment manager should only be one observer.
+     *
+     * @param assignmentPersistenceManager
+     *            - to save assignments
+     * @param groupManager
+     *            - to allow communication with the group manager.
+     * @param emailManager
+     *            - email manager
+     * @param userManager
+     *            - the user manager object
+     * @param gameManager
+     *            - the game manager object
+     * @param userAssociationManager
+     *            - the userAssociationManager manager object
+     * @param properties
+     *            - properties loader for the service's hostname
+     * @return Assignment manager object.
+     */
+    @Inject
+    @Provides
+    @Singleton
+    private static AssignmentManager getAssignmentManager(
+                final IAssignmentPersistenceManager assignmentPersistenceManager, final GroupManager groupManager,
+                final EmailManager emailManager, final UserAccountManager userManager, final GameManager gameManager,
+                final UserAssociationManager userAssociationManager, final PropertiesLoader properties) {
+        if (null == assignmentManager) {
+            assignmentManager =  new AssignmentManager(assignmentPersistenceManager, groupManager, emailManager,
+                    userManager, gameManager, userAssociationManager, properties);
+            log.info("Creating Singleton AssignmentManager");
+        }
+        return assignmentManager;
+    }
+
+    /**
      * Gets an instance of the symbolic question validator.
      *
      * @return IsaacSymbolicValidator preconfigured to work with the specified checker.
@@ -128,5 +176,27 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
 
         return new IsaacSymbolicChemistryValidator(properties.getProperty(Constants.CHEMISTRY_CHECKER_HOST),
                 properties.getProperty(Constants.CHEMISTRY_CHECKER_PORT));
+    }
+
+    /**
+     * This provides a singleton of the SchoolListReader for use by segue backed applications..
+     *
+     * We want this to be a singleton as otherwise it may not be threadsafe for loading into same SearchProvider.
+     *
+     * @param provider
+     *            - The search provider.
+     * @return schoolList reader
+     * @throws IOException
+     *             - if there is a problem loading the school list.
+     */
+    @Inject
+    @Provides
+    @Singleton
+    private SchoolListReader getSchoolListReader(final ISearchProvider provider) throws IOException {
+        if (null == schoolListReader) {
+            schoolListReader = new SchoolListReader(provider);
+            log.info("Creating singleton of SchoolListReader");
+        }
+        return schoolListReader;
     }
 }

@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,22 +15,38 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.PROXY_PATH;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacLogType;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueLogType;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
-
+import com.google.api.client.util.Maps;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
+import com.google.common.collect.ImmutableMap;
+import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import io.swagger.annotations.ApiOperation;
+import ma.glasnost.orika.MapperFacade;
+import org.jboss.resteasy.annotations.GZIP;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
+import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
+import uk.ac.cam.cl.dtg.segue.api.managers.IStatisticsManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
+import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dos.IUserStreaksManager;
+import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DefaultValue;
@@ -45,35 +61,15 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
-import ma.glasnost.orika.MapperFacade;
-
-import org.jboss.resteasy.annotations.GZIP;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
-import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
-import uk.ac.cam.cl.dtg.segue.api.managers.IStatisticsManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
-import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
-import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
-import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
-
-import com.google.api.client.util.Maps;
-import com.google.common.collect.ImmutableMap;
-import com.google.inject.Inject;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Isaac Controller
@@ -97,6 +93,8 @@ public class IsaacController extends AbstractIsaacFacade {
     private final URIManager uriManager;
     private final String contentIndex;
     private final IContentManager contentManager;
+    private final UserBadgeManager userBadgeManager;
+    private final IUserStreaksManager userStreaksManager;
 
     private static long lastQuestionCount = 0L;
 
@@ -148,7 +146,9 @@ public class IsaacController extends AbstractIsaacFacade {
                            final ILogManager logManager, final MapperFacade mapper, final IStatisticsManager statsManager,
                            final UserAccountManager userManager, final IContentManager contentManager,
                            final UserAssociationManager associationManager, final URIManager uriManager,
-                           @Named(CONTENT_INDEX) final String contentIndex) {
+                           @Named(CONTENT_INDEX) final String contentIndex,
+                           final IUserStreaksManager userStreaksManager,
+                           final UserBadgeManager userBadgeManager) {
         super(propertiesLoader, logManager);
         this.api = api;
         this.mapper = mapper;
@@ -158,6 +158,8 @@ public class IsaacController extends AbstractIsaacFacade {
         this.uriManager = uriManager;
         this.contentIndex = contentIndex;
         this.contentManager = contentManager;
+        this.userBadgeManager = userBadgeManager;
+        this.userStreaksManager = userStreaksManager;
     }
 
     /**
@@ -181,10 +183,11 @@ public class IsaacController extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("search/{searchString}")
     @GZIP
+    @ApiOperation(value = "Search for content objects matching the provided criteria.")
     public final Response search(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
             @PathParam("searchString") final String searchString, @QueryParam("types") final String types,
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
-            @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
+            @DefaultValue(DEFAULT_SEARCH_RESULT_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
 
         if (null == types) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "No search types were provided.").toResponse();
@@ -244,6 +247,8 @@ public class IsaacController extends AbstractIsaacFacade {
     @Produces("*/*")
     @Path("images/{path:.*}")
     @GZIP
+    @ApiOperation(value = "Get a binary object from the current content version.",
+                  notes = "This can only be used to get images from the content database.")
     public final Response getImageByPath(@Context final Request request, @PathParam("path") final String path) {
         // entity tags etc are already added by segue
         return api.getImageFileContent(request, this.contentIndex, path);
@@ -260,6 +265,7 @@ public class IsaacController extends AbstractIsaacFacade {
     @Path("users/current_user/progress")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get progress information for the current user.")
     public final Response getCurrentUserProgressInformation(@Context final HttpServletRequest request) {
         RegisteredUserDTO user;
         try {
@@ -286,6 +292,7 @@ public class IsaacController extends AbstractIsaacFacade {
     @Path("users/{user_id}/progress")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get progress information for a specified user.")
     public final Response getUserProgressInformation(@Context final HttpServletRequest request,
             @PathParam("user_id") final Long userIdOfInterest) {
         RegisteredUserDTO user;
@@ -304,7 +311,15 @@ public class IsaacController extends AbstractIsaacFacade {
                         .getUserQuestionInformation(userOfInterestFull);
 
                 // augment details with user snapshot data (perhaps one day we will replace the entire endpoint with this call)
-                userProgressInformation.put("userSnapshot", statsManager.getDetailedUserStatistics(userOfInterestFull));
+                Map<String, Object> streakRecord = userStreaksManager.getCurrentStreakRecord(userOfInterestFull);
+                streakRecord.put("largestStreak", userStreaksManager.getLongestStreak(userOfInterestFull));
+
+                Map<String, Object> userSnapshot = ImmutableMap.of(
+                        "streakRecord", streakRecord,
+                        "achievementsRecord", userBadgeManager.getAllUserBadges(userOfInterestFull)
+                );
+
+                userProgressInformation.put("userSnapshot", userSnapshot);
 
                 this.getLogManager().logEvent(user, request, IsaacLogType.VIEW_USER_PROGRESS,
                         ImmutableMap.of(USER_ID_FKEY_FIELDNAME, userOfInterestFull.getId()));
@@ -340,6 +355,8 @@ public class IsaacController extends AbstractIsaacFacade {
     @Path("stats/questions_answered/count")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get the total number of questions attempted on the platform.",
+                  notes = "For performance reasons, this number is cached server-side for 10 minutes.")
     public Response getQuestionCount(@Context final HttpServletRequest request) {
         // Update the question count if it's expired
         questionCountCache.get();
