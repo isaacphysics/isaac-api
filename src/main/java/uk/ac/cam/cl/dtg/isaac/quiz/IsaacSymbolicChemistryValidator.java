@@ -274,56 +274,25 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                         // Input is semantically equivalent to correct answer.
                         matchType = MatchType.EXACT;
 
-                    } else if (response.get("expectedType").equals("equation")) {
-
+                    } else if (response.get("expectedType").equals("equation") || response.get("expectedType").equals("expression")) {
                         if (response.get("weaklyEquivalent").equals(false)) {
-
-                            // current choice is not a good match.
+                            // This is not a match.
                             continue;
-
                         }
-
-                        // Measure the 'weakness' level. (0 is the weakest)
+                        // Strength of match, increasing from 0.
                         int counter = 0;
-
                         if (response.get("sameState").equals(true)) {
                             counter++;
                         }
-
                         if (response.get("sameCoefficient").equals(true)) {
                             counter++;
                         }
-
-                        if (response.get("sameArrow").equals(true)) {
+                        if (response.get("expectedType").equals("equation") && response.get("sameArrow").equals(true)) {
                             counter++;
                         }
 
 
                         matchType = MatchType.valueOf("WEAK" + counter);
-
-                    } else if (response.get("expectedType").equals("expression")) {
-
-                        // Response & Answer have type Expression.
-                        if (response.get("weaklyEquivalent").equals(false)) {
-
-                            // current choice is not a good match.
-                            continue;
-
-                        }
-
-                        // Measure the 'weakness' level. (0 is the weakest)
-                        int counter = 0;
-
-                        if (response.get("sameState").equals(true)) {
-                            counter++;
-                        }
-
-                        if (response.get("sameCoefficient").equals(true)) {
-                            counter++;
-                        }
-
-                        matchType = MatchType.valueOf("WEAK" + counter);
-
                     } else {
 
                         // Response & Answer have type NuclearEquation or NuclearExpression.
