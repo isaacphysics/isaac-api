@@ -47,6 +47,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Validator that provides functionality to validate symbolic questions.
@@ -64,10 +65,12 @@ public class IsaacSymbolicValidator implements IValidator {
 
     private final String hostname;
     private final String port;
+    private final String externalValidatorUrl;
 
     public IsaacSymbolicValidator(final String hostname, final String port) {
         this.hostname = hostname;
         this.port = port;
+        this.externalValidatorUrl = "http://" + this.hostname + ":" + this.port + "/check";
     }
 
     @Override
@@ -185,10 +188,6 @@ public class IsaacSymbolicValidator implements IValidator {
                 MatchType matchType = MatchType.NONE;
 
                 try {
-                    // This is ridiculous. All I want to do is pass some JSON to a REST endpoint and get some JSON back.
-
-                    ObjectMapper mapper = new ObjectMapper();
-
                     HashMap<String, String> req = Maps.newHashMap();
                     req.put("target", formulaChoice.getPythonExpression());
                     req.put("test", submittedFormula.getPythonExpression());
@@ -197,22 +196,7 @@ public class IsaacSymbolicValidator implements IValidator {
                         req.put("symbols", String.join(",", symbolicQuestion.getAvailableSymbols()));
                     }
 
-                    StringWriter sw = new StringWriter();
-                    JsonGenerator g = new JsonFactory().createGenerator(sw);
-                    mapper.writeValue(g, req);
-                    g.close();
-                    String requestString = sw.toString();
-
-                    HttpClient httpClient = new DefaultHttpClient();
-                    HttpPost httpPost = new HttpPost("http://" + hostname + ":" + port + "/check");
-
-                    httpPost.setEntity(new StringEntity(requestString, "UTF-8"));
-                    httpPost.addHeader("Content-Type", "application/json");
-
-                    HttpResponse httpResponse = httpClient.execute(httpPost);
-                    HttpEntity responseEntity = httpResponse.getEntity();
-                    String responseString = EntityUtils.toString(responseEntity);
-                    HashMap<String, Object> response = mapper.readValue(responseString, HashMap.class);
+                    HashMap<String, Object> response = getResponseFromExternalValidator(req);
 
                     if (response.containsKey("error")) {
                         if (response.containsKey("code")) {
@@ -320,5 +304,35 @@ public class IsaacSymbolicValidator implements IValidator {
         });
 
         return orderedChoices;
+    }
+
+    /**
+     * Make a JSON HTTP POST request to an external validator, and provide the response JSON as a HashMap.
+     *
+     * @param requestBody - the JSON request body as a Map
+     * @return the response JSON, as a HashMap
+     * @throws IOException - on failure to communicate with the external validator
+     */
+    private HashMap<String, Object> getResponseFromExternalValidator(final Map<String, String> requestBody) throws IOException {
+        // This is ridiculous. All we want to do is pass some JSON to a REST endpoint and get some JSON back.
+        ObjectMapper mapper = new ObjectMapper();
+        StringWriter sw = new StringWriter();
+        JsonGenerator g = new JsonFactory().createGenerator(sw);
+        mapper.writeValue(g, requestBody);
+        g.close();
+        String requestString = sw.toString();
+
+        HttpClient httpClient = new DefaultHttpClient();
+        HttpPost httpPost = new HttpPost(externalValidatorUrl);
+
+        httpPost.setEntity(new StringEntity(requestString, "UTF-8"));
+        httpPost.addHeader("Content-Type", "application/json");
+
+        HttpResponse httpResponse = httpClient.execute(httpPost);
+        HttpEntity responseEntity = httpResponse.getEntity();
+        String responseString = EntityUtils.toString(responseEntity);
+        HashMap<String, Object> response = mapper.readValue(responseString, HashMap.class);
+
+        return response;
     }
 }

@@ -47,6 +47,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.Map;
 
 /**
  * Validator that only provides functionality to validate symbolic chemistry questions.
@@ -71,52 +72,12 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
 
     private final String hostname;
     private final String port;
+    private final String externalValidatorUrl;
 
     public IsaacSymbolicChemistryValidator(final String hostname, final String port) {
         this.hostname = hostname;
         this.port = port;
-    }
-
-    /**
-     * Given two formulae, where one is student answer, and another is the target mhchem string,
-     * this method generates a JSON object of them, and sends it to a back end chemistry checker
-     * for comparison. Comparison results are sent back from server as a JSON string and returned here.
-     *
-     * @param submittedFormula Formula submitted by user.
-     * @param formulaChoice Formula of one of the choice in content editor.
-     * @param description A text description to show in the checker logs.
-     * @return The JSON string returned from the ChemicalChecker server.
-     * @throws IOException Trouble connecting to the ChemicalChecker server.
-     */
-    private String jsonPostAndGet(final String submittedFormula, final String formulaChoice, final String description) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
-
-        // Complicated: Put formulae into a JSON object
-        HashMap<String, String> req = Maps.newHashMap();
-        req.put("target", formulaChoice);
-        req.put("test", submittedFormula);
-        req.put("description", description);
-
-        StringWriter sw = new StringWriter();
-        JsonGenerator g = new JsonFactory().createGenerator(sw);
-        mapper.writeValue(g, req);
-        g.close();
-        String requestString = sw.toString();
-
-        // Do some real checking through HTTP
-        HttpClient httpClient = new DefaultHttpClient();
-
-        HttpPost httpPost = new HttpPost("http://" + hostname + ":" + port + "/check");
-
-        // Send JSON object across ChemistryChecker server.
-        httpPost.setEntity(new StringEntity(requestString));
-        httpPost.addHeader("Content-Type", "application/json");
-
-        // Receive JSON response from server.
-        HttpResponse httpResponse = httpClient.execute(httpPost);
-        HttpEntity responseEntity = httpResponse.getEntity();
-
-        return EntityUtils.toString(responseEntity);
+        this.externalValidatorUrl = "http://" + this.hostname + ":" + this.port + "/check";
     }
 
     @Override
@@ -245,11 +206,12 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                 try {
 
                     // Pass some JSON to a REST endpoint and get some JSON back.
+                    HashMap<String, String> req = Maps.newHashMap();
+                    req.put("target", formulaChoice.getMhchemExpression());
+                    req.put("test", submittedFormula.getMhchemExpression());
+                    req.put("description", symbolicQuestion.getId());
 
-                    ObjectMapper mapper = new ObjectMapper();
-                    String responseString = jsonPostAndGet(submittedFormula.getMhchemExpression(),
-                            formulaChoice.getMhchemExpression(), symbolicQuestion.getId());
-                    response = mapper.readValue(responseString, HashMap.class); //new HashMap<>();
+                    response = getResponseFromExternalValidator(req);
 
                     if (response.containsKey("error")) {
 
@@ -509,5 +471,34 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
 
         return orderedChoices;
     }
+
+    /**
+     * Make a JSON HTTP POST request to an external validator, and provide the response JSON as a HashMap.
+     *
+     * @param requestBody - the JSON request body as a Map
+     * @return the response JSON, as a HashMap
+     * @throws IOException - on failure to communicate with the external validator
+     */
+    private HashMap<String, Object> getResponseFromExternalValidator(final Map<String, String> requestBody) throws IOException {
+        // This is ridiculous. All we want to do is pass some JSON to a REST endpoint and get some JSON back.
+        ObjectMapper mapper = new ObjectMapper();
+        StringWriter sw = new StringWriter();
+        JsonGenerator g = new JsonFactory().createGenerator(sw);
+        mapper.writeValue(g, requestBody);
+        g.close();
+        String requestString = sw.toString();
+
+        HttpClient httpClient = new DefaultHttpClient();
+        HttpPost httpPost = new HttpPost(externalValidatorUrl);
+
+        httpPost.setEntity(new StringEntity(requestString, "UTF-8"));
+        httpPost.addHeader("Content-Type", "application/json");
+
+        HttpResponse httpResponse = httpClient.execute(httpPost);
+        HttpEntity responseEntity = httpResponse.getEntity();
+        String responseString = EntityUtils.toString(responseEntity);
+        HashMap<String, Object> response = mapper.readValue(responseString, HashMap.class);
+
+        return response;
     }
 }
