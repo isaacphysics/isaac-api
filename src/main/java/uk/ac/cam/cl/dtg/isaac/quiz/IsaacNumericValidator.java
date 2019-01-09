@@ -489,14 +489,13 @@ public class IsaacNumericValidator implements IValidator {
                     userStringForComparison.append(answerFromUser.getUnits());
                 }
 
-                StringBuilder questionAnswerStringForComparison = new StringBuilder();
-                questionAnswerStringForComparison.append(quantityFromQuestion.getValue().trim());
+                StringBuilder questionAnswerString = new StringBuilder();
+                questionAnswerString.append(quantityFromQuestion.getValue().trim());
                 if (isaacNumericQuestion.getRequireUnits()) {
-                    questionAnswerStringForComparison.append(quantityFromQuestion.getUnits());
+                    questionAnswerString.append(quantityFromQuestion.getUnits());
                 }
 
-                if (questionAnswerStringForComparison.toString().trim()
-                        .equals(userStringForComparison.toString().trim())) {
+                if (questionAnswerString.toString().trim().equals(userStringForComparison.toString().trim())) {
                     Boolean unitFeedback = null;
                     if (isaacNumericQuestion.getRequireUnits()) {
                         unitFeedback = quantityFromQuestion.getUnits().equals(answerFromUser.getUnits());
