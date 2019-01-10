@@ -1455,7 +1455,7 @@ public class AdminFacade extends AbstractSegueFacade {
 
                 websocketReport.put("currentWebsocketsOpen", SegueMetrics.CURRENT_OPEN_WEBSOCKETS.get());
                 websocketReport.put("usersCurrent", SegueMetrics.CURRENT_WEBSOCKET_USERS.get());
-                websocketReport.put("totalWebsocketsOpened", SegueMetrics.WEBSOCKETS_OPENED.get());
+                websocketReport.put("totalWebsocketsOpened", SegueMetrics.WEBSOCKETS_OPENED_SUCCESSFULLY.get());
                 websocketReport.put("totalWebsocketsClosed", SegueMetrics.WEBSOCKETS_CLOSED.get());
                 diagnosticReport.put("websockets", websocketReport);
 

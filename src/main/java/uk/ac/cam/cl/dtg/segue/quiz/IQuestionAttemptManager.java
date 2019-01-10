@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 
 /**
@@ -50,13 +51,14 @@ public interface IQuestionAttemptManager {
      *            - list of user ids to look up results for.
      * @param questionPage
      *            - list of question page ids (prefixes to question ids) that we should look up.
-     * @return a Map of userId --> Map of question_page --> Map of Question_id --> List of users attempts. (This is so
-     *         that lookup by question page id is quick)
+     * @return a Map of userId --> Map of question_page --> Map of Question_id --> List of lightweight users attempts
+     *          (without the actual question attempt values).
      * @throws SegueDatabaseException
      *             - if a database error occurrs
      */
-    Map<Long, Map<String, Map<String, List<QuestionValidationResponse>>>> getQuestionAttemptsByUsersAndQuestionPrefix(
-            List<Long> userIds, List<String> questionPage) throws SegueDatabaseException;
+    Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>>
+            getQuestionAttemptsByUsersAndQuestionPrefix(List<Long> userIds, List<String> questionPage)
+            throws SegueDatabaseException;
     
     /**
      * @param userId

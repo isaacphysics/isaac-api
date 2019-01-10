@@ -33,6 +33,7 @@ import uk.ac.cam.cl.dtg.isaac.configuration.IsaacApplicationRegister;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
@@ -363,7 +364,7 @@ public class QuestionManager {
      * @return a map of user id to question page id to question_id to list of attempts.
      * @throws SegueDatabaseException if there is a database error.
      */
-    public Map<Long, Map<String, Map<String, List<QuestionValidationResponse>>>> getMatchingQuestionAttempts(
+    public Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> getMatchingQuestionAttempts(
             final List<RegisteredUserDTO> users, final List<String> questionPageIds) throws SegueDatabaseException {
         List<Long> userIds = Lists.newArrayList();
         for (RegisteredUserDTO user : users) {
@@ -372,40 +373,6 @@ public class QuestionManager {
 
         return this.questionAttemptPersistenceManager.getQuestionAttemptsByUsersAndQuestionPrefix(userIds,
                 questionPageIds);
-    }
-    
-    /**
-     * Convenient method for requesting only question attempts we are interested in.
-     * @param user
-     *            who we are interested in.
-     * @param questionPageIds
-     *            we want to look up.
-     * @return a map of user id to question page id to question_id to list of attempts.
-     * @throws SegueDatabaseException
-     *             if there is a database error.
-     */
-    public Map<String, Map<String, List<QuestionValidationResponse>>> 
-        getMatchingQuestionAttempts(final AbstractSegueUserDTO user,
-            final List<String> questionPageIds) throws SegueDatabaseException {
-        Validate.notNull(user);
-
-        if (user instanceof RegisteredUserDTO) {
-            RegisteredUserDTO ru = (RegisteredUserDTO) user;
-            List<Long> userIds = Arrays.asList(ru.getId());
-            Map<String, Map<String, List<QuestionValidationResponse>>> mapToReturn 
-                = this.questionAttemptPersistenceManager.getQuestionAttemptsByUsersAndQuestionPrefix(userIds,
-                    questionPageIds).get(user);
-            
-            if (mapToReturn == null) {
-                return Maps.newHashMap();
-            }
-            
-            return mapToReturn;
-        } else {
-            AnonymousUserDTO anonymousUser = (AnonymousUserDTO) user;
-            // since no user is logged in assume that we want to use any anonymous attempts
-            return this.questionAttemptPersistenceManager.getAnonymousQuestionAttempts(anonymousUser.getSessionId());
-        }
     }
     
     /**

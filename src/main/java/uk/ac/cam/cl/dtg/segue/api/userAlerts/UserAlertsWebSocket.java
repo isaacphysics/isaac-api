@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.IStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidSessionException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
@@ -25,6 +26,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.IUserAlert;
 import uk.ac.cam.cl.dtg.segue.dos.IUserAlerts;
+import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
@@ -48,6 +50,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class UserAlertsWebSocket implements IAlertListener {
 
     private UserAccountManager userManager;
+    private UserAuthenticationManager userAuthenticationManager;
     private RegisteredUserDTO connectedUser;
     private final IUserAlerts userAlerts;
     private final ILogManager logManager;
@@ -96,12 +99,14 @@ public class UserAlertsWebSocket implements IAlertListener {
      */
     @Inject
     public UserAlertsWebSocket(final UserAccountManager userManager,
+                               final UserAuthenticationManager userAuthenticationManager,
                                final IUserAlerts userAlerts,
                                final ILogManager logManager,
                                final IStatisticsManager statisticsManager,
                                final PropertiesLoader properties) {
 
         this.userManager = userManager;
+        this.userAuthenticationManager = userAuthenticationManager;
         this.userAlerts = userAlerts;
         this.logManager = logManager;
         this.statisticsManager = statisticsManager;
@@ -146,11 +151,11 @@ public class UserAlertsWebSocket implements IAlertListener {
         try {
             this.session = session;
 
-            Map<String, String> sessionInformation = getSessionInformation(session);
+            RegisteredUser validUserFromSession = userAuthenticationManager.getUserFromSession(session.getUpgradeRequest());
 
-            if (userManager.isValidUserFromSession(sessionInformation)) {
+            if (null != validUserFromSession) {
 
-                connectedUser = userManager.getUserDTOById(Long.parseLong(sessionInformation.get(SESSION_USER_ID)));
+                connectedUser = userManager.getUserDTOById(validUserFromSession.getId());
 
                 long connectedUserId = connectedUser.getId();
                 boolean addedSocket;
@@ -181,10 +186,11 @@ public class UserAlertsWebSocket implements IAlertListener {
                     SegueMetrics.CURRENT_WEBSOCKET_USERS.inc();
                 }
 
+                // A websocket must be created for this object to be instantiated - we close it early if they have too many
+                SegueMetrics.CURRENT_OPEN_WEBSOCKETS.inc();
                 if (addedSocket) {
                     log.debug("User " + connectedUserId + " opened new websocket. Total open: " + numberOfUserSockets);
-                    SegueMetrics.CURRENT_OPEN_WEBSOCKETS.inc();
-                    SegueMetrics.WEBSOCKETS_OPENED.inc();
+                    SegueMetrics.WEBSOCKETS_OPENED_SUCCESSFULLY.inc();
                 } else {
                     log.debug("User " + connectedUserId
                             + " attempted to open too many simultaneous WebSockets; sending TRY_AGAIN_LATER.");
@@ -205,7 +211,7 @@ public class UserAlertsWebSocket implements IAlertListener {
         } catch (IOException e) {
             log.warn("WebSocket connection failed! " + e.getClass().getSimpleName() + ": " + e.getMessage());
             session.close(StatusCode.SERVER_ERROR, "onConnect IOException");
-        } catch (InvalidSessionException | NoUserException e) {
+        } catch (NoUserException e) {
             log.debug("WebSocket connection failed! " + e.getClass().getSimpleName() + ": " + e.getMessage());
             session.close(StatusCode.POLICY_VIOLATION, e.getClass().getSimpleName());
         } catch (SegueDatabaseException e) {
