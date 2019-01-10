@@ -287,24 +287,6 @@ public class IsaacNumericValidator implements IValidator {
     }
 
     /**
-     * Create a new list of the Choice objects, sorted into correct-first order for checking.
-     *
-     * @param choices - the Choices from a Question
-     * @return the ordered list of Choices
-     */
-    private List<Choice> getOrderedChoices(final List<Choice> choices) {
-        List<Choice> orderedChoices = Lists.newArrayList(choices);
-
-        orderedChoices.sort((o1, o2) -> {
-            int o1Val = o1.isCorrect() ? 0 : 1;
-            int o2Val = o2.isCorrect() ? 0 : 1;
-            return o1Val - o2Val;
-        });
-
-        return orderedChoices;
-    }
-
-    /**
      * Test whether two quantity values match. Parse the strings as doubles, supporting notation of 3x10^12 to mean
      * 3e12, then test that they match to given number of s.f.
      * 

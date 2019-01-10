@@ -206,7 +206,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                     req.put("test", submittedFormula.getMhchemExpression());
                     req.put("description", chemistryQuestion.getId());
 
-                    response = getResponseFromExternalValidator(req);
+                    response = getResponseFromExternalValidator(externalValidatorUrl, req);
 
                     if (response.containsKey("error")) {
 
@@ -415,51 +415,4 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
         return new QuestionValidationResponse(chemistryQuestion.getId(), answer, responseCorrect, feedback, new Date());
     }
 
-    /**
-     * Create a new list of the Choice objects, sorted into correct-first order for checking.
-     *
-     * @param choices - the Choices from a Question
-     * @return the ordered list of Choices
-     */
-    private List<Choice> getOrderedChoices(final List<Choice> choices) {
-        List<Choice> orderedChoices = Lists.newArrayList(choices);
-
-        orderedChoices.sort((o1, o2) -> {
-            int o1Val = o1.isCorrect() ? 0 : 1;
-            int o2Val = o2.isCorrect() ? 0 : 1;
-            return o1Val - o2Val;
-        });
-
-        return orderedChoices;
-    }
-
-    /**
-     * Make a JSON HTTP POST request to an external validator, and provide the response JSON as a HashMap.
-     *
-     * @param requestBody - the JSON request body as a Map
-     * @return the response JSON, as a HashMap
-     * @throws IOException - on failure to communicate with the external validator
-     */
-    private HashMap<String, Object> getResponseFromExternalValidator(final Map<String, String> requestBody) throws IOException {
-        // This is ridiculous. All we want to do is pass some JSON to a REST endpoint and get some JSON back.
-        ObjectMapper mapper = new ObjectMapper();
-        StringWriter sw = new StringWriter();
-        JsonGenerator g = new JsonFactory().createGenerator(sw);
-        mapper.writeValue(g, requestBody);
-        g.close();
-        String requestString = sw.toString();
-
-        HttpClient httpClient = new DefaultHttpClient();
-        HttpPost httpPost = new HttpPost(externalValidatorUrl);
-
-        httpPost.setEntity(new StringEntity(requestString, "UTF-8"));
-        httpPost.addHeader("Content-Type", "application/json");
-
-        HttpResponse httpResponse = httpClient.execute(httpPost);
-        HttpEntity responseEntity = httpResponse.getEntity();
-        String responseString = EntityUtils.toString(responseEntity);
-        HashMap<String, Object> response = mapper.readValue(responseString, HashMap.class);
-
-        return response;
-    }
 }
