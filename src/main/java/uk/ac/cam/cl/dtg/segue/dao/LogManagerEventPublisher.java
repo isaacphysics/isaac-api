@@ -170,8 +170,4 @@ public abstract class LogManagerEventPublisher implements ILogManager {
         return this.logManager.getAllEventTypes();
 
     }
-
-    public Map<String, Object> calculateStatistics() throws SegueDatabaseException {
-        return this.logManager.calculateStatistics();
-    }
 }
