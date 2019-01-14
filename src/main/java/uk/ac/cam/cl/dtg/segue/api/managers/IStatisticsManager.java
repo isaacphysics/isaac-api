@@ -27,7 +27,7 @@ public interface IStatisticsManager {
      * @return ImmutableMap<String, String> (stat name, stat value)
      * @throws SegueDatabaseException - if there is a database error.
      */
-    Map<String, Object> outputGeneralStatistics()
+    Map<String, Object> getGeneralStatistics()
             throws SegueDatabaseException;
 
     /**

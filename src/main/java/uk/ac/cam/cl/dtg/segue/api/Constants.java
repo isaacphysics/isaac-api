@@ -15,6 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
+import org.postgresql.util.PGInterval;
+
 import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -264,6 +266,22 @@ public final class Constants {
     public static final String POSTGRES_DB_USER = "POSTGRES_DB_USER";
     public static final String POSTGRES_DB_PASSWORD = "POSTGRES_DB_PASSWORD";
 
+    public enum TimeInterval {
+        SIX_MONTHS(0, 6, 0, 0, 0, 0),
+        NINETY_DAYS(0, 0, 90, 0, 0, 0),
+        THIRTY_DAYS(0, 0, 30, 0, 0, 0),
+        SEVEN_DAYS(0, 0, 7, 0, 0, 0);
+
+        private final PGInterval interval;
+
+        TimeInterval(int years, int months, int days, int hours, int minutes, double seconds) {
+            this.interval = new PGInterval(years, months, days, hours, minutes, seconds);
+        }
+        public PGInterval getPGInterval() {
+            return this.interval;
+        }
+    }
+
     // Logging component
     public static final String LOGGING_ENABLED = "LOGGING_ENABLED";
     public static final Integer MAX_LOG_REQUEST_BODY_SIZE_IN_BYTES = 1000000;
@@ -370,6 +388,9 @@ public final class Constants {
     public static final String SCHOOL_URN_FIELDNAME_POJO = "urn";
     public static final String SCHOOL_ESTABLISHMENT_NAME_FIELDNAME_POJO = "name";
     public static final String SCHOOL_POSTCODE_FIELDNAME_POJO = "postcode";
+
+    // User School Reporting
+    public enum SchoolInfoStatus { PROVIDED, OTHER_PROVIDED, NOT_PROVIDED };
 
     // cache settings
     public static final String MAX_CONTENT_CACHE_TIME = "MAX_CONTENT_CACHE_TIME";

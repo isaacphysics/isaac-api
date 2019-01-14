@@ -55,10 +55,16 @@ import java.util.concurrent.TimeUnit;
 
 import static com.google.common.collect.Maps.immutableEntry;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.FAST_TRACK_QUESTION_TYPE;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacLogType;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_TYPE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ID_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueLogType;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval.SIX_MONTHS;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval.NINETY_DAYS;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval.THIRTY_DAYS;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval.SEVEN_DAYS;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX;
 
@@ -108,9 +114,10 @@ public class StatisticsManager implements IStatisticsManager {
      */
     @Inject
     public StatisticsManager(final UserAccountManager userManager, final ILogManager logManager,
-            final SchoolListReader schoolManager, final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex,
+                             final SchoolListReader schoolManager, final IContentManager contentManager,
+                             @Named(CONTENT_INDEX) final String contentIndex,
                              final LocationManager locationHistoryManager, final GroupManager groupManager,
-            final QuestionManager questionManager, final GameManager gameManager,
+                             final QuestionManager questionManager, final GameManager gameManager,
                              final IUserStreaksManager userStreaksManager) {
         this.userManager = userManager;
         this.logManager = logManager;
@@ -137,10 +144,32 @@ public class StatisticsManager implements IStatisticsManager {
      * @return ImmutableMap<String, String> (stat name, stat value)
      * @throws SegueDatabaseException - if there is a database error.
      */
-    public synchronized Map<String, Object> outputGeneralStatistics() 
+    public synchronized Map<String, Object> getGeneralStatistics()
             throws SegueDatabaseException {
+        Map<String, Object> result = Maps.newHashMap();
 
-        return this.logManager.calculateStatistics();
+        result.put("userGenders", userManager.getGenderCount());
+        result.put("userRoles", userManager.getRoleCount());
+        result.put("userSchoolInfo", userManager.getSchoolInfoStats());
+        result.put("groupCount", this.groupManager.getGroupCount());
+
+        result.put("viewQuestionEvents", logManager.getLogCountByType(IsaacLogType.VIEW_QUESTION.name()));
+        result.put("answeredQuestionEvents", logManager.getLogCountByType(SegueLogType.ANSWER_QUESTION.name()));
+
+        Map<String, Map<Role, Long>> rangedActiveUserStats = Maps.newHashMap();
+        rangedActiveUserStats.put("sevenDays", userManager.getActiveRolesOverPrevious(SEVEN_DAYS));
+        rangedActiveUserStats.put("thirtyDays", userManager.getActiveRolesOverPrevious(THIRTY_DAYS));
+        rangedActiveUserStats.put("ninetyDays", userManager.getActiveRolesOverPrevious(NINETY_DAYS));
+        rangedActiveUserStats.put("sixMonths", userManager.getActiveRolesOverPrevious(SIX_MONTHS));
+        result.put("activeUsersOverPrevious", rangedActiveUserStats);
+
+        Map<String, Map<Role, Long>> rangedAnsweredQuestionStats = Maps.newHashMap();
+        rangedAnsweredQuestionStats.put("sevenDays", questionManager.getAnsweredQuestionRolesOverPrevious(SEVEN_DAYS));
+        rangedAnsweredQuestionStats.put("thirtyDays", questionManager.getAnsweredQuestionRolesOverPrevious(THIRTY_DAYS));
+        rangedAnsweredQuestionStats.put("ninetyDays", questionManager.getAnsweredQuestionRolesOverPrevious(NINETY_DAYS));
+        result.put("answeringUsersOverPrevious", rangedAnsweredQuestionStats);
+
+        return result;
     }
 
     /**

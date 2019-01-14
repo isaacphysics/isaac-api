@@ -34,7 +34,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.ArrayList;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
@@ -77,7 +76,6 @@ import uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
-import uk.ac.cam.cl.dtg.segue.api.userAlerts.UserAlertsWebSocket;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -184,7 +182,7 @@ public class AdminFacade extends AbstractSegueFacade {
                         .toResponse();
             }
 
-            return Response.ok(statsManager.outputGeneralStatistics())
+            return Response.ok(statsManager.getGeneralStatistics())
                     .cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false)).build();
         } catch (SegueDatabaseException e) {
             log.error("Unable to load general statistics.", e);
@@ -212,7 +210,7 @@ public class AdminFacade extends AbstractSegueFacade {
                         .toResponse();
             }
 
-            return Response.ok(ImmutableMap.of("role", userManager.getCountsForUsersByRole()))
+            return Response.ok(ImmutableMap.of("role", userManager.getRoleCount()))
                     .cacheControl(getCacheControl(NUMBER_SECONDS_IN_MINUTE, false)).build();
         } catch (SegueDatabaseException e) {
             log.error("Unable to load general statistics.", e);

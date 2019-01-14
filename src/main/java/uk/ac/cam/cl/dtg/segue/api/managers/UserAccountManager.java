@@ -66,6 +66,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.users.AnonymousUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
+import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.UserFromAuthProvider;
@@ -1151,14 +1152,6 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     /**
-     * Method to retrieve the number of users by role from the Database.
-     * @return a map of role to counter
-     */
-    public Map<Role, Integer> getCountsForUsersByRole() throws SegueDatabaseException {
-        return this.database.countUsersByRole();
-    }
-
-    /**
      * Sends verification email for the user's current email address. The destination will match the userDTO's email.
      * @param userDTO - user to which the email is to be sent.
      * @param emailVerificationToken - the generated email verification token.
@@ -1519,6 +1512,49 @@ public class UserAccountManager implements IUserAccountManager {
         return String.format("https://%s/verifyemail?%s", properties.getProperty(HOST_NAME), urlParams);
     }
 
+    /**
+     * Method to retrieve the number of users by role from the Database.
+     * @return a map of role to counter
+     */
+    public Map<Role, Long> getRoleCount() throws SegueDatabaseException {
+        return this.database.getRoleCount();
+    }
+
+    /**
+     * Count the users by role seen over the previous time interval
+     * @param timeInterval time interval over which to count
+     * @return map of counts for each role
+     * @throws SegueDatabaseException
+     *             - if there is a problem with the database.
+     */
+    public Map<Role, Long> getActiveRolesOverPrevious(TimeInterval timeInterval) throws SegueDatabaseException {
+        return this.database.getRolesLastSeenOver(timeInterval);
+    }
+
+    /**
+     * Count users' reported genders
+     * @return map of counts for each gender.
+     * @throws SegueDatabaseException
+     *             - if there is a problem with the database.
+     */
+    public Map<Gender, Long> getGenderCount() throws SegueDatabaseException {
+        return this.database.getGenderCount();
+    }
+
+    /**
+     * Count users' reported school information
+     * @return map of counts for students who have provided or not provided school information
+     * @throws SegueDatabaseException
+     *             - if there is a problem with the database.
+     */
+    public Map<SchoolInfoStatus, Long> getSchoolInfoStats() throws SegueDatabaseException {
+        return this.database.getSchoolInfoStats();
+    }
+
+    /**
+     * Count the number of anonymous users currently in our temporary user cache
+     * @return the number of anonymous users
+     */
     public Long getNumberOfAnonymousUsers() {
         return temporaryUserCache.size();
     }

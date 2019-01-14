@@ -3,9 +3,11 @@ package uk.ac.cam.cl.dtg.segue.quiz;
 import java.util.List;
 import java.util.Map;
 
+import uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 
 /**
  * IQuestionAttemptManager. Objects implementing this interface are responsible for recording question attempts
@@ -93,5 +95,15 @@ public interface IQuestionAttemptManager {
      *             - if something goes wrong.
      */
     void mergeAnonymousQuestionInformationWithRegisteredUserRecord(String anonymousUserId, Long registeredUserId)
+            throws SegueDatabaseException;
+
+    /**
+     * Count the users by role which have answered questions over the previous time interval
+     * @param timeInterval time interval over which to count
+     * @return map of counts for each role
+     * @throws SegueDatabaseException
+     *             - if there is a problem with the database.
+     */
+    Map<Role, Long> getAnsweredQuestionRolesOverPrevious(TimeInterval timeInterval)
             throws SegueDatabaseException;
 }
