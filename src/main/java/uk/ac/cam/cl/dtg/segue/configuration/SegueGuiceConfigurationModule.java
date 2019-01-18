@@ -1,12 +1,12 @@
 /**
  * Copyright 2014 Stephen Cummins
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.segue.configuration;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -57,6 +58,9 @@ import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dos.*;
 import uk.ac.cam.cl.dtg.segue.quiz.IQuestionAttemptManager;
 import uk.ac.cam.cl.dtg.segue.quiz.PgQuestionAttempts;
+import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
+import uk.ac.cam.cl.dtg.segue.scheduler.SegueScheduledDatabaseScriptJob;
+import uk.ac.cam.cl.dtg.segue.scheduler.SegueScheduledJob;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -81,13 +85,13 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
 /**
  * This class is responsible for injecting configuration values for persistence related classes.
- * 
+ *
  */
 public class SegueGuiceConfigurationModule extends AbstractModule implements ServletContextListener {
     private static final Logger log = LoggerFactory.getLogger(SegueGuiceConfigurationModule.class);
 
     private static PropertiesLoader globalProperties = null;
-    
+
     // Singletons - we only ever want there to be one instance of each of these.
     private static PostgresSqlDb postgresDB;
     private static ContentMapper mapper = null;
@@ -96,6 +100,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static UserAccountManager userManager = null;
     private static UserAuthenticationManager userAuthenticationManager = null;
     private static IQuestionAttemptManager questionPersistenceManager = null;
+    private static SegueJobService segueJobService = null;
+
     //private static ILogManager logManager;
     private static LogManagerEventPublisher logManager;
     private static EmailManager emailCommunicationQueue = null;
@@ -103,14 +109,14 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static IMetricsExporter metricsExporter = null;
     private static StatisticsManager statsManager = null;
     //private static IStatisticsManager statsManager = null;
-	private static GroupManager groupManager = null;
-	private static IUserAlerts userAlerts = null;
-	private static IUserStreaksManager userStreaksManager = null;
-	private static IUserBadgePersistenceManager userBadgePersitenceManager = null;
+    private static GroupManager groupManager = null;
+    private static IUserAlerts userAlerts = null;
+    private static IUserStreaksManager userStreaksManager = null;
+    private static IUserBadgePersistenceManager userBadgePersitenceManager = null;
 
     private static Collection<Class<? extends ServletContextListener>> contextListeners;
     private static Map<String, Reflections> reflections = com.google.common.collect.Maps.newHashMap();
-    
+
     /**
      * Create a SegueGuiceConfigurationModule.
      */
@@ -160,7 +166,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
         // IP address geocoding
         this.bindConstantToProperty(Constants.IP_INFO_DB_API_KEY, globalProperties);
-        
+
         this.bindConstantToProperty(Constants.SCHOOL_CSV_LIST_PATH, globalProperties);
 
         this.bindConstantToProperty(CONTENT_INDEX, globalProperties);
@@ -170,7 +176,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     /**
      * Configure all things persistency.
-     * 
+     *
      * @throws IOException
      *             - when we cannot load the database.
      */
@@ -242,7 +248,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         bind(IContentManager.class).to(GitContentManager.class);
 
         bind(LocationHistory.class).to(PgLocationHistory.class);
-        
+
         bind(PostCodeLocationResolver.class).to(PostCodeIOLocationResolver.class);
 
         bind(IUserDataManager.class).to(PgUsers.class);
@@ -282,9 +288,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     /**
      * This provides a singleton of the elasticSearch client that can be used by Guice.
-     * 
+     *
      * The client is threadsafe so we don't need to keep creating new ones.
-     * 
+     *
      * @param clusterName
      *            - The name of the cluster to create.
      * @param address
@@ -325,10 +331,10 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     /**
      * This provides a singleton of the git content manager for the segue facade.
-     * 
+     *
      * TODO: This is a singleton as the units and tags are stored in memory. If we move these out it can be an instance.
      * This would be better as then we can give it a new search provider if the client has closed.
-     * 
+     *
      * @param database
      *            - database reference
      * @param searchProvider
@@ -341,7 +347,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     private static GitContentManager getContentManager(final GitDb database, final ISearchProvider searchProvider,
-            final ContentMapper contentMapper, final PropertiesLoader globalProperties) {
+                                                       final ContentMapper contentMapper, final PropertiesLoader globalProperties) {
         if (null == contentManager) {
             contentManager = new GitContentManager(database, searchProvider, contentMapper, globalProperties);
             log.info("Creating singleton of ContentManager");
@@ -352,10 +358,10 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     /**
      * This provides a singleton of the LogManager for the Segue facade.
-     * 
+     *
      * Note: This is a singleton as logs are created very often and we wanted to minimise the overhead in class
      * creation. Although we can convert this to instances if we want to tidy this up.
-     * 
+     *
      * @param database
      *            - database reference
      * @param loggingEnabled
@@ -373,7 +379,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
         if (null == logManager) {
             //logManager = new MongoLogManager(database, new ObjectMapper(), loggingEnabled, lhm);
-            
+
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
             //logManager = new PgLogManager(database, objectMapper, loggingEnabled, lhm);
@@ -394,7 +400,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     /**
      * This provides a singleton of the contentVersionController for the segue facade. 
      * Note: This is a singleton because this content mapper has to use reflection to register all content classes.
-     * 
+     *
      * @return Content version controller with associated dependencies.
      */
     @Inject
@@ -424,7 +430,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     private static SegueLocalAuthenticator getSegueLocalAuthenticator(final IUserDataManager database, final IPasswordDataManager passwordDataManager,
-                                                             final PropertiesLoader properties) {
+                                                                      final PropertiesLoader properties) {
         ISegueHashingAlgorithm preferredAlgorithm = new SeguePBKDF2v2();
         ISegueHashingAlgorithm oldAlgorithm = new SeguePBKDF2v1();
 
@@ -460,10 +466,10 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     private static EmailManager getMessageCommunicationQueue(final IUserDataManager database,
-            final PropertiesLoader properties, final EmailCommunicator emailCommunicator,
-            final AbstractUserPreferenceManager userPreferenceManager,
-            final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final SegueLocalAuthenticator authenticator,
-            final ILogManager logManager) {
+                                                             final PropertiesLoader properties, final EmailCommunicator emailCommunicator,
+                                                             final AbstractUserPreferenceManager userPreferenceManager,
+                                                             final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final SegueLocalAuthenticator authenticator,
+                                                             final ILogManager logManager) {
 
         Map<String, String> globalTokens = Maps.newHashMap();
         globalTokens.put("sig", "Isaac Physics Project");
@@ -478,7 +484,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
         if (null == emailCommunicationQueue) {
             emailCommunicationQueue = new EmailManager(emailCommunicator, userPreferenceManager, properties,
-            				contentManager, logManager, globalTokens);
+                    contentManager, logManager, globalTokens);
             log.info("Creating singleton of EmailCommunicationQueue");
         }
         return emailCommunicationQueue;
@@ -543,9 +549,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     private UserAccountManager getUserManager(final IUserDataManager database, final QuestionManager questionManager,
-            final PropertiesLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
-            final EmailManager emailQueue, final ILogManager logManager, final MapperFacade mapperFacade,
-            final UserAuthenticationManager userAuthenticationManager) {
+                                              final PropertiesLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
+                                              final EmailManager emailQueue, final ILogManager logManager, final MapperFacade mapperFacade,
+                                              final UserAuthenticationManager userAuthenticationManager) {
 
         if (null == userManager) {
             userManager = new UserAccountManager(database, questionManager, properties, providersToRegister,
@@ -594,7 +600,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     private GroupManager getGroupManager(final IUserGroupPersistenceManager userGroupDataManager,
-            final UserAccountManager userManager, final MapperFacade dtoMapper) {
+                                         final UserAccountManager userManager, final MapperFacade dtoMapper) {
 
         if (null == groupManager) {
             groupManager = new GroupManager(userGroupDataManager, userManager, dtoMapper);
@@ -664,7 +670,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     /**
      * Gets the instance of the dozer mapper object.
-     * 
+     *
      * @return a preconfigured instance of an Auto Mapper. This is specialised for mapping SegueObjects.
      */
     @Provides
@@ -683,9 +689,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     /**
      * Gets the instance of the postgres connection wrapper.
-     * 
+     *
      * Note: This needs to be a singleton as it contains a connection pool.
-     * 
+     *
      * @param databaseUrl
      *            - database to connect to.
      * @param username
@@ -700,8 +706,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Singleton
     @Inject
     private static PostgresSqlDb getPostgresDB(@Named(Constants.POSTGRES_DB_URL) final String databaseUrl,
-            @Named(Constants.POSTGRES_DB_USER) final String username,
-            @Named(Constants.POSTGRES_DB_PASSWORD) final String password) throws SQLException {
+                                               @Named(Constants.POSTGRES_DB_USER) final String username,
+                                               @Named(Constants.POSTGRES_DB_PASSWORD) final String password) throws SQLException {
 
         if (null == postgresDB) {
             try {
@@ -741,7 +747,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      */
     @Provides
     @Singleton
-    @Inject    private static IUserStreaksManager getUserStreaksManager(final PostgresSqlDb postgresDB) {
+    @Inject
+    private static IUserStreaksManager getUserStreaksManager(final PostgresSqlDb postgresDB) {
 
         if (null == userStreaksManager) {
             userStreaksManager = new PgUserStreakManager(postgresDB);
@@ -752,7 +759,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     /**
      * Gets the instance of the StatisticsManager. Note: this class is a hack and needs to be refactored.... It is
      * currently only a singleton as it keeps a cache.
-     * 
+     *
      * @param userManager
      *            - dependency
      * @param logManager
@@ -788,7 +795,22 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
         return statsManager;
     }
-    
+
+    @Provides
+    @Singleton
+    @Inject
+    private static SegueJobService getSegueJobService(final PostgresSqlDb database) {
+        if (null == segueJobService) {
+            SegueScheduledJob PIISQLJob = new SegueScheduledDatabaseScriptJob("PIIDeleteScheduledJob", "SQLMaintenance",
+                    "SQL scheduled job that deletes PII", "0 0 2 * * ?", "db_scripts/pii-delete-scheduled-task.sql");
+
+            segueJobService = new SegueJobService(Arrays.asList(PIISQLJob));
+            log.info("Created Segue Job Manager for scheduled jobs");
+        }
+
+        return segueJobService;
+    }
+
     /**
      * This provides a new instance of the location resolver.
      *
@@ -804,7 +826,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     /**
      * Utility method to make the syntax of property bindings clearer.
-     * 
+     *
      * @param propertyLabel
      *            - Key for a given property
      * @param propertyLoader
@@ -846,8 +868,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             subTypes.removeAll(etlSubTypes);
 
             for (Class<? extends ServletContextListener> contextListener : subTypes) {
-
                 contextListeners.add(contextListener);
+                log.info("Registering context listener class " + contextListener.getCanonicalName());
             }
         }
 
