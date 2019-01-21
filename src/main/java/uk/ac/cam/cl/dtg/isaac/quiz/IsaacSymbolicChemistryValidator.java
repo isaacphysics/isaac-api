@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2016 Ian Davies, James Sharkey, Ryan Lau
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,19 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Maps;
-import com.google.common.collect.Lists;
 import org.apache.commons.lang3.Validate;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicChemistryQuestion;
@@ -40,18 +29,12 @@ import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatorUnavailableException;
 
 import java.io.IOException;
-import java.io.StringWriter;
-
-import java.util.HashMap;
-import java.util.Collections;
-import java.util.List;
-import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 
 /**
  * Validator that only provides functionality to validate symbolic chemistry questions.
- *
- * @author Ian Davies
  *
  */
 public class IsaacSymbolicChemistryValidator implements IValidator {
@@ -71,52 +54,12 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
 
     private final String hostname;
     private final String port;
+    private final String externalValidatorUrl;
 
     public IsaacSymbolicChemistryValidator(final String hostname, final String port) {
         this.hostname = hostname;
         this.port = port;
-    }
-
-    /**
-     * Given two formulae, where one is student answer, and another is the target mhchem string,
-     * this method generates a JSON object of them, and sends it to a back end chemistry checker
-     * for comparison. Comparison results are sent back from server as a JSON string and returned here.
-     *
-     * @param submittedFormula Formula submitted by user.
-     * @param formulaChoice Formula of one of the choice in content editor.
-     * @param description A text description to show in the checker logs.
-     * @return The JSON string returned from the ChemicalChecker server.
-     * @throws IOException Trouble connecting to the ChemicalChecker server.
-     */
-    private String jsonPostAndGet(final String submittedFormula, final String formulaChoice, final String description) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
-
-        // Complicated: Put formulae into a JSON object
-        HashMap<String, String> req = Maps.newHashMap();
-        req.put("target", formulaChoice);
-        req.put("test", submittedFormula);
-        req.put("description", description);
-
-        StringWriter sw = new StringWriter();
-        JsonGenerator g = new JsonFactory().createGenerator(sw);
-        mapper.writeValue(g, req);
-        g.close();
-        String requestString = sw.toString();
-
-        // Do some real checking through HTTP
-        HttpClient httpClient = new DefaultHttpClient();
-
-        HttpPost httpPost = new HttpPost("http://" + hostname + ":" + port + "/check");
-
-        // Send JSON object across ChemistryChecker server.
-        httpPost.setEntity(new StringEntity(requestString));
-        httpPost.addHeader("Content-Type", "application/json");
-
-        // Receive JSON response from server.
-        HttpResponse httpResponse = httpClient.execute(httpPost);
-        HttpEntity responseEntity = httpResponse.getEntity();
-
-        return EntityUtils.toString(responseEntity);
+        this.externalValidatorUrl = "http://" + this.hostname + ":" + this.port + "/check";
     }
 
     @Override
@@ -137,7 +80,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                     answer.getClass()));
         }
 
-        IsaacSymbolicChemistryQuestion symbolicQuestion = (IsaacSymbolicChemistryQuestion) question;
+        IsaacSymbolicChemistryQuestion chemistryQuestion = (IsaacSymbolicChemistryQuestion) question;
         ChemicalFormula submittedFormula = (ChemicalFormula) answer;
 
         // These variables store the important features of the response we'll send.
@@ -158,7 +101,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
         // STEP 0: Do we even have any answers for this question? Always do this check, because we know we
         //         won't have feedback yet.
 
-        if (null == symbolicQuestion.getChoices() || symbolicQuestion.getChoices().isEmpty()) {
+        if (null == chemistryQuestion.getChoices() || chemistryQuestion.getChoices().isEmpty()) {
             log.error("Question does not have any answers. " + question.getId() + " src: "
                     + question.getCanonicalSourceFile());
 
@@ -177,11 +120,11 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
         if (null == feedback) {
 
             // For all the choices on this question...
-            for (Choice c : symbolicQuestion.getChoices()) {
+            for (Choice c : chemistryQuestion.getChoices()) {
 
                 // ... that are of the ChemicalFormula type, ...
                 if (!(c instanceof ChemicalFormula)) {
-                    log.error("Isaac Symbolic Chemistry Validator for questionId: " + symbolicQuestion.getId()
+                    log.error("Isaac Symbolic Chemistry Validator for questionId: " + chemistryQuestion.getId()
                             + " expected there to be a ChemicalFormula. Instead it found a Choice.");
                     continue;
                 }
@@ -191,7 +134,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                 // ... and that have a mhchem expression ...
                 if (null == formulaChoice.getMhchemExpression() || formulaChoice.getMhchemExpression().isEmpty()) {
                     log.error("Expected python expression, but none found in choice for question id: "
-                            + symbolicQuestion.getId());
+                            + chemistryQuestion.getId());
                     continue;
                 }
 
@@ -218,16 +161,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
             boolean balancedKnownFlag = false;
 
             // Sort the choices so that we match incorrect choices last, taking precedence over correct ones.
-            List<Choice> orderedChoices = Lists.newArrayList(symbolicQuestion.getChoices());
-
-            Collections.sort(orderedChoices, new Comparator<Choice>() {
-                @Override
-                public int compare(final Choice o1, final Choice o2) {
-                    int o1Val = o1.isCorrect() ? 0 : 1;
-                    int o2Val = o2.isCorrect() ? 0 : 1;
-                    return o1Val - o2Val;
-                }
-            });
+            List<Choice> orderedChoices = getOrderedChoices(chemistryQuestion.getChoices());
 
             // For all the choices on this question...
             for (Choice c : orderedChoices) {
@@ -254,11 +188,12 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                 try {
 
                     // Pass some JSON to a REST endpoint and get some JSON back.
+                    HashMap<String, String> req = Maps.newHashMap();
+                    req.put("target", formulaChoice.getMhchemExpression());
+                    req.put("test", submittedFormula.getMhchemExpression());
+                    req.put("description", chemistryQuestion.getId());
 
-                    ObjectMapper mapper = new ObjectMapper();
-                    String responseString = jsonPostAndGet(submittedFormula.getMhchemExpression(),
-                            formulaChoice.getMhchemExpression(), symbolicQuestion.getId());
-                    response = mapper.readValue(responseString, HashMap.class); //new HashMap<>();
+                    response = getResponseFromExternalValidator(externalValidatorUrl, req);
 
                     if (response.containsKey("error")) {
 
@@ -324,68 +259,33 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                         // Input is semantically equivalent to correct answer.
                         matchType = MatchType.EXACT;
 
-                    } else if (response.get("expectedType").equals("equation")) {
-
+                    } else if (response.get("expectedType").equals("equation") || response.get("expectedType").equals("expression")) {
                         if (response.get("weaklyEquivalent").equals(false)) {
-
-                            // current choice is not a good match.
+                            // This is not a match.
                             continue;
-
                         }
-
-                        // Measure the 'weakness' level. (0 is the weakest)
+                        // Strength of match, increasing from 0.
                         int counter = 0;
-
                         if (response.get("sameState").equals(true)) {
                             counter++;
                         }
-
                         if (response.get("sameCoefficient").equals(true)) {
                             counter++;
                         }
-
-                        if (response.get("sameArrow").equals(true)) {
+                        if (response.get("expectedType").equals("equation") && response.get("sameArrow").equals(true)) {
                             counter++;
                         }
-
-
                         matchType = MatchType.valueOf("WEAK" + counter);
-
-                    } else if (response.get("expectedType").equals("expression")) {
-
-                        // Response & Answer have type Expression.
-                        if (response.get("weaklyEquivalent").equals(false)) {
-
-                            // current choice is not a good match.
-                            continue;
-
-                        }
-
-                        // Measure the 'weakness' level. (0 is the weakest)
-                        int counter = 0;
-
-                        if (response.get("sameState").equals(true)) {
-                            counter++;
-                        }
-
-                        if (response.get("sameCoefficient").equals(true)) {
-                            counter++;
-                        }
-
-                        matchType = MatchType.valueOf("WEAK" + counter);
-
                     } else {
 
                         // Response & Answer have type NuclearEquation or NuclearExpression.
                         if (response.get("weaklyEquivalent").equals(false)) {
-
-                            // current choice is not a good match.
+                            // This is not a match
                             continue;
                         }
 
                         // Measure the 'weakness' level. (0 is the weakest)
                         int counter = 0;
-
                         // FIXME: Nuclear Equations and Expressions don't have 'sameCoefficient' property?!
                         // So ignore this for now!
 //                        if (response.get("sameCoefficient").equals(true)) {
@@ -499,6 +399,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
             }
         }
 
-        return new QuestionValidationResponse(symbolicQuestion.getId(), answer, responseCorrect, feedback, new Date());
+        return new QuestionValidationResponse(chemistryQuestion.getId(), answer, responseCorrect, feedback, new Date());
     }
+
 }

@@ -15,16 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
-import java.math.BigDecimal;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-
-import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
 import uk.ac.cam.cl.dtg.segue.dos.QuantityValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
@@ -33,6 +25,12 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
+
+import java.math.BigDecimal;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
@@ -195,23 +193,15 @@ public class IsaacNumericValidator implements IValidator {
         int sigFigsToValidateWith = numberOfSignificantFiguresToValidateWith(answerFromUser.getValue(),
                       isaacNumericQuestion.getSignificantFiguresMin(), isaacNumericQuestion.getSignificantFiguresMax());
 
-        List<Choice> orderedChoices = Lists.newArrayList(isaacNumericQuestion.getChoices());
-
-        Collections.sort(orderedChoices, (o1, o2) -> {
-            int o1Val = o1.isCorrect() ? 0 : 1;
-            int o2Val = o2.isCorrect() ? 0 : 1;
-            return o1Val - o2Val;
-        });
-
         String unitsFromUser = answerFromUser.getUnits().trim();
 
+        List<Choice> orderedChoices = getOrderedChoices(isaacNumericQuestion.getChoices());
         for (Choice c : orderedChoices) {
             if (c instanceof Quantity) {
                 Quantity quantityFromQuestion = (Quantity) c;
 
                 if (quantityFromQuestion.getUnits() == null) {
-                    log.error("Expected units and no units can be found for question id: "
-                            + isaacNumericQuestion.getId());
+                    log.error("Expected units and no units can be found for question id: " + isaacNumericQuestion.getId());
                     continue;
                 }
 
@@ -219,20 +209,20 @@ public class IsaacNumericValidator implements IValidator {
 
                 boolean numericValuesMatched = numericValuesMatch(quantityFromQuestion.getValue(), answerFromUser.getValue(),
                         sigFigsToValidateWith);
-                // match known choices
-                if (numericValuesMatched && unitsFromUser.equals(unitsFromChoice)) {
 
-                    // exact match
+                // What sort of match do we have:
+                if (numericValuesMatched && unitsFromUser.equals(unitsFromChoice)) {
+                    // Exact match: nothing else can do better.
                     bestResponse = new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
                             quantityFromQuestion.isCorrect(), (Content) quantityFromQuestion.getExplanation(),
                             quantityFromQuestion.isCorrect(), quantityFromQuestion.isCorrect(), new Date());
                     break;
                 } else if (numericValuesMatched && !unitsFromUser.equals(unitsFromChoice) && quantityFromQuestion.isCorrect()) {
-                    // matches value but not units of a correct choice.
+                    // Matches value but not units of a correct choice.
                     bestResponse = new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
                             false, new Content(DEFAULT_WRONG_UNIT_VALIDATION_RESPONSE), true, false, new Date());
                 } else if (!numericValuesMatched && unitsFromUser.equals(unitsFromChoice) && quantityFromQuestion.isCorrect()) {
-                    // matches units but not value of a correct choice.
+                    // Matches units but not value of a correct choice.
                     bestResponse = new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
                             false, new Content(DEFAULT_VALIDATION_RESPONSE), false, true, new Date());
                 }
@@ -243,7 +233,7 @@ public class IsaacNumericValidator implements IValidator {
         }
 
         if (null == bestResponse) {
-            // tell them they got it wrong but we cannot find any more detailed feedback for them.
+            // No matches; tell them they got it wrong but we cannot find any more detailed feedback for them.
             return new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser, false, new Content(
                     DEFAULT_VALIDATION_RESPONSE), false, false, new Date());
         } else {
@@ -267,30 +257,18 @@ public class IsaacNumericValidator implements IValidator {
         int sigFigsToValidateWith = numberOfSignificantFiguresToValidateWith(answerFromUser.getValue(),
                 isaacNumericQuestion.getSignificantFiguresMin(), isaacNumericQuestion.getSignificantFiguresMax());
 
-        List<Choice> orderedChoices = Lists.newArrayList(isaacNumericQuestion.getChoices());
-
-        Collections.sort(orderedChoices, (o1, o2) -> {
-            int o1Val = o1.isCorrect() ? 0 : 1;
-            int o2Val = o2.isCorrect() ? 0 : 1;
-            return o1Val - o2Val;
-        });
+        List<Choice> orderedChoices = getOrderedChoices(isaacNumericQuestion.getChoices());
 
         for (Choice c : orderedChoices) {
             if (c instanceof Quantity) {
                 Quantity quantityFromQuestion = (Quantity) c;
 
-                // match known choices
+                // Do we have a match? Since only comparing values, either an exact match or not a match at all.
                 if (numericValuesMatch(quantityFromQuestion.getValue(), answerFromUser.getValue(), sigFigsToValidateWith)) {
-
-                    // value match
                     bestResponse = new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
                             quantityFromQuestion.isCorrect(), (Content) quantityFromQuestion.getExplanation(),
                             quantityFromQuestion.isCorrect(), null, new Date());
                     break;
-                } else {
-                    // value doesn't match this choice
-                    bestResponse = new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
-                            false, new Content(DEFAULT_VALIDATION_RESPONSE), false, null, new Date());
                 }
             } else {
                 log.error("Isaac Numeric Validator expected there to be a Quantity in ("
@@ -299,9 +277,9 @@ public class IsaacNumericValidator implements IValidator {
         }
 
         if (null == bestResponse) {
-            // tell them they got it wrong but we cannot find any more detailed feedback for them.
-            return new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser, false, null,
-                    false, false, new Date());
+            // No matches; tell them they got it wrong but we cannot find any more detailed feedback for them.
+            return new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
+                    false, new Content(DEFAULT_VALIDATION_RESPONSE), false, null, new Date());
         } else {
             return bestResponse;
         }
@@ -465,8 +443,8 @@ public class IsaacNumericValidator implements IValidator {
     }
     
     /**
-     * Sometimes we want to do an exact string wise match before we do sig fig checks etc. This method is intended to
-     * work for this case.
+     * To save validation effort, if we have string equality between the submitted value and an answer then we
+     * can be sure this match is the best possible.
      * 
      * @param isaacNumericQuestion
      *            - question content object
@@ -489,14 +467,13 @@ public class IsaacNumericValidator implements IValidator {
                     userStringForComparison.append(answerFromUser.getUnits());
                 }
 
-                StringBuilder questionAnswerStringForComparison = new StringBuilder();
-                questionAnswerStringForComparison.append(quantityFromQuestion.getValue().trim());
+                StringBuilder questionAnswerString = new StringBuilder();
+                questionAnswerString.append(quantityFromQuestion.getValue().trim());
                 if (isaacNumericQuestion.getRequireUnits()) {
-                    questionAnswerStringForComparison.append(quantityFromQuestion.getUnits());
+                    questionAnswerString.append(quantityFromQuestion.getUnits());
                 }
 
-                if (questionAnswerStringForComparison.toString().trim()
-                        .equals(userStringForComparison.toString().trim())) {
+                if (questionAnswerString.toString().trim().equals(userStringForComparison.toString().trim())) {
                     Boolean unitFeedback = null;
                     if (isaacNumericQuestion.getRequireUnits()) {
                         unitFeedback = quantityFromQuestion.getUnits().equals(answerFromUser.getUnits());
