@@ -14,31 +14,18 @@
  * limitations under the License.
  */
 package uk.ac.cam.cl.dtg.segue.api;
-import com.google.common.collect.Lists;
-import io.swagger.annotations.Api;
-
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.EntityTag;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Request;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
-
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.GroupManagerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
@@ -54,6 +41,24 @@ import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.EntityTag;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Request;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import java.util.List;
+import java.util.Map;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
@@ -107,6 +112,7 @@ public class GroupsFacade extends AbstractSegueFacade {
     @GET
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "List all groups owned or managed by the current user.")
     public Response getGroupsForCurrentUser(@Context final HttpServletRequest request,
                                             @Context final Request cacheRequest, @QueryParam("archived_groups_only") final boolean archivedGroupsOnly) {
         try {
@@ -227,6 +233,7 @@ public class GroupsFacade extends AbstractSegueFacade {
     @GET
     @Path("/{user_id}")
     @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "List all groups owned or managed by another user.")
     public Response getGroupsForGivenUser(@Context final HttpServletRequest request,
                                           @PathParam("user_id") final Long userId) {
         try {
@@ -235,7 +242,7 @@ public class GroupsFacade extends AbstractSegueFacade {
                         "You must provide a valid user id to access this endpoint.").toResponse();
             }
 
-            if (!isUserStaff(userManager, request)) {
+            if (!isUserAnAdmin(userManager, request)) {
                 SegueErrorResponse.getIncorrectRoleResponse();
             }
 
@@ -265,6 +272,8 @@ public class GroupsFacade extends AbstractSegueFacade {
     @Path("/")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Create a new group.",
+                  notes = "The group information must be a GroupDTO object, although only 'groupName' is used.")
     public Response createGroup(@Context final HttpServletRequest request, final UserGroup groupDTO) {
         if (null == groupDTO.getGroupName() || groupDTO.getGroupName().isEmpty()) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Group name must be specified.").toResponse();
@@ -306,6 +315,8 @@ public class GroupsFacade extends AbstractSegueFacade {
     @Path("/{group_id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Update an existing group.",
+                  notes = "The 'group_id' parameter must match the group ID in the request body.")
     public Response editGroup(@Context final HttpServletRequest request, final UserGroupDTO groupDTO,
                               @PathParam("group_id") final Long groupId) {
         if (null == groupDTO.getGroupName() || groupDTO.getGroupName().isEmpty()) {
@@ -313,11 +324,11 @@ public class GroupsFacade extends AbstractSegueFacade {
         }
 
         if (null == groupId) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Group Id must be specified.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Group ID must be specified.").toResponse();
         }
 
         if (!groupId.equals(groupDTO.getId())) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Group Id in request url must match data object.")
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Group ID in request url must match data object.")
                     .toResponse();
         }
 
@@ -358,10 +369,11 @@ public class GroupsFacade extends AbstractSegueFacade {
     @GET
     @Path("{group_id}/membership/")
     @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "List all members of a group.")
     public Response getUsersInGroup(@Context final HttpServletRequest request, @Context final Request cacheRequest,
                                     @PathParam("group_id") final Long groupId) {
         if (null == groupId) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Group id must be specified.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Group ID must be specified.").toResponse();
         }
 
         try {
@@ -410,16 +422,18 @@ public class GroupsFacade extends AbstractSegueFacade {
     @Path("{group_id}/membership/{user_id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Add a user to a group without approval.",
+                  notes = "This endpoint does not grant group owners access to the user's data.")
     public Response addUserToGroup(@Context final HttpServletRequest request,
                                    @PathParam("group_id") final Long groupId, @PathParam("user_id") final Long userId) {
         if (null == groupId) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Group id must be specified.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Group ID must be specified.").toResponse();
         }
 
         try {
             if (!isUserAnAdmin(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
-                        "Only admin's can directly add a user to a group without a token").toResponse();
+                        "Only admins can directly add a user to a group without a token").toResponse();
             }
 
             UserGroupDTO groupBasedOnId = groupManager.getGroupById(groupId);
@@ -452,10 +466,11 @@ public class GroupsFacade extends AbstractSegueFacade {
     @Path("{group_id}/membership/{user_id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Remove a user from a group.")
     public Response removeUserFromGroup(@Context final HttpServletRequest request, @Context final Request cacheRequest,
                                         @PathParam("group_id") final Long groupId, @PathParam("user_id") final Long userId) {
         if (null == groupId) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Group id must be specified.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Group ID must be specified.").toResponse();
         }
 
         try {
@@ -498,10 +513,11 @@ public class GroupsFacade extends AbstractSegueFacade {
     @Path("/{group_id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Delete a group.")
     public Response deleteGroup(@Context final HttpServletRequest request,
                                 @PathParam("group_id") final Long groupId) {
         if (null == groupId) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Group id must be specified.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Group ID must be specified.").toResponse();
         }
 
         try {
@@ -543,6 +559,8 @@ public class GroupsFacade extends AbstractSegueFacade {
     @Path("{group_id}/manager")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Add an additional manager to a group.",
+                  notes = "The email of the user to add must be provided as 'email' in the request body and they must have a teacher account.")
     public Response addAdditionalManagerToGroup(@Context final HttpServletRequest request,
                                                 @PathParam("group_id") final Long groupId,
                                                 final Map<String, String> responseMap) {
@@ -611,11 +629,12 @@ public class GroupsFacade extends AbstractSegueFacade {
     @Path("{group_id}/manager/{user_id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Remove an additional manager from a group.")
     public Response removeAdditionalManagerFromGroup(@Context final HttpServletRequest request,
                                                 @PathParam("group_id") final Long groupId,
                                                    @PathParam("user_id") final Long userId) {
         if (null == groupId) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "The group must be specified.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "The group ID must be specified.").toResponse();
         }
 
         if (null == userId) {

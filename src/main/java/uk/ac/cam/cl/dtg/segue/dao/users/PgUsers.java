@@ -236,7 +236,7 @@ public class PgUsers implements IUserDataManager {
         Validate.notBlank(email);
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM users WHERE email ILIKE ?");
+            pst = conn.prepareStatement("SELECT * FROM users WHERE lower(email)=lower(?)");
             pst.setString(1, email);
 
             ResultSet results = pst.executeQuery();
@@ -606,7 +606,8 @@ public class PgUsers implements IUserDataManager {
         u.setEmailVerificationToken(results.getString("email_verification_token"));
         u.setEmailVerificationStatus(results.getString("email_verification_status") != null ? EmailVerificationStatus
                 .valueOf(results.getString("email_verification_status")) : null);
-        
+        u.setSessionToken(results.getInt("session_token"));
+
         return u;
     }
 

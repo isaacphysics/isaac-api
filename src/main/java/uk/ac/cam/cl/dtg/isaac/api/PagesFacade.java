@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,38 +15,16 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
-
+import com.google.api.client.util.Maps;
+import com.google.common.collect.ImmutableMap;
+import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.EntityTag;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Request;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-
 import ma.glasnost.orika.MapperFacade;
-
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionSummaryPage;
@@ -73,9 +51,26 @@ import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import com.google.api.client.util.Maps;
-import com.google.common.collect.ImmutableMap;
-import com.google.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.EntityTag;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Request;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Pages Facade
@@ -156,7 +151,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Path("/concepts")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Gets the list of concept pages")
+    @ApiOperation(value = "List all concept page objects matching the provided criteria.")
     public final Response getConceptList(@Context final Request request, @QueryParam("ids") final String ids,
             @QueryParam("tags") final String tags,
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
@@ -224,6 +219,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Path("/concepts/{concept_page_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get a concept page object by ID.")
     public final Response getConcept(@Context final Request request, @Context final HttpServletRequest servletRequest,
             @PathParam("concept_page_id") final String conceptId) {
         if (null == conceptId || conceptId.isEmpty()) {
@@ -291,6 +287,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Path("/questions")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "List all question page objects matching the provided criteria.")
     public final Response getQuestionList(@Context final Request request, @QueryParam("ids") final String ids,
             @QueryParam("searchString") final String searchString, @QueryParam("tags") final String tags,
             @QueryParam("levels") final String level, @DefaultValue("false") @QueryParam("fasttrack") final Boolean fasttrack,
@@ -393,6 +390,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Path("/questions/{question_page_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get a question page object by ID.")
     public final Response getQuestion(@Context final Request request,
             @Context final HttpServletRequest httpServletRequest, 
             @PathParam("question_page_id") final String questionId) {
@@ -471,6 +469,8 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Path("question_summary/{page}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @Deprecated
+    @ApiOperation(value = "Get the question summary page content.")
     public final Response getQuestionSummaryPage(@Context final Request request,
             @Context final HttpServletRequest httpServletRequest, @PathParam("page") final String pageId) {
         // Calculate the ETag on current live version of the content
@@ -550,6 +550,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Path("/{page}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get a content page object by ID.")
     public final Response getPage(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
             @PathParam("page") final String pageId) {
         // Calculate the ETag on current live version of the content
@@ -603,6 +604,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Path("/fragments/{fragment_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Get a content page fragment by ID.")
     public final Response getPageFragment(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
             @PathParam("fragment_id") final String fragmentId) {
 
@@ -641,6 +643,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Path("/pods/{subject}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "List pods matching the subject provided.")
     public final Response getPodList(@Context final Request request,
                                      @PathParam("subject") final String subject) {
         // Calculate the ETag on current live version of the content

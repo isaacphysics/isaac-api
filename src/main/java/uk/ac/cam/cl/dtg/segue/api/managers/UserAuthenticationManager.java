@@ -15,9 +15,45 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
+import com.google.inject.Inject;
+import ma.glasnost.orika.MapperFacade;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.Validate;
+import org.eclipse.jetty.websocket.api.UpgradeRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
+import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.IOAuth1Authenticator;
+import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
+import uk.ac.cam.cl.dtg.segue.auth.IOAuthAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.IPasswordAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.OAuth1Token;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.*;
+import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
+import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
+import uk.ac.cam.cl.dtg.segue.comm.EmailType;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
+import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
+import uk.ac.cam.cl.dtg.segue.dos.users.UserFromAuthProvider;
+import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.HttpCookie;
 import java.net.URI;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
@@ -31,58 +67,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.HttpMethod;
-
-import com.google.common.collect.Maps;
-import ma.glasnost.orika.MapperFacade;
-
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang3.Validate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
-import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
-import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
-import uk.ac.cam.cl.dtg.segue.auth.IOAuth1Authenticator;
-import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
-import uk.ac.cam.cl.dtg.segue.auth.IOAuthAuthenticator;
-import uk.ac.cam.cl.dtg.segue.auth.IPasswordAuthenticator;
-import uk.ac.cam.cl.dtg.segue.auth.OAuth1Token;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationCodeException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidSessionException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
-import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
-import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
-import uk.ac.cam.cl.dtg.segue.comm.EmailType;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
-import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
-import uk.ac.cam.cl.dtg.segue.dos.users.UserFromAuthProvider;
-import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableList;
-import com.google.inject.Inject;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * This class handles all authentication details, including creation / destruction of sessions. It also handles adding
@@ -311,6 +296,7 @@ public class UserAuthenticationManager {
      * @return either a user or null if we couldn't find the user for whatever reason.
      */
     public RegisteredUser getUserFromSession(final HttpServletRequest request) {
+        // WARNING: There are two public getUserFromSession methods: ensure you check both!
         Validate.notNull(request);
 
         Map<String, String> currentSessionInformation;
@@ -345,28 +331,61 @@ public class UserAuthenticationManager {
             }
         }
 
-        // check if the users session is valid.
-        if (!this.isValidUsersSession(currentSessionInformation)) {
-            log.debug("User session has failed validation. Assume they are not logged in. Session: "
-                    + currentSessionInformation);
+        return getUserFromSessionInformationMap(currentSessionInformation);
+    }
+
+    /**
+     * @see #getUserFromSession(HttpServletRequest) - the two types of "request" have identical methods but are not
+     *           related by interfaces or inheritance and so require duplicated methods!
+     */
+    public RegisteredUser getUserFromSession(final UpgradeRequest request) {
+        // WARNING: There are two public getUserFromSession methods: ensure you check both!
+        Validate.notNull(request);
+
+        Map<String, String> currentSessionInformation;
+        try {
+            currentSessionInformation = this.getSegueSessionFromRequest(request);
+        } catch (IOException e1) {
+            log.error("Error parsing session information to retrieve user.");
+            return null;
+        } catch (InvalidSessionException e) {
+            log.debug("We cannot read the session information. It probably doesn't exist");
+            // assuming that no user is logged in.
             return null;
         }
 
-        // retrieve the user from database.
+        return getUserFromSessionInformationMap(currentSessionInformation);
+    }
+
+    /**
+     * This method tries to address some of the duplication when extracting a user from a request.
+     *
+     * @see #getUserFromSession(HttpServletRequest) - there are two types of "request" and they have identical methods
+     * @see #getUserFromSession(UpgradeRequest) -     but unrelated by interfaces/inheritance, so require duplication!
+     *
+     * @param currentSessionInformation - the session information map extracted from the cookie.
+     * @return either the valid user from the cookie, or null if no valid user
+     */
+    private RegisteredUser getUserFromSessionInformationMap(final Map<String, String> currentSessionInformation) {
+        // Retrieve the user from database.
         try {
-            // get the current user based on their session id information
-            Long currentUserId = Long.parseLong(currentSessionInformation.get(SESSION_USER_ID));
-            
-            // should be ok as isValidUser checks this.
-            Validate.notNull(currentUserId);
-            
-            return database.getById(currentUserId);
+            // Get the user the cookie claims to belong to from the session information:
+            long currentUserId = Long.parseLong(currentSessionInformation.get(SESSION_USER_ID));
+            RegisteredUser userToReturn =  database.getById(currentUserId);
+
+            // Check that the user's session is indeed valid:
+            if (null == userToReturn || !this.isValidUsersSession(currentSessionInformation, userToReturn)) {
+                log.debug("User session has failed validation. Treating as logged out. Session: " + currentSessionInformation);
+                return null;
+            }
+
+            return userToReturn;
         } catch (SegueDatabaseException e) {
             log.error("Internal Database error. Failed to resolve current user.", e);
             return null;
         } catch (NumberFormatException e) {
             log.info("Invalid user id detected in session. " + currentSessionInformation.get(SESSION_USER_ID));
-            return null;            
+            return null;
         }
     }
     
@@ -772,14 +791,22 @@ public class UserAuthenticationManager {
         Integer sessionExpiryTimeInSeconds = Integer.parseInt(properties.getProperty(SESSION_EXPIRY_SECONDS));
 
         String userId = user.getId().toString();
+        String userSessionToken = user.getSessionToken().toString();
         String hmacKey = properties.getProperty(HMAC_SALT);
 
         try {
-            String currentDate = sessionDateFormat.format(new Date());
-            String sessionHMAC = this.calculateSessionHMAC(hmacKey, userId, currentDate);
+            Calendar calendar = Calendar.getInstance();
+            calendar.add(Calendar.SECOND, sessionExpiryTimeInSeconds);
+            String sessionExpiryDate = sessionDateFormat.format(calendar.getTime());
 
-            Map<String, String> sessionInformation = ImmutableMap.of(SESSION_USER_ID, userId, DATE_SIGNED,
-                    currentDate, HMAC, sessionHMAC);
+            String sessionHMAC = this.calculateSessionHMAC(hmacKey, userId, sessionExpiryDate, userSessionToken);
+
+            Map<String, String> sessionInformation = ImmutableMap.of(
+                    SESSION_USER_ID, userId,
+                    SESSION_TOKEN, userSessionToken,
+                    DATE_EXPIRES, sessionExpiryDate,
+                    HMAC, sessionHMAC
+            );
 
             Cookie authCookie = new Cookie(SEGUE_AUTH_COOKIE,
                     serializationMapper.writeValueAsString(sessionInformation));
@@ -802,10 +829,13 @@ public class UserAuthenticationManager {
      * 
      * @param sessionInformation
      *            - map containing session information retrieved from the cookie.
+     * @param userFromDatabase
+     *            - the real user we are to validate this cookie against.
      * @return true if it is still valid, false if not.
      */
-    public boolean isValidUsersSession(final Map<String, String> sessionInformation) {
+    public boolean isValidUsersSession(final Map<String, String> sessionInformation, final RegisteredUser userFromDatabase) {
         Validate.notNull(sessionInformation);
+        Validate.notNull(userFromDatabase);
 
         Integer sessionExpiryTimeInSeconds = Integer.parseInt(properties.getProperty(SESSION_EXPIRY_SECONDS));
 
@@ -814,21 +844,34 @@ public class UserAuthenticationManager {
         String hmacKey = properties.getProperty(HMAC_SALT);
 
         String userId = sessionInformation.get(SESSION_USER_ID);
-        String sessionCreationDate = sessionInformation.get(DATE_SIGNED);
+        String userSessionToken = sessionInformation.get(SESSION_TOKEN);
+        String sessionDate;
         String sessionHMAC = sessionInformation.get(HMAC);
 
-        String ourHMAC = this.calculateSessionHMAC(hmacKey, userId, sessionCreationDate);
+        // FIXME: old cookies should be deprecated soon, by removing the userSessionToken is null case!
+        String ourHMAC;
+        if (null == userSessionToken) {
+            sessionDate = sessionInformation.get(DATE_SIGNED);
+            ourHMAC = this.calculateSessionHMAC(hmacKey, userId, sessionDate);
+        } else {
+            sessionDate = sessionInformation.get(DATE_EXPIRES);
+            ourHMAC = this.calculateSessionHMAC(hmacKey, userId, sessionDate, userSessionToken);
+        }
 
+        // Check that there is a user ID provided:
         if (null == userId) {
-            log.debug("No session set so not validating user identity.");
+            log.debug("No user ID provided by cookie, cannot be a valid session.");
             return false;
         }
 
-        // check it hasn't expired
+        // Check the expiry time has not passed:
         Calendar sessionExpiryDate = Calendar.getInstance();
         try {
-            sessionExpiryDate.setTime(sessionDateFormat.parse(sessionCreationDate));
-            sessionExpiryDate.add(Calendar.SECOND, sessionExpiryTimeInSeconds);
+            sessionExpiryDate.setTime(sessionDateFormat.parse(sessionDate));
+            // FIXME: old cookies should be deprecated soon, by removing the userSessionToken is null case!
+            if (null == userSessionToken) {
+                sessionExpiryDate.add(Calendar.SECOND, sessionExpiryTimeInSeconds);
+            }
 
             if (new Date().after(sessionExpiryDate.getTime())) {
                 log.debug("Session expired");
@@ -838,14 +881,20 @@ public class UserAuthenticationManager {
             return false;
         }
 
-        // check no one has tampered with the session.
-        if (ourHMAC.equals(sessionHMAC)) {
-            log.debug("Valid user session continuing...");
-            return true;
-        } else {
+        // Check no one has tampered with the cookie:
+        if (!ourHMAC.equals(sessionHMAC)) {
             log.debug("Invalid HMAC detected for user id " + userId);
             return false;
         }
+
+        // Check that the session token is still valid:
+        // FIXME: old cookies should be deprecated soon, by removing the userSessionToken is not null bypass case!
+        if (null != userSessionToken && !userFromDatabase.getSessionToken().toString().equals(userSessionToken)) {
+            log.debug("Invalid session token detected for user id " + userId);
+            return false;
+        }
+
+        return true;
     }
     
     /**
@@ -857,8 +906,26 @@ public class UserAuthenticationManager {
      *            - User Id
      * @param currentDate
      *            - Current date
+     * @param sessionToken
+     *            - a token allowing session invalidation
      * @return HMAC signature.
      */
+    private String calculateSessionHMAC(final String key, final String userId, final String currentDate, final String sessionToken) {
+        return UserAuthenticationManager.calculateHMAC(key, userId + "|" + currentDate + "|" + sessionToken);
+    }
+
+    /**
+     * Calculate the session HMAC value based on the properties of interest.
+     *
+     * @param key
+     *            - secret key.
+     * @param userId
+     *            - User Id
+     * @param currentDate
+     *            - Current date
+     * @return HMAC signature.
+     */
+    @Deprecated
     private String calculateSessionHMAC(final String key, final String userId, final String currentDate) {
         return UserAuthenticationManager.calculateHMAC(key, userId + "|" + currentDate);
     }
@@ -876,12 +943,43 @@ public class UserAuthenticationManager {
      */
     private Map<String, String> getSegueSessionFromRequest(final HttpServletRequest request) throws IOException,
             InvalidSessionException {
+        // WARNING: There are two getSegueSessionFromRequest methods: ensure you update both!
         Cookie segueAuthCookie = null;
         if (request.getCookies() == null) {
             throw new InvalidSessionException("There are no cookies set.");
         }
 
         for (Cookie c : request.getCookies()) {
+            if (c.getName().equals(SEGUE_AUTH_COOKIE)) {
+                segueAuthCookie = c;
+            }
+        }
+
+        if (null == segueAuthCookie) {
+            throw new InvalidSessionException("There are no cookies set.");
+        }
+
+        @SuppressWarnings("unchecked")
+        Map<String, String> sessionInformation = this.serializationMapper.readValue(segueAuthCookie.getValue(),
+                HashMap.class);
+
+        return sessionInformation;
+    }
+
+    /**
+     * @see #getSegueSessionFromRequest(HttpServletRequest) - except for some reason a WebSocket UpgradeRrequest is not
+     *          an HttpServletRequest. Worse, the cookies from an HttpServletRequest are Cookie objects, but those
+     *          from the WebSocket UpgradeRequest are HttpCookies!
+     */
+    private Map<String, String> getSegueSessionFromRequest(final UpgradeRequest request) throws IOException,
+            InvalidSessionException {
+        // WARNING: There are two getSegueSessionFromRequest methods: ensure you update both!
+        HttpCookie segueAuthCookie = null;
+        if (request.getCookies() == null) {
+            throw new InvalidSessionException("There are no cookies set.");
+        }
+
+        for (HttpCookie c : request.getCookies()) {
             if (c.getName().equals(SEGUE_AUTH_COOKIE)) {
                 segueAuthCookie = c;
             }

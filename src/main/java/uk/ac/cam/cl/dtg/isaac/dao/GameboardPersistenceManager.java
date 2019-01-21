@@ -29,11 +29,14 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.google.common.collect.Maps;
 import com.google.inject.name.Named;
@@ -127,6 +130,18 @@ public class GameboardPersistenceManager {
      */
     public GameboardDTO getGameboardById(final String gameboardId) throws SegueDatabaseException {
         return getGameboardById(gameboardId, true);
+    }
+
+    /**
+     * Find a list of gameboards by their ids.
+     *
+     * @param gameboardIds
+     *            - the ids to search for.
+     * @return the gameboards or null if we can't find them.
+     * @throws SegueDatabaseException  - if there is a problem accessing the database.
+     */
+    public List<GameboardDTO> getGameboardsByIds(final List<String> gameboardIds) throws SegueDatabaseException {
+        return getGameboardsByIds(gameboardIds, true);
     }
     
     /**
@@ -771,6 +786,60 @@ public class GameboardPersistenceManager {
         } catch (SQLException | IOException e) {
             throw new SegueDatabaseException("Unable to find assignment by id", e);
         }      
+    }
+
+    /**
+     * Utility method to allow us to retrieve a gameboard either from temporary storage or permanent.
+     *
+     * @param gameboardId
+     *            - gameboard to find
+     * @param fullyPopulate
+     *            - true or false
+     * @return gameboard dto or null if we cannot find the gameboard requested
+     * @throws SegueDatabaseException
+     *             - if there is a problem with the database
+     */
+    private List<GameboardDTO> getGameboardsByIds(final List<String> gameboardIds, final boolean fullyPopulate)
+            throws SegueDatabaseException {
+        if (null == gameboardIds || gameboardIds.isEmpty()) {
+            return null;
+        }
+
+        // First, try temporary storage
+        List<GameboardDTO> cachedGameboards = new ArrayList<>();
+        List<String> gameboardIdsForQuery = new ArrayList<>();
+        for (String gameboardId : gameboardIds) {
+            GameboardDO cachedGameboard = this.gameboardNonPersistentStorage.getIfPresent(gameboardId);
+            if (null != cachedGameboard) {
+                cachedGameboards.add(this.convertToGameboardDTO(cachedGameboard));
+            } else {
+                gameboardIdsForQuery.add(gameboardId);
+            }
+        }
+
+        // Then, go for the database
+        try (Connection conn = database.getDatabaseConnection()) {
+            PreparedStatement pst;
+            pst = conn.prepareStatement("SELECT * FROM gameboards WHERE id = ANY (?);");
+            Array gameboardIdsPreparedArray = conn.createArrayOf("varchar", gameboardIdsForQuery.toArray());
+            pst.setArray(1, gameboardIdsPreparedArray);
+
+            ResultSet results = pst.executeQuery();
+            List<GameboardDO> listOfResults = new ArrayList<>();
+            while (results.next()) {
+                listOfResults.add(this.convertFromSQLToGameboardDO(results));
+            }
+
+            if (listOfResults.size() == 0) {
+                return null;
+            }
+
+            List<GameboardDTO> databaseGameboards = listOfResults.stream().map(r -> this.convertToGameboardDTO(r, fullyPopulate)).collect(Collectors.toList());
+
+            return Stream.of(cachedGameboards, databaseGameboards).flatMap(Collection::stream).collect(Collectors.toList());
+        } catch (SQLException | IOException e) {
+            throw new SegueDatabaseException("Unable to find assignments by ids", e);
+        }
     }
 
     /**

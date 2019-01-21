@@ -49,7 +49,8 @@ public class PgUserStreakManager implements IUserStreaksManager {
             PreparedStatement pst;
             pst = conn.prepareStatement("SELECT * FROM"
                     + " user_streaks_current_progress(?) LEFT JOIN user_streaks(?)"
-                    + " ON user_streaks_current_progress.currentdate - user_streaks.enddate <= 1");
+                    + " ON user_streaks_current_progress.currentdate - user_streaks.enddate <= 1"
+                    + " AND user_streaks.startdate <= user_streaks_current_progress.currentdate");
 
             pst.setLong(1, user.getId());
             pst.setLong(2, user.getId());

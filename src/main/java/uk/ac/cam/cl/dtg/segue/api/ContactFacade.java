@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,23 +16,11 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.inject.Inject;
 import io.swagger.annotations.Api;
-
-import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-
+import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import uk.ac.cam.cl.dtg.segue.api.Constants.SegueLogType;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
@@ -44,7 +32,18 @@ import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import com.google.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import java.util.Map;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Contact Facade.
@@ -91,6 +90,7 @@ public class ContactFacade extends AbstractSegueFacade {
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Submit a contact form request.")
     public Response contactUs(final Map<String, String> form, @Context final HttpServletRequest request) {
         if (form.get("firstName") == null || form.get("lastName") == null || form.get("emailAddress") == null
                 || form.get("subject") == null || form.get("message") == null) {
