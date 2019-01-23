@@ -900,7 +900,7 @@ public class GameManager {
             return Lists.newArrayList();
         }
 
-        List<GameboardItem> gameboardReadyQuestions = Lists.newArrayList();
+        Set<GameboardItem> gameboardReadyQuestions = Sets.newHashSet();
         List<GameboardItem> completedQuestions = Lists.newArrayList();
         // choose the gameboard questions to include.
         while (gameboardReadyQuestions.size() < GAME_BOARD_TARGET_SIZE && !selectionOfGameboardQuestions.isEmpty()) {
@@ -925,9 +925,8 @@ public class GameManager {
                 if (questionState.equals(GameboardItemState.PASSED) 
                         || questionState.equals(GameboardItemState.PERFECT)) {
                     completedQuestions.add(gameboardItem);
-                } else if (!gameboardReadyQuestions.contains(gameboardItem)) {
-                    gameboardReadyQuestions.add(gameboardItem);
                 }
+                gameboardReadyQuestions.add(gameboardItem);
 
                 // stop inner loop if we have reached our target
                 if (gameboardReadyQuestions.size() == GAME_BOARD_TARGET_SIZE) {
@@ -957,10 +956,11 @@ public class GameManager {
             }
         }
 
-        // randomise the questions again as we may have injected some completed questions.
-        Collections.shuffle(gameboardReadyQuestions);
+        // Convert to List and randomise the questions again, as we may have injected some completed questions.
+        List<GameboardItem> gameboardQuestionList = Lists.newArrayList(gameboardReadyQuestions);
+        Collections.shuffle(gameboardQuestionList);
 
-        return gameboardReadyQuestions;
+        return gameboardQuestionList;
     }
 
     /**
