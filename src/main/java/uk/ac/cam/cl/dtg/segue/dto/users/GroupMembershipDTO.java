@@ -141,4 +141,17 @@ public class GroupMembershipDTO {
     public void setCreated(final Date created) {
         this.created = created;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("GroupMembershipDTO [groupId=");
+        builder.append(groupId.toString());
+        builder.append(", userId=");
+        builder.append(userId.toString());
+        builder.append(", status=");
+        builder.append(status);
+        builder.append("]");
+        return builder.toString();
+    }
 }

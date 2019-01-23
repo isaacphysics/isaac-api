@@ -388,18 +388,18 @@ public class GroupsFacade extends AbstractSegueFacade {
             List<UserSummaryDTO> summarisedMemberInfo = userManager.convertToUserSummaryObjectList(groupManager
                     .getUsersInGroup(group));
 
-            // Calculate the ETag based user id and groups they own
-            EntityTag etag = new EntityTag(group.getId().hashCode() + summarisedMemberInfo.toString().hashCode()
-                    + summarisedMemberInfo.size() + "");
-            Response cachedResponse = generateCachedResponse(cacheRequest, etag,
-                    Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK);
-            if (cachedResponse != null) {
-                return cachedResponse;
-            }
-
             associationManager.enforceAuthorisationPrivacy(user, summarisedMemberInfo);
 
             groupManager.convertToUserSummaryGroupMembership(group, summarisedMemberInfo);
+
+            // Calculate the ETag based on the users, their revoked status and their membership status
+            // For caching purposes (to ensure changes to group status are noticed, this must be the last thing we do:
+            EntityTag etag = new EntityTag(group.getId().hashCode() + summarisedMemberInfo.toString().hashCode()
+                    + summarisedMemberInfo.size() + "");
+            Response cachedResponse = generateCachedResponse(cacheRequest, etag, Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK);
+            if (cachedResponse != null) {
+                return cachedResponse;
+            }
 
             return Response.ok(summarisedMemberInfo).tag(etag)
                     .cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();

@@ -32,4 +32,23 @@ public class UserSummaryWithGroupMembershipDTO extends UserSummaryDTO {
     public void setGroupMembershipInformation(GroupMembershipDTO groupMembershipInformation) {
         this.groupMembershipInformation = groupMembershipInformation;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("UserSummaryDTO [databaseId=");
+        builder.append(this.getId().toString());
+        builder.append(", givenName=");
+        builder.append(this.getGivenName());
+        builder.append(", familyName=");
+        builder.append(this.getFamilyName());
+        builder.append(", groups=");
+        builder.append(groupMembershipInformation.toString());
+        builder.append(", emailVerificationStatus=");
+        builder.append(this.getEmailVerificationStatus().name());
+        builder.append(", authorisedFullAccess=");
+        builder.append(this.isAuthorisedFullAccess());
+        builder.append("]");
+        return builder.toString();
+    }
 }
