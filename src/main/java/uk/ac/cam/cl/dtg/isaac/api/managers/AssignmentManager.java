@@ -21,6 +21,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,13 +36,12 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
-import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
+import uk.ac.cam.cl.dtg.segue.dos.GroupMembershipStatus;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.GroupMembershipDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
@@ -112,7 +112,7 @@ public class AssignmentManager implements IGroupObserver {
 
         List<AssignmentDTO> assignments = Lists.newArrayList();
         for (UserGroupDTO group : groups) {
-            assignments.addAll(this.assignmentPersistenceManager.getAssignmentsByGroupId(group.getId()));
+            assignments.addAll(this.filterAssignmentsBasedOnGroupMembershipContext(this.assignmentPersistenceManager.getAssignmentsByGroupId(group.getId()), user.getId()));
         }
 
         return assignments;
@@ -167,26 +167,16 @@ public class AssignmentManager implements IGroupObserver {
         newAssignment.setId(this.assignmentPersistenceManager.saveAssignment(newAssignment));
 
         UserGroupDTO userGroupDTO = groupManager.getGroupById(newAssignment.getGroupId());
-        List<RegisteredUserDTO> users = groupManager.getUsersInGroup(userGroupDTO);
-        
+        List<RegisteredUserDTO> usersToEmail = Lists.newArrayList();
+        Map<Long, GroupMembershipDTO> userMembershipMapforGroup = this.groupManager.getUserMembershipMapForGroup(userGroupDTO.getId());
         GameboardDTO gameboard = gameManager.getGameboard(newAssignment.getGameboardId());
         
-        //filter users so those that have revoked access to their data aren't emailed
-        try {
-			RegisteredUserDTO assignmentOwner = userManager.getUserDTOById(newAssignment.getOwnerUserId());
-			
-			for (Iterator<RegisteredUserDTO> iterator = users.iterator(); iterator.hasNext();) {
-				RegisteredUserDTO user = iterator.next();
-				UserSummaryDTO userSummary = userManager.convertToUserSummaryObject(user);
-				if (!userAssociationManager.hasPermission(assignmentOwner, userSummary)) {
-					iterator.remove();
-				}
-			}
-			
-		} catch (NoUserException e1) {
-			log.error(String.format("Could not find assignment owner (%s) for assignment (%s)", 
-							newAssignment.getOwnerUserId(), newAssignment.getId()));
-		}
+        // filter users so those who are inactive in the group aren't emailed
+        for(RegisteredUserDTO user : groupManager.getUsersInGroup(userGroupDTO)) {
+            if (GroupMembershipStatus.ACTIVE.equals(userMembershipMapforGroup.get(user.getId()).getStatus())) {
+                usersToEmail.add(user);
+            }
+        }
 
 		// inform all members of the group that there is now an assignment for them.
         try {
@@ -204,7 +194,7 @@ public class AssignmentManager implements IGroupObserver {
                 gameboardName = gameboard.getTitle();
             }
 
-            for (RegisteredUserDTO userDTO : users) {
+            for (RegisteredUserDTO userDTO : usersToEmail) {
                 emailManager.sendTemplatedEmailToUser(userDTO,
                         emailManager.getEmailTemplateDTO("email-template-group-assignment"),
                         ImmutableMap.of("gameboardURL", gameboardURL,
@@ -222,7 +212,7 @@ public class AssignmentManager implements IGroupObserver {
 
     /**
      * Assignments set by user.
-     * 
+     *
      * @param user
      *            - who set the assignments
      * @return the assignments.
@@ -250,25 +240,6 @@ public class AssignmentManager implements IGroupObserver {
         }
         List<Long> groupIds = groups.stream().map(UserGroupDTO::getId).collect(Collectors.toList());
         return this.assignmentPersistenceManager.getAssignmentsByGroupList(groupIds);
-    }
-
-    /**
-     * Assignments set by user and group.
-     * 
-     * @param user
-     *            - who set the assignments
-     * @param group
-     *            - the group that was assigned the work.
-     * @return the assignments.
-     * @throws SegueDatabaseException
-     *             - if we cannot complete a required database operation.
-     */
-    public List<AssignmentDTO> getAllAssignmentsSetByUserToGroup(final RegisteredUserDTO user, final UserGroupDTO group)
-            throws SegueDatabaseException {
-        Validate.notNull(user);
-        Validate.notNull(group);
-        return this.assignmentPersistenceManager
-                .getAssignmentsByOwnerIdAndGroupId(user.getId(), group.getId());
     }
 
     /**
@@ -327,23 +298,14 @@ public class AssignmentManager implements IGroupObserver {
         Validate.notNull(user);
         Validate.notBlank(gameboardId);
 
-        List<AssignmentDTO> allAssignments = this.getAllAssignmentsSetByUser(user);
+        List<UserGroupDTO> allGroupsForUser = this.groupManager.getAllGroupsOwnedAndManagedByUser(user, false);
+        List<AssignmentDTO> allAssignmentsForMyGroups = this.getAllAssignmentsForSpecificGroups(allGroupsForUser);
+
         List<UserGroupDTO> groups = Lists.newArrayList();
 
-        for (AssignmentDTO assignment : allAssignments) {
+        for(AssignmentDTO assignment : allAssignmentsForMyGroups) {
             if (assignment.getGameboardId().equals(gameboardId)) {
-                try {
-                    // make sure the user has a reason to see the assignment still
-                    UserGroupDTO group = groupManager.getGroupById(assignment.getGroupId());
-                    if (GroupManager.isOwnerOrAdditionalManager(group, user.getId())) {
-                        groups.add(group);
-                    }
-                } catch (ResourceNotFoundException e) {
-                    // skip group as it no longer exists.
-                    log.warn(String.format(
-                            "Group (%s) that no longer exists referenced by assignment (%s). Skipping.",
-                            assignment.getGroupId(), assignment.getId()));
-                }
+                groups.add(groupManager.getGroupById(assignment.getGroupId()));
             }
         }
 
@@ -363,8 +325,7 @@ public class AssignmentManager implements IGroupObserver {
         // Try to email user to let them know
         try {
         	RegisteredUserDTO groupOwner = this.userManager.getUserDTOById(group.getOwnerId());
-
-            List<AssignmentDTO> existingAssignments = this.getAllAssignmentsSetByUserToGroup(groupOwner, group);
+            List<AssignmentDTO> existingAssignments = this.getAllAssignmentsForSpecificGroups(Arrays.asList(group));
 
             emailManager.sendTemplatedEmailToUser(user,
                     emailManager.getEmailTemplateDTO("email-template-group-welcome"),
@@ -494,6 +455,27 @@ public class AssignmentManager implements IGroupObserver {
                 .put("accountURL", accountURL)
                 .put("assignmentsInfo", plainTextSB.toString())
                 .put("assignmentsInfo_HTML", htmlSB.toString()).build();
+    }
+
+    private List<AssignmentDTO> filterAssignmentsBasedOnGroupMembershipContext(List<AssignmentDTO> assignments, Long userId) throws SegueDatabaseException {
+        Map<Long, Map<Long, GroupMembershipDTO>> groupIdToUserMembershipInfoMap = Maps.newHashMap();
+        List<AssignmentDTO> results = Lists.newArrayList();
+
+        for (AssignmentDTO assignment : assignments) {
+            if (!groupIdToUserMembershipInfoMap.containsKey(assignment.getGroupId())) {
+                groupIdToUserMembershipInfoMap.put(assignment.getGroupId(), this.groupManager.getUserMembershipMapForGroup(assignment.getGroupId()));
+            }
+
+            GroupMembershipDTO membershipRecord = groupIdToUserMembershipInfoMap.get(assignment.getGroupId()).get(userId);
+            // if they are inactive and they became inactive before the assignment was sent we want to skip the assignment.
+            if (GroupMembershipStatus.INACTIVE.equals(membershipRecord.getStatus())
+                    && membershipRecord.getUpdated().before(assignment.getCreationDate()) ) {
+                continue;
+            }
+
+            results.add(assignment);
+        }
+        return results;
     }
 
 }
