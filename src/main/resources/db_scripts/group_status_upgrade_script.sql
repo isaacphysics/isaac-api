@@ -2,7 +2,8 @@
 
 -- ALTER TABLE public.group_memberships DROP COLUMN updated;
 
-ALTER TABLE public.group_memberships ADD COLUMN updated timestamp with time zone DEFAULT now();
+ALTER TABLE public.group_memberships ADD COLUMN updated timestamp with time zone;
+ALTER TABLE public.group_memberships ALTER COLUMN updated SET DEFAULT now();
 
 -- Column: status
 
