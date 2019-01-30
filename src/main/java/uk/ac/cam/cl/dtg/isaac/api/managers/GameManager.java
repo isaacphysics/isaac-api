@@ -49,6 +49,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
@@ -253,6 +254,28 @@ public class GameManager {
         GameboardDTO gameboardFound = this.gameboardPersistenceManager.getGameboardById(gameboardId);
 
         return gameboardFound;
+    }
+
+    /**
+     * Get a list of gameboards by their ids.
+     *
+     * Note: These gameboards will not be augmented with user information.
+     *
+     * @param gameboardIds
+     *            - to look up.
+     * @return the gameboards or null.
+     * @throws SegueDatabaseException
+     *             - if there is a problem retrieving the gameboards in the database or updating the users gameboards
+     *             link table.
+     */
+    public final List<GameboardDTO> getGameboards(final List<String> gameboardIds) throws SegueDatabaseException {
+        if (null == gameboardIds || gameboardIds.isEmpty()) {
+            return null;
+        }
+
+        List<GameboardDTO> gameboardsFound = this.gameboardPersistenceManager.getGameboardsByIds(gameboardIds);
+
+        return gameboardsFound;
     }
 
     /**
@@ -629,9 +652,9 @@ public class GameManager {
             questionPageIds.add(questionPage.getId());
         }
 
-        Map<Long, Map<String, Map<String, List<QuestionValidationResponse>>>> questionAttemptsForAllUsersOfInterest 
-            = questionManager
-                .getMatchingQuestionAttempts(users, questionPageIds);
+        Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>>
+                questionAttemptsForAllUsersOfInterest =
+                questionManager.getMatchingQuestionAttempts(users, questionPageIds);
 
         for (RegisteredUserDTO user : users) {
             List<GameboardItem> userGameItems = Lists.newArrayList();
@@ -877,7 +900,7 @@ public class GameManager {
             return Lists.newArrayList();
         }
 
-        List<GameboardItem> gameboardReadyQuestions = Lists.newArrayList();
+        Set<GameboardItem> gameboardReadyQuestions = Sets.newHashSet();
         List<GameboardItem> completedQuestions = Lists.newArrayList();
         // choose the gameboard questions to include.
         while (gameboardReadyQuestions.size() < GAME_BOARD_TARGET_SIZE && !selectionOfGameboardQuestions.isEmpty()) {
@@ -902,9 +925,8 @@ public class GameManager {
                 if (questionState.equals(GameboardItemState.PASSED) 
                         || questionState.equals(GameboardItemState.PERFECT)) {
                     completedQuestions.add(gameboardItem);
-                } else if (!gameboardReadyQuestions.contains(gameboardItem)) {
-                    gameboardReadyQuestions.add(gameboardItem);
                 }
+                gameboardReadyQuestions.add(gameboardItem);
 
                 // stop inner loop if we have reached our target
                 if (gameboardReadyQuestions.size() == GAME_BOARD_TARGET_SIZE) {
@@ -934,10 +956,11 @@ public class GameManager {
             }
         }
 
-        // randomise the questions again as we may have injected some completed questions.
-        Collections.shuffle(gameboardReadyQuestions);
+        // Convert to List and randomise the questions again, as we may have injected some completed questions.
+        List<GameboardItem> gameboardQuestionList = Lists.newArrayList(gameboardReadyQuestions);
+        Collections.shuffle(gameboardQuestionList);
 
-        return gameboardReadyQuestions;
+        return gameboardQuestionList;
     }
 
     /**
@@ -1032,8 +1055,10 @@ public class GameManager {
      * @throws ResourceNotFoundException
      *             - if we cannot find the question specified.
      */
-    private GameboardItem augmentGameItemWithAttemptInformation(final GameboardItem gameItem,
-            final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser)
+    private GameboardItem augmentGameItemWithAttemptInformation(
+            final GameboardItem gameItem,
+            final Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>>
+                    questionAttemptsFromUser)
             throws ContentManagerException, ResourceNotFoundException {
         Validate.notNull(gameItem, "gameItem cannot be null");
         Validate.notNull(questionAttemptsFromUser, "questionAttemptsFromUser cannot be null");
@@ -1047,10 +1072,12 @@ public class GameManager {
         // get all question parts in the question page: depends on each question
         // having an id that starts with the question page id.
         Collection<QuestionDTO> listOfQuestionParts = getAllMarkableQuestionPartsDFSOrder(questionPageId);
-        Map<String, List<QuestionValidationResponse>> questionAttempts = questionAttemptsFromUser.get(questionPageId);
+        Map<String, ? extends List<? extends LightweightQuestionValidationResponse>> questionAttempts =
+                questionAttemptsFromUser.get(questionPageId);
         if (questionAttempts != null) {
             for (ContentDTO questionPart : listOfQuestionParts) {
-                List<QuestionValidationResponse> questionPartAttempts = questionAttempts.get(questionPart.getId());
+                List<? extends LightweightQuestionValidationResponse> questionPartAttempts =
+                        questionAttempts.get(questionPart.getId());
                 if (questionPartAttempts != null) {
                     // Go through the attempts in reverse chronological order for this question part to determine if
                     // there is a correct answer somewhere.
@@ -1095,8 +1122,8 @@ public class GameManager {
         gameItem.setQuestionPartStates(questionPartStates);
         Integer questionPartsTotal = questionPartsCorrect + questionPartsIncorrect + questionPartsNotAttempted;
         gameItem.setQuestionPartsTotal(questionPartsTotal);
-        Float percentCorrect = 100f * new Float(questionPartsCorrect) / questionPartsTotal;
-        Float percentIncorrect = 100f * new Float(questionPartsIncorrect) / questionPartsTotal;
+        Float percentCorrect = 100f * questionPartsCorrect / questionPartsTotal;
+        Float percentIncorrect = 100f * questionPartsIncorrect / questionPartsTotal;
 
         GameboardItemState state;
         if (questionPartsCorrect == questionPartsTotal) {

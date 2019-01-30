@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2015 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,28 +15,12 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
-import java.util.List;
-
+import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.inject.Inject;
-
 import uk.ac.cam.cl.dtg.segue.api.managers.NotificationPicker;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
@@ -49,6 +33,18 @@ import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import java.util.List;
 
 /**
  * This facade is to support the sending of notifications to lots of users. 
@@ -92,7 +88,8 @@ public class NotificationFacade extends AbstractSegueFacade {
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Gets any notifications for the current user - e.g. user study requests / achievements etc.")
+    @ApiOperation(value = "List any notifications for the current user.",
+                  notes = "This is the old notification delivery method. Newer notifications may be WebSocket based.")
     public Response getMyNotifications(@Context final HttpServletRequest request) {
         try {
             List<ContentDTO> listOfNotifications;
@@ -127,7 +124,7 @@ public class NotificationFacade extends AbstractSegueFacade {
     @Path("/{notification_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Gets a notification by id - e.g. user study requests / achievements etc.")
+    @ApiOperation(value = "Get a specific notification by id.")
     public Response getNotificationById(@Context final HttpServletRequest request,
             @PathParam("notification_id") final String notificationId) {
         if (!userManager.isRegisteredUserLoggedIn(request)) {
@@ -162,7 +159,8 @@ public class NotificationFacade extends AbstractSegueFacade {
     @Path("/{notification_id}/{response_from_user}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Allow users to respond to a notification with either: DISMISSED, POSTPONED or DISABLED")
+    @ApiOperation(value = "Record user response to a notification.",
+                  notes = "The response should be one of: ACKNOWLEDGED, POSTPONED, DISABLED.")
     public Response updateNotificationStatus(@Context final HttpServletRequest request,
             @PathParam("notification_id") final String notificationId,
             @PathParam("response_from_user") final String responseFromUser) {

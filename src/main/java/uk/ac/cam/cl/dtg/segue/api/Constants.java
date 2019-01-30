@@ -123,6 +123,11 @@ public final class Constants {
     public static final String DATE_SIGNED = "DATE_SIGNED";
 
     /**
+     * Constant representing the key for the expiry date property - used in HMAC calculations.
+     */
+    public static final String DATE_EXPIRES = "DATE_EXPIRES";
+
+    /**
      * Constant representing the key for the HMAC property - used in HMAC calculations.
      */
     public static final String HMAC = "HMAC";
@@ -136,6 +141,11 @@ public final class Constants {
      * Constant representing the key for the SESSION USER ID - used in HMAC calculations.
      */
     public static final String SESSION_USER_ID = "currentUserId";
+
+    /**
+     * Constant representing the key for the SESSION TOKEN - used in HMAC calculations.
+     */
+    public static final String SESSION_TOKEN = "token";
 
     /**
      * Constant representing the key for the HMAC Salt - used in HMAC calculations.
@@ -279,6 +289,7 @@ public final class Constants {
         ADMIN_EVENT_WAITING_LIST_PROMOTION,
         ANSWER_QUESTION,
         CHANGE_USER_ROLE,
+        CHANGE_GROUP_MEMBERSHIP_STATUS,
         CONTACT_US_FORM_USED,
         CREATE_USER_ASSOCIATION,
         CREATE_USER_GROUP,

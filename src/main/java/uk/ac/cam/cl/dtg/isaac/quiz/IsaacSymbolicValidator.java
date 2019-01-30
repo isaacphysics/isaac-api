@@ -1,5 +1,5 @@
-/**
- * Copyright 2016 Alistair Stead
+/*
+ * Copyright 2016 Alistair Stead, James Sharkey, Ian Davies
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,25 +15,10 @@
  */
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
-import java.io.*;
-import java.util.*;
-
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Maps;
-import com.google.common.collect.Lists;
 import org.apache.commons.lang3.Validate;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicQuestion;
 import uk.ac.cam.cl.dtg.segue.dos.FormulaValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
@@ -44,10 +29,15 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatorUnavailableException;
 
+import java.io.IOException;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+
 /**
- * Validator that only provides functionality to validate symbolic questions.
- *
- * @author Alistair Stead
+ * Validator that provides functionality to validate symbolic questions.
  *
  */
 public class IsaacSymbolicValidator implements IValidator {
@@ -62,10 +52,12 @@ public class IsaacSymbolicValidator implements IValidator {
 
     private final String hostname;
     private final String port;
+    private final String externalValidatorUrl;
 
     public IsaacSymbolicValidator(final String hostname, final String port) {
         this.hostname = hostname;
         this.port = port;
+        this.externalValidatorUrl = "http://" + this.hostname + ":" + this.port + "/check";
     }
 
     @Override
@@ -123,7 +115,7 @@ public class IsaacSymbolicValidator implements IValidator {
 
                 // ... that are of the Formula type, ...
                 if (!(c instanceof Formula)) {
-                    log.error("Isaac Symbolic Validator for questionId: " + symbolicQuestion.getId()
+                    log.error("Validator for questionId: " + symbolicQuestion.getId()
                             + " expected there to be a Formula. Instead it found a Choice.");
                     continue;
                 }
@@ -157,16 +149,7 @@ public class IsaacSymbolicValidator implements IValidator {
             MatchType closestMatchType = MatchType.NONE;
 
             // Sort the choices so that we match incorrect choices last, taking precedence over correct ones.
-            List<Choice> orderedChoices = Lists.newArrayList(symbolicQuestion.getChoices());
-
-            Collections.sort(orderedChoices, new Comparator<Choice>() {
-                @Override
-                public int compare(Choice o1, Choice o2) {
-                    int o1Val = o1.isCorrect() ? 0 : 1;
-                    int o2Val = o2.isCorrect() ? 0 : 1;
-                    return o1Val - o2Val;
-                }
-            });
+            List<Choice> orderedChoices = getOrderedChoices(symbolicQuestion.getChoices());
 
             // For all the choices on this question...
             for (Choice c : orderedChoices) {
@@ -192,10 +175,6 @@ public class IsaacSymbolicValidator implements IValidator {
                 MatchType matchType = MatchType.NONE;
 
                 try {
-                    // This is ridiculous. All I want to do is pass some JSON to a REST endpoint and get some JSON back.
-
-                    ObjectMapper mapper = new ObjectMapper();
-
                     HashMap<String, String> req = Maps.newHashMap();
                     req.put("target", formulaChoice.getPythonExpression());
                     req.put("test", submittedFormula.getPythonExpression());
@@ -204,31 +183,21 @@ public class IsaacSymbolicValidator implements IValidator {
                         req.put("symbols", String.join(",", symbolicQuestion.getAvailableSymbols()));
                     }
 
-                    StringWriter sw = new StringWriter();
-                    JsonGenerator g = new JsonFactory().createGenerator(sw);
-                    mapper.writeValue(g, req);
-                    g.close();
-                    String requestString = sw.toString();
-
-                    HttpClient httpClient = new DefaultHttpClient();
-                    HttpPost httpPost = new HttpPost("http://" + hostname + ":" + port + "/check");
-
-                    httpPost.setEntity(new StringEntity(requestString, "UTF-8"));
-                    httpPost.addHeader("Content-Type", "application/json");
-
-                    HttpResponse httpResponse = httpClient.execute(httpPost);
-                    HttpEntity responseEntity = httpResponse.getEntity();
-                    String responseString = EntityUtils.toString(responseEntity);
-                    HashMap<String, Object> response = mapper.readValue(responseString, HashMap.class);
+                    HashMap<String, Object> response = getResponseFromExternalValidator(externalValidatorUrl, req);
 
                     if (response.containsKey("error")) {
                         if (response.containsKey("code")) {
                             log.error("Failed to check formula \"" + submittedFormula.getPythonExpression()
-                                    + "\" against \"" + formulaChoice.getPythonExpression() + "\": "
-                                    + response.get("error"));
+                                    + "\" against \"" + formulaChoice.getPythonExpression() + "\": " + response.get("error"));
+                        } else if (response.containsKey("syntax_error")) {
+                            // There's a syntax error in the "test" expression, no use checking it further:
+                            closestMatch = null;
+                            feedback = new Content("Your answer does not seem to be valid maths.<br>"
+                                        + "Check for things like mismatched brackets or misplaced symbols.");
+                            feedback.setTags(new HashSet<>(Collections.singletonList("syntax_error")));
+                            responseCorrect = false;
+                            break;
                         } else {
-                            // If it doesn't contain a code, it wasn't a fatal error in the checker; probably only a
-                            // problem with the submitted answer.
                             log.warn("Problem checking formula \"" + submittedFormula.getPythonExpression()
                                     + "\" for (" + symbolicQuestion.getId() + ") with symbolic checker: " + response.get("error"));
                         }
@@ -263,13 +232,13 @@ public class IsaacSymbolicValidator implements IValidator {
                 }
             }
 
-
             if (null != closestMatch) {
                 // We found a decent match. Of course, it still might be wrong.
 
                 if (closestMatchType != MatchType.EXACT && closestMatch.getRequiresExactMatch()) {
                     if (closestMatch.isCorrect()) {
                         feedback = new Content("Your answer is not in the form we expected. Can you rearrange or simplify it?");
+                        feedback.setTags(new HashSet<>(Collections.singletonList("required_exact")));
                         responseCorrect = false;
                         responseMatchType = closestMatchType;
 
@@ -291,9 +260,6 @@ public class IsaacSymbolicValidator implements IValidator {
                             + "for question " + symbolicQuestion.getId() + ". Choice: "
                             + closestMatch.getPythonExpression() + ", submitted: "
                             + submittedFormula.getPythonExpression());
-
-                    // TODO: Decide whether we want to add something to the explanation along the lines of "you got it
-                    //       right, but only numerically.
                 }
 
             }
@@ -303,4 +269,5 @@ public class IsaacSymbolicValidator implements IValidator {
 
         return new FormulaValidationResponse(symbolicQuestion.getId(), answer, feedback, responseCorrect, responseMatchType.toString(), new Date());
     }
+
 }

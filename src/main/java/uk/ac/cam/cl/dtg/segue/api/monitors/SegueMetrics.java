@@ -30,8 +30,9 @@ public final class SegueMetrics {
     // Websocket Metrics
     public static final Gauge CURRENT_OPEN_WEBSOCKETS = Gauge.build()
             .name("segue_websockets").help("Currently open websockets.").register();
-    public static final Counter WEBSOCKETS_OPENED = Counter.build()
-            .name("segue_websocket_open_total").help("Websockets opened since process start.").register();
+    public static final Counter WEBSOCKETS_OPENED_SUCCESSFULLY = Counter.build()
+            .name("segue_websocket_open_total")
+            .help("Websockets opened successfully (i.e. not exceeding per user limit) since process start.").register();
     public static final Counter WEBSOCKETS_CLOSED = Counter.build()
             .name("segue_websocket_close_total").help("Websockets closed since process start.").register();
 

@@ -14,7 +14,7 @@
       </init-param>
       <init-param>
         <param-name>path-components</param-name>
-        <param-value>0</param-value><!-- full url path granularity -->
+        <param-value>3</param-value><!-- depth of path granularity to facade level -->
       </init-param>
     </filter>
     <filter-mapping>

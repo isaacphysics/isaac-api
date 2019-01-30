@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,19 +17,16 @@ package uk.ac.cam.cl.dtg.segue.dos;
 
 import java.util.Date;
 
-import org.mongojack.ObjectId;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * AssociationGroupDO - this object represents a group or label assigned to users who have been placed into a group.
- * 
- * This allows users to be organised by class / project and for teachers (or those granted permission) to view progress.
+ * GroupMembership Object - this object represents a users membership to a group.
+ *
  */
 public class GroupMembership {
-    private String id;
-    private String groupId;
-    private String userId;
+    private Long groupId;
+    private Long userId;
+    private GroupMembershipStatus status;
+    private Date updated;
     private Date created;
 
     /**
@@ -40,38 +37,15 @@ public class GroupMembership {
     }
 
     /**
-     * @param id - unqiue association id 
      * @param groupId - the group id
      * @param userId - the user id
      */
-    public GroupMembership(final String id, final String groupId, final String userId) {
-        this.id = id;
+    public GroupMembership(final Long groupId, final Long userId, final GroupMembershipStatus status, final Date created, final Date updated) {
         this.groupId = groupId;
         this.userId = userId;
-        this.created = new Date();
-    }
-
-    /**
-     * Gets the id.
-     * 
-     * @return the id
-     */
-    @JsonProperty("_id")
-    @ObjectId
-    public String getId() {
-        return id;
-    }
-
-    /**
-     * Sets the id.
-     * 
-     * @param id
-     *            the id to set
-     */
-    @JsonProperty("_id")
-    @ObjectId
-    public void setId(final String id) {
-        this.id = id;
+        this.status = status;
+        this.created = created;
+        this.updated = updated;
     }
 
     /**
@@ -79,7 +53,7 @@ public class GroupMembership {
      * 
      * @return the groupId
      */
-    public String getGroupId() {
+    public Long getGroupId() {
         return groupId;
     }
 
@@ -89,7 +63,7 @@ public class GroupMembership {
      * @param groupId
      *            the groupId to set
      */
-    public void setGroupId(final String groupId) {
+    public void setGroupId(final Long groupId) {
         this.groupId = groupId;
     }
 
@@ -98,7 +72,7 @@ public class GroupMembership {
      * 
      * @return the userId
      */
-    public String getUserId() {
+    public Long getUserId() {
         return userId;
     }
 
@@ -108,8 +82,43 @@ public class GroupMembership {
      * @param userId
      *            the userId to set
      */
-    public void setUserId(final String userId) {
+    public void setUserId(final Long userId) {
         this.userId = userId;
+    }
+
+    /**
+     * Get the status of the group membership
+     * @return the group status
+     */
+    public GroupMembershipStatus getStatus() {
+        return status;
+    }
+
+    /**
+     * set the status of the group membership
+     * @param status to set
+     */
+    public void setStatus(GroupMembershipStatus status) {
+        this.status = status;
+    }
+
+    /**
+     * Gets the updated date.
+     *
+     * @return the updated date
+     */
+    public Date getUpdated() {
+        return updated;
+    }
+
+    /**
+     * Sets the updated date.
+     *
+     * @param updated
+     *            the updated date to set
+     */
+    public void setUpdated(final Date updated) {
+        this.updated = updated;
     }
 
     /**

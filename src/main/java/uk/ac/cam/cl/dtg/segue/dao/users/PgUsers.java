@@ -642,7 +642,8 @@ public class PgUsers implements IUserDataManager {
         u.setEmailVerificationToken(results.getString("email_verification_token"));
         u.setEmailVerificationStatus(results.getString("email_verification_status") != null ? EmailVerificationStatus
                 .valueOf(results.getString("email_verification_status")) : null);
-        
+        u.setSessionToken(results.getInt("session_token"));
+
         return u;
     }
 

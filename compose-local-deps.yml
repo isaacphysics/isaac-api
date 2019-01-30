@@ -29,13 +29,20 @@ services:
   postgres:
     network_mode: bridge
     container_name: postgres
-    image: isaac-pg
+    image: postgres:9.6
+    volumes:
+      - pg-local:/var/lib/postgresql/data
+      - ./src/main/resources/db_scripts/postgres-rutherford-create-script.sql:/docker-entrypoint-initdb.d/00-isaac-create.sql:ro
+      - ./src/main/resources/db_scripts/postgres-rutherford-functions.sql:/docker-entrypoint-initdb.d/01-isaac-functions.sql:ro
+    environment:
+      POSTGRES_USER: rutherford
+      POSTGRES_PASSWORD: rutherf0rd
     ports:
       - "5432:5432"
   app-physics:
     network_mode: bridge
     container_name: app-physics
-    image: nginx:1.13.12
+    image: nginx:stable
     volumes:
       - "../isaac-app/app:/usr/share/nginx/html:ro"
       - "../isaac-app/nginx.conf:/etc/nginx/nginx.conf:ro"
@@ -44,7 +51,7 @@ services:
   app-chemistry:
     network_mode: bridge
     container_name: app-chemistry
-    image: nginx:1.13.12
+    image: nginx:stable
     volumes:
       - "../isaac-app/app:/usr/share/nginx/html:ro"
       - "../isaac-app/nginx.conf:/etc/nginx/nginx.conf:ro"
@@ -53,7 +60,7 @@ services:
   app-biology:
     network_mode: bridge
     container_name: app-biology
-    image: nginx:1.13.12
+    image: nginx:stable
     volumes:
       - "../isaac-app/app:/usr/share/nginx/html:ro"
       - "../isaac-app/nginx.conf:/etc/nginx/nginx.conf:ro"
@@ -63,3 +70,6 @@ networks:
   default:
     external:
       name: bridge
+volumes:
+  pg-local:
+    external: true
