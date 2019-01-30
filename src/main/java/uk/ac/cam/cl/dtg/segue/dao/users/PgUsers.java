@@ -748,6 +748,7 @@ public class PgUsers implements IUserDataManager {
         user.setEmail(UUID.randomUUID().toString());
         user.setEmailVerificationToken(null);
         user.setEmailToVerify(null);
+        user.setSchoolOther(null); // Risk this contains something identifying!
 
         if (user.getDateOfBirth() != null) {
             Calendar calendar = Calendar.getInstance();
