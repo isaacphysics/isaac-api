@@ -195,7 +195,7 @@ public class PgUsers implements IUserDataManager {
         // TODO Currently this uses the old mongo id for look ups.
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM users WHERE " + LEGACY_ID + " = ?");
+            pst = conn.prepareStatement("SELECT * FROM users WHERE " + LEGACY_ID + " = ? AND deleted <> TRUE");
             pst.setString(1, id);
 
             ResultSet results = pst.executeQuery();
@@ -360,7 +360,7 @@ public class PgUsers implements IUserDataManager {
     public Map<Role, Integer> countUsersByRole() throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("select role, count(1) from users group by role;");
+            pst = conn.prepareStatement("SELECT role, count(1) FROM users WHERE deleted <> TRUE GROUP BY role;");
 
             ResultSet results = pst.executeQuery();
             Map<Role, Integer> resultToReturn = Maps.newHashMap();
