@@ -427,9 +427,7 @@ public class PgUsers implements IUserDataManager {
                 // Replace all linked providers with a uid account provider IDs to prevent clashes if the user creates a new account.
                 PreparedStatement deleteLinkedAccounts;
                 deleteLinkedAccounts = conn.prepareStatement(
-                        "UPDATE linked_accounts " +
-                        "SET provider_user_id = ? " +
-                                "WHERE user_id = ?");
+                        "UPDATE linked_accounts SET provider_user_id = ? WHERE user_id = ?");
 
                 deleteLinkedAccounts.setString(1, UUID.randomUUID().toString());
                 deleteLinkedAccounts.setLong(2, userToDelete.getId());
@@ -437,10 +435,7 @@ public class PgUsers implements IUserDataManager {
 
                 // Hash all linked account provider IDs to prevent clashes if the user creates a new account.
                 PreparedStatement markUserAsDeleted;
-                markUserAsDeleted = conn.prepareStatement(
-                        "UPDATE users" +
-                                " SET deleted = TRUE" +
-                                " WHERE id = ?");
+                markUserAsDeleted = conn.prepareStatement("UPDATE users SET deleted = TRUE WHERE id = ?");
 
                 markUserAsDeleted.setLong(1, userToDelete.getId());
                 markUserAsDeleted.execute();
