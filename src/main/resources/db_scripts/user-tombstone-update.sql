@@ -3,6 +3,4 @@
 -- Column: deleted
 -- ALTER TABLE public.users DROP COLUMN deleted;
 
-ALTER TABLE public.users ADD COLUMN deleted boolean;
-ALTER TABLE public.users ALTER COLUMN deleted SET NOT NULL;
-ALTER TABLE public.users ALTER COLUMN deleted SET DEFAULT false;
+ALTER TABLE public.users ADD COLUMN deleted boolean NOT NULL DEFAULT false;
