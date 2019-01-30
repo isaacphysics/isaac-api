@@ -357,6 +357,7 @@ public final class Constants {
     public static final String EVENT_DATE_FIELDNAME = "eventDate";
     public static final String EVENT_TAGS_FIELDNAME = "eventTags";
     public static final String CONTENT_VERSION_FIELDNAME = "contentVersion";
+    public static enum EventFilterOption {FUTURE, RECENT, PAST};
 
     public static final String ID_SEPARATOR = "|";
     public static final String ESCAPED_ID_SEPARATOR = "\\" + ID_SEPARATOR;
