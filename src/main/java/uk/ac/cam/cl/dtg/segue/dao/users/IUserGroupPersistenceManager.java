@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,9 +17,12 @@ package uk.ac.cam.cl.dtg.segue.dao.users;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dos.GroupMembership;
+import uk.ac.cam.cl.dtg.segue.dos.GroupMembershipStatus;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 
 import javax.annotation.Nullable;
@@ -57,6 +60,21 @@ public interface IUserGroupPersistenceManager {
     List<UserGroup> getGroupsByOwner(Long ownerUserId, Boolean archivedGroupsOnly) throws SegueDatabaseException;
 
     /**
+     * Find User group by Id including deleted groups.
+     *
+     * Note this should only be used when trying to reconstruct assignment state, never when exposing group information directly to users.
+     *
+     * @param groupId
+     *            - the id of the group to find.
+     * @param includeDeletedGroups
+     *            - Enable retrieval of groups marked as deleted
+     * @return group
+     * @throws SegueDatabaseException
+     *             - if we cannot contact the database.
+     */
+    UserGroup findGroupById(Long groupId, boolean includeDeletedGroups) throws SegueDatabaseException;
+
+    /**
      * Find User group by Id.
      * 
      * @param groupId
@@ -65,16 +83,7 @@ public interface IUserGroupPersistenceManager {
      * @throws SegueDatabaseException
      *             - if we cannot contact the database.
      */
-    UserGroup findById(Long groupId) throws SegueDatabaseException;
-
-    /**
-     * @param groupId
-     *            group to lookup
-     * @return member user ids.
-     * @throws SegueDatabaseException
-     *             - if we cannot contact the database.
-     */
-    List<Long> getGroupMemberIds(Long groupId) throws SegueDatabaseException;
+    UserGroup findGroupById(Long groupId) throws SegueDatabaseException;
 
     /**
      * Create a group that users can be assigned to.
@@ -102,6 +111,16 @@ public interface IUserGroupPersistenceManager {
     void addUserToGroup(Long userId, Long groupId) throws SegueDatabaseException;
 
     /**
+     * Update group membership status for a given user
+     * @param userId - the id of the user
+     * @param groupId - the group they are a member of
+     * @param newStatus - e.g. active, inactive or deleted.
+     *
+     * @throws SegueDatabaseException - if an error occurs.
+     */
+    void setUsersGroupMembershipStatus(Long userId, Long groupId, GroupMembershipStatus newStatus) throws SegueDatabaseException;
+
+    /**
      * Remove a user from a group.
      * 
      * @param userId
@@ -114,14 +133,27 @@ public interface IUserGroupPersistenceManager {
     void removeUserFromGroup(Long userId, Long groupId) throws SegueDatabaseException;
 
     /**
-     * Delete group and all membership information.
-     * 
+     * Mark the group status as deleted.
+     *
      * @param groupId
      *            to delete.
      * @throws SegueDatabaseException
      *             - if there is a database error.
      */
     void deleteGroup(Long groupId) throws SegueDatabaseException;
+
+    /**
+     * Delete group and all membership information.
+     * 
+     * @param groupId
+     *            to delete.
+     * @param markAsDeleted
+     *            if true, then the group will have the status set to deleted rather than actually being removed,
+     *            false will actually delete the group from the database permanently
+     * @throws SegueDatabaseException
+     *             - if there is a database error.
+     */
+    void deleteGroup(Long groupId, boolean markAsDeleted) throws SegueDatabaseException;
 
     /**
      * Edit the group information for an existing group.
@@ -135,11 +167,27 @@ public interface IUserGroupPersistenceManager {
     UserGroup editGroup(UserGroup group) throws SegueDatabaseException;
 
     /**
+     * Collects a list of user ids who are a member of a given group.
+     * @param groupId - group of interest
+     * @return list of user ids.
+     * @throws SegueDatabaseException - if there is a database error
+     */
+    Collection<Long> getGroupMemberIds(Long groupId) throws SegueDatabaseException;
+
+    /**
+     * Create a map of user id to membership status so that group membership information can be used to change behaviour.
+     * @param groupId of interest
+     * @return
+     * @throws SegueDatabaseException
+     */
+    Map<Long, GroupMembership> getGroupMembershipMap(Long groupId) throws SegueDatabaseException;
+
+    /**
      * getGroupMembershipList.
-     * 
+     * The list of groups the user belongs to.
      * @param userId
      *            - to lookup
-     * @return the list of groups the user belongs to.
+     * @return the list of groups that the user belongs to.
      * @throws SegueDatabaseException
      *             - if a database error occurs.
      */

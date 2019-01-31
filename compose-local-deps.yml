@@ -42,7 +42,7 @@ services:
   app-physics:
     network_mode: bridge
     container_name: app-physics
-    image: nginx:1.13.12
+    image: nginx:stable
     volumes:
       - "../isaac-app/app:/usr/share/nginx/html:ro"
       - "../isaac-app/nginx.conf:/etc/nginx/nginx.conf:ro"
@@ -51,7 +51,7 @@ services:
   app-chemistry:
     network_mode: bridge
     container_name: app-chemistry
-    image: nginx:1.13.12
+    image: nginx:stable
     volumes:
       - "../isaac-app/app:/usr/share/nginx/html:ro"
       - "../isaac-app/nginx.conf:/etc/nginx/nginx.conf:ro"
@@ -60,7 +60,7 @@ services:
   app-biology:
     network_mode: bridge
     container_name: app-biology
-    image: nginx:1.13.12
+    image: nginx:stable
     volumes:
       - "../isaac-app/app:/usr/share/nginx/html:ro"
       - "../isaac-app/nginx.conf:/etc/nginx/nginx.conf:ro"
