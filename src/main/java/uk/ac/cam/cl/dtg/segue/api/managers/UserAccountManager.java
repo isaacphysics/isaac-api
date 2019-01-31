@@ -24,6 +24,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -1397,18 +1398,7 @@ public class UserAccountManager implements IUserAccountManager {
         if (null == user) {
             return null;
         }
-
-        RegisteredUserDTO userDTO = this.dtoMapper.map(user, RegisteredUserDTO.class);
-        // Augment with linked account information
-        try {
-            userDTO.setLinkedAccounts(this.database.getAuthenticationProvidersByUser(user));
-            userDTO.setHasSegueAccount(this.userAuthenticationManager.hasLocalCredentials(user));
-
-        } catch (SegueDatabaseException e) {
-            log.error("Unable to set linked accounts or local account property for user due to a database error.");
-        }
-
-        return userDTO;
+        return this.convertUserDOsToUserDTOs(Collections.singletonList(user)).get(0);
     }
 
     private List<RegisteredUserDTO> convertUserDOsToUserDTOs(final List<RegisteredUser> users) {

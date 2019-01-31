@@ -21,6 +21,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -95,23 +96,7 @@ public class PgUsers implements IUserDataManager {
     @Override
     public List<AuthenticationProvider> getAuthenticationProvidersByUser(final RegisteredUser user)
             throws SegueDatabaseException {
-
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM linked_accounts WHERE user_id = ?");
-            pst.setLong(1, user.getId());
-
-            ResultSet results = pst.executeQuery();
-            
-            List<AuthenticationProvider> listOfResults = Lists.newArrayList();
-            while (results.next()) {
-                listOfResults.add(AuthenticationProvider.valueOf(results.getString("provider")));
-            }
-
-            return listOfResults;
-        } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
-        }  
+        return this.getAuthenticationProvidersByUsers(Collections.singletonList(user)).get(user);
     }
 
     @Override
