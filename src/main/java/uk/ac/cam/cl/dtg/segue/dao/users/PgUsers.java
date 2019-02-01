@@ -20,10 +20,16 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.commons.lang3.Validate;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
@@ -90,23 +96,77 @@ public class PgUsers implements IUserDataManager {
     @Override
     public List<AuthenticationProvider> getAuthenticationProvidersByUser(final RegisteredUser user)
             throws SegueDatabaseException {
+        return this.getAuthenticationProvidersByUsers(Collections.singletonList(user)).get(user);
+    }
 
+    @Override
+    public Map<RegisteredUser, List<AuthenticationProvider>> getAuthenticationProvidersByUsers(final List<RegisteredUser> users) throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM linked_accounts WHERE user_id = ?");
-            pst.setLong(1, user.getId());
+            StringBuilder sb = new StringBuilder("SELECT * FROM linked_accounts WHERE user_id IN (");
+            List<String> questionMarks = IntStream.range(0, users.size()).mapToObj(i -> "?").collect(Collectors.toList());
+            sb.append(String.join(",", questionMarks));
+            sb.append(");");
 
-            ResultSet results = pst.executeQuery();
-            
-            List<AuthenticationProvider> listOfResults = Lists.newArrayList();
-            while (results.next()) {
-                listOfResults.add(AuthenticationProvider.valueOf(results.getString("provider")));
+            PreparedStatement pst;
+            pst = conn.prepareStatement(sb.toString());
+
+            int userParamIndex = 1;
+            // These will come in handy later...
+            Map<Long, RegisteredUser> userMap = users.stream().collect(Collectors.toMap(RegisteredUser::getId, Function.identity()));
+            Map<RegisteredUser, List<AuthenticationProvider>> authenticationProviders = new HashMap<>();
+            // Add the parameters into the query
+            for (RegisteredUser user : users) {
+                pst.setLong(userParamIndex++, user.getId());
+                authenticationProviders.put(userMap.get(user.getId()), new ArrayList<>());
             }
 
-            return listOfResults;
+            // There appears to be a hard limit of 32767 parameters (source: the Internet) while using a prepared
+            // statement over JDBC. However, one can circumvent that by running the query from a string. This is
+            // generally a bad idea, unless a prepared statement is used to construct the query first, which is probably
+            // still a bad idea, only slightly less so.
+            // TL;DR: Sorry...
+            ResultSet queryResults = conn.createStatement().executeQuery(pst.toString());
+            while (queryResults.next()) {
+                RegisteredUser user = userMap.get(queryResults.getLong("user_id"));
+                authenticationProviders.get(user).add(AuthenticationProvider.valueOf(queryResults.getString("provider")));
+            }
+            return authenticationProviders;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
-        }  
+        }
+    }
+
+    @Override
+    public Map<RegisteredUser, Boolean> getSegueAccountExistenceByUsers(List<RegisteredUser> users) throws SegueDatabaseException {
+        try (Connection conn = database.getDatabaseConnection()) {
+            StringBuilder sb = new StringBuilder("SELECT * FROM user_credentials WHERE user_id IN (");
+            List<String> questionMarks = IntStream.range(0, users.size()).mapToObj(i -> "?").collect(Collectors.toList());
+            sb.append(String.join(",", questionMarks));
+            sb.append(");");
+
+            PreparedStatement pst;
+            pst = conn.prepareStatement(sb.toString());
+
+            int userParamIndex = 1;
+            // These will come in handy later...
+            Map<Long, RegisteredUser> userMap = users.stream().collect(Collectors.toMap(RegisteredUser::getId, Function.identity()));
+            Map<RegisteredUser, Boolean> userCredentialsExistence = new HashMap<>();
+            // Add the parameters into the query
+            for (RegisteredUser user : users) {
+                pst.setLong(userParamIndex++, user.getId());
+                userCredentialsExistence.put(userMap.get(user.getId()), false);
+            }
+
+            // See comment in getAuthenticationProvidersByUsers
+            ResultSet queryResults = conn.createStatement().executeQuery(pst.toString());
+            while (queryResults.next()) {
+                RegisteredUser user = userMap.get(queryResults.getLong("user_id"));
+                userCredentialsExistence.put(user, true);
+            }
+            return userCredentialsExistence;
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        }
     }
 
     @Override
