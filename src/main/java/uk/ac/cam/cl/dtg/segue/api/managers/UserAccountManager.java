@@ -22,8 +22,15 @@ import java.io.IOException;
 import java.net.URI;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -1391,18 +1398,34 @@ public class UserAccountManager implements IUserAccountManager {
         if (null == user) {
             return null;
         }
+        return this.convertUserDOsToUserDTOs(Collections.singletonList(user)).get(0);
+    }
 
-        RegisteredUserDTO userDTO = this.dtoMapper.map(user, RegisteredUserDTO.class);
-        // Augment with linked account information
-        try {
-            userDTO.setLinkedAccounts(this.database.getAuthenticationProvidersByUser(user));
-            userDTO.setHasSegueAccount(this.userAuthenticationManager.hasLocalCredentials(user));
-
-        } catch (SegueDatabaseException e) {
-            log.error("Unable to set linked accounts or local account property for user due to a database error.");
+    private List<RegisteredUserDTO> convertUserDOsToUserDTOs(final List<RegisteredUser> users) {
+        List <RegisteredUser> userDOs = users.parallelStream().filter(Objects::nonNull).collect(Collectors.toList());
+        if (userDOs.isEmpty()) {
+            return new ArrayList<>();
         }
 
-        return userDTO;
+        List<RegisteredUserDTO> foundUserDTOs = new ArrayList<>();
+        try {
+            // These only need to be *effectively* final, but better be safe than sorry.
+            final Map<RegisteredUser, List<AuthenticationProvider>> usersAuthenticationProviders = this.database.getAuthenticationProvidersByUsers(users);
+            final Map<RegisteredUser, Boolean> usersHaveSegueAccount = this.database.getSegueAccountExistenceByUsers(users);
+
+            // The following should probably be outside of the try scope, but then good luck getting the two variables
+            // above captured by the lambda down here...
+            foundUserDTOs = users.parallelStream().map(user -> {
+                RegisteredUserDTO userDTO = this.dtoMapper.map(user, RegisteredUserDTO.class);
+                userDTO.setLinkedAccounts(usersAuthenticationProviders.get(user));
+                userDTO.setHasSegueAccount(usersHaveSegueAccount.get(user));
+                return userDTO;
+            }).collect(Collectors.toList());
+        } catch (SegueDatabaseException e) {
+            log.error("Unable to set linked accounts for users due to a database error.");
+        }
+
+        return foundUserDTOs;
     }
 
     /**
@@ -1413,11 +1436,7 @@ public class UserAccountManager implements IUserAccountManager {
      * @return the list of user dtos.
      */
     private List<RegisteredUserDTO> convertUserDOToUserDTOList(final List<RegisteredUser> listToConvert) {
-        List<RegisteredUserDTO> result = Lists.newArrayList();
-        for (RegisteredUser user : listToConvert) {
-            result.add(this.convertUserDOToUserDTO(user));
-        }
-        return result;
+        return this.convertUserDOsToUserDTOs(listToConvert);
     }
 
     /**

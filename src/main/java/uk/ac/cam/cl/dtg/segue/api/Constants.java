@@ -158,6 +158,7 @@ public final class Constants {
     public static final String SEARCH_CLUSTER_ADDRESS = "SEARCH_CLUSTER_ADDRESS";
     public static final String SEARCH_CLUSTER_PORT = "SEARCH_CLUSTER_PORT";
     public static final String SEARCH_CLUSTER_INFO_PORT = "SEARCH_CLUSTER_INFO_PORT";
+    public static final String SEARCH_RESULTS_HARD_LIMIT = "SEARCH_RESULTS_HARD_LIMIT";
 
     /**
      * Suffix to append to raw fields (minus dot separator) - these are fields that the search engine should not do any

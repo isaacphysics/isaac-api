@@ -55,6 +55,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_TIME_LOCALITY;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueLogType;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueUserPreferences;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_LIST_FKEY_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.QUEUED_EMAIL;
 
 /**
  * EmailManager
@@ -100,6 +101,12 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         this.globalStringTokens = globalStringTokens;
 
         FULL_DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(DEFAULT_TIME_LOCALITY));
+    }
+
+    @Override
+    protected void addToQueue(final EmailCommunicationMessage email) {
+        QUEUED_EMAIL.labels(email.getEmailType().name()).inc();
+        super.addToQueue(email);
     }
 
     /**
