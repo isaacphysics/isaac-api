@@ -849,11 +849,17 @@ public class AdminFacade extends AbstractSegueFacade {
                 return cachedResponse;
             }
 
-            if (foundUsers.size() > 2000) {
-                log.warn(String.format("%s user (%s) search returned %d results, limiting to 2000.",
+            int searchResultsLimit;
+            try {
+                searchResultsLimit = Integer.parseInt(this.getProperties().getProperty(Constants.SEARCH_RESULTS_HARD_LIMIT));
+            } catch(NumberFormatException e) {
+                searchResultsLimit = 2000; // Hard-coded, but only as a fail-safe.
+            }
+
+            if (foundUsers.size() > searchResultsLimit) {
+                log.warn(String.format("%s user (%s) search returned %d results, limiting to " + searchResultsLimit + ".",
                         currentUser.getRole(), currentUser.getEmail(), foundUsers.size()));
-                // Limit number of results here. 2000 is hard-coded. FIXME.
-                foundUsers = foundUsers.subList(0, 2000);
+                foundUsers = foundUsers.subList(0, searchResultsLimit);
             }
             log.info(String.format("%s user (%s) did a search across all users based on user prototype {%s}",
                     currentUser.getRole(), currentUser.getEmail(), userPrototype));

@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,6 +28,7 @@ import org.mongojack.ObjectId;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithEmailAddressDTO;
 
+
 /**
  * UserGroupDTO - this object represents a group or label assigned to users who have been placed into a group.
  * 
@@ -38,10 +39,12 @@ public class UserGroupDTO {
     private String groupName;
     private Long ownerId;
     private Date created;
+    private Date lastUpdated;
     private String token;
     private boolean archived;
     private UserSummaryWithEmailAddressDTO ownerSummary;
     private Set<UserSummaryWithEmailAddressDTO> additionalManagers;
+
 
     /**
      * Default Constructor.
@@ -62,12 +65,13 @@ public class UserGroupDTO {
      * @param created
      *            - date created.
      */
-    public UserGroupDTO(@Nullable final Long id, final String groupName, final Long ownerId, final Date created,
+    public UserGroupDTO(@Nullable final Long id, final String groupName, final Long ownerId, final Date created, final Date lastUpdated,
                         final boolean archived) {
         this.id = id;
         this.groupName = groupName;
         this.ownerId = ownerId;
         this.created = created;
+        this.lastUpdated = lastUpdated;
         this.archived = archived;
         this.additionalManagers = Sets.newHashSet();
     }
@@ -79,18 +83,40 @@ public class UserGroupDTO {
      */
     @JsonProperty("_id")
     @ObjectId
-    public Long getId() {
+    @Deprecated
+    public Long getMongoId() {
         return id;
     }
 
     /**
      * Sets the _id.
-     * 
+     *
      * @param id
      *            the _id to set
      */
     @JsonProperty("_id")
     @ObjectId
+    @Deprecated
+    public void setMongoId(final Long id) {
+        this.id = id;
+    }
+
+    /**
+     * Gets the id.
+     *
+     * @return the id
+     */
+    @JsonProperty("id")
+    public Long getId() {
+        return id;
+    }
+
+    /**
+     * Gets the id.
+     *
+     * @return the id
+     */
+    @JsonProperty("id")
     public void setId(final Long id) {
         this.id = id;
     }
@@ -150,6 +176,25 @@ public class UserGroupDTO {
      */
     public void setCreated(final Date created) {
         this.created = created;
+    }
+
+    /**
+     * Gets the last updated.
+     *
+     * @return the created
+     */
+    public Date getLastUpdated() {
+        return lastUpdated;
+    }
+
+    /**
+     * Sets the last updated date.
+     *
+     * @param lastUpdated
+     *            the created to set
+     */
+    public void setLastUpdated(final Date lastUpdated) {
+        this.lastUpdated = lastUpdated;
     }
 
     /**
@@ -270,4 +315,5 @@ public class UserGroupDTO {
     public Set<Long> getAdditionalManagersUserIds() {
         return additionalManagers.stream().map(UserSummaryWithEmailAddressDTO::getId).collect(Collectors.toSet());
     }
+
 }

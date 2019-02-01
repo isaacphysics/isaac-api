@@ -177,7 +177,7 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("UserSummaryDTO [databaseId=");
-        builder.append(databaseId);
+        builder.append(id.toString());
         builder.append(", givenName=");
         builder.append(givenName);
         builder.append(", familyName=");
