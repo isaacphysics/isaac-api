@@ -60,8 +60,10 @@ import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -193,13 +195,13 @@ public class UserManagerTest {
         replay(request);
 
         expect(dummyDatabase.getById(validUserId)).andReturn(returnUser);
-        expect(dummyDatabase.getAuthenticationProvidersByUser(returnUser)).andReturn(
-                Arrays.asList(AuthenticationProvider.GOOGLE));
+        expect(dummyDatabase.getAuthenticationProvidersByUsers(Collections.singletonList(returnUser)))
+                .andReturn(ImmutableMap.of(returnUser, Lists.newArrayList(AuthenticationProvider.GOOGLE))).once();
+        expect(dummyDatabase.getSegueAccountExistenceByUsers(Collections.singletonList(returnUser)))
+                .andReturn(ImmutableMap.of(returnUser, false)).atLeastOnce();
         replay(dummyQuestionDatabase);
 
         expect(dummyMapper.map(returnUser, RegisteredUserDTO.class)).andReturn(new RegisteredUserDTO()).atLeastOnce();
-        expect(dummyLocalAuth.hasPasswordRegistered(anyObject())).andReturn(false).anyTimes();
-
         replay(dummyMapper, dummyDatabase, dummyLocalAuth);
 
         // Act
@@ -370,8 +372,12 @@ public class UserManagerTest {
                 new Date(), Gender.MALE, new Date(), null, null,null, null);
         mappedUser.setSessionToken(0);
 
-        expect(dummyDatabase.getAuthenticationProvidersByUser(mappedUser)).andReturn(
-                Lists.newArrayList(AuthenticationProvider.GOOGLE)).atLeastOnce();
+        expect(dummyDatabase.getAuthenticationProvidersByUsers(Collections.singletonList(mappedUser)))
+                .andReturn(new HashMap<RegisteredUser, List<AuthenticationProvider>>() {{
+                    put(mappedUser, Lists.newArrayList(AuthenticationProvider.GOOGLE));
+                }}).atLeastOnce();
+        expect(dummyDatabase.getSegueAccountExistenceByUsers(Collections.singletonList(mappedUser)))
+                .andReturn(ImmutableMap.of(mappedUser, false)).atLeastOnce();
 
         RegisteredUserDTO mappedUserDTO = new RegisteredUserDTO();
 
@@ -402,8 +408,6 @@ public class UserManagerTest {
 
         dummyQuestionDatabase.mergeAnonymousQuestionAttemptsIntoRegisteredUser(someAnonymousUserDTO, mappedUserDTO);
         expectLastCall().once();
-
-        expect(dummyLocalAuth.hasPasswordRegistered(anyObject())).andReturn(false).anyTimes();
 
         expect(dummyQueue.getEmailTemplateDTO("email-template-registration-confirmation-federated")).andReturn(new EmailTemplateDTO()).once();
         dummyQueue.sendTemplatedEmailToUser(anyObject(), anyObject(), anyObject(), anyObject());
