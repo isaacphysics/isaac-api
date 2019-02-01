@@ -58,8 +58,6 @@ public class SegueJobService implements ServletContextListener {
             // register statically configured jobs
             this.registerScheduledJobs(staticallyConfiguredScheduledJobs);
 
-            // TODO - add db configured scheduled jobs - i.e. register jobs in a db table so we can handle clustered environments
-
             scheduler.start();
         } catch (SchedulerException e) {
             throw new RuntimeException("Unable to initialise the scheduler", e);
