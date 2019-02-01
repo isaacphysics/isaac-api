@@ -1,3 +1,9 @@
+-- DROP SCHEMA quartz_cluster;
+
+CREATE SCHEMA quartz_cluster
+  AUTHORIZATION rutherford;
+
+set schema 'quartz_cluster';
 DROP TABLE IF EXISTS qrtz_fired_triggers;
 DROP TABLE IF EXISTS qrtz_paused_trigger_grps;
 DROP TABLE IF EXISTS qrtz_scheduler_state;
