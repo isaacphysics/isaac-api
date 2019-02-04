@@ -257,7 +257,7 @@ public class PgUsers implements IUserDataManager {
         // TODO Currently this uses the old mongo id for look ups.
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM users WHERE " + LEGACY_ID + " = ? AND deleted <> TRUE");
+            pst = conn.prepareStatement("SELECT * FROM users WHERE " + LEGACY_ID + " = ? AND NOT deleted");
             pst.setString(1, id);
 
             ResultSet results = pst.executeQuery();
@@ -285,7 +285,7 @@ public class PgUsers implements IUserDataManager {
         
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM users WHERE id = ? AND deleted <> TRUE ");
+            pst = conn.prepareStatement("SELECT * FROM users WHERE id = ? AND NOT deleted");
             pst.setLong(1, id);
 
             ResultSet results = pst.executeQuery();
@@ -301,7 +301,7 @@ public class PgUsers implements IUserDataManager {
         Validate.notBlank(email);
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM users WHERE lower(email)=lower(?) AND deleted <> TRUE");
+            pst = conn.prepareStatement("SELECT * FROM users WHERE lower(email)=lower(?) AND NOT deleted");
             pst.setString(1, email);
 
             ResultSet results = pst.executeQuery();
@@ -343,7 +343,7 @@ public class PgUsers implements IUserDataManager {
             PreparedStatement pst;
             
             StringBuilder sb = new StringBuilder();
-            sb.append(" WHERE deleted <> TRUE");
+            sb.append(" WHERE NOT deleted");
             if (fieldsOfInterest.entrySet().size() != 0) {
                 sb.append(" AND ");
             }
@@ -401,7 +401,7 @@ public class PgUsers implements IUserDataManager {
             }
             
             pst = conn.prepareStatement(
-                    String.format("SELECT * FROM users WHERE id IN (%s) AND deleted <> TRUE ORDER BY family_name, given_name",
+                    String.format("SELECT * FROM users WHERE id IN (%s) AND NOT deleted ORDER BY family_name, given_name",
                             inParams.toString()));
 
             int index = 1;
@@ -422,7 +422,7 @@ public class PgUsers implements IUserDataManager {
     public Map<Role, Long> getRoleCount() throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT role, count(1) FROM users WHERE deleted <> TRUE GROUP BY role;");
+            pst = conn.prepareStatement("SELECT role, count(1) FROM users WHERE NOT deleted GROUP BY role;");
 
             ResultSet results = pst.executeQuery();
             Map<Role, Long> resultToReturn = Maps.newHashMap();
@@ -441,7 +441,7 @@ public class PgUsers implements IUserDataManager {
     public Map<Gender, Long> getGenderCount() throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT gender, count(1) FROM users GROUP BY gender;");
+            pst = conn.prepareStatement("SELECT gender, count(1) FROM users WHERE NOT deleted GROUP BY gender;");
 
             ResultSet results = pst.executeQuery();
             Map<Gender, Long> resultToReturn = Maps.newHashMap();
@@ -462,7 +462,7 @@ public class PgUsers implements IUserDataManager {
     public Map<Role, Long> getRolesLastSeenOver(TimeInterval timeInterval) throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT role, count(1) FROM users WHERE last_seen >= now() - ? GROUP BY role");
+            pst = conn.prepareStatement("SELECT role, count(1) FROM users WHERE NOT deleted AND last_seen >= now() - ? GROUP BY role");
             pst.setObject(1, timeInterval.getPGInterval());
             ResultSet results = pst.executeQuery();
             Map<Role, Long> resultsToReturn = Maps.newHashMap();
@@ -481,7 +481,7 @@ public class PgUsers implements IUserDataManager {
             PreparedStatement pst;
             pst = conn.prepareStatement(
                     "SELECT school_id IS NOT NULL AS has_school_id,  school_other IS NOT NULL AS has_school_other," +
-                    " count(1) FROM users GROUP BY has_school_id, has_school_other;");
+                    " count(1) FROM users WHERE NOT deleted GROUP BY has_school_id, has_school_other;");
             ResultSet results = pst.executeQuery();
 
             Map<SchoolInfoStatus, Long> resultsToReturn = Maps.newHashMap();
@@ -502,7 +502,7 @@ public class PgUsers implements IUserDataManager {
     public RegisteredUser getByEmailVerificationToken(final String token) throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM users WHERE email_verification_token = ? AND deleted <> TRUE");
+            pst = conn.prepareStatement("SELECT * FROM users WHERE email_verification_token = ? AND NOT deleted");
             pst.setString(1, token);
 
             ResultSet results = pst.executeQuery();
