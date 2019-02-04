@@ -385,6 +385,8 @@ public class ElasticSearchProvider implements ISearchProvider {
                         shouldMatchSet.add(pair.getKey().getValue());
                         query.should(QueryBuilders.matchQuery(pair.getKey().getValue(), queryItem))
                                 .minimumShouldMatch(shouldMatchSet.size());
+                    } else if (operatorForThisField.equals(Constants.BooleanOperator.NOT)) {
+                        query.mustNot(QueryBuilders.matchQuery(pair.getKey().getValue(), queryItem));
                     } else {
                         query.must(QueryBuilders.matchQuery(pair.getKey().getValue(), queryItem));
                     }
