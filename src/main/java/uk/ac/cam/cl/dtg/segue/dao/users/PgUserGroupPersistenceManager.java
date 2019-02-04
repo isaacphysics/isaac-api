@@ -239,7 +239,7 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
             PreparedStatement pst;
             // we don't want to count 'deleted' groups.
             pst = conn.prepareStatement("SELECT COUNT(1) AS TOTAL FROM groups " +
-                    "WHERE status <> ?");
+                    "WHERE group_status <> ?");
 
             pst.setString(1, GroupStatus.DELETED.name());
 
