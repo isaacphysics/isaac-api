@@ -399,7 +399,30 @@ public final class Constants {
     public static final String SCHOOL_POSTCODE_FIELDNAME_POJO = "postcode";
 
     // User School Reporting
-    public enum SchoolInfoStatus { PROVIDED, OTHER_PROVIDED, NOT_PROVIDED };
+
+    /**
+     *  Represent the information a user has provided about their school status.
+     */
+    public enum SchoolInfoStatus {
+        PROVIDED, OTHER_PROVIDED, BOTH_PROVIDED, NOT_PROVIDED;
+
+        /**
+         *  Return the status given the state of the two school fields
+         * @param schoolIdProvided - whether a school_id is provided
+         * @param schoolOtherProvided - whether a school_other is provided
+         * @return
+         */
+        public static SchoolInfoStatus get(final boolean schoolIdProvided, final boolean schoolOtherProvided) {
+            if (schoolIdProvided && schoolOtherProvided) {
+                return BOTH_PROVIDED;
+            } else if (schoolIdProvided) {
+                return PROVIDED;
+            } else if (schoolOtherProvided) {
+                return OTHER_PROVIDED;
+            }
+            return NOT_PROVIDED;
+        }
+    }
 
     // cache settings
     public static final String MAX_CONTENT_CACHE_TIME = "MAX_CONTENT_CACHE_TIME";

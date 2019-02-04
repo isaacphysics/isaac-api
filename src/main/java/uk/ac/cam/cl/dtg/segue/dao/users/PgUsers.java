@@ -488,7 +488,7 @@ public class PgUsers implements IUserDataManager {
             while (results.next()) {
                 boolean hasSchoolId = results.getBoolean("has_school_id");
                 boolean hasSchoolOther = results.getBoolean("has_school_other");
-                SchoolInfoStatus recordType = hasSchoolId ? PROVIDED : hasSchoolOther ? OTHER_PROVIDED : NOT_PROVIDED;
+                SchoolInfoStatus recordType = SchoolInfoStatus.get(hasSchoolId, hasSchoolOther);
                 resultsToReturn.put(recordType, results.getLong("count"));
             }
             return resultsToReturn;
