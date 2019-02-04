@@ -334,7 +334,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
         PreparedStatement pst;
         try (Connection conn = database.getDatabaseConnection()) {
             pst = conn.prepareStatement("SELECT role, count(DISTINCT users.id) FROM question_attempts" +
-                    " LEFT OUTER JOIN users ON user_id=users.id WHERE timestamp > now() - ? GROUP BY role");
+                    " JOIN users ON user_id=users.id AND NOT deleted WHERE timestamp > now() - ? GROUP BY role");
             pst.setObject(1, timeInterval.getPGInterval());
             ResultSet results = pst.executeQuery();
 
