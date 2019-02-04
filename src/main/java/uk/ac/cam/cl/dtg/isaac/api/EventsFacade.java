@@ -70,6 +70,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -951,10 +952,8 @@ public class EventsFacade extends AbstractIsaacFacade {
      *            - the initial index for the first result.
      * @param limit
      *            - the maximums number of results to return
-     * @param showActiveOnly
-     *            - true will impose filtering on the results. False will not. Defaults to false.
-     * @param showInactiveOnly
-     *            - true will impose filtering on the results. False will not. Defaults to false.
+     * @param filter
+     *            - in which way should the results be filtered from a choice defined in the EventFilterOption enum.
      * @return a Response containing a list of events objects or containing a SegueErrorResponse.
      */
     @GET
@@ -965,8 +964,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     public final Response getEventOverviews(@Context final HttpServletRequest request,
                                     @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
                                     @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit,
-                                    @QueryParam("show_active_only") final Boolean showActiveOnly,
-                                    @QueryParam("show_inactive_only") final Boolean showInactiveOnly) {
+                                    @QueryParam("filter") final String filter) {
         Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 
         Integer newLimit = null;
@@ -984,26 +982,27 @@ public class EventsFacade extends AbstractIsaacFacade {
 
         fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(EVENT_TYPE));
 
-        Map<String, AbstractFilterInstruction> filterInstructions = null;
-        if (showActiveOnly != null && showActiveOnly && showInactiveOnly != null && showInactiveOnly) {
-            return new SegueErrorResponse(Status.BAD_REQUEST,
-                    "You cannot request both show active and inactive only.").toResponse();
-        }
-        if ((showActiveOnly == null && showInactiveOnly == null) // default case
-                || (showActiveOnly != null && showActiveOnly)) {
-            filterInstructions = Maps.newHashMap();
-            DateRangeFilterInstruction anyEventsFromNow = new DateRangeFilterInstruction(new Date(), null);
-            filterInstructions.put(ENDDATE_FIELDNAME, anyEventsFromNow);
-            sortInstructions.put(DATE_FIELDNAME, SortOrder.ASC);
-        }
-        if (showInactiveOnly != null && showInactiveOnly) {
-            filterInstructions = Maps.newHashMap();
-            DateRangeFilterInstruction anyEventsToNow = new DateRangeFilterInstruction(null, new Date());
-            filterInstructions.put(ENDDATE_FIELDNAME, anyEventsToNow);
-            sortInstructions.put(DATE_FIELDNAME, SortOrder.DESC);
-        }
-
         try {
+            Map<String, AbstractFilterInstruction> filterInstructions = null;
+            if (filter != null) {
+                EventFilterOption filterOption = EventFilterOption.valueOf(filter);
+                filterInstructions = Maps.newHashMap();
+                if (filterOption.equals(EventFilterOption.FUTURE)) {
+                    DateRangeFilterInstruction anyEventsFromNow = new DateRangeFilterInstruction(new Date(), null);
+                    filterInstructions.put(ENDDATE_FIELDNAME, anyEventsFromNow);
+                    sortInstructions.put(DATE_FIELDNAME, SortOrder.ASC);
+                } else if (filterOption.equals(EventFilterOption.RECENT)) {
+                    Calendar calendar = Calendar.getInstance();
+                    calendar.add(Calendar.MONTH, -1);
+                    DateRangeFilterInstruction eventsOverPreviousMonth =
+                            new DateRangeFilterInstruction(calendar.getTime(), new Date());
+                    filterInstructions.put(ENDDATE_FIELDNAME, eventsOverPreviousMonth);
+                } else if (filterOption.equals(EventFilterOption.PAST)) {
+                    DateRangeFilterInstruction anyEventsToNow = new DateRangeFilterInstruction(null, new Date());
+                    filterInstructions.put(ENDDATE_FIELDNAME, anyEventsToNow);
+                }
+            }
+
             if (!isUserStaff(userManager, request)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
@@ -1011,8 +1010,8 @@ public class EventsFacade extends AbstractIsaacFacade {
             ResultsWrapper<ContentDTO> findByFieldNames = null;
 
             findByFieldNames = this.contentManager.findByFieldNames(
-                this.contentIndex, SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch),
-                newStartIndex, newLimit, sortInstructions, filterInstructions);
+                    this.contentIndex, SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch),
+                    newStartIndex, newLimit, sortInstructions, filterInstructions);
 
             List<Map<String, Object>> resultList = Lists.newArrayList();
 
@@ -1055,14 +1054,18 @@ public class EventsFacade extends AbstractIsaacFacade {
         } catch (ContentManagerException e) {
             log.error("Error during event request", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content you requested.")
-                .toResponse();
+                    .toResponse();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
             log.error("Error occurred during event overview look up", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the database content you requested.")
-                .toResponse();
+                    .toResponse();
+        } catch (IllegalArgumentException e) {
+            log.error("Error occurred during event overview look up", e);
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid request format.").toResponse();
         }
+
     }
 
     /**

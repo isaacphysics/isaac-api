@@ -39,6 +39,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.index.query.*;
+import org.elasticsearch.index.query.functionscore.RandomScoreFunctionBuilder;
 import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.sort.SortBuilders;
@@ -110,12 +111,19 @@ public class ElasticSearchProvider implements ISearchProvider {
     @Override
     public final ResultsWrapper<String> randomisedMatchSearch(final String indexBase, final String indexType,
                                                               final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch, final int startIndex,
-                                                              final int limit, final Map<String, AbstractFilterInstruction> filterInstructions)
+                                                              final int limit, final Long randomSeed, final Map<String, AbstractFilterInstruction> filterInstructions)
             throws SegueSearchException {
         // build up the query from the fieldsToMatch map
         QueryBuilder query = QueryBuilders.constantScoreQuery(generateBoolMatchQuery(fieldsToMatch));
 
-        query = QueryBuilders.functionScoreQuery(query, ScoreFunctionBuilders.randomFunction());
+        RandomScoreFunctionBuilder randomScoreFunctionBuilder;
+        if (null != randomSeed) {
+            randomScoreFunctionBuilder = new RandomScoreFunctionBuilder();
+            randomScoreFunctionBuilder.seed(randomSeed);
+        } else {
+            randomScoreFunctionBuilder = ScoreFunctionBuilders.randomFunction();
+        }
+        query = QueryBuilders.functionScoreQuery(query, randomScoreFunctionBuilder);
 
         if (filterInstructions != null) {
             query = QueryBuilders.boolQuery().must(query).filter(generateFilterQuery(filterInstructions));
@@ -377,6 +385,8 @@ public class ElasticSearchProvider implements ISearchProvider {
                         shouldMatchSet.add(pair.getKey().getValue());
                         query.should(QueryBuilders.matchQuery(pair.getKey().getValue(), queryItem))
                                 .minimumShouldMatch(shouldMatchSet.size());
+                    } else if (operatorForThisField.equals(Constants.BooleanOperator.NOT)) {
+                        query.mustNot(QueryBuilders.matchQuery(pair.getKey().getValue(), queryItem));
                     } else {
                         query.must(QueryBuilders.matchQuery(pair.getKey().getValue(), queryItem));
                     }

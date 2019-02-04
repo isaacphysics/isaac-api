@@ -900,18 +900,11 @@ public class GameManager {
             return Lists.newArrayList();
         }
 
-        List<GameboardItem> gameboardReadyQuestions = Lists.newArrayList();
+        Set<GameboardItem> gameboardReadyQuestions = Sets.newHashSet();
         List<GameboardItem> completedQuestions = Lists.newArrayList();
         // choose the gameboard questions to include.
         while (gameboardReadyQuestions.size() < GAME_BOARD_TARGET_SIZE && !selectionOfGameboardQuestions.isEmpty()) {
             for (GameboardItem gameboardItem : selectionOfGameboardQuestions) {
-
-                // Questions tagged with HIDE_FROM_FILTER_TAG should not appear in gameboards generated here at all:
-                if (gameboardItem.getTags() != null && gameboardItem.getTags().contains(HIDE_FROM_FILTER_TAG)) {
-                    log.debug("Skipping ignored question: " + gameboardItem.getId());
-                    continue;
-                }
-
                 GameboardItemState questionState;
                 try {
                     this.augmentGameItemWithAttemptInformation(gameboardItem, usersQuestionAttempts);
@@ -925,9 +918,8 @@ public class GameManager {
                 if (questionState.equals(GameboardItemState.PASSED) 
                         || questionState.equals(GameboardItemState.PERFECT)) {
                     completedQuestions.add(gameboardItem);
-                } else if (!gameboardReadyQuestions.contains(gameboardItem)) {
-                    gameboardReadyQuestions.add(gameboardItem);
                 }
+                gameboardReadyQuestions.add(gameboardItem);
 
                 // stop inner loop if we have reached our target
                 if (gameboardReadyQuestions.size() == GAME_BOARD_TARGET_SIZE) {
@@ -957,10 +949,11 @@ public class GameManager {
             }
         }
 
-        // randomise the questions again as we may have injected some completed questions.
-        Collections.shuffle(gameboardReadyQuestions);
+        // Convert to List and randomise the questions again, as we may have injected some completed questions.
+        List<GameboardItem> gameboardQuestionList = Lists.newArrayList(gameboardReadyQuestions);
+        Collections.shuffle(gameboardQuestionList);
 
-        return gameboardReadyQuestions;
+        return gameboardQuestionList;
     }
 
     /**
@@ -1322,6 +1315,10 @@ public class GameManager {
                 = immutableEntry(BooleanOperator.AND, RELATED_CONTENT_FIELDNAME);
             fieldsToMatchOutput.put(newEntry, gameFilter.getConcepts());
         }
+
+        // add no filter constraint
+        fieldsToMatchOutput.put(
+                immutableEntry(BooleanOperator.NOT, TAGS_FIELDNAME), Collections.singletonList(HIDE_FROM_FILTER_TAG));
 
         return fieldsToMatchOutput;
     }

@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -465,4 +465,28 @@ public class RegisteredUser extends AbstractSegueUser {
         }
         return true;
     }
+
+    @Override
+    public String toString() {
+        return "RegisteredUser{" +
+                "id=" + id +
+                ", givenName='" + givenName + '\'' +
+                ", familyName='" + familyName + '\'' +
+                ", email='" + email + '\'' +
+                ", role=" + role +
+                ", dateOfBirth=" + dateOfBirth +
+                ", gender=" + gender +
+                ", registrationDate=" + registrationDate +
+                ", schoolId='" + schoolId + '\'' +
+                ", schoolOther='" + schoolOther + '\'' +
+                ", defaultLevel=" + defaultLevel +
+                ", emailVerificationToken='" + emailVerificationToken + '\'' +
+                ", emailToVerify='" + emailToVerify + '\'' +
+                ", emailVerificationStatus=" + emailVerificationStatus +
+                ", lastUpdated=" + lastUpdated +
+                ", lastSeen=" + lastSeen +
+                '}';
+    }
+
+
 }

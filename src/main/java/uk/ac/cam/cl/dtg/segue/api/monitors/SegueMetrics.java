@@ -21,7 +21,7 @@ import io.prometheus.client.guava.cache.CacheMetricsCollector;
 
 /**
  * Created by mlt47 on 09/03/2018.
- * Use this class to register public static final Counters, Gauges and other metrics types used by Segue.
+ * Use this class to register public static final Counters, Gauges and other metric types used by Segue.
  * Metric and label naming conventions can be found here: https://prometheus.io/docs/practices/naming/
  */
 public final class SegueMetrics {
@@ -48,6 +48,10 @@ public final class SegueMetrics {
             .name("segue_log_in_total").help("Successful log in since process start.").register();
     public static final Counter LOG_OUT = Counter.build()
             .name("segue_log_out_total").help("Log out since preocess start.").register();
+
+    // Email Metrics
+    public static final Counter QUEUED_EMAIL = Counter.build()
+            .name("segue_queued_email_total").help("All emails queued since process start").labelNames("type").register();
 
     /**
      *  Private constructor as it does not make sense to instantiate this class.

@@ -160,6 +160,7 @@ public final class Constants {
     public static final String SEARCH_CLUSTER_ADDRESS = "SEARCH_CLUSTER_ADDRESS";
     public static final String SEARCH_CLUSTER_PORT = "SEARCH_CLUSTER_PORT";
     public static final String SEARCH_CLUSTER_INFO_PORT = "SEARCH_CLUSTER_INFO_PORT";
+    public static final String SEARCH_RESULTS_HARD_LIMIT = "SEARCH_RESULTS_HARD_LIMIT";
 
     /**
      * Suffix to append to raw fields (minus dot separator) - these are fields that the search engine should not do any
@@ -180,7 +181,7 @@ public final class Constants {
      * 
      */
     public enum BooleanOperator {
-        AND, OR
+        AND, OR, NOT
     };
 
     public static final String SCHOOLS_INDEX_BASE = "schools";
@@ -307,6 +308,7 @@ public final class Constants {
         ADMIN_EVENT_WAITING_LIST_PROMOTION,
         ANSWER_QUESTION,
         CHANGE_USER_ROLE,
+        CHANGE_GROUP_MEMBERSHIP_STATUS,
         CONTACT_US_FORM_USED,
         CREATE_USER_ASSOCIATION,
         CREATE_USER_GROUP,
@@ -374,6 +376,13 @@ public final class Constants {
     public static final String EVENT_DATE_FIELDNAME = "eventDate";
     public static final String EVENT_TAGS_FIELDNAME = "eventTags";
     public static final String CONTENT_VERSION_FIELDNAME = "contentVersion";
+
+    /**
+     *  Enum to represent filter values for event management.
+     */
+    public enum EventFilterOption {
+        FUTURE, RECENT, PAST
+    }
 
     public static final String ID_SEPARATOR = "|";
     public static final String ESCAPED_ID_SEPARATOR = "\\" + ID_SEPARATOR;

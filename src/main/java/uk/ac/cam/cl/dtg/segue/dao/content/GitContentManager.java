@@ -329,7 +329,7 @@ public class GitContentManager implements IContentManager {
         ResultsWrapper<ContentDTO> finalResults;
 
         ResultsWrapper<String> searchHits;
-        searchHits = searchProvider.randomisedMatchSearch(version, CONTENT_TYPE, fieldsToMatch, startIndex, limit,
+        searchHits = searchProvider.randomisedMatchSearch(version, CONTENT_TYPE, fieldsToMatch, startIndex, limit, randomSeed,
                 this.getUnpublishedFilter());
 
         // setup object mapper to use pre-configured deserializer module.
