@@ -359,6 +359,13 @@ public final class Constants {
     public static final String EVENT_TAGS_FIELDNAME = "eventTags";
     public static final String CONTENT_VERSION_FIELDNAME = "contentVersion";
 
+    /**
+     *  Enum to represent filter values for event management.
+     */
+    public enum EventFilterOption {
+        FUTURE, RECENT, PAST
+    }
+
     public static final String ID_SEPARATOR = "|";
     public static final String ESCAPED_ID_SEPARATOR = "\\" + ID_SEPARATOR;
 
