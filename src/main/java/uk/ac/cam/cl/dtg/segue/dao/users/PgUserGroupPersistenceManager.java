@@ -260,7 +260,7 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
     public UserGroup findGroupById(final Long groupId, boolean includeDeletedGroups) throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            if(includeDeletedGroups) {
+            if (includeDeletedGroups) {
                 pst = conn.prepareStatement("SELECT * FROM groups WHERE id = ?");
             } else {
                 pst = conn.prepareStatement("SELECT * FROM groups WHERE id = ? AND group_status <> ?");
