@@ -239,7 +239,7 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
             PreparedStatement pst;
             // we don't want to count 'deleted' groups.
             pst = conn.prepareStatement("SELECT COUNT(1) AS TOTAL FROM groups " +
-                    "WHERE status <> ?");
+                    "WHERE group_status <> ?");
 
             pst.setString(1, GroupStatus.DELETED.name());
 
@@ -260,7 +260,7 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
     public UserGroup findGroupById(final Long groupId, boolean includeDeletedGroups) throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            if(includeDeletedGroups) {
+            if (includeDeletedGroups) {
                 pst = conn.prepareStatement("SELECT * FROM groups WHERE id = ?");
             } else {
                 pst = conn.prepareStatement("SELECT * FROM groups WHERE id = ? AND group_status <> ?");
