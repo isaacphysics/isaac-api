@@ -23,7 +23,6 @@ import uk.ac.cam.cl.dtg.segue.dos.users.Role;
  * Minimal view of a User object.
  */
 public class UserSummaryDTO extends AbstractSegueUserDTO {
-    private String databaseId;
     private Long id;
     private String givenName;
     private String familyName;
@@ -42,41 +41,19 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
      * Gets the id.
      * @return the id
      */
+    @JsonProperty("id")
     public Long getId() {
         return id;
     }
-    
+
 
     /**
      * Sets the id.
      * @param id the id to set
      */
+    @JsonProperty("id")
     public void setId(final Long id) {
         this.id = id;
-    }
-    
-
-    /**
-     * Gets the databaseId.
-     * 
-     * @return the databaseId
-     */
-    @JsonProperty("_id")
-    @Deprecated
-    public String getLegacyDbId() {
-        return databaseId;
-    }
-
-    /**
-     * Sets the databaseId.
-     * 
-     * @param databaseId
-     *            the databaseId to set
-     */
-    @JsonProperty("_id")
-    @Deprecated
-    public void setLegacyDbId(final String databaseId) {
-        this.databaseId = databaseId;
     }
 
     /**
@@ -177,7 +154,7 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("UserSummaryDTO [databaseId=");
-        builder.append(id.toString());
+        builder.append(id);
         builder.append(", givenName=");
         builder.append(givenName);
         builder.append(", familyName=");
