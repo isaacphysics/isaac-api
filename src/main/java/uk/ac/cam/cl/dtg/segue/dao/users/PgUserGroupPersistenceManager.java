@@ -144,7 +144,7 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
     public void addUserToGroup(final Long userId, final Long groupId) throws SegueDatabaseException {
         // first check if they already have a membership record
         if (this.hasMembershipForGroup(userId, groupId)) {
-            this.setUsersGroupMembershipStatus(userId,groupId, GroupMembershipStatus.ACTIVE);
+            this.setUsersGroupMembershipStatus(userId, groupId, GroupMembershipStatus.ACTIVE);
             return;
         }
 
@@ -356,7 +356,7 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
      * @return true if they ever had a recorded membership entry in the db.
      * @throws SegueDatabaseException - if there is db error.
      */
-    private boolean hasMembershipForGroup(final Long groupId, final Long userId) throws SegueDatabaseException {
+    private boolean hasMembershipForGroup(final Long userId, final Long groupId) throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
 
