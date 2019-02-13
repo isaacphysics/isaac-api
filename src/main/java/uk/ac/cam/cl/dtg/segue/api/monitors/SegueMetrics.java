@@ -37,11 +37,13 @@ public final class SegueMetrics {
             .name("segue_websocket_close_total").help("Websockets closed since process start.").register();
 
     // User Metrics
+    public static final Counter USER_REGISTRATION = Counter.build()
+            .name("segue_user_registration_total").help("User registrations since process start.").register();
+
     public static final Gauge CURRENT_WEBSOCKET_USERS = Gauge.build()
             .name("segue_websocket_users").help("Currently number of websocket users/browsers.").register();
     // Anonymous user stats are calculated using metrics on the guava cache which holds a reference to each active user
 
-    // Login Metrics
     public static final Counter LOG_IN_ATTEMPT = Counter.build()
             .name("segue_log_in_attempt_total").help("Log in attempt since process start.").register();
     public static final Counter LOG_IN = Counter.build()
@@ -49,7 +51,6 @@ public final class SegueMetrics {
     public static final Counter LOG_OUT = Counter.build()
             .name("segue_log_out_total").help("Log out since preocess start.").register();
 
-    // Password Reset Metrics
     public static final Counter PASSWORD_RESET = Counter.build()
             .name("segue_password_reset_total").help("Password reset requests since process start.").register();
 

@@ -271,6 +271,7 @@ public class UsersFacade extends AbstractSegueFacade {
         } else {
             try {
                 misuseMonitor.notifyEvent(RequestIPExtractor.getClientIpAddr(request), RegistrationMisuseHandler.class.toString());
+                SegueMetrics.USER_REGISTRATION.inc();
                 return this.createUserObjectAndLogIn(request, response, registeredUser, newPassword, userPreferences);
             } catch (SegueResourceMisuseException e) {
                 log.error(String.format("Blocked a registration attempt by (%s) after misuse limit hit!", RequestIPExtractor.getClientIpAddr(request)));
