@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
+import com.google.common.collect.ImmutableMap;
 import org.isaacphysics.thirdparty.openmark.marker.PMatch;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
@@ -29,16 +30,32 @@ import uk.ac.cam.cl.dtg.segue.dos.content.StringChoice;
 import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 
 import java.util.Date;
+import java.util.Map;
 
 public class IsaacFreeTextValidator implements IValidator {
     private static final Logger log = LoggerFactory.getLogger(IsaacFreeTextValidator.class);
+
+    // Map of wildcards from our RegEx based syntax to the PMatch's custom syntax
+    private static final Map<String, String> WILDCARD_CONVERSION_MAP = ImmutableMap.of(
+            "*", "&",
+            ".", "#"
+    );
+
+    private static String convertToPMatchWildcardNotation(final String ruleValue) {
+        String ouSyntaxRuleValue = ruleValue;
+        for (Map.Entry<String, String> wildcardMap : WILDCARD_CONVERSION_MAP.entrySet()) {
+            ouSyntaxRuleValue = ouSyntaxRuleValue.replace(wildcardMap.getKey(), wildcardMap.getValue());
+        }
+        return ouSyntaxRuleValue;
+    }
 
     private static String extractAnswerValue(Choice answer, FreeTextRule rule) {
         return rule.isCaseInsensitive() ? answer.getValue().toLowerCase() : answer.getValue();
     }
 
     private static String extractRuleValue(FreeTextRule rule) {
-        return rule.isCaseInsensitive() ? rule.getValue().toLowerCase() : rule.getValue();
+        String ruleInCorrectCase = rule.isCaseInsensitive() ? rule.getValue().toLowerCase() : rule.getValue();
+        return convertToPMatchWildcardNotation(ruleInCorrectCase);
     }
 
     private static void validateInputs(final Question question, final Choice answer) {
@@ -57,9 +74,9 @@ public class IsaacFreeTextValidator implements IValidator {
 
     private static String evaluateMatchingOptions(final FreeTextRule rule) {
         StringBuilder result = new StringBuilder();
-        if (rule.getAllowsMisspelling()) { result.append('m'); }
-        if (rule.getAllowsAnyOrder()) { result.append('o'); }
-        if (rule.getAllowsExtraWords()) { result.append('w'); }
+        if (rule.getAllowsMisspelling()) { result.append("m"); }
+        if (rule.getAllowsAnyOrder()) { result.append("o"); }
+        if (rule.getAllowsExtraWords()) { result.append("w"); }
         return result.toString();
     }
 
