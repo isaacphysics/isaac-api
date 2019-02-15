@@ -48,8 +48,8 @@ public class UserSummaryWithEmailAddressDTO extends UserSummaryDTO {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("UserSummaryDTO [databaseId=");
-        builder.append(this.getId().toString());
+        builder.append("UserSummaryDTO [id=");
+        builder.append(this.getId());
         builder.append(", givenName=");
         builder.append(this.getGivenName());
         builder.append(", familyName=");
