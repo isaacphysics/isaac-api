@@ -32,6 +32,7 @@ import uk.ac.cam.cl.dtg.segue.dos.GroupMembership;
 import uk.ac.cam.cl.dtg.segue.dos.GroupMembershipStatus;
 import uk.ac.cam.cl.dtg.segue.dos.GroupStatus;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
+import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.segue.dos.GroupMembership;
@@ -507,9 +508,36 @@ public class GroupManager {
      */
     private List<UserGroupDTO> convertGroupToDTOs(final Iterable<UserGroup> groups) throws SegueDatabaseException {
         List<UserGroupDTO> result = Lists.newArrayList();
+
+        // add temporary cache so we don't have to look up the same user each time.
+        Map<Long, RegisteredUserDTO> userLookupCache = Maps.newHashMap();
+
         for (UserGroup group : groups) {
-            result.add(convertGroupToDTO(group));
+            UserGroupDTO dtoToReturn = dtoMapper.map(group, UserGroupDTO.class);
+            try {
+                RegisteredUserDTO ownerUser = userLookupCache.get(group.getOwnerId());
+                if (null == ownerUser) {
+                    ownerUser = userManager.getUserDTOById(group.getOwnerId());
+                    userLookupCache.put(ownerUser.getId(), ownerUser);
+                }
+
+                dtoToReturn.setOwnerSummary(userManager.convertToDetailedUserSummaryObject(ownerUser, UserSummaryWithEmailAddressDTO.class));
+            } catch (NoUserException e) {
+                // This should never happen!
+                log.error(String.format("Group (%s) has owner ID (%s) that no longer exists!", group.getId(), group.getOwnerId()));
+            }
+
+            Set<Long> additionalManagers = this.groupDatabase.getAdditionalManagerSetByGroupId(group.getId());
+            Set<UserSummaryWithEmailAddressDTO> setOfUsers = Sets.newHashSet();
+            if (additionalManagers != null) {
+                setOfUsers.addAll(userManager.convertToDetailedUserSummaryObjectList(userManager.findUsers(additionalManagers), UserSummaryWithEmailAddressDTO.class));
+            }
+
+            dtoToReturn.setAdditionalManagers(setOfUsers);
+
+            result.add(dtoToReturn);
         }
+
         return result;
     }
 
