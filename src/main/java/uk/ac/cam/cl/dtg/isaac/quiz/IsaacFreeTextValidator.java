@@ -40,11 +40,16 @@ public class IsaacFreeTextValidator implements IValidator {
             "*", "&",
             ".", "#"
     );
+    private static final String ESCAPE_CHARACTER = "\\";
+    private static final String TEMPORARY_OBSCURE_CHARACTER = "\uBAD1"; // Same character as is used in PMatch library
 
     private static String convertToPMatchWildcardNotation(final String ruleValue) {
         String ouSyntaxRuleValue = ruleValue;
         for (Map.Entry<String, String> wildcardMap : WILDCARD_CONVERSION_MAP.entrySet()) {
+            String escapedWildcard = ESCAPE_CHARACTER + wildcardMap.getKey();
+            ouSyntaxRuleValue = ouSyntaxRuleValue.replace(escapedWildcard, TEMPORARY_OBSCURE_CHARACTER);
             ouSyntaxRuleValue = ouSyntaxRuleValue.replace(wildcardMap.getKey(), wildcardMap.getValue());
+            ouSyntaxRuleValue = ouSyntaxRuleValue.replace(TEMPORARY_OBSCURE_CHARACTER, wildcardMap.getKey());
         }
         return ouSyntaxRuleValue;
     }
