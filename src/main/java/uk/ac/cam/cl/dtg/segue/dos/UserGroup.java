@@ -23,7 +23,7 @@ import org.mongojack.ObjectId;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * UserGroupDO - this object represents a group or label assigned to users who have been placed into a group.
+ * UserGroupDO - this object represents a group or collection of users
  * 
  * This allows users to be organised by class / project and for teachers (or those granted permission) to view progress.
  */
@@ -31,6 +31,7 @@ public class UserGroup {
     private Long id;
     private String groupName;
     private Long ownerId;
+    private GroupStatus status;
     private Date created;
     private boolean archived;
     private Date lastUpdated;
@@ -54,14 +55,35 @@ public class UserGroup {
      * @param created
      *            - date created.
      */
-    public UserGroup(@Nullable final Long id, final String groupName, final Long ownerId, final Date created,
+    public UserGroup(@Nullable final Long id, final String groupName, final Long ownerId, final GroupStatus status, final Date created,
                      final boolean archived, final Date lastUpdated) {
         this.id = id;
         this.groupName = groupName;
         this.ownerId = ownerId;
+        this.status = status;
         this.created = created;
         this.archived = archived;
         this.lastUpdated = lastUpdated;
+    }
+
+    /**
+     * Gets the id.
+     *
+     * @return the id
+     */
+    @JsonProperty("id")
+    public Long getId() {
+        return id;
+    }
+
+    /**
+     * Gets the id.
+     *
+     * @return the id
+     */
+    @JsonProperty("id")
+    public void setId(final Long id) {
+        this.id = id;
     }
 
     /**
@@ -71,7 +93,8 @@ public class UserGroup {
      */
     @JsonProperty("_id")
     @ObjectId
-    public Long getId() {
+    @Deprecated
+    public Long getMongoId() {
         return id;
     }
 
@@ -83,7 +106,8 @@ public class UserGroup {
      */
     @JsonProperty("_id")
     @ObjectId
-    public void setId(final Long id) {
+    @Deprecated
+    public void setMongoId(final Long id) {
         this.id = id;
     }
 
@@ -123,6 +147,22 @@ public class UserGroup {
      */
     public void setOwnerId(final Long ownerId) {
         this.ownerId = ownerId;
+    }
+
+    /**
+     * Get the status of the group
+     * @return the status of the group - i.e. active or deleted
+     */
+    public GroupStatus getStatus() {
+        return status;
+    }
+
+    /**
+     * Set the status of the group
+     * @param status e.g. active or deleted.
+     */
+    public void setStatus(GroupStatus status) {
+        this.status = status;
     }
 
     /**

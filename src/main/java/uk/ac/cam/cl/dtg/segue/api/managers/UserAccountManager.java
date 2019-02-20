@@ -22,8 +22,15 @@ import java.io.IOException;
 import java.net.URI;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -66,6 +73,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.users.AnonymousUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
+import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.UserFromAuthProvider;
@@ -1151,14 +1159,6 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     /**
-     * Method to retrieve the number of users by role from the Database.
-     * @return a map of role to counter
-     */
-    public Map<Role, Integer> getCountsForUsersByRole() throws SegueDatabaseException {
-        return this.database.countUsersByRole();
-    }
-
-    /**
      * Sends verification email for the user's current email address. The destination will match the userDTO's email.
      * @param userDTO - user to which the email is to be sent.
      * @param emailVerificationToken - the generated email verification token.
@@ -1391,18 +1391,34 @@ public class UserAccountManager implements IUserAccountManager {
         if (null == user) {
             return null;
         }
+        return this.convertUserDOsToUserDTOs(Collections.singletonList(user)).get(0);
+    }
 
-        RegisteredUserDTO userDTO = this.dtoMapper.map(user, RegisteredUserDTO.class);
-        // Augment with linked account information
-        try {
-            userDTO.setLinkedAccounts(this.database.getAuthenticationProvidersByUser(user));
-            userDTO.setHasSegueAccount(this.userAuthenticationManager.hasLocalCredentials(user));
-
-        } catch (SegueDatabaseException e) {
-            log.error("Unable to set linked accounts or local account property for user due to a database error.");
+    private List<RegisteredUserDTO> convertUserDOsToUserDTOs(final List<RegisteredUser> users) {
+        List <RegisteredUser> userDOs = users.parallelStream().filter(Objects::nonNull).collect(Collectors.toList());
+        if (userDOs.isEmpty()) {
+            return new ArrayList<>();
         }
 
-        return userDTO;
+        List<RegisteredUserDTO> foundUserDTOs = new ArrayList<>();
+        try {
+            // These only need to be *effectively* final, but better be safe than sorry.
+            final Map<RegisteredUser, List<AuthenticationProvider>> usersAuthenticationProviders = this.database.getAuthenticationProvidersByUsers(users);
+            final Map<RegisteredUser, Boolean> usersHaveSegueAccount = this.database.getSegueAccountExistenceByUsers(users);
+
+            // The following should probably be outside of the try scope, but then good luck getting the two variables
+            // above captured by the lambda down here...
+            foundUserDTOs = users.parallelStream().map(user -> {
+                RegisteredUserDTO userDTO = this.dtoMapper.map(user, RegisteredUserDTO.class);
+                userDTO.setLinkedAccounts(usersAuthenticationProviders.get(user));
+                userDTO.setHasSegueAccount(usersHaveSegueAccount.get(user));
+                return userDTO;
+            }).collect(Collectors.toList());
+        } catch (SegueDatabaseException e) {
+            log.error("Unable to set linked accounts for users due to a database error.");
+        }
+
+        return foundUserDTOs;
     }
 
     /**
@@ -1413,11 +1429,7 @@ public class UserAccountManager implements IUserAccountManager {
      * @return the list of user dtos.
      */
     private List<RegisteredUserDTO> convertUserDOToUserDTOList(final List<RegisteredUser> listToConvert) {
-        List<RegisteredUserDTO> result = Lists.newArrayList();
-        for (RegisteredUser user : listToConvert) {
-            result.add(this.convertUserDOToUserDTO(user));
-        }
-        return result;
+        return this.convertUserDOsToUserDTOs(listToConvert);
     }
 
     /**
@@ -1519,6 +1531,49 @@ public class UserAccountManager implements IUserAccountManager {
         return String.format("https://%s/verifyemail?%s", properties.getProperty(HOST_NAME), urlParams);
     }
 
+    /**
+     * Method to retrieve the number of users by role from the Database.
+     * @return a map of role to counter
+     */
+    public Map<Role, Long> getRoleCount() throws SegueDatabaseException {
+        return this.database.getRoleCount();
+    }
+
+    /**
+     * Count the users by role seen over the previous time interval
+     * @param timeInterval time interval over which to count
+     * @return map of counts for each role
+     * @throws SegueDatabaseException
+     *             - if there is a problem with the database.
+     */
+    public Map<Role, Long> getActiveRolesOverPrevious(TimeInterval timeInterval) throws SegueDatabaseException {
+        return this.database.getRolesLastSeenOver(timeInterval);
+    }
+
+    /**
+     * Count users' reported genders
+     * @return map of counts for each gender.
+     * @throws SegueDatabaseException
+     *             - if there is a problem with the database.
+     */
+    public Map<Gender, Long> getGenderCount() throws SegueDatabaseException {
+        return this.database.getGenderCount();
+    }
+
+    /**
+     * Count users' reported school information
+     * @return map of counts for students who have provided or not provided school information
+     * @throws SegueDatabaseException
+     *             - if there is a problem with the database.
+     */
+    public Map<SchoolInfoStatus, Long> getSchoolInfoStats() throws SegueDatabaseException {
+        return this.database.getSchoolInfoStats();
+    }
+
+    /**
+     * Count the number of anonymous users currently in our temporary user cache
+     * @return the number of anonymous users
+     */
     public Long getNumberOfAnonymousUsers() {
         return temporaryUserCache.size();
     }

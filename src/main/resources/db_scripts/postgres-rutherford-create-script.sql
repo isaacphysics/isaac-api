@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 9.6.2
--- Dumped by pg_dump version 9.6.2
+-- Dumped from database version 9.6.4
+-- Dumped by pg_dump version 9.6.4
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -15,14 +15,14 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: plpgsql; Type: EXTENSION; Schema: -; Owner:
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
 --
 
 CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 
 
 --
--- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner:
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
 --
 
 COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
@@ -149,7 +149,9 @@ ALTER TABLE group_additional_managers OWNER TO rutherford;
 CREATE TABLE group_memberships (
     group_id integer NOT NULL,
     user_id integer NOT NULL,
-    created timestamp without time zone
+    created timestamp without time zone,
+    updated timestamp with time zone DEFAULT now(),
+    status text DEFAULT 'ACTIVE'::text
 );
 
 
@@ -165,7 +167,8 @@ CREATE TABLE groups (
     owner_id integer,
     created timestamp without time zone,
     archived boolean DEFAULT false NOT NULL,
-    last_updated timestamp without time zone DEFAULT NULL
+    group_status text DEFAULT 'ACTIVE'::text,
+    last_updated timestamp without time zone
 );
 
 
@@ -346,7 +349,7 @@ CREATE TABLE uk_post_codes (
 ALTER TABLE uk_post_codes OWNER TO rutherford;
 
 --
--- Name: user_alerts_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: user_alerts_id_seq; Type: SEQUENCE; Schema: public; Owner: rutherford
 --
 
 CREATE SEQUENCE user_alerts_id_seq
@@ -357,10 +360,10 @@ CREATE SEQUENCE user_alerts_id_seq
     CACHE 1;
 
 
-ALTER TABLE user_alerts_id_seq OWNER TO postgres;
+ALTER TABLE user_alerts_id_seq OWNER TO rutherford;
 
 --
--- Name: user_alerts; Type: TABLE; Schema: public; Owner: postgres
+-- Name: user_alerts; Type: TABLE; Schema: public; Owner: rutherford
 --
 
 CREATE TABLE user_alerts (
@@ -375,7 +378,7 @@ CREATE TABLE user_alerts (
 );
 
 
-ALTER TABLE user_alerts OWNER TO postgres;
+ALTER TABLE user_alerts OWNER TO rutherford;
 
 --
 -- Name: user_associations; Type: TABLE; Schema: public; Owner: rutherford
@@ -538,9 +541,9 @@ CREATE TABLE users (
     email_verification_status character varying(255),
     last_seen timestamp without time zone,
     default_level integer,
-    email_verification_token text,
     email_to_verify text,
-    session_token integer NOT NULL DEFAULT 0
+    email_verification_token text,
+    deleted boolean DEFAULT false NOT NULL
 );
 
 
@@ -753,7 +756,7 @@ ALTER TABLE ONLY users
 
 
 --
--- Name: user_alerts user_alerts_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: user_alerts user_alerts_pkey; Type: CONSTRAINT; Schema: public; Owner: rutherford
 --
 
 ALTER TABLE ONLY user_alerts
@@ -894,7 +897,7 @@ CREATE UNIQUE INDEX "unique email case insensitive" ON users USING btree (lower(
 
 
 --
--- Name: user_alerts_id_uindex; Type: INDEX; Schema: public; Owner: postgres
+-- Name: user_alerts_id_uindex; Type: INDEX; Schema: public; Owner: rutherford
 --
 
 CREATE UNIQUE INDEX user_alerts_id_uindex ON user_alerts USING btree (id);
@@ -1120,15 +1123,6 @@ ALTER TABLE ONLY user_streak_targets
 
 
 --
--- Name: public; Type: ACL; Schema: -; Owner: postgres
---
-
-REVOKE ALL ON SCHEMA public FROM PUBLIC;
-REVOKE ALL ON SCHEMA public FROM postgres;
-GRANT ALL ON SCHEMA public TO postgres;
-GRANT ALL ON SCHEMA public TO PUBLIC;
-
-
---
 -- PostgreSQL database dump complete
 --
+

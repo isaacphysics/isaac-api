@@ -10,12 +10,12 @@ services:
       driver: journald
       options:
         tag: equality-checker
-    restart: always
+    restart: unless-stopped
 
   chemistry-checker:
     container_name: chemistry-checker
     image: ucamcldtg/chemistry-checker
-    restart: always
+    restart: unless-stopped
 
   elasticsearch-live:
     # container configuration https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html
@@ -36,7 +36,7 @@ services:
     networks:
       default:
         ipv4_address: "${LOCAL_ELASTICSEARCH_IP}"
-    restart: always
+    restart: unless-stopped
 
 volumes:
   es-data:

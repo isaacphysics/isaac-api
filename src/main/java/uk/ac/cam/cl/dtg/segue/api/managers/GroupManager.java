@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.segue.api.managers;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Sets;
 import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.Validate;
@@ -27,15 +28,23 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupPersistenceManager;
+import uk.ac.cam.cl.dtg.segue.dos.GroupMembership;
+import uk.ac.cam.cl.dtg.segue.dos.GroupMembershipStatus;
+import uk.ac.cam.cl.dtg.segue.dos.GroupStatus;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithEmailAddressDTO;
+import uk.ac.cam.cl.dtg.segue.dos.GroupMembership;
+import uk.ac.cam.cl.dtg.segue.dto.users.GroupMembershipDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithGroupMembershipDTO;
 
 import java.util.Comparator;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -91,7 +100,7 @@ public class GroupManager {
         Validate.notNull(groupOwner);
 
         Date now = new Date();
-        UserGroup group = new UserGroup(null, groupName, groupOwner.getId(), now, false, now);
+        UserGroup group = new UserGroup(null, groupName, groupOwner.getId(), GroupStatus.ACTIVE, now, false, now);
 
         return this.convertGroupToDTO(groupDatabase.createGroup(group));
     }
@@ -136,7 +145,7 @@ public class GroupManager {
      */
     public List<RegisteredUserDTO> getUsersInGroup(final UserGroupDTO group) throws SegueDatabaseException {
         Validate.notNull(group);
-        List<Long> groupMemberIds = groupDatabase.getGroupMemberIds(group.getId());
+        List<Long> groupMemberIds = Lists.newArrayList(groupDatabase.getGroupMemberIds(group.getId()));
 
         if (groupMemberIds.isEmpty()) {
             return Lists.newArrayList();
@@ -145,6 +154,31 @@ public class GroupManager {
         List<RegisteredUserDTO> users = userManager.findUsers(groupMemberIds);
         this.orderUsersByName(users);
         return users;
+    }
+
+    /**
+     * Get a map representing the current membership of a given group.
+     * @param groupId - group of interest
+     * @return map of user id to membership record.
+     * @throws SegueDatabaseException
+     *              - If an error occurred while interacting with the database.
+     */
+    public Map<Long, GroupMembershipDTO> getUserMembershipMapForGroup(Long groupId) throws SegueDatabaseException {
+        Map<Long, GroupMembershipDTO> result = Maps.newHashMap();
+        for(Map.Entry<Long, GroupMembership> entry : this.groupDatabase.getGroupMembershipMap(groupId).entrySet()) {
+            result.put(entry.getKey(), dtoMapper.map(entry.getValue(), GroupMembershipDTO.class));
+        }
+        return result;
+    }
+
+    /**
+     * Get an individual users groupMembershipStatus
+     * @param userId - userId
+     * @param groupId - groupId
+     * @return the membership status
+     */
+    public GroupMembershipStatus getGroupMembershipStatus(Long userId, Long groupId) throws SegueDatabaseException {
+        return this.getUserMembershipMapForGroup(groupId).get(userId).getStatus();
     }
 
     /**
@@ -184,7 +218,7 @@ public class GroupManager {
      *            if true then only archived groups will be returned,
      *            if false then only unarchived groups will be returned.
      * @return List of groups or empty list.
-     * @throws SegueDatabaseException if there is a db error
+     * @throws SegueDatabaseException - if there is a db error
      */
     public List<UserGroupDTO> getAllGroupsOwnedAndManagedByUser(final RegisteredUserDTO ownerUser, boolean archivedGroupsOnly) throws SegueDatabaseException {
         Validate.notNull(ownerUser);
@@ -252,9 +286,32 @@ public class GroupManager {
 
         } else {
             // otherwise it is a noop.
+            // although we should force the user membership status to be active for the group.
+            this.setMembershipStatus(group, userToAdd, GroupMembershipStatus.ACTIVE);
             log.info(String.format("User (%s) is already a member of the group with id %s. Skipping.",
                     userToAdd.getId(), group.getId()));
         }
+    }
+
+    /**
+     * Change users group membership status
+     *
+     * @param group
+     *            - that should be affected
+     * @param user
+     *            - user that should be affected.
+     * @param newStatus
+     *            - the new membership status
+     * @throws SegueDatabaseException
+     *             - If an error occurred while interacting with the database.
+     */
+    public void setMembershipStatus(final UserGroupDTO group, final RegisteredUserDTO user, GroupMembershipStatus newStatus)
+            throws SegueDatabaseException {
+        Validate.notNull(group);
+        Validate.notNull(user);
+        // we don't want people to delete user membership via this route as observers are not notified.
+        Validate.isTrue(!GroupMembershipStatus.DELETED.equals(newStatus), "Deletion of a group membership should not use this route.");
+        groupDatabase.setUsersGroupMembershipStatus(user.getId(), group.getId(), newStatus);
     }
 
     /**
@@ -290,7 +347,7 @@ public class GroupManager {
      *             - if there is a database error.
      */
     public UserGroupDTO getGroupById(final Long groupId) throws ResourceNotFoundException, SegueDatabaseException {
-        UserGroup group = groupDatabase.findById(groupId);
+        UserGroup group = groupDatabase.findGroupById(groupId);
 
         if (null == group) {
             throw new ResourceNotFoundException("The group id specified (" + groupId.toString() + ") does not exist.");
@@ -355,7 +412,7 @@ public class GroupManager {
      */
     public boolean isValidGroup(final Long groupId) {
         try {
-            return this.groupDatabase.findById(groupId) != null;
+            return this.groupDatabase.findGroupById(groupId) != null;
         } catch (SegueDatabaseException e) {
             log.error("Database error while validating group: failing validation silently");
             return false;
@@ -456,4 +513,25 @@ public class GroupManager {
         return result;
     }
 
+    /**
+     * Mutates the list to include group membership information
+     *
+     * @param group group to look up membership info
+     * @param summarisedMemberInfo - the list containing summarised user objects - this will be replaced with summarised user objects that include membership information
+     * @throws SegueDatabaseException - if there is an error.
+     */
+    public void convertToUserSummaryGroupMembership(UserGroupDTO group, List<UserSummaryDTO> summarisedMemberInfo) throws SegueDatabaseException {
+        List<UserSummaryWithGroupMembershipDTO> result = Lists.newArrayList();
+        Map<Long, GroupMembershipDTO> userMembershipMapforMap = this.getUserMembershipMapForGroup(group.getId());
+
+        for(UserSummaryDTO dto : summarisedMemberInfo) {
+            UserSummaryWithGroupMembershipDTO newDTO = dtoMapper.map(dto, UserSummaryWithGroupMembershipDTO.class);
+            GroupMembershipDTO groupMembershipDTO = userMembershipMapforMap.get(newDTO.getId());
+            newDTO.setGroupMembershipInformation(dtoMapper.map(groupMembershipDTO, GroupMembershipDTO.class));
+            result.add(newDTO);
+        }
+
+        summarisedMemberInfo.clear();
+        summarisedMemberInfo.addAll(result);
+    }
 }

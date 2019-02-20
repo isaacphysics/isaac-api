@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.quiz;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ANONYMOUS_SESSION_DURATION_IN_MINUTES;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -46,6 +47,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 
 /**
  * @author sac92
@@ -324,5 +326,25 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
 
         // delete the session attribute as merge has completed.
         this.anonymousQuestionAttemptsCache.invalidate(anonymousUserId);
+    }
+
+    @Override
+    public Map<Role, Long> getAnsweredQuestionRolesOverPrevious(TimeInterval timeInterval) throws
+            SegueDatabaseException {
+        PreparedStatement pst;
+        try (Connection conn = database.getDatabaseConnection()) {
+            pst = conn.prepareStatement("SELECT role, count(DISTINCT users.id) FROM question_attempts" +
+                    " JOIN users ON user_id=users.id AND NOT deleted WHERE timestamp > now() - ? GROUP BY role");
+            pst.setObject(1, timeInterval.getPGInterval());
+            ResultSet results = pst.executeQuery();
+
+            Map<Role, Long> resultsToReturn = Maps.newHashMap();
+            while (results.next()) {
+                resultsToReturn.put(Role.valueOf(results.getString("role")), results.getLong("count"));
+            }
+            return resultsToReturn;
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        }
     }
 }

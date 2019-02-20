@@ -1,5 +1,5 @@
-/**
- * Copyright 2014 Stephen Cummins
+/*
+ * Copyright 2017 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.segue.dos.users;
+package uk.ac.cam.cl.dtg.segue.dos;
 
-/**
- * @author Stephen Cummins
- */
-public enum Gender {
-    MALE, FEMALE, OTHER, UNKNOWN
+public enum GroupMembershipStatus {
+    ACTIVE, INACTIVE, DELETED
 }

@@ -19,8 +19,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
+import uk.ac.cam.cl.dtg.segue.api.Constants.SchoolInfoStatus;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 
@@ -68,6 +71,30 @@ public interface IUserDataManager {
      *             - If there is an internal database error.
      */
     List<AuthenticationProvider> getAuthenticationProvidersByUser(final RegisteredUser user)
+            throws SegueDatabaseException;
+
+    /**
+     * Get all the linked accounts by users in a list.
+     *
+     * @param users
+     *             - the list of DOs to search for.
+     * @return List of authentication providers (or empty list) per user.
+     * @throws SegueDatabaseException
+     *             - If there is an internal database error.
+     */
+    Map<RegisteredUser, List<AuthenticationProvider>> getAuthenticationProvidersByUsers(final List<RegisteredUser> users)
+            throws SegueDatabaseException;
+
+    /**
+     * Get whether a list of users have a Segue account.
+     *
+     * @param users
+     *             - the list fo DOs to search for.
+     * @return List of Segue account existence information.
+     * @throws SegueDatabaseException
+     *             - If there is an internal database error.
+     */
+    Map<RegisteredUser, Boolean> getSegueAccountExistenceByUsers(final List<RegisteredUser> users)
             throws SegueDatabaseException;
 
     /**
@@ -172,14 +199,6 @@ public interface IUserDataManager {
     List<RegisteredUser> findUsers(List<Long> usersToLocate) throws SegueDatabaseException;
 
     /**
-     * Count all the users by role and return a map
-     * @return map of user role to integers
-     * @throws SegueDatabaseException
-     *             - if there is a problem with the database.
-     */
-    Map<Role, Integer> countUsersByRole() throws SegueDatabaseException;
-
-    /**
      * Get a user by email verification token.
      *
      * @param token
@@ -234,4 +253,36 @@ public interface IUserDataManager {
      */
     void updateUserLastSeen(final RegisteredUser user, final Date date) throws SegueDatabaseException;
 
+    /**
+     * Count all the users by role and return a map
+     * @return map of user role to integers
+     * @throws SegueDatabaseException
+     *             - if there is a problem with the database.
+     */
+    Map<Role, Long> getRoleCount() throws SegueDatabaseException;
+
+    /**
+     * Count the users by role seen over the previous time interval
+     * @param timeInterval time interval over which to count
+     * @return map of counts for each role
+     * @throws SegueDatabaseException
+     *             - if there is a problem with the database.
+     */
+    Map<Role, Long> getRolesLastSeenOver(TimeInterval timeInterval) throws SegueDatabaseException;
+
+    /**
+     * Count users' reported genders
+     * @return map of counts for each gender.
+     * @throws SegueDatabaseException
+     *             - if there is a problem with the database.
+     */
+    Map<Gender, Long> getGenderCount() throws SegueDatabaseException;
+
+    /**
+     * Count users' reported school information
+     * @return map of counts for students who have provided or not provided school information
+     * @throws SegueDatabaseException
+     *             - if there is a problem with the database.
+     */
+    Map<SchoolInfoStatus, Long> getSchoolInfoStats() throws SegueDatabaseException;
 }

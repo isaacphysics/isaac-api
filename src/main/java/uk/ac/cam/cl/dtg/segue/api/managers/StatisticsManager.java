@@ -15,27 +15,18 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
+import com.google.api.client.util.Lists;
+import com.google.api.client.util.Maps;
+import com.google.api.client.util.Sets;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.ImmutableMap;
+import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.apache.commons.lang3.Validate;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.LocationManager;
@@ -47,7 +38,6 @@ import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
-import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
@@ -56,17 +46,27 @@ import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 import uk.ac.cam.cl.dtg.util.locations.Location;
-import static com.google.common.collect.Maps.immutableEntry;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
-import com.google.api.client.util.Lists;
-import com.google.api.client.util.Maps;
-import com.google.api.client.util.Sets;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.ImmutableMap;
-import com.google.inject.Inject;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.TimeUnit;
+
+import static com.google.common.collect.Maps.immutableEntry;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.FAST_TRACK_QUESTION_TYPE;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacLogType;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_TYPE;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.ID_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueLogType;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval.SIX_MONTHS;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval.NINETY_DAYS;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval.THIRTY_DAYS;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval.SEVEN_DAYS;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX;
 
 /**
  * StatisticsManager.
@@ -114,9 +114,10 @@ public class StatisticsManager implements IStatisticsManager {
      */
     @Inject
     public StatisticsManager(final UserAccountManager userManager, final ILogManager logManager,
-            final SchoolListReader schoolManager, final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex,
+                             final SchoolListReader schoolManager, final IContentManager contentManager,
+                             @Named(CONTENT_INDEX) final String contentIndex,
                              final LocationManager locationHistoryManager, final GroupManager groupManager,
-            final QuestionManager questionManager, final GameManager gameManager,
+                             final QuestionManager questionManager, final GameManager gameManager,
                              final IUserStreaksManager userStreaksManager) {
         this.userManager = userManager;
         this.logManager = logManager;
@@ -143,179 +144,30 @@ public class StatisticsManager implements IStatisticsManager {
      * @return ImmutableMap<String, String> (stat name, stat value)
      * @throws SegueDatabaseException - if there is a database error.
      */
-    public synchronized Map<String, Object> outputGeneralStatistics() 
+    public synchronized Map<String, Object> getGeneralStatistics()
             throws SegueDatabaseException {
-        @SuppressWarnings("unchecked")
-        Map<String, Object> cachedOutput = (Map<String, Object>) this.longStatsCache.getIfPresent(GENERAL_STATS);
-        if (cachedOutput != null) {
-            log.info("Using cached General Statistics");
-            return cachedOutput;
-        } else {
-            log.info("Calculating General Statistics");
-        }
+        Map<String, Object> result = Maps.newHashMap();
 
-        // get all the users
-        List<RegisteredUserDTO> users = userManager.findUsers(new RegisteredUserDTO());
-        ImmutableMap.Builder<String, Object> ib = new ImmutableMap.Builder<>();
+        result.put("userGenders", userManager.getGenderCount());
+        result.put("userRoles", userManager.getRoleCount());
+        result.put("userSchoolInfo", userManager.getSchoolInfoStats());
+        result.put("groupCount", this.groupManager.getGroupCount());
 
-        List<RegisteredUserDTO> male = Lists.newArrayList();
-        List<RegisteredUserDTO> female = Lists.newArrayList();
-        List<RegisteredUserDTO> otherGender = Lists.newArrayList();
-        ib.put("totalUsers", "" + users.size());
+        result.put("viewQuestionEvents", logManager.getLogCountByType(IsaacLogType.VIEW_QUESTION.name()));
+        result.put("answeredQuestionEvents", logManager.getLogCountByType(SegueLogType.ANSWER_QUESTION.name()));
 
-        List<RegisteredUserDTO> studentOrUnknownRole = Lists.newArrayList();
-        List<RegisteredUserDTO> teacherRole = Lists.newArrayList();
-        List<RegisteredUserDTO> adminStaffRole = Lists.newArrayList();
-        List<RegisteredUserDTO> contentEditorStaffRole = Lists.newArrayList();
-        List<RegisteredUserDTO> testerRole = Lists.newArrayList();
-        List<RegisteredUserDTO> staffRole = Lists.newArrayList();
-        List<RegisteredUserDTO> eventManagerStaffRole = Lists.newArrayList();
-        List<RegisteredUserDTO> hasSchool = Lists.newArrayList();
-        List<RegisteredUserDTO> hasNoSchool = Lists.newArrayList();
-        List<RegisteredUserDTO> hasOtherSchool = Lists.newArrayList();
-        Map<String, Date> lastSeenMap = Maps.newHashMap();
+        Map<String, Map<Role, Long>> rangedActiveUserStats = Maps.newHashMap();
+        rangedActiveUserStats.put("sevenDays", userManager.getActiveRolesOverPrevious(SEVEN_DAYS));
+        rangedActiveUserStats.put("thirtyDays", userManager.getActiveRolesOverPrevious(THIRTY_DAYS));
+        rangedActiveUserStats.put("ninetyDays", userManager.getActiveRolesOverPrevious(NINETY_DAYS));
+        rangedActiveUserStats.put("sixMonths", userManager.getActiveRolesOverPrevious(SIX_MONTHS));
+        result.put("activeUsersOverPrevious", rangedActiveUserStats);
 
-        for (RegisteredUserDTO user : users) {
-            if (user.getGender() == null) {
-                otherGender.add(user);
-            } else {
-                switch (user.getGender()) {
-                    case MALE:
-                        male.add(user);
-                        break;
-                    case FEMALE:
-                        female.add(user);
-                        break;
-                    case OTHER:
-                        otherGender.add(user);
-                        break;
-                    default:
-                        otherGender.add(user);
-                        break;
-                }
-
-            }
-
-            if (user.getRole() == null) {
-                studentOrUnknownRole.add(user);
-            } else {
-                switch (user.getRole()) {
-                    case STUDENT:
-                        studentOrUnknownRole.add(user);
-                        break;
-                    case ADMIN:
-                        adminStaffRole.add(user);
-                        break;
-                    case CONTENT_EDITOR:
-                    	contentEditorStaffRole.add(user);
-                        break;
-                    case EVENT_MANAGER:
-                    	eventManagerStaffRole.add(user);
-                        break;
-                    case TEACHER:
-                        teacherRole.add(user);
-                        break;
-                    case STAFF:
-                        staffRole.add(user);
-                        break;
-                    case TESTER:
-                    	testerRole.add(user);
-                        break;
-                    default:
-                        studentOrUnknownRole.add(user);
-                        break;
-                }
-            }
-
-            if (user.getSchoolId() == null && user.getSchoolOther() == null) {
-                hasNoSchool.add(user);
-            } else {
-                hasSchool.add(user);
-                if (user.getSchoolOther() != null) {
-                    hasOtherSchool.add(user);
-                }
-            }
-
-            if (user.getLastSeen() != null) {
-                lastSeenMap.put(user.getId().toString(), user.getLastSeen());
-            } else if (user.getRegistrationDate() != null) {
-                lastSeenMap.put(user.getId().toString(), user.getRegistrationDate());
-            }
-
-        }
-
-        Map<String, Object> gender = Maps.newHashMap();
-        gender.put(Gender.MALE.toString(), male.size());
-        gender.put(Gender.FEMALE.toString(), female.size());
-        gender.put(Gender.OTHER.toString(), otherGender.size());
-        ib.put("gender", gender);
-
-        Map<String, Object> role = Maps.newHashMap();
-        role.put(Role.ADMIN.toString(), adminStaffRole.size());
-        role.put(Role.CONTENT_EDITOR.toString(), contentEditorStaffRole.size());
-        role.put(Role.EVENT_MANAGER.toString(), eventManagerStaffRole.size());
-        role.put(Role.TEACHER.toString(), teacherRole.size());
-        role.put(Role.TESTER.toString(), testerRole.size());
-        role.put(Role.STUDENT.toString(), studentOrUnknownRole.size());
-        role.put(Role.STAFF.toString(), staffRole.size());
-        ib.put("role", role);
-
-        ib.put("viewQuestionEvents", "" + logManager.getLogCountByType(IsaacLogType.VIEW_QUESTION.name()));
-        ib.put("answeredQuestionEvents", "" + logManager.getLogCountByType(SegueLogType.ANSWER_QUESTION.name()));
-
-        ib.put("hasSchool", "" + hasSchool.size());
-        ib.put("hasNoSchool", "" + hasNoSchool.size());
-        ib.put("hasSchoolOther", "" + hasOtherSchool.size());
-
-        log.debug("Calculating general stats - 2. Last seen map");
-
-        final int sevenDays = 7;
-        final int thirtyDays = 30;
-        final int sixMonthsInDays = 180;
-
-        List<RegisteredUserDTO> nonStaffUsers = Lists.newArrayList();
-        nonStaffUsers.addAll(teacherRole);
-        nonStaffUsers.addAll(studentOrUnknownRole);
-
-        ib.put("activeInLastSixMonths", this.getNumberOfUsersActiveForLastNDays(users, lastSeenMap, sixMonthsInDays)
-                .size());
-        
-        ib.put("activeTeachersLastWeek",
-                "" + this.getNumberOfUsersActiveForLastNDays(teacherRole, lastSeenMap, sevenDays).size());
-        ib.put("activeTeachersLastThirtyDays",
-                "" + this.getNumberOfUsersActiveForLastNDays(teacherRole, lastSeenMap, thirtyDays).size());
-
-        ib.put("activeStudentsLastWeek",
-                "" + this.getNumberOfUsersActiveForLastNDays(studentOrUnknownRole, lastSeenMap, sevenDays).size());
-        ib.put("activeStudentsLastThirtyDays",
-                "" + this.getNumberOfUsersActiveForLastNDays(studentOrUnknownRole, lastSeenMap, thirtyDays).size());
-
-        ib.put("activeUsersLastWeek",
-                "" + this.getNumberOfUsersActiveForLastNDays(nonStaffUsers, lastSeenMap, sevenDays).size());
-        ib.put("activeUsersLastThirtyDays",
-                "" + this.getNumberOfUsersActiveForLastNDays(nonStaffUsers, lastSeenMap, thirtyDays).size());
-
-        Map<String, Date> lastSeenUserMapQuestions = this.getLastSeenUserMap(SegueLogType.ANSWER_QUESTION.name());
-        ib.put("questionsAnsweredLastWeekTeachers",
-                "" + this.getNumberOfUsersActiveForLastNDays(teacherRole, lastSeenUserMapQuestions, sevenDays).size());
-        ib.put("questionsAnsweredLastThirtyDaysTeachers",
-                "" + this.getNumberOfUsersActiveForLastNDays(teacherRole, lastSeenUserMapQuestions, thirtyDays).size());
-
-        ib.put("questionsAnsweredLastWeekStudents",
-                ""
-                        + this.getNumberOfUsersActiveForLastNDays(studentOrUnknownRole, lastSeenUserMapQuestions,
-                                sevenDays).size());
-        ib.put("questionsAnsweredLastThirtyDaysStudents",
-                ""
-                        + this.getNumberOfUsersActiveForLastNDays(studentOrUnknownRole, lastSeenUserMapQuestions,
-                                thirtyDays).size());
-        
-        ib.put("groupCount", groupManager.getGroupCount());
-        
-        Map<String, Object> result = ib.build();
-        this.longStatsCache.put(GENERAL_STATS, result);
-
-        log.info("Finished calculating General Statistics");
+        Map<String, Map<Role, Long>> rangedAnsweredQuestionStats = Maps.newHashMap();
+        rangedAnsweredQuestionStats.put("sevenDays", questionManager.getAnsweredQuestionRolesOverPrevious(SEVEN_DAYS));
+        rangedAnsweredQuestionStats.put("thirtyDays", questionManager.getAnsweredQuestionRolesOverPrevious(THIRTY_DAYS));
+        rangedAnsweredQuestionStats.put("ninetyDays", questionManager.getAnsweredQuestionRolesOverPrevious(NINETY_DAYS));
+        result.put("answeringUsersOverPrevious", rangedAnsweredQuestionStats);
 
         return result;
     }
