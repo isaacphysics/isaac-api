@@ -30,7 +30,7 @@ public class School {
      * Enum to represent where this school object was created.
      */
     public enum SchoolDataSource {
-        GOVERNMENT_UK, GOVERNMENT_IE, GOVERNMENT_SCO, GOVERNMENT_WAL, USER_ENTERED;
+        GOVERNMENT_UK, GOVERNMENT_IE, GOVERNMENT_SCO, GOVERNMENT_WAL, GOVERNMENT_NI, USER_ENTERED;
 
         @Override
         public String toString() {
