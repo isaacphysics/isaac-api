@@ -46,10 +46,17 @@ public class IsaacFreeTextValidator implements IValidator {
     private static String convertToPMatchWildcardNotation(final String ruleValue) {
         String ouSyntaxRuleValue = ruleValue;
         for (Map.Entry<String, String> wildcardMap : WILDCARD_CONVERSION_MAP.entrySet()) {
-            String escapedWildcard = ESCAPE_CHARACTER + wildcardMap.getKey();
-            ouSyntaxRuleValue = ouSyntaxRuleValue.replace(escapedWildcard, TEMPORARY_OBSCURE_CHARACTER);
-            ouSyntaxRuleValue = ouSyntaxRuleValue.replace(wildcardMap.getKey(), wildcardMap.getValue());
-            ouSyntaxRuleValue = ouSyntaxRuleValue.replace(TEMPORARY_OBSCURE_CHARACTER, wildcardMap.getKey());
+            String isaacWildCard = wildcardMap.getKey();
+            String openMarkWildcard = wildcardMap.getValue();
+
+            // Escape unsupported OpenMark wildcard
+            ouSyntaxRuleValue = ouSyntaxRuleValue.replace(openMarkWildcard, ESCAPE_CHARACTER + openMarkWildcard);
+            // Temporarily replace escaped Isaac wildcards with an obscure character
+            ouSyntaxRuleValue = ouSyntaxRuleValue.replace(ESCAPE_CHARACTER + isaacWildCard, TEMPORARY_OBSCURE_CHARACTER);
+            // Convert Isaac wildcard to the library supported OpenMark wildcard
+            ouSyntaxRuleValue = ouSyntaxRuleValue.replace(isaacWildCard, openMarkWildcard);
+            // Replace our escaped Isaac characters with the wildcard character for matching
+            ouSyntaxRuleValue = ouSyntaxRuleValue.replace(TEMPORARY_OBSCURE_CHARACTER, isaacWildCard);
         }
         return ouSyntaxRuleValue;
     }
