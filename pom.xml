@@ -15,9 +15,9 @@
 		<powermock.version>1.6.3</powermock.version>
 		<postgresql.version>9.3-1104-jdbc41</postgresql.version>
 		<swagger-ui-version>3.19.5</swagger-ui-version>
-        <jetty.port.api>8080</jetty.port.api>
-        <jetty.port.etl>8090</jetty.port.etl>
-        <config.location>/local/data/rutherford/conf/segue-config.properties</config.location>
+		<jetty.port.api>8080</jetty.port.api>
+		<jetty.port.etl>8090</jetty.port.etl>
+		<config.location>/local/data/rutherford/conf/segue-config.properties</config.location>
 		<log.path>/isaac-logs</log.path>
 	</properties>
 
@@ -32,11 +32,18 @@
 		</repository>
 	</repositories>
 	<dependencies>
-        <dependency>
-            <groupId>org.javassist</groupId>
-            <artifactId>javassist</artifactId>
-            <version>3.18.2-GA</version>
-        </dependency>
+
+		<dependency>
+			<groupId>org.isaacphysics.thirdparty</groupId>
+			<artifactId>openmark-pmatch</artifactId>
+			<version>0.1.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.javassist</groupId>
+			<artifactId>javassist</artifactId>
+			<version>3.18.2-GA</version>
+		</dependency>
 
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
@@ -154,7 +161,7 @@
 			<version>0.9.11</version>
 		</dependency>
 
-        <dependency>
+		<dependency>
 			<groupId>io.swagger</groupId>
 			<artifactId>swagger-jaxrs</artifactId>
 			<version>1.5.21</version>
@@ -369,7 +376,7 @@
 					<systemPropertyVariables>
 						<log.path>${log.path}</log.path>
 					</systemPropertyVariables>
-                    <useSystemClassLoader>false</useSystemClassLoader>
+					<useSystemClassLoader>false</useSystemClassLoader>
 				</configuration>
 			</plugin>
 
@@ -406,11 +413,11 @@
 						<webInfIncludeJarPattern>^$</webInfIncludeJarPattern>
 						<containerIncludeJarPattern>^$</containerIncludeJarPattern>
 					</webApp>
-                    <systemProperties>
-                        <systemProperty>
-                            <name>jetty.port</name>
-                            <value>${jetty.port.api}</value>
-                        </systemProperty>
+					<systemProperties>
+						<systemProperty>
+							<name>jetty.port</name>
+							<value>${jetty.port.api}</value>
+						</systemProperty>
 						<systemProperty>
 							<name>config.location</name>
 							<value>${config.location}</value>
@@ -423,7 +430,7 @@
 							<name>segue.version</name>
 							<value>${segue.version}</value>
 						</systemProperty>
-                    </systemProperties>
+					</systemProperties>
 				</configuration>
 			</plugin>
 		</plugins>
@@ -469,9 +476,9 @@
 		</profile>
 		<profile>
 			<id>etl</id>
-            <properties>
-                <build.profile.id>etl</build.profile.id>
-            </properties>
+			<properties>
+				<build.profile.id>etl</build.profile.id>
+			</properties>
 			<build>
 				<plugins>
 					<plugin>
@@ -482,8 +489,8 @@
 							<webApp>
 								<contextPath>/isaac-api</contextPath>
 								<overrideDescriptor>override-etl-web.xml</overrideDescriptor>
-                                <webInfIncludeJarPattern>^$</webInfIncludeJarPattern>
-                                <containerIncludeJarPattern>^$</containerIncludeJarPattern>
+								<webInfIncludeJarPattern>^$</webInfIncludeJarPattern>
+								<containerIncludeJarPattern>^$</containerIncludeJarPattern>
 							</webApp>
 							<systemProperties>
 								<systemProperty>

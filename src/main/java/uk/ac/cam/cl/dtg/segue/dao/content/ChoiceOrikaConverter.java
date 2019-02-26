@@ -20,6 +20,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.ChemicalFormula;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Formula;
 import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
+import uk.ac.cam.cl.dtg.segue.dos.content.FreeTextRule;
 import uk.ac.cam.cl.dtg.segue.dto.content.GraphChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.dos.content.StringChoice;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChemicalFormulaDTO;
@@ -29,6 +30,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.QuantityDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.StringChoiceDTO;
 import ma.glasnost.orika.converter.BidirectionalConverter;
 import ma.glasnost.orika.metadata.Type;
+import uk.ac.cam.cl.dtg.segue.dto.content.FreeTextRuleDTO;
 
 /**
  * ContentBaseOrikaConverter A specialist converter class to work with the Orika automapper library.
@@ -62,6 +64,8 @@ public class ChoiceOrikaConverter extends BidirectionalConverter<Choice, ChoiceD
             return super.mapperFacade.map(source, GraphChoiceDTO.class);
         } else if (source instanceof StringChoice) {
             return super.mapperFacade.map(source, StringChoiceDTO.class);
+        }else if (source instanceof FreeTextRule) {
+            return super.mapperFacade.map(source, FreeTextRuleDTO.class);
         } else {
             // I would have expected this to cause an infinite loop / stack
             // overflow but apparently it doesn't.
@@ -87,6 +91,8 @@ public class ChoiceOrikaConverter extends BidirectionalConverter<Choice, ChoiceD
             return super.mapperFacade.map(source, GraphChoice.class);
         } else if (source instanceof StringChoiceDTO) {
             return super.mapperFacade.map(source, StringChoice.class);
+        } else if (source instanceof FreeTextRuleDTO) {
+            return super.mapperFacade.map(source, FreeTextRule.class);
         } else {
             // I would have expected this to cause an infinite loop / stack
             // overflow but apparently it doesn't.

@@ -73,6 +73,8 @@ public class ChoiceDeserializer extends JsonDeserializer<Choice> {
                 return getSingletonChoiceMapper().readValue(root.toString(), GraphChoice.class);
             case "stringChoice":
                 return getSingletonChoiceMapper().readValue(root.toString(), StringChoice.class);
+            case "freeTextRule":
+                return getSingletonChoiceMapper().readValue(root.toString(), FreeTextRule.class);
             default:
                 return getSingletonChoiceMapper().readValue(root.toString(), Choice.class);
         }
