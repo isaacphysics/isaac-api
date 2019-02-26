@@ -62,6 +62,7 @@ import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetRequestMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.RegistrationMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
@@ -270,6 +271,7 @@ public class UsersFacade extends AbstractSegueFacade {
         } else {
             try {
                 misuseMonitor.notifyEvent(RequestIPExtractor.getClientIpAddr(request), RegistrationMisuseHandler.class.toString());
+                SegueMetrics.USER_REGISTRATION.inc();
                 return this.createUserObjectAndLogIn(request, response, registeredUser, newPassword, userPreferences);
             } catch (SegueResourceMisuseException e) {
                 log.error(String.format("Blocked a registration attempt by (%s) after misuse limit hit!", RequestIPExtractor.getClientIpAddr(request)));
@@ -349,6 +351,7 @@ public class UsersFacade extends AbstractSegueFacade {
             }
 
             misuseMonitor.notifyEvent(currentUser.getEmail() + "_group_member_reset", PasswordResetRequestMisuseHandler.class.toString());
+            SegueMetrics.PASSWORD_RESET.inc();
             userManager.resetPasswordRequest(userOfInterest);
 
             this.getLogManager()
