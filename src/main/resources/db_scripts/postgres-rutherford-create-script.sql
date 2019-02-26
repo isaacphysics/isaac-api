@@ -543,6 +543,7 @@ CREATE TABLE users (
     default_level integer,
     email_to_verify text,
     email_verification_token text,
+    session_token INTEGER NOT NULL DEFAULT 0,
     deleted boolean DEFAULT false NOT NULL
 );
 
