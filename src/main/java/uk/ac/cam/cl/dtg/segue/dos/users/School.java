@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,8 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.segue.dos.users;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 /**
  * School information POJO.
  * 
@@ -25,6 +23,7 @@ public class School {
     private String urn;
     private String name;
     private String postcode;
+    private Boolean closed;
 
     /**
      * Enum to represent where this school object was created.
@@ -58,12 +57,15 @@ public class School {
      *            -postcode of the school
      * @param dataSource
      *            -dataSource of this information
+     * @param closed
+     *            - whether the school is closed
      */
-    public School(final String urn, final String name, final String postcode, final SchoolDataSource dataSource) {
+    public School(final String urn, final String name, final String postcode, final Boolean closed, final SchoolDataSource dataSource) {
         this.urn = urn;
         this.name = name;
         this.postcode = postcode;
         this.dataSource = dataSource;
+        this.closed = closed;
     }
 
     /**
@@ -121,6 +123,26 @@ public class School {
      */
     public void setPostcode(final String postcode) {
         this.postcode = postcode;
+    }
+
+
+    /**
+     * Gets the closed status.
+     *
+     * @return whether the school is closed
+     */
+    public Boolean isClosed() {
+        return closed;
+    }
+
+    /**
+     * Sets the closed status.
+     *
+     * @param closed
+     *            whether the school is closed
+     */
+    public void setClosed(final Boolean closed) {
+        this.closed = closed;
     }
 
     /**
