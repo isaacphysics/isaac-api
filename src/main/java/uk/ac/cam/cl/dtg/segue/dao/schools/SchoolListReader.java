@@ -86,15 +86,22 @@ public class SchoolListReader {
             throw new UnableToIndexSchoolsException("unable to ensure the cache has been populated");
         }
 
+        // FIXME: for one release cycle, we need backwards compatibility and so cannot use the fieldsThatMustMatch property
+        // It should be set to ImmutableMap.of("closed", ImmutableList.of("false"))
         List<String> schoolSearchResults = searchProvider.fuzzySearch(SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString(),
-                searchQuery, 0, DEFAULT_RESULTS_LIMIT, ImmutableMap.of("closed", ImmutableList.of("false")), null, SCHOOL_URN_FIELDNAME_POJO,
+                searchQuery, 0, DEFAULT_RESULTS_LIMIT, null, null, SCHOOL_URN_FIELDNAME_POJO,
                 SCHOOL_ESTABLISHMENT_NAME_FIELDNAME_POJO, SCHOOL_POSTCODE_FIELDNAME_POJO)
                 .getResults();
 
         List<School> resultList = Lists.newArrayList();
         for (String schoolString : schoolSearchResults) {
             try {
-                resultList.add(mapper.readValue(schoolString, School.class));
+                School school = mapper.readValue(schoolString, School.class);
+                if (school.isClosed() != null && school.isClosed()) {
+                    // FIXME: this filtering will be unnecessary once the above fix is implemented!
+                    continue;
+                }
+                resultList.add(school);
             } catch (JsonParseException | JsonMappingException e) {
                 log.error("Unable to parse the school " + schoolString, e);
             } catch (IOException e) {
