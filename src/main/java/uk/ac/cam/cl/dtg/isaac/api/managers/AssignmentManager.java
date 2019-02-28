@@ -110,10 +110,9 @@ public class AssignmentManager implements IGroupObserver {
             return Lists.newArrayList();
         }
 
-        List<AssignmentDTO> assignments = Lists.newArrayList();
-        for (UserGroupDTO group : groups) {
-            assignments.addAll(this.filterAssignmentsBasedOnGroupMembershipContext(this.assignmentPersistenceManager.getAssignmentsByGroupId(group.getId()), user.getId()));
-        }
+        List<Long> groupIds = groups.stream().map(UserGroupDTO::getId).collect(Collectors.toList());
+        List<AssignmentDTO> assignments = this.filterAssignmentsBasedOnGroupMembershipContext(
+                this.assignmentPersistenceManager.getAssignmentsByGroupList(groupIds), user.getId());
 
         return assignments;
     }
