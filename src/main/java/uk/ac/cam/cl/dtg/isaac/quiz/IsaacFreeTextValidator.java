@@ -51,6 +51,7 @@ public class IsaacFreeTextValidator implements IValidator {
 
             // Escape unsupported OpenMark wildcard
             ouSyntaxRuleValue = ouSyntaxRuleValue.replace(openMarkWildcard, ESCAPE_CHARACTER + openMarkWildcard);
+
             // Temporarily replace escaped Isaac wildcards with an obscure character
             ouSyntaxRuleValue = ouSyntaxRuleValue.replace(ESCAPE_CHARACTER + isaacWildCard, TEMPORARY_OBSCURE_CHARACTER);
             // Convert Isaac wildcard to the library supported OpenMark wildcard
@@ -61,8 +62,8 @@ public class IsaacFreeTextValidator implements IValidator {
         return ouSyntaxRuleValue;
     }
 
-    private static String extractAnswerValue(Choice answer, FreeTextRule rule) {
-        return rule.isCaseInsensitive() ? answer.getValue().toLowerCase() : answer.getValue();
+    private static String extractAnswerValue(Choice answer, boolean caseInsensitive) {
+        return caseInsensitive ? answer.getValue().toLowerCase() : answer.getValue();
     }
 
     private static String extractRuleValue(FreeTextRule rule) {
@@ -102,7 +103,8 @@ public class IsaacFreeTextValidator implements IValidator {
         for (Choice rule : freeTextQuestion.getChoices()) {
             if (rule instanceof FreeTextRule) {
                 FreeTextRule freeTextRule = (FreeTextRule) rule;
-                PMatch questionAnswerMatcher = new PMatch(extractAnswerValue(answer, freeTextRule));
+                String answerString = extractAnswerValue(answer, freeTextRule.isCaseInsensitive());
+                PMatch questionAnswerMatcher = new PMatch(answerString);
                 String matchingParamaters = evaluateMatchingOptions(freeTextRule);
                 if (questionAnswerMatcher.match(matchingParamaters, extractRuleValue(freeTextRule))) {
                     isCorrectResponse = rule.isCorrect();
