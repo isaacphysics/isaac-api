@@ -114,7 +114,7 @@ class SchoolIndexer {
             }
 
             // We expect the columns to have the following names/structure and be UTF-8 encoded:
-            // URN | EstablishmentName | Postcode | DataSource
+            // URN | EstablishmentName | Postcode | Closed | DataSource
             String[] schoolArray;
             while ((schoolArray = reader.readNext()) != null) {
                 try {
@@ -124,6 +124,8 @@ class SchoolIndexer {
                     School schoolToSave = new School(schoolArray[fieldNameMapping.get(Constants.SCHOOL_URN_FIELDNAME)],
                             schoolArray[fieldNameMapping.get(Constants.SCHOOL_ESTABLISHMENT_NAME_FIELDNAME)],
                             schoolArray[fieldNameMapping.get(Constants.SCHOOL_POSTCODE_FIELDNAME)],
+                            // CSV file contains string "t" and "f" values to denote true and false, but need a boolean:
+                            "t".equals(schoolArray[fieldNameMapping.get(Constants.SCHOOL_CLOSED_FIELDNAME)]),
                             source);
 
                     if (null == schoolToSave.getPostcode() || schoolToSave.getPostcode().isEmpty()) {
