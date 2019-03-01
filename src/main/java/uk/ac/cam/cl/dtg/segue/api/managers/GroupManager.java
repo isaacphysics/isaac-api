@@ -502,6 +502,8 @@ public class GroupManager {
     }
 
     /**
+     * Convert a collection of group DOs into DTOs
+     * 
      * @param groups
      *            to convert
      * @return groupDTOs
@@ -512,8 +514,11 @@ public class GroupManager {
         // add temporary cache so we don't have to look up the same user each time.
         Map<Long, RegisteredUserDTO> userLookupCache = Maps.newHashMap();
 
+        // go through each group and get the related user information in the correct format
         for (UserGroup group : groups) {
             UserGroupDTO dtoToReturn = dtoMapper.map(group, UserGroupDTO.class);
+
+            // convert the owner of the group into a DTO
             try {
                 RegisteredUserDTO ownerUser = userLookupCache.get(group.getOwnerId());
                 if (null == ownerUser) {
@@ -527,6 +532,7 @@ public class GroupManager {
                 log.error(String.format("Group (%s) has owner ID (%s) that no longer exists!", group.getId(), group.getOwnerId()));
             }
 
+            // Didn't bother using the user cache above for the below as the bottleneck was the group owner db calls.
             Set<Long> additionalManagers = this.groupDatabase.getAdditionalManagerSetByGroupId(group.getId());
             Set<UserSummaryWithEmailAddressDTO> setOfUsers = Sets.newHashSet();
             if (additionalManagers != null) {
