@@ -20,6 +20,7 @@ import java.util.*;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import com.google.api.client.util.Maps;
 import com.google.inject.Injector;
 import org.apache.commons.lang3.Validate;
 import org.joda.time.LocalDate;
@@ -403,6 +404,28 @@ public class QuestionManager {
     public Map<Role, Long> getAnsweredQuestionRolesOverPrevious(TimeInterval timeInterval)
             throws SegueDatabaseException {
         return this.questionAttemptPersistenceManager.getAnsweredQuestionRolesOverPrevious(timeInterval);
+    }
+
+    /**
+     * getQuestionAttemptCountsByDate
+     *
+     * Retrieves a map of days and number of question attempts
+     */
+    public Map<LocalDate, Long> getUsersQuestionAttemptCountsByDate(final RegisteredUserDTO user,
+                                                                                 final Date fromDate, final Date toDate) throws SegueDatabaseException {
+        Map<Date, Long> questionAttemptCountByMonthByUser = this.questionAttemptPersistenceManager.getQuestionAttemptCountForUserByDateRange(fromDate, toDate, user.getId());
+
+        // Convert the normal java dates into useful joda dates and create a new map.
+        Map<LocalDate, Long> result = Maps.newHashMap();
+        for (Map.Entry<Date, Long> le : questionAttemptCountByMonthByUser.entrySet()) {
+
+            if (result.containsKey(le.getKey())) {
+                result.put(new LocalDate(le.getKey()), result.get(le.getKey()) + le.getValue());
+            } else {
+                result.put(new LocalDate(le.getKey()), le.getValue());
+            }
+        }
+        return result;
     }
 
     /**
