@@ -22,6 +22,7 @@ import javax.ws.rs.core.Response.Status;
 
 import com.google.inject.Injector;
 import org.apache.commons.lang3.Validate;
+import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -391,7 +392,19 @@ public class QuestionManager {
         this.questionAttemptPersistenceManager.mergeAnonymousQuestionInformationWithRegisteredUserRecord(
                 anonymousUser.getSessionId(), registeredUser.getId());
     }
-    
+
+    /**
+     * Count the users by role which have answered questions over the previous time interval
+     * @param timeInterval time interval over which to count
+     * @return map of counts for each role
+     * @throws SegueDatabaseException
+     *             - if there is a problem with the database.
+     */
+    public Map<Role, Long> getAnsweredQuestionRolesOverPrevious(TimeInterval timeInterval)
+            throws SegueDatabaseException {
+        return this.questionAttemptPersistenceManager.getAnsweredQuestionRolesOverPrevious(timeInterval);
+    }
+
     /**
      * Extract all of the questionObjectsRecursively.
      * 
@@ -453,15 +466,4 @@ public class QuestionManager {
         }
     }
 
-    /**
-     * Count the users by role which have answered questions over the previous time interval
-     * @param timeInterval time interval over which to count
-     * @return map of counts for each role
-     * @throws SegueDatabaseException
-     *             - if there is a problem with the database.
-     */
-    public Map<Role, Long> getAnsweredQuestionRolesOverPrevious(TimeInterval timeInterval)
-            throws SegueDatabaseException {
-        return this.questionAttemptPersistenceManager.getAnsweredQuestionRolesOverPrevious(timeInterval);
-    }
 }
