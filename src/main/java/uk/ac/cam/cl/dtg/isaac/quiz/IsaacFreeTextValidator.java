@@ -67,12 +67,11 @@ public class IsaacFreeTextValidator implements IValidator {
 
     private String removeNonAlphanumericChars(final String answer, final String rule) {
         String strippedAnswer = answer;
-        List<String> nonAlphanumericCharsNotInRule = NON_ALPHANUMERIC_CHARS.codePoints()
-                .mapToObj(nonAlphaCodePoint -> String.valueOf((char) nonAlphaCodePoint))
-                .filter(nonAlphaString -> !rule.contains(nonAlphaString))
-                .collect(Collectors.toList());
-        for (String nonAlphanumericChar : nonAlphanumericCharsNotInRule) {
-            strippedAnswer = strippedAnswer.replace(nonAlphanumericChar, " ");
+        for (char nonAlphanumericChar : NON_ALPHANUMERIC_CHARS.toCharArray()) {
+            String nonAlphanumericCharStr = String.valueOf(nonAlphanumericChar);
+            if (!rule.contains(nonAlphanumericCharStr)) {
+                strippedAnswer = strippedAnswer.replace(nonAlphanumericCharStr, " ");
+            }
         }
         return strippedAnswer;
     }
