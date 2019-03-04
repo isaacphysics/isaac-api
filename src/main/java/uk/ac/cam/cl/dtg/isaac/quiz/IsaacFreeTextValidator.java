@@ -30,12 +30,15 @@ import uk.ac.cam.cl.dtg.segue.dos.content.StringChoice;
 import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class IsaacFreeTextValidator implements IValidator {
     private static final Logger log = LoggerFactory.getLogger(IsaacFreeTextValidator.class);
 
     // Map of wildcards from our RegEx based syntax to the PMatch's custom syntax
+    private static final String NON_ALPHANUMERIC_CHARS = "!\"#£$%&'/\\-+<=>@^`{}~.,()[]:;";
     private static final Map<String, String> WILDCARD_CONVERSION_MAP = ImmutableMap.of(
             "*", "&",
             ".", "#"
@@ -51,6 +54,7 @@ public class IsaacFreeTextValidator implements IValidator {
 
             // Escape unsupported OpenMark wildcard
             ouSyntaxRuleValue = ouSyntaxRuleValue.replace(openMarkWildcard, ESCAPE_CHARACTER + openMarkWildcard);
+
             // Temporarily replace escaped Isaac wildcards with an obscure character
             ouSyntaxRuleValue = ouSyntaxRuleValue.replace(ESCAPE_CHARACTER + isaacWildCard, TEMPORARY_OBSCURE_CHARACTER);
             // Convert Isaac wildcard to the library supported OpenMark wildcard
@@ -61,8 +65,19 @@ public class IsaacFreeTextValidator implements IValidator {
         return ouSyntaxRuleValue;
     }
 
-    private static String extractAnswerValue(Choice answer, FreeTextRule rule) {
-        return rule.isCaseInsensitive() ? answer.getValue().toLowerCase() : answer.getValue();
+    private String removeNonAlphanumericChars(final String answer, final String rule) {
+        String strippedAnswer = answer;
+        for (char nonAlphanumericChar : NON_ALPHANUMERIC_CHARS.toCharArray()) {
+            String nonAlphanumericCharStr = String.valueOf(nonAlphanumericChar);
+            if (!rule.contains(nonAlphanumericCharStr)) {
+                strippedAnswer = strippedAnswer.replace(nonAlphanumericCharStr, " ");
+            }
+        }
+        return strippedAnswer;
+    }
+
+    private static String extractAnswerValue(Choice answer, boolean caseInsensitive) {
+        return caseInsensitive ? answer.getValue().toLowerCase() : answer.getValue();
     }
 
     private static String extractRuleValue(FreeTextRule rule) {
@@ -102,7 +117,9 @@ public class IsaacFreeTextValidator implements IValidator {
         for (Choice rule : freeTextQuestion.getChoices()) {
             if (rule instanceof FreeTextRule) {
                 FreeTextRule freeTextRule = (FreeTextRule) rule;
-                PMatch questionAnswerMatcher = new PMatch(extractAnswerValue(answer, freeTextRule));
+                String answerString = extractAnswerValue(answer, freeTextRule.isCaseInsensitive());
+                answerString = removeNonAlphanumericChars(answerString, freeTextRule.getValue());
+                PMatch questionAnswerMatcher = new PMatch(answerString);
                 String matchingParamaters = evaluateMatchingOptions(freeTextRule);
                 if (questionAnswerMatcher.match(matchingParamaters, extractRuleValue(freeTextRule))) {
                     isCorrectResponse = rule.isCorrect();
