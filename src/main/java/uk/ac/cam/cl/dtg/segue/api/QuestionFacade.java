@@ -168,7 +168,7 @@ public class QuestionFacade extends AbstractSegueFacade {
     @GET
     @Path("answered_questions/{user_id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Provide users who try to cheat with a guide to the location of our help page.")
+    @ApiOperation(value = "Return a count of question attempts per month.")
     public Response getQuestionsAnswered(@Context final HttpServletRequest request,
                                       @PathParam("user_id") final Long userIdOfInterest,
                                       @QueryParam("from_date") final Long fromDate,
