@@ -34,7 +34,6 @@ import uk.ac.cam.cl.dtg.segue.dos.GroupStatus;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithEmailAddressDTO;
-import uk.ac.cam.cl.dtg.segue.dos.GroupMembership;
 import uk.ac.cam.cl.dtg.segue.dto.users.GroupMembershipDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
@@ -203,7 +202,7 @@ public class GroupManager {
      */
     public List<UserGroupDTO> getGroupsByOwner(final RegisteredUserDTO ownerUser) throws SegueDatabaseException {
         Validate.notNull(ownerUser);
-        return convertGroupToDTOs(groupDatabase.getGroupsByOwner(ownerUser.getId()));
+        return convertGroupsToDTOs(groupDatabase.getGroupsByOwner(ownerUser.getId()));
     }
 
     /**
@@ -223,8 +222,8 @@ public class GroupManager {
     public List<UserGroupDTO> getAllGroupsOwnedAndManagedByUser(final RegisteredUserDTO ownerUser, boolean archivedGroupsOnly) throws SegueDatabaseException {
         Validate.notNull(ownerUser);
         List<UserGroupDTO> combinedResults = Lists.newArrayList();
-        combinedResults.addAll(convertGroupToDTOs(groupDatabase.getGroupsByOwner(ownerUser.getId(), archivedGroupsOnly)));
-        combinedResults.addAll(convertGroupToDTOs(groupDatabase.getGroupsByAdditionalManager(ownerUser.getId(), archivedGroupsOnly)));
+        combinedResults.addAll(convertGroupsToDTOs(groupDatabase.getGroupsByOwner(ownerUser.getId(), archivedGroupsOnly)));
+        combinedResults.addAll(convertGroupsToDTOs(groupDatabase.getGroupsByAdditionalManager(ownerUser.getId(), archivedGroupsOnly)));
         return combinedResults;
     }
 
@@ -241,7 +240,7 @@ public class GroupManager {
      */
     public List<UserGroupDTO> getGroupsByOwner(final RegisteredUserDTO ownerUser, boolean archivedGroupsOnly) throws SegueDatabaseException {
         Validate.notNull(ownerUser);
-        return convertGroupToDTOs(groupDatabase.getGroupsByOwner(ownerUser.getId(), archivedGroupsOnly));
+        return convertGroupsToDTOs(groupDatabase.getGroupsByOwner(ownerUser.getId(), archivedGroupsOnly));
     }
 
     /**
@@ -257,7 +256,7 @@ public class GroupManager {
             throws SegueDatabaseException {
         Validate.notNull(userToLookup);
 
-        return convertGroupToDTOs(this.groupDatabase.getGroupMembershipList(userToLookup.getId()));
+        return convertGroupsToDTOs(this.groupDatabase.getGroupMembershipList(userToLookup.getId()));
     }
 
     /**
@@ -501,15 +500,52 @@ public class GroupManager {
     }
 
     /**
+     * Convert a collection of group DOs into DTOs
+     * 
      * @param groups
      *            to convert
      * @return groupDTOs
+     * @throws SegueDatabaseException
+     *      *            - if there is a database problem.
      */
-    private List<UserGroupDTO> convertGroupToDTOs(final Iterable<UserGroup> groups) throws SegueDatabaseException {
+    private List<UserGroupDTO> convertGroupsToDTOs(final Iterable<UserGroup> groups) throws SegueDatabaseException {
+        // FIXME - this duplicates much of the behaviour of the single-group convertGroupToDTO(...) method.
+        // If refactored so additional managers uses lookup cache, then the single-group method should use this code!
         List<UserGroupDTO> result = Lists.newArrayList();
+
+        // add temporary cache so we don't have to look up the same user each time.
+        Map<Long, RegisteredUserDTO> userLookupCache = Maps.newHashMap();
+
+        // go through each group and get the related user information in the correct format
         for (UserGroup group : groups) {
-            result.add(convertGroupToDTO(group));
+            UserGroupDTO dtoToReturn = dtoMapper.map(group, UserGroupDTO.class);
+
+            // convert the owner of the group into a DTO
+            try {
+                RegisteredUserDTO ownerUser = userLookupCache.get(group.getOwnerId());
+                if (null == ownerUser) {
+                    ownerUser = userManager.getUserDTOById(group.getOwnerId());
+                    userLookupCache.put(ownerUser.getId(), ownerUser);
+                }
+
+                dtoToReturn.setOwnerSummary(userManager.convertToDetailedUserSummaryObject(ownerUser, UserSummaryWithEmailAddressDTO.class));
+            } catch (NoUserException e) {
+                // This should never happen!
+                log.error(String.format("Group (%s) has owner ID (%s) that no longer exists!", group.getId(), group.getOwnerId()));
+            }
+
+            // Didn't bother using the user cache above for the below as the bottleneck was the group owner db calls.
+            Set<Long> additionalManagers = this.groupDatabase.getAdditionalManagerSetByGroupId(group.getId());
+            Set<UserSummaryWithEmailAddressDTO> setOfUsers = Sets.newHashSet();
+            if (additionalManagers != null) {
+                setOfUsers.addAll(userManager.convertToDetailedUserSummaryObjectList(userManager.findUsers(additionalManagers), UserSummaryWithEmailAddressDTO.class));
+            }
+
+            dtoToReturn.setAdditionalManagers(setOfUsers);
+
+            result.add(dtoToReturn);
         }
+
         return result;
     }
 
