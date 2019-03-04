@@ -140,25 +140,7 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
 
     @Override
     public List<AssignmentDTO> getAssignmentsByGroupId(final Long groupId) throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM assignments WHERE group_id = ? ORDER BY creation_date");
-
-            pst.setLong(1, groupId);
-            
-            ResultSet results = pst.executeQuery();
- 
-            List<AssignmentDTO> listOfResults = Lists.newArrayList();
-            
-            while (results.next()) {
-                listOfResults.add(this.convertToAssignmentDTO(this.convertFromSQLToAssignmentDO(results)));
-            }
-
-            return listOfResults;
-
-        } catch (SQLException e) {
-            throw new SegueDatabaseException("Unable to find assignment by group", e);
-        }
+        return this.getAssignmentsByGroupList(Collections.singletonList(groupId));
     }
 
     @Override

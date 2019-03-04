@@ -646,11 +646,8 @@ public class GameManager {
 
         List<ImmutablePair<RegisteredUserDTO, List<GameboardItem>>> result = Lists.newArrayList();
 
-        List<String> questionPageIds = Lists.newArrayList();
-
-        for (GameboardItem questionPage : gameboard.getQuestions()) {
-            questionPageIds.add(questionPage.getId());
-        }
+        List<String> questionPageIds =
+                gameboard.getQuestions().stream().map(GameboardItem::getId).collect(Collectors.toList());
 
         Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>>
                 questionAttemptsForAllUsersOfInterest =
