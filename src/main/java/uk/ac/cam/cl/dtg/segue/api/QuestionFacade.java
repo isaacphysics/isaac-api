@@ -174,6 +174,17 @@ public class QuestionFacade extends AbstractSegueFacade {
                                       @QueryParam("from_date") final Long fromDate,
                                       @QueryParam("to_date") final Long toDate) {
         try {
+
+            if (null == fromDate || null == toDate) {
+                return new SegueErrorResponse(Status.BAD_REQUEST,
+                        "You must specify the from_date and to_date you are interested in.").toResponse();
+            }
+
+            if (fromDate > toDate) {
+                return new SegueErrorResponse(Status.BAD_REQUEST,
+                        "The from_date must be before the to_date!").toResponse();
+            }
+
             RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(request);
 
             RegisteredUserDTO userOfInterest = this.userManager.getUserDTOById(userIdOfInterest);
