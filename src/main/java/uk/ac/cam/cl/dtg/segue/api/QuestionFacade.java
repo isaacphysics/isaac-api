@@ -185,7 +185,14 @@ public class QuestionFacade extends AbstractSegueFacade {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
-            return Response.ok(this.questionManager.getUsersQuestionAttemptCountsByDate(userOfInterest, new Date(fromDate), new Date(toDate))).build();
+            // No point looking for stats from before the user registered (except for merged attempts at registration,
+            // and these will only be ANONYMOUS_SESSION_DURATION_IN_MINUTES before registration anyway):
+            Date fromDateObject = new Date(fromDate);
+            if (fromDateObject.before(userOfInterest.getRegistrationDate())) {
+                fromDateObject = userOfInterest.getRegistrationDate();
+            }
+
+            return Response.ok(this.questionManager.getUsersQuestionAttemptCountsByDate(userOfInterest, fromDateObject, new Date(toDate))).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (NoUserException e) {
