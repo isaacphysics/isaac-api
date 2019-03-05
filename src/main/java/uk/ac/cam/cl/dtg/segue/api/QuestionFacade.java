@@ -28,11 +28,14 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.AnonQuestionAttemptMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IPQuestionAttemptMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.QuestionAttemptMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -42,12 +45,14 @@ import uk.ac.cam.cl.dtg.segue.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
+import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 
@@ -58,11 +63,13 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -84,6 +91,7 @@ public class QuestionFacade extends AbstractSegueFacade {
     private final UserAccountManager userManager;
     private final QuestionManager questionManager;
     private final UserBadgeManager userBadgeManager;
+    private final UserAssociationManager userAssociationManager;
     private IMisuseMonitor misuseMonitor;
     private IUserStreaksManager userStreaksManager;
 
@@ -110,7 +118,8 @@ public class QuestionFacade extends AbstractSegueFacade {
                           final QuestionManager questionManager,
                           final ILogManager logManager, final IMisuseMonitor misuseMonitor,
                           final UserBadgeManager userBadgeManager,
-                          final IUserStreaksManager userStreaksManager) {
+                          final IUserStreaksManager userStreaksManager,
+                          final UserAssociationManager userAssociationManager) {
         super(properties, logManager);
 
         this.questionManager = questionManager;
@@ -121,6 +130,7 @@ public class QuestionFacade extends AbstractSegueFacade {
         this.misuseMonitor = misuseMonitor;
         this.userStreaksManager = userStreaksManager;
         this.userBadgeManager = userBadgeManager;
+        this.userAssociationManager = userAssociationManager;
     }
 
     /**
@@ -145,6 +155,66 @@ public class QuestionFacade extends AbstractSegueFacade {
         }
         return new SegueErrorResponse(Status.METHOD_NOT_ALLOWED, errorMessage).toResponse();
     }
+
+    /**
+     * Get questions answered by user per month for a given date range
+     *
+     * @param request - the incoming request
+     * @param userIdOfInterest - The user id that the query is focused on
+     * @param fromDate - the date to start counting (and the month that will be first in the response map)
+     * @param toDate - The date to finish counting and the month that will be last in the response map
+     * @return an object containing dates (first of each month) mapped to number (number of question attempts)
+     */
+    @GET
+    @Path("answered_questions/{user_id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Return a count of question attempts per month.")
+    public Response getQuestionsAnswered(@Context final HttpServletRequest request,
+                                      @PathParam("user_id") final Long userIdOfInterest,
+                                      @QueryParam("from_date") final Long fromDate,
+                                      @QueryParam("to_date") final Long toDate) {
+        try {
+
+            if (null == fromDate || null == toDate) {
+                return new SegueErrorResponse(Status.BAD_REQUEST,
+                        "You must specify the from_date and to_date you are interested in.").toResponse();
+            }
+
+            if (fromDate > toDate) {
+                return new SegueErrorResponse(Status.BAD_REQUEST,
+                        "The from_date must be before the to_date!").toResponse();
+            }
+
+            RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(request);
+
+            RegisteredUserDTO userOfInterest = this.userManager.getUserDTOById(userIdOfInterest);
+            UserSummaryDTO userOfInterestSummaryObject = userManager.convertToUserSummaryObject(userOfInterest);
+
+            // decide if the user is allowed to view this data.
+            if (!currentUser.getId().equals(userIdOfInterest)
+                    && !userAssociationManager.hasPermission(currentUser, userOfInterestSummaryObject)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
+            // No point looking for stats from before the user registered (except for merged attempts at registration,
+            // and these will only be ANONYMOUS_SESSION_DURATION_IN_MINUTES before registration anyway):
+            Date fromDateObject = new Date(fromDate);
+            if (fromDateObject.before(userOfInterest.getRegistrationDate())) {
+                fromDateObject = userOfInterest.getRegistrationDate();
+            }
+
+            return Response.ok(this.questionManager.getUsersQuestionAttemptCountsByDate(userOfInterest, fromDateObject, new Date(toDate))).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (NoUserException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to find user with the id provided.").toResponse();
+        } catch (SegueDatabaseException e) {
+            log.error("Unable to look up user event history for user " + userIdOfInterest, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while looking up event information")
+                    .toResponse();
+        }
+    }
+
 
     /**
      * Record that a user has answered a question.

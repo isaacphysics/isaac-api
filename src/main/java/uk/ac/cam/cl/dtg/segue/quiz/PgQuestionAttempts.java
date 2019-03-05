@@ -24,7 +24,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -345,6 +349,46 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             return resultsToReturn;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
+        }
+    }
+
+    @Override
+    public Map<Date, Long> getQuestionAttemptCountForUserByDateRange(final Date fromDate,
+                                                                     final Date toDate, final Long userId) throws SegueDatabaseException {
+        Validate.notNull(fromDate);
+        Validate.notNull(toDate);
+
+        StringBuilder queryToBuild = new StringBuilder();
+        queryToBuild.append("WITH filtered_attempts AS (SELECT * FROM question_attempts WHERE user_id = ?) ");
+
+        // The following LEFT JOIN gives us months with no events in as required, but need count(id) not count(1) to
+        // count actual logged events (where id strictly NOT NULL) in those months, and not count an extra '1' for
+        // empty months where id is NULL by definition of the JOIN.
+        queryToBuild.append("SELECT to_char(gen_month, 'YYYY-MM-01'), count(id)");
+        queryToBuild.append(" FROM generate_series(date_trunc('month', ?::timestamp), ?, INTERVAL '1' MONTH) m(gen_month)");
+        queryToBuild.append(" LEFT OUTER JOIN filtered_attempts ON ( date_trunc('month', \"timestamp\") = date_trunc('month', gen_month) )");
+        queryToBuild.append(" GROUP BY gen_month ORDER BY gen_month ASC;");
+
+        try (Connection conn = database.getDatabaseConnection()) {
+            PreparedStatement pst;
+            pst = conn.prepareStatement(queryToBuild.toString());
+            pst.setLong(1, userId);
+            pst.setTimestamp(2, new java.sql.Timestamp(fromDate.getTime()));
+            pst.setTimestamp(3, new java.sql.Timestamp(toDate.getTime()));
+
+            ResultSet results = pst.executeQuery();
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+
+            Map<Date, Long> mapToReturn = Maps.newHashMap();
+            while (results.next()) {
+                mapToReturn.put(formatter.parse(results.getString("to_char")), results.getLong("count"));
+            }
+
+            return mapToReturn;
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        } catch (ParseException e) {
+            throw new SegueDatabaseException("Unable to parse date exception", e);
         }
     }
 }

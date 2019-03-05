@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.segue.quiz;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -106,4 +107,24 @@ public interface IQuestionAttemptManager {
      */
     Map<Role, Long> getAnsweredQuestionRolesOverPrevious(TimeInterval timeInterval)
             throws SegueDatabaseException;
+
+    /**
+     * getQuestionAttemptCountForUserByDateRange.
+     *
+     * An optimised method for getting question attempt counts data by month for a given date range.
+     *
+     * This relies on the database doing the binning for us.
+     *
+     * @param fromDate
+     *            - the earliest date the log event can have occurred
+     * @param toDate
+     *            - the latest date the log event can have occurred
+     * @param userId
+     *            - the list of users ids we are interested in.
+     * @return a collection of log events that match the above criteria or an empty collection.
+     * @throws SegueDatabaseException
+     *             - if we cannot retrieve the data from the database.
+     */
+    Map<Date, Long> getQuestionAttemptCountForUserByDateRange(Date fromDate,
+                                                              Date toDate, Long userId) throws SegueDatabaseException;
 }
