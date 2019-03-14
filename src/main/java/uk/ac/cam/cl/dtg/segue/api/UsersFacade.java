@@ -653,11 +653,15 @@ public class UsersFacade extends AbstractSegueFacade {
             final ImmutableMap.Builder<String, Object> builder = ImmutableMap.builder();
             for (RegisteredUserDTO user : users) {
                 if (user.getSchoolId() != null) {
-                    builder.put(user.getId().toString(), schoolListReader.findSchoolById(user.getSchoolId()));
+                    School school = schoolListReader.findSchoolById(user.getSchoolId());
+                    if (null != school) {
+                        builder.put(user.getId().toString(), school);
+                    } else {
+                        // The school once existed in the list but no longer does. Set the name to be the URN:
+                        builder.put(user.getId().toString(), ImmutableMap.of("name", user.getSchoolId()));
+                    }
                 } else if (user.getSchoolOther() != null && !user.getSchoolOther().isEmpty()) {
-                    Map<String, String> schoolOtherResult = Maps.newHashMap();
-                    schoolOtherResult.put("name", user.getSchoolOther());
-                    builder.put(user.getId().toString(), schoolOtherResult);
+                    builder.put(user.getId().toString(), ImmutableMap.of("name", user.getSchoolOther()));
                 }
             }
 
