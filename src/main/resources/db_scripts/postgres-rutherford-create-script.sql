@@ -2,8 +2,6 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 9.6.4
--- Dumped by pg_dump version 9.6.4
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -349,7 +347,7 @@ CREATE TABLE uk_post_codes (
 ALTER TABLE uk_post_codes OWNER TO rutherford;
 
 --
--- Name: user_alerts_id_seq; Type: SEQUENCE; Schema: public; Owner: rutherford
+-- Name: user_alerts_id_seq; Type: SEQUENCE; Schema: public; Owner: rutheford
 --
 
 CREATE SEQUENCE user_alerts_id_seq
@@ -360,10 +358,10 @@ CREATE SEQUENCE user_alerts_id_seq
     CACHE 1;
 
 
-ALTER TABLE user_alerts_id_seq OWNER TO rutherford;
+ALTER TABLE user_alerts_id_seq OWNER TO rutheford;
 
 --
--- Name: user_alerts; Type: TABLE; Schema: public; Owner: rutherford
+-- Name: user_alerts; Type: TABLE; Schema: public; Owner: rutheford
 --
 
 CREATE TABLE user_alerts (
@@ -378,7 +376,7 @@ CREATE TABLE user_alerts (
 );
 
 
-ALTER TABLE user_alerts OWNER TO rutherford;
+ALTER TABLE user_alerts OWNER TO rutheford;
 
 --
 -- Name: user_associations; Type: TABLE; Schema: public; Owner: rutherford
@@ -543,7 +541,7 @@ CREATE TABLE users (
     default_level integer,
     email_to_verify text,
     email_verification_token text,
-    session_token INTEGER NOT NULL DEFAULT 0,
+    session_token integer DEFAULT 0 NOT NULL,
     deleted boolean DEFAULT false NOT NULL
 );
 
@@ -757,7 +755,7 @@ ALTER TABLE ONLY users
 
 
 --
--- Name: user_alerts user_alerts_pkey; Type: CONSTRAINT; Schema: public; Owner: rutherford
+-- Name: user_alerts user_alerts_pkey; Type: CONSTRAINT; Schema: public; Owner: rutheford
 --
 
 ALTER TABLE ONLY user_alerts
@@ -821,6 +819,13 @@ ALTER TABLE ONLY user_streak_targets
 
 
 --
+-- Name: assignments_group_id; Type: INDEX; Schema: public; Owner: rutherford
+--
+
+CREATE INDEX assignments_group_id ON assignments USING btree (group_id DESC);
+
+
+--
 -- Name: event_booking_user_event_id_index; Type: INDEX; Schema: public; Owner: rutherford
 --
 
@@ -839,6 +844,13 @@ CREATE INDEX "fki_user_id fkey" ON user_notifications USING btree (user_id);
 --
 
 CREATE INDEX gameboards_tags_gin_index ON gameboards USING gin (tags);
+
+
+--
+-- Name: groups_owner_id; Type: INDEX; Schema: public; Owner: rutherford
+--
+
+CREATE INDEX groups_owner_id ON groups USING btree (owner_id);
 
 
 --
@@ -891,6 +903,13 @@ CREATE INDEX question_attempts_by_timestamp ON question_attempts USING btree ("t
 
 
 --
+-- Name: question_attempts_by_user_question; Type: INDEX; Schema: public; Owner: rutherford
+--
+
+CREATE INDEX question_attempts_by_user_question ON question_attempts USING btree (user_id, question_id text_pattern_ops);
+
+
+--
 -- Name: unique email case insensitive; Type: INDEX; Schema: public; Owner: rutherford
 --
 
@@ -898,7 +917,7 @@ CREATE UNIQUE INDEX "unique email case insensitive" ON users USING btree (lower(
 
 
 --
--- Name: user_alerts_id_uindex; Type: INDEX; Schema: public; Owner: rutherford
+-- Name: user_alerts_id_uindex; Type: INDEX; Schema: public; Owner: rutheford
 --
 
 CREATE UNIQUE INDEX user_alerts_id_uindex ON user_alerts USING btree (id);
