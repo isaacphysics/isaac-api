@@ -93,10 +93,11 @@ public class SegueJobService implements ServletContextListener {
 
         scheduler.getContext().put(jobToRegister.getExecutableTask().getClass().getName(), jobToRegister.getExecutionContext());
 
-        if(!scheduler.checkExists(job.getKey())) {
+        if (!scheduler.checkExists(job.getKey())) {
             scheduler.scheduleJob(job, cronTrigger);
             log.info(String.format("Registered job (%s) to segue job execution service. Current jobs registered (%s): ", jobToRegister.getJobKey(), localRegisteredJobs.size()));
         } else {
+            // FIXME - this does not update the job details, e.g. if the SQL file name changes.
             scheduler.rescheduleJob(cronTrigger.getKey(), cronTrigger);
             log.info(String.format("Re-registered job (%s) to segue job execution service. Current jobs registered (%s): ", jobToRegister.getJobKey(), localRegisteredJobs.size()));
         }
