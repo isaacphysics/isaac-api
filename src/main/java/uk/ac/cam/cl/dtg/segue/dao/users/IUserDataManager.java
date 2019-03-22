@@ -158,19 +158,6 @@ public interface IUserDataManager {
             throws SegueDatabaseException;
 
     /**
-     * Get a user by local Id.
-     * 
-     * @param id
-     *            - local user id.
-     * @return A user object or null if we can't find one.
-     * @throws SegueDatabaseException
-     *             - If there is an internal database error.
-     * @deprecated Should use getById
-     */
-    @Deprecated
-    RegisteredUser getByLegacyId(final String id) throws SegueDatabaseException;
-
-    /**
      * @param id user id
      * @return the user the matches
      * @throws SegueDatabaseException - if there is a database problem.

@@ -279,32 +279,6 @@ public class PgUsers implements IUserDataManager {
             throw new SegueDatabaseException("Postgres exception", e);
         }
     }
-
-    // TODO: Remove getByLegacyId altogether? Don't think we have any legacy IDs any more.
-    @Override
-    public RegisteredUser getByLegacyId(final String id) throws SegueDatabaseException {
-        // if the id is null then we won't find anyone so just return null.
-        if (null == id) {
-            return null;
-        }
-        
-        // TODO Currently this uses the old mongo id for look ups.
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM users WHERE " + LEGACY_ID + " = ? AND NOT deleted");
-            pst.setString(1, id);
-
-            ResultSet results = pst.executeQuery();
-            
-            if (!results.isBeforeFirst()) {
-                return null;
-            } 
-            
-            return this.findOneUser(results);
-        } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
-        }        
-    }
     
     /**
      * @param id the id of the user to find
