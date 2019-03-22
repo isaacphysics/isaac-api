@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,6 +26,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
+import uk.ac.cam.cl.dtg.segue.dos.users.UserAuthenticationSettings;
 
 /**
  * Interface for managing and persisting user specific data in segue.
@@ -84,6 +85,17 @@ public interface IUserDataManager {
      */
     Map<RegisteredUser, List<AuthenticationProvider>> getAuthenticationProvidersByUsers(final List<RegisteredUser> users)
             throws SegueDatabaseException;
+
+    /**
+     * Get UserAuthenticationSettings Object
+     * This object provides information on how a user can login based on linked accounts and if they have a Segue account
+     *
+     * @param userId - user of interest
+     * @return UserAuthenticationSettings DO
+     * @throws SegueDatabaseException
+     *             - If there is an internal database error.
+     */
+    UserAuthenticationSettings getUserAuthenticationSettings(Long userId) throws SegueDatabaseException;
 
     /**
      * Get whether a list of users have a Segue account.

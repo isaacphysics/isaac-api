@@ -23,6 +23,7 @@ import java.net.URI;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -76,11 +77,13 @@ import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
+import uk.ac.cam.cl.dtg.segue.dos.users.UserAuthenticationSettings;
 import uk.ac.cam.cl.dtg.segue.dos.users.UserFromAuthProvider;
 import uk.ac.cam.cl.dtg.segue.dto.content.EmailTemplateDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserAuthenticationSettingsDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -493,6 +496,27 @@ public class UserAccountManager implements IUserAccountManager {
         }
 
         return this.convertUserDOToUserDTO(user);
+    }
+
+    /**
+     * Get the authentication settings of particular user
+     *
+     * @param user
+     *            - to retrieve settings from
+     * @return Returns the current UserDTO if we can get it or null if user is not currently logged in
+     * @throws SegueDatabaseException
+     *             - If there is an internal database error
+     */
+    public final UserAuthenticationSettingsDTO getUsersAuthenticationSettings(final RegisteredUserDTO user)
+            throws SegueDatabaseException {
+        Validate.notNull(user);
+
+        UserAuthenticationSettings userAuthenticationSettings = this.database.getUserAuthenticationSettings(user.getId());
+        if (userAuthenticationSettings != null) {
+            return this.dtoMapper.map(userAuthenticationSettings, UserAuthenticationSettingsDTO.class);
+        } else {
+            return new UserAuthenticationSettingsDTO();
+        }
     }
 
     /**
@@ -1400,25 +1424,7 @@ public class UserAccountManager implements IUserAccountManager {
             return new ArrayList<>();
         }
 
-        List<RegisteredUserDTO> foundUserDTOs = new ArrayList<>();
-        try {
-            // These only need to be *effectively* final, but better be safe than sorry.
-            final Map<RegisteredUser, List<AuthenticationProvider>> usersAuthenticationProviders = this.database.getAuthenticationProvidersByUsers(users);
-            final Map<RegisteredUser, Boolean> usersHaveSegueAccount = this.database.getSegueAccountExistenceByUsers(users);
-
-            // The following should probably be outside of the try scope, but then good luck getting the two variables
-            // above captured by the lambda down here...
-            foundUserDTOs = users.parallelStream().map(user -> {
-                RegisteredUserDTO userDTO = this.dtoMapper.map(user, RegisteredUserDTO.class);
-                userDTO.setLinkedAccounts(usersAuthenticationProviders.get(user));
-                userDTO.setHasSegueAccount(usersHaveSegueAccount.get(user));
-                return userDTO;
-            }).collect(Collectors.toList());
-        } catch (SegueDatabaseException e) {
-            log.error("Unable to set linked accounts for users due to a database error.");
-        }
-
-        return foundUserDTOs;
+        return users.parallelStream().map(user -> this.dtoMapper.map(user, RegisteredUserDTO.class)).collect(Collectors.toList());
     }
 
     /**

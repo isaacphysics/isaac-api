@@ -16,9 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.dto.users;
 
 import java.util.Date;
-import java.util.List;
 
-import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
@@ -44,9 +42,6 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 
     private String schoolId;
     private String schoolOther;
-
-    private List<AuthenticationProvider> linkedAccounts;
-    private boolean hasSegueAccount;
 
     private boolean firstLogin = false;
     private Date lastUpdated;
@@ -325,44 +320,6 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
     }
 
     /**
-     * Gets the linkedAccounts.
-     * 
-     * @return the linkedAccounts
-     */
-    public List<AuthenticationProvider> getLinkedAccounts() {
-        return linkedAccounts;
-    }
-
-    /**
-     * Sets the linkedAccounts.
-     * 
-     * @param linkedAccounts
-     *            the linkedAccounts to set
-     */
-    public void setLinkedAccounts(final List<AuthenticationProvider> linkedAccounts) {
-        this.linkedAccounts = linkedAccounts;
-    }
-
-    /**
-     * Gets the hasSegueAccount.
-     * 
-     * @return the hasSegueAccount
-     */
-    public boolean getHasSegueAccount() {
-        return hasSegueAccount;
-    }
-
-    /**
-     * Sets the hasSegueAccount.
-     * 
-     * @param hasSegueAccount
-     *            the hasSegueAccount to set
-     */
-    public void setHasSegueAccount(final boolean hasSegueAccount) {
-        this.hasSegueAccount = hasSegueAccount;
-    }
-
-    /**
      * Gets the firstLogin.
      * 
      * @return the firstLogin
@@ -515,9 +472,6 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
         } else if (!givenName.equals(other.givenName)) {
             return false;
         }
-        if (hasSegueAccount != other.hasSegueAccount) {
-            return false;
-        }
         if (lastUpdated == null) {
             if (other.lastUpdated != null) {
                 return false;
@@ -525,13 +479,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
         } else if (!lastUpdated.equals(other.lastUpdated)) {
             return false;
         }
-        if (linkedAccounts == null) {
-            if (other.linkedAccounts != null) {
-                return false;
-            }
-        } else if (!linkedAccounts.equals(other.linkedAccounts)) {
-            return false;
-        }
+
         if (registrationDate == null) {
             if (other.registrationDate != null) {
                 return false;
@@ -565,7 +513,6 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
                 + familyName + ", email=" + email + ", role=" + role + ", dateOfBirth=" + dateOfBirth + ", gender="
                 + gender + ", registrationDate=" + registrationDate + ", schoolId=" + schoolId + ", schoolOther="
                 + schoolOther +  ", emailVerificationStatus="
-                + emailVerificationStatus + ", linkedAccounts=" + linkedAccounts + ", hasSegueAccount=" 
-                + hasSegueAccount + ", firstLogin=" + firstLogin + ", lastUpdated=" + lastUpdated + "]";
+                + emailVerificationStatus + ", firstLogin=" + firstLogin + ", lastUpdated=" + lastUpdated + "]";
     }
 }

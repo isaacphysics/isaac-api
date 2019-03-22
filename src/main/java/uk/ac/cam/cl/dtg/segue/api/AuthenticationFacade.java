@@ -41,6 +41,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -99,6 +100,42 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     }
 
     /**
+     * Get authentication provider information for the current user
+     *
+     * @param request
+     *            - the http request containing session information of the user currently logged in
+     * @param userId - the id of the user of interest
+     * @return a user authentication settings object showing information about how a given user can authenticate
+     */
+    @GET
+    @Path("/user_authentication_settings/{user_id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "The current users authentication settings, e.g. linked accounts and whether they have segue or not")
+    public final Response getCurrentUserAuthorisationSettings(@Context final HttpServletRequest request, @PathParam("user_id") Long userId ) {
+        try {
+            RegisteredUserDTO currentRegisteredUser = this.userManager.getCurrentRegisteredUser(request);
+
+            if (!userId.equals(currentRegisteredUser.getId()) && !currentRegisteredUser.getRole().equals(Role.ADMIN)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin member to view this setting for another user.")
+                        .toResponse();
+            }
+
+            if (currentRegisteredUser.getId().equals(userId)) {
+                return Response.ok(this.userManager.getUsersAuthenticationSettings(currentRegisteredUser)).build();
+            } else {
+                return Response.ok(this.userManager.getUsersAuthenticationSettings(this.userManager.getUserDTOById(userId))).build();
+            }
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Unable to remove account due to a problem with the database.", e).toResponse();
+        } catch (NoUserException e) {
+            return new SegueErrorResponse(Status.NOT_FOUND, "User ID specified cound not be found").toResponse();
+        }
+    }
+
+    /**
      * This is the initial step of the authentication process.
      * 
      * @param request
@@ -137,7 +174,6 @@ public class AuthenticationFacade extends AbstractSegueFacade {
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         }
-        
     }
 
     /**

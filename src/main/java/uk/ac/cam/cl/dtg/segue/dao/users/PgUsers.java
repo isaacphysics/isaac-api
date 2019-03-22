@@ -26,6 +26,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
+import uk.ac.cam.cl.dtg.segue.dos.users.UserAuthenticationSettings;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -46,7 +47,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SchoolInfoStatus.*;
 
 /**
  * @author sac92
@@ -140,6 +140,40 @@ public class PgUsers implements IUserDataManager {
             throw new SegueDatabaseException("Postgres exception", e);
         }
     }
+
+    @Override
+    public UserAuthenticationSettings getUserAuthenticationSettings(Long userId) throws SegueDatabaseException {
+
+        try (Connection conn = database.getDatabaseConnection()) {
+            PreparedStatement pst;
+            pst = conn.prepareStatement("SELECT users.id, password IS NOT NULL AS has_segue_account, array_agg(provider) AS linked_accounts " +
+                    "FROM (users LEFT OUTER JOIN user_credentials ON user_credentials.user_id=users.id) " +
+                    "LEFT OUTER JOIN linked_accounts ON users.id=linked_accounts.user_id WHERE users.id=? GROUP BY users.id, user_credentials.user_id;");
+            pst.setLong(1, userId);
+
+            ResultSet results = pst.executeQuery();
+
+            if (!results.isBeforeFirst()) {
+                return null;
+            } else {
+                results.next();
+            }
+
+            String[] providers = (String[]) results.getArray("linked_accounts").getArray();
+            List<AuthenticationProvider> providersList = Lists.newArrayList();
+            for (int i =0; i < providers.length; i++){
+                // the way the join works means that if a user has no linked accounts a single element comes back as null
+                if (providers[i] != null) {
+                    providersList.add(AuthenticationProvider.valueOf(providers[i]));
+                }
+            }
+
+            return new UserAuthenticationSettings(userId, providersList, results.getBoolean("has_segue_account"));
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        }
+    }
+
 
     @Override
     public Map<RegisteredUser, Boolean> getSegueAccountExistenceByUsers(List<RegisteredUser> users) throws SegueDatabaseException {
