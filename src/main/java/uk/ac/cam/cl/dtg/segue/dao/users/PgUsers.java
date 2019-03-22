@@ -160,10 +160,10 @@ public class PgUsers implements IUserDataManager {
 
             String[] providers = (String[]) results.getArray("linked_accounts").getArray();
             List<AuthenticationProvider> providersList = Lists.newArrayList();
-            for (int i =0; i < providers.length; i++){
+            for (String provider : providers) {
                 // the way the join works means that if a user has no linked accounts a single element comes back as null
-                if (providers[i] != null) {
-                    providersList.add(AuthenticationProvider.valueOf(providers[i]));
+                if (provider != null) {
+                    providersList.add(AuthenticationProvider.valueOf(provider));
                 }
             }
 
