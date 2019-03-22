@@ -27,6 +27,7 @@ import uk.ac.cam.cl.dtg.isaac.api.IsaacController;
 import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.api.SegueDefaultFacade;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
+import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
 
 /**
  * This class registers the resteasy handlers. The name is important since it is used as a String in
@@ -51,6 +52,10 @@ public class SegueApplicationRegister extends Application {
         Injector injector = Guice.createInjector(new IsaacGuiceConfigurationModule(),
                 new SegueGuiceConfigurationModule());
         this.singletons.add(injector.getInstance(SegueDefaultFacade.class));
+
+        // create instance to get it up and running - it is not a rest facade though
+        injector.getInstance(SegueJobService.class);
+
         return this.singletons;
     }
 
