@@ -23,7 +23,6 @@ import java.net.URI;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -532,7 +531,7 @@ public class UserAccountManager implements IUserAccountManager {
         List<RegisteredUser> registeredUsersDOs = this.database.findUsers(this.dtoMapper.map(prototype,
                 RegisteredUser.class));
 
-        return this.convertUserDOToUserDTOList(registeredUsersDOs);
+        return this.convertUserDOListToUserDTOList(registeredUsersDOs);
     }
 
     /**
@@ -552,7 +551,7 @@ public class UserAccountManager implements IUserAccountManager {
 
         List<RegisteredUser> registeredUsersDOs = this.database.findUsers(Lists.newArrayList(userIds));
 
-        return this.convertUserDOToUserDTOList(registeredUsersDOs);
+        return this.convertUserDOListToUserDTOList(registeredUsersDOs);
     }
 
     /**
@@ -1415,27 +1414,23 @@ public class UserAccountManager implements IUserAccountManager {
         if (null == user) {
             return null;
         }
-        return this.convertUserDOsToUserDTOs(Collections.singletonList(user)).get(0);
+        return this.convertUserDOListToUserDTOList(Collections.singletonList(user)).get(0);
     }
 
-    private List<RegisteredUserDTO> convertUserDOsToUserDTOs(final List<RegisteredUser> users) {
+    /**
+     * Converts a list of userDOs into a List of userDTOs.
+     *
+     * @param users
+     *            - list of DOs to convert
+     * @return the list of user dtos.
+     */
+    private List<RegisteredUserDTO> convertUserDOListToUserDTOList(final List<RegisteredUser> users) {
         List <RegisteredUser> userDOs = users.parallelStream().filter(Objects::nonNull).collect(Collectors.toList());
         if (userDOs.isEmpty()) {
             return new ArrayList<>();
         }
 
         return users.parallelStream().map(user -> this.dtoMapper.map(user, RegisteredUserDTO.class)).collect(Collectors.toList());
-    }
-
-    /**
-     * Converts a list of userDOs into a List of userDTOs.
-     *
-     * @param listToConvert
-     *            - list of DOs to convert
-     * @return the list of user dtos.
-     */
-    private List<RegisteredUserDTO> convertUserDOToUserDTOList(final List<RegisteredUser> listToConvert) {
-        return this.convertUserDOsToUserDTOs(listToConvert);
     }
 
     /**
