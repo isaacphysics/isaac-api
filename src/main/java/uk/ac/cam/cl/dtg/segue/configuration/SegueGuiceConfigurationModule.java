@@ -802,7 +802,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static SegueJobService getSegueJobService(final PostgresSqlDb database) {
         if (null == segueJobService) {
             SegueScheduledJob PIISQLJob = new SegueScheduledDatabaseScriptJob("PIIDeleteScheduledJob", "SQLMaintenance",
-                    "SQL scheduled job that deletes PII", "0 0 2 * * ?", "db_scripts/pii-delete-scheduled-task.sql");
+                    "SQL scheduled job that deletes PII", "0 0 2 * * ?", "db_scripts/scheduled/pii-delete-task.sql");
 
             segueJobService = new SegueJobService(Arrays.asList(PIISQLJob));
             log.info("Created Segue Job Manager for scheduled jobs");
