@@ -53,7 +53,6 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  *
  */
 public class PgUsers implements IUserDataManager {
-    private static final String LEGACY_ID = "_id";
     //private static final Logger log = LoggerFactory.getLogger(PgUsers.class);
             
     private final PostgresSqlDb database;
