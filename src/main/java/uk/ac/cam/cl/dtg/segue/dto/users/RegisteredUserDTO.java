@@ -45,8 +45,6 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
     private String schoolId;
     private String schoolOther;
 
-    private Integer defaultLevel;
-
     private List<AuthenticationProvider> linkedAccounts;
     private boolean hasSegueAccount;
 
@@ -327,25 +325,6 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
     }
 
     /**
-     * Gets the defaultLevel.
-     * 
-     * @return the defaultLevel
-     */
-    public Integer getDefaultLevel() {
-        return defaultLevel;
-    }
-
-    /**
-     * Sets the defaultLevel.
-     * 
-     * @param defaultLevel
-     *            the defaultLevel to set
-     */
-    public void setDefaultLevel(final Integer defaultLevel) {
-        this.defaultLevel = defaultLevel;
-    }
-
-    /**
      * Gets the linkedAccounts.
      * 
      * @return the linkedAccounts
@@ -502,13 +481,6 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
         } else if (!dateOfBirth.equals(other.dateOfBirth)) {
             return false;
         }
-        if (defaultLevel == null) {
-            if (other.defaultLevel != null) {
-                return false;
-            }
-        } else if (!defaultLevel.equals(other.defaultLevel)) {
-            return false;
-        }
         if (email == null) {
             if (other.email != null) {
                 return false;
@@ -592,7 +564,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
         return "RegisteredUserDTO [id=" + id + ", givenName=" + givenName + ", familyName="
                 + familyName + ", email=" + email + ", role=" + role + ", dateOfBirth=" + dateOfBirth + ", gender="
                 + gender + ", registrationDate=" + registrationDate + ", schoolId=" + schoolId + ", schoolOther="
-                + schoolOther + ", defaultLevel=" + defaultLevel + ", emailVerificationStatus=" 
+                + schoolOther +  ", emailVerificationStatus="
                 + emailVerificationStatus + ", linkedAccounts=" + linkedAccounts + ", hasSegueAccount=" 
                 + hasSegueAccount + ", firstLogin=" + firstLogin + ", lastUpdated=" + lastUpdated + "]";
     }
