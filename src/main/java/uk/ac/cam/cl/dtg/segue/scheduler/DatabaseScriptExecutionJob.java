@@ -28,8 +28,8 @@ import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 public class DatabaseScriptExecutionJob implements Job {
     private static final Logger log = LoggerFactory.getLogger(DatabaseScriptExecutionJob.class);
@@ -56,8 +56,10 @@ public class DatabaseScriptExecutionJob implements Job {
             String sqlFileContents = IOUtils.toString(getClass().getClassLoader().getResourceAsStream(SQLFile));
 
             log.debug(String.format("Executing scheduled SQL job (%s)", SQLFile));
-            PreparedStatement preparedStatement = conn.prepareStatement(sqlFileContents);
-            preparedStatement.execute();
+            // JDBC cannot cope with the Postgres ? JSONB operator in PreparedStatements. Since we pass no parameters,
+            // and run infrequently, a plain Statement is safe:
+            Statement sss = conn.createStatement();
+            sss.execute(sqlFileContents);
             log.info(String.format("Scheduled SQL job (%s) completed", SQLFile));
 
         } catch (IOException | SQLException e) {
