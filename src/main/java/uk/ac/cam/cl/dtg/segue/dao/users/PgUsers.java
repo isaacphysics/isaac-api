@@ -49,7 +49,7 @@ import java.util.stream.IntStream;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
- * @author sac92
+ * @author Stephen Cummins
  *
  */
 public class PgUsers implements IUserDataManager {
@@ -278,12 +278,7 @@ public class PgUsers implements IUserDataManager {
             throw new SegueDatabaseException("Postgres exception", e);
         }
     }
-    
-    /**
-     * @param id the id of the user to find
-     * @return a user object or null if none found.
-     * @throws SegueDatabaseException - if there is a database error
-     */
+
     @Override
     public RegisteredUser getById(final Long id) throws SegueDatabaseException {
         if (null == id) {
@@ -605,7 +600,7 @@ public class PgUsers implements IUserDataManager {
      * createUser.
      * @param userToCreate - a user object to persist
      * @return a register user as just created.
-     * @throws SegueDatabaseException
+     * @throws SegueDatabaseException - If there is a db error
      */
     private RegisteredUser createUser(final RegisteredUser userToCreate) throws SegueDatabaseException {    
         // make sure student is default role if none set
@@ -811,10 +806,8 @@ public class PgUsers implements IUserDataManager {
      * @return a single user that matches the search criteria or null of no matches found.
      * @throws SQLException
      *             - if a db error occurs
-     * @throws SegueDatabaseException
-     *             - if more than one result is returned
      */
-    private List<RegisteredUser> findAllUsers(final ResultSet results) throws SQLException, SegueDatabaseException {
+    private List<RegisteredUser> findAllUsers(final ResultSet results) throws SQLException {
         List<RegisteredUser> listOfResults = Lists.newArrayList();
         while (results.next()) {
             listOfResults.add(buildRegisteredUser(results));
