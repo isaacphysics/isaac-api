@@ -29,5 +29,13 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 @JsonContentType("isaacStringMatchQuestion")
 @ValidatesWith(IsaacStringMatchValidator.class)
 public class IsaacStringMatchQuestion extends IsaacQuestionBase {
+    private Boolean multiLineEntry;
 
+    public Boolean getMultiLineEntry() {
+        return multiLineEntry;
+    }
+
+    public void setMultiLineEntry(final Boolean multiLineEntry) {
+        this.multiLineEntry = multiLineEntry;
+    }
 }
