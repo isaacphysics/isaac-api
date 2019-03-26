@@ -373,13 +373,13 @@ public class QuestionFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST, "No answer received.").toResponse();
         }
 
-        /*try {
-            if (!isUserAnAdminOrContentEditor(userManager, request)) {
+        try {
+            if (!isUserStaff(userManager, request)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
-        }*/
+        }
 
         ChoiceDTO answerFromClientDTO;
         try {
