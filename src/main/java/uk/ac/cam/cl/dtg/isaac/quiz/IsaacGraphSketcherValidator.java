@@ -15,8 +15,11 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.GraphChoice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
+import uk.ac.cam.cl.dtg.segue.quiz.ISpecifier;
 import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
+import uk.ac.cam.cl.dtg.segue.quiz.ValidatorUnavailableException;
 
+import javax.xml.ws.Response;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
@@ -26,7 +29,7 @@ import java.util.List;
  *
  * Created by hhrl2 on 01/08/2016.
  */
-public class IsaacGraphSketcherValidator implements IValidator {
+public class IsaacGraphSketcherValidator implements IValidator, ISpecifier {
 
     /**
      * Private logger for printing error messages on console.
@@ -95,7 +98,7 @@ public class IsaacGraphSketcherValidator implements IValidator {
             // For all the choices on this question...
             for (Choice c : orderedChoices) {
 
-                // ... that are of the StringChoice type, ...
+                // ... that are of the GraphChoice type, ...
                 if (!(c instanceof GraphChoice)) {
                     log.error("Isaac GraphSketcher Validator for questionId: " + graphSketcherQuestion.getId()
                         + " expected there to be a GraphChoice . Instead it found a Choice.");
@@ -134,4 +137,25 @@ public class IsaacGraphSketcherValidator implements IValidator {
         return Lists.newArrayList(choices);
     }
 
+    @Override
+    public String createSpecification(Choice answer) throws ValidatorUnavailableException {
+        if (!(answer instanceof GraphChoice)) {
+            log.error("Isaac GraphSketcher specifier expected there to be a GraphChoice . Instead it found a Choice.");
+            throw new ValidatorUnavailableException("Incorrect choice type");
+        }
+        GraphChoice graphChoice = (GraphChoice) answer;
+
+        GraphAnswer graphAnswer = null;
+
+        try {
+            graphAnswer = objectMapper.readValue(answer.getValue(), GraphAnswer.class);
+        } catch (IOException e) {
+            log.error("Expected a GraphAnswer, but couldn't parse it for specification", e);
+            throw new ValidatorUnavailableException("Couldn't parse your GraphAnswer");
+        }
+
+        Input input = answerToInput.apply(graphAnswer);
+
+        return features.generate(input);
+    }
 }

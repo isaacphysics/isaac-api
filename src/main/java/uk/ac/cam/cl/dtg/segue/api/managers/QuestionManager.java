@@ -42,6 +42,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
+import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.*;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
@@ -154,6 +155,39 @@ public class QuestionManager {
         // we will continue our search of the superclasses for the annotation
         return locateValidator((Class<? extends Question>) questionType.getSuperclass());
     }
+
+    /**
+     * Reflection to try and determine the associated specifier for the choice given.
+     *
+     * @param choiceClass
+     *            - the type of choice given.
+     * @return a Validator
+     */
+    @SuppressWarnings("unchecked")
+    private ISpecifier locateSpecifier(Class<? extends ChoiceDTO> choiceClass) {
+        // check we haven't gone too high up the superclass tree
+        if (!ChoiceDTO.class.isAssignableFrom(choiceClass)) {
+            return null;
+        }
+
+        // Does this class have the correct annotation?
+        if (choiceClass.isAnnotationPresent(SpecifiesWith.class)) {
+
+            log.debug("Specifier for specifiation creation found. Using : "
+                + choiceClass.getAnnotation(SpecifiesWith.class).value());
+            Injector injector = IsaacApplicationRegister.injector;
+            return injector.getInstance(choiceClass.getAnnotation(SpecifiesWith.class).value());
+
+        } else if (choiceClass.equals(ChoiceDTO.class)) {
+            // so if we get here then we haven't found a SpecifiesWith class, so
+            // we should just give up and return null.
+            return null;
+        }
+
+        // we will continue our search of the superclasses for the annotation
+        return locateSpecifier((Class<? extends ChoiceDTO>) choiceClass.getSuperclass());
+    }
+
 
     /**
      * This method will ensure any user question attempt information available is used to augment this question object.
@@ -489,4 +523,36 @@ public class QuestionManager {
         }
     }
 
+    /**
+     * Convert an answer into a question specification.
+     *
+     * @param answer
+     *            from the client as a list used for comparison purposes.
+     * @return A response containing a QuestionValidationResponse object.
+     */
+    public final Response generateSpecification(final ChoiceDTO answer) {
+
+        ISpecifier specifier = locateSpecifier(answer.getClass());
+
+        if (null == specifier) {
+            log.error("Unable to locate a valid specifier for this choice: " + answer);
+            return Response.serverError()
+                .entity("Unable to detect question validator for " + "this object. Unable to verify answer")
+                .build();
+        }
+
+        Choice answerFromUser = mapper.getAutoMapper().map(answer, Choice.class);
+        String specification = null;
+        try {
+            specification = specifier.createSpecification(answerFromUser);
+        } catch (ValidatorUnavailableException e) {
+            return SegueErrorResponse.getServiceUnavailableResponse(e.getClass().getSimpleName() + ":"
+                + e.getMessage());
+        }
+
+        ResultsWrapper<String> results = new ResultsWrapper<>(Collections.singletonList(specification), 1L);
+
+        return Response.ok(
+            mapper.getAutoMapper().map(results, ResultsWrapper.class)).build();
+    }
 }
