@@ -347,7 +347,7 @@ CREATE TABLE uk_post_codes (
 ALTER TABLE uk_post_codes OWNER TO rutherford;
 
 --
--- Name: user_alerts_id_seq; Type: SEQUENCE; Schema: public; Owner: rutheford
+-- Name: user_alerts_id_seq; Type: SEQUENCE; Schema: public; Owner: rutherford
 --
 
 CREATE SEQUENCE user_alerts_id_seq
@@ -358,10 +358,10 @@ CREATE SEQUENCE user_alerts_id_seq
     CACHE 1;
 
 
-ALTER TABLE user_alerts_id_seq OWNER TO rutheford;
+ALTER TABLE user_alerts_id_seq OWNER TO rutherford;
 
 --
--- Name: user_alerts; Type: TABLE; Schema: public; Owner: rutheford
+-- Name: user_alerts; Type: TABLE; Schema: public; Owner: rutherford
 --
 
 CREATE TABLE user_alerts (
@@ -376,7 +376,7 @@ CREATE TABLE user_alerts (
 );
 
 
-ALTER TABLE user_alerts OWNER TO rutheford;
+ALTER TABLE user_alerts OWNER TO rutherford;
 
 --
 -- Name: user_associations; Type: TABLE; Schema: public; Owner: rutherford
@@ -755,7 +755,7 @@ ALTER TABLE ONLY users
 
 
 --
--- Name: user_alerts user_alerts_pkey; Type: CONSTRAINT; Schema: public; Owner: rutheford
+-- Name: user_alerts user_alerts_pkey; Type: CONSTRAINT; Schema: public; Owner: rutherford
 --
 
 ALTER TABLE ONLY user_alerts
@@ -917,7 +917,7 @@ CREATE UNIQUE INDEX "unique email case insensitive" ON users USING btree (lower(
 
 
 --
--- Name: user_alerts_id_uindex; Type: INDEX; Schema: public; Owner: rutheford
+-- Name: user_alerts_id_uindex; Type: INDEX; Schema: public; Owner: rutherford
 --
 
 CREATE UNIQUE INDEX user_alerts_id_uindex ON user_alerts USING btree (id);
