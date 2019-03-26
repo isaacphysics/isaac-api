@@ -20,7 +20,7 @@ package uk.ac.cam.cl.dtg.segue.dto.content;
  *
  */
 public class GraphChoiceDTO extends ChoiceDTO {
-    private String graphData;
+    private String graphSpec;
 
     /**
      * Default constructor required for mapping.
@@ -34,18 +34,18 @@ public class GraphChoiceDTO extends ChoiceDTO {
      *
      * @return the graph data.
      */
-    public final String getGraphData() {
-        return graphData;
+    public final String getGraphSpec() {
+        return graphSpec;
     }
 
     /**
      * Sets the graph data.
      *
-     * @param graphData
+     * @param graphSpec
      *            the graph data to set
      */
-    public final void setGraphData(final String graphData) {
-        this.graphData = graphData;
+    public final void setGraphSpec(final String graphSpec) {
+        this.graphSpec = graphSpec;
     }
 
 }

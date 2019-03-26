@@ -339,6 +339,13 @@
 			<version>9.3.22.v20171030</version>
 		</dependency>
 
+		<!-- Graph checker code -->
+		<dependency>
+			<artifactId>isaac-graph-marker-library</artifactId>
+			<groupId>uk.ac.cam.cl.dtg.teaching</groupId>
+			<version>0.1-SNAPSHOT</version>
+		</dependency>
+
 
 	</dependencies>
 
