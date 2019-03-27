@@ -15,6 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.segue.dto.content;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * DTO to represent items in Parsons Choices and Questions.
  *
@@ -27,6 +29,13 @@ public class ParsonsItemDTO extends ContentDTO {
      * Default constructor required for mapping.
      */
     public ParsonsItemDTO() {
+    }
+
+    // We don't want this field appearing in the DTO JSON!
+    @Override
+    @JsonIgnore
+    public Boolean getPublished() {
+        return super.getPublished();
     }
 
     public Integer getIndentation() {
