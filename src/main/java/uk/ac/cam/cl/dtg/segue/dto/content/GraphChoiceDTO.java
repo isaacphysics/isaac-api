@@ -17,7 +17,6 @@ package uk.ac.cam.cl.dtg.segue.dto.content;
 
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacGraphSketcherValidator;
 import uk.ac.cam.cl.dtg.segue.quiz.SpecifiesWith;
-import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 
 /**
  * DTO to represent a Graph choice.
