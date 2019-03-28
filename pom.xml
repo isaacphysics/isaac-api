@@ -341,9 +341,9 @@
 
 		<!-- Graph checker code -->
 		<dependency>
-			<artifactId>isaac-graph-marker-library</artifactId>
-			<groupId>uk.ac.cam.cl.dtg.teaching</groupId>
-			<version>0.1-SNAPSHOT</version>
+			<artifactId>isaac-graph-checker-library</artifactId>
+			<groupId>org.isaacphysics</groupId>
+			<version>1.0</version>
 		</dependency>
 
 
