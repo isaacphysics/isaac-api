@@ -31,6 +31,7 @@ import java.util.List;
 @JsonContentType("isaacStringMatchQuestion")
 @ValidatesWith(IsaacStringMatchValidator.class)
 public class IsaacStringMatchQuestionDTO extends IsaacQuestionBaseDTO {
+    private Boolean multiLineEntry;
 
     @Override
     public final List<ChoiceDTO> getChoices() {
@@ -43,5 +44,13 @@ public class IsaacStringMatchQuestionDTO extends IsaacQuestionBaseDTO {
     @Override
     public ContentBaseDTO getAnswer() {
         return super.getAnswer();
+    }
+
+    public Boolean getMultiLineEntry() {
+        return multiLineEntry;
+    }
+
+    public void setMultiLineEntry(final Boolean multiLineEntry) {
+        this.multiLineEntry = multiLineEntry;
     }
 }
