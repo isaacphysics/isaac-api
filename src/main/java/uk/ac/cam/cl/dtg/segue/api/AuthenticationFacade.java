@@ -104,7 +104,23 @@ public class AuthenticationFacade extends AbstractSegueFacade {
      *
      * @param request
      *            - the http request containing session information of the user currently logged in
-     * @param userId - the id of the user of interest
+     * @return a user authentication settings object showing information about how a given user can authenticate
+     */
+    @GET
+    @Path("/user_authentication_settings")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "The current users authentication settings, e.g. linked accounts and whether they have segue or not")
+    public final Response getCurrentUserAuthorisationSettings(@Context final HttpServletRequest request) {
+
+        return this.getCurrentUserAuthorisationSettings(request, null);
+    }
+
+    /**
+     * Get authentication provider information for the specified user
+     *
+     * @param request
+     *            - the http request containing session information of the user currently logged in
+     * @param userId - the id of the user of interest, null assumes current user
      * @return a user authentication settings object showing information about how a given user can authenticate
      */
     @GET
@@ -114,6 +130,9 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     public final Response getCurrentUserAuthorisationSettings(@Context final HttpServletRequest request, @PathParam("user_id") Long userId ) {
         try {
             RegisteredUserDTO currentRegisteredUser = this.userManager.getCurrentRegisteredUser(request);
+            if (null == userId) {
+                userId = currentRegisteredUser.getId();
+            }
 
             if (!userId.equals(currentRegisteredUser.getId()) && !this.isUserAnAdmin(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin member to view this setting for another user.")
