@@ -437,8 +437,23 @@ public class UserAccountManager implements IUserAccountManager {
      */
     public final boolean checkUserRole(final HttpServletRequest request, final Collection<Role> validRoles)
             throws NoUserLoggedInException {
-        RegisteredUser user = this.getCurrentRegisteredUserDO(request);
+        RegisteredUserDTO user = this.getCurrentRegisteredUser(request);
 
+        return this.checkUserRole(user, validRoles);
+    }
+
+    /**
+     * CheckUserRole matches a list of valid roles.
+     *
+     * @param user
+     *            - the users details.
+     * @param validRoles
+     *            - a Collection of roles that we would want the user to match.
+     * @return true if the user is a member of one of the roles in our valid roles list. False if not.
+     * @throws NoUserLoggedInException
+     *             - if there is no registered user logged in.
+     */
+    public final boolean checkUserRole(final RegisteredUserDTO user, final Collection<Role> validRoles) throws NoUserLoggedInException {
         if (null == user) {
             throw new NoUserLoggedInException();
         }
