@@ -35,6 +35,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.PerformanceMonitor;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.google.inject.Guice;
@@ -75,6 +76,9 @@ public class IsaacApplicationRegister extends Application {
         }
         
         setupSwaggerApiAdvertiser();
+
+        // create instance to get it up and running - it is not a rest facade though
+        injector.getInstance(SegueJobService.class);
     }
 
     @Override
