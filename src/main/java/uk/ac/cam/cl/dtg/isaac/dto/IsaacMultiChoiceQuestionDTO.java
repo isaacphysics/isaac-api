@@ -37,7 +37,7 @@ public class IsaacMultiChoiceQuestionDTO extends IsaacQuestionBaseDTO {
     @Override
     @JsonIgnore(false)
     public List<ChoiceDTO> getChoices() {
-        return choices;
+        return super.choices;
     }
 
 }
