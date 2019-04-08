@@ -29,10 +29,4 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 @JsonContentType("isaacGraphSketcherQuestion")
 @ValidatesWith(IsaacGraphSketcherValidator.class)
 public class IsaacGraphSketcherQuestionDTO extends IsaacSymbolicQuestionDTO {
-    // stop the answer being returned for this type of question
-    @JsonIgnore
-    @Override
-    public ContentBaseDTO getAnswer() {
-        return super.getAnswer();
-    }
 }
