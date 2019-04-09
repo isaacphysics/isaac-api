@@ -26,7 +26,11 @@ import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
  */
 @JsonContentType("isaacQuestion")
 public class IsaacQuickQuestionDTO extends IsaacQuestionBaseDTO {
-
+    /**
+     * Unignores getting the answer as it is
+     * required to be shown in a quick question
+     * @return the answer
+     */
     @Override
     @JsonIgnore(false)
     public ContentBaseDTO getAnswer() {

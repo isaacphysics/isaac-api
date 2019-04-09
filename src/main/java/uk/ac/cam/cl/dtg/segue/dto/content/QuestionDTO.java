@@ -43,7 +43,8 @@ public class QuestionDTO extends ContentDTO {
 
     /**
      * Gets the answer, defaults to not return to the user.
-     * Manually unignored e.g. quick questions
+     * This is Manually unignored when the answer is required to
+     * be returned to the user e.g. quick questions
      * @return the answer
      */
     @JsonIgnore

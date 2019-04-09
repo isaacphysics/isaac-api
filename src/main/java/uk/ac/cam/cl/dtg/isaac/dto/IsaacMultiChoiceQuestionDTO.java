@@ -31,7 +31,9 @@ public class IsaacMultiChoiceQuestionDTO extends IsaacQuestionBaseDTO {
 
     /**
      * Gets the choices.
-     * 
+     * Unignores getting the choices as they are required
+     * to be presented in multi-choice questions
+     *
      * @return the choices
      */
     @Override
