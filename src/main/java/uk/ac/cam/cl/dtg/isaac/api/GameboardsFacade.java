@@ -103,12 +103,14 @@ public class GameboardsFacade extends AbstractIsaacFacade {
      *            - to get user details
      * @param associationManager
      *            - to enforce privacy policies.
+     * @param userBadgeManager
+     *            - for updating badge information.
      */
     @Inject
     public GameboardsFacade(final PropertiesLoader properties, final ILogManager logManager,
             final GameManager gameManager, final QuestionManager questionManager, final UserAccountManager userManager,
             final UserAssociationManager associationManager,
-                            UserBadgeManager userBadgeManager) {
+                            final UserBadgeManager userBadgeManager) {
         super(properties, logManager);
 
         this.userBadgeManager = userBadgeManager;
@@ -170,9 +172,9 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             String[] levelsAsString = levels.split(",");
 
             levelsList = Lists.newArrayList();
-            for (int i = 0; i < levelsAsString.length; i++) {
+            for (String s : levelsAsString) {
                 try {
-                    levelsList.add(Integer.parseInt(levelsAsString[i]));
+                    levelsList.add(Integer.parseInt(s));
                 } catch (NumberFormatException e) {
                     return new SegueErrorResponse(Status.BAD_REQUEST, "Levels must be numbers if specified.", e)
                             .toResponse();
@@ -305,7 +307,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                     .getQuestionAttemptsByUser(randomUser);
 
             // attempt to augment the gameboard with user information.
-            List<GameboardItem> conceptQuestionsProgress = gameManager.getFastTrackConceptProgress(gameboardId, conceptTitle, userQuestionAttempts);
+            List<GameboardItem> conceptQuestionsProgress
+                    = gameManager.getFastTrackConceptProgress(gameboardId, conceptTitle, userQuestionAttempts);
 
             return Response.ok(conceptQuestionsProgress).build();
         } catch (SegueDatabaseException e) {
