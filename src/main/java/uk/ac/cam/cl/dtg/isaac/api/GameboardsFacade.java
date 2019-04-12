@@ -578,7 +578,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
      * @return a Response containing a list of gameboard objects or a noContent Response.
      */
     @GET
-    @Path("users/current_user/gameboards")
+    @Path("gameboards/user_gameboards")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @ApiOperation(value = "List all gameboards linked to the current user.")
@@ -586,7 +586,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             @QueryParam("start_index") final String startIndex, @QueryParam("limit") final String limit,
             @QueryParam("sort") final String sortInstructions, @QueryParam("show_only") final String showCriteria) {
         RegisteredUserDTO currentUser;
-        // TODO: change endpoint path to be more consistent with the gameboards facade
+
         try {
             currentUser = userManager.getCurrentRegisteredUser(request);
         } catch (NoUserLoggedInException e1) {
@@ -699,12 +699,12 @@ public class GameboardsFacade extends AbstractIsaacFacade {
      * @return a Response containing a list of gameboard objects or containing a SegueErrorResponse.
      */
     @POST
-    @Path("users/current_user/gameboards/{gameboard_id}")
+    @Path("gameboards/user_gameboards/{gameboard_id}")
     @ApiOperation(value = "Link a gameboard to the current user.",
                   notes = "This will save a persistent copy of the gameboard if it was a temporary board.")
     public final Response linkUserToGameboard(@Context final HttpServletRequest request,
             @PathParam("gameboard_id") final String gameboardId) {
-        // TODO: change endpoint path to be more consistent with the gameboards facade
+
         RegisteredUserDTO user;
         try {
             user = userManager.getCurrentRegisteredUser(request);
@@ -753,13 +753,13 @@ public class GameboardsFacade extends AbstractIsaacFacade {
      * @return noContent response if successful a SegueErrorResponse if not.
      */
     @DELETE
-    @Path("users/current_user/gameboards/{gameboard_id}")
+    @Path("gameboards/user_gameboards/{gameboard_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @ApiOperation(value = "Unlink the current user from a gameboard.",
                   notes = "This will not delete or modify the gameboard.")
     public Response unlinkUserFromGameboard(@Context final HttpServletRequest request,
             @PathParam("gameboard_id") final String gameboardId) {
-        // TODO: change endpoint path to be more consistent with the gameboards facade
+
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
