@@ -26,6 +26,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
+import uk.ac.cam.cl.dtg.segue.dos.users.UserAuthenticationSettings;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -46,14 +47,12 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SchoolInfoStatus.*;
 
 /**
- * @author sac92
+ * @author Stephen Cummins
  *
  */
 public class PgUsers implements IUserDataManager {
-    private static final String LEGACY_ID = "_id";
     //private static final Logger log = LoggerFactory.getLogger(PgUsers.class);
             
     private final PostgresSqlDb database;
@@ -140,6 +139,40 @@ public class PgUsers implements IUserDataManager {
             throw new SegueDatabaseException("Postgres exception", e);
         }
     }
+
+    @Override
+    public UserAuthenticationSettings getUserAuthenticationSettings(Long userId) throws SegueDatabaseException {
+
+        try (Connection conn = database.getDatabaseConnection()) {
+            PreparedStatement pst;
+            pst = conn.prepareStatement("SELECT users.id, password IS NOT NULL AS has_segue_account, array_agg(provider) AS linked_accounts " +
+                    "FROM (users LEFT OUTER JOIN user_credentials ON user_credentials.user_id=users.id) " +
+                    "LEFT OUTER JOIN linked_accounts ON users.id=linked_accounts.user_id WHERE users.id=? GROUP BY users.id, user_credentials.user_id;");
+            pst.setLong(1, userId);
+
+            ResultSet results = pst.executeQuery();
+
+            if (!results.isBeforeFirst()) {
+                return null;
+            } else {
+                results.next();
+            }
+
+            String[] providers = (String[]) results.getArray("linked_accounts").getArray();
+            List<AuthenticationProvider> providersList = Lists.newArrayList();
+            for (String provider : providers) {
+                // the way the join works means that if a user has no linked accounts a single element comes back as null
+                if (provider != null) {
+                    providersList.add(AuthenticationProvider.valueOf(provider));
+                }
+            }
+
+            return new UserAuthenticationSettings(userId, providersList, results.getBoolean("has_segue_account"));
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        }
+    }
+
 
     @Override
     public Map<RegisteredUser, Boolean> getSegueAccountExistenceByUsers(List<RegisteredUser> users) throws SegueDatabaseException {
@@ -246,37 +279,6 @@ public class PgUsers implements IUserDataManager {
         }
     }
 
-    // TODO: Remove getByLegacyId altogether? Don't think we have any legacy IDs any more.
-    @Override
-    public RegisteredUser getByLegacyId(final String id) throws SegueDatabaseException {
-        // if the id is null then we won't find anyone so just return null.
-        if (null == id) {
-            return null;
-        }
-        
-        // TODO Currently this uses the old mongo id for look ups.
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM users WHERE " + LEGACY_ID + " = ? AND NOT deleted");
-            pst.setString(1, id);
-
-            ResultSet results = pst.executeQuery();
-            
-            if (!results.isBeforeFirst()) {
-                return null;
-            } 
-            
-            return this.findOneUser(results);
-        } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
-        }        
-    }
-    
-    /**
-     * @param id the id of the user to find
-     * @return a user object or null if none found.
-     * @throws SegueDatabaseException - if there is a database error
-     */
     @Override
     public RegisteredUser getById(final Long id) throws SegueDatabaseException {
         if (null == id) {
@@ -598,7 +600,7 @@ public class PgUsers implements IUserDataManager {
      * createUser.
      * @param userToCreate - a user object to persist
      * @return a register user as just created.
-     * @throws SegueDatabaseException
+     * @throws SegueDatabaseException - If there is a db error
      */
     private RegisteredUser createUser(final RegisteredUser userToCreate) throws SegueDatabaseException {    
         // make sure student is default role if none set
@@ -618,8 +620,8 @@ public class PgUsers implements IUserDataManager {
                             "INSERT INTO users(family_name, given_name, email, role, "
                             + "date_of_birth, gender, registration_date, school_id, "
                             + "school_other, last_updated, email_verification_status, "
-                            + "last_seen, default_level, email_verification_token, email_to_verify) "
-                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
+                            + "last_seen, email_verification_token, email_to_verify) "
+                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
                             Statement.RETURN_GENERATED_KEYS);
 
             // TODO: Change this to annotations or something to rely exclusively on the pojo.
@@ -635,9 +637,8 @@ public class PgUsers implements IUserDataManager {
             setValueHelper(pst, 10, userToCreate.getLastUpdated());
             setValueHelper(pst, 11,  userToCreate.getEmailVerificationStatus());
             setValueHelper(pst, 12, userToCreate.getLastSeen());
-            setValueHelper(pst, 13, userToCreate.getDefaultLevel());
-            setValueHelper(pst, 14, userToCreate.getEmailVerificationToken());
-            setValueHelper(pst, 15, userToCreate.getEmailToVerify());
+            setValueHelper(pst, 13, userToCreate.getEmailVerificationToken());
+            setValueHelper(pst, 14, userToCreate.getEmailToVerify());
             
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save user.");
@@ -697,7 +698,7 @@ public class PgUsers implements IUserDataManager {
                         "UPDATE users SET family_name = ?, given_name = ?, email = ?, role = ?, "
                         + "date_of_birth = ?, gender = ?, registration_date = ?, school_id = ?, "
                         + "school_other = ?, last_updated = ?, email_verification_status = ?, "
-                        + "last_seen = ?, default_level = ?, email_verification_token = ?, email_to_verify = ? "
+                        + "last_seen = ?, email_verification_token = ?, email_to_verify = ? "
                         + "WHERE id = ?;");
 
         // TODO: Change this to annotations or something to rely exclusively on the pojo.
@@ -713,10 +714,9 @@ public class PgUsers implements IUserDataManager {
         setValueHelper(pst, 10, userToCreate.getLastUpdated());
         setValueHelper(pst, 11,  userToCreate.getEmailVerificationStatus());
         setValueHelper(pst, 12, userToCreate.getLastSeen());
-        setValueHelper(pst, 13, userToCreate.getDefaultLevel());
-        setValueHelper(pst, 14, userToCreate.getEmailVerificationToken());
-        setValueHelper(pst, 15, userToCreate.getEmailToVerify());
-        setValueHelper(pst, 16, userToCreate.getId());
+        setValueHelper(pst, 13, userToCreate.getEmailVerificationToken());
+        setValueHelper(pst, 14, userToCreate.getEmailToVerify());
+        setValueHelper(pst, 15, userToCreate.getId());
 
         if (pst.executeUpdate() == 0) {
             throw new SegueDatabaseException("Unable to save user.");
@@ -759,7 +759,6 @@ public class PgUsers implements IUserDataManager {
         u.setSchoolOther(results.getString("school_other"));
         u.setLastUpdated(results.getTimestamp("last_updated"));
         u.setLastSeen(results.getTimestamp("last_seen"));
-        u.setDefaultLevel(results.getInt("default_level"));
         u.setEmailToVerify(results.getString("email_to_verify"));
         u.setEmailVerificationToken(results.getString("email_verification_token"));
         u.setEmailVerificationStatus(results.getString("email_verification_status") != null ? EmailVerificationStatus
@@ -807,10 +806,8 @@ public class PgUsers implements IUserDataManager {
      * @return a single user that matches the search criteria or null of no matches found.
      * @throws SQLException
      *             - if a db error occurs
-     * @throws SegueDatabaseException
-     *             - if more than one result is returned
      */
-    private List<RegisteredUser> findAllUsers(final ResultSet results) throws SQLException, SegueDatabaseException {
+    private List<RegisteredUser> findAllUsers(final ResultSet results) throws SQLException {
         List<RegisteredUser> listOfResults = Lists.newArrayList();
         while (results.next()) {
             listOfResults.add(buildRegisteredUser(results));
