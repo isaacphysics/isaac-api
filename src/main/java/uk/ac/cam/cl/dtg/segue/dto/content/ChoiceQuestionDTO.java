@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.segue.dto.content;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.quiz.ChoiceQuestionValidator;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 
@@ -39,10 +40,11 @@ public class ChoiceQuestionDTO extends QuestionDTO {
     }
 
     /**
-     * Gets the choices.
-     * 
+     * Gets the choices. Defaults to not return choices.
+     * Manually unignore, e.g. multi-choice questions
      * @return the choices
      */
+    @JsonIgnore
     public List<ChoiceDTO> getChoices() {
         return choices;
     }

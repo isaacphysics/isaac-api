@@ -30,16 +30,5 @@ import java.util.List;
 @JsonContentType("isaacFreeTextQuestion")
 @ValidatesWith(IsaacFreeTextValidator.class)
 public class IsaacFreeTextQuestionDTO extends IsaacQuestionBaseDTO {
-    @Override
-    public final List<ChoiceDTO> getChoices() {
-        // we do not want the choice list to be displayed to users.
-        return null;
-    }
 
-    // stop the answer being returned for this type of question
-    @JsonIgnore
-    @Override
-    public ContentBaseDTO getAnswer() {
-        return super.getAnswer();
-    }
 }

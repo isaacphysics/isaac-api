@@ -15,8 +15,11 @@
  */
 package uk.ac.cam.cl.dtg.segue.dto.content;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.List;
 
+import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 
 /**
@@ -39,10 +42,12 @@ public class QuestionDTO extends ContentDTO {
     }
 
     /**
-     * Gets the answer.
-     * 
+     * Gets the answer, defaults to not return to the user.
+     * This is Manually unignored when the answer is required to
+     * be returned to the user e.g. quick questions
      * @return the answer
      */
+    @JsonIgnore
     public ContentBaseDTO getAnswer() {
         return answer;
     }
