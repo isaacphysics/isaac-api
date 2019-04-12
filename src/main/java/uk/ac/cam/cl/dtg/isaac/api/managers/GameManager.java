@@ -187,7 +187,7 @@ public class GameManager {
 
             this.gameboardPersistenceManager.temporarilyStoreGameboard(gameboardDTO);
 
-            return augmentGameboardWithUserInformation(gameboardDTO, usersQuestionAttempts, boardOwner);
+            return augmentGameboardWithQuestionAttemptInformation(gameboardDTO, usersQuestionAttempts);
         } else {
             return null;
         }
@@ -311,7 +311,9 @@ public class GameManager {
             final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts)
             throws SegueDatabaseException, ContentManagerException {
 
-        GameboardDTO gameboardFound = augmentGameboardWithUserInformation(
+
+        // we need to augment the DTO with whether this gameboard is in a users my boards list.
+        GameboardDTO gameboardFound = augmentGameboardWithQuestionAttemptInformationAndUserInformation(
                 this.gameboardPersistenceManager.getGameboardById(gameboardId), userQuestionAttempts, user);
 
         return gameboardFound;
@@ -365,7 +367,13 @@ public class GameManager {
 
         // filter gameboards based on selection.
         for (GameboardDTO gameboard : usersGameboards) {
-            this.augmentGameboardWithUserInformation(gameboard, questionAttemptsFromUser, user);
+            this.augmentGameboardWithQuestionAttemptInformation(gameboard, questionAttemptsFromUser);
+
+            // we know that the user already has these boards in their my boards page so just set them to true
+            if (user instanceof RegisteredUserDTO) {
+                gameboard
+                        .setSavedToCurrentUser(true);
+            }
 
             if (null == showOnly) {
                 resultToReturn.add(gameboard);
@@ -463,24 +471,48 @@ public class GameManager {
         return myBoardsResults;
     }
 
+
     /**
-     * Augments the gameboards with user information.
+     * Augments the gameboards with question attempt information AND whether or not the user has it in their my board page.
+     *
+     * @param gameboardDTO
+     *            - the DTO of the gameboard.
+     * @param questionAttemptsFromUser
+     *            - the users question attempt data.
+     * @return Augmented Gameboard.
+     * @throws SegueDatabaseException
+     *             - if there is an error retrieving the content requested.
+     * @throws ContentManagerException
+     *             - if there is an error retrieving the content requested.
+     */
+    private GameboardDTO augmentGameboardWithQuestionAttemptInformationAndUserInformation(final GameboardDTO gameboardDTO,
+                                                                             final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser, AbstractSegueUserDTO user)
+            throws SegueDatabaseException, ContentManagerException {
+        if (user instanceof RegisteredUserDTO) {
+            gameboardDTO
+                    .setSavedToCurrentUser(this.isBoardLinkedToUser((RegisteredUserDTO) user, gameboardDTO.getId()));
+        }
+
+        this.augmentGameboardWithQuestionAttemptInformation(gameboardDTO, questionAttemptsFromUser);
+
+        return gameboardDTO;
+    }
+
+
+    /**
+     * Augments the gameboards with question attempt information NOT whether the user has it in their my board page
      * 
      * @param gameboardDTO
      *            - the DTO of the gameboard.
      * @param questionAttemptsFromUser
-     *            - the users question data.
-     * @param user
-     *            - the users data.
+     *            - the users question attempt data.
      * @return Augmented Gameboard.
      * @throws ContentManagerException
      *             - if there is an error retrieving the content requested.
-     * @throws SegueDatabaseException if we can't look up gameboard --> user information
      */
-    public final GameboardDTO augmentGameboardWithUserInformation(final GameboardDTO gameboardDTO,
-            final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser, 
-            final AbstractSegueUserDTO user)
-            throws ContentManagerException, SegueDatabaseException {
+    private GameboardDTO augmentGameboardWithQuestionAttemptInformation(final GameboardDTO gameboardDTO,
+                                                                             final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser)
+            throws ContentManagerException {
         if (null == gameboardDTO) {
             return null;
         }
@@ -502,6 +534,7 @@ public class GameManager {
                         gameboardDTO.getId(), gameItem.getId()));
                 continue;
             }
+
             if (!gameboardStarted && !gameItem.getState().equals(Constants.GameboardItemState.NOT_ATTEMPTED)) {
                 gameboardStarted = true;
                 gameboardDTO.setStartedQuestion(gameboardStarted);
@@ -509,13 +542,9 @@ public class GameManager {
             totalNumberOfQuestionsParts += gameItem.getQuestionPartsTotal();
             totalNumberOfCorrectQuestionParts += gameItem.getQuestionPartsCorrect();
         }
+
         float boardPercentage = 100f * totalNumberOfCorrectQuestionParts / totalNumberOfQuestionsParts;
         gameboardDTO.setPercentageCompleted(Math.round(boardPercentage));
-        
-        if (user instanceof RegisteredUserDTO) {
-            gameboardDTO
-                    .setSavedToCurrentUser(this.isBoardLinkedToUser((RegisteredUserDTO) user, gameboardDTO.getId()));
-        }
         
         return gameboardDTO;
     }
