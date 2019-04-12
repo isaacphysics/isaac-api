@@ -791,7 +791,7 @@ public class GameboardPersistenceManager {
     /**
      * Utility method to allow us to retrieve a gameboard either from temporary storage or permanent.
      *
-     * @param gameboardId
+     * @param gameboardIds
      *            - gameboard to find
      * @param fullyPopulate
      *            - true or false

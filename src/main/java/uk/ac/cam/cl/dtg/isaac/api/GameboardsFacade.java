@@ -393,9 +393,11 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
     /**
      * createGameboard.
-     * 
-     * @param request 
-     * @param newGameboardObject 
+     *
+     * @param request
+     *            - for getting the user information
+     * @param newGameboardObject
+     *            - the new gameboard to save in the database
      * @return Gameboard DTO which has been persisted.
      */
     @POST
