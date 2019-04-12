@@ -94,6 +94,7 @@ public class GameManager {
      *            - a persistence manager that deals with storing and retrieving gameboards.
      * @param mapper
      *            - allows mapping between DO and DTO object types.
+     * @param contentIndex
      */
     @Inject
     public GameManager(final IContentManager contentManager,
@@ -107,24 +108,6 @@ public class GameManager {
         this.randomGenerator = new Random();
 
         this.mapper = mapper;
-    }
-
-    /**
-     * Generate a random gameboard without any filter conditions specified.
-     * 
-     * @see #generateRandomGameboard(String, List, List, List, List, List, AbstractSegueUserDTO)
-     * @return gameboard containing random problems.
-     * @throws NoWildcardException
-     *             - when we are unable to provide you with a wildcard object.
-     * @throws SegueDatabaseException
-     *             -
-     * @throws ContentManagerException
-     *             - if there is an error retrieving the content requested.
-     */
-    public final GameboardDTO generateRandomGameboard() throws NoWildcardException, SegueDatabaseException,
-            ContentManagerException {
-        return this.generateRandomGameboard(null, null, null, null, null,
-                null, null);
     }
 
     /**
@@ -597,59 +580,7 @@ public class GameManager {
 
         return result;
     }
-    
-    /**
-     * @param users the users we are interested in
-     * @param gameboard the gameboard / assignment we are interested in.
-     * @return Map {userId: [{questionPageId : [questionId1Result, questionId2Result]}]
-     * @throws SegueDatabaseException 
-     * @throws ContentManagerException 
-     */
-    public Map<RegisteredUserDTO, Map<String, Integer>> getDetailedGameProgressData(
-            final List<RegisteredUserDTO> users, final GameboardDTO gameboard) throws SegueDatabaseException,
-            ContentManagerException {      
-        Validate.notNull(users);
-        Validate.notNull(gameboard);
 
-        Map<RegisteredUserDTO, Map<String, Integer>> results = Maps.newHashMap();
-        
-        for (RegisteredUserDTO user : users) {
-            Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsBySession = questionManager
-                    .getQuestionAttemptsByUser(user);
-            
-            // questionPageId --> list of ints, in order of the questions on the page 1 is success, 0 is fail 
-            // null is unanswered.
-            Map<String, Integer> questionResultMap = Maps.newHashMap(); 
-            for (GameboardItem questionPage : gameboard.getQuestions()) {                
-
-                for (QuestionDTO question : this.getAllMarkableQuestionParts(questionPage.getId())) {
-                    Map<String, List<QuestionValidationResponse>> questionPageAttempts = questionAttemptsBySession.get(
-                            questionPage.getId());
-                    if (null == questionPageAttempts) {
-                        questionResultMap.put(question.getId(), null);
-                        continue;
-                    }
-                    
-                    List<QuestionValidationResponse> listOfAttempts = questionPageAttempts.get(question.getId());
-                 
-                    if (hasCorrectQuestionAttempt(listOfAttempts) == null) {
-                        questionResultMap.put(question.getId(), null);
-                    } else if (hasCorrectQuestionAttempt(listOfAttempts)) {
-                        questionResultMap.put(question.getId(), 1);
-                    } else {
-                        questionResultMap.put(question.getId(), 0);
-                    }
-                    
-                }
-            }
-            
-            results.put(user, questionResultMap);
-        }
-        
-        return results;
-    }
-    
-    
     
     /**
      * Find all wildcards.
@@ -705,30 +636,6 @@ public class GameManager {
         dfs = depthFirstQuestionSearch(questionPage, dfs);
 
         return this.filterQuestionParts(dfs);
-    }
-
-
-    /**
-     * Get all questions in the question page: depends on each question.
-     *
-     * This collection is in an arbitrary order. If you want a DFS order use
-     * {@link #getAllMarkableQuestionPartsDFSOrder(String)}
-     *
-     * @param questionPageId
-     *            - results depend on each question having an id prefixed with the question page id.
-     * @return collection of markable question parts (questions).
-     * @throws ContentManagerException
-     *             if there is a problem with the content requested.
-     */
-    private Collection<QuestionDTO> getAllMarkableQuestionParts(final String questionPageId)
-            throws ContentManagerException {
-        Validate.notBlank(questionPageId);
-
-        // go through each question in the question page
-        ResultsWrapper<ContentDTO> listOfQuestions = this.contentManager.getByIdPrefix(
-                this.contentIndex, questionPageId + ID_SEPARATOR, 0, NO_SEARCH_LIMIT);
-
-        return this.filterQuestionParts(listOfQuestions.getResults());
     }
 
     /**
@@ -1160,27 +1067,6 @@ public class GameManager {
         gameItem.setState(state);
 
         return gameItem;
-    }
-    
-    /**
-     * @param questionAttempts - to check
-     * @return true or false
-     */
-    private Boolean hasCorrectQuestionAttempt(final List<QuestionValidationResponse> questionAttempts) {
-        if (null == questionAttempts || questionAttempts.size() == 0) {
-            return null;
-        }
-
-        // Go through the attempts in reverse chronological order
-        // for this question to determine if there is a
-        // correct answer somewhere.
-        for (int i = questionAttempts.size() - 1; i >= 0; i--) {
-            if (questionAttempts.get(i).isCorrect() != null && questionAttempts.get(i).isCorrect()) {
-                return true;
-            }
-        }
-
-        return false;
     }
     
     /**
