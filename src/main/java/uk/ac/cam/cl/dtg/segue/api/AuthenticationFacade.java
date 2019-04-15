@@ -148,7 +148,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Unable to remove account due to a problem with the database.", e).toResponse();
+                    "Unable to load authentication settings due to a problem with the database.", e).toResponse();
         } catch (NoUserException e) {
             return new SegueErrorResponse(Status.NOT_FOUND, "User ID specified could not be found").toResponse();
         }
