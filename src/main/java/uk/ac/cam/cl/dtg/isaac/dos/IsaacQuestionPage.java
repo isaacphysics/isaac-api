@@ -36,6 +36,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.SeguePage;
 public class IsaacQuestionPage extends SeguePage {
     protected Float passMark;
     protected String supersededBy;
+    protected Integer difficulty;
 
     @JsonCreator
     public IsaacQuestionPage(@JsonProperty("id") String id,
@@ -46,12 +47,14 @@ public class IsaacQuestionPage extends SeguePage {
             @JsonProperty("value") String value, @JsonProperty("attribution") String attribution,
             @JsonProperty("relatedContent") List<String> relatedContent, @JsonProperty("published") boolean published,
             @JsonProperty("tags") Set<String> tags, @JsonProperty("level") Integer level,
-            @JsonProperty("passMark") Float passMark, @JsonProperty("supersededBy") String supersededBy) {
+            @JsonProperty("difficulty") Integer difficulty, @JsonProperty("passMark") Float passMark,
+            @JsonProperty("supersededBy") String supersededBy) {
         super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
                 attribution, relatedContent, published, tags, level);
 
         this.passMark = passMark;
         this.supersededBy = supersededBy;
+        this.difficulty = difficulty;
     }
 
     /**
@@ -72,4 +75,7 @@ public class IsaacQuestionPage extends SeguePage {
 
     public void setSupersededBy(String supersededBy) { this.supersededBy = supersededBy; }
 
+    public Integer getDifficulty() { return difficulty; }
+
+    public void setDifficulty(Integer difficulty) { this.difficulty = difficulty; }
 }

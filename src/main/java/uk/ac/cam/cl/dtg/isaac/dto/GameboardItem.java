@@ -36,6 +36,7 @@ public class GameboardItem {
     private List<String> tags;
 
     private Integer level;
+    private Integer difficulty;
     private Integer questionPartsCorrect;
     private Integer questionPartsIncorrect;
     private Integer questionPartsNotAttempted;
@@ -68,6 +69,7 @@ public class GameboardItem {
         this.setDescription(original.getDescription());
         this.setUri(original.getUri());
         this.setLevel(original.getLevel());
+        this.setDifficulty(original.getDifficulty());
         this.setQuestionPartsCorrect(original.getQuestionPartsCorrect());
         this.setQuestionPartsIncorrect(original.getQuestionPartsIncorrect());
         this.setQuestionPartsNotAttempted(original.getQuestionPartsNotAttempted());
@@ -188,6 +190,25 @@ public class GameboardItem {
      */
     public final void setLevel(final Integer level) {
         this.level = level;
+    }
+
+    /**
+     * Gets the difficulty.
+     *
+     * @return the difficulty
+     */
+    public final Integer getDifficulty() {
+        return difficulty;
+    }
+
+    /**
+     * Sets the difficulty.
+     *
+     * @param difficulty
+     *            the difficulty to set
+     */
+    public final void setDifficulty(final Integer difficulty) {
+        this.difficulty= difficulty;
     }
 
     public final List<Constants.QuestionPartState> getQuestionPartStates(){
