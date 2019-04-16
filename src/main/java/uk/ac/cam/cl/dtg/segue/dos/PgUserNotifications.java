@@ -54,7 +54,7 @@ public class PgUserNotifications implements IUserNotifications {
     public List<IUserNotification> getUserNotifications(final Long userId) throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("Select * FROM user_notifications WHERE user_id = ? ORDER BY created ASC");
+            pst = conn.prepareStatement("SELECT * FROM user_notifications WHERE user_id = ? ORDER BY created ASC");
             pst.setLong(1, userId);
 
             ResultSet results = pst.executeQuery();
@@ -177,7 +177,7 @@ public class PgUserNotifications implements IUserNotifications {
             throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("Select * FROM user_notifications WHERE user_id = ? AND notification_id = ?");
+            pst = conn.prepareStatement("SELECT * FROM user_notifications WHERE user_id = ? AND notification_id = ?");
             pst.setLong(1, userId);
             pst.setString(2, contentId);
 

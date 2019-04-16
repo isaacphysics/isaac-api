@@ -35,7 +35,7 @@ public class PgUserAlerts implements IUserAlerts {
     public List<IUserAlert> getUserAlerts(Long userId) throws SegueDatabaseException {
         try (Connection conn = db.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("Select * FROM user_alerts WHERE user_id = ? ORDER BY created ASC");
+            pst = conn.prepareStatement("SELECT * FROM user_alerts WHERE user_id = ? ORDER BY created ASC");
             pst.setLong(1, userId);
 
             ResultSet results = pst.executeQuery();

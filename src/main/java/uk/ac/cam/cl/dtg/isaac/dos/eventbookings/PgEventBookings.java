@@ -234,7 +234,7 @@ public class PgEventBookings implements EventBookings {
 
         try (Connection conn = ds.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("Select * FROM event_bookings WHERE event_id = ? AND user_id = ?");
+            pst = conn.prepareStatement("SELECT * FROM event_bookings WHERE event_id = ? AND user_id = ?");
             pst.setString(1, eventId);
             pst.setLong(2, userId);
             ResultSet results = pst.executeQuery();
@@ -272,7 +272,7 @@ public class PgEventBookings implements EventBookings {
     public Iterable<EventBooking> findAll() throws SegueDatabaseException {
         try (Connection conn = ds.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("Select * FROM event_bookings");
+            pst = conn.prepareStatement("SELECT * FROM event_bookings");
 
             ResultSet results = pst.executeQuery();
             List<EventBooking> returnResult = Lists.newArrayList();
@@ -312,7 +312,7 @@ public class PgEventBookings implements EventBookings {
         try (Connection conn = ds.getDatabaseConnection()) {
             PreparedStatement pst;
             StringBuilder sb = new StringBuilder();
-            sb.append("Select * FROM event_bookings WHERE event_id = ?");
+            sb.append("SELECT * FROM event_bookings WHERE event_id = ?");
 
             if (status != null) {
                 sb.append(" AND status = ?");
@@ -343,7 +343,7 @@ public class PgEventBookings implements EventBookings {
 
         try (Connection conn = ds.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("Select * FROM event_bookings WHERE user_id = ?");
+            pst = conn.prepareStatement("SELECT * FROM event_bookings WHERE user_id = ?");
             pst.setLong(1, userId);
             ResultSet results = pst.executeQuery();
 
