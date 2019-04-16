@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -94,6 +94,8 @@ public class GameManager {
      *            - a persistence manager that deals with storing and retrieving gameboards.
      * @param mapper
      *            - allows mapping between DO and DTO object types.
+     * @param contentIndex
+     *            - the current content index of interest.
      */
     @Inject
     public GameManager(final IContentManager contentManager,
@@ -107,24 +109,6 @@ public class GameManager {
         this.randomGenerator = new Random();
 
         this.mapper = mapper;
-    }
-
-    /**
-     * Generate a random gameboard without any filter conditions specified.
-     * 
-     * @see #generateRandomGameboard(String, List, List, List, List, List, AbstractSegueUserDTO)
-     * @return gameboard containing random problems.
-     * @throws NoWildcardException
-     *             - when we are unable to provide you with a wildcard object.
-     * @throws SegueDatabaseException
-     *             -
-     * @throws ContentManagerException
-     *             - if there is an error retrieving the content requested.
-     */
-    public final GameboardDTO generateRandomGameboard() throws NoWildcardException, SegueDatabaseException,
-            ContentManagerException {
-        return this.generateRandomGameboard(null, null, null, null, null,
-                null, null);
     }
 
     /**
@@ -187,7 +171,7 @@ public class GameManager {
 
             this.gameboardPersistenceManager.temporarilyStoreGameboard(gameboardDTO);
 
-            return augmentGameboardWithUserInformation(gameboardDTO, usersQuestionAttempts, boardOwner);
+            return augmentGameboardWithQuestionAttemptInformation(gameboardDTO, usersQuestionAttempts);
         } else {
             return null;
         }
@@ -251,9 +235,7 @@ public class GameManager {
             return null;
         }
 
-        GameboardDTO gameboardFound = this.gameboardPersistenceManager.getGameboardById(gameboardId);
-
-        return gameboardFound;
+        return this.gameboardPersistenceManager.getGameboardById(gameboardId);
     }
 
     /**
@@ -273,9 +255,7 @@ public class GameManager {
             return null;
         }
 
-        List<GameboardDTO> gameboardsFound = this.gameboardPersistenceManager.getGameboardsByIds(gameboardIds);
-
-        return gameboardsFound;
+        return this.gameboardPersistenceManager.getGameboardsByIds(gameboardIds);
     }
 
     /**
@@ -311,12 +291,21 @@ public class GameManager {
             final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts)
             throws SegueDatabaseException, ContentManagerException {
 
-        GameboardDTO gameboardFound = augmentGameboardWithUserInformation(
-                this.gameboardPersistenceManager.getGameboardById(gameboardId), userQuestionAttempts, user);
 
-        return gameboardFound;
+        // we need to augment the DTO with whether this gameboard is in a users my boards list.
+        return augmentGameboardWithQuestionAttemptInformationAndUserInformation(
+                this.gameboardPersistenceManager.getGameboardById(gameboardId), userQuestionAttempts, user);
     }
 
+    /**
+     * getFastTrackConceptProgress.
+     *
+     * @param gameboardId to look up.
+     * @param conceptTitle concept title.
+     * @param userQuestionAttempts - the map of user's question attempts.
+     * @return list of gameboard items.
+     * @throws ContentManagerException if there is a problem retrieving the content.
+     */
     public final List<GameboardItem> getFastTrackConceptProgress(final String gameboardId, final String conceptTitle,
              final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts)
             throws ContentManagerException {
@@ -365,7 +354,10 @@ public class GameManager {
 
         // filter gameboards based on selection.
         for (GameboardDTO gameboard : usersGameboards) {
-            this.augmentGameboardWithUserInformation(gameboard, questionAttemptsFromUser, user);
+            this.augmentGameboardWithQuestionAttemptInformation(gameboard, questionAttemptsFromUser);
+
+            // we know that the user already has these boards in their my boards page so just set them to true
+            gameboard.setSavedToCurrentUser(true);
 
             if (null == showOnly) {
                 resultToReturn.add(gameboard);
@@ -457,88 +449,8 @@ public class GameManager {
         // fully augment only those we are returning.
         this.gameboardPersistenceManager.augmentGameboardItems(sublistOfGameboards);
 
-        GameboardListDTO myBoardsResults = new GameboardListDTO(sublistOfGameboards, (long) resultToReturn.size(),
+        return new GameboardListDTO(sublistOfGameboards, (long) resultToReturn.size(),
                 totalNotStarted, totalInProgress, totalCompleted);
-
-        return myBoardsResults;
-    }
-
-    /**
-     * Augments the gameboards with user information.
-     * 
-     * @param gameboardDTO
-     *            - the DTO of the gameboard.
-     * @param questionAttemptsFromUser
-     *            - the users question data.
-     * @param user
-     *            - the users data.
-     * @return Augmented Gameboard.
-     * @throws ContentManagerException
-     *             - if there is an error retrieving the content requested.
-     * @throws SegueDatabaseException if we can't look up gameboard --> user information
-     */
-    public final GameboardDTO augmentGameboardWithUserInformation(final GameboardDTO gameboardDTO,
-            final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser, 
-            final AbstractSegueUserDTO user)
-            throws ContentManagerException, SegueDatabaseException {
-        if (null == gameboardDTO) {
-            return null;
-        }
-
-        if (null == questionAttemptsFromUser || gameboardDTO.getQuestions().size() == 0) {
-            return gameboardDTO;
-        }
-
-        boolean gameboardStarted = false;
-        List<GameboardItem> questions = gameboardDTO.getQuestions();
-        int totalNumberOfQuestionsParts = 0;
-        int totalNumberOfCorrectQuestionParts = 0;
-        for (GameboardItem gameItem : questions) {
-            try {
-                this.augmentGameItemWithAttemptInformation(gameItem, questionAttemptsFromUser);
-            } catch (ResourceNotFoundException e) {
-                log.info(String.format(
-                        "The gameboard '%s' references an unavailable question '%s' - treating it as if it never existed for marking!",
-                        gameboardDTO.getId(), gameItem.getId()));
-                continue;
-            }
-            if (!gameboardStarted && !gameItem.getState().equals(Constants.GameboardItemState.NOT_ATTEMPTED)) {
-                gameboardStarted = true;
-                gameboardDTO.setStartedQuestion(gameboardStarted);
-            }
-            totalNumberOfQuestionsParts += gameItem.getQuestionPartsTotal();
-            totalNumberOfCorrectQuestionParts += gameItem.getQuestionPartsCorrect();
-        }
-        float boardPercentage = 100f * totalNumberOfCorrectQuestionParts / totalNumberOfQuestionsParts;
-        gameboardDTO.setPercentageCompleted(Math.round(boardPercentage));
-        
-        if (user instanceof RegisteredUserDTO) {
-            gameboardDTO
-                    .setSavedToCurrentUser(this.isBoardLinkedToUser((RegisteredUserDTO) user, gameboardDTO.getId()));
-        }
-        
-        return gameboardDTO;
-    }
-
-    /**
-     * Convert a list of questions to gameboard items and augment with user question attempt information.
-     * @param questions list of questions.
-     * @param userQuestionAttempts the user's question attempt history.
-     * @return list of augmented gameboard items.
-     */
-    private List<GameboardItem> getGameboardItemProgress(List<ContentDTO> questions,
-                                                         final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts) {
-
-        return questions.stream()
-                .map(this.gameboardPersistenceManager::convertToGameboardItem)
-                .map(questionItem -> {
-                    try {
-                        this.augmentGameItemWithAttemptInformation(questionItem, userQuestionAttempts);
-                    } catch (ContentManagerException | ResourceNotFoundException e) {
-                        log.error("Unable to augment '" + questionItem.getId() + "' with user attempt information");
-                    }
-                    return questionItem;
-                }).collect(Collectors.toList());
     }
 
     /**
@@ -667,59 +579,7 @@ public class GameManager {
 
         return result;
     }
-    
-    /**
-     * @param users the users we are interested in
-     * @param gameboard the gameboard / assignment we are interested in.
-     * @return Map {userId: [{questionPageId : [questionId1Result, questionId2Result]}]
-     * @throws SegueDatabaseException 
-     * @throws ContentManagerException 
-     */
-    public Map<RegisteredUserDTO, Map<String, Integer>> getDetailedGameProgressData(
-            final List<RegisteredUserDTO> users, final GameboardDTO gameboard) throws SegueDatabaseException,
-            ContentManagerException {      
-        Validate.notNull(users);
-        Validate.notNull(gameboard);
 
-        Map<RegisteredUserDTO, Map<String, Integer>> results = Maps.newHashMap();
-        
-        for (RegisteredUserDTO user : users) {
-            Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsBySession = questionManager
-                    .getQuestionAttemptsByUser(user);
-            
-            // questionPageId --> list of ints, in order of the questions on the page 1 is success, 0 is fail 
-            // null is unanswered.
-            Map<String, Integer> questionResultMap = Maps.newHashMap(); 
-            for (GameboardItem questionPage : gameboard.getQuestions()) {                
-
-                for (QuestionDTO question : this.getAllMarkableQuestionParts(questionPage.getId())) {
-                    Map<String, List<QuestionValidationResponse>> questionPageAttempts = questionAttemptsBySession.get(
-                            questionPage.getId());
-                    if (null == questionPageAttempts) {
-                        questionResultMap.put(question.getId(), null);
-                        continue;
-                    }
-                    
-                    List<QuestionValidationResponse> listOfAttempts = questionPageAttempts.get(question.getId());
-                 
-                    if (hasCorrectQuestionAttempt(listOfAttempts) == null) {
-                        questionResultMap.put(question.getId(), null);
-                    } else if (hasCorrectQuestionAttempt(listOfAttempts)) {
-                        questionResultMap.put(question.getId(), 1);
-                    } else {
-                        questionResultMap.put(question.getId(), 0);
-                    }
-                    
-                }
-            }
-            
-            results.put(user, questionResultMap);
-        }
-        
-        return results;
-    }
-    
-    
     
     /**
      * Find all wildcards.
@@ -755,29 +615,6 @@ public class GameManager {
     }
     
     /**
-     * Get all questions in the question page: depends on each question.
-     * 
-     * This collection is in an arbitrary order. If you want a DFS order use
-     * {@link #getAllMarkableQuestionPartsDFSOrder(String)}
-     * 
-     * @param questionPageId
-     *            - results depend on each question having an id prefixed with the question page id.
-     * @return collection of markable question parts (questions).
-     * @throws ContentManagerException
-     *             if there is a problem with the content requested.
-     */
-    public Collection<QuestionDTO> getAllMarkableQuestionParts(final String questionPageId)
-            throws ContentManagerException {
-        Validate.notBlank(questionPageId);
-
-        // go through each question in the question page
-        ResultsWrapper<ContentDTO> listOfQuestions = this.contentManager.getByIdPrefix(
-                this.contentIndex, questionPageId + ID_SEPARATOR, 0, NO_SEARCH_LIMIT);
-        
-        return this.filterQuestionParts(listOfQuestions.getResults());
-    }
-    
-    /**
      * Get all questions in the question page: depends on each question. This method will conduct a DFS traversal and
      * ensure the collection is ordered as per the DFS.
      * 
@@ -798,6 +635,108 @@ public class GameManager {
         dfs = depthFirstQuestionSearch(questionPage, dfs);
 
         return this.filterQuestionParts(dfs);
+    }
+
+    /**
+     * Augments the gameboards with question attempt information AND whether or not the user has it in their boards.
+     *
+     * @param gameboardDTO
+     *            - the DTO of the gameboard.
+     * @param questionAttemptsFromUser
+     *            - the users question attempt data.
+     * @param user
+     *            - the user to check whether the board is in their boards list
+     * @return Augmented Gameboard.
+     * @throws SegueDatabaseException
+     *             - if there is an error retrieving the content requested.
+     * @throws ContentManagerException
+     *             - if there is an error retrieving the content requested.
+     */
+    private GameboardDTO augmentGameboardWithQuestionAttemptInformationAndUserInformation(final GameboardDTO gameboardDTO,
+                                                                                          final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser,
+                                                                                          final AbstractSegueUserDTO user)
+            throws SegueDatabaseException, ContentManagerException {
+        if (user instanceof RegisteredUserDTO) {
+            gameboardDTO
+                    .setSavedToCurrentUser(this.isBoardLinkedToUser((RegisteredUserDTO) user, gameboardDTO.getId()));
+        }
+
+        this.augmentGameboardWithQuestionAttemptInformation(gameboardDTO, questionAttemptsFromUser);
+
+        return gameboardDTO;
+    }
+
+
+    /**
+     * Augments the gameboards with question attempt information NOT whether the user has it in their my board page.
+     *
+     * @param gameboardDTO
+     *            - the DTO of the gameboard.
+     * @param questionAttemptsFromUser
+     *            - the users question attempt data.
+     * @return Augmented Gameboard.
+     * @throws ContentManagerException
+     *             - if there is an error retrieving the content requested.
+     */
+    private GameboardDTO augmentGameboardWithQuestionAttemptInformation(final GameboardDTO gameboardDTO,
+                                                                        final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser)
+            throws ContentManagerException {
+        if (null == gameboardDTO) {
+            return null;
+        }
+
+        if (null == questionAttemptsFromUser || gameboardDTO.getQuestions().size() == 0) {
+            return gameboardDTO;
+        }
+
+        boolean gameboardStarted = false;
+        List<GameboardItem> questions = gameboardDTO.getQuestions();
+        int totalNumberOfQuestionsParts = 0;
+        int totalNumberOfCorrectQuestionParts = 0;
+        for (GameboardItem gameItem : questions) {
+            try {
+                this.augmentGameItemWithAttemptInformation(gameItem, questionAttemptsFromUser);
+            } catch (ResourceNotFoundException e) {
+                log.info(String.format(
+                        "The gameboard '%s' references an unavailable question '%s' - treating it as if it never existed for marking!",
+                        gameboardDTO.getId(), gameItem.getId()));
+                continue;
+            }
+
+            if (!gameboardStarted && !gameItem.getState().equals(Constants.GameboardItemState.NOT_ATTEMPTED)) {
+                gameboardStarted = true;
+                gameboardDTO.setStartedQuestion(gameboardStarted);
+            }
+            totalNumberOfQuestionsParts += gameItem.getQuestionPartsTotal();
+            totalNumberOfCorrectQuestionParts += gameItem.getQuestionPartsCorrect();
+        }
+
+        float boardPercentage = 100f * totalNumberOfCorrectQuestionParts / totalNumberOfQuestionsParts;
+        gameboardDTO.setPercentageCompleted(Math.round(boardPercentage));
+
+        return gameboardDTO;
+    }
+
+    /**
+     * Convert a list of questions to gameboard items and augment with user question attempt information.
+     *
+     * @param questions list of questions.
+     * @param userQuestionAttempts the user's question attempt history.
+     * @return list of augmented gameboard items.
+     */
+    private List<GameboardItem> getGameboardItemProgress(List<ContentDTO> questions,
+                                                         final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts) {
+
+        return questions.stream()
+                .map(this.gameboardPersistenceManager::convertToGameboardItem)
+                .map(questionItem -> {
+                    try {
+                        this.augmentGameItemWithAttemptInformation(questionItem, userQuestionAttempts);
+                    } catch (ContentManagerException | ResourceNotFoundException e) {
+                        log.error("Unable to augment '" + questionItem.getId() + "' with user attempt information");
+                    }
+                    return questionItem;
+                }).collect(Collectors.toList());
     }
 
     /**
@@ -976,9 +915,8 @@ public class GameManager {
         Map<String, SortOrder> sortInstructions = Maps.newHashMap();
         sortInstructions.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, SortOrder.ASC);
 
-        List<ContentDTO> conceptQuestions = this.contentManager.findByFieldNames(
-                    this.contentIndex, fieldsToMap, 0, SEARCH_MAX_WINDOW_SIZE, sortInstructions).getResults();
-        return conceptQuestions;
+        return this.contentManager.findByFieldNames(
+                this.contentIndex, fieldsToMap, 0, SEARCH_MAX_WINDOW_SIZE, sortInstructions).getResults();
     }
 
     /**
@@ -1130,27 +1068,6 @@ public class GameManager {
         gameItem.setState(state);
 
         return gameItem;
-    }
-    
-    /**
-     * @param questionAttempts - to check
-     * @return true or false
-     */
-    private Boolean hasCorrectQuestionAttempt(final List<QuestionValidationResponse> questionAttempts) {
-        if (null == questionAttempts || questionAttempts.size() == 0) {
-            return null;
-        }
-
-        // Go through the attempts in reverse chronological order
-        // for this question to determine if there is a
-        // correct answer somewhere.
-        for (int i = questionAttempts.size() - 1; i >= 0; i--) {
-            if (questionAttempts.get(i).isCorrect() != null && questionAttempts.get(i).isCorrect()) {
-                return true;
-            }
-        }
-
-        return false;
     }
     
     /**
@@ -1393,7 +1310,7 @@ public class GameManager {
             NoWildcardException {
         if (gameboardDTO.getId() != null && gameboardDTO.getId().contains(" ")) {
             throw new InvalidGameboardException(
-                    String.format("Your gameboard must not contain illegal characters e.g. spaces"));
+                    "Your gameboard must not contain illegal characters e.g. spaces");
         }
 
         if (gameboardDTO.getQuestions().size() > Constants.GAME_BOARD_TARGET_SIZE) {
@@ -1402,9 +1319,8 @@ public class GameManager {
         }
 
         if (gameboardDTO.getGameFilter() == null || !validateFilterQuery(gameboardDTO.getGameFilter())) {
-            throw new InvalidGameboardException(String.format(
-                    "Your gameboard must have some valid filter information e.g. subject must be set.",
-                    GAME_BOARD_TARGET_SIZE));
+            throw new InvalidGameboardException("Your gameboard must have some valid filter information " +
+                    "e.g. subject must be set.");
         }
 
         List<String> badQuestions = this.gameboardPersistenceManager.getInvalidQuestionIdsFromGameboard(gameboardDTO);
