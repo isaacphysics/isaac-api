@@ -17,7 +17,7 @@
 		<swagger-ui-version>3.19.5</swagger-ui-version>
 		<jetty.port.api>8080</jetty.port.api>
 		<jetty.port.etl>8090</jetty.port.etl>
-		<config.location>/local/data/rutherford/conf/segue-config.properties</config.location>
+		<config.location>/local/data/conf/segue-config.properties</config.location>
 		<log.path>/isaac-logs</log.path>
 	</properties>
 
