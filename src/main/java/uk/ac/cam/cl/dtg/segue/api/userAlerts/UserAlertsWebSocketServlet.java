@@ -3,7 +3,8 @@ package uk.ac.cam.cl.dtg.segue.api.userAlerts;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import org.eclipse.jetty.websocket.servlet.*;
+import org.eclipse.jetty.websocket.servlet.WebSocketServlet;
+import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueContextNotifier;
@@ -15,6 +16,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Collections;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
@@ -39,6 +41,20 @@ public class UserAlertsWebSocketServlet extends WebSocketServlet {
 
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // We have been seeing malformed WebSocket requests. Add some debug logging to these:
+        if (!"websocket".equals(request.getHeader("Upgrade"))) {
+            log.warn(String.format("WebSocket Upgrade request incorrect header 'Upgrade: %s', headers: %s.",
+                    request.getHeader("Upgrade"), Collections.list(request.getHeaderNames()).toString()));
+        }
+        if (null == request.getHeader("Sec-WebSocket-Key")) {
+            log.warn(String.format("WebSocket Upgrade request missing 'Sec-WebSocket-Key' header."
+                    + " 'Sec-WebSocket-Extensions: %s', 'Sec-WebSocket-Version: %s', 'User-Agent: %s'",
+                    request.getHeader("Sec-WebSocket-Extensions"), request.getHeader("Sec-WebSocket-Version"),
+                    request.getHeader("User-Agent")));
+            response.setStatus(400);
+            return;
+        }
+
         // WebSockets are not protected by the CORS filters in /override-api-web.xml so we must check the origin
         // explicitly here:
         String origin = request.getHeader("Origin");
