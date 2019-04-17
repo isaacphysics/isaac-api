@@ -114,7 +114,7 @@ public class QuestionManager {
                 validateQuestionResponse = validator.validateQuestionResponse(question,
                         answerFromUser);
             } catch (ValidatorUnavailableException e) {
-                return SegueErrorResponse.getServiceUnavailableResponse(e.getClass().getSimpleName() + ":"
+                return SegueErrorResponse.getServiceUnavailableResponse(e.getClass().getSimpleName() + ": "
                         + e.getMessage());
             }
 
