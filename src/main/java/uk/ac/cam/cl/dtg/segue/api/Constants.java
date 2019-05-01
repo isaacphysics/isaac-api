@@ -167,6 +167,10 @@ public final class Constants {
     public static final String SEARCH_CLUSTER_INFO_PORT = "SEARCH_CLUSTER_INFO_PORT";
     public static final String SEARCH_RESULTS_HARD_LIMIT = "SEARCH_RESULTS_HARD_LIMIT";
 
+    // Event management stuff:
+    public static final String EVENT_ADMIN_EMAIL = "EVENT_ADMIN_EMAIL";
+    public static final String EVENT_ICAL_UID_DOMAIN = "EVENT_ICAL_UID_DOMAIN";
+
     /**
      * Suffix to append to raw fields (minus dot separator) - these are fields that the search engine should not do any
      * processing on (e.g. no stemming)

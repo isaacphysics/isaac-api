@@ -52,8 +52,7 @@ import java.net.URLEncoder;
 import java.util.*;
 import java.text.DateFormat;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_TIME_LOCALITY;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * EventBookingManager.
@@ -875,8 +874,10 @@ public class EventBookingManager {
             icalEvent.setDateEnd(event.getEndDate(), true);
             icalEvent.setDescription(event.getSubtitle());
 
-            icalEvent.setOrganizer(new Organizer("Isaac Physics", "events@isaacphysics.org"));
-            icalEvent.setUid(String.format("%s@%s.isaacphysics.org", bookingDetails.getUserBooked().getId(), event.getId()));
+            icalEvent.setOrganizer(new Organizer(propertiesLoader.getProperty(MAIL_NAME),
+                    propertiesLoader.getProperty(EVENT_ADMIN_EMAIL)));
+            icalEvent.setUid(String.format("%s@%s.%s", bookingDetails.getUserBooked().getId(),
+                    event.getId(), propertiesLoader.getProperty(EVENT_ICAL_UID_DOMAIN)));
             icalEvent.setUrl(String.format("https://%s/events/%s",
                     propertiesLoader.getProperty(HOST_NAME), event.getId()));
 
