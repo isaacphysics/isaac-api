@@ -75,6 +75,11 @@ public final class Constants {
     public static final String SERVER_ADMIN_ADDRESS = "SERVER_ADMIN_ADDRESS";
 
     /**
+     * Constant representing the text used for {{sig}} in emails..
+     */
+    public static final String EMAIL_SIGNATURE = "EMAIL_SIGNATURE";
+
+    /**
      * The path for the csv file containing the list of schools.
      */
     public static final String SCHOOL_CSV_LIST_PATH = "SCHOOL_CSV_LIST_PATH";

@@ -498,7 +498,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                                                              final ILogManager logManager) {
 
         Map<String, String> globalTokens = Maps.newHashMap();
-        globalTokens.put("sig", "Isaac Physics Project");
+        globalTokens.put("sig", properties.getProperty(EMAIL_SIGNATURE));
         globalTokens.put("emailPreferencesURL", String.format("https://%s/account#emailpreferences",
                 properties.getProperty(HOST_NAME)));
         globalTokens.put("myAssignmentsURL", String.format("https://%s/assignments",
