@@ -51,10 +51,4 @@ public class IsaacSymbolicQuestionDTO extends IsaacQuestionBaseDTO {
         this.availableSymbols = availableSymbols;
     }
 
-    // stop the answer being returned for this type of question
-    @JsonIgnore
-    @Override
-    public ContentBaseDTO getAnswer() {
-        return super.getAnswer();
-    }
 }

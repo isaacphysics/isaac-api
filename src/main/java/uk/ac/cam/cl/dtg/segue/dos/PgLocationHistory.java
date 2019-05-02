@@ -73,7 +73,7 @@ public class PgLocationHistory implements LocationHistory {
 
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("Select * FROM ip_location_history "
+            pst = conn.prepareStatement("SELECT * FROM ip_location_history "
                     + "WHERE ip_address = ? AND is_current = ? " + "ORDER BY last_lookup DESC");
 
             pst.setString(1, ipAddress);
@@ -101,7 +101,7 @@ public class PgLocationHistory implements LocationHistory {
 
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("Select postcode, lat, lon FROM uk_post_codes WHERE postcode = ?");
+            pst = conn.prepareStatement("SELECT postcode, lat, lon FROM uk_post_codes WHERE postcode = ?");
 
             pst.setString(1, postCode);
 
@@ -133,7 +133,7 @@ public class PgLocationHistory implements LocationHistory {
             }
 
             PreparedStatement pst;
-            pst = conn.prepareStatement("Select * FROM ip_location_history " + "WHERE ip_address IN ("
+            pst = conn.prepareStatement("SELECT * FROM ip_location_history " + "WHERE ip_address IN ("
                     + builder.deleteCharAt(builder.length() - 1).toString() + ") AND is_current = ? "
                     + "ORDER BY last_lookup DESC");
 
@@ -164,7 +164,7 @@ public class PgLocationHistory implements LocationHistory {
 
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("Select * FROM ip_location_history WHERE ip_address = ? ORDER BY created ASC");
+            pst = conn.prepareStatement("SELECT * FROM ip_location_history WHERE ip_address = ? ORDER BY created ASC");
             pst.setString(1, ipAddress);
             ResultSet results = pst.executeQuery();
             List<LocationHistoryEvent> returnResult = Lists.newArrayList();
@@ -295,7 +295,7 @@ public class PgLocationHistory implements LocationHistory {
         try (Connection conn = database.getDatabaseConnection()) {
 
             PreparedStatement pst;
-            pst = conn.prepareStatement("Select * FROM ip_location_history "
+            pst = conn.prepareStatement("SELECT * FROM ip_location_history "
                     + "WHERE last_lookup BETWEEN ? AND ? AND is_current = TRUE ORDER BY last_lookup DESC");
            
             pst.setDate(1, new java.sql.Date(fromDate.getTime()));

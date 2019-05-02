@@ -15,7 +15,10 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
+
 
 /**
  * Quick Question DTO.
@@ -23,5 +26,14 @@ import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
  */
 @JsonContentType("isaacQuestion")
 public class IsaacQuickQuestionDTO extends IsaacQuestionBaseDTO {
-
+    /**
+     * Unignores getting the answer as it is
+     * required to be shown in a quick question
+     * @return the answer
+     */
+    @Override
+    @JsonIgnore(false)
+    public ContentBaseDTO getAnswer() {
+        return super.getAnswer();
+    }
 }

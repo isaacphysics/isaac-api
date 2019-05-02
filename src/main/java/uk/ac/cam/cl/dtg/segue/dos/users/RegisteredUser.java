@@ -38,8 +38,6 @@ public class RegisteredUser extends AbstractSegueUser {
     private String schoolId;
     private String schoolOther;
 
-    private Integer defaultLevel;
-
     private String emailVerificationToken;
     private String emailToVerify;
     private EmailVerificationStatus emailVerificationStatus;
@@ -304,25 +302,6 @@ public class RegisteredUser extends AbstractSegueUser {
     }
 
     /**
-     * Gets the defaultLevel.
-     * 
-     * @return the defaultLevel
-     */
-    public Integer getDefaultLevel() {
-        return defaultLevel;
-    }
-
-    /**
-     * Sets the defaultLevel.
-     * 
-     * @param defaultLevel
-     *            the defaultLevel to set
-     */
-    public void setDefaultLevel(final Integer defaultLevel) {
-        this.defaultLevel = defaultLevel;
-    }
-
-    /**
      * Gets the email.
      *
      * @return the email to verify
@@ -479,7 +458,6 @@ public class RegisteredUser extends AbstractSegueUser {
                 ", registrationDate=" + registrationDate +
                 ", schoolId='" + schoolId + '\'' +
                 ", schoolOther='" + schoolOther + '\'' +
-                ", defaultLevel=" + defaultLevel +
                 ", emailVerificationToken='" + emailVerificationToken + '\'' +
                 ", emailToVerify='" + emailToVerify + '\'' +
                 ", emailVerificationStatus=" + emailVerificationStatus +
@@ -487,6 +465,4 @@ public class RegisteredUser extends AbstractSegueUser {
                 ", lastSeen=" + lastSeen +
                 '}';
     }
-
-
 }

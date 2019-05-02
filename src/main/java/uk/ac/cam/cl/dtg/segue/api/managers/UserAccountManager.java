@@ -76,11 +76,13 @@ import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
+import uk.ac.cam.cl.dtg.segue.dos.users.UserAuthenticationSettings;
 import uk.ac.cam.cl.dtg.segue.dos.users.UserFromAuthProvider;
 import uk.ac.cam.cl.dtg.segue.dto.content.EmailTemplateDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserAuthenticationSettingsDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -435,8 +437,23 @@ public class UserAccountManager implements IUserAccountManager {
      */
     public final boolean checkUserRole(final HttpServletRequest request, final Collection<Role> validRoles)
             throws NoUserLoggedInException {
-        RegisteredUser user = this.getCurrentRegisteredUserDO(request);
+        RegisteredUserDTO user = this.getCurrentRegisteredUser(request);
 
+        return this.checkUserRole(user, validRoles);
+    }
+
+    /**
+     * CheckUserRole matches a list of valid roles.
+     *
+     * @param user
+     *            - the users details.
+     * @param validRoles
+     *            - a Collection of roles that we would want the user to match.
+     * @return true if the user is a member of one of the roles in our valid roles list. False if not.
+     * @throws NoUserLoggedInException
+     *             - if there is no registered user logged in.
+     */
+    public final boolean checkUserRole(final RegisteredUserDTO user, final Collection<Role> validRoles) throws NoUserLoggedInException {
         if (null == user) {
             throw new NoUserLoggedInException();
         }
@@ -496,6 +513,27 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     /**
+     * Get the authentication settings of particular user
+     *
+     * @param user
+     *            - to retrieve settings from
+     * @return Returns the current UserDTO if we can get it or null if user is not currently logged in
+     * @throws SegueDatabaseException
+     *             - If there is an internal database error
+     */
+    public final UserAuthenticationSettingsDTO getUsersAuthenticationSettings(final RegisteredUserDTO user)
+            throws SegueDatabaseException {
+        Validate.notNull(user);
+
+        UserAuthenticationSettings userAuthenticationSettings = this.database.getUserAuthenticationSettings(user.getId());
+        if (userAuthenticationSettings != null) {
+            return this.dtoMapper.map(userAuthenticationSettings, UserAuthenticationSettingsDTO.class);
+        } else {
+            return new UserAuthenticationSettingsDTO();
+        }
+    }
+
+    /**
      * Find a list of users based on some user prototype.
      * 
      * @param prototype
@@ -508,7 +546,7 @@ public class UserAccountManager implements IUserAccountManager {
         List<RegisteredUser> registeredUsersDOs = this.database.findUsers(this.dtoMapper.map(prototype,
                 RegisteredUser.class));
 
-        return this.convertUserDOToUserDTOList(registeredUsersDOs);
+        return this.convertUserDOListToUserDTOList(registeredUsersDOs);
     }
 
     /**
@@ -528,7 +566,7 @@ public class UserAccountManager implements IUserAccountManager {
 
         List<RegisteredUser> registeredUsersDOs = this.database.findUsers(Lists.newArrayList(userIds));
 
-        return this.convertUserDOToUserDTOList(registeredUsersDOs);
+        return this.convertUserDOListToUserDTOList(registeredUsersDOs);
     }
 
     /**
@@ -642,8 +680,9 @@ public class UserAccountManager implements IUserAccountManager {
             throw new DuplicateAccountException("An account with that e-mail address already exists.");
         }
 
+        // FIXME: This is a hard-coded reference to the URL of the platform!
         // Ensure nobody registers with Isaac email addresses. Users can change emails by verifying them however.
-        if (user.getEmail().matches(".*@isaac(physics|chemistry|maths|biology|science)\\.org")) {
+        if (user.getEmail().matches(".*@isaac(physics|chemistry|maths|biology|computerscience|science)\\.org")) {
             log.warn("User attempted to register with Isaac email address '" + user.getEmail() + "'!");
             throw new EmailMustBeVerifiedException("You cannot register with an Isaac email address.");
         }
@@ -1391,45 +1430,23 @@ public class UserAccountManager implements IUserAccountManager {
         if (null == user) {
             return null;
         }
-        return this.convertUserDOsToUserDTOs(Collections.singletonList(user)).get(0);
-    }
-
-    private List<RegisteredUserDTO> convertUserDOsToUserDTOs(final List<RegisteredUser> users) {
-        List <RegisteredUser> userDOs = users.parallelStream().filter(Objects::nonNull).collect(Collectors.toList());
-        if (userDOs.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        List<RegisteredUserDTO> foundUserDTOs = new ArrayList<>();
-        try {
-            // These only need to be *effectively* final, but better be safe than sorry.
-            final Map<RegisteredUser, List<AuthenticationProvider>> usersAuthenticationProviders = this.database.getAuthenticationProvidersByUsers(users);
-            final Map<RegisteredUser, Boolean> usersHaveSegueAccount = this.database.getSegueAccountExistenceByUsers(users);
-
-            // The following should probably be outside of the try scope, but then good luck getting the two variables
-            // above captured by the lambda down here...
-            foundUserDTOs = users.parallelStream().map(user -> {
-                RegisteredUserDTO userDTO = this.dtoMapper.map(user, RegisteredUserDTO.class);
-                userDTO.setLinkedAccounts(usersAuthenticationProviders.get(user));
-                userDTO.setHasSegueAccount(usersHaveSegueAccount.get(user));
-                return userDTO;
-            }).collect(Collectors.toList());
-        } catch (SegueDatabaseException e) {
-            log.error("Unable to set linked accounts for users due to a database error.");
-        }
-
-        return foundUserDTOs;
+        return this.convertUserDOListToUserDTOList(Collections.singletonList(user)).get(0);
     }
 
     /**
      * Converts a list of userDOs into a List of userDTOs.
      *
-     * @param listToConvert
+     * @param users
      *            - list of DOs to convert
      * @return the list of user dtos.
      */
-    private List<RegisteredUserDTO> convertUserDOToUserDTOList(final List<RegisteredUser> listToConvert) {
-        return this.convertUserDOsToUserDTOs(listToConvert);
+    private List<RegisteredUserDTO> convertUserDOListToUserDTOList(final List<RegisteredUser> users) {
+        List <RegisteredUser> userDOs = users.parallelStream().filter(Objects::nonNull).collect(Collectors.toList());
+        if (userDOs.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        return users.parallelStream().map(user -> this.dtoMapper.map(user, RegisteredUserDTO.class)).collect(Collectors.toList());
     }
 
     /**

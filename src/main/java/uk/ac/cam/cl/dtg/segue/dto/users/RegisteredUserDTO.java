@@ -16,9 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.dto.users;
 
 import java.util.Date;
-import java.util.List;
 
-import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
@@ -44,11 +42,6 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 
     private String schoolId;
     private String schoolOther;
-
-    private Integer defaultLevel;
-
-    private List<AuthenticationProvider> linkedAccounts;
-    private boolean hasSegueAccount;
 
     private boolean firstLogin = false;
     private Date lastUpdated;
@@ -327,63 +320,6 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
     }
 
     /**
-     * Gets the defaultLevel.
-     * 
-     * @return the defaultLevel
-     */
-    public Integer getDefaultLevel() {
-        return defaultLevel;
-    }
-
-    /**
-     * Sets the defaultLevel.
-     * 
-     * @param defaultLevel
-     *            the defaultLevel to set
-     */
-    public void setDefaultLevel(final Integer defaultLevel) {
-        this.defaultLevel = defaultLevel;
-    }
-
-    /**
-     * Gets the linkedAccounts.
-     * 
-     * @return the linkedAccounts
-     */
-    public List<AuthenticationProvider> getLinkedAccounts() {
-        return linkedAccounts;
-    }
-
-    /**
-     * Sets the linkedAccounts.
-     * 
-     * @param linkedAccounts
-     *            the linkedAccounts to set
-     */
-    public void setLinkedAccounts(final List<AuthenticationProvider> linkedAccounts) {
-        this.linkedAccounts = linkedAccounts;
-    }
-
-    /**
-     * Gets the hasSegueAccount.
-     * 
-     * @return the hasSegueAccount
-     */
-    public boolean getHasSegueAccount() {
-        return hasSegueAccount;
-    }
-
-    /**
-     * Sets the hasSegueAccount.
-     * 
-     * @param hasSegueAccount
-     *            the hasSegueAccount to set
-     */
-    public void setHasSegueAccount(final boolean hasSegueAccount) {
-        this.hasSegueAccount = hasSegueAccount;
-    }
-
-    /**
      * Gets the firstLogin.
      * 
      * @return the firstLogin
@@ -502,13 +438,6 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
         } else if (!dateOfBirth.equals(other.dateOfBirth)) {
             return false;
         }
-        if (defaultLevel == null) {
-            if (other.defaultLevel != null) {
-                return false;
-            }
-        } else if (!defaultLevel.equals(other.defaultLevel)) {
-            return false;
-        }
         if (email == null) {
             if (other.email != null) {
                 return false;
@@ -543,9 +472,6 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
         } else if (!givenName.equals(other.givenName)) {
             return false;
         }
-        if (hasSegueAccount != other.hasSegueAccount) {
-            return false;
-        }
         if (lastUpdated == null) {
             if (other.lastUpdated != null) {
                 return false;
@@ -553,13 +479,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
         } else if (!lastUpdated.equals(other.lastUpdated)) {
             return false;
         }
-        if (linkedAccounts == null) {
-            if (other.linkedAccounts != null) {
-                return false;
-            }
-        } else if (!linkedAccounts.equals(other.linkedAccounts)) {
-            return false;
-        }
+
         if (registrationDate == null) {
             if (other.registrationDate != null) {
                 return false;
@@ -592,8 +512,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
         return "RegisteredUserDTO [id=" + id + ", givenName=" + givenName + ", familyName="
                 + familyName + ", email=" + email + ", role=" + role + ", dateOfBirth=" + dateOfBirth + ", gender="
                 + gender + ", registrationDate=" + registrationDate + ", schoolId=" + schoolId + ", schoolOther="
-                + schoolOther + ", defaultLevel=" + defaultLevel + ", emailVerificationStatus=" 
-                + emailVerificationStatus + ", linkedAccounts=" + linkedAccounts + ", hasSegueAccount=" 
-                + hasSegueAccount + ", firstLogin=" + firstLogin + ", lastUpdated=" + lastUpdated + "]";
+                + schoolOther +  ", emailVerificationStatus="
+                + emailVerificationStatus + ", firstLogin=" + firstLogin + ", lastUpdated=" + lastUpdated + "]";
     }
 }

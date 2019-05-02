@@ -31,17 +31,13 @@ import java.util.List;
 @JsonContentType("isaacStringMatchQuestion")
 @ValidatesWith(IsaacStringMatchValidator.class)
 public class IsaacStringMatchQuestionDTO extends IsaacQuestionBaseDTO {
+    private Boolean multiLineEntry;
 
-    @Override
-    public final List<ChoiceDTO> getChoices() {
-        // we do not want the choice list to be displayed to users.
-        return null;
+    public Boolean getMultiLineEntry() {
+        return multiLineEntry;
     }
 
-    // stop the answer being returned for this type of question
-    @JsonIgnore
-    @Override
-    public ContentBaseDTO getAnswer() {
-        return super.getAnswer();
+    public void setMultiLineEntry(final Boolean multiLineEntry) {
+        this.multiLineEntry = multiLineEntry;
     }
 }

@@ -173,7 +173,7 @@ public class PgLogManager implements ILogManager {
     public Long getLogCountByType(final String type) throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("Select COUNT(*) AS TOTAL FROM logged_events WHERE event_type = ?");
+            pst = conn.prepareStatement("SELECT COUNT(*) AS TOTAL FROM logged_events WHERE event_type = ?");
             pst.setString(1, type);
 
             ResultSet results = pst.executeQuery();
@@ -406,7 +406,7 @@ public class PgLogManager implements ILogManager {
     private Collection<LogEvent> getLogsByUserAndType(final String type, final Date fromDate, final Date toDate,
             final Collection<String> userIds) throws SegueDatabaseException {
 
-        String query = "Select * FROM logged_events WHERE event_type = ?";
+        String query = "SELECT * FROM logged_events WHERE event_type = ?";
 
         if (fromDate != null) {
             query += " AND timestamp > ?";
