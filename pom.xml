@@ -60,7 +60,7 @@
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
 			<artifactId>jetty-servlets</artifactId>
-			<version>9.3.22.v20171030</version>
+			<version>9.3.27.v20190418</version>
 		</dependency>
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
@@ -329,14 +329,14 @@
 		<dependency>
 			<groupId>org.eclipse.jetty.websocket</groupId>
 			<artifactId>javax-websocket-server-impl</artifactId>
-			<version>9.3.22.v20171030</version>
+			<version>9.3.27.v20190418</version>
 		</dependency>
 
 		<!--Jetty Websocket API server side dependency -->
 		<dependency>
 			<groupId>org.eclipse.jetty.websocket</groupId>
 			<artifactId>websocket-server</artifactId>
-			<version>9.3.22.v20171030</version>
+			<version>9.3.27.v20190418</version>
 		</dependency>
 
 
@@ -411,7 +411,7 @@
 			<plugin>
 				<groupId>org.eclipse.jetty</groupId>
 				<artifactId>jetty-maven-plugin</artifactId>
-				<version>9.3.22.v20171030</version>
+				<version>9.3.27.v20190418</version>
 				<configuration>
 					<webApp>
 						<contextPath>/isaac-api</contextPath>
@@ -490,7 +490,7 @@
 					<plugin>
 						<groupId>org.eclipse.jetty</groupId>
 						<artifactId>jetty-maven-plugin</artifactId>
-						<version>9.3.22.v20171030</version>
+						<version>9.3.27.v20190418</version>
 						<configuration>
 							<webApp>
 								<contextPath>/isaac-api</contextPath>
