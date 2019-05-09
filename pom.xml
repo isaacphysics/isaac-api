@@ -339,6 +339,13 @@
 			<version>9.3.27.v20190418</version>
 		</dependency>
 
+		<!-- Graph checker code -->
+		<dependency>
+			<artifactId>isaac-graph-checker-library</artifactId>
+			<groupId>org.isaacphysics</groupId>
+			<version>1.0.1</version>
+		</dependency>
+
 
 	</dependencies>
 

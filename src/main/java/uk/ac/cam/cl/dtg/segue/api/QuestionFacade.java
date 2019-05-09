@@ -353,4 +353,59 @@ public class QuestionFacade extends AbstractSegueFacade {
             return error.toResponse();
         }
     }
+
+    /**
+     * Convert a possible answer into a question specification.
+     *
+     * @param request
+     *            - the servlet request so we can find out if it is a known user.
+     * @param jsonAnswer
+     *            - answer body which will be parsed as a Choice and then converted to a ChoiceDTO.
+     * @return Response containing a QuestionValidationResponse object or containing a SegueErrorResponse .
+     */
+    @POST
+    @Path("generateSpecification")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Turn an answer into a question specification.")
+    public Response generateSpecification(@Context final HttpServletRequest request, final String jsonAnswer) {
+        if (null == jsonAnswer || jsonAnswer.isEmpty()) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "No answer received.").toResponse();
+        }
+
+        try {
+            if (!isUserStaff(userManager, request)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
+
+        ChoiceDTO answerFromClientDTO;
+        try {
+            Choice answerFromClient = mapper.getSharedContentObjectMapper().readValue(jsonAnswer, Choice.class);
+            // convert to a DTO so that it strips out any untrusted data.
+            answerFromClientDTO = mapper.getAutoMapper().map(answerFromClient, ChoiceDTO.class);
+        } catch (JsonMappingException | JsonParseException e) {
+            log.info("Failed to map to any expected input...", e);
+            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to map response to a "
+                + "Choice object so failing with an error", e);
+            return error.toResponse();
+        } catch (IOException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to map response to a "
+                + "Choice object so failing with an error", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        }
+
+        Response response;
+        try {
+            response = this.questionManager.generateSpecification(answerFromClientDTO);
+            return response;
+        } catch (IllegalArgumentException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Bad request - " + e.getMessage(), e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        }
+    }
 }
