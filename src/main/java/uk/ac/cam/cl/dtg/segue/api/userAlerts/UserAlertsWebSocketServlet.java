@@ -42,7 +42,7 @@ public class UserAlertsWebSocketServlet extends WebSocketServlet {
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         // We have been seeing malformed WebSocket requests. Add some debug logging to these:
-        if (!"websocket".equals(request.getHeader("Upgrade"))) {
+        if (!"websocket".equalsIgnoreCase(request.getHeader("Upgrade"))) {
             log.warn(String.format("WebSocket Upgrade request incorrect header 'Upgrade: %s', headers: %s.",
                     request.getHeader("Upgrade"), Collections.list(request.getHeaderNames()).toString()));
         }
