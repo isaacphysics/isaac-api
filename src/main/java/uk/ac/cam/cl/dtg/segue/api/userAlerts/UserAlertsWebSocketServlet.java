@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.Collections;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
+import static uk.ac.cam.cl.dtg.util.RequestIPExtractor.getClientIpAddr;
 
 /**
  * Created by du220 on 17/07/2017.
@@ -43,14 +44,14 @@ public class UserAlertsWebSocketServlet extends WebSocketServlet {
     protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         // We have been seeing malformed WebSocket requests. Add some debug logging to these:
         if (!"websocket".equalsIgnoreCase(request.getHeader("Upgrade"))) {
-            log.warn(String.format("WebSocket Upgrade request incorrect header 'Upgrade: %s', headers: %s.",
-                    request.getHeader("Upgrade"), Collections.list(request.getHeaderNames()).toString()));
+            log.warn(String.format("WebSocket Upgrade request from %s has incorrect header 'Upgrade: %s', headers: %s.",
+                    request.getHeader("Upgrade"), getClientIpAddr(request), Collections.list(request.getHeaderNames()).toString()));
         }
         if (null == request.getHeader("Sec-WebSocket-Key")) {
-            log.warn(String.format("WebSocket Upgrade request missing 'Sec-WebSocket-Key' header."
+            log.warn(String.format("WebSocket Upgrade request from %s has missing 'Sec-WebSocket-Key' header."
                     + " 'Sec-WebSocket-Extensions: %s', 'Sec-WebSocket-Version: %s', 'User-Agent: %s'",
-                    request.getHeader("Sec-WebSocket-Extensions"), request.getHeader("Sec-WebSocket-Version"),
-                    request.getHeader("User-Agent")));
+                    getClientIpAddr(request), request.getHeader("Sec-WebSocket-Extensions"),
+                    request.getHeader("Sec-WebSocket-Version"), request.getHeader("User-Agent")));
             response.setStatus(400);
             return;
         }
