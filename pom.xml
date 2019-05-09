@@ -343,7 +343,7 @@
 		<dependency>
 			<artifactId>isaac-graph-checker-library</artifactId>
 			<groupId>org.isaacphysics</groupId>
-			<version>1.0</version>
+			<version>1.0.1</version>
 		</dependency>
 
 
