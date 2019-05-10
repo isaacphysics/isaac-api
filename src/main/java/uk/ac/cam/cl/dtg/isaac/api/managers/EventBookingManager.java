@@ -558,10 +558,12 @@ public class EventBookingManager {
     /**
      * getPlacesAvailable.
      * This method is not threadsafe and will not acquire a lock.
-     * It assumes that both WAITING_LIST and CONFIRMED bookings count towards capacity.
+     * It assumes that both WAITING_LIST and CONFIRMED bookings count towards capacity for all events apart from
+     * WAITING_LIST_ONLY events where only confirmed bookings count.
      * <p>
      * This assumption allows waiting list bookings to be manually changed into CONFIRMED by event
-     * managers without the possibility of someone creating a new booking to occupy the space.
+     * managers without the possibility of someone creating a new booking to occupy the space after a confirmed
+     * cancellation.
      * <p>
      * It also assumes teachers don't count on student events.
      *
@@ -571,7 +573,11 @@ public class EventBookingManager {
      * @throws SegueDatabaseException - if we cannot contact the database.
      */
     public Integer getPlacesAvailable(final IsaacEventPageDTO event) throws SegueDatabaseException {
-        return this.getPlacesAvailable(event, false);
+        if (EventStatus.WAITING_LIST_ONLY.equals(event.getEventStatus())) {
+            return this.getPlacesAvailable(event, true);
+        } else {
+            return this.getPlacesAvailable(event, false);
+        }
     }
 
     /**

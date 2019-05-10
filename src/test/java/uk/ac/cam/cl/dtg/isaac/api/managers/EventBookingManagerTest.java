@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import org.junit.Before;
 import org.junit.Test;
 import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dos.EventStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
@@ -26,8 +27,8 @@ import java.util.List;
 import java.util.Map;
 
 import static org.easymock.EasyMock.*;
-import static org.junit.Assert.fail;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
+import static org.junit.Assert.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * EventBookingManagerTest.
@@ -522,6 +523,53 @@ public class EventBookingManagerTest {
         } catch (EventIsFullException e) {
             // success
         }
+    }
+
+    @Test
+    public void getEventPage_checkWaitingListOnlyEventCapacity_capacityCalculatedCorrectly() throws
+            Exception {
+        EventBookingManager ebm = this.buildEventBookingManager();
+        IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
+        testEvent.setId("someEventId");
+        testEvent.setNumberOfPlaces(2);
+        testEvent.setTags(ImmutableSet.of("student", "physics"));
+        testEvent.setEventStatus(EventStatus.WAITING_LIST_ONLY);
+
+        RegisteredUserDTO someUser = new RegisteredUserDTO();
+        someUser.setId(6L);
+        someUser.setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
+        someUser.setRole(Role.STUDENT);
+
+        EventBookingDTO firstBooking = new EventBookingDTO();
+        UserSummaryDTO firstUser = new UserSummaryDTO();
+        firstUser.setRole(Role.STUDENT);
+        firstBooking.setUserBooked(firstUser);
+        firstBooking.setBookingStatus(BookingStatus.CONFIRMED);
+
+        EventBookingDTO secondBooking = new EventBookingDTO();
+        UserSummaryDTO secondUser = new UserSummaryDTO();
+        secondUser.setRole(Role.STUDENT);
+        secondBooking.setUserBooked(secondUser);
+        secondBooking.setBookingStatus(BookingStatus.WAITING_LIST);
+
+        List<EventBookingDTO> currentBookings = Arrays.asList(firstBooking, secondBooking);
+
+        expect(dummyEventBookingPersistenceManager.getBookingByEventId(testEvent.getId())).andReturn(currentBookings);
+        expect(dummyEventBookingPersistenceManager.isUserBooked(testEvent.getId(), someUser.getId())).andReturn(false);
+
+        dummyEventBookingPersistenceManager.acquireDistributedLock(testEvent.getId());
+        expectLastCall().atLeastOnce();
+
+        expect(dummyEventBookingPersistenceManager.createBooking(testEvent.getId(), someUser.getId(), BookingStatus
+                .CONFIRMED, someAdditionalInformation)).andReturn(firstBooking).atLeastOnce();
+
+        dummyEventBookingPersistenceManager.releaseDistributedLock(testEvent.getId());
+        expectLastCall().atLeastOnce();
+
+        replay(dummyEventBookingPersistenceManager);
+        Integer placesAvailable = ebm.getPlacesAvailable(testEvent);
+        assertEquals("WAITING_LIST_ONLY events should only count confirmed places in availability calculations",
+                placesAvailable, 1);
     }
 
     private EventBookingManager buildEventBookingManager() {
