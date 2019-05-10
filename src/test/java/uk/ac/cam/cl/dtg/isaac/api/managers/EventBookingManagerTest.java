@@ -53,6 +53,9 @@ public class EventBookingManagerTest {
         this.groupManager = createMock(GroupManager.class);
         this.dummyPropertiesLoader = createMock(PropertiesLoader.class);
         expect(this.dummyPropertiesLoader.getProperty(HOST_NAME)).andReturn("hostname.com").anyTimes();
+        expect(this.dummyPropertiesLoader.getProperty(MAIL_NAME)).andReturn("Isaac Physics").anyTimes();
+        expect(this.dummyPropertiesLoader.getProperty(EVENT_ADMIN_EMAIL)).andReturn("admin@hostname.com").anyTimes();
+        expect(this.dummyPropertiesLoader.getProperty(EVENT_ICAL_UID_DOMAIN)).andReturn("hostname.com").anyTimes();
         this.someAdditionalInformation = Maps.newHashMap();
     }
 
