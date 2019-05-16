@@ -551,7 +551,7 @@ public class PagesFacade extends AbstractIsaacFacade {
      * @return A Response object containing a page object or containing a SegueErrorResponse.
      */
     @GET
-    @Path("topic/{topic_id}")
+    @Path("topics/{topic_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @ApiOperation(value = "Get a topic summary with a list of related material.")
@@ -565,7 +565,7 @@ public class PagesFacade extends AbstractIsaacFacade {
             return cachedResponse;
         }
 
-        // Topic summary pahes have the ID convention "topic_summary_[tag_name]"
+        // Topic summary pages have the ID convention "topic_summary_[tag_name]"
         String summaryPageId = String.format("topic_summary_%s", topicId);
 
         // Load the summary page:
