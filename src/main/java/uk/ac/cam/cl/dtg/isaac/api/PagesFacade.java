@@ -28,10 +28,12 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionSummaryPage;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacTopicSummaryPage;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionSummaryPageDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacTopicSummaryPageDTO;
 import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -66,6 +68,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -533,6 +536,58 @@ public class PagesFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Unable to retrieve Content requested due to an internal server error.", e).toResponse();
         }
+    }
+
+
+    /**
+     *  Get and augment a topic summary.
+     *
+     * @param request
+     *            - so we can deal with caching.
+     * @param httpServletRequest
+     *            - so that we can extract user information.
+     * @param topicId
+     *            as a string
+     * @return A Response object containing a page object or containing a SegueErrorResponse.
+     */
+    @GET
+    @Path("topics/{topic_id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @ApiOperation(value = "Get a topic summary with a list of related material.")
+    public final Response getTopicSummaryPage(@Context final Request request,
+                                                 @Context final HttpServletRequest httpServletRequest, @PathParam("topic_id") final String topicId) {
+        // Calculate the ETag on current live version of the content
+        // NOTE: Assumes that the latest version of the content is being used.
+        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + topicId.hashCode() + "");
+        Response cachedResponse = generateCachedResponse(request, etag);
+        if (cachedResponse != null) {
+            return cachedResponse;
+        }
+
+        // Topic summary pages have the ID convention "topic_summary_[tag_name]"
+        String summaryPageId = String.format("topic_summary_%s", topicId);
+
+        // Load the summary page:
+        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
+        fieldsToMatch.put(TYPE_FIELDNAME, Collections.singletonList(TOPIC_SUMMARY_PAGE_TYPE));
+        if (null != summaryPageId) {
+            fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singletonList(summaryPageId));
+        }
+        Response result = this.findSingleResult(fieldsToMatch);
+
+        // If we have a topic summary, log the request:
+        if (result.getEntity() instanceof IsaacTopicSummaryPageDTO) {
+            ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
+                    .put(PAGE_ID_LOG_FIELDNAME, summaryPageId)
+                    .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
+
+            getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
+                    IsaacLogType.VIEW_TOPIC_SUMMARY_PAGE, logEntry);
+        }
+
+        return Response.status(result.getStatus()).entity(result.getEntity())
+                .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
     }
     
     /**
