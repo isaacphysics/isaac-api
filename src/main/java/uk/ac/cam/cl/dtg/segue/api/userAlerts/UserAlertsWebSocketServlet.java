@@ -45,7 +45,7 @@ public class UserAlertsWebSocketServlet extends WebSocketServlet {
         // We have been seeing malformed WebSocket requests. Add some debug logging to these:
         if (!"websocket".equalsIgnoreCase(request.getHeader("Upgrade"))) {
             log.warn(String.format("WebSocket Upgrade request from %s has incorrect header 'Upgrade: %s', headers: %s.",
-                    request.getHeader("Upgrade"), getClientIpAddr(request), Collections.list(request.getHeaderNames()).toString()));
+                    getClientIpAddr(request), request.getHeader("Upgrade"), Collections.list(request.getHeaderNames()).toString()));
         }
         if (null == request.getHeader("Sec-WebSocket-Key")) {
             log.warn(String.format("WebSocket Upgrade request from %s has missing 'Sec-WebSocket-Key' header."
