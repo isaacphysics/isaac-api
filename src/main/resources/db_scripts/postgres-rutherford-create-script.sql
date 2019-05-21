@@ -959,6 +959,14 @@ CREATE INDEX users_id_role ON public.users USING btree (id, role);
 
 
 --
+-- Name: assignments assignment_group_fkey; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY assignments
+    ADD CONSTRAINT assignment_group_fkey FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE;
+
+
+--
 -- Name: assignments assignment_owner_fkey; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
 --
 
