@@ -132,7 +132,7 @@ public final class Constants {
     public static final Set<String> ISAAC_LOG_TYPES = Arrays.stream(IsaacLogType.values()).map(IsaacLogType::name).collect(Collectors.toSet());
 
     public enum IsaacUserPreferences {
-        SUBJECT_INTEREST, BETA_FEATURE
+        SUBJECT_INTEREST, BETA_FEATURE, EXAM_BOARD
     }
 
     /**
