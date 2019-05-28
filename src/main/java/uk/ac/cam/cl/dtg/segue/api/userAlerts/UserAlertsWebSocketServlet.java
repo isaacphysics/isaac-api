@@ -44,8 +44,9 @@ public class UserAlertsWebSocketServlet extends WebSocketServlet {
     protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         // We have been seeing malformed WebSocket requests. Add some debug logging to these:
         if (!"websocket".equalsIgnoreCase(request.getHeader("Upgrade"))) {
-            log.warn(String.format("WebSocket Upgrade request from %s has incorrect header 'Upgrade: %s', headers: %s.",
-                    getClientIpAddr(request), request.getHeader("Upgrade"), Collections.list(request.getHeaderNames()).toString()));
+            log.warn(String.format("WebSocket Upgrade request from %s has incorrect header 'Upgrade: %s', headers: %s, 'Via: %s'.",
+                    getClientIpAddr(request), request.getHeader("Upgrade"), Collections.list(request.getHeaderNames()).toString(),
+                    request.getHeader("Via")));
         }
         if (null == request.getHeader("Sec-WebSocket-Key")) {
             log.warn(String.format("WebSocket Upgrade request from %s has missing 'Sec-WebSocket-Key' header."
