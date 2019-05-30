@@ -507,6 +507,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                 properties.getProperty(HOST_NAME)));
         globalTokens.put("contactUsURL", String.format("https://%s/contact",
                 properties.getProperty(HOST_NAME)));
+        globalTokens.put("siteBaseURL", String.format("https://%s", properties.getProperty(HOST_NAME)));
 
         if (null == emailCommunicationQueue) {
             emailCommunicationQueue = new EmailManager(emailCommunicator, userPreferenceManager, properties,
