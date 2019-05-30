@@ -560,12 +560,14 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         Properties htmlTemplateProperties = new Properties();
         htmlTemplateProperties.put("content", HTMLContent);
         htmlTemplateProperties.put("email", userEmail);
+        htmlTemplateProperties.putAll(this.globalStringTokens);
 
         String htmlMessage = completeTemplateWithProperties(htmlTemplate.getValue(), htmlTemplateProperties, true);
 
         Properties plainTextTemplateProperties = new Properties();
         plainTextTemplateProperties.put("content", plainTextContent);
         plainTextTemplateProperties.put("email", userEmail);
+        plainTextTemplateProperties.putAll(this.globalStringTokens);
 
         String plainTextMessage = completeTemplateWithProperties(plainTextTemplate.getValue(),
                 plainTextTemplateProperties);
