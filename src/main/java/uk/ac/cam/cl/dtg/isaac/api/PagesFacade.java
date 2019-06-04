@@ -577,16 +577,30 @@ public class PagesFacade extends AbstractIsaacFacade {
         Response result = this.findSingleResult(fieldsToMatch);
 
         // If we have a topic summary, log the request:
-        if (result.getEntity() instanceof IsaacTopicSummaryPageDTO) {
+        Object resultEntity = result.getEntity();
+        if (resultEntity instanceof IsaacTopicSummaryPageDTO) {
+            IsaacTopicSummaryPageDTO topicSummaryPageDTO = (IsaacTopicSummaryPageDTO) resultEntity;
+            AbstractSegueUserDTO user = userManager.getCurrentUser(httpServletRequest);
+
+            // Log the request:
             ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
                     .put(PAGE_ID_LOG_FIELDNAME, summaryPageId)
                     .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
+            getLogManager().logEvent(user, httpServletRequest, IsaacLogType.VIEW_TOPIC_SUMMARY_PAGE, logEntry);
 
-            getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
-                    IsaacLogType.VIEW_TOPIC_SUMMARY_PAGE, logEntry);
+            // Augment relatedContent with question attempts:
+            Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts;
+            try {
+                userQuestionAttempts = questionManager.getQuestionAttemptsByUser(user);
+            } catch (SegueDatabaseException e) {
+                String message = "SegueDatabaseException whilst trying to retrieve user question data";
+                log.error(message, e);
+                return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+            }
+            QuestionManager.augmentRelatedQuestionsWithAttemptInformation(topicSummaryPageDTO, userQuestionAttempts);
         }
 
-        return Response.status(result.getStatus()).entity(result.getEntity())
+        return Response.status(result.getStatus()).entity(resultEntity)
                 .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
     }
     

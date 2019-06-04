@@ -275,7 +275,7 @@ public class QuestionManager {
      * @param content the content to be augmented.
      * @param usersQuestionAttempts the user's question attempts.
      */
-    private static void augmentRelatedQuestionsWithAttemptInformation(
+    public static void augmentRelatedQuestionsWithAttemptInformation(
             final ContentDTO content,
             final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
         // Check if all question parts have been answered
