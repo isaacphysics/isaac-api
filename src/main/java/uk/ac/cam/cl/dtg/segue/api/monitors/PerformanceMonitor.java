@@ -25,7 +25,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.ext.Provider;
 
 import org.apache.commons.lang3.time.StopWatch;
-import org.jboss.resteasy.annotations.interception.ServerInterceptor;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +34,6 @@ import org.slf4j.LoggerFactory;
  *
  */
 @Provider
-@ServerInterceptor
 public class PerformanceMonitor implements ContainerRequestFilter, ContainerResponseFilter {
     private static final Logger log = LoggerFactory.getLogger(PerformanceMonitor.class);
 
