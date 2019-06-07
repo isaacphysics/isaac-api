@@ -207,15 +207,16 @@ public class QuestionManager {
             final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
 
         List<QuestionDTO> questionsToAugment = QuestionManager.extractQuestionObjectsRecursively(page,
-                new ArrayList<QuestionDTO>());
+                new ArrayList<>());
 
         this.augmentQuestionObjectWithAttemptInformation(page, questionsToAugment, usersQuestionAttempts);
-        QuestionManager.augmentRelatedQuestionsWithAttemptInformation(page, usersQuestionAttempts);
 
         shuffleChoiceQuestionsChoices(userId, questionsToAugment);
 
         return page;
     }
+
+
 
     /**
      * Modify a question objects in a page such that it contains bestAttempt information if we can provide it.
@@ -229,7 +230,7 @@ public class QuestionManager {
      *            - as a map of QuestionPageId to Map of QuestionId to QuestionValidationResponseDO
      * @return augmented page - the return result is by convenience as the page provided as a parameter will be mutated.
      */
-    public SeguePageDTO augmentQuestionObjectWithAttemptInformation(final SeguePageDTO page,
+    private SeguePageDTO augmentQuestionObjectWithAttemptInformation(final SeguePageDTO page,
             final List<QuestionDTO> questionsToAugment,
             final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
 
@@ -269,54 +270,7 @@ public class QuestionManager {
         return page;
     }
 
-    /**
-     * A mathod which audments related questions with attempt information.
-     * i.e. sets whether the related content summary has been completed.
-     * @param content the content to be augmented.
-     * @param usersQuestionAttempts the user's question attempts.
-     */
-    public static void augmentRelatedQuestionsWithAttemptInformation(
-            final ContentDTO content,
-            final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
-        // Check if all question parts have been answered
-        List<ContentSummaryDTO> relatedContentSummaries = content.getRelatedContent();
-        if (relatedContentSummaries != null) {
-            for (ContentSummaryDTO relatedContentSummary : relatedContentSummaries) {
-                String questionId = relatedContentSummary.getId();
-                Map<String, List<QuestionValidationResponse>> questionAttempts = usersQuestionAttempts.get(questionId);
-                boolean questionAnsweredCorrectly = false;
-                if (questionAttempts != null) {
-                    for (String relatedQuestionPartId : relatedContentSummary.getQuestionPartIds()) {
-                        questionAnsweredCorrectly = false;
-                        List<QuestionValidationResponse> questionPartAttempts =
-                                questionAttempts.get(relatedQuestionPartId);
-                        if (questionPartAttempts != null) {
-                            for (QuestionValidationResponse partAttempt : questionPartAttempts) {
-                                questionAnsweredCorrectly = partAttempt.isCorrect();
-                                if (questionAnsweredCorrectly) {
-                                    break; // exit on first correct attempt
-                                }
-                            }
-                        }
-                        if (!questionAnsweredCorrectly) {
-                            break; // exit on first false question part
-                        }
-                    }
-                }
-                relatedContentSummary.setCorrect(questionAnsweredCorrectly);
-            }
-        }
-        // for all children recurse
-        List<ContentBaseDTO> children = content.getChildren();
-        if (children != null) {
-            for (ContentBaseDTO child : children) {
-                if (child instanceof ContentDTO) {
-                    ContentDTO childContent = (ContentDTO) child;
-                    QuestionManager.augmentRelatedQuestionsWithAttemptInformation(childContent, usersQuestionAttempts);
-                }
-            }
-        }
-    }
+
 
     /**
      * Converts a QuestionValidationResponse into a QuestionValidationResponseDTO.

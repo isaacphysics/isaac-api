@@ -28,7 +28,6 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionSummaryPage;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacTopicSummaryPage;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
@@ -45,6 +44,7 @@ import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
@@ -53,6 +53,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
+import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -116,6 +117,8 @@ public class PagesFacade extends AbstractIsaacFacade {
      *            - So we can look up attempt information.
      * @param gameManager
      *            - For looking up gameboard information.
+     * @param contentIndex
+     *            - Index for the content to serve
      */
     @Inject
     public PagesFacade(final SegueContentFacade api, final PropertiesLoader propertiesLoader,
@@ -424,7 +427,7 @@ public class PagesFacade extends AbstractIsaacFacade {
             return cachedResponse;
         }
 
-        Response response = this.findSingleResult(fieldsToMatch);
+        Response response = this.findSingleResult(fieldsToMatch, userQuestionAttempts);
 
         if (response.getEntity() != null && response.getEntity() instanceof IsaacQuestionPageDTO) {
             SeguePageDTO content = (SeguePageDTO) response.getEntity();
@@ -574,13 +577,23 @@ public class PagesFacade extends AbstractIsaacFacade {
         if (null != summaryPageId) {
             fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singletonList(summaryPageId));
         }
-        Response result = this.findSingleResult(fieldsToMatch);
+
+        AbstractSegueUserDTO user = userManager.getCurrentUser(httpServletRequest);
+        Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts;
+        try {
+            userQuestionAttempts = questionManager.getQuestionAttemptsByUser(user);
+        } catch (SegueDatabaseException e) {
+            String message = "SegueDatabaseException whilst trying to retrieve user question attempt data";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        }
+
+        Response result = this.findSingleResult(fieldsToMatch, userQuestionAttempts);
 
         // If we have a topic summary, log the request:
         Object resultEntity = result.getEntity();
         if (resultEntity instanceof IsaacTopicSummaryPageDTO) {
             IsaacTopicSummaryPageDTO topicSummaryPageDTO = (IsaacTopicSummaryPageDTO) resultEntity;
-            AbstractSegueUserDTO user = userManager.getCurrentUser(httpServletRequest);
 
             // Log the request:
             ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
@@ -588,16 +601,6 @@ public class PagesFacade extends AbstractIsaacFacade {
                     .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
             getLogManager().logEvent(user, httpServletRequest, IsaacLogType.VIEW_TOPIC_SUMMARY_PAGE, logEntry);
 
-            // Augment relatedContent with question attempts:
-            Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts;
-            try {
-                userQuestionAttempts = questionManager.getQuestionAttemptsByUser(user);
-            } catch (SegueDatabaseException e) {
-                String message = "SegueDatabaseException whilst trying to retrieve user question data";
-                log.error(message, e);
-                return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
-            }
-            QuestionManager.augmentRelatedQuestionsWithAttemptInformation(topicSummaryPageDTO, userQuestionAttempts);
         }
 
         return Response.status(result.getStatus()).entity(resultEntity)
@@ -750,15 +753,76 @@ public class PagesFacade extends AbstractIsaacFacade {
      *            - version of the content to use for augmentation.
      * @param contentToAugment
      *            - the content to augment.
+     * @param usersQuestionAttempts
+     *            - nullable question attempt information to support augmentation of content.
      * @return content which has been augmented
      * @throws ContentManagerException
      *             - an exception when the content is not found
      */
-    private ContentDTO augmentContentWithRelatedContent(final String version, final ContentDTO contentToAugment)
+    private ContentDTO augmentContentWithRelatedContent(final String version, final ContentDTO contentToAugment,
+                                                        @Nullable final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts)
             throws ContentManagerException {
-        return this.contentManager.populateRelatedContent(version, contentToAugment);
+
+        ContentDTO augmentedDTO = this.contentManager.populateRelatedContent(version, contentToAugment);
+
+        if (usersQuestionAttempts != null) {
+            this.augmentRelatedQuestionsWithAttemptInformation(augmentedDTO, usersQuestionAttempts);
+        }
+
+        return augmentedDTO;
     }
-    
+
+    /**
+     * A method which augments related questions with attempt information.
+     *
+     * i.e. sets whether the related content summary has been completed.
+     *
+     * @param content the content to be augmented.
+     * @param usersQuestionAttempts the user's question attempts.
+     */
+    private void augmentRelatedQuestionsWithAttemptInformation(
+            final ContentDTO content,
+            final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
+        // Check if all question parts have been answered
+        List<ContentSummaryDTO> relatedContentSummaries = content.getRelatedContent();
+        if (relatedContentSummaries != null) {
+            for (ContentSummaryDTO relatedContentSummary : relatedContentSummaries) {
+                String questionId = relatedContentSummary.getId();
+                Map<String, List<QuestionValidationResponse>> questionAttempts = usersQuestionAttempts.get(questionId);
+                boolean questionAnsweredCorrectly = false;
+                if (questionAttempts != null) {
+                    for (String relatedQuestionPartId : relatedContentSummary.getQuestionPartIds()) {
+                        questionAnsweredCorrectly = false;
+                        List<QuestionValidationResponse> questionPartAttempts =
+                                questionAttempts.get(relatedQuestionPartId);
+                        if (questionPartAttempts != null) {
+                            for (QuestionValidationResponse partAttempt : questionPartAttempts) {
+                                questionAnsweredCorrectly = partAttempt.isCorrect();
+                                if (questionAnsweredCorrectly) {
+                                    break; // exit on first correct attempt
+                                }
+                            }
+                        }
+                        if (!questionAnsweredCorrectly) {
+                            break; // exit on first false question part
+                        }
+                    }
+                }
+                relatedContentSummary.setCorrect(questionAnsweredCorrectly);
+            }
+        }
+        // for all children recurse
+        List<ContentBaseDTO> children = content.getChildren();
+        if (children != null) {
+            for (ContentBaseDTO child : children) {
+                if (child instanceof ContentDTO) {
+                    ContentDTO childContent = (ContentDTO) child;
+                    augmentRelatedQuestionsWithAttemptInformation(childContent, usersQuestionAttempts);
+                }
+            }
+        }
+    }
+
     /**
      * This method will extract basic information from a content object so the lighter ContentInfo object can be sent to
      * the client instead.
@@ -803,15 +867,26 @@ public class PagesFacade extends AbstractIsaacFacade {
     }
 
     /**
+     * As per the {@link #findSingleResult(Map, Map) findSingleResult} method.
+     */
+    private Response findSingleResult(final Map<String, List<String>> fieldsToMatch) {
+        return this.findSingleResult(fieldsToMatch, null);
+    }
+
+    /**
      * For use when we expect to only find a single result.
      * 
      * By default related content ContentSummary objects will be fully augmented.
      * 
      * @param fieldsToMatch
      *            - expects a map of the form fieldname -> list of queries to match
+     * @param usersQuestionAttempts
+     *            - optional question attempt information to support augmentation of content.
+     *
      * @return A Response containing a single conceptPage or containing a SegueErrorResponse.
      */
-    private Response findSingleResult(final Map<String, List<String>> fieldsToMatch) {
+    private Response findSingleResult(final Map<String, List<String>> fieldsToMatch,
+                                      @Nullable final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
         try {
             ResultsWrapper<ContentDTO> resultList = api.findMatchingContent(this.contentIndex,
                     SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch), null, null); // includes
@@ -829,7 +904,7 @@ public class PagesFacade extends AbstractIsaacFacade {
                 c = resultList.getResults().get(0);
             }
 
-            return Response.ok(this.augmentContentWithRelatedContent(this.contentIndex, c)).build();
+            return Response.ok(this.augmentContentWithRelatedContent(this.contentIndex, c, usersQuestionAttempts)).build();
         } catch (ContentManagerException e1) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content requested",
                     e1);
