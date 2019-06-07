@@ -193,6 +193,8 @@ public class QuestionManager {
      * This method will ensure any user question attempt information available is used to augment this question object.
      * 
      * It will also ensure that any personalisation of questions is affected (e.g. randomised multichoice elements).
+     *
+     * Note: It will not do anything to related content
      * 
      * @param page
      *            - to augment - this object may be mutated as a result of this method. i.e BestAttempt field set on
@@ -215,8 +217,6 @@ public class QuestionManager {
 
         return page;
     }
-
-
 
     /**
      * Modify a question objects in a page such that it contains bestAttempt information if we can provide it.
