@@ -36,6 +36,7 @@ import org.jboss.resteasy.annotations.GZIP;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
 import uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -126,6 +127,7 @@ public class AdminFacade extends AbstractSegueFacade {
     private final SchoolListReader schoolReader;
 
     private final AbstractUserPreferenceManager userPreferenceManager;
+    private final EventBookingManager eventBookingManager;
 
     /**
      * Create an instance of the administrators facade.
@@ -144,12 +146,15 @@ public class AdminFacade extends AbstractSegueFacade {
      *            - for geocoding if we need it.
      * @param schoolReader
      *            - for looking up school information
+     * @param eventBookingManager
+     *            - for using the event booking system
      */
     @Inject
     public AdminFacade(final PropertiesLoader properties, final UserAccountManager userManager,
                        final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final ILogManager logManager,
                        final StatisticsManager statsManager, final LocationManager locationManager,
-                       final SchoolListReader schoolReader, final AbstractUserPreferenceManager userPreferenceManager) {
+                       final SchoolListReader schoolReader, final AbstractUserPreferenceManager userPreferenceManager,
+                       final EventBookingManager eventBookingManager) {
         super(properties, logManager);
         this.userManager = userManager;
         this.contentManager = contentManager;
@@ -158,6 +163,7 @@ public class AdminFacade extends AbstractSegueFacade {
         this.locationManager = locationManager;
         this.schoolReader = schoolReader;
         this.userPreferenceManager = userPreferenceManager;
+        this.eventBookingManager = eventBookingManager;
     }
 
     /**
@@ -935,7 +941,7 @@ public class AdminFacade extends AbstractSegueFacade {
             RegisteredUserDTO userToDelete = this.userManager.getUserDTOById(userId);
             
             this.userManager.deleteUserAccount(userToDelete);
-            
+            this.eventBookingManager.deleteUsersAdditionalInformationBooking(userToDelete);
             getLogManager().logEvent(currentlyLoggedInUser, httpServletRequest, SegueLogType.DELETE_USER_ACCOUNT,
                     ImmutableMap.of(USER_ID_FKEY_FIELDNAME, userToDelete.getId()));
             

@@ -210,6 +210,16 @@ public class EventBookingPersistenceManager {
     }
 
     /**
+     * @param userId
+     *            - user id
+     * @throws SegueDatabaseException
+     *             - if an error occurs.
+     */
+    public void deleteAdditionalInformation(final Long userId) throws SegueDatabaseException {
+        dao.deleteAdditionalInformation(userId);
+    }
+
+    /**
      * Acquire a globally unique database lock.
      *
      * This lock must be released manually.

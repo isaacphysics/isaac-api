@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2015 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -57,6 +57,8 @@ public class PgEventBookings implements EventBookings {
      * 
      * @param ds
      *            connection to the database.
+     * @param mapper
+     *            object mapper
      */
     public PgEventBookings(final PostgresSqlDb ds, final ObjectMapper mapper) {
         this.ds = ds;
@@ -161,6 +163,22 @@ public class PgEventBookings implements EventBookings {
 
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception while trying to delete event booking", e);
+        }
+    }
+
+    @Override
+    public void deleteAdditionalInformation(Long userId) throws SegueDatabaseException {
+        PreparedStatement pst;
+        try (Connection conn = ds.getDatabaseConnection()) {
+            pst = conn.prepareStatement("UPDATE event_bookings " +
+                    "SET additional_booking_information = null " +
+                    "WHERE user_id = ?;");
+
+            pst.setLong(1, userId);
+            pst.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception while trying to expunge additional event information", e);
         }
     }
 

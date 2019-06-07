@@ -742,6 +742,16 @@ public class EventBookingManager {
     }
 
     /**
+     * Expunge additional information fields for all of a given user's bookings i.e. to remove PII.
+     *
+     * @param user  - user to unbook
+     * @throws SegueDatabaseException - if an error occurs.
+     */
+    public void deleteUsersAdditionalInformationBooking(final RegisteredUserDTO user) throws SegueDatabaseException {
+        this.bookingPersistenceManager.deleteAdditionalInformation(user.getId());
+    }
+
+    /**
      * This method will attempt to resend the last email that a user booked on an event should have received.
      * E.g. if their status is confirmed it would be a welcome email, if cancelled it would be a cancellation one.
      *
