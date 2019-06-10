@@ -142,4 +142,11 @@ public interface EventBookings {
      *             - if an error occurs.
      */
     EventBooking findBookingByEventAndUser(String eventId, Long userId) throws SegueDatabaseException;
+
+    /**
+     * Expunge the additional information field for all bookings for a given user id.
+     *
+     * @param userId - user id
+     */
+    void deleteAdditionalInformation(Long userId) throws SegueDatabaseException;
 }
