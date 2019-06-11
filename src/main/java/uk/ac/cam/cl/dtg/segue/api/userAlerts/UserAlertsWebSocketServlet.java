@@ -29,6 +29,7 @@ import static uk.ac.cam.cl.dtg.util.RequestIPExtractor.getClientIpAddr;
 public class UserAlertsWebSocketServlet extends WebSocketServlet {
 
     private static final Logger log = LoggerFactory.getLogger(UserAlertsWebSocketServlet.class);
+    private static final int BAD_REQUEST = 400;
     private static final int FORBIDDEN = 403;
     private static Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
     private final String hostName = injector.getInstance(PropertiesLoader.class).getProperty(HOST_NAME);
@@ -53,7 +54,7 @@ public class UserAlertsWebSocketServlet extends WebSocketServlet {
                     + " 'Sec-WebSocket-Extensions: %s', 'Sec-WebSocket-Version: %s', 'User-Agent: %s'",
                     getClientIpAddr(request), request.getHeader("Sec-WebSocket-Extensions"),
                     request.getHeader("Sec-WebSocket-Version"), request.getHeader("User-Agent")));
-            response.setStatus(400);
+            response.setStatus(BAD_REQUEST);
             return;
         }
 
