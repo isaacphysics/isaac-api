@@ -15,7 +15,7 @@
 		<jackson.version>2.9.9</jackson.version>
 		<powermock.version>1.6.3</powermock.version>
 		<swagger-ui-version>3.19.5</swagger-ui-version>
-		<jetty-maven-version>9.4.18.v20190429</jetty-maven-version>
+		<jetty-maven-version>9.3.27.v20190418</jetty-maven-version>
 		<jetty.port.api>8080</jetty.port.api>
 		<jetty.port.etl>8090</jetty.port.etl>
 		<config.location>/local/data/conf/segue-config.properties</config.location>
