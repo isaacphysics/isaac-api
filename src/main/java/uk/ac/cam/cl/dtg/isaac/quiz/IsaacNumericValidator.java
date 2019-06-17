@@ -27,6 +27,8 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -314,12 +316,11 @@ public class IsaacNumericValidator implements IValidator {
         String untrustedParsedValue = untrustedValue.replace("−", "-");
         untrustedParsedValue = untrustedParsedValue.replaceFirst(NUMERIC_QUESTION_PARSE_REGEX, "e${exp1}${exp2}");
 
-        trustedDouble = Double.parseDouble(trustedValue.replaceFirst(NUMERIC_QUESTION_PARSE_REGEX, "e${exp1}${exp2}"));
-        untrustedDouble = Double.parseDouble(untrustedParsedValue);
+        String trustedParsedValue = trustedValue.replaceFirst(NUMERIC_QUESTION_PARSE_REGEX, "e${exp1}${exp2}");
 
         // Round to N s.f. for trusted value
-        trustedDouble = roundToSigFigs(trustedDouble, significantFiguresRequired);
-        untrustedDouble = roundToSigFigs(untrustedDouble, significantFiguresRequired);
+        trustedDouble = roundStringValueToSigFigs(trustedParsedValue, significantFiguresRequired);
+        untrustedDouble = roundStringValueToSigFigs(untrustedParsedValue, significantFiguresRequired);
         final double epsilon = 1e-50;
 
         return Math.abs(trustedDouble - untrustedDouble) < max(epsilon * max(trustedDouble, untrustedDouble), epsilon);
@@ -328,22 +329,22 @@ public class IsaacNumericValidator implements IValidator {
     /**
      * Round a double to a given number of significant figures.
      * 
-     * @param f
+     * @param value
      *            - number to round
      * @param sigFigs
      *            - number of significant figures required
      * @return the rounded number.
      */
-    private double roundToSigFigs(final double f, final int sigFigs) {
-        log.debug("\t[roundToSigFigs]");
+    private double roundStringValueToSigFigs(final String value, final int sigFigs) {
+        log.debug("\t[roundStringValueToSigFigs]");
 
-        int mag = (int) Math.floor(Math.log10(Math.abs(f)));
+        // To prevent floating point arithmetic errors when rounding the value, use a BigDecimal and pass the string
+        // value of the number:
+        BigDecimal bigDecimalValue = new BigDecimal(value);
+        BigDecimal rounded = bigDecimalValue.round(new MathContext(sigFigs, RoundingMode.HALF_UP));
 
-        double normalised = Math.abs(f / Math.pow(10, mag));
+        return rounded.doubleValue();
 
-        // Round without the sign, in order to efficiently achieve "round half away from zero" when Java's Math.round()
-        // defaults to "round half towards positive infinity", then add the sign back when finished.
-        return Math.signum(f) * Math.round(normalised * Math.pow(10, sigFigs - 1)) * Math.pow(10, mag) / Math.pow(10, sigFigs - 1);
     }
 
     /**
