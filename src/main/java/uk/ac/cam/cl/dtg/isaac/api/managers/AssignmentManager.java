@@ -416,7 +416,6 @@ public class AssignmentManager implements IGroupObserver {
         final DateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yyyy");
         StringBuilder htmlSB = new StringBuilder();
         StringBuilder plainTextSB = new StringBuilder();
-        final String accountURL = String.format("https://%s/account", properties.getProperty(HOST_NAME));
 
         if (existingAssignments != null && existingAssignments.size() > 0) {
             htmlSB.append("Your teacher has assigned the following assignments:<br>");
@@ -451,7 +450,6 @@ public class AssignmentManager implements IGroupObserver {
 
         return new ImmutableMap.Builder<String, Object>()
                 .put("teacherName", groupOwnerName == null ? "" : groupOwnerName)
-                .put("accountURL", accountURL)
                 .put("assignmentsInfo", plainTextSB.toString())
                 .put("assignmentsInfo_HTML", htmlSB.toString()).build();
     }
