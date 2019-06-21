@@ -228,43 +228,51 @@ public class PagesFacade extends AbstractIsaacFacade {
     @ApiOperation(value = "Get a concept page object by ID.")
     public final Response getConcept(@Context final Request request, @Context final HttpServletRequest servletRequest,
             @PathParam("concept_page_id") final String conceptId) {
-        if (null == conceptId || conceptId.isEmpty()) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid concept id.").toResponse();
+
+        try {
+            if (null == conceptId || conceptId.isEmpty()) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid concept id.").toResponse();
+            }
+
+            // Calculate the ETag on current live version of the content
+            // NOTE: Assumes that the latest version of the content is being used.
+            EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + "byId".hashCode()
+                    + conceptId.hashCode() + "");
+            Response cachedResponse = generateCachedResponse(request, etag);
+            if (cachedResponse != null) {
+                return cachedResponse;
+            }
+
+            Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
+            fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(CONCEPT_TYPE));
+
+            // options
+            if (null != conceptId) {
+                fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(conceptId));
+            }
+
+            Response result = this.findSingleResult(fieldsToMatch);
+
+            if (result.getEntity() instanceof SeguePageDTO) {
+                ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
+                        .put(CONCEPT_ID_LOG_FIELDNAME, conceptId).put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA())
+                        .build();
+
+                // the request log
+                getLogManager().logEvent(userManager.getCurrentUser(servletRequest), servletRequest,
+                        IsaacLogType.VIEW_CONCEPT, logEntry);
+            }
+
+            Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())
+                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
+
+            return cachableResult;
+        } catch (SegueDatabaseException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Database error while looking up user information.", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
         }
-
-        // Calculate the ETag on current live version of the content
-        // NOTE: Assumes that the latest version of the content is being used.
-        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + "byId".hashCode()
-                + conceptId.hashCode() + "");
-        Response cachedResponse = generateCachedResponse(request, etag);
-        if (cachedResponse != null) {
-            return cachedResponse;
-        }
-
-        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-        fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(CONCEPT_TYPE));
-
-        // options
-        if (null != conceptId) {
-            fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(conceptId));
-        }
-
-        Response result = this.findSingleResult(fieldsToMatch);
-
-        if (result.getEntity() instanceof SeguePageDTO) {
-            ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
-                    .put(CONCEPT_ID_LOG_FIELDNAME, conceptId).put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA())
-                    .build();
-
-            // the request log
-            getLogManager().logEvent(userManager.getCurrentUser(servletRequest), servletRequest,
-                    IsaacLogType.VIEW_CONCEPT, logEntry);
-        }
-
-        Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())
-                .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
-
-        return cachableResult;
     }
 
     /**
@@ -309,7 +317,6 @@ public class PagesFacade extends AbstractIsaacFacade {
             fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(QUESTION_TYPE));
             etagCodeBuilder.append(QUESTION_TYPE);
         }
-
 
         // defaults
         int newLimit = DEFAULT_RESULTS_LIMIT;
@@ -401,62 +408,61 @@ public class PagesFacade extends AbstractIsaacFacade {
             @Context final HttpServletRequest httpServletRequest, 
             @PathParam("question_page_id") final String questionId) {
         Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-
         fieldsToMatch.put("type", Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
 
         // options
         if (null != questionId) {
             fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(questionId));
         }
-        AbstractSegueUserDTO user = userManager.getCurrentUser(httpServletRequest);
-        Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts;
 
         try {
+            AbstractSegueUserDTO user = userManager.getCurrentUser(httpServletRequest);
+            Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts;
             userQuestionAttempts = questionManager.getQuestionAttemptsByUser(user);
-        } catch (SegueDatabaseException e) {
-            String message = "SegueDatabaseException whilst trying to retrieve user question data";
-            log.error(message, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
-        }
 
-        // Calculate the ETag
-        EntityTag etag = new EntityTag(questionId.hashCode() + userQuestionAttempts.toString().hashCode() + "");
+            // Calculate the ETag
+            EntityTag etag = new EntityTag(questionId.hashCode() + userQuestionAttempts.toString().hashCode() + "");
 
-        Response cachedResponse = generateCachedResponse(request, etag, NEVER_CACHE_WITHOUT_ETAG_CHECK);
-        if (cachedResponse != null) {
-            return cachedResponse;
-        }
-
-        Response response = this.findSingleResult(fieldsToMatch, userQuestionAttempts);
-
-        if (response.getEntity() != null && response.getEntity() instanceof IsaacQuestionPageDTO) {
-            SeguePageDTO content = (SeguePageDTO) response.getEntity();
-
-            Map<String, String> logEntry = ImmutableMap.of(QUESTION_ID_LOG_FIELDNAME, content.getId(),
-                    CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA());
-
-            String userIdForRandomisation;
-            if (user instanceof AnonymousUserDTO) {
-                userIdForRandomisation = ((AnonymousUserDTO) user).getSessionId();
-            } else {
-                userIdForRandomisation = ((RegisteredUserDTO) user).getId().toString();
+            Response cachedResponse = generateCachedResponse(request, etag, NEVER_CACHE_WITHOUT_ETAG_CHECK);
+            if (cachedResponse != null) {
+                return cachedResponse;
             }
 
-            content = this.questionManager.augmentQuestionObjects(content, userIdForRandomisation,
-                    userQuestionAttempts);
+            Response response = this.findSingleResult(fieldsToMatch, userQuestionAttempts);
 
-            // the request log
-            getLogManager().logEvent(user, httpServletRequest, IsaacLogType.VIEW_QUESTION, logEntry);
+            if (response.getEntity() != null && response.getEntity() instanceof IsaacQuestionPageDTO) {
+                SeguePageDTO content = (SeguePageDTO) response.getEntity();
 
-            // return augmented content.
-            return Response.ok(content)
-                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
-                    .tag(etag)
-                    .build();
-        } else {
-            String error = "Unable to locate a question with the id specified: " + questionId;
-            log.warn(error);
-            return SegueErrorResponse.getResourceNotFoundResponse(error);
+                Map<String, String> logEntry = ImmutableMap.of(QUESTION_ID_LOG_FIELDNAME, content.getId(),
+                        CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA());
+
+                String userIdForRandomisation;
+                if (user instanceof AnonymousUserDTO) {
+                    userIdForRandomisation = ((AnonymousUserDTO) user).getSessionId();
+                } else {
+                    userIdForRandomisation = ((RegisteredUserDTO) user).getId().toString();
+                }
+
+                content = this.questionManager.augmentQuestionObjects(content, userIdForRandomisation,
+                        userQuestionAttempts);
+
+                // the request log
+                getLogManager().logEvent(user, httpServletRequest, IsaacLogType.VIEW_QUESTION, logEntry);
+
+                // return augmented content.
+                return Response.ok(content)
+                        .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
+                        .tag(etag)
+                        .build();
+            } else {
+                String error = "Unable to locate a question with the id specified: " + questionId;
+                log.warn(error);
+                return SegueErrorResponse.getResourceNotFoundResponse(error);
+            }
+        } catch (SegueDatabaseException e) {
+            String message = "SegueDatabaseException whilst trying to retrieve user data";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         }
     }
 
@@ -560,51 +566,58 @@ public class PagesFacade extends AbstractIsaacFacade {
     @ApiOperation(value = "Get a topic summary with a list of related material.")
     public final Response getTopicSummaryPage(@Context final Request request,
                                                  @Context final HttpServletRequest httpServletRequest, @PathParam("topic_id") final String topicId) {
-        // Calculate the ETag on current live version of the content
-        // NOTE: Assumes that the latest version of the content is being used.
-        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + topicId.hashCode() + "");
-        Response cachedResponse = generateCachedResponse(request, etag);
-        if (cachedResponse != null) {
-            return cachedResponse;
-        }
-
-        // Topic summary pages have the ID convention "topic_summary_[tag_name]"
-        String summaryPageId = String.format("topic_summary_%s", topicId);
-
-        // Load the summary page:
-        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-        fieldsToMatch.put(TYPE_FIELDNAME, Collections.singletonList(TOPIC_SUMMARY_PAGE_TYPE));
-        if (null != summaryPageId) {
-            fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singletonList(summaryPageId));
-        }
-
-        AbstractSegueUserDTO user = userManager.getCurrentUser(httpServletRequest);
-        Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts;
         try {
-            userQuestionAttempts = questionManager.getQuestionAttemptsByUser(user);
+            // Calculate the ETag on current live version of the content
+            // NOTE: Assumes that the latest version of the content is being used.
+            EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + topicId.hashCode() + "");
+            Response cachedResponse = generateCachedResponse(request, etag);
+            if (cachedResponse != null) {
+                return cachedResponse;
+            }
+
+            // Topic summary pages have the ID convention "topic_summary_[tag_name]"
+            String summaryPageId = String.format("topic_summary_%s", topicId);
+
+            // Load the summary page:
+            Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
+            fieldsToMatch.put(TYPE_FIELDNAME, Collections.singletonList(TOPIC_SUMMARY_PAGE_TYPE));
+            if (null != summaryPageId) {
+                fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singletonList(summaryPageId));
+            }
+
+            AbstractSegueUserDTO user = userManager.getCurrentUser(httpServletRequest);
+            Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts;
+            try {
+                userQuestionAttempts = questionManager.getQuestionAttemptsByUser(user);
+            } catch (SegueDatabaseException e) {
+                String message = "SegueDatabaseException whilst trying to retrieve user question attempt data";
+                log.error(message, e);
+                return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+            }
+
+            Response result = this.findSingleResult(fieldsToMatch, userQuestionAttempts);
+
+            // If we have a topic summary, log the request:
+            Object resultEntity = result.getEntity();
+            if (resultEntity instanceof IsaacTopicSummaryPageDTO) {
+                IsaacTopicSummaryPageDTO topicSummaryPageDTO = (IsaacTopicSummaryPageDTO) resultEntity;
+
+                // Log the request:
+                ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
+                        .put(PAGE_ID_LOG_FIELDNAME, summaryPageId)
+                        .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
+                getLogManager().logEvent(user, httpServletRequest, IsaacLogType.VIEW_TOPIC_SUMMARY_PAGE, logEntry);
+
+            }
+
+            return Response.status(result.getStatus()).entity(resultEntity)
+                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
         } catch (SegueDatabaseException e) {
-            String message = "SegueDatabaseException whilst trying to retrieve user question attempt data";
-            log.error(message, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Database error while looking up user information.", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
         }
-
-        Response result = this.findSingleResult(fieldsToMatch, userQuestionAttempts);
-
-        // If we have a topic summary, log the request:
-        Object resultEntity = result.getEntity();
-        if (resultEntity instanceof IsaacTopicSummaryPageDTO) {
-            IsaacTopicSummaryPageDTO topicSummaryPageDTO = (IsaacTopicSummaryPageDTO) resultEntity;
-
-            // Log the request:
-            ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
-                    .put(PAGE_ID_LOG_FIELDNAME, summaryPageId)
-                    .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
-            getLogManager().logEvent(user, httpServletRequest, IsaacLogType.VIEW_TOPIC_SUMMARY_PAGE, logEntry);
-
-        }
-
-        return Response.status(result.getStatus()).entity(resultEntity)
-                .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
     }
     
     /**
@@ -625,40 +638,47 @@ public class PagesFacade extends AbstractIsaacFacade {
     @ApiOperation(value = "Get a content page object by ID.")
     public final Response getPage(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
             @PathParam("page") final String pageId) {
-        // Calculate the ETag on current live version of the content
-        // NOTE: Assumes that the latest version of the content is being used.
-        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + pageId.hashCode() + "");
+        try {
+            // Calculate the ETag on current live version of the content
+            // NOTE: Assumes that the latest version of the content is being used.
+            EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + pageId.hashCode() + "");
 
-        Response cachedResponse = generateCachedResponse(request, etag);
-        if (cachedResponse != null) {
-            return cachedResponse;
+            Response cachedResponse = generateCachedResponse(request, etag);
+            if (cachedResponse != null) {
+                return cachedResponse;
+            }
+
+            Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
+            fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(PAGE_TYPE, QUESTIONS_PAGE_TYPE));
+
+            // options
+            if (null != pageId) {
+                fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(pageId));
+            }
+
+            Response result = this.findSingleResult(fieldsToMatch);
+
+            if (result.getEntity() instanceof SeguePageDTO) {
+
+
+                ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
+                        .put(PAGE_ID_LOG_FIELDNAME, pageId)
+                        .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
+
+                // the request log
+                getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
+                        IsaacLogType.VIEW_PAGE, logEntry);
+            }
+
+            Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())
+                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
+            return cachableResult;
+        } catch (SegueDatabaseException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Database error while looking up user information.", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
         }
-
-        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-        fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(PAGE_TYPE, QUESTIONS_PAGE_TYPE));
-
-        // options
-        if (null != pageId) {
-            fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(pageId));
-        }
-
-        Response result = this.findSingleResult(fieldsToMatch);
-
-        if (result.getEntity() instanceof SeguePageDTO) {
-
-
-            ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
-                    .put(PAGE_ID_LOG_FIELDNAME, pageId)
-                    .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
-
-            // the request log
-            getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
-                    IsaacLogType.VIEW_PAGE, logEntry);
-        }
-
-        Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())
-                .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
-        return cachableResult;
     }
 
     /**
@@ -679,29 +699,35 @@ public class PagesFacade extends AbstractIsaacFacade {
     @ApiOperation(value = "Get a content page fragment by ID.")
     public final Response getPageFragment(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
             @PathParam("fragment_id") final String fragmentId) {
+        try {
+            // Calculate the ETag on current live version of the content
+            // NOTE: Assumes that the latest version of the content is being used.
+            EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + fragmentId.hashCode() + "");
+            Response cachedResponse = generateCachedResponse(request, etag);
+            if (cachedResponse != null) {
+                return cachedResponse;
+            }
 
-        // Calculate the ETag on current live version of the content
-        // NOTE: Assumes that the latest version of the content is being used.
-        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + fragmentId.hashCode() + "");
-        Response cachedResponse = generateCachedResponse(request, etag);
-        if (cachedResponse != null) {
-            return cachedResponse;
+            Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
+            fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(PAGE_FRAGMENT_TYPE));
+            fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(fragmentId));
+
+            Response result = this.findSingleResult(fieldsToMatch);
+
+            getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
+                    IsaacLogType.VIEW_PAGE_FRAGMENT, ImmutableMap.of(
+                            FRAGMENT_ID_LOG_FIELDNAME, fragmentId,
+                            CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()
+                    ));
+
+            return Response.status(result.getStatus()).entity(result.getEntity())
+                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
+        } catch (SegueDatabaseException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Database error while looking up user information.", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
         }
-
-        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-        fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(PAGE_FRAGMENT_TYPE));
-        fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(fragmentId));
-
-        Response result = this.findSingleResult(fieldsToMatch);
-
-        getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
-                IsaacLogType.VIEW_PAGE_FRAGMENT, ImmutableMap.of(
-                        FRAGMENT_ID_LOG_FIELDNAME, fragmentId,
-                        CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()
-                ));
-
-        return Response.status(result.getStatus()).entity(result.getEntity())
-                .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
     }
 
     /**

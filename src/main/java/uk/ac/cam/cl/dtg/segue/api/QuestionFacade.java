@@ -146,14 +146,21 @@ public class QuestionFacade extends AbstractSegueFacade {
     public Response getQuestionAnswer(@Context final HttpServletRequest request, @PathParam("question_id") final String questionId) {
         String errorMessage = String.format("We do not provide answers to questions. See https://%s/solving_problems for more help!",
                                             getProperties().getProperty(HOST_NAME));
-        AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(request);
-        if (currentUser instanceof RegisteredUserDTO) {
-            log.warn(String.format("MethodNotAllowed: User (%s) attempted to GET the answer to the question '%s'!",
-                                    ((RegisteredUserDTO) currentUser).getId(), questionId));
-        } else {
-            log.warn(String.format("MethodNotAllowed: Anonymous user attempted to GET the answer to the question '%s'!", questionId));
+        try {
+            AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(request);
+            if (currentUser instanceof RegisteredUserDTO) {
+                log.warn(String.format("MethodNotAllowed: User (%s) attempted to GET the answer to the question '%s'!",
+                        ((RegisteredUserDTO) currentUser).getId(), questionId));
+            } else {
+                log.warn(String.format("MethodNotAllowed: Anonymous user attempted to GET the answer to the question '%s'!", questionId));
+            }
+            return new SegueErrorResponse(Status.METHOD_NOT_ALLOWED, errorMessage).toResponse();
+        } catch (SegueDatabaseException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Database error while looking up user information.", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
         }
-        return new SegueErrorResponse(Status.METHOD_NOT_ALLOWED, errorMessage).toResponse();
     }
 
     /**
@@ -240,8 +247,6 @@ public class QuestionFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST, "No answer received.").toResponse();
         }
 
-        AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(request);
-
         Content contentBasedOnId;
         try {
             contentBasedOnId = this.contentManager.getContentDOById(
@@ -288,6 +293,7 @@ public class QuestionFacade extends AbstractSegueFacade {
         // validate the answer.
         Response response;
         try {
+            AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(request);
             response = this.questionManager.validateAnswer(question, Lists.newArrayList(answersFromClient));
 
             // After validating the answer, work out whether this is abuse of the endpoint. If so, record the attempt in

@@ -223,15 +223,21 @@ public class IsaacController extends AbstractIsaacFacade {
                 .put(TYPE_FIELDNAME, types)
                 .put("searchString", searchString)
                 .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
+        try {
+            getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
+                    IsaacLogType.GLOBAL_SITE_SEARCH, logMap);
+            return Response
+                    .ok(this.extractContentSummaryFromResultsWrapper(searchResults,
+                            this.getProperties().getProperty(PROXY_PATH))).tag(etag)
+                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
+                    .build();
 
-        getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
-                IsaacLogType.GLOBAL_SITE_SEARCH, logMap);
-
-        return Response
-                .ok(this.extractContentSummaryFromResultsWrapper(searchResults,
-                        this.getProperties().getProperty(PROXY_PATH))).tag(etag)
-                .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
-                .build();
+        } catch (SegueDatabaseException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Database error while looking up user information.", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        }
     }
 
     /**

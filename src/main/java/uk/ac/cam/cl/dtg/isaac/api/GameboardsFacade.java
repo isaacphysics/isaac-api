@@ -186,9 +186,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             conceptsList = Arrays.asList(concepts.split(","));
         }
 
-        AbstractSegueUserDTO boardOwner = this.userManager.getCurrentUser(request);
-
         try {
+            AbstractSegueUserDTO boardOwner = this.userManager.getCurrentUser(request);
             GameboardDTO gameboard;
 
             gameboard = gameManager.generateRandomGameboard(title, subjectsList, fieldsList, topicsList, levelsList,
