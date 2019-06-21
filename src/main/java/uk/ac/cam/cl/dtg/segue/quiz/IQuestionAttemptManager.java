@@ -83,7 +83,7 @@ public interface IQuestionAttemptManager {
      *            - some anonymous identifier
      * @return List of questionpage --> question id --> list of QuestionResponses.
      */
-    Map<String, Map<String, List<QuestionValidationResponse>>> getAnonymousQuestionAttempts(String anonymousId);
+    Map<String, Map<String, List<QuestionValidationResponse>>> getAnonymousQuestionAttempts(String anonymousId) throws SegueDatabaseException;
 
     /**
      * Convenience method to merge anonymous user question attempts with registered user records.
