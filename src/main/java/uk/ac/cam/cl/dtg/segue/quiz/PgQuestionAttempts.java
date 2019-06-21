@@ -95,7 +95,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             pst.setString(2, objectMapper.writeValueAsString(userAttempts));
             pst.setString(3, userId);
 
-            log.info(pst.toString());
+            log.debug(pst.toString());
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save question attempt.");
             }
