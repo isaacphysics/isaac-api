@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,11 +20,13 @@ import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
+import org.powermock.reflect.Whitebox;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.dao.IAssignmentPersistenceManager;
@@ -37,6 +39,7 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
@@ -93,4 +96,59 @@ public class AssignmentManagerTest {
 		assertTrue(assignments != null);
 		assertTrue(assignments.size() == 0);
 	}
+
+    /**
+     * Test teacher user name extraction.
+     */
+    @Test
+    public final void testGetTeacherNameFromUser() throws Exception {
+
+        AssignmentManager am = new AssignmentManager(dummyAssignmentPersistenceManager, dummyGroupManager,
+                dummyEmailManager, dummyUserManager, dummyGameManager, null, dummyPropertiesLoader);
+
+        // Check case with both first and last name:
+        RegisteredUserDTO dummyUserFirstLast = new RegisteredUserDTO();
+        dummyUserFirstLast.setGivenName("FirstName");
+        dummyUserFirstLast.setFamilyName("LastName");
+        String shortNameFirstLast = Whitebox.invokeMethod(am, "getTeacherNameFromUser", dummyUserFirstLast);
+        assertEquals("F. LastName", shortNameFirstLast);
+
+        // Check case with no first name:
+        RegisteredUserDTO dummyUserNoFirst = new RegisteredUserDTO();
+        dummyUserNoFirst.setGivenName("");
+        dummyUserNoFirst.setFamilyName("LastName");
+        String shortNameNoFirst = Whitebox.invokeMethod(am, "getTeacherNameFromUser", dummyUserNoFirst);
+        assertEquals("LastName", shortNameNoFirst);
+
+        UserSummaryDTO dummyUserSummary = new UserSummaryDTO();
+        dummyUserSummary.setGivenName("FirstName");
+        dummyUserSummary.setFamilyName("LastName");
+        String shortNameUserSummary = Whitebox.invokeMethod(am, "getTeacherNameFromUser", dummyUserSummary);
+        assertEquals("F. LastName", shortNameUserSummary);
+    }
+
+    /**
+     * Test teacher user name extraction.
+     */
+    @Test
+    public final void testGetFilteredGroupNameFromGroup() throws Exception {
+
+        AssignmentManager am = new AssignmentManager(dummyAssignmentPersistenceManager, dummyGroupManager,
+                dummyEmailManager, dummyUserManager, dummyGameManager, null, dummyPropertiesLoader);
+
+        String groupName = "Group Name";
+
+        // Check case with shared group name:
+        UserGroupDTO dummyGroup = new UserGroupDTO();
+        dummyGroup.setLastUpdated(new Date());
+        dummyGroup.setGroupName(groupName);
+        String filteredGroupName = Whitebox.invokeMethod(am, "getFilteredGroupNameFromGroup", dummyGroup);
+        assertEquals(filteredGroupName, groupName);
+
+        // Check case without shared group name:
+        UserGroupDTO dummyGroupNotSharedName = new UserGroupDTO();
+        dummyGroupNotSharedName.setGroupName(groupName);
+        String filteredGroupNameNotShared = Whitebox.invokeMethod(am, "getFilteredGroupNameFromGroup", dummyGroupNotSharedName);
+        assertFalse("Should not shared group name!", groupName.equals(filteredGroupNameNotShared));
+    }
 }
