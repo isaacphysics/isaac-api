@@ -531,10 +531,8 @@ public class GitContentManager implements IContentManager {
         String contentIndex = globalProperties.getProperty(Constants.CONTENT_INDEX);
         GetResponse versionResponse = contentShaCache.getIfPresent(contentIndex);
         if (null == versionResponse) {
-            versionResponse = searchProvider.getById(
-                    globalProperties.getProperty(Constants.CONTENT_INDEX),
-                    Constants.CONTENT_INDEX_TYPE.METADATA.toString(), "general"
-            );
+            versionResponse =
+                    searchProvider.getById(contentIndex, Constants.CONTENT_INDEX_TYPE.METADATA.toString(), "general");
             contentShaCache.put(contentIndex, versionResponse);
         }
         return (String) versionResponse.getSource().get("version");
