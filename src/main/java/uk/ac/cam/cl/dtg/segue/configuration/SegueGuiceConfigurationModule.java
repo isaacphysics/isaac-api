@@ -68,9 +68,11 @@ import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.IUserBadgePersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.PgUserBadgePersistenceManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.IAnonymousUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IPasswordDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupPersistenceManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.PgAnonymousUsers;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgPasswordDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgUserGroupPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgUsers;
@@ -278,6 +280,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         bind(PostCodeLocationResolver.class).to(PostCodeIOLocationResolver.class);
 
         bind(IUserDataManager.class).to(PgUsers.class);
+
+        bind(IAnonymousUserDataManager.class).to(PgAnonymousUsers.class);
 
         bind(IPasswordDataManager.class).to(PgPasswordDataManager.class);
 
@@ -579,12 +583,13 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Singleton
     private UserAccountManager getUserManager(final IUserDataManager database, final QuestionManager questionManager,
                                               final PropertiesLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
-                                              final EmailManager emailQueue, final ILogManager logManager, final MapperFacade mapperFacade,
+                                              final EmailManager emailQueue, final IAnonymousUserDataManager temporaryUserCache,
+                                              final ILogManager logManager, final MapperFacade mapperFacade,
                                               final UserAuthenticationManager userAuthenticationManager) {
 
         if (null == userManager) {
             userManager = new UserAccountManager(database, questionManager, properties, providersToRegister,
-                    mapperFacade, emailQueue, logManager, userAuthenticationManager);
+                    mapperFacade, emailQueue, temporaryUserCache, logManager, userAuthenticationManager);
             log.info("Creating singleton of UserManager");
         }
 

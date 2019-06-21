@@ -31,6 +31,7 @@ public class AnonymousUser extends AbstractSegueUser {
     private String sessionId;
 
     private Date dateCreated;
+    private Date lastUpdated;
 
     /**
      * Default constructor required for Jackson.
@@ -54,12 +55,13 @@ public class AnonymousUser extends AbstractSegueUser {
      * 
      * @param sessionId
      *            - Our session Unique ID
-     * @param temporaryQuestionAttempts
-     *            - attempts.
+     * @param dateCreated - date the user object was created
+     * @param lastUpdated - last time it was updated.
      */
-    public AnonymousUser(final String sessionId,
-            final Map<String, Map<String, List<QuestionValidationResponse>>> temporaryQuestionAttempts) {
+    public AnonymousUser(final String sessionId, final Date dateCreated, final Date lastUpdated) {
         this.sessionId = sessionId;
+        this.dateCreated = dateCreated;
+        this.lastUpdated = lastUpdated;
     }
 
     /**
@@ -100,11 +102,30 @@ public class AnonymousUser extends AbstractSegueUser {
         this.dateCreated = dateCreated;
     }
 
+
+    /**
+     * get date this object was last updated.
+     *
+     * @return update date
+     */
+    public Date getLastUpdated() {
+        return lastUpdated;
+    }
+
+    /**
+     * set the last update date
+     * @param lastUpdated last update date
+     */
+    public void setLastUpdated(final Date lastUpdated) {
+        this.lastUpdated = lastUpdated;
+    }
+
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
         result = prime * result + ((dateCreated == null) ? 0 : dateCreated.hashCode());
+        result = prime * result + ((lastUpdated == null) ? 0 : lastUpdated.hashCode());
         result = prime * result + ((sessionId == null) ? 0 : sessionId.hashCode());
         return result;
     }
@@ -128,6 +149,13 @@ public class AnonymousUser extends AbstractSegueUser {
         } else if (!dateCreated.equals(other.dateCreated)) {
             return false;
         }
+        if (lastUpdated == null) {
+            if (other.lastUpdated != null) {
+                return false;
+            }
+        } else if (!lastUpdated.equals(other.lastUpdated)) {
+            return false;
+        }
         if (sessionId == null) {
             if (other.sessionId != null) {
                 return false;
@@ -137,5 +165,4 @@ public class AnonymousUser extends AbstractSegueUser {
         }
         return true;
     }
-
 }
