@@ -212,7 +212,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
     /**
      * Rest end point that gets a single concept based on a given id.
-     * 
+     *
      * @param request
      *            - so we can deal with caching and ETags.
      * @param servletRequest
@@ -227,32 +227,30 @@ public class PagesFacade extends AbstractIsaacFacade {
     @GZIP
     @ApiOperation(value = "Get a concept page object by ID.")
     public final Response getConcept(@Context final Request request, @Context final HttpServletRequest servletRequest,
-            @PathParam("concept_page_id") final String conceptId) {
+                                     @PathParam("concept_page_id") final String conceptId) {
+        if (null == conceptId || conceptId.isEmpty()) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid concept id.").toResponse();
+        }
 
+        // Calculate the ETag on current live version of the content
+        // NOTE: Assumes that the latest version of the content is being used.
+        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + "byId".hashCode()
+                + conceptId.hashCode() + "");
+        Response cachedResponse = generateCachedResponse(request, etag);
+        if (cachedResponse != null) {
+            return cachedResponse;
+        }
+
+        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
+        fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(CONCEPT_TYPE));
+
+        // options
+        if (null != conceptId) {
+            fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(conceptId));
+        }
+
+        Response result = this.findSingleResult(fieldsToMatch);
         try {
-            if (null == conceptId || conceptId.isEmpty()) {
-                return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid concept id.").toResponse();
-            }
-
-            // Calculate the ETag on current live version of the content
-            // NOTE: Assumes that the latest version of the content is being used.
-            EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + "byId".hashCode()
-                    + conceptId.hashCode() + "");
-            Response cachedResponse = generateCachedResponse(request, etag);
-            if (cachedResponse != null) {
-                return cachedResponse;
-            }
-
-            Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-            fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(CONCEPT_TYPE));
-
-            // options
-            if (null != conceptId) {
-                fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(conceptId));
-            }
-
-            Response result = this.findSingleResult(fieldsToMatch);
-
             if (result.getEntity() instanceof SeguePageDTO) {
                 ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
                         .put(CONCEPT_ID_LOG_FIELDNAME, conceptId).put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA())
@@ -262,11 +260,11 @@ public class PagesFacade extends AbstractIsaacFacade {
                 getLogManager().logEvent(userManager.getCurrentUser(servletRequest), servletRequest,
                         IsaacLogType.VIEW_CONCEPT, logEntry);
             }
-
             Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())
                     .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
 
             return cachableResult;
+
         } catch (SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Database error while looking up user information.", e);
@@ -566,25 +564,26 @@ public class PagesFacade extends AbstractIsaacFacade {
     @ApiOperation(value = "Get a topic summary with a list of related material.")
     public final Response getTopicSummaryPage(@Context final Request request,
                                                  @Context final HttpServletRequest httpServletRequest, @PathParam("topic_id") final String topicId) {
+
+        // Calculate the ETag on current live version of the content
+        // NOTE: Assumes that the latest version of the content is being used.
+        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + topicId.hashCode() + "");
+        Response cachedResponse = generateCachedResponse(request, etag);
+        if (cachedResponse != null) {
+            return cachedResponse;
+        }
+
+        // Topic summary pages have the ID convention "topic_summary_[tag_name]"
+        String summaryPageId = String.format("topic_summary_%s", topicId);
+
+        // Load the summary page:
+        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
+        fieldsToMatch.put(TYPE_FIELDNAME, Collections.singletonList(TOPIC_SUMMARY_PAGE_TYPE));
+        if (null != summaryPageId) {
+            fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singletonList(summaryPageId));
+        }
+
         try {
-            // Calculate the ETag on current live version of the content
-            // NOTE: Assumes that the latest version of the content is being used.
-            EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + topicId.hashCode() + "");
-            Response cachedResponse = generateCachedResponse(request, etag);
-            if (cachedResponse != null) {
-                return cachedResponse;
-            }
-
-            // Topic summary pages have the ID convention "topic_summary_[tag_name]"
-            String summaryPageId = String.format("topic_summary_%s", topicId);
-
-            // Load the summary page:
-            Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-            fieldsToMatch.put(TYPE_FIELDNAME, Collections.singletonList(TOPIC_SUMMARY_PAGE_TYPE));
-            if (null != summaryPageId) {
-                fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singletonList(summaryPageId));
-            }
-
             AbstractSegueUserDTO user = userManager.getCurrentUser(httpServletRequest);
             Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts;
             try {
@@ -638,24 +637,25 @@ public class PagesFacade extends AbstractIsaacFacade {
     @ApiOperation(value = "Get a content page object by ID.")
     public final Response getPage(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
             @PathParam("page") final String pageId) {
+
+        // Calculate the ETag on current live version of the content
+        // NOTE: Assumes that the latest version of the content is being used.
+        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + pageId.hashCode() + "");
+
+        Response cachedResponse = generateCachedResponse(request, etag);
+        if (cachedResponse != null) {
+            return cachedResponse;
+        }
+
+        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
+        fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(PAGE_TYPE, QUESTIONS_PAGE_TYPE));
+
+        // options
+        if (null != pageId) {
+            fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(pageId));
+        }
+
         try {
-            // Calculate the ETag on current live version of the content
-            // NOTE: Assumes that the latest version of the content is being used.
-            EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + pageId.hashCode() + "");
-
-            Response cachedResponse = generateCachedResponse(request, etag);
-            if (cachedResponse != null) {
-                return cachedResponse;
-            }
-
-            Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-            fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(PAGE_TYPE, QUESTIONS_PAGE_TYPE));
-
-            // options
-            if (null != pageId) {
-                fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(pageId));
-            }
-
             Response result = this.findSingleResult(fieldsToMatch);
 
             if (result.getEntity() instanceof SeguePageDTO) {

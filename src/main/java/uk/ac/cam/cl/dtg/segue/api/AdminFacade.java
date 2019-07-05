@@ -1490,5 +1490,4 @@ public class AdminFacade extends AbstractSegueFacade {
             return error.toResponse();
         }
     }
-
 }
