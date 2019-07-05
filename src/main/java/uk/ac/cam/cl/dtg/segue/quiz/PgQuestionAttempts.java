@@ -131,7 +131,28 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
 
             resultSet.next();
 
-            return objectMapper.readValue(resultSet.getString("question_attempts"), Map.class);
+            // We need to try and generate QuestionValidationResponses in the correct object structure - Apologies for the hideousness
+            Map<String, Map<String, List<Object>>> questionAttemptsFromDB
+                    = objectMapper.readValue(resultSet.getString("question_attempts"), Map.class);
+            Map<String, Map<String, List<QuestionValidationResponse>>> result = Maps.newHashMap();
+
+            for (Map.Entry<String, Map<String, List<Object>>> questionAttemptsForPage : questionAttemptsFromDB.entrySet()){
+
+                Map<String, List<QuestionValidationResponse>> questionAttemptsForQuestion = Maps.newHashMap();
+                for (Map.Entry<String, List<Object>> submap : questionAttemptsForPage.getValue().entrySet()){
+                    List<QuestionValidationResponse> listOfuestionValidationResponses = Lists.newArrayList();
+                    questionAttemptsForQuestion.put(submap.getKey(), listOfuestionValidationResponses);
+
+                    for (Object o : submap.getValue()) {
+                        listOfuestionValidationResponses
+                                .add(objectMapper.convertValue(o, QuestionValidationResponse.class));
+                    }
+                }
+
+                result.put(questionAttemptsForPage.getKey(), questionAttemptsForQuestion);
+            }
+
+            return result;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         } catch (IOException e) {
