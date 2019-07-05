@@ -839,7 +839,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                     "SQL scheduled job that deletes PII", "0 0 2 * * ?", "db_scripts/scheduled/pii-delete-task.sql");
 
             SegueScheduledJob cleanUpOldAnonymousUsers = new SegueScheduledDatabaseScriptJob("cleanAnonymousUsers", "SQLMaintenance",
-                    "SQL scheduled job that deletes old AnonymousUsers", "0 * * * * ?", "db_scripts/scheduled/anonymous-user-clean-up.sql");
+                    "SQL scheduled job that deletes old AnonymousUsers", "0 30 2 * * ?", "db_scripts/scheduled/anonymous-user-clean-up.sql");
 
             segueJobService = new SegueJobService(Arrays.asList(PIISQLJob, cleanUpOldAnonymousUsers));
             log.info("Created Segue Job Manager for scheduled jobs");
