@@ -23,6 +23,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.Validate;
+import org.apache.commons.text.StringEscapeUtils;
 import org.eclipse.jgit.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -154,7 +155,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         // default properties
         //TODO: We should find and replace this in templates as the case is wrong.
-        propertiesToReplace.putIfAbsent("givenname", userDTO.getGivenName() == null ? "" : userDTO.getGivenName());
+        propertiesToReplace.putIfAbsent("givenname", userDTO.getGivenName() == null ? "" : StringEscapeUtils.escapeHtml4(userDTO.getGivenName()));
 
         EmailCommunicationMessage emailCommunicationMessage
                 = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), emailContentTemplate, propertiesToReplace,
@@ -226,8 +227,9 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             p.putAll(this.flattenTokenMap(userPropertiesMap, Maps.newHashMap(), ""));
 
             // TODO - Remove once content templates have all been replaced with correct tokens
-            p.put("givenname", user.getGivenName() == null ? "" : user.getGivenName());
-            p.put("familyname", user.getFamilyName() == null ? "" : user.getFamilyName());
+            // Sanitize user name inputs
+            p.put("givenname", user.getGivenName() == null ? "" : StringEscapeUtils.escapeHtml4(user.getGivenName()));
+            p.put("familyname", user.getFamilyName() == null ? "" : StringEscapeUtils.escapeHtml4(user.getFamilyName()));
             p.put("id", user.getId().toString());
 
             EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(), emailContent, p,

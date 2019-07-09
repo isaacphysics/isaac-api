@@ -24,6 +24,7 @@ import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.apache.commons.lang3.EnumUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -218,8 +219,9 @@ public class EmailFacade extends AbstractSegueFacade {
             previewProperties.putAll(emailManager.flattenTokenMap(userPropertiesMap, Maps.newHashMap(), ""));
 
             //TODO: backwards compat - fix content so that case is correct.
-            previewProperties.put("givenname", currentUser.getGivenName() == null ? "" : currentUser.getGivenName());
-            previewProperties.put("familyname", currentUser.getFamilyName() == null ? "" : currentUser.getFamilyName());
+            //Sanitizes name inputs from users
+            previewProperties.put("givenname", currentUser.getGivenName() == null ? "" : StringEscapeUtils.escapeHtml4(currentUser.getGivenName()));
+            previewProperties.put("familyname", currentUser.getFamilyName() == null ? "" : StringEscapeUtils.escapeHtml4(currentUser.getFamilyName()));
 
             EmailCommunicationMessage ecm = this.emailManager.constructMultiPartEmail(currentUser.getId(),
                     currentUser.getEmail(), emailTemplateDTO, previewProperties, EmailType.SYSTEM);
