@@ -13,31 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.segue.dos.content;
+package uk.ac.cam.cl.dtg.segue.dto.content;
 
-import uk.ac.cam.cl.dtg.segue.dto.content.ParsonsItemDTO;
+import java.util.List;
 
 /**
- * Specific content for items in Parsons Choices and Questions.
+ * Choice for Item Questions, containing a list of Items.
  *
  */
-@DTOMapping(ParsonsItemDTO.class)
-@JsonContentType("parsonsItem")
-public class ParsonsItem extends Item {
+public class ItemChoiceDTO extends ChoiceDTO {
 
-    private Integer indentation;
+    private List<ItemDTO> items;
 
     /**
      * Default constructor required for mapping.
      */
-    public ParsonsItem() {
+    public ItemChoiceDTO() {
     }
 
-    public Integer getIndentation() {
-        return indentation;
+    public List<ItemDTO> getItems() {
+        return items;
     }
 
-    public void setIndentation(final Integer indentation) {
-        this.indentation = indentation;
+    public void setItems(final List<ItemDTO> items) {
+        this.items = items;
     }
+
 }

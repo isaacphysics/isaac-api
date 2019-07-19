@@ -17,29 +17,16 @@ package uk.ac.cam.cl.dtg.segue.dos.content;
 
 import uk.ac.cam.cl.dtg.segue.dto.content.ParsonsChoiceDTO;
 
-import java.util.List;
-
 /**
  * Choice for Parsons Questions, containing a list of ParsonsItems.
  *
  */
 @DTOMapping(ParsonsChoiceDTO.class)
 @JsonContentType("parsonsChoice")
-public class ParsonsChoice extends Choice {
-
-    private List<ParsonsItem> items;
-
+public class ParsonsChoice extends ItemChoice {
     /**
      * Default constructor required for mapping.
      */
     public ParsonsChoice() {
-    }
-
-    public List<ParsonsItem> getItems() {
-        return items;
-    }
-
-    public void setItems(final List<ParsonsItem> items) {
-        this.items = items;
     }
 }

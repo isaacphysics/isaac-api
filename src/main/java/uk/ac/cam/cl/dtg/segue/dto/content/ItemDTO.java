@@ -13,31 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.segue.dos.content;
+package uk.ac.cam.cl.dtg.segue.dto.content;
 
-import uk.ac.cam.cl.dtg.segue.dto.content.ParsonsItemDTO;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
- * Specific content for items in Parsons Choices and Questions.
+ * DTO to represent items in Item Choices and Questions.
  *
  */
-@DTOMapping(ParsonsItemDTO.class)
-@JsonContentType("parsonsItem")
-public class ParsonsItem extends Item {
-
-    private Integer indentation;
+public class ItemDTO extends ContentDTO {
 
     /**
      * Default constructor required for mapping.
      */
-    public ParsonsItem() {
+    public ItemDTO() {
     }
 
-    public Integer getIndentation() {
-        return indentation;
+    // We don't want this field appearing in the DTO JSON!
+    @Override
+    @JsonIgnore
+    public Boolean getPublished() {
+        return super.getPublished();
     }
 
-    public void setIndentation(final Integer indentation) {
-        this.indentation = indentation;
-    }
 }

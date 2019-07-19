@@ -15,29 +15,19 @@
  */
 package uk.ac.cam.cl.dtg.segue.dos.content;
 
-import uk.ac.cam.cl.dtg.segue.dto.content.ParsonsItemDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.ItemDTO;
 
 /**
- * Specific content for items in Parsons Choices and Questions.
+ * Specific content for items in Item Choices and Questions.
  *
  */
-@DTOMapping(ParsonsItemDTO.class)
-@JsonContentType("parsonsItem")
-public class ParsonsItem extends Item {
-
-    private Integer indentation;
+@DTOMapping(ItemDTO.class)
+@JsonContentType("item")
+public class Item extends Content {
 
     /**
      * Default constructor required for mapping.
      */
-    public ParsonsItem() {
-    }
-
-    public Integer getIndentation() {
-        return indentation;
-    }
-
-    public void setIndentation(final Integer indentation) {
-        this.indentation = indentation;
+    public Item() {
     }
 }

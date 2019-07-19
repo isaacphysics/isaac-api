@@ -22,14 +22,15 @@ import uk.ac.cam.cl.dtg.isaac.dos.IsaacParsonsQuestion;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
+import uk.ac.cam.cl.dtg.segue.dos.content.Item;
 import uk.ac.cam.cl.dtg.segue.dos.content.ParsonsChoice;
 import uk.ac.cam.cl.dtg.segue.dos.content.ParsonsItem;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Validator that only provides functionality to validate Parsons questions.
@@ -100,11 +101,37 @@ public class IsaacParsonsValidator implements IValidator {
                 if (parsonsChoice.getItems().size() != submittedChoice.getItems().size()) {
                     continue;
                 }
-                List<String> choiceItemIds = parsonsChoice.getItems().stream().map(ParsonsItem::getId).collect(Collectors.toList());
-                List<String> submittedItemIds = submittedChoice.getItems().stream().map(ParsonsItem::getId).collect(Collectors.toList());
 
-                List<Integer> choiceItemIndentations = parsonsChoice.getItems().stream().map(ParsonsItem::getIndentation).collect(Collectors.toList());
-                List<Integer> submittedItemIndentations = submittedChoice.getItems().stream().map(ParsonsItem::getIndentation).collect(Collectors.toList());
+                boolean itemTypeMismatch = false;
+                List<String> submittedItemIds = new ArrayList<>();
+                List<Integer> submittedItemIndentations = new ArrayList<>();
+                List<String> choiceItemIds = new ArrayList<>();
+                List<Integer> choiceItemIndentations = new ArrayList<>();
+
+                // Run through the submitted items:
+                for (Item item : submittedChoice.getItems()) {
+                    if (!(item instanceof ParsonsItem)) {
+                        throw new IllegalArgumentException("Expected ParsonsChoice to contain ParsonsItems!");
+                    }
+                    ParsonsItem parsonsItem = (ParsonsItem) item;
+                    submittedItemIds.add(parsonsItem.getId());
+                    submittedItemIndentations.add(parsonsItem.getIndentation());
+                }
+                // Run through the items in the question:
+                for (Item item : parsonsChoice.getItems()) {
+                    if (!(item instanceof ParsonsItem)) {
+                        log.error("ParsonsChoice contained non-ParsonsItem. Skipping!");
+                        itemTypeMismatch = true;
+                        break;
+                    }
+                    ParsonsItem parsonsItem = (ParsonsItem) item;
+                    choiceItemIds.add(parsonsItem.getId());
+                    choiceItemIndentations.add(parsonsItem.getIndentation());
+                }
+                if (itemTypeMismatch) {
+                    // A problem with the choice itself. Maybe another one will be a better match?
+                    continue;
+                }
 
                 if (choiceItemIds.equals(submittedItemIds) && choiceItemIndentations.equals(submittedItemIndentations)) {
                     responseCorrect = parsonsChoice.isCorrect();

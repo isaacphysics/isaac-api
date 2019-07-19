@@ -31,6 +31,8 @@ import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.isaac.configuration.IsaacApplicationRegister;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacItemQuestion;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacItemQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -434,7 +436,8 @@ public class QuestionManager {
     }
 
     /**
-     * This is a helper method that will shuffle multiple choice questions based on a user specified seed.
+     * This is a helper method that will shuffle multiple choice questions and item questions
+     * based on a user specified seed.
      * 
      * @param seed
      *            - Randomness
@@ -449,12 +452,26 @@ public class QuestionManager {
         // shuffle all choices based on the seed provided, augmented by individual question ID.
         for (QuestionDTO question : questions) {
             if (question instanceof ChoiceQuestionDTO) {
+                ChoiceQuestionDTO choiceQuestion = (ChoiceQuestionDTO) question;
+                String qSeed = seed + choiceQuestion.getId();
+
                 Boolean randomiseChoices = ((ChoiceQuestionDTO) question).getRandomiseChoices();
                 if (randomiseChoices == null || randomiseChoices) {  // Default to randomised if not set.
-                    ChoiceQuestionDTO choiceQuestion = (ChoiceQuestionDTO) question;
-                    String qSeed = seed + choiceQuestion.getId();
                     if (choiceQuestion.getChoices() != null) {
                         Collections.shuffle(choiceQuestion.getChoices(), new Random(qSeed.hashCode()));
+                    }
+                }
+
+                // FIXME: this is an Isaac specific thing in a segue class!
+                // Perhaps ItemQuestions could live in Segue, but then what relation should they have to
+                // the IsaacQuestionBase class?
+                if (question instanceof IsaacItemQuestionDTO) {
+                    IsaacItemQuestionDTO itemQuestion = (IsaacItemQuestionDTO) question;
+                    Boolean randomiseItems = itemQuestion.getRandomiseItems();
+                    if (randomiseItems == null || randomiseItems) {  // Default to randomised if not set.
+                        if (itemQuestion.getItems() != null) {
+                            Collections.shuffle(itemQuestion.getItems(), new Random(qSeed.hashCode()));
+                        }
                     }
                 }
             }
