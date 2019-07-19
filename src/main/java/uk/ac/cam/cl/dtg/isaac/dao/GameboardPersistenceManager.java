@@ -340,16 +340,28 @@ public class GameboardPersistenceManager {
 	 * Allows a link between users and a gameboard to be destroyed.
 	 * 
 	 * @param userId - users id.
-	 * @param gameboardId - gameboard's id
+	 * @param gameboardId - gameboard ids
 	 * @throws SegueDatabaseException - if there is an error during the delete operation.
 	 */
-	public void removeUserLinkToGameboard(final Long userId, final String gameboardId) throws SegueDatabaseException {
+	public void removeUserLinkToGameboard(final Long userId, final Collection<String> gameboardId) throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("DELETE FROM user_gameboards WHERE user_id = ? AND gameboard_id = ?");
+
+            StringBuilder params = new StringBuilder();
+            params.append("?");
+            for (int i = 1; i < gameboardId.size(); i++) {
+                params.append(",?");
+            }
+
+            pst = conn.prepareStatement( String.format("DELETE FROM user_gameboards WHERE user_id = ? AND gameboard_id IN (%s)", params));
             pst.setLong(1, userId);
-            pst.setString(2, gameboardId);
-            
+
+            int index = 2;
+            for (String id : gameboardId) {
+                pst.setString(index, id);
+                index++;
+            }
+
             pst.execute();
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
