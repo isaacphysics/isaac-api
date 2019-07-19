@@ -80,11 +80,11 @@ public class QuestionManager {
      * 
      * @param question
      *            The question to which the answer must be validated against.
-     * @param answers
-     *            from the client as a list used for comparison purposes.
+     * @param submittedAnswer
+     *            from the client as a DTO for comparison.
      * @return A response containing a QuestionValidationResponse object.
      */
-    public final Response validateAnswer(final Question question, final List<ChoiceDTO> answers) {
+    public final Response validateAnswer(final Question question, final ChoiceDTO submittedAnswer) {
         IValidator validator = locateValidator(question.getClass());
 
         if (null == validator) {
@@ -94,34 +94,18 @@ public class QuestionManager {
                     .build();
         }
 
-        if (validator instanceof IMultiFieldValidator) {
-            IMultiFieldValidator multiFieldValidator = (IMultiFieldValidator) validator;
-            // we need to call the multifield validator instead.
-            return Response.ok(multiFieldValidator.validateMultiFieldQuestionResponses(question, answers)).build();
-        } else { // use the standard IValidator
-
-            // ok so we are expecting there just to be one choice?
-            if (answers.isEmpty() || answers.size() > 1) {
-                log.debug("We only expected one answer for this question...");
-                SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
-                        "We only expected one answer for this question (id " + question.getId()
-                                + ") and we were given a list.");
-                return error.toResponse();
-            }
-            
-            Choice answerFromUser = mapper.getAutoMapper().map(answers.get(0), Choice.class);
-            QuestionValidationResponse validateQuestionResponse = null;
-            try {
-                validateQuestionResponse = validator.validateQuestionResponse(question,
-                        answerFromUser);
-            } catch (ValidatorUnavailableException e) {
-                return SegueErrorResponse.getServiceUnavailableResponse(e.getClass().getSimpleName() + ": "
-                        + e.getMessage());
-            }
-
-            return Response.ok(
-                    mapper.getAutoMapper().map(validateQuestionResponse, QuestionValidationResponseDTO.class)).build();
+        Choice answerFromUser = mapper.getAutoMapper().map(submittedAnswer, Choice.class);
+        QuestionValidationResponse validateQuestionResponse;
+        try {
+            validateQuestionResponse = validator.validateQuestionResponse(question, answerFromUser);
+        } catch (ValidatorUnavailableException e) {
+            return SegueErrorResponse.getServiceUnavailableResponse(e.getClass().getSimpleName() + ": "
+                    + e.getMessage());
         }
+
+        return Response.ok(
+                mapper.getAutoMapper().map(validateQuestionResponse, QuestionValidationResponseDTO.class)).build();
+
     }
 
     /**
