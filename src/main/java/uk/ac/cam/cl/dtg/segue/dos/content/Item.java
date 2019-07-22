@@ -30,4 +30,15 @@ public class Item extends Content {
      */
     public Item() {
     }
+
+    /**
+     * Constructor to make testing easier.
+     *
+     * @param id - the ID for the Item
+     * @param value - the value of the Item
+     */
+    public Item(final String id, final String value) {
+        this.id = id;
+        this.value = value;
+    }
 }
