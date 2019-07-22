@@ -1,12 +1,12 @@
 /**
  * Copyright 2014 Stephen Cummins
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -36,229 +36,229 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
 
 /**
  * Test class for the user manager class.
- * 
+ *
  */
 @PowerMockIgnore({"javax.ws.*"})
 public class IsaacNumericValidatorTest {
-	private IsaacNumericValidator validator;
+    private IsaacNumericValidator validator;
 
-	/**
-	 * Initial configuration of tests.
-	 * 
-	 */
-	@Before
-	public final void setUp() {
-		validator = new IsaacNumericValidator();
-	}
+    /**
+     * Initial configuration of tests.
+     *
+     */
+    @Before
+    public final void setUp() {
+        validator = new IsaacNumericValidator();
+    }
 
-	/*
-	    Test that the "not a valid number" response is returned for non-numeric input.
-	 */
-	@Test
-	public final void isaacNumericValidator_NonNumericValue_InvalidResponseShouldBeReturned() {
-	    // Set up the question object:
-		IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
-		someNumericQuestion.setRequireUnits(false);
-
-		List<Choice> answerList = Lists.newArrayList();
-		Quantity someCorrectAnswer = new Quantity();
-		someCorrectAnswer.setValue("4.8e22");
-		someCorrectAnswer.setCorrect(true);
-		answerList.add(someCorrectAnswer);
-
-		someNumericQuestion.setChoices(answerList);
-
-		String explanationShouldContain = "not a valid number";
-
-		// Set up user answer:
-		Quantity q = new Quantity();
-		q.setValue("4.8[]3");
-
-		// Test response:
-		QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
-		assertFalse(response.isCorrect());
-		assertTrue(response.getExplanation().getValue().contains(explanationShouldContain));
-	}
-
-	/*
-	    Test a correct answer with an exponent in it gets recognised as correct.
-	 */
-	@Test
-	public final void isaacNumericValidator_CheckCorrectAnswerWithExponent_CorrectResponseShouldHappen() {
+    /*
+        Test that the "not a valid number" response is returned for non-numeric input.
+     */
+    @Test
+    public final void isaacNumericValidator_NonNumericValue_InvalidResponseShouldBeReturned() {
         // Set up the question object:
-		IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
-		someNumericQuestion.setRequireUnits(false);
-				
-		List<Choice> answerList = Lists.newArrayList();
-		Quantity someCorrectAnswer = new Quantity();
-		someCorrectAnswer.setValue("4.8e22");
-		someCorrectAnswer.setCorrect(true);
-		answerList.add(someCorrectAnswer);
-		
-		someNumericQuestion.setChoices(answerList);
-		
-		// Set up user answer:
-		Quantity q = new Quantity();
-		q.setValue("4.8e22");
+        IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
+        someNumericQuestion.setRequireUnits(false);
 
-		// Test response:
-		QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
-		assertTrue(response.isCorrect());
-	}
+        List<Choice> answerList = Lists.newArrayList();
+        Quantity someCorrectAnswer = new Quantity();
+        someCorrectAnswer.setValue("4.8e22");
+        someCorrectAnswer.setCorrect(true);
+        answerList.add(someCorrectAnswer);
+
+        someNumericQuestion.setChoices(answerList);
+
+        String explanationShouldContain = "not a valid number";
+
+        // Set up user answer:
+        Quantity q = new Quantity();
+        q.setValue("4.8[]3");
+
+        // Test response:
+        QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
+        assertFalse(response.isCorrect());
+        assertTrue(response.getExplanation().getValue().contains(explanationShouldContain));
+    }
+
+    /*
+        Test a correct answer with an exponent in it gets recognised as correct.
+     */
+    @Test
+    public final void isaacNumericValidator_CheckCorrectAnswerWithExponent_CorrectResponseShouldHappen() {
+        // Set up the question object:
+        IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
+        someNumericQuestion.setRequireUnits(false);
+
+        List<Choice> answerList = Lists.newArrayList();
+        Quantity someCorrectAnswer = new Quantity();
+        someCorrectAnswer.setValue("4.8e22");
+        someCorrectAnswer.setCorrect(true);
+        answerList.add(someCorrectAnswer);
+
+        someNumericQuestion.setChoices(answerList);
+
+        // Set up user answer:
+        Quantity q = new Quantity();
+        q.setValue("4.8e22");
+
+        // Test response:
+        QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
+        assertTrue(response.isCorrect());
+    }
 
     /*
         Test a correct integer answer without units gets recognised as correct.
      */
-	@Test
-	public final void isaacNumericValidator_CheckCorrectIntegerAnswer_CorrectResponseShouldHappen() {
+    @Test
+    public final void isaacNumericValidator_CheckCorrectIntegerAnswer_CorrectResponseShouldHappen() {
         // Set up the question object:
-		IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
-		someNumericQuestion.setRequireUnits(false);
+        IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
+        someNumericQuestion.setRequireUnits(false);
 
-		List<Choice> answerList = Lists.newArrayList();
-		Quantity someCorrectAnswer = new Quantity();
-		someCorrectAnswer.setValue("42");
-		someCorrectAnswer.setCorrect(true);
-		answerList.add(someCorrectAnswer);
+        List<Choice> answerList = Lists.newArrayList();
+        Quantity someCorrectAnswer = new Quantity();
+        someCorrectAnswer.setValue("42");
+        someCorrectAnswer.setCorrect(true);
+        answerList.add(someCorrectAnswer);
 
-		someNumericQuestion.setChoices(answerList);
+        someNumericQuestion.setChoices(answerList);
 
-		// Set up user answer:
-		Quantity q = new Quantity();
-		q.setValue("42");
+        // Set up user answer:
+        Quantity q = new Quantity();
+        q.setValue("42");
 
         // Test response:
-		QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
-		assertTrue(response.isCorrect());
-	}
+        QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
+        assertTrue(response.isCorrect());
+    }
 
     /*
         Test a correct integer answer with correct units gets recognised as correct.
      */
-	@Test
-	public final void isaacNumericValidator_CheckCorrectAnswerWithCorrectUnits_CorrectResponseShouldHappen() {
+    @Test
+    public final void isaacNumericValidator_CheckCorrectAnswerWithCorrectUnits_CorrectResponseShouldHappen() {
         // Set up the question object:
-		IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
-		someNumericQuestion.setRequireUnits(true);
-		
-		List<Choice> answerList = Lists.newArrayList();
-		Quantity someCorrectAnswer = new Quantity();
-		someCorrectAnswer.setValue("42");
-		someCorrectAnswer.setUnits("m\\,s^{-1}");
-		someCorrectAnswer.setCorrect(true);
-		answerList.add(someCorrectAnswer);
-		
-		someNumericQuestion.setChoices(answerList);
+        IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
+        someNumericQuestion.setRequireUnits(true);
+
+        List<Choice> answerList = Lists.newArrayList();
+        Quantity someCorrectAnswer = new Quantity();
+        someCorrectAnswer.setValue("42");
+        someCorrectAnswer.setUnits("m\\,s^{-1}");
+        someCorrectAnswer.setCorrect(true);
+        answerList.add(someCorrectAnswer);
+
+        someNumericQuestion.setChoices(answerList);
 
         // Set up user answer:
-		Quantity q = new Quantity();
-		q.setValue("42");
-		q.setUnits("m\\,s^{-1}");
+        Quantity q = new Quantity();
+        q.setValue("42");
+        q.setUnits("m\\,s^{-1}");
 
         // Test response:
-		QuantityValidationResponse response = (QuantityValidationResponse) validator.validateQuestionResponse(someNumericQuestion, q);
-		assertTrue("check question is marked as correct", response.isCorrect());
-		assertTrue("check units is correct", response.getCorrectUnits());
-	}
+        QuantityValidationResponse response = (QuantityValidationResponse) validator.validateQuestionResponse(someNumericQuestion, q);
+        assertTrue("check question is marked as correct", response.isCorrect());
+        assertTrue("check units is correct", response.getCorrectUnits());
+    }
 
-	/*
-	    Test an incorrect integer answer with correct units gets recognised as incorrect, but with correct units.
-	 */
-	@Test
-	public final void isaacNumericValidator_CheckCorrectAnswerWithIncorrectValue_IncorrectResponseShouldHappen() {
+    /*
+        Test an incorrect integer answer with correct units gets recognised as incorrect, but with correct units.
+     */
+    @Test
+    public final void isaacNumericValidator_CheckCorrectAnswerWithIncorrectValue_IncorrectResponseShouldHappen() {
         // Set up the question object:
-		IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
-		someNumericQuestion.setRequireUnits(true);
-		
-		List<Choice> answerList = Lists.newArrayList();
-		Quantity someCorrectAnswer = new Quantity();
-		someCorrectAnswer.setValue("42");
-		someCorrectAnswer.setUnits("m\\,s^{-1}");
-		someCorrectAnswer.setCorrect(true);
-		answerList.add(someCorrectAnswer);
-		
-		someNumericQuestion.setChoices(answerList);
+        IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
+        someNumericQuestion.setRequireUnits(true);
+
+        List<Choice> answerList = Lists.newArrayList();
+        Quantity someCorrectAnswer = new Quantity();
+        someCorrectAnswer.setValue("42");
+        someCorrectAnswer.setUnits("m\\,s^{-1}");
+        someCorrectAnswer.setCorrect(true);
+        answerList.add(someCorrectAnswer);
+
+        someNumericQuestion.setChoices(answerList);
 
         // Set up user answer:
-		Quantity q = new Quantity();
-		q.setValue("43");
-		q.setUnits("m\\,s^{-1}");
+        Quantity q = new Quantity();
+        q.setValue("43");
+        q.setUnits("m\\,s^{-1}");
 
         // Test response:
-		QuantityValidationResponse response = (QuantityValidationResponse) validator.validateQuestionResponse(someNumericQuestion, q);
+        QuantityValidationResponse response = (QuantityValidationResponse) validator.validateQuestionResponse(someNumericQuestion, q);
 
-		assertFalse("check question is marked as incorrect", response.isCorrect());
+        assertFalse("check question is marked as incorrect", response.isCorrect());
 
-		assertFalse("check value is marked as incorrect", response.getCorrectValue());
-		assertTrue("check units are marked as correct", response.getCorrectUnits());
-	}
+        assertFalse("check value is marked as incorrect", response.getCorrectValue());
+        assertTrue("check units are marked as correct", response.getCorrectUnits());
+    }
 
-	/*
-	    Test a correct integer answer with incorrect units gets recognised as incorrect, but with correct value.
-	 */
-	@Test
-	public final void isaacNumericValidator_CheckCorrectAnswerWithIncorrectUnits_IncorrectResponseShouldHappen() {
+    /*
+        Test a correct integer answer with incorrect units gets recognised as incorrect, but with correct value.
+     */
+    @Test
+    public final void isaacNumericValidator_CheckCorrectAnswerWithIncorrectUnits_IncorrectResponseShouldHappen() {
         // Set up the question object:
-		IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
-		someNumericQuestion.setRequireUnits(true);
-		
-		List<Choice> answerList = Lists.newArrayList();
-		Quantity someCorrectAnswer = new Quantity();
-		someCorrectAnswer.setValue("42");
-		someCorrectAnswer.setUnits("m\\,s^{-1}");
-		someCorrectAnswer.setCorrect(true);
-		answerList.add(someCorrectAnswer);
+        IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
+        someNumericQuestion.setRequireUnits(true);
 
-		someNumericQuestion.setChoices(answerList);
+        List<Choice> answerList = Lists.newArrayList();
+        Quantity someCorrectAnswer = new Quantity();
+        someCorrectAnswer.setValue("42");
+        someCorrectAnswer.setUnits("m\\,s^{-1}");
+        someCorrectAnswer.setCorrect(true);
+        answerList.add(someCorrectAnswer);
+
+        someNumericQuestion.setChoices(answerList);
 
         // Set up user answer:
-		Quantity q = new Quantity();
-		q.setValue("42");
-		q.setUnits("m\\,h^{-1}");
+        Quantity q = new Quantity();
+        q.setValue("42");
+        q.setUnits("m\\,h^{-1}");
 
         // Test response:
-		QuantityValidationResponse response = (QuantityValidationResponse) validator.validateQuestionResponse(someNumericQuestion, q);
-		
-		assertFalse("check question is marked as incorrect", response.isCorrect());
-		
-		assertTrue("check value is marked as correct", response.getCorrectValue());
-		assertFalse("check units are marked as incorrect", response.getCorrectUnits());
-	}
+        QuantityValidationResponse response = (QuantityValidationResponse) validator.validateQuestionResponse(someNumericQuestion, q);
 
-	/*
-	    Test a correct answer with missing units gets recognised as incorrect but with correct units.
-	 */
-	@Test
-	public final void isaacNumericValidator_CheckCorrectAnswerWithNoUnits_IncorrectResponseShouldHappen() {
+        assertFalse("check question is marked as incorrect", response.isCorrect());
+
+        assertTrue("check value is marked as correct", response.getCorrectValue());
+        assertFalse("check units are marked as incorrect", response.getCorrectUnits());
+    }
+
+    /*
+        Test a correct answer with missing units gets recognised as incorrect but with correct units.
+     */
+    @Test
+    public final void isaacNumericValidator_CheckCorrectAnswerWithNoUnits_IncorrectResponseShouldHappen() {
         // Set up the question object:
-		IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
-		someNumericQuestion.setRequireUnits(true);
+        IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
+        someNumericQuestion.setRequireUnits(true);
 
-		List<Choice> answerList = Lists.newArrayList();
-		Quantity someCorrectAnswer = new Quantity();
-		someCorrectAnswer.setValue("42");
-		someCorrectAnswer.setUnits("m\\,s^{-1}");
-		someCorrectAnswer.setCorrect(true);
-		answerList.add(someCorrectAnswer);
+        List<Choice> answerList = Lists.newArrayList();
+        Quantity someCorrectAnswer = new Quantity();
+        someCorrectAnswer.setValue("42");
+        someCorrectAnswer.setUnits("m\\,s^{-1}");
+        someCorrectAnswer.setCorrect(true);
+        answerList.add(someCorrectAnswer);
 
-		someNumericQuestion.setChoices(answerList);
+        someNumericQuestion.setChoices(answerList);
 
         // Set up user answer:
-		Quantity q = new Quantity();
-		q.setValue("42");
+        Quantity q = new Quantity();
+        q.setValue("42");
 
         // Test response:
-		QuantityValidationResponse response = (QuantityValidationResponse) validator.validateQuestionResponse(someNumericQuestion, q);
+        QuantityValidationResponse response = (QuantityValidationResponse) validator.validateQuestionResponse(someNumericQuestion, q);
 
-		assertFalse("check question is marked as incorrect", response.isCorrect());
-		assertFalse("check units are marked as incorrect", response.getCorrectUnits());
+        assertFalse("check question is marked as incorrect", response.isCorrect());
+        assertFalse("check units are marked as incorrect", response.getCorrectUnits());
 
-		assertTrue("Appropriate message provided", response.getExplanation().getValue().contains("units"));
-	}
+        assertTrue("Appropriate message provided", response.getExplanation().getValue().contains("units"));
+    }
 
-	/*
-	    Test known wrong answers take precedence over sig fig warning.
-	 */
+    /*
+        Test known wrong answers take precedence over sig fig warning.
+     */
     @Test
     public final void isaacNumericValidator_CheckKnownIncorrectAnswerWithIncorrectSigFigs_KnownIncorrectResponseShouldHappen() {
         // Set up the question object:
@@ -295,222 +295,222 @@ public class IsaacNumericValidatorTest {
     /*
         Test significant figure warning message in answer with exponent.
      */
-	@Test
-	public final void isaacNumericValidator_CheckCorrectAnswerWithExponentIncorrectSigFigs_IncorrectResponseShouldHappen() {
+    @Test
+    public final void isaacNumericValidator_CheckCorrectAnswerWithExponentIncorrectSigFigs_IncorrectResponseShouldHappen() {
         // Set up the question object:
-		IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
-		someNumericQuestion.setRequireUnits(false);
+        IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
+        someNumericQuestion.setRequireUnits(false);
 
-		List<Choice> answerList = Lists.newArrayList();
-		Quantity someCorrectAnswer = new Quantity();
-		someCorrectAnswer.setValue("4.8e22");
-		someCorrectAnswer.setCorrect(true);
-		answerList.add(someCorrectAnswer);
+        List<Choice> answerList = Lists.newArrayList();
+        Quantity someCorrectAnswer = new Quantity();
+        someCorrectAnswer.setValue("4.8e22");
+        someCorrectAnswer.setCorrect(true);
+        answerList.add(someCorrectAnswer);
 
-		someNumericQuestion.setChoices(answerList);
+        someNumericQuestion.setChoices(answerList);
 
-		// Set up user answer:
-		Quantity q = new Quantity();
-		q.setValue("4.81e22");
+        // Set up user answer:
+        Quantity q = new Quantity();
+        q.setValue("4.81e22");
 
-		// Test response:
-		String explanationShouldContain = "significant figures";
+        // Test response:
+        String explanationShouldContain = "significant figures";
 
-		QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
+        QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
 
-		assertFalse("Response should be incorrect", response.isCorrect());
+        assertFalse("Response should be incorrect", response.isCorrect());
 
-		assertTrue("Explanation should warn about sig figs", response.getExplanation().getValue().toLowerCase().contains(explanationShouldContain.toLowerCase()));
-	}
+        assertTrue("Explanation should warn about sig figs", response.getExplanation().getValue().toLowerCase().contains(explanationShouldContain.toLowerCase()));
+    }
 
-	/*
-	    Test incorrect answer with exponent and without units recognised as incorrect.
-	 */
-	@Test
-	public final void isaacNumericValidator_CheckIncorrectAnswerWithExponent_IncorrectResponseShouldHappen() {
+    /*
+        Test incorrect answer with exponent and without units recognised as incorrect.
+     */
+    @Test
+    public final void isaacNumericValidator_CheckIncorrectAnswerWithExponent_IncorrectResponseShouldHappen() {
         // Set up the question object:
-		IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
-		someNumericQuestion.setRequireUnits(false);
+        IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
+        someNumericQuestion.setRequireUnits(false);
 
-		List<Choice> answerList = Lists.newArrayList();
-		Quantity someCorrectAnswer = new Quantity();
-		someCorrectAnswer.setValue("4.8e22");
-		someCorrectAnswer.setCorrect(false);
-		answerList.add(someCorrectAnswer);
+        List<Choice> answerList = Lists.newArrayList();
+        Quantity someCorrectAnswer = new Quantity();
+        someCorrectAnswer.setValue("4.8e22");
+        someCorrectAnswer.setCorrect(false);
+        answerList.add(someCorrectAnswer);
 
-		someNumericQuestion.setChoices(answerList);
+        someNumericQuestion.setChoices(answerList);
 
-		// Set up user answer:
-		Quantity q = new Quantity();
-		q.setValue("4.8e22");
+        // Set up user answer:
+        Quantity q = new Quantity();
+        q.setValue("4.8e22");
 
-		// Test response:
-		QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
+        // Test response:
+        QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
 
-		assertFalse(response.isCorrect());
-	}
+        assertFalse(response.isCorrect());
+    }
 
-	/*
+    /*
         Test incorrect response provided when no answers exist for a question.
-	 */
-	@Test
-	public final void isaacNumericValidator_CheckAnswerNotFoundWhenNoChoicesProvided_IncorrectResponseShouldHappen() {
+     */
+    @Test
+    public final void isaacNumericValidator_CheckAnswerNotFoundWhenNoChoicesProvided_IncorrectResponseShouldHappen() {
         // Set up the question object:
-		IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
-		someNumericQuestion.setRequireUnits(false);
+        IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
+        someNumericQuestion.setRequireUnits(false);
 
-		List<Choice> answerList = Lists.newArrayList();	
-		someNumericQuestion.setChoices(answerList);
+        List<Choice> answerList = Lists.newArrayList();
+        someNumericQuestion.setChoices(answerList);
 
-		// Set up user answer:
-		Quantity q = new Quantity();
-		q.setValue("4.8e22");
+        // Set up user answer:
+        Quantity q = new Quantity();
+        q.setValue("4.8e22");
 
-		// Test response:
-		QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
+        // Test response:
+        QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
 
-		assertFalse(response.isCorrect());
-	}
+        assertFalse(response.isCorrect());
+    }
 
-	/*
-	    Test significant figure warning in answer without an exponent.
-	 */
-	@Test
-	public final void isaacNumericValidator_CheckCorrectAnswerWrongSigFigs_IncorrectResponseShouldHappen() {
+    /*
+        Test significant figure warning in answer without an exponent.
+     */
+    @Test
+    public final void isaacNumericValidator_CheckCorrectAnswerWrongSigFigs_IncorrectResponseShouldHappen() {
         // Set up the question object:
-		IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
-		someNumericQuestion.setRequireUnits(false);
+        IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
+        someNumericQuestion.setRequireUnits(false);
 
-		List<Choice> answerList = Lists.newArrayList();
-		Quantity someCorrectAnswer = new Quantity();
-		someCorrectAnswer.setValue("4.8");
-		someCorrectAnswer.setCorrect(true);
-		answerList.add(someCorrectAnswer);
+        List<Choice> answerList = Lists.newArrayList();
+        Quantity someCorrectAnswer = new Quantity();
+        someCorrectAnswer.setValue("4.8");
+        someCorrectAnswer.setCorrect(true);
+        answerList.add(someCorrectAnswer);
 
-		someNumericQuestion.setChoices(answerList);
+        someNumericQuestion.setChoices(answerList);
 
-		// Set up user answer:
-		Quantity q = new Quantity();
-		q.setValue("4.81");
+        // Set up user answer:
+        Quantity q = new Quantity();
+        q.setValue("4.81");
 
-		// Test response:
-		String explanationShouldContain = "significant figures";
+        // Test response:
+        String explanationShouldContain = "significant figures";
 
-		QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
+        QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
 
-		assertFalse(response.isCorrect());
+        assertFalse(response.isCorrect());
 
-		assertTrue(response.getExplanation().getValue().toLowerCase().contains(explanationShouldContain.toLowerCase()));
-	}
+        assertTrue(response.getExplanation().getValue().toLowerCase().contains(explanationShouldContain.toLowerCase()));
+    }
 
-	/*
-	    Test significant figure warning for incorrect answer without exponent.
-	 */
-	@Test
-	public final void isaacNumericValidator_CheckIncorrectAnswerWrongSigFigs_IncorrectResponseShouldHappen() {
+    /*
+        Test significant figure warning for incorrect answer without exponent.
+     */
+    @Test
+    public final void isaacNumericValidator_CheckIncorrectAnswerWrongSigFigs_IncorrectResponseShouldHappen() {
         // Set up the question object:
-		IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
-		someNumericQuestion.setRequireUnits(false);
+        IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
+        someNumericQuestion.setRequireUnits(false);
 
-		List<Choice> answerList = Lists.newArrayList();
-		Quantity someCorrectAnswer = new Quantity();
-		someCorrectAnswer.setValue("4.8");
-		someCorrectAnswer.setCorrect(true);
-		answerList.add(someCorrectAnswer);
+        List<Choice> answerList = Lists.newArrayList();
+        Quantity someCorrectAnswer = new Quantity();
+        someCorrectAnswer.setValue("4.8");
+        someCorrectAnswer.setCorrect(true);
+        answerList.add(someCorrectAnswer);
 
-		someNumericQuestion.setChoices(answerList);
+        someNumericQuestion.setChoices(answerList);
 
-		// Set up user answer:
-		Quantity q = new Quantity();
-		q.setValue("4.881");
+        // Set up user answer:
+        Quantity q = new Quantity();
+        q.setValue("4.881");
 
-		// Test response:
-		String explanationShouldContain = "significant figures";
+        // Test response:
+        String explanationShouldContain = "significant figures";
 
-		QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
+        QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
 
-		assertFalse(response.isCorrect());
+        assertFalse(response.isCorrect());
 
-		assertTrue(response.getExplanation().getValue().toLowerCase().contains(explanationShouldContain.toLowerCase()));
-	}
+        assertTrue(response.getExplanation().getValue().toLowerCase().contains(explanationShouldContain.toLowerCase()));
+    }
 
-	/*
-	    Test known incorrect answer with negative exponent.
-	 */
-	@Test
-	public final void isaacNumericValidator_CheckKnownIncorrectAnswerWithNegativeExponent_IncorrectResponseShouldHappenWithExplain() {
+    /*
+        Test known incorrect answer with negative exponent.
+     */
+    @Test
+    public final void isaacNumericValidator_CheckKnownIncorrectAnswerWithNegativeExponent_IncorrectResponseShouldHappenWithExplain() {
         // Set up the question object:
-		IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
-		someNumericQuestion.setRequireUnits(false);
+        IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
+        someNumericQuestion.setRequireUnits(false);
 
-		List<Choice> answerList = Lists.newArrayList();
-		Quantity someCorrectAnswer = new Quantity();
-		someCorrectAnswer.setValue("4.8e22");
-		someCorrectAnswer.setCorrect(true);
+        List<Choice> answerList = Lists.newArrayList();
+        Quantity someCorrectAnswer = new Quantity();
+        someCorrectAnswer.setValue("4.8e22");
+        someCorrectAnswer.setCorrect(true);
 
-		Quantity someIncorrectAnswer = new Quantity();
-		Content someExplanation = new Content("someIncorrectExplanation");
+        Quantity someIncorrectAnswer = new Quantity();
+        Content someExplanation = new Content("someIncorrectExplanation");
 
-		someIncorrectAnswer.setValue("1.2e-28");
-		someIncorrectAnswer.setCorrect(false);
-		someIncorrectAnswer.setExplanation(someExplanation);
+        someIncorrectAnswer.setValue("1.2e-28");
+        someIncorrectAnswer.setCorrect(false);
+        someIncorrectAnswer.setExplanation(someExplanation);
 
-		answerList.add(someCorrectAnswer);
-		answerList.add(someIncorrectAnswer);
+        answerList.add(someCorrectAnswer);
+        answerList.add(someIncorrectAnswer);
 
-		someNumericQuestion.setChoices(answerList);
+        someNumericQuestion.setChoices(answerList);
 
-		// Set up user answer:
-		Quantity q = new Quantity();
-		q.setValue("1.2e-28");
+        // Set up user answer:
+        Quantity q = new Quantity();
+        q.setValue("1.2e-28");
 
-		// Test response:
-		String explanationShouldContain = someExplanation.getValue();
+        // Test response:
+        String explanationShouldContain = someExplanation.getValue();
 
-		QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
+        QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
 
-		assertFalse(response.isCorrect());
+        assertFalse(response.isCorrect());
 
-		assertTrue(response.getExplanation().getValue().equals(explanationShouldContain));
-	}
+        assertTrue(response.getExplanation().getValue().equals(explanationShouldContain));
+    }
 
-	/*
-	    Test unknown incorrect answer with negative exponent.
-	 */
-	@Test
-	public final void isaacNumericValidator_CheckUnknownIncorrectAnswerWithNegativeExponent_GeneralIncorrectResponseShouldHappen() {
+    /*
+        Test unknown incorrect answer with negative exponent.
+     */
+    @Test
+    public final void isaacNumericValidator_CheckUnknownIncorrectAnswerWithNegativeExponent_GeneralIncorrectResponseShouldHappen() {
         // Set up the question object:
-		IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
-		someNumericQuestion.setRequireUnits(false);
+        IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
+        someNumericQuestion.setRequireUnits(false);
 
-		List<Choice> answerList = Lists.newArrayList();
-		Quantity someCorrectAnswer = new Quantity();
-		someCorrectAnswer.setValue("4.8e22");
-		someCorrectAnswer.setCorrect(true);
+        List<Choice> answerList = Lists.newArrayList();
+        Quantity someCorrectAnswer = new Quantity();
+        someCorrectAnswer.setValue("4.8e22");
+        someCorrectAnswer.setCorrect(true);
 
-		Quantity someIncorrectAnswer = new Quantity();
-		Content someExplanation = new Content("some Incorrect Explanation"); // this should not be what we see.
+        Quantity someIncorrectAnswer = new Quantity();
+        Content someExplanation = new Content("some Incorrect Explanation"); // this should not be what we see.
 
-		someIncorrectAnswer.setValue("1.2e-28");
-		someIncorrectAnswer.setCorrect(false);
-		someIncorrectAnswer.setExplanation(someExplanation);
+        someIncorrectAnswer.setValue("1.2e-28");
+        someIncorrectAnswer.setCorrect(false);
+        someIncorrectAnswer.setExplanation(someExplanation);
 
-		answerList.add(someCorrectAnswer);
-		answerList.add(someIncorrectAnswer);
+        answerList.add(someCorrectAnswer);
+        answerList.add(someIncorrectAnswer);
 
-		someNumericQuestion.setChoices(answerList);
+        someNumericQuestion.setChoices(answerList);
 
-		// Set up user answer:
-		Quantity q = new Quantity();
-		q.setValue("5e-22");
+        // Set up user answer:
+        Quantity q = new Quantity();
+        q.setValue("5e-22");
 
-		// Test response:
-		QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
+        // Test response:
+        QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
 
-		assertFalse(response.isCorrect());
+        assertFalse(response.isCorrect());
 
-		assertTrue(!response.getExplanation().getValue().equals(someExplanation.getValue()));
-	}
+        assertTrue(!response.getExplanation().getValue().equals(someExplanation.getValue()));
+    }
 
     /*
         Test correct answers to questions allowing a range of significant figures.
@@ -622,9 +622,9 @@ public class IsaacNumericValidatorTest {
                 response_1sf.getExplanation().getValue().toLowerCase().contains("significant figures"));
     }
 
-	/*
-	    Test parsing common unambiguous representations as numbers.
-	 */
+    /*
+        Test parsing common unambiguous representations as numbers.
+     */
     @Test
     public final void isaacNumericValidator_CheckParsingAsNumberWorks() throws Exception {
         // Set up the question object:
@@ -652,47 +652,52 @@ public class IsaacNumericValidatorTest {
         }
     }
 
-	/*
-	    Test various numbers for significant figure rules.
-	 */
-	@Test
-	public final void isaacNumericValidator_CheckSignificantFiguresNoRangeCalculationWorks_multipleTests() throws Exception {
-		verifyCorrectNumberOfSigFigsNoRange(Arrays.asList("5000", "5000e3", "-5000", "-5000e3"), Arrays.asList(1,2,3,4), Arrays.asList(5));
-		
-		verifyCorrectNumberOfSigFigsNoRange(Arrays.asList("5300", "5300e3", "-5300", "-5300e3"), Arrays.asList(2,3,4), Arrays.asList(1,5));
-		
-		verifyCorrectNumberOfSigFigsNoRange(Arrays.asList("50300", "-50300"), Arrays.asList(3,4,5), Arrays.asList(1,2,6));
-		
-		verifyCorrectNumberOfSigFigsNoRange(Arrays.asList("0", "-0"), Arrays.asList(1), Arrays.asList(2));
-		
-		verifyCorrectNumberOfSigFigsNoRange(Arrays.asList("0000100", "-0000100"), Arrays.asList(1,2,3), Arrays.asList(4,5,6,7));
-		
-		verifyCorrectNumberOfSigFigsNoRange(Arrays.asList("0000100.00", "-0000100.00"), Arrays.asList(5), Arrays.asList(4,6,7));
-	}
+    /*
+        Test various numbers for significant figure rules.
+     */
+    @Test
+    public final void isaacNumericValidator_CheckSignificantFiguresNoRangeCalculationWorks_multipleTests() throws Exception {
+        verifyCorrectNumberOfSigFigsNoRange(Arrays.asList("5000", "5000e3", "-5000", "-5000e3"), Arrays.asList(1, 2, 3, 4), Arrays.asList(5));
 
-	/*
-	    Test the rounding to a specified number of significant figures works as expected.
-	 */
-	@Test
-	public final void isaacNumericValidator_CheckSignificantFiguresRoundingWorks() throws Exception {
-		IsaacNumericValidator test = new IsaacNumericValidator();
-		this.testSigFigRoundingWorks(test, 1.25648, 1, 1.0);
+        verifyCorrectNumberOfSigFigsNoRange(Arrays.asList("5300", "5300e3", "-5300", "-5300e3"), Arrays.asList(2, 3, 4), Arrays.asList(1, 5));
 
-		this.testSigFigRoundingWorks(test, 1.25648, 2, 1.3);
-		this.testSigFigRoundingWorks(test, -1.25648, 2, -1.3);
+        verifyCorrectNumberOfSigFigsNoRange(Arrays.asList("50300", "-50300"), Arrays.asList(3, 4, 5), Arrays.asList(1, 2, 6));
 
-		// Check that we're using the rounding scheme known as "round half away from zero"
-		this.testSigFigRoundingWorks(test, 17.5, 2, 18);
-		this.testSigFigRoundingWorks(test, -17.5, 2, -18);
+        verifyCorrectNumberOfSigFigsNoRange(Arrays.asList("0", "-0"), Arrays.asList(1), Arrays.asList(2));
 
-		this.testSigFigRoundingWorks(test, 1.25E11, 2, 1.3E11);
-		this.testSigFigRoundingWorks(test, 1.25E1, 2, 1.3E1);
-		this.testSigFigRoundingWorks(test, -4.0E11, 2, -4.0E11);
-		this.testSigFigRoundingWorks(test, -4.0E-11, 2, -4.0E-11);
+        verifyCorrectNumberOfSigFigsNoRange(Arrays.asList("0000100", "-0000100"), Arrays.asList(1, 2, 3), Arrays.asList(4, 5, 6, 7));
 
-		this.testSigFigRoundingWorks(test, 0.0, 2, 0.0);
-		this.testSigFigRoundingWorks(test, 0, 2, 0.0);
-	}
+        verifyCorrectNumberOfSigFigsNoRange(Arrays.asList("0000100.00", "-0000100.00"), Arrays.asList(5), Arrays.asList(4, 6, 7));
+    }
+
+    /*
+        Test the rounding to a specified number of significant figures works as expected.
+     */
+    @Test
+    public final void isaacNumericValidator_CheckSignificantFiguresRoundingWorks() throws Exception {
+        IsaacNumericValidator test = new IsaacNumericValidator();
+        this.testSigFigRoundingWorks(test, "1.25648", 1, 1.0);
+
+        this.testSigFigRoundingWorks(test, "1.25648", 2, 1.3);
+        this.testSigFigRoundingWorks(test, "-1.25648", 2, -1.3);
+
+        // Check that we're using the rounding scheme known as "round half away from zero"
+        this.testSigFigRoundingWorks(test, "17.5", 2, 18);
+        this.testSigFigRoundingWorks(test, "-17.5", 2, -18);
+
+        this.testSigFigRoundingWorks(test, "0.2425", 3, 0.243);
+        this.testSigFigRoundingWorks(test, "-0.2425", 3, -0.243);
+        this.testSigFigRoundingWorks(test, "0.2425", 2, 0.24);
+        this.testSigFigRoundingWorks(test, "-0.2425", 2, -0.24);
+
+        this.testSigFigRoundingWorks(test, "1.25E11", 2, 1.3E11);
+        this.testSigFigRoundingWorks(test, "1.25E1", 2, 1.3E1);
+        this.testSigFigRoundingWorks(test, "-4.0E11", 2, -4.0E11);
+        this.testSigFigRoundingWorks(test, "-4.0E-11", 2, -4.0E-11);
+
+        this.testSigFigRoundingWorks(test, "0.0", 2, 0.0);
+        this.testSigFigRoundingWorks(test, "0", 2, 0.0);
+    }
 
     /*
     Test the rounding to a specified number of significant figures works as expected.
@@ -706,21 +711,21 @@ public class IsaacNumericValidatorTest {
         this.testSigFigExtractionWorks(test, "0.400", 2, 3, 3);
         this.testSigFigExtractionWorks(test, "6.0e3", 2, 2, 2);
         // Ambiguous cases:
-        this.testSigFigExtractionWorks(test, "30000", 3, 3,3);
-        this.testSigFigExtractionWorks(test, "10", 3, 3,3);
-        this.testSigFigExtractionWorks(test, "3333000", 2, 4,4);
+        this.testSigFigExtractionWorks(test, "30000", 3, 3, 3);
+        this.testSigFigExtractionWorks(test, "10", 3, 3, 3);
+        this.testSigFigExtractionWorks(test, "3333000", 2, 4, 4);
     }
 
-	private void testSigFigRoundingWorks(IsaacNumericValidator classUnderTest, double inputValue, int sigFigToRoundTo, double expectedResult) throws Exception {
-		double result = Whitebox.<Double> invokeMethod(classUnderTest, "roundToSigFigs", inputValue, sigFigToRoundTo);				
-		
-		assertTrue("sigfig rounding failed for value '" + inputValue + "' to " + sigFigToRoundTo
-				+ "sf: expected '" + expectedResult + "', got '" + result + "'", result == expectedResult);
-	}
+    private void testSigFigRoundingWorks(IsaacNumericValidator classUnderTest, String inputValue, int sigFigToRoundTo, double expectedResult) throws Exception {
+        double result = Whitebox.<Double>invokeMethod(classUnderTest, "roundStringValueToSigFigs", inputValue, sigFigToRoundTo);
+
+        assertTrue("sigfig rounding failed for value '" + inputValue + "' to " + sigFigToRoundTo
+                + "sf: expected '" + expectedResult + "', got '" + result + "'", result == expectedResult);
+    }
 
     private void testSigFigExtractionWorks(IsaacNumericValidator classUnderTest, String inputValue, int minAllowedSigFigs,
-										   int maxAllowedSigFigs, int expectedResult) throws Exception {
-        int result = Whitebox.<Integer> invokeMethod(classUnderTest, "numberOfSignificantFiguresToValidateWith",
+                                           int maxAllowedSigFigs, int expectedResult) throws Exception {
+        int result = Whitebox.<Integer>invokeMethod(classUnderTest, "numberOfSignificantFiguresToValidateWith",
                 inputValue, minAllowedSigFigs, maxAllowedSigFigs);
 
         assertTrue("sigfig extraction out of range for value " + inputValue + " (min allowed: " + minAllowedSigFigs
@@ -728,29 +733,29 @@ public class IsaacNumericValidatorTest {
         assertTrue("sigfig extraction failed for value " + inputValue + ", expected: " + expectedResult
                 + " got " + result, result == expectedResult);
     }
-	
-	
-	/**
-	 * Helper to launch multiple sig fig tests on given numbers, when checking against a single allowed value for sig figs.
-	 * 
-	 * @param numbersToTest the numbers to feed into the validator
-	 * @param sigFigsToPass - the number of significant figures we expect the aforementioned numbers return a pass for
-	 * @param sigFigsToFail - the number of significant figures we expect the aforementioned numbers return a fail for
-	 * @throws Exception - if we can't execute the private method.
-	 */
-	private void verifyCorrectNumberOfSigFigsNoRange(List<String> numbersToTest, List<Integer> sigFigsToPass, List<Integer> sigFigsToFail) throws Exception {
-		IsaacNumericValidator test = new IsaacNumericValidator();
-		for (String number : numbersToTest) {
-			
-			for(Integer sigFig : sigFigsToPass) {
-				boolean validate = Whitebox.<Boolean> invokeMethod(test, "verifyCorrectNumberOfSignificantFigures", number, sigFig, sigFig);
-				assertTrue("Verifying sigfig success failed " + number + " " + sigFig, validate);
-			}
-			
-			for(Integer sigFig : sigFigsToFail) {
-				boolean validate = Whitebox.<Boolean> invokeMethod(test, "verifyCorrectNumberOfSignificantFigures", number, sigFig, sigFig);
-				assertFalse("Verifying sigfig failures failed " + number + " " + sigFig, validate);
-			}
-		}
-	}
+
+
+    /**
+     * Helper to launch multiple sig fig tests on given numbers, when checking against a single allowed value for sig figs.
+     *
+     * @param numbersToTest the numbers to feed into the validator
+     * @param sigFigsToPass - the number of significant figures we expect the aforementioned numbers return a pass for
+     * @param sigFigsToFail - the number of significant figures we expect the aforementioned numbers return a fail for
+     * @throws Exception - if we can't execute the private method.
+     */
+    private void verifyCorrectNumberOfSigFigsNoRange(List<String> numbersToTest, List<Integer> sigFigsToPass, List<Integer> sigFigsToFail) throws Exception {
+        IsaacNumericValidator test = new IsaacNumericValidator();
+        for (String number : numbersToTest) {
+
+            for (Integer sigFig : sigFigsToPass) {
+                boolean validate = Whitebox.<Boolean>invokeMethod(test, "verifyCorrectNumberOfSignificantFigures", number, sigFig, sigFig);
+                assertTrue("Verifying sigfig success failed " + number + " " + sigFig, validate);
+            }
+
+            for (Integer sigFig : sigFigsToFail) {
+                boolean validate = Whitebox.<Boolean>invokeMethod(test, "verifyCorrectNumberOfSignificantFigures", number, sigFig, sigFig);
+                assertFalse("Verifying sigfig failures failed " + number + " " + sigFig, validate);
+            }
+        }
+    }
 }
