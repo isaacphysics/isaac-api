@@ -44,6 +44,8 @@ import static org.junit.Assert.assertTrue;
 @PowerMockIgnore({"javax.ws.*"})
 public class IsaacItemQuestionValidatorTest {
     private IsaacItemQuestionValidator validator;
+    private IsaacItemQuestion someItemQuestion;
+    private String incorrectExplanation = "EXPLANATION";
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -54,6 +56,29 @@ public class IsaacItemQuestionValidatorTest {
     @Before
     public final void setUp() {
         validator = new IsaacItemQuestionValidator();
+
+        // Set up the question object:
+        someItemQuestion = new IsaacItemQuestion();
+
+        List<Choice> answerList = Lists.newArrayList();
+        ItemChoice someIncorrectChoice = new ItemChoice();
+        ItemChoice someCorrectAnswer = new ItemChoice();
+        Item item1 = new Item("id001", "A");
+        Item item2 = new Item("id002", "B");
+        Item item3 = new Item("id003", "C");
+        someItemQuestion.setItems(ImmutableList.of(item1, item2, item3));
+
+        // Correct and incorrect choices the same:
+        someCorrectAnswer.setItems(ImmutableList.of(item1, item3));
+        someCorrectAnswer.setCorrect(true);
+        someIncorrectChoice.setItems(ImmutableList.of(item1, item2));
+        someIncorrectChoice.setCorrect(false);
+        someIncorrectChoice.setExplanation(new Content(incorrectExplanation));
+
+        // Add both choices to question, incorrect first:
+        answerList.add(someIncorrectChoice);
+        answerList.add(someCorrectAnswer);
+        someItemQuestion.setChoices(answerList);
     }
 
     /*
@@ -61,21 +86,6 @@ public class IsaacItemQuestionValidatorTest {
     */
     @Test
     public final void isaacItemQuestionValidator_CorrectItems_CorrectResponseShouldBeReturned() {
-        // Set up the question object:
-        IsaacItemQuestion someItemQuestion = new IsaacItemQuestion();
-
-        List<Choice> answerList = Lists.newArrayList();
-        ItemChoice someCorrectAnswer = new ItemChoice();
-        Item item1 = new Item("id001", "A");
-        Item item2 = new Item("id002", "B");
-        Item item3 = new Item("id003", "C");
-        someCorrectAnswer.setItems(ImmutableList.of(item1, item3));
-        someCorrectAnswer.setCorrect(true);
-        answerList.add(someCorrectAnswer);
-        someItemQuestion.setItems(ImmutableList.of(item1, item2, item3));
-
-        someItemQuestion.setChoices(answerList);
-
         // Set up user answer:
         ItemChoice c = new ItemChoice();
         Item submittedItem1 = new Item("id001", null);
@@ -92,21 +102,6 @@ public class IsaacItemQuestionValidatorTest {
     */
     @Test
     public final void isaacItemQuestionValidator_CorrectItemsUnordered_CorrectResponseShouldBeReturned() {
-        // Set up the question object:
-        IsaacItemQuestion someItemQuestion = new IsaacItemQuestion();
-
-        List<Choice> answerList = Lists.newArrayList();
-        ItemChoice someCorrectAnswer = new ItemChoice();
-        Item item1 = new Item("id001", "A");
-        Item item2 = new Item("id002", "B");
-        Item item3 = new Item("id003", "C");
-        someCorrectAnswer.setItems(ImmutableList.of(item1, item3));
-        someCorrectAnswer.setCorrect(true);
-        answerList.add(someCorrectAnswer);
-        someItemQuestion.setItems(ImmutableList.of(item1, item2, item3));
-
-        someItemQuestion.setChoices(answerList);
-
         // Set up user answer:
         ItemChoice c = new ItemChoice();
         Item submittedItem1 = new Item("id001", null);
@@ -124,7 +119,7 @@ public class IsaacItemQuestionValidatorTest {
     @Test
     public final void isaacItemQuestionValidator_CorrectChoicePrecedence_CorrectResponseShouldBeReturned() {
         // Set up the question object:
-        IsaacItemQuestion someItemQuestion = new IsaacItemQuestion();
+        IsaacItemQuestion itemQuestion = new IsaacItemQuestion();
 
         List<Choice> answerList = Lists.newArrayList();
         ItemChoice someIncorrectChoice = new ItemChoice();
@@ -132,7 +127,7 @@ public class IsaacItemQuestionValidatorTest {
         Item item1 = new Item("id001", "A");
         Item item2 = new Item("id002", "B");
         Item item3 = new Item("id003", "C");
-        someItemQuestion.setItems(ImmutableList.of(item1, item2, item3));
+        itemQuestion.setItems(ImmutableList.of(item1, item2, item3));
         List<Item> itemsForChoices = ImmutableList.of(item1, item3);
 
         // Correct and incorrect choices the same:
@@ -144,7 +139,7 @@ public class IsaacItemQuestionValidatorTest {
         // Add both choices to question, incorrect first:
         answerList.add(someIncorrectChoice);
         answerList.add(someCorrectAnswer);
-        someItemQuestion.setChoices(answerList);
+        itemQuestion.setChoices(answerList);
 
         // Set up user answer:
         ItemChoice c = new ItemChoice();
@@ -153,7 +148,7 @@ public class IsaacItemQuestionValidatorTest {
         c.setItems(ImmutableList.of(submittedItem1, submittedItem3));
 
         // Test response:
-        QuestionValidationResponse response = validator.validateQuestionResponse(someItemQuestion, c);
+        QuestionValidationResponse response = validator.validateQuestionResponse(itemQuestion, c);
         assertTrue(response.isCorrect());
     }
 
@@ -162,21 +157,6 @@ public class IsaacItemQuestionValidatorTest {
     */
     @Test
     public final void isaacItemQuestionValidator_InvalidItems_ErrorResponseShouldBeReturned() {
-        // Set up the question object:
-        IsaacItemQuestion someItemQuestion = new IsaacItemQuestion();
-
-        List<Choice> answerList = Lists.newArrayList();
-        ItemChoice someCorrectAnswer = new ItemChoice();
-        Item item1 = new Item("id001", "A");
-        Item item2 = new Item("id002", "B");
-        Item item3 = new Item("id003", "C");
-        someCorrectAnswer.setItems(ImmutableList.of(item1, item3));
-        someCorrectAnswer.setCorrect(true);
-        answerList.add(someCorrectAnswer);
-        someItemQuestion.setItems(ImmutableList.of(item1, item2, item3));
-
-        someItemQuestion.setChoices(answerList);
-
         // Set up invalid user answer:
         ItemChoice c = new ItemChoice();
         Item submittedItem1 = new Item("id005", null);
@@ -193,21 +173,6 @@ public class IsaacItemQuestionValidatorTest {
     */
     @Test
     public final void isaacItemQuestionValidator_NoItemsSubmitted_IncorrectResponseShouldBeReturned() {
-        // Set up the question object:
-        IsaacItemQuestion someItemQuestion = new IsaacItemQuestion();
-
-        List<Choice> answerList = Lists.newArrayList();
-        ItemChoice someCorrectAnswer = new ItemChoice();
-        Item item1 = new Item("id001", "A");
-        Item item2 = new Item("id002", "B");
-        Item item3 = new Item("id003", "C");
-        someCorrectAnswer.setItems(ImmutableList.of(item1, item3));
-        someCorrectAnswer.setCorrect(true);
-        answerList.add(someCorrectAnswer);
-        someItemQuestion.setItems(ImmutableList.of(item1, item2, item3));
-
-        someItemQuestion.setChoices(answerList);
-
         // Set up invalid user answer:
         ItemChoice c = new ItemChoice();
         c.setItems(null);
@@ -223,21 +188,6 @@ public class IsaacItemQuestionValidatorTest {
     */
     @Test
     public final void isaacItemQuestionValidator_IncorrectAnswer_IncorrectResponseShouldBeReturned() {
-        // Set up the question object:
-        IsaacItemQuestion someItemQuestion = new IsaacItemQuestion();
-
-        List<Choice> answerList = Lists.newArrayList();
-        ItemChoice someCorrectAnswer = new ItemChoice();
-        Item item1 = new Item("id001", "A");
-        Item item2 = new Item("id002", "B");
-        Item item3 = new Item("id003", "C");
-        someCorrectAnswer.setItems(ImmutableList.of(item1, item3));
-        someCorrectAnswer.setCorrect(true);
-        answerList.add(someCorrectAnswer);
-        someItemQuestion.setItems(ImmutableList.of(item1, item2, item3));
-
-        someItemQuestion.setChoices(answerList);
-
         // Set up user answer:
         ItemChoice c = new ItemChoice();
         Item submittedItem1 = new Item("id001", null);
@@ -254,30 +204,6 @@ public class IsaacItemQuestionValidatorTest {
     */
     @Test
     public final void isaacItemQuestionValidator_IncorrectChoiceMatch_MatchedResponseShouldBeReturned() {
-        // Set up the question object:
-        IsaacItemQuestion someItemQuestion = new IsaacItemQuestion();
-
-        List<Choice> answerList = Lists.newArrayList();
-        ItemChoice someIncorrectChoice = new ItemChoice();
-        ItemChoice someCorrectAnswer = new ItemChoice();
-        Item item1 = new Item("id001", "A");
-        Item item2 = new Item("id002", "B");
-        Item item3 = new Item("id003", "C");
-        someItemQuestion.setItems(ImmutableList.of(item1, item2, item3));
-
-        // Correct and incorrect choices:
-        someCorrectAnswer.setItems(ImmutableList.of(item1, item3));
-        someCorrectAnswer.setCorrect(true);
-        someIncorrectChoice.setItems(ImmutableList.of(item1, item2));
-        someIncorrectChoice.setCorrect(false);
-        String incorrectExplanation = "EXPLANATION";
-        someIncorrectChoice.setExplanation(new Content(incorrectExplanation));
-
-        // Add both choices to question, incorrect first:
-        answerList.add(someIncorrectChoice);
-        answerList.add(someCorrectAnswer);
-        someItemQuestion.setChoices(answerList);
-
         // Set up user answer:
         ItemChoice c = new ItemChoice();
         Item submittedItem1 = new Item("id001", null);
@@ -298,23 +224,22 @@ public class IsaacItemQuestionValidatorTest {
     @Test
     public final void isaacItemQuestionValidator_NoChoices_IncorrectResponseShouldBeReturned() {
         // Set up the question object:
-        IsaacItemQuestion someItemQuestion = new IsaacItemQuestion();
+        IsaacItemQuestion itemQuestion = new IsaacItemQuestion();
 
-        List<Choice> answerList = Lists.newArrayList();
         Item item1 = new Item("id001", "A");
         Item item2 = new Item("id002", "B");
         Item item3 = new Item("id003", "C");
-        someItemQuestion.setItems(ImmutableList.of(item1, item2, item3));
+        itemQuestion.setItems(ImmutableList.of(item1, item2, item3));
 
-        someItemQuestion.setChoices(answerList);
+        itemQuestion.setChoices(Lists.newArrayList());
 
-        // Set up invalid user answer:
+        // Set up user answer:
         ItemChoice c = new ItemChoice();
         Item submittedItem1 = new Item("id001", null);
         c.setItems(ImmutableList.of(submittedItem1));
 
         // Test response:
-        QuestionValidationResponse response = validator.validateQuestionResponse(someItemQuestion, c);
+        QuestionValidationResponse response = validator.validateQuestionResponse(itemQuestion, c);
         assertFalse(response.isCorrect());
         assertTrue(response.getExplanation().getValue().contains("not have any correct answers"));
     }
@@ -325,25 +250,26 @@ public class IsaacItemQuestionValidatorTest {
     @Test
     public final void isaacItemQuestionValidator_NoItems_IncorrectResponseShouldBeReturned() {
         // Set up the question object:
-        IsaacItemQuestion someItemQuestion = new IsaacItemQuestion();
+        IsaacItemQuestion itemQuestion = new IsaacItemQuestion();
 
         List<Choice> answerList = Lists.newArrayList();
         Item item1 = new Item("id001", "A");
         Item item2 = new Item("id002", "B");
         Item item3 = new Item("id003", "C");
+        // Don't set items on the question object itself.
 
         ItemChoice someCorrectAnswer = new ItemChoice();
         someCorrectAnswer.setItems(ImmutableList.of(item1, item2, item3));
         someCorrectAnswer.setCorrect(true);
         answerList.add(someCorrectAnswer);
-        someItemQuestion.setChoices(answerList);
+        itemQuestion.setChoices(answerList);
 
         // Set up correct user answer:
         ItemChoice c = new ItemChoice();
         c.setItems(ImmutableList.of(item1, item2, item3));
 
         // Test response:
-        QuestionValidationResponse response = validator.validateQuestionResponse(someItemQuestion, c);
+        QuestionValidationResponse response = validator.validateQuestionResponse(itemQuestion, c);
         assertFalse(response.isCorrect());
         assertTrue(response.getExplanation().getValue().contains("not have any items to choose from"));
     }
@@ -354,25 +280,25 @@ public class IsaacItemQuestionValidatorTest {
     @Test
     public final void isaacItemQuestionValidator_NoItemsInChoice_IncorrectResponseShouldBeReturned() {
         // Set up the question object:
-        IsaacItemQuestion someItemQuestion = new IsaacItemQuestion();
+        IsaacItemQuestion itemQuestion = new IsaacItemQuestion();
 
         List<Choice> answerList = Lists.newArrayList();
         ItemChoice someCorrectAnswer = new ItemChoice();
         Item item1 = new Item("id001", "A");
         Item item2 = new Item("id002", "B");
         Item item3 = new Item("id003", "C");
-        someItemQuestion.setItems(ImmutableList.of(item1, item2, item3));
+        itemQuestion.setItems(ImmutableList.of(item1, item2, item3));
 
         someCorrectAnswer.setCorrect(true);
         answerList.add(someCorrectAnswer);
-        someItemQuestion.setChoices(answerList);
+        itemQuestion.setChoices(answerList);
 
         // Set up correct user answer:
         ItemChoice c = new ItemChoice();
         c.setItems(ImmutableList.of(item1, item2, item3));
 
         // Test response:
-        QuestionValidationResponse response = validator.validateQuestionResponse(someItemQuestion, c);
+        QuestionValidationResponse response = validator.validateQuestionResponse(itemQuestion, c);
         assertFalse(response.isCorrect());
         assertNull(response.getExplanation());
     }
@@ -383,25 +309,25 @@ public class IsaacItemQuestionValidatorTest {
     @Test
     public final void isaacItemQuestionValidator_WrongChoiceType_IncorrectResponseShouldBeReturned() {
         // Set up the question object:
-        IsaacItemQuestion someItemQuestion = new IsaacItemQuestion();
+        IsaacItemQuestion itemQuestion = new IsaacItemQuestion();
 
         List<Choice> answerList = Lists.newArrayList();
         Item item1 = new Item("id001", "A");
         Item item2 = new Item("id002", "B");
         Item item3 = new Item("id003", "C");
-        someItemQuestion.setItems(ImmutableList.of(item1, item2, item3));
+        itemQuestion.setItems(ImmutableList.of(item1, item2, item3));
 
         Choice someCorrectAnswer = new Choice();
         someCorrectAnswer.setCorrect(true);
         answerList.add(someCorrectAnswer);
-        someItemQuestion.setChoices(answerList);
+        itemQuestion.setChoices(answerList);
 
         // Set up correct user answer:
         ItemChoice c = new ItemChoice();
         c.setItems(ImmutableList.of(item1, item2, item3));
 
         // Test response:
-        QuestionValidationResponse response = validator.validateQuestionResponse(someItemQuestion, c);
+        QuestionValidationResponse response = validator.validateQuestionResponse(itemQuestion, c);
         assertFalse(response.isCorrect());
         assertNull(response.getExplanation());
     }
@@ -426,13 +352,13 @@ public class IsaacItemQuestionValidatorTest {
     */
     @Test
     public final void isaacItemQuestionValidator_WrongChoiceType_ExceptionShouldBeThrown() {
-        IsaacItemQuestion someItemQuestion = new IsaacItemQuestion();
-        someItemQuestion.setId("invalidQuestionType");
+        IsaacItemQuestion itemQuestion = new IsaacItemQuestion();
+        itemQuestion.setId("invalidQuestionType");
 
         expectedException.expect(IllegalArgumentException.class);
         expectedException.expectMessage("Expected ItemChoice for IsaacItemQuestion");
 
         // This should throw an exception:
-        validator.validateQuestionResponse(someItemQuestion, new Choice());
+        validator.validateQuestionResponse(itemQuestion, new Choice());
     }
 }
