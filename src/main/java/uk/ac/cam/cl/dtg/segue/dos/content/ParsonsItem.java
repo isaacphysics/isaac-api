@@ -33,6 +33,18 @@ public class ParsonsItem extends Item {
     public ParsonsItem() {
     }
 
+    /**
+     * Constructor to make testing easier.
+     *
+     * @param id - the ID for the Item
+     * @param value - the value of the Item
+     * @param indentation - the indentation of the item
+     */
+    public ParsonsItem(final String id, final String value, final Integer indentation) {
+        super(id, value);
+        this.indentation = indentation;
+    }
+
     public Integer getIndentation() {
         return indentation;
     }
