@@ -31,6 +31,8 @@ import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Validator that only provides functionality to validate Parsons questions.
@@ -45,46 +47,65 @@ public class IsaacParsonsValidator implements IValidator {
 
         if (!(question instanceof IsaacParsonsQuestion)) {
             throw new IllegalArgumentException(String.format(
-                    "This validator only works with Isaac Parsons Questions... (%s is not Parsons)",
-                    question.getId()));
+                    "This validator only works with IsaacParsonsQuestions (%s is not ParsonsQuestion)", question.getId()));
         }
 
         if (!(answer instanceof ParsonsChoice)) {
             throw new IllegalArgumentException(String.format(
-                    "Expected ParsonsChoice for IsaacParsonsQuestion: %s. Received (%s) ", question.getId(),
-                    answer.getClass()));
+                    "Expected ParsonsChoice for IsaacParsonsQuestion: %s. Received (%s) ", question.getId(), answer.getClass()));
         }
-
-        IsaacParsonsQuestion parsonsQuestion = (IsaacParsonsQuestion) question;
-        ParsonsChoice submittedChoice = (ParsonsChoice) answer;
 
         // These variables store the important features of the response we'll send.
         Content feedback = null;                        // The feedback we send the user
         boolean responseCorrect = false;                // Whether we're right or wrong
 
+        IsaacParsonsQuestion parsonsQuestion = (IsaacParsonsQuestion) question;
+        ParsonsChoice submittedChoice = (ParsonsChoice) answer;
+
+        // STEP 0: Is it even possible to answer this question?
+
         if (null == parsonsQuestion.getChoices() || parsonsQuestion.getChoices().isEmpty()) {
             log.error("Question does not have any answers. " + question.getId() + " src: "
                     + question.getCanonicalSourceFile());
-
             feedback = new Content("This question does not have any correct answers");
         }
 
-        // STEP 1: Did they provide an answer at all?
+        if (null == parsonsQuestion.getItems() || parsonsQuestion.getItems().isEmpty()) {
+            log.error("ItemQuestion does not have any items. " + question.getId() + " src: "
+                    + question.getCanonicalSourceFile());
+            feedback = new Content("This question does not have any items to choose from!");
+        }
+
+        // STEP 1: Did they provide a valid answer?
 
         if (null == feedback && (null == submittedChoice.getItems() || submittedChoice.getItems().isEmpty())) {
             feedback = new Content("You did not provide an answer");
         }
 
+        Set<String> submittedItemIdSet = null;
+        Set<String> allowedItemIds;
+        if (null != submittedChoice.getItems() && null != parsonsQuestion.getItems()) {
+            submittedItemIdSet = submittedChoice.getItems().stream().map(Item::getId).collect(Collectors.toSet());
+            allowedItemIds = parsonsQuestion.getItems().stream().map(Item::getId).collect(Collectors.toSet());
+            if (!allowedItemIds.containsAll(submittedItemIdSet)) {
+                feedback = new Content("You did not provide a valid answer; it contained unrecognised items");
+            }
+        }
+
         // STEP 2: If they did, does their answer match a known answer?
 
-        if (null == feedback) {
+        if (null == feedback && null != submittedItemIdSet) {
+            // Sort the choices so that we match incorrect choices last, taking precedence over correct ones.
+            List<Choice> orderedChoices = getOrderedChoices(parsonsQuestion.getChoices());
+
             // For all the choices on this question...
-            for (Choice c : parsonsQuestion.getChoices()) {
+            for (Choice c : orderedChoices) {
 
                 // ... that are of the Formula type, ...
                 if (!(c instanceof ParsonsChoice)) {
-                    log.error("Validator for questionId: " + parsonsQuestion.getId()
-                            + " expected there to be a Formula. Instead it found a Choice.");
+                    log.error(String.format(
+                            "Validator for question (%s) expected there to be an ParsonsChoice. Instead it found a %s.",
+                            parsonsQuestion.getId(), c.getClass().toString()));
                     continue;
                 }
 
