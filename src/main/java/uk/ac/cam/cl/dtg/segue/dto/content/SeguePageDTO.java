@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -64,5 +65,11 @@ public class SeguePageDTO extends ContentDTO {
      */
     public final void setSummary(final String summary) {
         this.summary = summary;
+    }
+
+    @Override
+    @JsonIgnore(false) // Override the parent class decorator!
+    public String getCanonicalSourceFile() {
+        return this.canonicalSourceFile;
     }
 }

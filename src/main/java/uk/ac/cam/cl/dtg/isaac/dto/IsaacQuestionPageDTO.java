@@ -74,10 +74,4 @@ public class IsaacQuestionPageDTO extends SeguePageDTO {
 
     public void setSupersededBy(String supersededBy) { this.supersededBy = supersededBy; }
 
-    @Override
-    @JsonIgnore(false) // Override the parent class decorator!
-    public String getCanonicalSourceFile() {
-        return this.canonicalSourceFile;
-    }
-
 }
