@@ -35,6 +35,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class IsaacQuestionPageDTO extends SeguePageDTO {
     protected Float passMark;
     protected String supersededBy;
+    protected Integer difficulty;
 
     @JsonCreator
     public IsaacQuestionPageDTO(@JsonProperty("id") String id,
@@ -45,14 +46,15 @@ public class IsaacQuestionPageDTO extends SeguePageDTO {
             @JsonProperty("value") String value, @JsonProperty("attribution") String attribution,
             @JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
             @JsonProperty("published") Boolean published, @JsonProperty("tags") Set<String> tags,
-            @JsonProperty("level") Integer level, @JsonProperty("passMark") Float passMark,
-            @JsonProperty("supersededBy") String supersededBy) {
+            @JsonProperty("level") Integer level, @JsonProperty("difficulty") Integer difficulty,
+            @JsonProperty("passMark") Float passMark, @JsonProperty("supersededBy") String supersededBy) {
 
         super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
                 attribution, relatedContent, published, tags, level);
 
         this.passMark = passMark;
         this.supersededBy = supersededBy;
+        this.difficulty = difficulty;
     }
 
     /**
@@ -73,5 +75,9 @@ public class IsaacQuestionPageDTO extends SeguePageDTO {
     public String getSupersededBy() { return supersededBy; }
 
     public void setSupersededBy(String supersededBy) { this.supersededBy = supersededBy; }
+
+    public Integer getDifficulty() { return difficulty; }
+
+    public void setDifficulty(Integer difficulty) { this.difficulty = difficulty; }
 
 }
