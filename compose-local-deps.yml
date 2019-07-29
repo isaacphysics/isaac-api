@@ -25,7 +25,18 @@ services:
       - cluster.name=isaac
       - "network.host=0.0.0.0"
     ports:
-      - "9200-9400:9200-9400"
+      - "9200:9200"
+      - "9300:9300"
+  cs-elasticsearch:
+    network_mode: bridge
+    container_name: cs-elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch-oss:6.4.1
+    environment:
+      - cluster.name=cs-isaac
+      - "network.host=0.0.0.0"
+    ports:
+      - "9201:9200"
+      - "9301:9300"
   postgres:
     network_mode: bridge
     container_name: postgres
@@ -34,6 +45,7 @@ services:
       - pg-local:/var/lib/postgresql/data
       - ./src/main/resources/db_scripts/postgres-rutherford-create-script.sql:/docker-entrypoint-initdb.d/00-isaac-create.sql:ro
       - ./src/main/resources/db_scripts/postgres-rutherford-functions.sql:/docker-entrypoint-initdb.d/01-isaac-functions.sql:ro
+      - ./src/main/resources/db_scripts/quartz_scheduler_create_script.sql:/docker-entrypoint-initdb.d/02-isaac-quartz.sql:ro
     environment:
       POSTGRES_USER: rutherford
       POSTGRES_PASSWORD: rutherf0rd

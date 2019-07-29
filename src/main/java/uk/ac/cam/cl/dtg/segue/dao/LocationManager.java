@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2015 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -58,6 +58,7 @@ public class LocationManager implements IPLocationResolver {
     private final IPLocationResolver ipLocationResolver;
     private final PostCodeLocationResolver postCodeLocationResolver;
     private final Cache<String, Location> locationCache;
+    private final Cache<String, Location> failedLocationCache;
 
     /**
      * @param dao
@@ -76,6 +77,8 @@ public class LocationManager implements IPLocationResolver {
 
         // This cache is here to prevent lots of needless look ups to the database.
         locationCache = CacheBuilder.newBuilder().expireAfterWrite(NON_PERSISTENT_CACHE_TIME_IN_HOURS, TimeUnit.HOURS)
+                .<String, Location> build();
+        failedLocationCache = CacheBuilder.newBuilder().expireAfterWrite(NON_PERSISTENT_CACHE_TIME_IN_HOURS, TimeUnit.HOURS)
                 .<String, Location> build();
     }
 
@@ -98,8 +101,8 @@ public class LocationManager implements IPLocationResolver {
             return;
         }
 
-        // if it is present in the local cache we have no need to hit the database
-        if (locationCache.getIfPresent(ipAddress) != null) {
+        // if it is present in a local cache we have no need to hit the database
+        if (locationCache.getIfPresent(ipAddress) != null || failedLocationCache.getIfPresent(ipAddress) != null) {
             return;
         }
 
@@ -140,6 +143,8 @@ public class LocationManager implements IPLocationResolver {
 
         } catch (LocationServerException e) {
             log.error(String.format("Unable to resolve location for ip address: %s. Skipping...", ipAddress), e.getMessage());
+            // add it to the ephemeral failed cache for a while so we don't keep asking for an address with no info immediately.
+            this.failedLocationCache.put(ipAddress, new Location(null, 0.0, 0.0));
         }
     }
 

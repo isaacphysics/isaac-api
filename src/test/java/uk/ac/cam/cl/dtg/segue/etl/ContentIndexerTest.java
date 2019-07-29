@@ -67,14 +67,13 @@ public class ContentIndexerTest {
     }
 
     /**
-     * Test that the buildSearchIndexFromLocalGitIndex sends each Content object
-     * to the searchProvider.
+     * Test that the buildSearchIndex sends all of the various different segue data
+     * to the searchProvider and we haven't forgotten anything.
      *
      * @throws Exception
      */
-	@SuppressWarnings("unchecked")
 	@Test
-	public void buildElasticSearch_sendContentToSearchProvider_checkSearchProviderReceivesObject()
+	public void buildSearchIndexes_sendContentToSearchProvider_checkSearchProviderIsSentAllImportantObject()
 			throws Exception {
 		reset(database, searchProvider);
 		String uniqueObjectId = UUID.randomUUID().toString();
@@ -86,41 +85,61 @@ public class ContentIndexerTest {
 		contents.put(uniqueObjectId, content);
 
 		Set<String> someTagsList = Sets.newHashSet();
-		Map<String, String> someUnitsMap = Maps.newHashMap();
-		Map<String, String> publishedUnitsMap = Maps.newHashMap();
-        Map<Content, List<String>> someContentProblemsMap = Maps.newHashMap();
 
-        Map versionMeta = ImmutableMap.of("version", INITIAL_VERSION, "created", new Date().toString());
+		Map<String, String> someUnitsMap = ImmutableMap.of("N","N", "km", "km");
+		Map<String, String> publishedUnitsMap = ImmutableMap.of("N","N", "km", "km");
+
+        // This is what is sent to the search provider so needs to be mocked
+        Map<String, String> someUnitsMapRaw = ImmutableMap.of("cleanKey","N", "unit", "N");
+        Map<String, String> someUnitsMapRaw2 = ImmutableMap.of("cleanKey","km", "unit", "km");
+
+        Date someCreatedDate = new Date();
+        Map versionMeta = ImmutableMap.of("version", INITIAL_VERSION, "created", someCreatedDate.toString());
         Map tagsMeta = ImmutableMap.of("tags", someTagsList);
 
+        Map<Content, List<String>> someContentProblemsMap = Maps.newHashMap();
+
+        // prepare pre-canned responses for the object mapper
 		ObjectMapper objectMapper = createMock(ObjectMapper.class);
-
-		//TODO: Check this is done somewhere.
-//		searchProvider.registerRawStringFields((List<String>) anyObject());
-//		expectLastCall().once();
-
 		expect(searchProvider.hasIndex(INITIAL_VERSION, Constants.CONTENT_INDEX_TYPE.CONTENT.toString())).andReturn(false)
 				.once();
 		expect(contentMapper.generateNewPreconfiguredContentMapper()).andReturn(objectMapper)
 				.once();
 		expect(objectMapper.writeValueAsString(content)).andReturn(
 				uniqueObjectHash).once();
-
         expect(objectMapper.writeValueAsString(
-                versionMeta)).andReturn(versionMeta.toString()).once();
-
+                anyObject())).andReturn(versionMeta.toString()).once(); // expects versionMeta - possibly differing date
         expect(objectMapper.writeValueAsString(
                 tagsMeta)).andReturn(tagsMeta.toString()).once();
 
+        // populate all units and published units - order matters for the below
+        expect(objectMapper.writeValueAsString(
+                someUnitsMapRaw)).andReturn(someUnitsMap.toString()).once();
+        expect(objectMapper.writeValueAsString(
+                someUnitsMapRaw2)).andReturn(someUnitsMap.toString()).once();
+        expect(objectMapper.writeValueAsString(
+                someUnitsMapRaw)).andReturn(someUnitsMap.toString()).once();
+        expect(objectMapper.writeValueAsString(
+                someUnitsMapRaw2)).andReturn(someUnitsMap.toString()).once();
+
+        // Important Items for test - start here
+
+        // Ensure general metadata (version) is indexed
         searchProvider.indexObject(INITIAL_VERSION, "metadata", versionMeta.toString(), "general");
-        expectLastCall().once();
+        expectLastCall().atLeastOnce();
 
+        // Ensure tags are indexed
         searchProvider.indexObject(INITIAL_VERSION, "metadata", tagsMeta.toString(), "tags");
-        expectLastCall().once();
+        expectLastCall().atLeastOnce();
 
-        //TODO: add check that units are indexed
+        // Ensure units are indexed
+        searchProvider.indexObject(eq(INITIAL_VERSION), eq("unit"), eq(someUnitsMap.toString()));
+        expectLastCall().atLeastOnce();
+        searchProvider.indexObject(eq(INITIAL_VERSION), eq("publishedUnit"), eq(publishedUnitsMap.toString()));
+        expectLastCall().atLeastOnce();
 
-        searchProvider.bulkIndex(eq(INITIAL_VERSION), anyString(), anyObject());
+        // Ensure at least one bulk index for general content is requested
+        searchProvider.bulkIndex(eq(INITIAL_VERSION), eq(Constants.CONTENT_INDEX_TYPE.CONTENT.toString()), anyObject());
 		expectLastCall().once();
 
 		replay(searchProvider, contentMapper, objectMapper);
@@ -128,6 +147,7 @@ public class ContentIndexerTest {
         ContentIndexer contentIndexer = new ContentIndexer(database,
 				searchProvider, contentMapper);
 
+        // Method under test
 		Whitebox.invokeMethod(contentIndexer,
 				"buildElasticSearchIndex",
                 INITIAL_VERSION, contents, someTagsList, someUnitsMap, publishedUnitsMap, someContentProblemsMap);

@@ -75,6 +75,11 @@ public final class Constants {
     public static final String SERVER_ADMIN_ADDRESS = "SERVER_ADMIN_ADDRESS";
 
     /**
+     * Constant representing the text used for {{sig}} in emails..
+     */
+    public static final String EMAIL_SIGNATURE = "EMAIL_SIGNATURE";
+
+    /**
      * The path for the csv file containing the list of schools.
      */
     public static final String SCHOOL_CSV_LIST_PATH = "SCHOOL_CSV_LIST_PATH";
@@ -161,6 +166,10 @@ public final class Constants {
     public static final String SEARCH_CLUSTER_PORT = "SEARCH_CLUSTER_PORT";
     public static final String SEARCH_CLUSTER_INFO_PORT = "SEARCH_CLUSTER_INFO_PORT";
     public static final String SEARCH_RESULTS_HARD_LIMIT = "SEARCH_RESULTS_HARD_LIMIT";
+
+    // Event management stuff:
+    public static final String EVENT_ADMIN_EMAIL = "EVENT_ADMIN_EMAIL";
+    public static final String EVENT_ICAL_UID_DOMAIN = "EVENT_ICAL_UID_DOMAIN";
 
     /**
      * Suffix to append to raw fields (minus dot separator) - these are fields that the search engine should not do any

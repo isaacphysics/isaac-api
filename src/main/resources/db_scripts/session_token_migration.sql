@@ -1,1 +1,0 @@
-﻿ALTER TABLE users ADD COLUMN session_token INTEGER NOT NULL DEFAULT 0;

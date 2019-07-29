@@ -52,8 +52,7 @@ import java.net.URLEncoder;
 import java.util.*;
 import java.text.DateFormat;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_TIME_LOCALITY;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * EventBookingManager.
@@ -559,10 +558,12 @@ public class EventBookingManager {
     /**
      * getPlacesAvailable.
      * This method is not threadsafe and will not acquire a lock.
-     * It assumes that both WAITING_LIST and CONFIRMED bookings count towards capacity.
+     * It assumes that both WAITING_LIST and CONFIRMED bookings count towards capacity for all events apart from
+     * WAITING_LIST_ONLY events where only confirmed bookings count.
      * <p>
      * This assumption allows waiting list bookings to be manually changed into CONFIRMED by event
-     * managers without the possibility of someone creating a new booking to occupy the space.
+     * managers without the possibility of someone creating a new booking to occupy the space after a confirmed
+     * cancellation.
      * <p>
      * It also assumes teachers don't count on student events.
      *
@@ -572,7 +573,11 @@ public class EventBookingManager {
      * @throws SegueDatabaseException - if we cannot contact the database.
      */
     public Integer getPlacesAvailable(final IsaacEventPageDTO event) throws SegueDatabaseException {
-        return this.getPlacesAvailable(event, false);
+        if (EventStatus.WAITING_LIST_ONLY.equals(event.getEventStatus())) {
+            return this.getPlacesAvailable(event, true);
+        } else {
+            return this.getPlacesAvailable(event, false);
+        }
     }
 
     /**
@@ -737,6 +742,16 @@ public class EventBookingManager {
     }
 
     /**
+     * Expunge additional information fields for all of a given user's bookings i.e. to remove PII.
+     *
+     * @param user  - user to unbook
+     * @throws SegueDatabaseException - if an error occurs.
+     */
+    public void deleteUsersAdditionalInformationBooking(final RegisteredUserDTO user) throws SegueDatabaseException {
+        this.bookingPersistenceManager.deleteAdditionalInformation(user.getId());
+    }
+
+    /**
      * This method will attempt to resend the last email that a user booked on an event should have received.
      * E.g. if their status is confirmed it would be a welcome email, if cancelled it would be a cancellation one.
      *
@@ -875,8 +890,10 @@ public class EventBookingManager {
             icalEvent.setDateEnd(event.getEndDate(), true);
             icalEvent.setDescription(event.getSubtitle());
 
-            icalEvent.setOrganizer(new Organizer("Isaac Physics", "events@isaacphysics.org"));
-            icalEvent.setUid(String.format("%s@%s.isaacphysics.org", bookingDetails.getUserBooked().getId(), event.getId()));
+            icalEvent.setOrganizer(new Organizer(propertiesLoader.getProperty(MAIL_NAME),
+                    propertiesLoader.getProperty(EVENT_ADMIN_EMAIL)));
+            icalEvent.setUid(String.format("%s@%s.%s", bookingDetails.getUserBooked().getId(),
+                    event.getId(), propertiesLoader.getProperty(EVENT_ICAL_UID_DOMAIN)));
             icalEvent.setUrl(String.format("https://%s/events/%s",
                     propertiesLoader.getProperty(HOST_NAME), event.getId()));
 

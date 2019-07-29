@@ -158,7 +158,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             throws SegueDatabaseException {
         PreparedStatement pst;
         try (Connection conn = database.getDatabaseConnection()) {
-            pst = conn.prepareStatement("Select * FROM question_attempts WHERE user_id = ? ORDER BY \"timestamp\" ASC");
+            pst = conn.prepareStatement("SELECT * FROM question_attempts WHERE user_id = ? ORDER BY \"timestamp\" ASC");
             pst.setLong(1, userId);
 
             ResultSet results = pst.executeQuery();

@@ -14,19 +14,19 @@ public class GraphChoice extends Choice {
     /**
      * GraphChoice data, in JSON string format.
      */
-    private String graphData;
+    private String graphSpec;
 
     /**
      * @return the graph data
      */
-    public String getGraphData() {
-        return graphData;
+    public String getGraphSpec() {
+        return graphSpec;
     }
 
     /**
-     * @param graphData the graph data to set
+     * @param graphSpec the graph data to set
      */
-    public void setGraphData(final String graphData) {
-        this.graphData = graphData;
+    public void setGraphSpec(final String graphSpec) {
+        this.graphSpec = graphSpec;
     }
 }

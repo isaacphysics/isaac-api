@@ -42,6 +42,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
+import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.*;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
@@ -114,7 +115,7 @@ public class QuestionManager {
                 validateQuestionResponse = validator.validateQuestionResponse(question,
                         answerFromUser);
             } catch (ValidatorUnavailableException e) {
-                return SegueErrorResponse.getServiceUnavailableResponse(e.getClass().getSimpleName() + ":"
+                return SegueErrorResponse.getServiceUnavailableResponse(e.getClass().getSimpleName() + ": "
                         + e.getMessage());
             }
 
@@ -156,9 +157,44 @@ public class QuestionManager {
     }
 
     /**
+     * Reflection to try and determine the associated specifier for the choice given.
+     *
+     * @param choiceClass
+     *            - the type of choice given.
+     * @return a Validator
+     */
+    @SuppressWarnings("unchecked")
+    private ISpecifier locateSpecifier(Class<? extends ChoiceDTO> choiceClass) {
+        // check we haven't gone too high up the superclass tree
+        if (!ChoiceDTO.class.isAssignableFrom(choiceClass)) {
+            return null;
+        }
+
+        // Does this class have the correct annotation?
+        if (choiceClass.isAnnotationPresent(SpecifiesWith.class)) {
+
+            log.debug("Specifier for specifiation creation found. Using : "
+                + choiceClass.getAnnotation(SpecifiesWith.class).value());
+            Injector injector = IsaacApplicationRegister.injector;
+            return injector.getInstance(choiceClass.getAnnotation(SpecifiesWith.class).value());
+
+        } else if (choiceClass.equals(ChoiceDTO.class)) {
+            // so if we get here then we haven't found a SpecifiesWith class, so
+            // we should just give up and return null.
+            return null;
+        }
+
+        // we will continue our search of the superclasses for the annotation
+        return locateSpecifier((Class<? extends ChoiceDTO>) choiceClass.getSuperclass());
+    }
+
+
+    /**
      * This method will ensure any user question attempt information available is used to augment this question object.
      * 
      * It will also ensure that any personalisation of questions is affected (e.g. randomised multichoice elements).
+     *
+     * Note: It will not do anything to related content
      * 
      * @param page
      *            - to augment - this object may be mutated as a result of this method. i.e BestAttempt field set on
@@ -173,10 +209,9 @@ public class QuestionManager {
             final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
 
         List<QuestionDTO> questionsToAugment = QuestionManager.extractQuestionObjectsRecursively(page,
-                new ArrayList<QuestionDTO>());
+                new ArrayList<>());
 
         this.augmentQuestionObjectWithAttemptInformation(page, questionsToAugment, usersQuestionAttempts);
-        QuestionManager.augmentRelatedQuestionsWithAttemptInformation(page, usersQuestionAttempts);
 
         shuffleChoiceQuestionsChoices(userId, questionsToAugment);
 
@@ -195,7 +230,7 @@ public class QuestionManager {
      *            - as a map of QuestionPageId to Map of QuestionId to QuestionValidationResponseDO
      * @return augmented page - the return result is by convenience as the page provided as a parameter will be mutated.
      */
-    public SeguePageDTO augmentQuestionObjectWithAttemptInformation(final SeguePageDTO page,
+    private SeguePageDTO augmentQuestionObjectWithAttemptInformation(final SeguePageDTO page,
             final List<QuestionDTO> questionsToAugment,
             final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
 
@@ -235,54 +270,7 @@ public class QuestionManager {
         return page;
     }
 
-    /**
-     * A mathod which audments related questions with attempt information.
-     * i.e. sets whether the related content summary has been completed.
-     * @param content the content to be augmented.
-     * @param usersQuestionAttempts the user's question attempts.
-     */
-    private static void augmentRelatedQuestionsWithAttemptInformation(
-            final ContentDTO content,
-            final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
-        // Check if all question parts have been answered
-        List<ContentSummaryDTO> relatedContentSummaries = content.getRelatedContent();
-        if (relatedContentSummaries != null) {
-            for (ContentSummaryDTO relatedContentSummary : relatedContentSummaries) {
-                String questionId = relatedContentSummary.getId();
-                Map<String, List<QuestionValidationResponse>> questionAttempts = usersQuestionAttempts.get(questionId);
-                boolean questionAnsweredCorrectly = false;
-                if (questionAttempts != null) {
-                    for (String relatedQuestionPartId : relatedContentSummary.getQuestionPartIds()) {
-                        questionAnsweredCorrectly = false;
-                        List<QuestionValidationResponse> questionPartAttempts =
-                                questionAttempts.get(relatedQuestionPartId);
-                        if (questionPartAttempts != null) {
-                            for (QuestionValidationResponse partAttempt : questionPartAttempts) {
-                                questionAnsweredCorrectly = partAttempt.isCorrect();
-                                if (questionAnsweredCorrectly) {
-                                    break; // exit on first correct attempt
-                                }
-                            }
-                        }
-                        if (!questionAnsweredCorrectly) {
-                            break; // exit on first false question part
-                        }
-                    }
-                }
-                relatedContentSummary.setCorrect(questionAnsweredCorrectly);
-            }
-        }
-        // for all children recurse
-        List<ContentBaseDTO> children = content.getChildren();
-        if (children != null) {
-            for (ContentBaseDTO child : children) {
-                if (child instanceof ContentDTO) {
-                    ContentDTO childContent = (ContentDTO) child;
-                    QuestionManager.augmentRelatedQuestionsWithAttemptInformation(childContent, usersQuestionAttempts);
-                }
-            }
-        }
-    }
+
 
     /**
      * Converts a QuestionValidationResponse into a QuestionValidationResponseDTO.
@@ -489,4 +477,36 @@ public class QuestionManager {
         }
     }
 
+    /**
+     * Convert an answer into a question specification.
+     *
+     * @param answer
+     *            from the client as a list used for comparison purposes.
+     * @return A response containing a QuestionValidationResponse object.
+     */
+    public final Response generateSpecification(final ChoiceDTO answer) {
+
+        ISpecifier specifier = locateSpecifier(answer.getClass());
+
+        if (null == specifier) {
+            log.error("Unable to locate a valid specifier for this choice: " + answer);
+            return Response.serverError()
+                .entity("Unable to detect question validator for " + "this object. Unable to verify answer")
+                .build();
+        }
+
+        Choice answerFromUser = mapper.getAutoMapper().map(answer, Choice.class);
+        String specification = null;
+        try {
+            specification = specifier.createSpecification(answerFromUser);
+        } catch (ValidatorUnavailableException e) {
+            return SegueErrorResponse.getServiceUnavailableResponse(e.getClass().getSimpleName() + ":"
+                + e.getMessage());
+        }
+
+        ResultsWrapper<String> results = new ResultsWrapper<>(Collections.singletonList(specification), 1L);
+
+        return Response.ok(
+            mapper.getAutoMapper().map(results, ResultsWrapper.class)).build();
+    }
 }

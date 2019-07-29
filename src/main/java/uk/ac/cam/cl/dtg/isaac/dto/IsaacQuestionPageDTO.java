@@ -80,10 +80,4 @@ public class IsaacQuestionPageDTO extends SeguePageDTO {
 
     public void setDifficulty(Integer difficulty) { this.difficulty = difficulty; }
 
-    @Override
-    @JsonIgnore(false) // Override the parent class decorator!
-    public String getCanonicalSourceFile() {
-        return this.canonicalSourceFile;
-    }
-
 }

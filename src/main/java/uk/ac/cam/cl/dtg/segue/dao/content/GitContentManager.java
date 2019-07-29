@@ -74,6 +74,7 @@ public class GitContentManager implements IContentManager {
     private final Random randomNumberGenerator = new Random();
 
     private final Cache<Object, Object> cache;
+    private final Cache<String, GetResponse> contentShaCache;
 
 
     /**
@@ -103,6 +104,7 @@ public class GitContentManager implements IContentManager {
         }
 
         this.cache = CacheBuilder.newBuilder().softValues().expireAfterAccess(1, TimeUnit.DAYS).build();
+        this.contentShaCache = CacheBuilder.newBuilder().softValues().expireAfterWrite(1, TimeUnit.MINUTES).build();
     }
 
     /**
@@ -123,6 +125,7 @@ public class GitContentManager implements IContentManager {
         this.globalProperties = null;
         this.allowOnlyPublishedContent = false;
         this.cache = CacheBuilder.newBuilder().softValues().expireAfterAccess(1, TimeUnit.DAYS).build();
+        this.contentShaCache = CacheBuilder.newBuilder().softValues().expireAfterWrite(1, TimeUnit.MINUTES).build();
     }
 
     @Override
@@ -525,9 +528,14 @@ public class GitContentManager implements IContentManager {
 
     @Override
     public String getCurrentContentSHA() {
-        GetResponse r = searchProvider.getById(globalProperties.getProperty(Constants.CONTENT_INDEX),
-                Constants.CONTENT_INDEX_TYPE.METADATA.toString(), "general");
-        return (String) r.getSource().get("version");
+        String contentIndex = globalProperties.getProperty(Constants.CONTENT_INDEX);
+        GetResponse versionResponse = contentShaCache.getIfPresent(contentIndex);
+        if (null == versionResponse) {
+            versionResponse =
+                    searchProvider.getById(contentIndex, Constants.CONTENT_INDEX_TYPE.METADATA.toString(), "general");
+            contentShaCache.put(contentIndex, versionResponse);
+        }
+        return (String) versionResponse.getSource().get("version");
     }
 
     /**

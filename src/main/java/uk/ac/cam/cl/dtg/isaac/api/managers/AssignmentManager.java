@@ -15,24 +15,20 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.stream.Collectors;
-
+import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import uk.ac.cam.cl.dtg.isaac.dao.IAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.IGroupObserver;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
@@ -42,12 +38,23 @@ import uk.ac.cam.cl.dtg.segue.dos.GroupMembershipStatus;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.GroupMembershipDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
-
-import com.google.api.client.util.Lists;
-import com.google.inject.Inject;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * AssignmentManager.
@@ -171,7 +178,7 @@ public class AssignmentManager implements IGroupObserver {
         GameboardDTO gameboard = gameManager.getGameboard(newAssignment.getGameboardId());
         
         // filter users so those who are inactive in the group aren't emailed
-        for(RegisteredUserDTO user : groupManager.getUsersInGroup(userGroupDTO)) {
+        for (RegisteredUserDTO user : groupManager.getUsersInGroup(userGroupDTO)) {
             if (GroupMembershipStatus.ACTIVE.equals(userMembershipMapforGroup.get(user.getId()).getStatus())) {
                 usersToEmail.add(user);
             }
@@ -193,19 +200,29 @@ public class AssignmentManager implements IGroupObserver {
                 gameboardName = gameboard.getTitle();
             }
 
+            RegisteredUserDTO assignmentOwnerDTO = this.userManager.getUserDTOById(newAssignment.getOwnerUserId());
+
+            String groupName = getFilteredGroupNameFromGroup(userGroupDTO);
+            String assignmentOwner = getTeacherNameFromUser(assignmentOwnerDTO);
+
             for (RegisteredUserDTO userDTO : usersToEmail) {
                 emailManager.sendTemplatedEmailToUser(userDTO,
                         emailManager.getEmailTemplateDTO("email-template-group-assignment"),
-                        ImmutableMap.of("gameboardURL", gameboardURL,
+                        ImmutableMap.of(
+                                "gameboardURL", gameboardURL,
                                 "gameboardName", gameboardName,
-                                "assignmentDueDate", dueDate),
-                        EmailType.ASSIGNMENTS);
+                                "assignmentDueDate", dueDate,
+                                "groupName", groupName,
+                                "assignmentOwner", assignmentOwner
+                        ), EmailType.ASSIGNMENTS);
             }
 
         } catch (ContentManagerException e) {
             log.error("Could not send group assignment emails due to content issue", e);
+        } catch (NoUserException e) {
+            log.error("Could not send group assignment emails because owner did not exist.", e);
         }
-        
+
         return newAssignment;
     }
 
@@ -224,7 +241,7 @@ public class AssignmentManager implements IGroupObserver {
     }
 
     /**
-     * Get all assignments for a list of groups
+     * Get all assignments for a list of groups.
      *
      * @param groups to include in the search
      * @return a list of assignments set to the group ids provided.
@@ -302,7 +319,7 @@ public class AssignmentManager implements IGroupObserver {
 
         List<UserGroupDTO> groups = Lists.newArrayList();
 
-        for(AssignmentDTO assignment : allAssignmentsForMyGroups) {
+        for (AssignmentDTO assignment : allAssignmentsForMyGroups) {
             if (assignment.getGameboardId().equals(gameboardId)) {
                 groups.add(groupManager.getGroupById(assignment.getGroupId()));
             }
@@ -323,18 +340,15 @@ public class AssignmentManager implements IGroupObserver {
 
         // Try to email user to let them know
         try {
-        	RegisteredUserDTO groupOwner = this.userManager.getUserDTOById(group.getOwnerId());
-            List<AssignmentDTO> existingAssignments = this.getAllAssignmentsForSpecificGroups(Arrays.asList(group));
+            List<AssignmentDTO> existingAssignments = this.getAllAssignmentsForSpecificGroups(Collections.singletonList(group));
 
             emailManager.sendTemplatedEmailToUser(user,
                     emailManager.getEmailTemplateDTO("email-template-group-welcome"),
-                    this.prepareGroupWelcomeEmailTokenMap(user, group, groupOwner, existingAssignments),
+                    this.prepareGroupWelcomeEmailTokenMap(user, group, existingAssignments),
                     EmailType.SYSTEM);
 
         } catch (ContentManagerException e) {
-            log.info(String.format("Could not send group welcome email "), e);
-        } catch (NoUserException e) {
-            log.info(String.format("Could not find owner user object of group %s", group.getId()), e);
+            log.info("Could not send group welcome email ", e);
         } catch (SegueDatabaseException e) {
             log.error("Unable to send group welcome e-mail due to a database error. Failing silently.", e);
         }
@@ -349,13 +363,7 @@ public class AssignmentManager implements IGroupObserver {
         try {
             RegisteredUserDTO groupOwner = this.userManager.getUserDTOById(group.getOwnerId());
 
-            String groupOwnerName = "Unknown";
-            if (groupOwner != null && groupOwner.getFamilyName() != null) {
-                groupOwnerName = groupOwner.getFamilyName();
-            }
-            if (groupOwner != null && groupOwner.getGivenName() != null && !groupOwner.getGivenName().isEmpty()) {
-                groupOwnerName = groupOwner.getGivenName().substring(0, 1) + ". " + groupOwnerName;
-            }
+            String groupOwnerName = getTeacherNameFromUser(groupOwner);
             String groupOwnerEmail = "Unknown";
             if (groupOwner != null && groupOwner.getEmail() != null && !groupOwner.getEmail().isEmpty()) {
                 groupOwnerEmail = groupOwner.getEmail();
@@ -389,34 +397,36 @@ public class AssignmentManager implements IGroupObserver {
      *
      * @param userDTO - identity of user
      * @param userGroup - group being added to.
-     * @param groupOwner - Owner of the group
      * @param existingAssignments - Any existing assignments that have been set.
      * @return a map of string to string, with some values that may want to be shown in the email.
      * @throws SegueDatabaseException if we can't get the gameboard details.
      */
     private Map<String, Object> prepareGroupWelcomeEmailTokenMap(final RegisteredUserDTO userDTO, final UserGroupDTO userGroup,
-                                                                 final RegisteredUserDTO groupOwner,
                                                                  final List<AssignmentDTO> existingAssignments)
             throws SegueDatabaseException {
         Validate.notNull(userDTO);
-        String groupOwnerName = "Unknown";
 
-        if (groupOwner != null && groupOwner.getFamilyName() != null) {
-            groupOwnerName = groupOwner.getFamilyName();
+        UserSummaryWithEmailAddressDTO groupOwner = userGroup.getOwnerSummary();
+        String groupOwnerName = getTeacherNameFromUser(groupOwner);
+
+        String teacherInfo;
+        if (!userGroup.getAdditionalManagers().isEmpty()) {
+            teacherInfo = String.format("your teachers %s and %s",
+                    userGroup.getAdditionalManagers().stream().map(this::getTeacherNameFromUser).collect(Collectors.joining(", ")),
+                    groupOwnerName);
+        } else {
+            teacherInfo = String.format("your teacher %s", groupOwnerName);
         }
 
-        if (groupOwner != null && groupOwner.getGivenName() != null && !groupOwner.getGivenName().isEmpty()) {
-            groupOwnerName = groupOwner.getGivenName().substring(0, 1) + ". " + groupOwnerName;
-        }
+        String groupName = getFilteredGroupNameFromGroup(userGroup);
 
         if (existingAssignments != null) {
-            Collections.sort(existingAssignments, Comparator.comparing(AssignmentDTO::getCreationDate));
+            existingAssignments.sort(Comparator.comparing(AssignmentDTO::getCreationDate));
         }
 
         final DateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yyyy");
         StringBuilder htmlSB = new StringBuilder();
         StringBuilder plainTextSB = new StringBuilder();
-        final String accountURL = String.format("https://%s/account", properties.getProperty(HOST_NAME));
 
         if (existingAssignments != null && existingAssignments.size() > 0) {
             htmlSB.append("Your teacher has assigned the following assignments:<br>");
@@ -444,16 +454,18 @@ public class AssignmentManager implements IGroupObserver {
                 plainTextSB.append(String.format("%d. %s (set on %s%s)\n", i + 1, gameboardName,
                         DATE_FORMAT.format(existingAssignments.get(i).getCreationDate()), dueDate));
             }
-        } else if (existingAssignments != null && existingAssignments.size() == 0) {
+        } else if (existingAssignments != null) {
             htmlSB.append("No assignments have been set yet.<br>");
             plainTextSB.append("No assignments have been set yet.\n");
         }
 
         return new ImmutableMap.Builder<String, Object>()
-                .put("teacherName", groupOwnerName == null ? "" : groupOwnerName)
-                .put("accountURL", accountURL)
+                .put("teacherName", groupOwnerName)
+                .put("teacherInfo", teacherInfo)
+                .put("groupName", groupName)
                 .put("assignmentsInfo", plainTextSB.toString())
-                .put("assignmentsInfo_HTML", htmlSB.toString()).build();
+                .put("assignmentsInfo_HTML", htmlSB.toString())
+                .build();
     }
 
     private List<AssignmentDTO> filterAssignmentsBasedOnGroupMembershipContext(List<AssignmentDTO> assignments, Long userId) throws SegueDatabaseException {
@@ -475,6 +487,58 @@ public class AssignmentManager implements IGroupObserver {
             results.add(assignment);
         }
         return results;
+    }
+
+    /**
+     * Form the short version of a teacher name with only a first initial.
+     * @param teacherUser - The user summary object of the teacher user
+     * @return The short name with first initial
+     */
+    private String getTeacherNameFromUser(final UserSummaryDTO teacherUser) {
+        return formatTeacherName(teacherUser.getGivenName(), teacherUser.getFamilyName());
+    }
+
+
+    /**
+     * Form the short version of a teacher name with only a first initial.
+     * @param teacherUser - The user summary object of the teacher user
+     * @return The short name with first initial
+     */
+    private String getTeacherNameFromUser(final RegisteredUserDTO teacherUser) {
+        return formatTeacherName(teacherUser.getGivenName(), teacherUser.getFamilyName());
+    }
+
+    /**
+     * Form the short version of a teacher name with only a first initial.
+     * @param givenName The user's first name
+     * @param familyName The user's last name
+     * @return The short name with first initial
+     */
+    private String formatTeacherName(final String givenName, final String familyName) {
+        String teacherName = "Unknown";
+        if (familyName != null) {
+            teacherName = familyName;
+        }
+
+        if (givenName != null && !givenName.isEmpty()) {
+            teacherName = givenName.substring(0, 1) + ". " + teacherName;
+        }
+        return teacherName;
+    }
+
+    /**
+     * Get the group name, if it is allowed to be shared, else a placeholder.
+     * @param group - the group to extract the name from
+     * @return the group name to show to students.
+     */
+    private String getFilteredGroupNameFromGroup(final UserGroupDTO group) {
+        // Check the group has a last updated date: if not it means that we shouldn't show students the group name
+        // as teachers may not have realised the names are public:
+        String groupName = String.format("Group %s", group.getId());
+        if (group.getLastUpdated() != null) {
+            groupName = group.getGroupName();
+        }
+        return groupName;
     }
 
 }

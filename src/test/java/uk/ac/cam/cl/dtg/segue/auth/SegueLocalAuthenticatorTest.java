@@ -47,10 +47,12 @@ public class SegueLocalAuthenticatorTest {
 	private IPasswordDataManager passwordDataManager;
 	private PropertiesLoader propertiesLoader;
 
-	private ISegueHashingAlgorithm preferredAlgorithm = new SeguePBKDF2v1();
+	private ISegueHashingAlgorithm preferredAlgorithm = new SeguePBKDF2v2();
+	private ISegueHashingAlgorithm oldAlgorithm = new SeguePBKDF2v1();
 
 	private Map<String, ISegueHashingAlgorithm> possibleAlgorithms
-			= ImmutableMap.of(preferredAlgorithm.hashingAlgorithmName(), preferredAlgorithm);
+			= ImmutableMap.of(preferredAlgorithm.hashingAlgorithmName(), preferredAlgorithm,
+                              oldAlgorithm.hashingAlgorithmName(), oldAlgorithm);
 
 	/**
 	 * Initial configuration of tests.

@@ -3,7 +3,8 @@ package uk.ac.cam.cl.dtg.segue.api.userAlerts;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import org.eclipse.jetty.websocket.servlet.*;
+import org.eclipse.jetty.websocket.servlet.WebSocketServlet;
+import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueContextNotifier;
@@ -15,8 +16,10 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Collections;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
+import static uk.ac.cam.cl.dtg.util.RequestIPExtractor.getClientIpAddr;
 
 /**
  * Created by du220 on 17/07/2017.
@@ -26,6 +29,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 public class UserAlertsWebSocketServlet extends WebSocketServlet {
 
     private static final Logger log = LoggerFactory.getLogger(UserAlertsWebSocketServlet.class);
+    private static final int BAD_REQUEST = 400;
     private static final int FORBIDDEN = 403;
     private static Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
     private final String hostName = injector.getInstance(PropertiesLoader.class).getProperty(HOST_NAME);
@@ -39,6 +43,21 @@ public class UserAlertsWebSocketServlet extends WebSocketServlet {
 
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // We have been seeing malformed WebSocket requests. Add some debug logging to these:
+        if (!"websocket".equalsIgnoreCase(request.getHeader("Upgrade"))) {
+            log.debug(String.format("WebSocket Upgrade request from %s has incorrect header 'Upgrade: %s', headers: %s, 'Via: %s'.",
+                    getClientIpAddr(request), request.getHeader("Upgrade"), Collections.list(request.getHeaderNames()).toString(),
+                    request.getHeader("Via")));
+        }
+        if (null == request.getHeader("Sec-WebSocket-Key")) {
+            log.warn(String.format("WebSocket Upgrade request from %s has missing 'Sec-WebSocket-Key' header."
+                    + " 'Sec-WebSocket-Extensions: %s', 'Sec-WebSocket-Version: %s', 'User-Agent: %s'",
+                    getClientIpAddr(request), request.getHeader("Sec-WebSocket-Extensions"),
+                    request.getHeader("Sec-WebSocket-Version"), request.getHeader("User-Agent")));
+            response.setStatus(BAD_REQUEST);
+            return;
+        }
+
         // WebSockets are not protected by the CORS filters in /override-api-web.xml so we must check the origin
         // explicitly here:
         String origin = request.getHeader("Origin");

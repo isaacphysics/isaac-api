@@ -15,6 +15,6 @@ WORKDIR /isaac-api
 VOLUME /root/.m2
 #RUN mvn package -P deploy
 
-RUN sed -i -e 's#dev/random#dev/./urandom#g' /etc/java-8-openjdk/security/java.security
+RUN sed -i -e 's#dev/random#dev/./urandom#g' $JAVA_HOME/jre/lib/security/java.security
 
 CMD ["mvn", "jetty:run", "-P", "deploy"] 

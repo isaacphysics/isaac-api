@@ -241,7 +241,9 @@ public class SegueErrorResponse implements Serializable {
      * @return a helper function to get a service unavailable response
      */
     public static Response getServiceUnavailableResponse(final String message) {
-        return new SegueErrorResponse(Status.SERVICE_UNAVAILABLE, message).toResponse();
+        SegueErrorResponse errorResponse = new SegueErrorResponse(Status.SERVICE_UNAVAILABLE, message);
+        errorResponse.setBypassGenericSiteErrorPage(true);
+        return errorResponse.toResponse();
     }
 
     /**

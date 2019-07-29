@@ -152,10 +152,10 @@ public class PgEventBooking implements EventBooking {
         try (Connection conn = ds.getDatabaseConnection()) {
             PreparedStatement pst;
             if (bookingId != null) {
-                pst = conn.prepareStatement("Select * FROM event_bookings WHERE id = ?");
+                pst = conn.prepareStatement("SELECT * FROM event_bookings WHERE id = ?");
                 pst.setLong(1, bookingId);
             } else if (userId != null && eventId != null) {
-                pst = conn.prepareStatement("Select * FROM event_bookings WHERE user_id = ? AND event_id = ?");
+                pst = conn.prepareStatement("SELECT * FROM event_bookings WHERE user_id = ? AND event_id = ?");
                 pst.setLong(1, userId);
                 pst.setString(2, eventId);
             } else {

@@ -10,14 +10,15 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<segue.version>2.8.3-SNAPSHOT</segue.version>
-		<resteasy.version>3.0.11.Final</resteasy.version>
+		<segue.version>2.8.9-SNAPSHOT</segue.version>
+		<resteasy.version>4.0.0.Final</resteasy.version>
+		<jackson.version>2.9.9</jackson.version>
 		<powermock.version>1.6.3</powermock.version>
-		<postgresql.version>9.3-1104-jdbc41</postgresql.version>
 		<swagger-ui-version>3.19.5</swagger-ui-version>
+		<jetty-maven-version>9.3.27.v20190418</jetty-maven-version>
 		<jetty.port.api>8080</jetty.port.api>
 		<jetty.port.etl>8090</jetty.port.etl>
-		<config.location>/local/data/rutherford/conf/segue-config.properties</config.location>
+		<config.location>/local/data/conf/segue-config.properties</config.location>
 		<log.path>/isaac-logs</log.path>
 	</properties>
 
@@ -46,12 +47,6 @@
 		</dependency>
 
 		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-core</artifactId>
-			<version>2.8.11</version>
-		</dependency>
-
-		<dependency>
 			<groupId>javax.servlet</groupId>
 			<artifactId>javax.servlet-api</artifactId>
 			<version>3.0.1</version>
@@ -60,13 +55,9 @@
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
 			<artifactId>jetty-servlets</artifactId>
-			<version>9.3.22.v20171030</version>
+			<version>${jetty-maven-version}</version>
 		</dependency>
-		<dependency>
-			<groupId>org.jboss.resteasy</groupId>
-			<artifactId>jaxrs-api</artifactId>
-			<version>${resteasy.version}</version>
-		</dependency>
+
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
 			<artifactId>resteasy-client</artifactId>
@@ -75,6 +66,11 @@
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
 			<artifactId>resteasy-jaxrs</artifactId>
+			<version>4.0.0.Beta5</version>
+		</dependency>
+		<dependency>
+			<groupId>org.jboss.resteasy</groupId>
+			<artifactId>resteasy-jaxb-provider</artifactId>
 			<version>${resteasy.version}</version>
 		</dependency>
 		<dependency>
@@ -87,6 +83,12 @@
 			<artifactId>resteasy-multipart-provider</artifactId>
 			<version>${resteasy.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>org.jboss.resteasy</groupId>
+			<artifactId>resteasy-servlet-initializer</artifactId>
+			<version>${resteasy.version}</version>
+		</dependency>
+
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
 			<artifactId>resteasy-guice</artifactId>
@@ -106,7 +108,7 @@
 		<dependency>
 			<groupId>org.eclipse.jgit</groupId>
 			<artifactId>org.eclipse.jgit</artifactId>
-			<version>5.0.2.201807311906-r</version>
+			<version>5.4.0.201906121030-r</version>
 		</dependency>
 
 		<dependency>
@@ -141,7 +143,7 @@
 		<dependency>
 			<groupId>com.google.http-client</groupId>
 			<artifactId>google-http-client-jackson2</artifactId>
-			<version>1.23.0</version>
+			<version>1.30.0</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.apis</groupId>
@@ -217,30 +219,37 @@
 			<artifactId>log4j-slf4j-impl</artifactId>
 			<version>2.6.2</version>
 		</dependency>
+
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-core</artifactId>
+			<version>${jackson.version}</version>
+		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.dataformat</groupId>
 			<artifactId>jackson-dataformat-yaml</artifactId>
-			<version>2.8.11</version>
+			<version>${jackson.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
-			<version>2.8.11.3</version>
+			<version>2.9.9.1</version>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-annotations</artifactId>
-			<version>2.8.11</version>
+			<version>${jackson.version}</version>
 		</dependency>
+
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
-			<version>3.8.1</version>
+			<version>3.9</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-collections4</artifactId>
-			<version>4.2</version>
+			<version>4.3</version>
 		</dependency>
 
 		<dependency>
@@ -283,13 +292,13 @@
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
-			<version>${postgresql.version}</version>
+			<version>42.2.5</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-dbcp2</artifactId>
-			<version>2.1.1</version>
+			<version>2.6.0</version>
 		</dependency>
 
 		<dependency>
@@ -329,14 +338,21 @@
 		<dependency>
 			<groupId>org.eclipse.jetty.websocket</groupId>
 			<artifactId>javax-websocket-server-impl</artifactId>
-			<version>9.3.22.v20171030</version>
+			<version>9.3.27.v20190418</version>
 		</dependency>
 
 		<!--Jetty Websocket API server side dependency -->
 		<dependency>
 			<groupId>org.eclipse.jetty.websocket</groupId>
 			<artifactId>websocket-server</artifactId>
-			<version>9.3.22.v20171030</version>
+			<version>9.3.27.v20190418</version>
+		</dependency>
+
+		<!-- Graph checker code -->
+		<dependency>
+			<artifactId>isaac-graph-checker-library</artifactId>
+			<groupId>org.isaacphysics</groupId>
+			<version>1.0.1</version>
 		</dependency>
 
 
@@ -411,7 +427,7 @@
 			<plugin>
 				<groupId>org.eclipse.jetty</groupId>
 				<artifactId>jetty-maven-plugin</artifactId>
-				<version>9.3.22.v20171030</version>
+				<version>${jetty-maven-version}</version>
 				<configuration>
 					<webApp>
 						<contextPath>/isaac-api</contextPath>
@@ -439,6 +455,25 @@
 					</systemProperties>
 				</configuration>
 			</plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.4</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
 		</plugins>
 		<resources>
 		</resources>
@@ -480,6 +515,7 @@
 				</resources>
 			</build>
 		</profile>
+
 		<profile>
 			<id>etl</id>
 			<properties>
@@ -490,7 +526,7 @@
 					<plugin>
 						<groupId>org.eclipse.jetty</groupId>
 						<artifactId>jetty-maven-plugin</artifactId>
-						<version>9.3.22.v20171030</version>
+						<version>${jetty-maven-version}</version>
 						<configuration>
 							<webApp>
 								<contextPath>/isaac-api</contextPath>

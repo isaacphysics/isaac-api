@@ -3,7 +3,8 @@
 CREATE SCHEMA quartz_cluster
   AUTHORIZATION rutherford;
 
-set schema 'quartz_cluster';
+SET SCHEMA 'quartz_cluster';
+
 DROP TABLE IF EXISTS qrtz_fired_triggers;
 DROP TABLE IF EXISTS qrtz_paused_trigger_grps;
 DROP TABLE IF EXISTS qrtz_scheduler_state;
@@ -173,3 +174,5 @@ create index idx_qrtz_ft_trig_inst_name on qrtz_fired_triggers(instance_name);
 create index idx_qrtz_ft_job_name on qrtz_fired_triggers(job_name);
 create index idx_qrtz_ft_job_group on qrtz_fired_triggers(job_group);
 create index idx_qrtz_ft_job_req_recovery on qrtz_fired_triggers(requests_recovery);
+
+SET SCHEMA 'public';

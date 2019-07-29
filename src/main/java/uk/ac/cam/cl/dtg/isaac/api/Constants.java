@@ -39,6 +39,7 @@ public final class Constants {
     public static final String POD_FRAGMENT_TYPE = "isaacPod";
     public static final String PAGE_TYPE = "page";
     public static final String QUESTIONS_PAGE_TYPE = "questionsPage";
+    public static final String TOPIC_SUMMARY_PAGE_TYPE = "isaacTopicSummaryPage";
     public static final String EVENT_TYPE = "isaacEventPage";
 
     public static final String RELATED_CONTENT_FIELDNAME = "relatedContent";
@@ -125,12 +126,13 @@ public final class Constants {
         VIEW_PAGE,
         VIEW_PAGE_FRAGMENT,
         VIEW_QUESTION,
+        VIEW_TOPIC_SUMMARY_PAGE,
         VIEW_USER_PROGRESS
     }
     public static final Set<String> ISAAC_LOG_TYPES = Arrays.stream(IsaacLogType.values()).map(IsaacLogType::name).collect(Collectors.toSet());
 
     public enum IsaacUserPreferences {
-        SUBJECT_INTEREST, BETA_FEATURE
+        SUBJECT_INTEREST, BETA_FEATURE, EXAM_BOARD
     }
 
     /**
