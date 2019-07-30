@@ -63,6 +63,7 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -747,38 +748,30 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     /**
      * Rest Endpoint that allows a user to remove a gameboard from their my boards page.
      * 
-     * This does not delete the gameboard from the system just removes it.
+     * This does not delete the gameboard from the system just removes it from the user's my boards page.
      * 
      * @param request
      *            - So that we can find the user information.
-     * @param gameboardId
-     *            -
+     * @param gameboardIds
+     *            - comma separated list of gameboard ids to unlink
      * @return noContent response if successful a SegueErrorResponse if not.
      */
     @DELETE
     @Path("gameboards/user_gameboards/{gameboard_id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Unlink the current user from a gameboard.",
+    @ApiOperation(value = "Unlink the current user from one or a comma separated list of gameboards.",
                   notes = "This will not delete or modify the gameboard.")
     public Response unlinkUserFromGameboard(@Context final HttpServletRequest request,
-            @PathParam("gameboard_id") final String gameboardId) {
+            @PathParam("gameboard_id") final String gameboardIds) {
 
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+            Collection<String> gameboardIdsForDeletion = Arrays.asList(gameboardIds.split(","));
 
-            Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts = questionManager
-                    .getQuestionAttemptsByUser(user);
+            this.gameManager.unlinkUserToGameboard(user, gameboardIdsForDeletion);
 
-            GameboardDTO gameboardDTO = this.gameManager.getGameboard(gameboardId, user, userQuestionAttempts);
-
-            if (null == gameboardDTO) {
-                return new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the gameboard specified.")
-                        .toResponse();
-            }
-
-            this.gameManager.unlinkUserToGameboard(gameboardDTO, user);
             getLogManager().logEvent(user, request, IsaacLogType.DELETE_BOARD_FROM_PROFILE,
-                    ImmutableMap.of(GAMEBOARD_ID_FKEY, gameboardDTO.getId()));
+                    ImmutableMap.of(GAMEBOARD_ID_FKEYS, gameboardIdsForDeletion));
 
         } catch (SegueDatabaseException e) {
             String message = "Error whilst trying to delete a gameboard.";
@@ -786,11 +779,6 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (ContentManagerException e1) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Error locating the version requested",
-                    e1);
-            log.error(error.getErrorMessage(), e1);
-            return error.toResponse();
         }
 
         return Response.noContent().build();
