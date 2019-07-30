@@ -15,16 +15,25 @@
  */
 package uk.ac.cam.cl.dtg.segue.dto.content;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
- * Choice for Parsons Questions, containing a list of ParsonsItems.
+ * DTO to represent items in Item Choices and Questions.
  *
  */
-public class ParsonsChoiceDTO extends ItemChoiceDTO {
+public class ItemDTO extends ContentDTO {
 
     /**
      * Default constructor required for mapping.
      */
-    public ParsonsChoiceDTO() {
+    public ItemDTO() {
+    }
+
+    // We don't want this field appearing in the DTO JSON!
+    @Override
+    @JsonIgnore
+    public Boolean getPublished() {
+        return super.getPublished();
     }
 
 }

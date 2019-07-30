@@ -22,7 +22,18 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import uk.ac.cam.cl.dtg.segue.dos.content.*;
+import uk.ac.cam.cl.dtg.segue.dos.content.ChemicalFormula;
+import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
+import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
+import uk.ac.cam.cl.dtg.segue.dos.content.Formula;
+import uk.ac.cam.cl.dtg.segue.dos.content.FreeTextRule;
+import uk.ac.cam.cl.dtg.segue.dos.content.GraphChoice;
+import uk.ac.cam.cl.dtg.segue.dos.content.Item;
+import uk.ac.cam.cl.dtg.segue.dos.content.ItemChoice;
+import uk.ac.cam.cl.dtg.segue.dos.content.LogicFormula;
+import uk.ac.cam.cl.dtg.segue.dos.content.ParsonsChoice;
+import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
+import uk.ac.cam.cl.dtg.segue.dos.content.StringChoice;
 
 import java.io.IOException;
 
@@ -36,6 +47,7 @@ import java.io.IOException;
  */
 public class ChoiceDeserializer extends JsonDeserializer<Choice> {
     private ContentBaseDeserializer contentDeserializer;
+    private ItemDeserializer itemDeserializer;
     
     private static ObjectMapper choiceMapper;
     
@@ -44,16 +56,19 @@ public class ChoiceDeserializer extends JsonDeserializer<Choice> {
      * 
      * @param contentDeserializer
      *            - Instance of a contentBase deserializer needed to deserialize nested content.
+     * @param itemDeserializer
+     *            - Required to cope with deserialising Items inside Choices when deserialising Choices directly.
      */
-    public ChoiceDeserializer(final ContentBaseDeserializer contentDeserializer) {
+    public ChoiceDeserializer(final ContentBaseDeserializer contentDeserializer, final ItemDeserializer itemDeserializer) {
         this.contentDeserializer = contentDeserializer;
+        this.itemDeserializer = itemDeserializer;
     }
 
     @Override
     public Choice deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext)
             throws IOException {
 
-        ObjectNode root = (ObjectNode) getSingletonChoiceMapper().readTree(jsonParser);
+        ObjectNode root = getSingletonChoiceMapper().readTree(jsonParser);
 
         if (null == root.get("type")) {
             throw new JsonMappingException(
@@ -79,6 +94,8 @@ public class ChoiceDeserializer extends JsonDeserializer<Choice> {
                 return getSingletonChoiceMapper().readValue(root.toString(), FreeTextRule.class);
             case "parsonsChoice":
                 return getSingletonChoiceMapper().readValue(root.toString(), ParsonsChoice.class);
+            case "itemChoice":
+                return getSingletonChoiceMapper().readValue(root.toString(), ItemChoice.class);
             default:
                 return getSingletonChoiceMapper().readValue(root.toString(), Choice.class);
         }
@@ -92,6 +109,7 @@ public class ChoiceDeserializer extends JsonDeserializer<Choice> {
         if (null == choiceMapper) {
             SimpleModule contentDeserializerModule = new SimpleModule("ContentDeserializerModule");
             contentDeserializerModule.addDeserializer(ContentBase.class, contentDeserializer);
+            contentDeserializerModule.addDeserializer(Item.class, itemDeserializer);
             
             ObjectMapper mapper = new ObjectMapper();
             mapper.registerModule(contentDeserializerModule);

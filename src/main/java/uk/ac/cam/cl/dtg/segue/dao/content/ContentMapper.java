@@ -15,26 +15,22 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.content;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.google.api.client.util.Lists;
 import com.google.common.collect.Maps;
+import com.google.inject.Inject;
+import com.mongodb.DBObject;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.converter.ConverterFactory;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
-
 import org.apache.commons.lang3.Validate;
 import org.mongojack.internal.MongoJackModule;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import uk.ac.cam.cl.dtg.segue.dao.JsonLoader;
 import uk.ac.cam.cl.dtg.segue.dao.users.AnonymousUserQuestionAttemptsOrikaConverter;
 import uk.ac.cam.cl.dtg.segue.dao.users.QuestionValidationResponseDeserializer;
@@ -44,6 +40,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
+import uk.ac.cam.cl.dtg.segue.dos.content.Item;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.segue.dos.users.AnonymousUser;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
@@ -51,11 +48,12 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.google.api.client.util.Lists;
-import com.google.inject.Inject;
-import com.mongodb.DBObject;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Class responsible for mapping Content objects (or contentBase objects) to their respective subclass.
@@ -419,6 +417,7 @@ public class ContentMapper {
 
             ContentBaseOrikaConverter contentConverter = new ContentBaseOrikaConverter(this);
             ChoiceOrikaConverter choiceConverter = new ChoiceOrikaConverter();
+            ItemOrikaConverter itemConverter = new ItemOrikaConverter();
 
             QuestionValidationResponseOrikaConverter questionValidationResponseConverter 
                 = new QuestionValidationResponseOrikaConverter();
@@ -430,6 +429,7 @@ public class ContentMapper {
 
             converterFactory.registerConverter(contentConverter);
             converterFactory.registerConverter(choiceConverter);
+            converterFactory.registerConverter(itemConverter);
             converterFactory.registerConverter(questionValidationResponseConverter);
             converterFactory.registerConverter("anonymousUserAttemptsToDTOConverter", anonymousUserOrikaConverter);
 
@@ -452,8 +452,12 @@ public class ContentMapper {
     public ObjectMapper generateNewPreconfiguredContentMapper() {
         ContentBaseDeserializer contentDeserializer = new ContentBaseDeserializer();
         contentDeserializer.registerTypeMap(jsonTypes);
-        
-        ChoiceDeserializer choiceDeserializer = new ChoiceDeserializer(contentDeserializer);
+
+        /* When deserialising from Git, the top-level content mapper needs to have an ItemDeseriaizer,
+           and when deserialising a Choice object directly then the ChoiceDeserializer needs to have an
+           ItemDeserializer inside it too. The perils of a recursive content model! */
+        ItemDeserializer itemDeserializer = new ItemDeserializer(contentDeserializer);
+        ChoiceDeserializer choiceDeserializer = new ChoiceDeserializer(contentDeserializer, itemDeserializer);
 
         QuestionValidationResponseDeserializer validationResponseDeserializer 
             = new QuestionValidationResponseDeserializer(
@@ -462,6 +466,7 @@ public class ContentMapper {
         SimpleModule contentDeserializerModule = new SimpleModule("ContentDeserializerModule");
         contentDeserializerModule.addDeserializer(ContentBase.class, contentDeserializer);
         contentDeserializerModule.addDeserializer(Choice.class, choiceDeserializer);
+        contentDeserializerModule.addDeserializer(Item.class, itemDeserializer);
         contentDeserializerModule.addDeserializer(QuestionValidationResponse.class, validationResponseDeserializer);
 
         ObjectMapper objectMapper = new ObjectMapper();

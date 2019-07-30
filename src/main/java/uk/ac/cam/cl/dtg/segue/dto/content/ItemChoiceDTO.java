@@ -15,16 +15,28 @@
  */
 package uk.ac.cam.cl.dtg.segue.dto.content;
 
+import java.util.List;
+
 /**
- * Choice for Parsons Questions, containing a list of ParsonsItems.
+ * Choice for Item Questions, containing a list of Items.
  *
  */
-public class ParsonsChoiceDTO extends ItemChoiceDTO {
+public class ItemChoiceDTO extends ChoiceDTO {
+
+    private List<ItemDTO> items;
 
     /**
      * Default constructor required for mapping.
      */
-    public ParsonsChoiceDTO() {
+    public ItemChoiceDTO() {
+    }
+
+    public List<ItemDTO> getItems() {
+        return items;
+    }
+
+    public void setItems(final List<ItemDTO> items) {
+        this.items = items;
     }
 
 }

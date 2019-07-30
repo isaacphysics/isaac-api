@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2017 James Sharkey
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -269,7 +269,7 @@ public class IsaacStringMatchValidatorTest {
 
         someStringMatchQuestion.setChoices(answerList);
 
-        // Set up user answer, matches both correct and incorrect but incorrect answer more strongly:
+        // Set up user answer, matches both correct and incorrect but correct answer more strongly:
         StringChoice c = new StringChoice();
         c.setValue("testing123");
 
