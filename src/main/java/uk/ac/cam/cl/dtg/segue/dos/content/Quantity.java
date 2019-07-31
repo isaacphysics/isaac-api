@@ -33,6 +33,28 @@ public class Quantity extends Choice {
     }
 
     /**
+     * Additional constructor to help unit testing.
+     *
+     * @param value - the value of the Quantity
+     */
+    public Quantity(final String value) {
+        this.value = value;
+
+    }
+
+    /**
+     * Additional constructor to help unit testing.
+     *
+     * @param value - the value of the Quantity
+     * @param units - the units of the Quantity
+     */
+    public Quantity(final String value, final String units) {
+        this.value = value;
+        this.units = units;
+
+    }
+
+    /**
      * Gets the units.
      * 
      * @return the units

@@ -99,8 +99,9 @@ public class IsaacNumericValidator implements IValidator {
             log.error("Question does not have any answers. " + question.getId() + " src: "
                     + question.getCanonicalSourceFile());
 
-            return new QuantityValidationResponse(question.getId(), answerFromUser, false, new Content(""), false, false,
-                    new Date());
+            return new QuantityValidationResponse(question.getId(), answerFromUser, false,
+                            new Content("This question does not have any correct answers"),
+                            false, false, new Date());
         }
 
         if (isaacNumericQuestion.getSignificantFiguresMin() < 1 || isaacNumericQuestion.getSignificantFiguresMax() < 1
@@ -108,8 +109,9 @@ public class IsaacNumericValidator implements IValidator {
             log.error("Question has broken significant figure rules! " + question.getId() + " src: "
                     + question.getCanonicalSourceFile());
 
-            return new QuantityValidationResponse(question.getId(), answerFromUser, false, new Content(""), false, false,
-                    new Date());
+            return new QuantityValidationResponse(question.getId(), answerFromUser, false,
+                            new Content("This question cannot be answered correctly."),
+                            false, false, new Date());
         }
 
         try {
