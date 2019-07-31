@@ -15,21 +15,20 @@
  */
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
-import static org.junit.Assert.*;
-
-import java.util.List;
-
+import com.google.api.client.util.Lists;
 import org.junit.Before;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
-
-import com.google.api.client.util.Lists;
-
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacStringMatchQuestion;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.StringChoice;
+
+import java.util.List;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test class for the String Match Validator class.
