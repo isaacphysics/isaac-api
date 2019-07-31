@@ -16,7 +16,6 @@
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
 import com.google.api.client.util.Lists;
-import com.google.common.collect.ImmutableList;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -37,8 +36,6 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
