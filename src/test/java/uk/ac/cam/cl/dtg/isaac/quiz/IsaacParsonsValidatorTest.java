@@ -353,15 +353,14 @@ public class IsaacParsonsValidatorTest {
         ParsonsItem item3 = new ParsonsItem("id003", "C", 1);
         parsonsQuestion.setItems(ImmutableList.of(item1, item2, item3));
 
-        ParsonsChoice someCorrectAnswer = new ParsonsChoice();
-        someCorrectAnswer.setItems(ImmutableList.of(new Item("id001", "A")));
+        Choice someCorrectAnswer = new Choice();
         someCorrectAnswer.setCorrect(true);
         answerList.add(someCorrectAnswer);
         parsonsQuestion.setChoices(answerList);
 
         // Set up correct user answer:
         ParsonsChoice c = new ParsonsChoice();
-        c.setItems(ImmutableList.of(item1));
+        c.setItems(ImmutableList.of(item1, item2, item3));
 
         // Test response:
         QuestionValidationResponse response = validator.validateQuestionResponse(parsonsQuestion, c);
@@ -383,14 +382,15 @@ public class IsaacParsonsValidatorTest {
         ParsonsItem item3 = new ParsonsItem("id003", "C", 1);
         parsonsQuestion.setItems(ImmutableList.of(item1, item2, item3));
 
-        Choice someCorrectAnswer = new Choice();
+        ParsonsChoice someCorrectAnswer = new ParsonsChoice();
+        someCorrectAnswer.setItems(ImmutableList.of(new Item("id001", "A")));
         someCorrectAnswer.setCorrect(true);
         answerList.add(someCorrectAnswer);
         parsonsQuestion.setChoices(answerList);
 
         // Set up correct user answer:
         ParsonsChoice c = new ParsonsChoice();
-        c.setItems(ImmutableList.of(item1, item2, item3));
+        c.setItems(ImmutableList.of(item1));
 
         // Test response:
         QuestionValidationResponse response = validator.validateQuestionResponse(parsonsQuestion, c);
