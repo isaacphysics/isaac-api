@@ -1,0 +1,5 @@
+ignore:
+  - "/src/main/java/uk/ac/cam/cl/dtg/isaac/dto/.*" # isaac dtos
+  - "/src/main/java/uk/ac/cam/cl/dtg/isaac/dos/.*" # isaac dos
+  - "/src/main/java/uk/ac/cam/cl/dtg/segue/dos/.*" # segue dos
+  - "/src/main/java/uk/ac/cam/cl/dtg/segue/dto/.*" # segue dtos
