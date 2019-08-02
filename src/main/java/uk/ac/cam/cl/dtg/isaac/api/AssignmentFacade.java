@@ -128,6 +128,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
      *            - Instance of log manager
      * @param associationManager
      *            - So that we can determine what information is allowed to be seen by other users.
+     * @param userBadgeManager
+     *            - So that badges can be awarded to do with assignments
      */
     @Inject
     public AssignmentFacade(final AssignmentManager assignmentManager, final QuestionManager questionManager,
