@@ -551,6 +551,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         String replyToName = emailContent.getReplyToName();
         if (replyToAddress == null || replyToAddress.isEmpty()) {
             replyToAddress = globalProperties.getProperty(Constants.REPLY_TO_ADDRESS);
+        }
+        if (replyToName == null || replyToName.isEmpty()) {
             replyToName = globalProperties.getProperty(Constants.MAIL_NAME);
         }
 
