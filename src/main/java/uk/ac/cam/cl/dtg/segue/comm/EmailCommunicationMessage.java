@@ -35,6 +35,10 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
 
     private final String htmlMessage;
 
+    private final String overrideFromAddress;
+
+    private final String overrideFromName;
+
     private final String replyToAddress;
 
     private final String replyToName;
@@ -48,6 +52,8 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
      * @param recipientAddress address of user
      * @param subject subject of email
      * @param plainTextMessage message in email
+     * @param overrideFromAddress an override from address
+     * @param overrideFromName an override of the from name
      * @param htmlMessage html message in email
      * @param emailType the type of the message
      * @param replyToAddress (nullable) the preferred reply to address.
@@ -58,6 +64,7 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
     public EmailCommunicationMessage(@Nullable final Long userId, final String recipientAddress,
                                      final String subject, final String plainTextMessage,
                                      final String htmlMessage, final EmailType emailType,
+                                     @Nullable final String overrideFromAddress, @Nullable final String overrideFromName,
                                      @Nullable final String replyToAddress, @Nullable final String replyToName,
                                      @Nullable final List<EmailAttachment> attachments) {
         this.userId = userId;
@@ -65,10 +72,35 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
         this.recipientAddress = recipientAddress;
         this.subject = subject;
         this.htmlMessage = htmlMessage;
+        this.overrideFromAddress = overrideFromAddress;
+        this.overrideFromName = overrideFromName;
         this.replyToAddress = replyToAddress;
         this.replyToName = replyToName;
         this.emailType = emailType;
         this.attachments = attachments;
+    }
+
+    /**
+     * @param recipientAddress address of user
+     * @param subject subject of email
+     * @param plainTextMessage message in email
+     * @param htmlMessage html message in email
+     * @param emailType the type of the message
+     *
+     */
+    public EmailCommunicationMessage(final String recipientAddress, final String subject, final String plainTextMessage,
+                                     final String htmlMessage, final EmailType emailType) {
+        this.userId = null;
+        this.plainTextMessage = plainTextMessage;
+        this.recipientAddress = recipientAddress;
+        this.subject = subject;
+        this.htmlMessage = htmlMessage;
+        this.overrideFromAddress = null;
+        this.overrideFromName = null;
+        this.replyToAddress = null;
+        this.replyToName = null;
+        this.emailType = emailType;
+        this.attachments = null;
     }
 
     /**
@@ -105,7 +137,20 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
     public String getSubject() {
         return subject;
     }
-    
+
+    /**
+     * @return overrideFromAddress if set.
+     */
+    public String getOverrideFromAddress() {
+        return overrideFromAddress;
+    }
+
+    /**
+     * @return overrideFromName if set.
+     */
+    public String getOverrideFromName() {
+        return overrideFromName;
+    }
     /**
      * @return replyToAddress if set.
      */
