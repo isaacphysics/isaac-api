@@ -485,7 +485,8 @@ CREATE TABLE public.user_preferences (
     user_id integer NOT NULL,
     preference_type character varying(255) NOT NULL,
     preference_name character varying(255) NOT NULL,
-    preference_value boolean NOT NULL
+    preference_value boolean NOT NULL,
+    last_updated timestamp without time zone
 );
 
 
