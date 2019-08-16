@@ -161,20 +161,21 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @GZIP
     @ApiOperation(value = "List all boards assigned to the current user.")
     public Response getAssignments(@Context final HttpServletRequest request,
-
                                    @QueryParam("assignmentStatus") final GameboardState assignmentStatus) {
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
-
             Collection<AssignmentDTO> assignments = this.assignmentManager.getAssignments(currentlyLoggedInUser);
-
             Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsByUser = this.questionManager
                     .getQuestionAttemptsByUser(currentlyLoggedInUser);
 
+            // Gather all gameboards we need to augment for the assignments in a single query
+            List<String> gameboardIds = assignments.stream().map(AssignmentDTO::getGameboardId).collect(Collectors.toList());
+            Map<String, GameboardDTO> gameboardsMap = this.gameManager.getGameboards(gameboardIds, currentlyLoggedInUser, questionAttemptsByUser)
+                    .stream().collect(Collectors.toMap(GameboardDTO::getId, Function.identity()));
+
             // we want to populate gameboard details for the assignment DTO.
             for (AssignmentDTO assignment : assignments) {
-                assignment.setGameboard(this.gameManager.getGameboard(assignment.getGameboardId(),
-                        currentlyLoggedInUser, questionAttemptsByUser));
+                assignment.setGameboard(gameboardsMap.get(assignment.getGameboardId()));
 
                 if (assignment.getOwnerUserId() != null) {
                     try {
@@ -211,7 +212,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 assignments = newList;
             }
 
-            return Response.ok(assignments).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
+            return Response.ok(assignments)
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
                     .build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
