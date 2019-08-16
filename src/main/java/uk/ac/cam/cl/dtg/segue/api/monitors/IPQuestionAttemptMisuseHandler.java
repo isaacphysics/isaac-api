@@ -71,9 +71,8 @@ public class IPQuestionAttemptMisuseHandler implements IMisuseHandler {
     @Override
     public void executeHardThresholdAction(final String message) {
         final String subject = "HARD Threshold limit reached for IP Address based Question Attempts!";
-        EmailCommunicationMessage e = new EmailCommunicationMessage(null,
-                properties.getProperty(Constants.SERVER_ADMIN_ADDRESS), subject, message, message, EmailType.ADMIN,
-                null, null, null);
+        EmailCommunicationMessage e = new EmailCommunicationMessage(properties.getProperty(Constants.SERVER_ADMIN_ADDRESS),
+                subject, message, message, EmailType.ADMIN);
         try {
             emailManager.addSystemEmailToQueue(e);
         } catch (SegueDatabaseException e1) {

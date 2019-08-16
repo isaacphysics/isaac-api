@@ -15,10 +15,10 @@
  */
 package uk.ac.cam.cl.dtg.segue.dos.content;
 
+import uk.ac.cam.cl.dtg.segue.dto.content.EmailTemplateDTO;
+
 import java.util.List;
 import java.util.Set;
-
-import uk.ac.cam.cl.dtg.segue.dto.content.EmailTemplateDTO;
 
 /**
  * EmailTemplate DTO.
@@ -30,6 +30,8 @@ public class EmailTemplate extends Content {
     private String subject;
     private String plainTextContent;
     private String htmlContent;
+    private String overrideFromAddress;
+    private String overrideFromName;
     private String replyToEmailAddress;
     private String replyToName;
 
@@ -122,6 +124,38 @@ public class EmailTemplate extends Content {
      */
     public void setHtmlContent(final String htmlContent) {
         this.htmlContent = htmlContent;
+    }
+
+    /**
+     * Gets the overrideFromAddress.
+     * @return the overrideFromAddress
+     */
+    public String getOverrideFromAddress() {
+        return overrideFromAddress;
+    }
+
+    /**
+     * Sets the overrideFromAddress.
+     * @param overrideFromAddress the overrideFromAddress to set
+     */
+    public void setOverrideFromAddress(final String overrideFromAddress) {
+        this.overrideFromAddress = overrideFromAddress;
+    }
+
+    /**
+     * Gets the overrideFromName.
+     * @return the overrideFromName
+     */
+    public String getOverrideFromName() {
+        return overrideFromName;
+    }
+
+    /**
+     * Sets the overrideFromName.
+     * @param overrideFromName the overrideFromName to set
+     */
+    public void setOverrideFromName(final String overrideFromName) {
+        this.overrideFromName = overrideFromName;
     }
 
     /**
