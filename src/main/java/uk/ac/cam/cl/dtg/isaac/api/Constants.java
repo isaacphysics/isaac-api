@@ -101,6 +101,7 @@ public final class Constants {
     public static final Integer DEFAULT_GAMEBOARDS_RESULTS_LIMIT = 6;
     public static final Integer MAX_PODS_TO_RETURN = 10;
     public static final Integer SEARCH_MAX_WINDOW_SIZE = 10000;
+    public static final Integer GAMEBOARD_MAX_TITLE_LENGTH = 255;
 
     // Log events
     public static final String QUESTION_ID_LOG_FIELDNAME = "questionId";

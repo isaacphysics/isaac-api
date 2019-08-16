@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Nick Rogers
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.api.managers;
 /**
  * @author nr378
  */
-public class NoWildcardException extends Exception {
+public class NoWildcardException extends InvalidGameboardException {
     private static final long serialVersionUID = 8222475145102964489L;
 
 }

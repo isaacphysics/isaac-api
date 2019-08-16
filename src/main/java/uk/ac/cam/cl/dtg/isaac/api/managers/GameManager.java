@@ -533,7 +533,8 @@ public class GameManager {
      *             - if there is a problem updating the gameboard.
      */
     public GameboardDTO updateGameboardTitle(final GameboardDTO gameboardWithUpdatedTitle)
-            throws SegueDatabaseException {
+            throws SegueDatabaseException, InvalidGameboardException {
+        this.validateGameboard(gameboardWithUpdatedTitle);
         return this.gameboardPersistenceManager.updateGameboardTitle(gameboardWithUpdatedTitle);
     }
 
@@ -1328,6 +1329,11 @@ public class GameManager {
             throw new InvalidGameboardException(String.format(
                     "The gameboard provided contains %s invalid (or missing) questions - [%s]", badQuestions.size(),
                     badQuestions));
+        }
+
+        if (gameboardDTO.getTitle().length() > GAMEBOARD_MAX_TITLE_LENGTH) {
+            throw new InvalidGameboardException(String.format(
+                    "The gameboard title provided is too long (%s characters) the maximum length is %s", gameboardDTO.getTitle().length(), GAMEBOARD_MAX_TITLE_LENGTH));
         }
 
         if (gameboardDTO.getWildCard() == null) {

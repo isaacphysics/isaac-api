@@ -431,9 +431,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
         }
 
         newGameboardObject.setCreationMethod(GameboardCreationMethod.BUILDER);
-
         GameboardDTO persistedGameboard;
-
         try {
             persistedGameboard = gameManager.saveNewGameboard(newGameboardObject, user);
 
@@ -559,6 +557,9 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                 String message = "Error whilst trying to update the gameboard.";
                 log.error(message, e);
                 return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+            } catch (InvalidGameboardException e) {
+                return new SegueErrorResponse(Status.BAD_REQUEST,
+                        String.format("The gameboard you provided is invalid: " + e.getMessage()), e).toResponse();
             }
             return Response.ok(updatedGameboard).build();
         }
