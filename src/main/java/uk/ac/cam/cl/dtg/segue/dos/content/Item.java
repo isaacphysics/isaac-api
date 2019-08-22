@@ -13,18 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.segue.dto.content;
+package uk.ac.cam.cl.dtg.segue.dos.content;
+
+import uk.ac.cam.cl.dtg.segue.dto.content.ItemDTO;
 
 /**
- * Choice for Parsons Questions, containing a list of ParsonsItems.
+ * Specific content for items in Item Choices and Questions.
  *
  */
-public class ParsonsChoiceDTO extends ItemChoiceDTO {
+@DTOMapping(ItemDTO.class)
+@JsonContentType("item")
+public class Item extends Content {
 
     /**
      * Default constructor required for mapping.
      */
-    public ParsonsChoiceDTO() {
+    public Item() {
     }
 
+    /**
+     * Constructor to make testing easier.
+     *
+     * @param id - the ID for the Item
+     * @param value - the value of the Item
+     */
+    public Item(final String id, final String value) {
+        this.id = id;
+        this.value = value;
+    }
 }

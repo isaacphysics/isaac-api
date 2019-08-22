@@ -15,26 +15,28 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.content;
 
-import uk.ac.cam.cl.dtg.segue.dos.content.GraphChoice;
+import ma.glasnost.orika.converter.BidirectionalConverter;
+import ma.glasnost.orika.metadata.Type;
 import uk.ac.cam.cl.dtg.segue.dos.content.ChemicalFormula;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Formula;
+import uk.ac.cam.cl.dtg.segue.dos.content.FreeTextRule;
+import uk.ac.cam.cl.dtg.segue.dos.content.GraphChoice;
+import uk.ac.cam.cl.dtg.segue.dos.content.ItemChoice;
 import uk.ac.cam.cl.dtg.segue.dos.content.LogicFormula;
 import uk.ac.cam.cl.dtg.segue.dos.content.ParsonsChoice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
-import uk.ac.cam.cl.dtg.segue.dos.content.FreeTextRule;
-import uk.ac.cam.cl.dtg.segue.dto.content.GraphChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.dos.content.StringChoice;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChemicalFormulaDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.FormulaDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.FreeTextRuleDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.GraphChoiceDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.ItemChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.LogicFormulaDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ParsonsChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuantityDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.StringChoiceDTO;
-import ma.glasnost.orika.converter.BidirectionalConverter;
-import ma.glasnost.orika.metadata.Type;
-import uk.ac.cam.cl.dtg.segue.dto.content.FreeTextRuleDTO;
 
 /**
  * ContentBaseOrikaConverter A specialist converter class to work with the Orika automapper library.
@@ -74,6 +76,8 @@ public class ChoiceOrikaConverter extends BidirectionalConverter<Choice, ChoiceD
             return super.mapperFacade.map(source, FreeTextRuleDTO.class);
         } else if (source instanceof ParsonsChoice) {
             return super.mapperFacade.map(source, ParsonsChoiceDTO.class);
+        } else if (source instanceof ItemChoice) {
+            return super.mapperFacade.map(source, ItemChoiceDTO.class);
         } else {
             // I would have expected this to cause an infinite loop / stack
             // overflow but apparently it doesn't.
@@ -105,6 +109,8 @@ public class ChoiceOrikaConverter extends BidirectionalConverter<Choice, ChoiceD
             return super.mapperFacade.map(source, FreeTextRule.class);
         } else if (source instanceof ParsonsChoiceDTO) {
             return super.mapperFacade.map(source, ParsonsChoice.class);
+        } else if (source instanceof ItemChoiceDTO) {
+            return super.mapperFacade.map(source, ItemChoice.class);
         } else {
             // I would have expected this to cause an infinite loop / stack
             // overflow but apparently it doesn't.

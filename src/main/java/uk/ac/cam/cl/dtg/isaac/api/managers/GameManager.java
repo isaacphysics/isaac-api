@@ -205,17 +205,17 @@ public class GameManager {
 
     /**
      * This method allows a user to gameboard link to be destroyed.
-     * 
-     * @param gameboardToUnlink
-     *            - the DTO
+     *
      * @param user
      *            - DTO
+     * @param gameboardsToUnlink
+     *            - the collection of ids to unlink
      * @throws SegueDatabaseException
      *             - If there is a problem with the operation.
      */
-    public void unlinkUserToGameboard(final GameboardDTO gameboardToUnlink, final RegisteredUserDTO user)
+    public void unlinkUserToGameboard(final RegisteredUserDTO user, final Collection<String> gameboardsToUnlink)
             throws SegueDatabaseException {
-        this.gameboardPersistenceManager.removeUserLinkToGameboard(user.getId(), gameboardToUnlink.getId());
+        this.gameboardPersistenceManager.removeUserLinkToGameboard(user.getId(), gameboardsToUnlink);
     }
 
     /**

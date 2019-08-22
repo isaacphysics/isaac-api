@@ -36,7 +36,6 @@ import uk.ac.cam.cl.dtg.segue.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.segue.dos.UserPreference;
 import uk.ac.cam.cl.dtg.segue.dos.content.ExternalReference;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
-import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.EmailTemplateDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -45,16 +44,18 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import javax.annotation.Nullable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_VERSION_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_TIME_LOCALITY;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueLogType;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueUserPreferences;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_LIST_FKEY_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.QUEUED_EMAIL;
 
 /**
@@ -547,13 +548,17 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         String plainTextContent = completeTemplateWithProperties(emailContent.getPlainTextContent(), contentPropertiesToUse);
         String HTMLContent = completeTemplateWithProperties(emailContent.getHtmlContent(), contentPropertiesToUse, true);
 
+        // Extract from address and reply to addresses:
+        String overrideFromAddress = emailContent.getOverrideFromAddress();
+        String overrideFromName = emailContent.getOverrideFromName();
         String replyToAddress = emailContent.getReplyToEmailAddress();
         String replyToName = emailContent.getReplyToName();
         if (replyToAddress == null || replyToAddress.isEmpty()) {
             replyToAddress = globalProperties.getProperty(Constants.REPLY_TO_ADDRESS);
+        }
+        if (replyToName == null || replyToName.isEmpty()) {
             replyToName = globalProperties.getProperty(Constants.MAIL_NAME);
         }
-
         ContentDTO htmlTemplate = getContentDTO("email-template-html");
         ContentDTO plainTextTemplate = getContentDTO("email-template-ascii");
 
@@ -573,8 +578,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                 plainTextTemplateProperties);
 
         return new EmailCommunicationMessage(userId, userEmail, emailContent.getSubject(),
-                plainTextMessage,
-                htmlMessage, emailType, replyToAddress, replyToName, attachments);
+                plainTextMessage, htmlMessage, emailType,
+                overrideFromAddress, overrideFromName, replyToAddress, replyToName, attachments);
 
     }
 

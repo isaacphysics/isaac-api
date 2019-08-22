@@ -55,12 +55,18 @@ public class SegueJobService implements ServletContextListener {
         try {
             scheduler = stdSchedulerFactory.getScheduler();
 
+        } catch (SchedulerException e) {
+            throw new RuntimeException("Unable to initialise the scheduler", e);
+        }
+
+        // try to schedule / reschedule jobs
+        try {
             // register statically configured jobs
             this.registerScheduledJobs(staticallyConfiguredScheduledJobs);
 
             scheduler.start();
         } catch (SchedulerException e) {
-            throw new RuntimeException("Unable to initialise the scheduler", e);
+            log.error("Scheduler ERROR - Unable to to schedule quartz jobs or start scheduler on this API instance. Aborting...", e);
         }
     }
 

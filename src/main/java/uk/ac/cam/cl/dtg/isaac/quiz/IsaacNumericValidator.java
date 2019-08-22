@@ -27,6 +27,8 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -51,7 +53,7 @@ public class IsaacNumericValidator implements IValidator {
     private static final String INVALID_NEGATIVE_STANDARD_FORM = ".*?10-([0-9]+).*?";
 
     /**
-     *  A class to represent the significant figures a number has, noting if it is ambiguous and the range if so.
+     * A class to represent the significant figures a number has, noting if it is ambiguous and the range if so.
      */
     private class SigFigResult {
         boolean isAmbiguous;
@@ -60,9 +62,10 @@ public class IsaacNumericValidator implements IValidator {
 
         /**
          * Default constructor.
+         *
          * @param isAmbiguous - whether the significant figures are ambiguous or not.
-         * @param sigFigsMin - the minimum number of sig figs the number could have
-         * @param sigFigsMax - the maximum number of sig fig the number could have, equal to min if not ambiguous.
+         * @param sigFigsMin  - the minimum number of sig figs the number could have
+         * @param sigFigsMax  - the maximum number of sig fig the number could have, equal to min if not ambiguous.
          */
         SigFigResult(final boolean isAmbiguous, final int sigFigsMin, final int sigFigsMax) {
             this.isAmbiguous = isAmbiguous;
@@ -96,8 +99,9 @@ public class IsaacNumericValidator implements IValidator {
             log.error("Question does not have any answers. " + question.getId() + " src: "
                     + question.getCanonicalSourceFile());
 
-            return new QuantityValidationResponse(question.getId(), answerFromUser, false, new Content(""), false, false,
-                    new Date());
+            return new QuantityValidationResponse(question.getId(), answerFromUser, false,
+                            new Content("This question does not have any correct answers"),
+                            false, false, new Date());
         }
 
         if (isaacNumericQuestion.getSignificantFiguresMin() < 1 || isaacNumericQuestion.getSignificantFiguresMax() < 1
@@ -105,8 +109,9 @@ public class IsaacNumericValidator implements IValidator {
             log.error("Question has broken significant figure rules! " + question.getId() + " src: "
                     + question.getCanonicalSourceFile());
 
-            return new QuantityValidationResponse(question.getId(), answerFromUser, false, new Content(""), false, false,
-                    new Date());
+            return new QuantityValidationResponse(question.getId(), answerFromUser, false,
+                            new Content("This question cannot be answered correctly."),
+                            false, false, new Date());
         }
 
         try {
@@ -141,8 +146,8 @@ public class IsaacNumericValidator implements IValidator {
             // - this provides more helpful feedback than sig figs errors.
             if (!bestResponse.isCorrect() && bestResponse.getExplanation() != null
                     && !(DEFAULT_VALIDATION_RESPONSE.equals(bestResponse.getExplanation().getValue())
-                            || DEFAULT_WRONG_UNIT_VALIDATION_RESPONSE
-                            .equals(bestResponse.getExplanation().getValue()))) {
+                    || DEFAULT_WRONG_UNIT_VALIDATION_RESPONSE
+                    .equals(bestResponse.getExplanation().getValue()))) {
                 return bestResponse;
             }
 
@@ -160,9 +165,9 @@ public class IsaacNumericValidator implements IValidator {
                 // Our new bestResponse is about incorrect significant figures:
                 Content sigFigResponse = new Content(
                         "Your <strong>Significant figures</strong> are incorrect, "
-                        + "read our "
-                        + "<strong><a target='_blank' href='/solving_problems#acc_solving_problems_sig_figs'>"
-                        + "sig fig guide</a></strong>.");
+                                + "read our "
+                                + "<strong><a target='_blank' href='/solving_problems#acc_solving_problems_sig_figs'>"
+                                + "sig fig guide</a></strong>.");
                 sigFigResponse.setTags(new HashSet<>(Collections.singletonList("sig_figs")));
                 bestResponse = new QuantityValidationResponse(question.getId(), answerFromUser, false, sigFigResponse,
                         false, validUnits, new Date());
@@ -185,19 +190,17 @@ public class IsaacNumericValidator implements IValidator {
 
     /**
      * Numerically validate the students answer ensuring that the correct unit value is specified.
-     * 
-     * @param isaacNumericQuestion
-     *            - question to validate.
-     * @param answerFromUser
-     *            - answer from user
+     *
+     * @param isaacNumericQuestion - question to validate.
+     * @param answerFromUser       - answer from user
      * @return the validation response
      */
     private QuantityValidationResponse validateWithUnits(final IsaacNumericQuestion isaacNumericQuestion,
-            final Quantity answerFromUser) {
+                                                         final Quantity answerFromUser) {
         log.debug("\t[validateWithUnits]");
         QuantityValidationResponse bestResponse = null;
         int sigFigsToValidateWith = numberOfSignificantFiguresToValidateWith(answerFromUser.getValue(),
-                      isaacNumericQuestion.getSignificantFiguresMin(), isaacNumericQuestion.getSignificantFiguresMax());
+                isaacNumericQuestion.getSignificantFiguresMin(), isaacNumericQuestion.getSignificantFiguresMax());
 
         String unitsFromUser = answerFromUser.getUnits().trim();
 
@@ -249,15 +252,13 @@ public class IsaacNumericValidator implements IValidator {
 
     /**
      * Numerically validate the response without units being considered.
-     * 
-     * @param isaacNumericQuestion
-     *            - question to validate.
-     * @param answerFromUser
-     *            - answer from user
+     *
+     * @param isaacNumericQuestion - question to validate.
+     * @param answerFromUser       - answer from user
      * @return the validation response
      */
     private QuantityValidationResponse validateWithoutUnits(final IsaacNumericQuestion isaacNumericQuestion,
-            final Quantity answerFromUser) {
+                                                            final Quantity answerFromUser) {
         log.debug("\t[validateWithoutUnits]");
         QuantityValidationResponse bestResponse = null;
         int sigFigsToValidateWith = numberOfSignificantFiguresToValidateWith(answerFromUser.getValue(),
@@ -294,19 +295,15 @@ public class IsaacNumericValidator implements IValidator {
     /**
      * Test whether two quantity values match. Parse the strings as doubles, supporting notation of 3x10^12 to mean
      * 3e12, then test that they match to given number of s.f.
-     * 
-     * @param trustedValue
-     *            - first number
-     * @param untrustedValue
-     *            - second number
-     * @param significantFiguresRequired
-     *            - the number of significant figures to perform comparisons to
-     * @throws NumberFormatException
-     *            - when one of the values cannot be parsed
+     *
+     * @param trustedValue               - first number
+     * @param untrustedValue             - second number
+     * @param significantFiguresRequired - the number of significant figures to perform comparisons to
      * @return true when the numbers match
+     * @throws NumberFormatException - when one of the values cannot be parsed
      */
     private boolean numericValuesMatch(final String trustedValue, final String untrustedValue,
-            final int significantFiguresRequired) throws NumberFormatException {
+                                       final int significantFiguresRequired) throws NumberFormatException {
         log.debug("\t[numericValuesMatch]");
         double trustedDouble, untrustedDouble;
 
@@ -314,12 +311,11 @@ public class IsaacNumericValidator implements IValidator {
         String untrustedParsedValue = untrustedValue.replace("−", "-");
         untrustedParsedValue = untrustedParsedValue.replaceFirst(NUMERIC_QUESTION_PARSE_REGEX, "e${exp1}${exp2}");
 
-        trustedDouble = Double.parseDouble(trustedValue.replaceFirst(NUMERIC_QUESTION_PARSE_REGEX, "e${exp1}${exp2}"));
-        untrustedDouble = Double.parseDouble(untrustedParsedValue);
+        String trustedParsedValue = trustedValue.replaceFirst(NUMERIC_QUESTION_PARSE_REGEX, "e${exp1}${exp2}");
 
         // Round to N s.f. for trusted value
-        trustedDouble = roundToSigFigs(trustedDouble, significantFiguresRequired);
-        untrustedDouble = roundToSigFigs(untrustedDouble, significantFiguresRequired);
+        trustedDouble = roundStringValueToSigFigs(trustedParsedValue, significantFiguresRequired);
+        untrustedDouble = roundStringValueToSigFigs(untrustedParsedValue, significantFiguresRequired);
         final double epsilon = 1e-50;
 
         return Math.abs(trustedDouble - untrustedDouble) < max(epsilon * max(trustedDouble, untrustedDouble), epsilon);
@@ -327,23 +323,21 @@ public class IsaacNumericValidator implements IValidator {
 
     /**
      * Round a double to a given number of significant figures.
-     * 
-     * @param f
-     *            - number to round
-     * @param sigFigs
-     *            - number of significant figures required
+     *
+     * @param value   - number to round
+     * @param sigFigs - number of significant figures required
      * @return the rounded number.
      */
-    private double roundToSigFigs(final double f, final int sigFigs) {
-        log.debug("\t[roundToSigFigs]");
+    private double roundStringValueToSigFigs(final String value, final int sigFigs) {
+        log.debug("\t[roundStringValueToSigFigs]");
 
-        int mag = (int) Math.floor(Math.log10(Math.abs(f)));
+        // To prevent floating point arithmetic errors when rounding the value, use a BigDecimal and pass the string
+        // value of the number:
+        BigDecimal bigDecimalValue = new BigDecimal(value);
+        BigDecimal rounded = bigDecimalValue.round(new MathContext(sigFigs, RoundingMode.HALF_UP));
 
-        double normalised = Math.abs(f / Math.pow(10, mag));
+        return rounded.doubleValue();
 
-        // Round without the sign, in order to efficiently achieve "round half away from zero" when Java's Math.round()
-        // defaults to "round half towards positive infinity", then add the sign back when finished.
-        return Math.signum(f) * Math.round(normalised * Math.pow(10, sigFigs - 1)) * Math.pow(10, mag) / Math.pow(10, sigFigs - 1);
     }
 
     /**
@@ -395,7 +389,7 @@ public class IsaacNumericValidator implements IValidator {
      * Deduce from the user answer and question data how many sig figs we should use when checking a question. We must
      * pick a value in the allowed range, but it may be informed by the user's answer.
      *
-     * @param valueToCheck - the user provided value in string form
+     * @param valueToCheck      - the user provided value in string form
      * @param minAllowedSigFigs - the minimum number of significant figures the question allows
      * @param maxAllowedSigFigs - the maximum number of significant figures the question allows
      * @return the number of significant figures that should be used when checking the question
@@ -424,13 +418,10 @@ public class IsaacNumericValidator implements IValidator {
 
     /**
      * Helper method to verify if the answer given is to the correct number of significant figures.
-     * 
-     * @param valueToCheck
-     *            - the value as a string from the user to check.
-     * @param minAllowedSigFigs
-     *            - the minimum number of significant figures that is expected for the answer to be correct.
-     * @param maxAllowedSigFigs
-     *            - the maximum number of significant figures that is expected for the answer to be correct.
+     *
+     * @param valueToCheck      - the value as a string from the user to check.
+     * @param minAllowedSigFigs - the minimum number of significant figures that is expected for the answer to be correct.
+     * @param maxAllowedSigFigs - the maximum number of significant figures that is expected for the answer to be correct.
      * @return true if yes false if not.
      */
     private boolean verifyCorrectNumberOfSignificantFigures(final String valueToCheck, final int minAllowedSigFigs,
@@ -447,19 +438,17 @@ public class IsaacNumericValidator implements IValidator {
             return sigFigsFromUser.sigFigsMin <= maxAllowedSigFigs && minAllowedSigFigs <= sigFigsFromUser.sigFigsMax;
         }
     }
-    
+
     /**
      * To save validation effort, if we have string equality between the submitted value and an answer then we
      * can be sure this match is the best possible.
-     * 
-     * @param isaacNumericQuestion
-     *            - question content object
-     * @param answerFromUser
-     *            - response form the user
+     *
+     * @param isaacNumericQuestion - question content object
+     * @param answerFromUser       - response form the user
      * @return either a QuestionValidationResponse if there is an exact String match or null if no string match.
      */
     private QuantityValidationResponse exactStringMatch(final IsaacNumericQuestion isaacNumericQuestion,
-            final Quantity answerFromUser) {
+                                                        final Quantity answerFromUser) {
 
         log.debug("\t[exactStringMatch]");
 

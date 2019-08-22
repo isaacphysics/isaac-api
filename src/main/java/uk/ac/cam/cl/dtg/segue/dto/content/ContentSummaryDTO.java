@@ -38,6 +38,7 @@ public class ContentSummaryDTO {
     private Boolean correct;
     private List<String> questionPartIds;
     private String supersededBy;
+    private String difficulty;
 
     /**
      * Private constructor required for Dozer.
@@ -232,4 +233,22 @@ public class ContentSummaryDTO {
      * @param supersededBy superseding question ID
      */
     public void setSupersededBy(String supersededBy) { this.supersededBy = supersededBy; }
+
+    /**
+     * Gets the difficulty.
+     *
+     * @return the difficulty
+     */
+    public String getDifficulty() {
+        return difficulty;
+    }
+
+    /**
+     * Sets the difficulty.
+     *
+     * @param difficulty the difficulty to set
+     */
+    public void setDifficulty(final String difficulty) {
+        this.difficulty = difficulty;
+    }
 }

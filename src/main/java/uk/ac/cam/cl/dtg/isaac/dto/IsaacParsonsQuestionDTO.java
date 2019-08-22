@@ -16,27 +16,15 @@
 package uk.ac.cam.cl.dtg.isaac.dto;
 
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
-import uk.ac.cam.cl.dtg.segue.dto.content.ParsonsItemDTO;
-
-import java.util.List;
 
 /**
  * Content DTO for IsaacParsonsQuestions.
  *
  */
 @JsonContentType("isaacParsonsQuestion")
-public class IsaacParsonsQuestionDTO extends IsaacQuestionBaseDTO {
+public class IsaacParsonsQuestionDTO extends IsaacItemQuestionDTO {
 
-    private List<ParsonsItemDTO> items;
     private Boolean disableIndentation;
-
-    public List<ParsonsItemDTO> getItems() {
-        return items;
-    }
-
-    public void setItems(final List<ParsonsItemDTO> items) {
-        this.items = items;
-    }
 
     public Boolean getDisableIndentation() {
         return disableIndentation;

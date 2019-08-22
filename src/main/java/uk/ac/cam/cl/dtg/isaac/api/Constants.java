@@ -92,6 +92,7 @@ public final class Constants {
     public static final String VISITED_DATE_FIELDNAME = "lastVisited";
 
     public static final String GAMEBOARD_ID_FKEY = "gameboardId";
+    public static final String GAMEBOARD_ID_FKEYS = "gameboardIds";
 
     public static final String DATE_FIELDNAME = "date";
     public static final String ENDDATE_FIELDNAME = "endDate";

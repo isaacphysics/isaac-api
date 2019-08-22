@@ -23,7 +23,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ParsonsItemDTO;
  */
 @DTOMapping(ParsonsItemDTO.class)
 @JsonContentType("parsonsItem")
-public class ParsonsItem extends Content {
+public class ParsonsItem extends Item {
 
     private Integer indentation;
 
@@ -31,6 +31,18 @@ public class ParsonsItem extends Content {
      * Default constructor required for mapping.
      */
     public ParsonsItem() {
+    }
+
+    /**
+     * Constructor to make testing easier.
+     *
+     * @param id - the ID for the Item
+     * @param value - the value of the Item
+     * @param indentation - the indentation of the item
+     */
+    public ParsonsItem(final String id, final String value, final Integer indentation) {
+        super(id, value);
+        this.indentation = indentation;
     }
 
     public Integer getIndentation() {

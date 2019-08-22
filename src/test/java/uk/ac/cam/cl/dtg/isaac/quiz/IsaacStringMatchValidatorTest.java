@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2017 James Sharkey
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,21 +15,24 @@
  */
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
-import static org.junit.Assert.*;
-
-import java.util.List;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-
 import com.google.api.client.util.Lists;
-
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuickQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacStringMatchQuestion;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.StringChoice;
+
+import java.util.List;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test class for the String Match Validator class.
@@ -38,6 +41,12 @@ import uk.ac.cam.cl.dtg.segue.dos.content.StringChoice;
 @PowerMockIgnore({"javax.ws.*"})
 public class IsaacStringMatchValidatorTest {
     private IsaacStringMatchValidator validator;
+    private IsaacStringMatchQuestion someStringMatchQuestion;
+    private String caseSensitiveAnswer = "CaseSensitiveAnswer";
+    private String caseInsensitiveAnswer = "CaseInsensitiveAnswer";
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     /**
      * Initial configuration of tests.
@@ -46,6 +55,24 @@ public class IsaacStringMatchValidatorTest {
     @Before
     public final void setUp() {
         validator = new IsaacStringMatchValidator();
+
+        // Set up the question object:
+        someStringMatchQuestion = new IsaacStringMatchQuestion();
+
+        List<Choice> answerList = Lists.newArrayList();
+
+        StringChoice caseSensitiveChoice = new StringChoice();
+        caseSensitiveChoice.setValue(caseSensitiveAnswer);
+        caseSensitiveChoice.setCorrect(true);
+        answerList.add(caseSensitiveChoice);
+
+        StringChoice caseInsensitiveChoice = new StringChoice();
+        caseInsensitiveChoice.setValue(caseInsensitiveAnswer);
+        caseInsensitiveChoice.setCaseInsensitive(true);
+        caseInsensitiveChoice.setCorrect(true);
+        answerList.add(caseInsensitiveChoice);
+
+        someStringMatchQuestion.setChoices(answerList);
     }
 
     /*
@@ -53,19 +80,6 @@ public class IsaacStringMatchValidatorTest {
      */
     @Test
     public final void isaacStringMatchValidator_EmptyValue_InvalidResponseShouldBeReturned() {
-        // Set up the question object:
-        IsaacStringMatchQuestion someStringMatchQuestion = new IsaacStringMatchQuestion();
-
-        List<Choice> answerList = Lists.newArrayList();
-        StringChoice someCorrectAnswer = new StringChoice();
-        someCorrectAnswer.setValue("Testing123");
-        someCorrectAnswer.setCorrect(true);
-        answerList.add(someCorrectAnswer);
-
-        someStringMatchQuestion.setChoices(answerList);
-
-        String explanationShouldContain = "did not provide an answer";
-
         // Set up user answer:
         StringChoice c = new StringChoice();
         c.setValue("");
@@ -73,7 +87,7 @@ public class IsaacStringMatchValidatorTest {
         // Test response:
         QuestionValidationResponse response = validator.validateQuestionResponse(someStringMatchQuestion, c);
         assertFalse(response.isCorrect());
-        assertTrue(response.getExplanation().getValue().contains(explanationShouldContain));
+        assertTrue(response.getExplanation().getValue().contains("did not provide an answer"));
     }
 
     /*
@@ -81,20 +95,9 @@ public class IsaacStringMatchValidatorTest {
     */
     @Test
     public final void isaacStringMatchValidator_LowerCaseValueDefaultChoice_IncorrectResponseShouldBeReturned() {
-        // Set up the question object:
-        IsaacStringMatchQuestion someStringMatchQuestion = new IsaacStringMatchQuestion();
-
-        List<Choice> answerList = Lists.newArrayList();
-        StringChoice someCorrectAnswer = new StringChoice();
-        someCorrectAnswer.setValue("Testing123");
-        someCorrectAnswer.setCorrect(true);
-        answerList.add(someCorrectAnswer);
-
-        someStringMatchQuestion.setChoices(answerList);
-
         // Set up user answer:
         StringChoice c = new StringChoice();
-        c.setValue("testing123");
+        c.setValue(caseSensitiveAnswer.toLowerCase());
 
         // Test response:
         QuestionValidationResponse response = validator.validateQuestionResponse(someStringMatchQuestion, c);
@@ -106,20 +109,9 @@ public class IsaacStringMatchValidatorTest {
     */
     @Test
     public final void isaacStringMatchValidator_CorrectValueDefaultChoice_CorrectResponseShouldBeReturned() {
-        // Set up the question object:
-        IsaacStringMatchQuestion someStringMatchQuestion = new IsaacStringMatchQuestion();
-
-        List<Choice> answerList = Lists.newArrayList();
-        StringChoice someCorrectAnswer = new StringChoice();
-        someCorrectAnswer.setValue("Testing123");
-        someCorrectAnswer.setCorrect(true);
-        answerList.add(someCorrectAnswer);
-
-        someStringMatchQuestion.setChoices(answerList);
-
         // Set up user answer:
         StringChoice c = new StringChoice();
-        c.setValue("Testing123");
+        c.setValue(caseSensitiveAnswer);
 
         // Test response:
         QuestionValidationResponse response = validator.validateQuestionResponse(someStringMatchQuestion, c);
@@ -131,21 +123,9 @@ public class IsaacStringMatchValidatorTest {
     */
     @Test
     public final void isaacStringMatchValidator_CorrectValueCaseInsensitive_CorrectResponseShouldBeReturned() {
-        // Set up the question object:
-        IsaacStringMatchQuestion someStringMatchQuestion = new IsaacStringMatchQuestion();
-
-        List<Choice> answerList = Lists.newArrayList();
-        StringChoice someCorrectAnswer = new StringChoice();
-        someCorrectAnswer.setValue("Testing123");
-        someCorrectAnswer.setCorrect(true);
-        someCorrectAnswer.setCaseInsensitive(true);
-        answerList.add(someCorrectAnswer);
-
-        someStringMatchQuestion.setChoices(answerList);
-
         // Set up user answer:
         StringChoice c = new StringChoice();
-        c.setValue("Testing123");
+        c.setValue(caseInsensitiveAnswer);
 
         // Test response:
         QuestionValidationResponse response = validator.validateQuestionResponse(someStringMatchQuestion, c);
@@ -157,21 +137,9 @@ public class IsaacStringMatchValidatorTest {
     */
     @Test
     public final void isaacStringMatchValidator_LowercaseCorrectValueCaseInsensitive_CorrectResponseShouldBeReturned() {
-        // Set up the question object:
-        IsaacStringMatchQuestion someStringMatchQuestion = new IsaacStringMatchQuestion();
-
-        List<Choice> answerList = Lists.newArrayList();
-        StringChoice someCorrectAnswer = new StringChoice();
-        someCorrectAnswer.setValue("Testing123");
-        someCorrectAnswer.setCorrect(true);
-        someCorrectAnswer.setCaseInsensitive(true);
-        answerList.add(someCorrectAnswer);
-
-        someStringMatchQuestion.setChoices(answerList);
-
         // Set up user answer:
         StringChoice c = new StringChoice();
-        c.setValue("testing123");
+        c.setValue(caseInsensitiveAnswer.toLowerCase());
 
         // Test response:
         QuestionValidationResponse response = validator.validateQuestionResponse(someStringMatchQuestion, c);
@@ -269,12 +237,113 @@ public class IsaacStringMatchValidatorTest {
 
         someStringMatchQuestion.setChoices(answerList);
 
-        // Set up user answer, matches both correct and incorrect but incorrect answer more strongly:
+        // Set up user answer, matches both correct and incorrect but correct answer more strongly:
         StringChoice c = new StringChoice();
         c.setValue("testing123");
 
         // Test response:
         QuestionValidationResponse response = validator.validateQuestionResponse(someStringMatchQuestion, c);
         assertTrue(response.isCorrect());
+    }
+
+    //  ---------- Tests from here test invalid questions themselves ----------
+
+    /*
+     Test that missing choices are detected.
+    */
+    @Test
+    public final void isaacStringMatchValidator_NoChoices_IncorrectResponseShouldBeReturned() {
+        // Set up the question object:
+        IsaacStringMatchQuestion someStringMatchQuestion = new IsaacStringMatchQuestion();
+        someStringMatchQuestion.setChoices(Lists.newArrayList());
+
+        // Set up user answer:
+        StringChoice c = new StringChoice();
+        c.setValue("testing123");
+
+        // Test response:
+        QuestionValidationResponse response = validator.validateQuestionResponse(someStringMatchQuestion, c);
+        assertFalse(response.isCorrect());
+        assertTrue(response.getExplanation().getValue().contains("not have any correct answers"));
+    }
+
+    /*
+     Test that incorrect choice types in question are detected.
+    */
+    @Test
+    public final void isaacStringMatchValidator_WrongChoiceType_IncorrectResponseShouldBeReturned() {
+        // Set up the question object:
+        IsaacStringMatchQuestion someStringMatchQuestion = new IsaacStringMatchQuestion();
+
+        List<Choice> answerList = Lists.newArrayList();
+
+        Choice someCorrectAnswer = new Choice();
+        someCorrectAnswer.setCorrect(true);
+        answerList.add(someCorrectAnswer);
+        someStringMatchQuestion.setChoices(answerList);
+
+        // Set up user answer:
+        StringChoice c = new StringChoice();
+        c.setValue("testing123");
+
+        // Test response:
+        QuestionValidationResponse response = validator.validateQuestionResponse(someStringMatchQuestion, c);
+        assertFalse(response.isCorrect());
+        assertNull(response.getExplanation());
+    }
+
+    /*
+     Test that choices in questions missing values are not matched.
+    */
+    @Test
+    public final void isaacStringMatchValidator_EmptyValueInQuestion_IncorrectResponseShouldBeReturned() {
+        // Set up the question object:
+        IsaacStringMatchQuestion someStringMatchQuestion = new IsaacStringMatchQuestion();
+
+        List<Choice> answerList = Lists.newArrayList();
+        StringChoice someCorrectAnswer = new StringChoice();
+        someCorrectAnswer.setValue("");
+        someCorrectAnswer.setCorrect(true);
+        answerList.add(someCorrectAnswer);
+        someStringMatchQuestion.setChoices(answerList);
+
+        // Set up user answer:
+        StringChoice c = new StringChoice();
+        c.setValue("TEST");
+
+        // Test response:
+        QuestionValidationResponse response = validator.validateQuestionResponse(someStringMatchQuestion, c);
+        assertFalse(response.isCorrect());
+        assertNull(response.getExplanation());
+    }
+
+    /*
+     Test that incorrect question types are detected.
+    */
+    @Test
+    public final void isaacStringMatchValidator_WrongQuestionType_ExceptionShouldBeThrown() {
+        IsaacQuickQuestion invalidQuestionType = new IsaacQuickQuestion();
+        invalidQuestionType.setId("invalidQuestionType");
+
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("only works with Isaac String Match Questions");
+
+        // This should throw an exception:
+        validator.validateQuestionResponse(invalidQuestionType, new StringChoice());
+    }
+
+    /*
+     Test that incorrect submitted choice types are detected.
+    */
+    @Test
+    public final void isaacStringMatchValidator_WrongChoiceType_ExceptionShouldBeThrown() {
+        IsaacStringMatchQuestion someStringMatchQuestion = new IsaacStringMatchQuestion();
+        someStringMatchQuestion.setId("invalidQuestionType");
+
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("Expected StringChoice for IsaacStringMatchQuestion");
+
+        // This should throw an exception:
+        validator.validateQuestionResponse(someStringMatchQuestion, new Choice());
     }
 }

@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,5 +19,5 @@ package uk.ac.cam.cl.dtg.segue.dos.users;
  * @author Stephen Cummins
  */
 public enum Gender {
-    MALE, FEMALE, OTHER, UNKNOWN
+    MALE, FEMALE, OTHER, PREFER_NOT_TO_SAY, UNKNOWN
 }

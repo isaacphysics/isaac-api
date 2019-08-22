@@ -1,5 +1,5 @@
-/**
- * Copyright 2014 Stephen Cummins
+/*
+ * Copyright 2019 James Sharkey
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.isaac.dto;
+package uk.ac.cam.cl.dtg.segue.dto.content;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
 
 /**
- * IsaacConcept Page DTO.
+ * DTO to represent items in Item Choices and Questions.
  *
  */
-public class IsaacConceptPageDTO extends SeguePageDTO {
+public class ItemDTO extends ContentDTO {
+
+    /**
+     * Default constructor required for mapping.
+     */
+    public ItemDTO() {
+    }
+
+    // We don't want this field appearing in the DTO JSON!
+    @Override
+    @JsonIgnore
+    public Boolean getPublished() {
+        return super.getPublished();
+    }
 
 }
