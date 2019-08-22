@@ -8,7 +8,7 @@ CREATE TABLE public.temporary_user_store
   temporary_app_data jsonb,
   created timestamp with time zone NOT NULL DEFAULT now(),
   last_updated timestamp with time zone NOT NULL DEFAULT now(),
-  CONSTRAINT "PK" PRIMARY KEY (id)
+  CONSTRAINT "temporary_user_store_pk" PRIMARY KEY (id)
 )
   WITH (
     OIDS=FALSE
