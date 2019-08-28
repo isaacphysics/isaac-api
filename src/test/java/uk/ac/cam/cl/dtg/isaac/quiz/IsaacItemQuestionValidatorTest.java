@@ -29,6 +29,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Item;
 import uk.ac.cam.cl.dtg.segue.dos.content.ItemChoice;
+import uk.ac.cam.cl.dtg.segue.dos.content.ParsonsChoice;
 
 import java.util.List;
 
@@ -360,5 +361,20 @@ public class IsaacItemQuestionValidatorTest {
 
         // This should throw an exception:
         validator.validateQuestionResponse(itemQuestion, new Choice());
+    }
+
+    /*
+     Test that incorrect submitted child choice types are detected.
+    */
+    @Test
+    public final void isaacItemQuestionValidator_WrongChildChoiceType_ExceptionShouldBeThrown() {
+        IsaacItemQuestion itemQuestion = new IsaacItemQuestion();
+        itemQuestion.setId("invalidQuestionType");
+
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("Expected ItemChoice for IsaacItemQuestion");
+
+        // This should throw an exception:
+        validator.validateQuestionResponse(itemQuestion, new ParsonsChoice());
     }
 }

@@ -23,13 +23,13 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacParsonsQuestion;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuickQuestion;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Item;
-import uk.ac.cam.cl.dtg.segue.dos.content.ParsonsItem;
+import uk.ac.cam.cl.dtg.segue.dos.content.ItemChoice;
 import uk.ac.cam.cl.dtg.segue.dos.content.ParsonsChoice;
+import uk.ac.cam.cl.dtg.segue.dos.content.ParsonsItem;
 
 import java.util.List;
 
@@ -44,7 +44,7 @@ import static org.junit.Assert.assertTrue;
  */
 @PowerMockIgnore({"javax.ws.*"})
 public class IsaacParsonsValidatorTest {
-    private IsaacParsonsValidator validator;
+    private IsaacItemQuestionValidator validator;
     private IsaacParsonsQuestion someParsonsQuestion;
     private String incorrectExplanation = "EXPLANATION";
 
@@ -56,7 +56,7 @@ public class IsaacParsonsValidatorTest {
      */
     @Before
     public final void setUp() {
-        validator = new IsaacParsonsValidator();
+        validator = new IsaacItemQuestionValidator();
 
         // Set up the question object:
         someParsonsQuestion = new IsaacParsonsQuestion();
@@ -369,6 +369,36 @@ public class IsaacParsonsValidatorTest {
     }
 
     /*
+     Test that incorrect choice types in question are detected.
+    */
+    @Test
+    public final void isaacParsonsValidator_WrongChildChoiceType_IncorrectResponseShouldBeReturned() {
+        // Set up the question object:
+        IsaacParsonsQuestion parsonsQuestion = new IsaacParsonsQuestion();
+        parsonsQuestion.setId("questionWithInvalidChoice");
+
+        List<Choice> answerList = Lists.newArrayList();
+        ParsonsItem item1 = new ParsonsItem("id001", "A", 0);
+        ParsonsItem item2 = new ParsonsItem("id002", "B", 0);
+        ParsonsItem item3 = new ParsonsItem("id003", "C", 1);
+        parsonsQuestion.setItems(ImmutableList.of(item1, item2, item3));
+
+        Choice someCorrectAnswer = new ItemChoice();
+        someCorrectAnswer.setCorrect(true);
+        answerList.add(someCorrectAnswer);
+        parsonsQuestion.setChoices(answerList);
+
+        // Set up correct user answer:
+        ParsonsChoice c = new ParsonsChoice();
+        c.setItems(ImmutableList.of(item1, item2, item3));
+
+        // Test response:
+        QuestionValidationResponse response = validator.validateQuestionResponse(parsonsQuestion, c);
+        assertFalse(response.isCorrect());
+        assertNull(response.getExplanation());
+    }
+
+    /*
  Test that incorrect Item types in choices are detected.
 */
     @Test
@@ -399,21 +429,6 @@ public class IsaacParsonsValidatorTest {
     }
 
     /*
-     Test that incorrect question types are detected.
-    */
-    @Test
-    public final void isaacParsonsValidator_WrongQuestionType_ExceptionShouldBeThrown() {
-        IsaacQuickQuestion invalidQuestionType = new IsaacQuickQuestion();
-        invalidQuestionType.setId("invalidQuestionType");
-
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("only works with IsaacParsonsQuestions");
-
-        // This should throw an exception:
-        validator.validateQuestionResponse(invalidQuestionType, new ParsonsChoice());
-    }
-
-    /*
      Test that incorrect submitted choice types are detected.
     */
     @Test
@@ -425,6 +440,6 @@ public class IsaacParsonsValidatorTest {
         expectedException.expectMessage("Expected ParsonsChoice for IsaacParsonsQuestion");
 
         // This should throw an exception:
-        validator.validateQuestionResponse(parsonsQuestion, new Choice());
+        validator.validateQuestionResponse(parsonsQuestion, new ItemChoice());
     }
 }

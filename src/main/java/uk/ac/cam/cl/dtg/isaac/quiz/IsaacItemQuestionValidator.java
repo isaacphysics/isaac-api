@@ -19,15 +19,21 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacItemQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacParsonsQuestion;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Item;
 import uk.ac.cam.cl.dtg.segue.dos.content.ItemChoice;
+import uk.ac.cam.cl.dtg.segue.dos.content.ParsonsChoice;
+import uk.ac.cam.cl.dtg.segue.dos.content.ParsonsItem;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -53,12 +59,22 @@ public class IsaacItemQuestionValidator implements IValidator {
                     "Expected ItemChoice for IsaacItemQuestion: %s. Received (%s) ", question.getId(), answer.getClass()));
         }
 
+        // Check that question type and choice type match: Don't allow child choice types:
+        if (question instanceof IsaacParsonsQuestion && !(answer instanceof ParsonsChoice)) {
+            throw new IllegalArgumentException(String.format(
+                    "Expected ParsonsChoice for IsaacParsonsQuestion: %s. Received (%s) ", question.getId(), answer.getClass()));
+        } else if (!(question instanceof IsaacParsonsQuestion) && answer instanceof ParsonsChoice) {
+            throw new IllegalArgumentException(String.format(
+                    "Expected ItemChoice for IsaacItemQuestion: %s. Received (%s) ", question.getId(), answer.getClass()));
+        }
+
         // These variables store the important features of the response we'll send.
         Content feedback = null;                        // The feedback we send the user
         boolean responseCorrect = false;                // Whether we're right or wrong
 
         IsaacItemQuestion itemQuestion = (IsaacItemQuestion) question;
         ItemChoice submittedChoice = (ItemChoice) answer;
+        boolean isParsonQuestion = question instanceof IsaacParsonsQuestion;
 
         // STEP 0: Is it even possible to answer this question?
 
@@ -80,10 +96,15 @@ public class IsaacItemQuestionValidator implements IValidator {
             feedback = new Content("You did not provide an answer");
         }
 
-        Set<String> submittedItemIds = null;
+        Collection<String> submittedItemIds = null;
         Set<String> allowedItemIds;
         if (null != submittedChoice.getItems() && null != itemQuestion.getItems()) {
-            submittedItemIds = submittedChoice.getItems().stream().map(Item::getId).collect(Collectors.toSet());
+            // Item order doesn't matter for ItemQuestions so use set not a list:
+            if (isParsonQuestion) {
+                submittedItemIds = submittedChoice.getItems().stream().map(Item::getId).collect(Collectors.toList());
+            } else {
+                submittedItemIds = submittedChoice.getItems().stream().map(Item::getId).collect(Collectors.toSet());
+            }
             allowedItemIds = itemQuestion.getItems().stream().map(Item::getId).collect(Collectors.toSet());
             if (!allowedItemIds.containsAll(submittedItemIds)) {
                 feedback = new Content("You did not provide a valid answer; it contained unrecognised items");
@@ -99,10 +120,15 @@ public class IsaacItemQuestionValidator implements IValidator {
             // For all the choices on this question...
             for (Choice c : orderedChoices) {
 
-                // ... that are ItemChoices, ...
+                // ... that are the right type of ItemChoices, ...
                 if (!(c instanceof ItemChoice)) {
                     log.error(String.format(
                             "Validator for question (%s) expected there to be an ItemChoice. Instead it found a %s.",
+                            itemQuestion.getId(), c.getClass().toString()));
+                    continue;
+                } else if (!(c instanceof ParsonsChoice) && isParsonQuestion) {
+                    log.error(String.format(
+                            "Validator for question (%s) expected there to be an ParsonsChoice. Instead it found a %s.",
                             itemQuestion.getId(), c.getClass().toString()));
                     continue;
                 }
@@ -119,12 +145,39 @@ public class IsaacItemQuestionValidator implements IValidator {
                 if (itemChoice.getItems().size() != submittedChoice.getItems().size()) {
                     continue;
                 }
-                Set<String> choiceItemIds = itemChoice.getItems().stream().map(Item::getId).collect(Collectors.toSet());
 
-                if (choiceItemIds.equals(submittedItemIds)) {
-                    // This is safe from duplication issues, since the list lengths are the same too.
-                    responseCorrect = itemChoice.isCorrect();
-                    feedback = (Content) itemChoice.getExplanation();
+                boolean itemTypeMismatch = false;
+                List<Integer> submittedItemIndentations = new ArrayList<>();
+                Collection<String> choiceItemIds = isParsonQuestion ? new ArrayList<>() : new HashSet<>();
+                List<Integer> choiceItemIndentations = new ArrayList<>();
+                for (int i = 0; i < itemChoice.getItems().size(); i++) {
+                    Item choiceItem = itemChoice.getItems().get(i);
+                    Item submittedItem = submittedChoice.getItems().get(i);
+
+                    choiceItemIds.add(choiceItem.getId());
+                    if (isParsonQuestion) {
+                        if (!(submittedItem instanceof ParsonsItem)) {
+                            throw new IllegalArgumentException("Expected ParsonsChoice to contain ParsonsItems!");
+                        }
+                        if (!(choiceItem instanceof ParsonsItem)) {
+                            log.error("ParsonsChoice contained non-ParsonsItem. Skipping!");
+                            itemTypeMismatch = true;
+                            break;
+                        }
+
+                        submittedItemIndentations.add(((ParsonsItem) submittedItem).getIndentation());
+                        choiceItemIndentations.add(((ParsonsItem) choiceItem).getIndentation());
+                    }
+                }
+
+                if (itemTypeMismatch) {
+                    // A problem with the choice itself. Maybe another one will be a better match?
+                    continue;
+                }
+
+                if (choiceItemIds.equals(submittedItemIds) && choiceItemIndentations.equals(submittedItemIndentations)) {
+                    responseCorrect = c.isCorrect();
+                    feedback = (Content) c.getExplanation();
                     break;
                 }
             }
