@@ -15,11 +15,13 @@
  */
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
+import com.google.common.collect.Lists;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacItemQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacParsonsQuestion;
+import uk.ac.cam.cl.dtg.segue.dos.ItemQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
@@ -69,8 +71,9 @@ public class IsaacItemQuestionValidator implements IValidator {
         }
 
         // These variables store the important features of the response we'll send.
-        Content feedback = null;                        // The feedback we send the user
-        boolean responseCorrect = false;                // Whether we're right or wrong
+        Content feedback = null;                // The feedback we send the user
+        List<String> incorrectItemIds = null;   // Additional info about incorrect items
+        boolean responseCorrect = false;        // Whether we're right or wrong
 
         IsaacItemQuestion itemQuestion = (IsaacItemQuestion) question;
         ItemChoice submittedChoice = (ItemChoice) answer;
@@ -143,6 +146,14 @@ public class IsaacItemQuestionValidator implements IValidator {
 
                 // ... look for a match to the submitted answer:
                 if (itemChoice.getItems().size() != submittedChoice.getItems().size()) {
+                    if (itemChoice.isCorrect()) {
+                        // only reveal the selected items which are incorrect so a user cannot simply press submit to
+                        // highlight all correct answers
+                        Set<String> choiceItemIds = itemChoice.getItems().stream().map(Item::getId).collect(Collectors.toSet());
+                        Set<String> submittedItemsNotInChoice = new HashSet<>(submittedItemIds);
+                        submittedItemsNotInChoice.removeAll(choiceItemIds);
+                        incorrectItemIds = new ArrayList<>(submittedItemsNotInChoice);
+                    }
                     continue;
                 }
 
@@ -165,8 +176,16 @@ public class IsaacItemQuestionValidator implements IValidator {
                             break;
                         }
 
-                        submittedItemIndentations.add(((ParsonsItem) submittedItem).getIndentation());
-                        choiceItemIndentations.add(((ParsonsItem) choiceItem).getIndentation());
+                        Integer submittedItemIndentation = ((ParsonsItem) submittedItem).getIndentation();
+                        Integer choiceItemIndentation = ((ParsonsItem) choiceItem).getIndentation();
+                        submittedItemIndentations.add(submittedItemIndentation);
+                        choiceItemIndentations.add(choiceItemIndentation);
+
+                        if (itemChoice.isCorrect() && null == incorrectItemIds) {
+                            if (!choiceItem.getId().equals(submittedItem.getId()) || !choiceItemIndentation.equals(submittedItemIndentation)) {
+                                incorrectItemIds = Lists.newArrayList(submittedItem.getId());
+                            }
+                        }
                     }
                 }
 
@@ -177,13 +196,14 @@ public class IsaacItemQuestionValidator implements IValidator {
 
                 if (choiceItemIds.equals(submittedItemIds) && choiceItemIndentations.equals(submittedItemIndentations)) {
                     responseCorrect = c.isCorrect();
+                    incorrectItemIds = new ArrayList<>();
                     feedback = (Content) c.getExplanation();
                     break;
                 }
             }
         }
 
-        return new QuestionValidationResponse(question.getId(), answer, responseCorrect, feedback, new Date());
+        return new ItemQuestionValidationResponse(question.getId(), answer, responseCorrect, feedback, incorrectItemIds, new Date());
     }
 
 }

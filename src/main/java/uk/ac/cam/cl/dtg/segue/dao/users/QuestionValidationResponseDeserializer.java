@@ -29,6 +29,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import uk.ac.cam.cl.dtg.segue.dao.content.ChoiceDeserializer;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentBaseDeserializer;
+import uk.ac.cam.cl.dtg.segue.dos.ItemQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.QuantityValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
@@ -84,6 +85,8 @@ public class QuestionValidationResponseDeserializer extends JsonDeserializer<Que
         String questionResponseType = root.get("answer").get("type").textValue();
         if (questionResponseType.equals("quantity")) {
             return mapper.readValue(jsonString, QuantityValidationResponse.class);
+        } else if (questionResponseType.equals("itemChoice") || questionResponseType.equals("parsonsChoice")) {
+            return mapper.readValue(jsonString, ItemQuestionValidationResponse.class);
         } else {
             return mapper.readValue(jsonString, QuestionValidationResponse.class);
         }

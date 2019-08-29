@@ -15,8 +15,10 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.users;
 
+import uk.ac.cam.cl.dtg.segue.dos.ItemQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.QuantityValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.segue.dto.ItemQuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.QuantityValidationResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 import ma.glasnost.orika.converter.BidirectionalConverter;
@@ -48,6 +50,8 @@ public class QuestionValidationResponseOrikaConverter extends
 
         if (source instanceof QuantityValidationResponse) {
             return super.mapperFacade.map(source, QuantityValidationResponseDTO.class);
+        } else if (source instanceof ItemQuestionValidationResponse) {
+            return super.mapperFacade.map(source, ItemQuestionValidationResponseDTO.class);
         } else {
             // I would have expected this to cause an infinite loop / stack
             // overflow but apparently it doesn't.
@@ -66,6 +70,8 @@ public class QuestionValidationResponseOrikaConverter extends
 
         if (source instanceof QuantityValidationResponseDTO) {
             return super.mapperFacade.map(source, QuantityValidationResponse.class);
+        } else if (source instanceof ItemQuestionValidationResponseDTO) {
+            return super.mapperFacade.map(source, ItemQuestionValidationResponse.class);
         } else {
             // I would have expected this to cause an infinite loop / stack
             // overflow but apparently it doesn't.
