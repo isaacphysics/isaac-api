@@ -146,14 +146,6 @@ public class IsaacItemQuestionValidator implements IValidator {
 
                 // ... look for a match to the submitted answer:
                 if (itemChoice.getItems().size() != submittedChoice.getItems().size()) {
-                    if (itemChoice.isCorrect()) {
-                        // only reveal the selected items which are incorrect so a user cannot simply press submit to
-                        // highlight all correct answers
-                        Set<String> choiceItemIds = itemChoice.getItems().stream().map(Item::getId).collect(Collectors.toSet());
-                        Set<String> submittedItemsNotInChoice = new HashSet<>(submittedItemIds);
-                        submittedItemsNotInChoice.removeAll(choiceItemIds);
-                        incorrectItemIds = new ArrayList<>(submittedItemsNotInChoice);
-                    }
                     continue;
                 }
 
