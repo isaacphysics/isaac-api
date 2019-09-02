@@ -84,7 +84,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.text.WordUtils.capitalizeFully;
@@ -1409,7 +1408,7 @@ public class UserAccountManager implements IUserAccountManager {
         boolean isValid = true;
 
         if (userToValidate.getEmail() == null || userToValidate.getEmail().isEmpty()
-                || !Pattern.compile("@|-(facebook|google|twitter)$").matcher(userToValidate.getEmail()).find()) {
+                || userToValidate.getEmail().matches(".*@|-(facebook|google|twitter)$")) {
             isValid = false;
         }
         
