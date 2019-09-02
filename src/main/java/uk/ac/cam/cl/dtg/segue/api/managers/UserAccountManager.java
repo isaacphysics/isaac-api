@@ -15,36 +15,19 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
-import static org.apache.commons.lang3.text.WordUtils.capitalizeFully;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
-
-import java.io.IOException;
-import java.net.URI;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import com.google.api.client.util.Lists;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.ImmutableMap;
+import com.google.inject.Inject;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
-
 import org.apache.commons.lang3.Validate;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
@@ -87,11 +70,25 @@ import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import com.google.api.client.util.Lists;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.ImmutableMap;
-import com.google.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.net.URI;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import static org.apache.commons.lang3.text.WordUtils.capitalizeFully;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * This class is responsible for managing all user data and orchestration of calls to a user Authentication Manager for
@@ -1412,7 +1409,7 @@ public class UserAccountManager implements IUserAccountManager {
         boolean isValid = true;
 
         if (userToValidate.getEmail() == null || userToValidate.getEmail().isEmpty()
-                || !userToValidate.getEmail().contains("@")) {
+                || !Pattern.compile("@|-(facebook|google|twitter)$").matcher(userToValidate.getEmail()).find()) {
             isValid = false;
         }
         
