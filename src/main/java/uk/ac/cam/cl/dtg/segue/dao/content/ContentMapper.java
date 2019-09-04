@@ -434,8 +434,8 @@ public class ContentMapper {
             converterFactory.registerConverter("anonymousUserAttemptsToDTOConverter", anonymousUserOrikaConverter);
 
             // special rules
-            mapperFactory.classMap(AnonymousUser.class, AnonymousUserDTO.class).fieldMap("temporaryQuestionAttempts")
-                    .converter("anonymousUserAttemptsToDTOConverter").add().byDefault().register();
+//            mapperFactory.classMap(AnonymousUser.class, AnonymousUserDTO.class).fieldMap("temporaryQuestionAttempts")
+//                    .converter("anonymousUserAttemptsToDTOConverter").add().byDefault().register();
 
             this.autoMapper = mapperFactory.getMapperFacade();
         }

@@ -335,6 +335,20 @@ ALTER SEQUENCE public.question_attempts_id_seq OWNED BY public.question_attempts
 
 
 --
+-- Name: temporary_user_store; Type: TABLE; Schema: public; Owner: rutherford
+--
+
+CREATE TABLE public.temporary_user_store (
+    id character varying NOT NULL,
+    created timestamp with time zone DEFAULT now() NOT NULL,
+    last_updated timestamp with time zone DEFAULT now() NOT NULL,
+    temporary_app_data jsonb
+);
+
+
+ALTER TABLE public.temporary_user_store OWNER TO rutherford;
+
+--
 -- Name: uk_post_codes; Type: TABLE; Schema: public; Owner: rutherford
 --
 
@@ -617,6 +631,14 @@ ALTER TABLE ONLY public.question_attempts ALTER COLUMN id SET DEFAULT nextval('p
 --
 
 ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
+
+
+--
+-- Name: temporary_user_store PK; Type: CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY public.temporary_user_store
+    ADD CONSTRAINT "PK" PRIMARY KEY (id);
 
 
 --

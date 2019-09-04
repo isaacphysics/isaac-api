@@ -112,33 +112,39 @@ public class LogEventFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.FORBIDDEN, "Unable to record log message, restricted '"
                     + TYPE_FIELDNAME + "' value.").toResponse();
         }
-
-        // implement arbitrary log size limit.
-        AbstractSegueUserDTO currentUser = userManager.getCurrentUser(httpRequest);
-        String uid;
-        if (currentUser instanceof AnonymousUserDTO) {
-            uid = ((AnonymousUserDTO) currentUser).getSessionId();
-        } else {
-            uid = ((RegisteredUserDTO) currentUser).getId().toString();
-        }
-
         try {
-            misuseMonitor.notifyEvent(uid, LogEventMisuseHandler.class.toString(), httpRequest.getContentLength());
-        } catch (SegueResourceMisuseException e) {
-            log.error(String.format("Logging Event Failed - log event requested (%s bytes) "
-                    + "and would exceed daily limit size limit (%s bytes) ", httpRequest.getContentLength(),
-                    Constants.MAX_LOG_REQUEST_BODY_SIZE_IN_BYTES));
-            return SegueErrorResponse.getRateThrottledResponse(String.format(
-                    "Log event request (%s bytes) would exceed limit for this endpoint.",
-                    httpRequest.getContentLength()));
+            // implement arbitrary log size limit.
+            AbstractSegueUserDTO currentUser = userManager.getCurrentUser(httpRequest);
+            String uid;
+            if (currentUser instanceof AnonymousUserDTO) {
+                uid = ((AnonymousUserDTO) currentUser).getSessionId();
+            } else {
+                uid = ((RegisteredUserDTO) currentUser).getId().toString();
+            }
+
+            try {
+                misuseMonitor.notifyEvent(uid, LogEventMisuseHandler.class.toString(), httpRequest.getContentLength());
+            } catch (SegueResourceMisuseException e) {
+                log.error(String.format("Logging Event Failed - log event requested (%s bytes) "
+                        + "and would exceed daily limit size limit (%s bytes) ", httpRequest.getContentLength(),
+                        Constants.MAX_LOG_REQUEST_BODY_SIZE_IN_BYTES));
+                return SegueErrorResponse.getRateThrottledResponse(String.format(
+                        "Log event request (%s bytes) would exceed limit for this endpoint.",
+                        httpRequest.getContentLength()));
+            }
+
+            // remove the type information as we don't need it.
+            eventJSON.remove(TYPE_FIELDNAME);
+
+            this.getLogManager().logExternalEvent(this.userManager.getCurrentUser(httpRequest), httpRequest, eventType, eventJSON);
+
+            return Response.ok().cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
+        } catch (SegueDatabaseException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Database error while looking up user information.", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
         }
-
-        // remove the type information as we don't need it.
-        eventJSON.remove(TYPE_FIELDNAME);
-
-        this.getLogManager().logExternalEvent(this.userManager.getCurrentUser(httpRequest), httpRequest, eventType, eventJSON);
-
-        return Response.ok().cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
     }
 
     /**

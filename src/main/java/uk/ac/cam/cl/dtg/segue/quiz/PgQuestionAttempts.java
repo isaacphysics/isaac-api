@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2015 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,8 +15,20 @@
  */
 package uk.ac.cam.cl.dtg.segue.quiz;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.ANONYMOUS_SESSION_DURATION_IN_MINUTES;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.util.Lists;
+import com.google.api.client.util.Maps;
+import com.google.inject.Inject;
+import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
+import uk.ac.cam.cl.dtg.segue.dos.LightweightQuestionValidationResponse;
+import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -27,31 +39,12 @@ import java.sql.Statement;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.lang3.Validate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.api.client.util.Lists;
-import com.google.api.client.util.Maps;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.inject.Inject;
-
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
-import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
-import uk.ac.cam.cl.dtg.segue.dos.LightweightQuestionValidationResponse;
-import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
-import uk.ac.cam.cl.dtg.segue.dos.users.Role;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
 
 /**
  * @author sac92
@@ -63,10 +56,6 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
     private final PostgresSqlDb database;
     private final ObjectMapper objectMapper;
 
-    // cache of anonymousUserId --> Map of questionPageId --> Map of questionId --> List of Validation responses
-    private final Cache<String, Map<String, Map<String, List<QuestionValidationResponse>>>> 
-        anonymousQuestionAttemptsCache;
-
     /**
      * @param ds
      *            - data source
@@ -77,47 +66,97 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
     public PgQuestionAttempts(final PostgresSqlDb ds, final ContentMapper objectMapper) {
         this.database = ds;
         this.objectMapper = objectMapper.getSharedContentObjectMapper();
-        anonymousQuestionAttemptsCache = CacheBuilder.newBuilder()
-                .expireAfterAccess(ANONYMOUS_SESSION_DURATION_IN_MINUTES, TimeUnit.MINUTES)
-                .<String, Map<String, Map<String, List<QuestionValidationResponse>>>> build();
     }
     
     @Override
     public void registerAnonymousQuestionAttempt(final String userId, final String questionPageId,
             final String fullQuestionId, final QuestionValidationResponse questionAttempt)
             throws SegueDatabaseException {
-        Map<String, Map<String, List<QuestionValidationResponse>>> userAttempts = anonymousQuestionAttemptsCache
-                .getIfPresent(userId);
 
-        if (null == userAttempts) {
-            userAttempts = new HashMap<String, Map<String, List<QuestionValidationResponse>>>();
-            anonymousQuestionAttemptsCache.put(userId, userAttempts);
+        PreparedStatement pst;
+        try (Connection conn = database.getDatabaseConnection()) {
+            Map<String, Map<String, List<QuestionValidationResponse>>> userAttempts = this.getAnonymousQuestionAttempts(userId);
+
+            if (null == userAttempts) {
+                userAttempts = new HashMap<>();
+            }
+
+            userAttempts.computeIfAbsent(questionPageId, k -> new HashMap<>());
+
+            userAttempts.get(questionPageId).computeIfAbsent(fullQuestionId, k -> new ArrayList<>());
+
+            userAttempts.get(questionPageId).get(fullQuestionId).add(questionAttempt);
+
+            // TODO: This might be able to be simplified by using json_insert
+            pst = conn.prepareStatement("UPDATE temporary_user_store " +
+                    "SET temporary_app_data = jsonb_set(temporary_app_data, " +
+                    "?::text[], ?::text::jsonb) WHERE id = ?;");
+            pst.setString(1, "{questionAttempts}");
+            pst.setString(2, objectMapper.writeValueAsString(userAttempts));
+            pst.setString(3, userId);
+
+            log.debug(pst.toString());
+            if (pst.executeUpdate() == 0) {
+                throw new SegueDatabaseException("Unable to save question attempt.");
+            }
+
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        } catch (JsonProcessingException e) {
+            throw new SegueDatabaseException("Unable to process json exception", e);
         }
-
-        if (userAttempts.get(questionPageId) == null) {
-            userAttempts.put(questionPageId, new HashMap<String, List<QuestionValidationResponse>>());
-        }
-
-        if (userAttempts.get(questionPageId).get(fullQuestionId) == null) {
-            userAttempts.get(questionPageId).put(fullQuestionId, new ArrayList<QuestionValidationResponse>());
-        }
-
-        userAttempts.get(questionPageId).get(fullQuestionId).add(questionAttempt);
     }
 
     /**
-     * 
+     * getAnonymousQuestionAttempts.
      * @param anonymousId
      *            to lookup
      * @return the question pageId --> full questionId --> list of responses. (or null if no data)
      */
     @Override
     public Map<String, Map<String, List<QuestionValidationResponse>>> getAnonymousQuestionAttempts(
-            final String anonymousId) {
-        if (this.anonymousQuestionAttemptsCache.getIfPresent(anonymousId) != null) {
-            return this.anonymousQuestionAttemptsCache.getIfPresent(anonymousId);
-        } else {
-            return Maps.newHashMap();
+            final String anonymousId) throws SegueDatabaseException {
+        PreparedStatement pst;
+        try (Connection conn = database.getDatabaseConnection()) {
+            pst = conn.prepareStatement("SELECT temporary_app_data->'questionAttempts' AS question_attempts from temporary_user_store where id = ?;"
+                    , Statement.RETURN_GENERATED_KEYS);
+
+            pst.setString(1, anonymousId);
+
+            ResultSet resultSet = pst.executeQuery();
+            // are there any results
+            if (!resultSet.isBeforeFirst()) {
+                return Maps.newHashMap();
+            }
+
+            resultSet.next();
+
+            // We need to try and generate QuestionValidationResponses in the correct object structure - Apologies for the hideousness
+            Map<String, Map<String, List<Object>>> questionAttemptsFromDB
+                    = objectMapper.readValue(resultSet.getString("question_attempts"), Map.class);
+            Map<String, Map<String, List<QuestionValidationResponse>>> result = Maps.newHashMap();
+
+            for (Map.Entry<String, Map<String, List<Object>>> questionAttemptsForPage : questionAttemptsFromDB.entrySet()){
+
+                Map<String, List<QuestionValidationResponse>> questionAttemptsForQuestion = Maps.newHashMap();
+                for (Map.Entry<String, List<Object>> submap : questionAttemptsForPage.getValue().entrySet()){
+                    List<QuestionValidationResponse> listOfuestionValidationResponses = Lists.newArrayList();
+                    questionAttemptsForQuestion.put(submap.getKey(), listOfuestionValidationResponses);
+
+                    for (Object o : submap.getValue()) {
+                        listOfuestionValidationResponses
+                                .add(objectMapper.convertValue(o, QuestionValidationResponse.class));
+                    }
+                }
+
+                result.put(questionAttemptsForPage.getKey(), questionAttemptsForQuestion);
+            }
+
+            return result;
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        } catch (IOException e) {
+            throw new SegueDatabaseException("Unable to process json exception", e);
         }
     }
 
@@ -327,9 +366,6 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
         
         log.info(String.format("Merged anonymously answered questions (%s) with known user account (%s)", count,
                 registeredUserId));
-
-        // delete the session attribute as merge has completed.
-        this.anonymousQuestionAttemptsCache.invalidate(anonymousUserId);
     }
 
     @Override

@@ -39,6 +39,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.IAnonymousUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.users.AnonymousUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
@@ -94,7 +95,7 @@ public class UserManagerTest {
     private EmailManager dummyQueue;
     private SimpleDateFormat sdf;
 
-    private Cache<String, AnonymousUser> dummyUserCache;
+    private IAnonymousUserDataManager dummyUserCache;
     private ILogManager dummyLogManager;
     private SegueLocalAuthenticator dummyLocalAuth;
 
@@ -121,9 +122,7 @@ public class UserManagerTest {
         this.dummyPropertiesLoader = createMock(PropertiesLoader.class);
         this.sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss Z yyyy");
 
-        this.dummyUserCache = CacheBuilder.newBuilder()
-                .expireAfterAccess(Constants.ANONYMOUS_SESSION_DURATION_IN_MINUTES, TimeUnit.MINUTES)
-                .<String, AnonymousUser> build();
+        this.dummyUserCache = createMock(IAnonymousUserDataManager.class);
 
         this.dummyLogManager = createMock(ILogManager.class);
 
@@ -320,7 +319,8 @@ public class UserManagerTest {
 
         AnonymousUser au = new AnonymousUser();
         au.setSessionId(someSegueAnonymousUserId);
-        this.dummyUserCache.put(au.getSessionId(), au);
+        expect(this.dummyUserCache.storeAnonymousUser(au)).andReturn(au).atLeastOnce();
+        expect(this.dummyUserCache.getById(au.getSessionId())).andReturn(au).atLeastOnce();
 
         AnonymousUserDTO someAnonymousUserDTO = new AnonymousUserDTO();
         someAnonymousUserDTO.setSessionId(someSegueAnonymousUserId);
@@ -413,7 +413,7 @@ public class UserManagerTest {
         dummyQueue.sendTemplatedEmailToUser(anyObject(), anyObject(), anyObject(), anyObject());
         expectLastCall().once();
 
-        replay(dummySession, request, dummyAuth, dummyQuestionDatabase, dummyMapper, dummyDatabase, dummyLocalAuth, dummyQueue);
+        replay(dummySession, request, dummyAuth, dummyQuestionDatabase, dummyMapper, dummyDatabase, dummyLocalAuth, dummyQueue, dummyUserCache);
 
         // Act
         RegisteredUserDTO u = userManager.authenticateCallback(request, response, validOAuthProvider);
