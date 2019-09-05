@@ -281,7 +281,7 @@ public class GameManager {
                                                   final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts)
             throws SegueDatabaseException, ContentManagerException {
         if (null == gameboardIds || gameboardIds.isEmpty()) {
-            return null;
+            return new ArrayList<>();
         }
 
         List<GameboardDTO> gameboardsByIds = this.gameboardPersistenceManager.getGameboardsByIds(gameboardIds);
