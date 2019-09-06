@@ -46,7 +46,7 @@ services:
       - cluster.name=isaac-cs-live-search
       - "network.host=${LOCAL_CS_ELASTICSEARCH_IP}"
       - "discovery.zen.ping.unicast.hosts=${LOCAL_CS_ELASTICSEARCH_IP}"
-#      - "discovery.zen.ping.unicast.hosts=${REMOTE_CS_ELASTICSEARCH_IP},${LOCAL_CS_ELASTICSEARCH_IP}"
+      - "discovery.zen.ping.unicast.hosts=${REMOTE_CS_ELASTICSEARCH_IP},${LOCAL_CS_ELASTICSEARCH_IP}"
       - "ES_JAVA_OPTS=-Xms6g -Xmx6g"
       - bootstrap.memory_lock=true # part of disabling swap
     ulimits:
