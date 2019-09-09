@@ -105,7 +105,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
     private final QuestionManager questionManager;
     private final UserBadgeManager userBadgeManager;
-    protected final List<String> bookTags = ImmutableList.of("phys_book_gcse", "physics_skills_14", "chemistry_16");
+    private final List<String> bookTags = ImmutableList.of("phys_book_gcse", "physics_skills_14", "chemistry_16");
 
     private final String NOT_SHARING = "NOT_SHARING";
 
@@ -128,6 +128,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
      *            - Instance of log manager
      * @param associationManager
      *            - So that we can determine what information is allowed to be seen by other users.
+     * @param userBadgeManager
+     *            - So that badges can be awarded to do with assignments
      */
     @Inject
     public AssignmentFacade(final AssignmentManager assignmentManager, final QuestionManager questionManager,
@@ -159,20 +161,21 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @GZIP
     @ApiOperation(value = "List all boards assigned to the current user.")
     public Response getAssignments(@Context final HttpServletRequest request,
-
                                    @QueryParam("assignmentStatus") final GameboardState assignmentStatus) {
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
-
             Collection<AssignmentDTO> assignments = this.assignmentManager.getAssignments(currentlyLoggedInUser);
-
             Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsByUser = this.questionManager
                     .getQuestionAttemptsByUser(currentlyLoggedInUser);
 
+            // Gather all gameboards we need to augment for the assignments in a single query
+            List<String> gameboardIds = assignments.stream().map(AssignmentDTO::getGameboardId).collect(Collectors.toList());
+            Map<String, GameboardDTO> gameboardsMap = this.gameManager.getGameboards(gameboardIds, currentlyLoggedInUser, questionAttemptsByUser)
+                    .stream().collect(Collectors.toMap(GameboardDTO::getId, Function.identity()));
+
             // we want to populate gameboard details for the assignment DTO.
             for (AssignmentDTO assignment : assignments) {
-                assignment.setGameboard(this.gameManager.getGameboard(assignment.getGameboardId(),
-                        currentlyLoggedInUser, questionAttemptsByUser));
+                assignment.setGameboard(gameboardsMap.get(assignment.getGameboardId()));
 
                 if (assignment.getOwnerUserId() != null) {
                     try {
@@ -209,7 +212,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 assignments = newList;
             }
 
-            return Response.ok(assignments).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
+            return Response.ok(assignments)
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
                     .build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
@@ -224,19 +228,22 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     }
 
     /**
-     * Allows a user to get all assignments they have set.
+     * Allows a user to get all assignments they have set in light weight objects.
+     *
+     * If the user specifies a group ID to narrow the search full objects including questions in gameboards will be returned.
      *
      * @param request
      *            - so that we can identify the current user.
      * @param groupIdOfInterest
-     *            - Optional parameter to filter the list by group id.
+     *            - Optional parameter - If this is specified a fully resolved assignment object will be provided
+     *            otherwise just a lightweight one per assignment will be returned.
      * @return the assignment object.
      */
     @GET
     @Path("/assign")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "List all assignments set by the current user.")
+    @ApiOperation(value = "List all assignments set by the current user if no group param specified.")
     public Response getAssigned(@Context final HttpServletRequest request,
                                 @QueryParam("group") final Long groupIdOfInterest) {
         try {
@@ -262,9 +269,13 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 Collection<AssignmentDTO> allAssignmentsSetToGroup
                         = this.assignmentManager.getAssignmentsByGroup(group.getId());
 
+                // we currently need to use the currently logged in users information to as a parameter to get all the pass mark information.
+                Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts = this.questionManager
+                        .getQuestionAttemptsByUser(currentlyLoggedInUser);
+
                 // we want to populate gameboard details for the assignment DTO.
                 for (AssignmentDTO assignment : allAssignmentsSetToGroup) {
-                    assignment.setGameboard(this.gameManager.getGameboard(assignment.getGameboardId()));
+                    assignment.setGameboard(this.gameManager.getGameboard(assignment.getGameboardId(), currentlyLoggedInUser, userQuestionAttempts));
                 }
 
                 this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacLogType.VIEW_GROUPS_ASSIGNMENTS,
@@ -279,6 +290,11 @@ public class AssignmentFacade extends AbstractIsaacFacade {
         } catch (SegueDatabaseException e) {
             log.error("Database error while trying to assignments set to a given group", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unknown database error.").toResponse();
+        } catch (ContentManagerException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Error locating the version requested",
+                    e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
         }
     }
 

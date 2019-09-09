@@ -31,6 +31,8 @@ public class AnonymousUserDTO extends AbstractSegueUserDTO {
     private String sessionId;
     private Map<String, Map<String, List<QuestionValidationResponseDTO>>> temporaryQuestionAttempts;
     private Date dateCreated;
+    private Date lastUpdated;
+
 
     /**
      * Default constructor required for Jackson.
@@ -52,16 +54,16 @@ public class AnonymousUserDTO extends AbstractSegueUserDTO {
 
     /**
      * Full constructor for the AnonymousUser object.
-     * 
+     *
      * @param sessionId
      *            - Our session Unique ID
-     * @param temporaryQuestionAttempts
-     *            - attempts.
+     * @param dateCreated - date the user object was created
+     * @param lastUpdated - last time it was updated.
      */
-    public AnonymousUserDTO(final String sessionId,
-            final Map<String, Map<String, List<QuestionValidationResponseDTO>>> temporaryQuestionAttempts) {
-        this.temporaryQuestionAttempts = temporaryQuestionAttempts;
+    public AnonymousUserDTO(final String sessionId, final Date dateCreated, final Date lastUpdated) {
         this.sessionId = sessionId;
+        this.dateCreated = dateCreated;
+        this.lastUpdated = lastUpdated;
     }
 
     /**
@@ -84,26 +86,6 @@ public class AnonymousUserDTO extends AbstractSegueUserDTO {
     }
 
     /**
-     * Gets the temporaryQuestionAttempts.
-     * 
-     * @return the temporaryQuestionAttempts
-     */
-    public Map<String, Map<String, List<QuestionValidationResponseDTO>>> getTemporaryQuestionAttempts() {
-        return temporaryQuestionAttempts;
-    }
-
-    /**
-     * Sets the temporaryQuestionAttempts.
-     * 
-     * @param temporaryQuestionAttempts
-     *            the temporaryQuestionAttempts to set
-     */
-    public void setTemporaryQuestionAttempts(
-            final Map<String, Map<String, List<QuestionValidationResponseDTO>>> temporaryQuestionAttempts) {
-        this.temporaryQuestionAttempts = temporaryQuestionAttempts;
-    }
-
-    /**
      * Gets the dateCreated.
      * 
      * @return the dateCreated
@@ -120,5 +102,23 @@ public class AnonymousUserDTO extends AbstractSegueUserDTO {
      */
     public void setDateCreated(final Date dateCreated) {
         this.dateCreated = dateCreated;
+    }
+
+
+    /**
+     * get date this object was last updated.
+     *
+     * @return update date
+     */
+    public Date getLastUpdated() {
+        return lastUpdated;
+    }
+
+    /**
+     * set the last update date
+     * @param lastUpdated last update date
+     */
+    public void setLastUpdated(final Date lastUpdated) {
+        this.lastUpdated = lastUpdated;
     }
 }

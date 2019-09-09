@@ -420,13 +420,18 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     @ApiOperation(value = "Initiate logout for the current user.")
     public final Response userLogout(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response) {
+        try {
+            this.getLogManager().logEvent(this.userManager.getCurrentUser(request), request, SegueLogType.LOG_OUT,
+                    Maps.newHashMap());
+            SegueMetrics.LOG_OUT.inc();
 
-        this.getLogManager().logEvent(this.userManager.getCurrentUser(request), request, SegueLogType.LOG_OUT,
-                Maps.newHashMap());
-        SegueMetrics.LOG_OUT.inc();
+            userManager.logUserOut(request, response);
 
-        userManager.logUserOut(request, response);
-
-        return Response.ok().build();
+            return Response.ok().build();
+        } catch (SegueDatabaseException e) {
+            String errorMsg = "Internal Database error has occurred during logout.";
+            log.error(errorMsg, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
+        }
     }
 }

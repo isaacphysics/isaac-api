@@ -1483,7 +1483,11 @@ public class AdminFacade extends AbstractSegueFacade {
 
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Database error while looking up number of anonymous users.", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
         }
     }
-
 }

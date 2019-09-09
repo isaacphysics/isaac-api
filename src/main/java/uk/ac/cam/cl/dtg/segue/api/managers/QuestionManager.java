@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,6 +31,8 @@ import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.isaac.configuration.IsaacApplicationRegister;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacItemQuestion;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacItemQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -80,11 +82,11 @@ public class QuestionManager {
      * 
      * @param question
      *            The question to which the answer must be validated against.
-     * @param answers
-     *            from the client as a list used for comparison purposes.
+     * @param submittedAnswer
+     *            from the client as a DTO for comparison.
      * @return A response containing a QuestionValidationResponse object.
      */
-    public final Response validateAnswer(final Question question, final List<ChoiceDTO> answers) {
+    public final Response validateAnswer(final Question question, final ChoiceDTO submittedAnswer) {
         IValidator validator = locateValidator(question.getClass());
 
         if (null == validator) {
@@ -94,34 +96,18 @@ public class QuestionManager {
                     .build();
         }
 
-        if (validator instanceof IMultiFieldValidator) {
-            IMultiFieldValidator multiFieldValidator = (IMultiFieldValidator) validator;
-            // we need to call the multifield validator instead.
-            return Response.ok(multiFieldValidator.validateMultiFieldQuestionResponses(question, answers)).build();
-        } else { // use the standard IValidator
-
-            // ok so we are expecting there just to be one choice?
-            if (answers.isEmpty() || answers.size() > 1) {
-                log.debug("We only expected one answer for this question...");
-                SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
-                        "We only expected one answer for this question (id " + question.getId()
-                                + ") and we were given a list.");
-                return error.toResponse();
-            }
-            
-            Choice answerFromUser = mapper.getAutoMapper().map(answers.get(0), Choice.class);
-            QuestionValidationResponse validateQuestionResponse = null;
-            try {
-                validateQuestionResponse = validator.validateQuestionResponse(question,
-                        answerFromUser);
-            } catch (ValidatorUnavailableException e) {
-                return SegueErrorResponse.getServiceUnavailableResponse(e.getClass().getSimpleName() + ": "
-                        + e.getMessage());
-            }
-
-            return Response.ok(
-                    mapper.getAutoMapper().map(validateQuestionResponse, QuestionValidationResponseDTO.class)).build();
+        Choice answerFromUser = mapper.getAutoMapper().map(submittedAnswer, Choice.class);
+        QuestionValidationResponse validateQuestionResponse;
+        try {
+            validateQuestionResponse = validator.validateQuestionResponse(question, answerFromUser);
+        } catch (ValidatorUnavailableException e) {
+            return SegueErrorResponse.getServiceUnavailableResponse(e.getClass().getSimpleName() + ": "
+                    + e.getMessage());
         }
+
+        return Response.ok(
+                mapper.getAutoMapper().map(validateQuestionResponse, QuestionValidationResponseDTO.class)).build();
+
     }
 
     /**
@@ -450,7 +436,8 @@ public class QuestionManager {
     }
 
     /**
-     * This is a helper method that will shuffle multiple choice questions based on a user specified seed.
+     * This is a helper method that will shuffle multiple choice questions and item questions
+     * based on a user specified seed.
      * 
      * @param seed
      *            - Randomness
@@ -465,12 +452,26 @@ public class QuestionManager {
         // shuffle all choices based on the seed provided, augmented by individual question ID.
         for (QuestionDTO question : questions) {
             if (question instanceof ChoiceQuestionDTO) {
+                ChoiceQuestionDTO choiceQuestion = (ChoiceQuestionDTO) question;
+                String qSeed = seed + choiceQuestion.getId();
+
                 Boolean randomiseChoices = ((ChoiceQuestionDTO) question).getRandomiseChoices();
                 if (randomiseChoices == null || randomiseChoices) {  // Default to randomised if not set.
-                    ChoiceQuestionDTO choiceQuestion = (ChoiceQuestionDTO) question;
-                    String qSeed = seed + choiceQuestion.getId();
                     if (choiceQuestion.getChoices() != null) {
                         Collections.shuffle(choiceQuestion.getChoices(), new Random(qSeed.hashCode()));
+                    }
+                }
+
+                // FIXME: this is an Isaac specific thing in a segue class!
+                // Perhaps ItemQuestions could live in Segue, but then what relation should they have to
+                // the IsaacQuestionBase class?
+                if (question instanceof IsaacItemQuestionDTO) {
+                    IsaacItemQuestionDTO itemQuestion = (IsaacItemQuestionDTO) question;
+                    Boolean randomiseItems = itemQuestion.getRandomiseItems();
+                    if (randomiseItems == null || randomiseItems) {  // Default to randomised if not set.
+                        if (itemQuestion.getItems() != null) {
+                            Collections.shuffle(itemQuestion.getItems(), new Random(qSeed.hashCode()));
+                        }
                     }
                 }
             }

@@ -358,7 +358,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     public final Response getEventBookingById(@Context final HttpServletRequest request,
             @PathParam("booking_id") final String bookingId) {
         try {
-            if (!isUserStaff(userManager, request)) {
+            if (!isUserAnAdminOrEventManager(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
                         .toResponse();
             }
@@ -399,7 +399,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                                                      @PathParam("event_id") final String eventId,
                                                      @PathParam("user_id") final Long userId, final Map<String, String> additionalInformation) {
         try {
-            if (!isUserStaff(userManager, request)) {
+            if (!isUserAnAdminOrEventManager(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be a staff user to access this endpoint.")
                     .toResponse();
             }
@@ -465,7 +465,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     public final Response getEventBookingByEventId(@Context final HttpServletRequest request,
             @PathParam("event_id") final String eventId) {
         try {
-            if (!isUserStaff(userManager, request)) {
+            if (!isUserAnAdminOrEventManager(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
                         .toResponse();
             }
@@ -733,7 +733,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             }
 
             // if the user id is null then it means they are changing their own booking.
-            if (userId != null && !isUserStaff(userManager, request) ) {
+            if (userId != null && !isUserAnAdminOrEventManager(userManager, request) ) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to change another user's booking.")
                     .toResponse();
             }
@@ -983,6 +983,10 @@ public class EventsFacade extends AbstractIsaacFacade {
         fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(EVENT_TYPE));
 
         try {
+            if (!isUserAnAdminOrEventManager(userManager, request)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
             Map<String, AbstractFilterInstruction> filterInstructions = null;
             if (filter != null) {
                 EventFilterOption filterOption = EventFilterOption.valueOf(filter);
@@ -1001,10 +1005,6 @@ public class EventsFacade extends AbstractIsaacFacade {
                     DateRangeFilterInstruction anyEventsToNow = new DateRangeFilterInstruction(null, new Date());
                     filterInstructions.put(ENDDATE_FIELDNAME, anyEventsToNow);
                 }
-            }
-
-            if (!isUserStaff(userManager, request)) {
-                return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
             ResultsWrapper<ContentDTO> findByFieldNames = null;

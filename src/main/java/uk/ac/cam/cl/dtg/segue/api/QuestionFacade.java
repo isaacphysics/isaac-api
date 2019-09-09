@@ -146,14 +146,21 @@ public class QuestionFacade extends AbstractSegueFacade {
     public Response getQuestionAnswer(@Context final HttpServletRequest request, @PathParam("question_id") final String questionId) {
         String errorMessage = String.format("We do not provide answers to questions. See https://%s/solving_problems for more help!",
                                             getProperties().getProperty(HOST_NAME));
-        AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(request);
-        if (currentUser instanceof RegisteredUserDTO) {
-            log.warn(String.format("MethodNotAllowed: User (%s) attempted to GET the answer to the question '%s'!",
-                                    ((RegisteredUserDTO) currentUser).getId(), questionId));
-        } else {
-            log.warn(String.format("MethodNotAllowed: Anonymous user attempted to GET the answer to the question '%s'!", questionId));
+        try {
+            AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(request);
+            if (currentUser instanceof RegisteredUserDTO) {
+                log.warn(String.format("MethodNotAllowed: User (%s) attempted to GET the answer to the question '%s'!",
+                        ((RegisteredUserDTO) currentUser).getId(), questionId));
+            } else {
+                log.warn(String.format("MethodNotAllowed: Anonymous user attempted to GET the answer to the question '%s'!", questionId));
+            }
+            return new SegueErrorResponse(Status.METHOD_NOT_ALLOWED, errorMessage).toResponse();
+        } catch (SegueDatabaseException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Database error while looking up user information.", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
         }
-        return new SegueErrorResponse(Status.METHOD_NOT_ALLOWED, errorMessage).toResponse();
     }
 
     /**
@@ -240,8 +247,6 @@ public class QuestionFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST, "No answer received.").toResponse();
         }
 
-        AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(request);
-
         Content contentBasedOnId;
         try {
             contentBasedOnId = this.contentManager.getContentDOById(
@@ -263,16 +268,12 @@ public class QuestionFacade extends AbstractSegueFacade {
             return error.toResponse();
         }
 
-        // decide if we have been given a list or an object and put it in a list
-        // either way
-        List<ChoiceDTO> answersFromClient = Lists.newArrayList();
+        ChoiceDTO answerFromClientDTO;
         try {
-            // convert single object into a list.
+            // convert submitted JSON into a Choice:
             Choice answerFromClient = mapper.getSharedContentObjectMapper().readValue(jsonAnswer, Choice.class);
             // convert to a DTO so that it strips out any untrusted data.
-            ChoiceDTO answerFromClientDTO = mapper.getAutoMapper().map(answerFromClient, ChoiceDTO.class);
-
-            answersFromClient.add(answerFromClientDTO);
+            answerFromClientDTO = mapper.getAutoMapper().map(answerFromClient, ChoiceDTO.class);
         } catch (JsonMappingException | JsonParseException e) {
             log.info("Failed to map to any expected input...", e);
             SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to map response to a "
@@ -288,7 +289,8 @@ public class QuestionFacade extends AbstractSegueFacade {
         // validate the answer.
         Response response;
         try {
-            response = this.questionManager.validateAnswer(question, Lists.newArrayList(answersFromClient));
+            AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(request);
+            response = this.questionManager.validateAnswer(question, answerFromClientDTO);
 
             // After validating the answer, work out whether this is abuse of the endpoint. If so, record the attempt in
             // the log, but don't save it for the user. Also, return an error.

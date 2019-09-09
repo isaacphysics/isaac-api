@@ -718,11 +718,6 @@ public class ContentIndexer {
                     this.registerContentProblem(c,
                             "Email template should always have plain text content field", indexProblemCache);
                 }
-
-                if (e.getReplyToEmailAddress() != null && null == e.getReplyToName()) {
-                    this.registerContentProblem(c,
-                            "Email template contains replyToEmailAddress but not replyToName", indexProblemCache);
-                }
             }
 
             if (c instanceof IsaacEventPage) {

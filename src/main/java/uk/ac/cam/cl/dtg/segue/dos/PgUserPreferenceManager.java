@@ -250,11 +250,12 @@ public class PgUserPreferenceManager extends AbstractUserPreferenceManager {
             conn.setAutoCommit(false);
             for (UserPreference preference : userPreferences) {
                 // Upsert the value in, using Postgres 9.5 syntax 'ON CONFLICT DO UPDATE ...'
-                pst = conn.prepareStatement("INSERT INTO user_preferences (user_id, preference_type, preference_name, preference_value)" +
-                        " VALUES (?, ?, ?, ?) ON CONFLICT (user_id, preference_type, preference_name) DO UPDATE" +
-                        " SET preference_value=excluded.preference_value WHERE user_preferences.user_id=excluded.user_id" +
-                        " AND user_preferences.preference_type=excluded.preference_type" +
-                        " AND user_preferences.preference_name=excluded.preference_name;");
+                // Only update a conflicting row if value has changed, to ensure the last_updated date remains accurate:
+                pst = conn.prepareStatement("INSERT INTO user_preferences(user_id, preference_type, preference_name, preference_value, last_updated) "
+                        + " VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)"
+                        + " ON CONFLICT (user_id, preference_type, preference_name) DO UPDATE"
+                        + " SET preference_value=excluded.preference_value, last_updated=excluded.last_updated"
+                        + " WHERE user_preferences.preference_value!=excluded.preference_value;");
                 pst.setLong(1, preference.getUserId());
                 pst.setString(2, preference.getPreferenceType());
                 pst.setString(3, preference.getPreferenceName());

@@ -17,25 +17,25 @@ services:
     image: ucamcldtg/chemistry-checker
     restart: unless-stopped
 
-  elasticsearch-live:
+  phy-elasticsearch-live:
     # container configuration https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html
-    container_name: elasticsearch-live
+    container_name: phy-elasticsearch-live
     image: docker.elastic.co/elasticsearch/elasticsearch-oss:6.4.1
     environment:
-      - cluster.name=isaac-live-search
-      - "network.host=${LOCAL_ELASTICSEARCH_IP}"
-      - "discovery.zen.ping.unicast.hosts=${REMOTE_ELASTICSEARCH_IP},${LOCAL_ELASTICSEARCH_IP}"
-      - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
+      - cluster.name=isaac-phy-live-search
+      - "network.host=${LOCAL_PHY_ELASTICSEARCH_IP}"
+      - "discovery.zen.ping.unicast.hosts=${REMOTE_PHY_ELASTICSEARCH_IP},${LOCAL_PHY_ELASTICSEARCH_IP}"
+      - "ES_JAVA_OPTS=-Xms6g -Xmx6g"
       - bootstrap.memory_lock=true # part of disabling swap
     ulimits:
       memlock: -1 # part of disabling swap
       nproc: -1 # doc suggestion: at least 2,048 our docker default is unlimited
       nofile: 1048576 # doc suggestion: at least 65,536
     volumes:
-      - es-data:/usr/share/elasticsearch/data
+      - phy-es-data:/usr/share/elasticsearch/data
     networks:
       default:
-        ipv4_address: "${LOCAL_ELASTICSEARCH_IP}"
+        ipv4_address: "${LOCAL_PHY_ELASTICSEARCH_IP}"
     restart: unless-stopped
 
   cs-elasticsearch-live:
@@ -46,7 +46,7 @@ services:
       - cluster.name=isaac-cs-live-search
       - "network.host=${LOCAL_CS_ELASTICSEARCH_IP}"
       - "discovery.zen.ping.unicast.hosts=${LOCAL_CS_ELASTICSEARCH_IP}"
-#      - "discovery.zen.ping.unicast.hosts=${REMOTE_CS_ELASTICSEARCH_IP},${LOCAL_CS_ELASTICSEARCH_IP}"
+      - "discovery.zen.ping.unicast.hosts=${REMOTE_CS_ELASTICSEARCH_IP},${LOCAL_CS_ELASTICSEARCH_IP}"
       - "ES_JAVA_OPTS=-Xms6g -Xmx6g"
       - bootstrap.memory_lock=true # part of disabling swap
     ulimits:
@@ -61,9 +61,9 @@ services:
     restart: unless-stopped
 
 volumes:
-  es-data:
+  phy-es-data:
     external:
-      name: es-data
+      name: phy-es-data
   cs-es-data:
     external:
       name: cs-es-data

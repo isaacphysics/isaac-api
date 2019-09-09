@@ -568,8 +568,9 @@ public class EventBookingManagerTest {
 
         replay(dummyEventBookingPersistenceManager);
         Integer placesAvailable = ebm.getPlacesAvailable(testEvent);
+        Integer expectedPlacesAvailable = 1;
         assertEquals("WAITING_LIST_ONLY events should only count confirmed places in availability calculations",
-                placesAvailable, 1);
+                placesAvailable, expectedPlacesAvailable);
     }
 
     private EventBookingManager buildEventBookingManager() {

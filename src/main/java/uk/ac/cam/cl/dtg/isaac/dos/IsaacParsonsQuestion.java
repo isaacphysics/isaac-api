@@ -19,10 +19,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacParsonsQuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacParsonsValidator;
 import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
-import uk.ac.cam.cl.dtg.segue.dos.content.ParsonsItem;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
-
-import java.util.List;
 
 
 /**
@@ -32,18 +29,9 @@ import java.util.List;
 @DTOMapping(IsaacParsonsQuestionDTO.class)
 @JsonContentType("isaacParsonsQuestion")
 @ValidatesWith(IsaacParsonsValidator.class)
-public class IsaacParsonsQuestion extends IsaacQuestionBase {
+public class IsaacParsonsQuestion extends IsaacItemQuestion {
 
-    private List<ParsonsItem> items;
     private Boolean requiresIndentation;
-
-    public List<ParsonsItem> getItems() {
-        return items;
-    }
-
-    public void setItems(final List<ParsonsItem> items) {
-        this.items = items;
-    }
 
     public Boolean getRequiresIndentation() {
         return requiresIndentation;

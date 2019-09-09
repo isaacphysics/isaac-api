@@ -15,36 +15,19 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
-import static org.apache.commons.lang3.text.WordUtils.capitalizeFully;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
-
-import java.io.IOException;
-import java.net.URI;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import com.google.api.client.util.Lists;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.ImmutableMap;
+import com.google.inject.Inject;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
-
 import org.apache.commons.lang3.Validate;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
@@ -70,6 +53,7 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.users.IAnonymousUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.users.AnonymousUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
@@ -87,11 +71,24 @@ import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import com.google.api.client.util.Lists;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.ImmutableMap;
-import com.google.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.net.URI;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import static org.apache.commons.lang3.text.WordUtils.capitalizeFully;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * This class is responsible for managing all user data and orchestration of calls to a user Authentication Manager for
@@ -105,8 +102,9 @@ public class UserAccountManager implements IUserAccountManager {
     private final ILogManager logManager;
     private final MapperFacade dtoMapper;
     private final EmailManager emailManager;
-    
-    private final Cache<String, AnonymousUser> temporaryUserCache;
+
+    private final IAnonymousUserDataManager temporaryUserCache;
+
     private final Map<AuthenticationProvider, IAuthenticator> registeredAuthProviders;
     private final UserAuthenticationManager userAuthenticationManager;
     private final PropertiesLoader properties;
@@ -126,6 +124,8 @@ public class UserAccountManager implements IUserAccountManager {
      *            - the preconfigured DO to DTO object mapper for user objects.
      * @param emailQueue
      *            - the preconfigured communicator manager for sending e-mails.
+     * @param temporaryUserCache
+     *            - temporary user cache for anonymous users
      * @param logManager
      *            - so that we can log events for users.
      * @param userAuthenticationManager
@@ -134,39 +134,7 @@ public class UserAccountManager implements IUserAccountManager {
     @Inject
     public UserAccountManager(final IUserDataManager database, final QuestionManager questionDb,
             final PropertiesLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
-            final MapperFacade dtoMapper, final EmailManager emailQueue, final ILogManager logManager,
-            final UserAuthenticationManager userAuthenticationManager) {
-        this(database, questionDb, properties, providersToRegister, dtoMapper, emailQueue, CacheBuilder.newBuilder()
-                .expireAfterAccess(ANONYMOUS_SESSION_DURATION_IN_MINUTES, TimeUnit.MINUTES).recordStats()
-                .build(), logManager, userAuthenticationManager);
-    }
-
-    /**
-     * Fully injectable constructor.
-     * 
-     * @param database
-     *            - an IUserDataManager that will support persistence.
-     * @param questionDb
-     *            - supports persistence of question attempt info.
-     * @param properties
-     *            - A property loader
-     * @param providersToRegister
-     *            - A map of known authentication providers.
-     * @param dtoMapper
-     *            - the preconfigured DO to DTO object mapper for user objects.
-     * @param emailQueue
-     *            - the preconfigured communicator manager for sending e-mails.
-     * @param temporaryUserCache
-     *            - the preconfigured communicator manager for sending e-mails.
-     * @param logManager
-     *            - so that we can log events for users..
-     * @param userAuthenticationManager
-     *            - Class responsible for handling sessions, passwords and linked accounts.
-     */
-    public UserAccountManager(final IUserDataManager database, final QuestionManager questionDb,
-            final PropertiesLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
-            final MapperFacade dtoMapper, final EmailManager emailQueue,
-            final Cache<String, AnonymousUser> temporaryUserCache, final ILogManager logManager,
+            final MapperFacade dtoMapper, final EmailManager emailQueue, final IAnonymousUserDataManager temporaryUserCache, final ILogManager logManager,
             final UserAuthenticationManager userAuthenticationManager) {
         Validate.notNull(properties.getProperty(HMAC_SALT));
         Validate.notNull(properties.getProperty(SESSION_EXPIRY_SECONDS));
@@ -177,7 +145,7 @@ public class UserAccountManager implements IUserAccountManager {
         this.database = database;
         this.questionAttemptDb = questionDb;
         this.temporaryUserCache = temporaryUserCache;
-        SegueMetrics.CACHE_METRICS_COLLECTOR.addCache("anonymous_user_cache", temporaryUserCache);
+
         this.logManager = logManager;
 
         this.registeredAuthProviders = providersToRegister;
@@ -621,7 +589,7 @@ public class UserAccountManager implements IUserAccountManager {
      * 
      * @return AbstractSegueUserDTO - Either a RegisteredUser or an AnonymousUser
      */
-    public AbstractSegueUserDTO getCurrentUser(final HttpServletRequest request) {
+    public AbstractSegueUserDTO getCurrentUser(final HttpServletRequest request) throws SegueDatabaseException {
         try {
             return this.getCurrentRegisteredUser(request);
         } catch (NoUserLoggedInException e) {
@@ -1258,7 +1226,7 @@ public class UserAccountManager implements IUserAccountManager {
      * @return the DTO version of the user.
      */
     private RegisteredUserDTO logUserIn(final HttpServletRequest request, final HttpServletResponse response,
-            final RegisteredUser user) {
+            final RegisteredUser user) throws SegueDatabaseException {
         AnonymousUser anonymousUser = this.getAnonymousUserDO(request);
 
         // now we want to clean up any data generated by the user while they weren't logged in.
@@ -1297,7 +1265,11 @@ public class UserAccountManager implements IUserAccountManager {
                                 ImmutableMap.of("oldAnonymousUserId", anonymousUser.getSessionId()));
 
                         // delete the session attribute as merge has completed.
-                        temporaryUserCache.invalidate(anonymousUser.getSessionId());
+                        try {
+                            temporaryUserCache.deleteAnonymousUser(anonymousUser);
+                        } catch (SegueDatabaseException e) {
+                            log.error("Unable to delete anonymous user during merge operation.", e);
+                        }
                     }
                 };
 
@@ -1412,7 +1384,7 @@ public class UserAccountManager implements IUserAccountManager {
         boolean isValid = true;
 
         if (userToValidate.getEmail() == null || userToValidate.getEmail().isEmpty()
-                || !userToValidate.getEmail().contains("@")) {
+                || userToValidate.getEmail().matches(".*@|-(facebook|google|twitter)$")) {
             isValid = false;
         }
         
@@ -1470,7 +1442,7 @@ public class UserAccountManager implements IUserAccountManager {
      *            - request containing session information.
      * @return An anonymous user containing any anonymous question attempts (which could be none)
      */
-    private AnonymousUserDTO getAnonymousUserDTO(final HttpServletRequest request) {
+    private AnonymousUserDTO getAnonymousUserDTO(final HttpServletRequest request) throws SegueDatabaseException {
         return this.dtoMapper.map(this.getAnonymousUserDO(request), AnonymousUserDTO.class);
     }
 
@@ -1481,20 +1453,22 @@ public class UserAccountManager implements IUserAccountManager {
      *            - request containing session information.
      * @return An anonymous user containing any anonymous question attempts (which could be none)
      */
-    private AnonymousUser getAnonymousUserDO(final HttpServletRequest request) {
+    private AnonymousUser getAnonymousUserDO(final HttpServletRequest request) throws SegueDatabaseException {
         AnonymousUser user;
+
         // no session exists so create one.
         if (request.getSession().getAttribute(ANONYMOUS_USER) == null) {
             user = new AnonymousUser(request.getSession().getId());
             user.setDateCreated(new Date());
             // add the user reference to the session
             request.getSession().setAttribute(ANONYMOUS_USER, user.getSessionId());
-            this.temporaryUserCache.put(user.getSessionId(), user);
+            this.temporaryUserCache.storeAnonymousUser(user);
+
         } else {
             // reuse existing one
             if (request.getSession().getAttribute(ANONYMOUS_USER) instanceof String) {
                 String userId = (String) request.getSession().getAttribute(ANONYMOUS_USER);
-                user = this.temporaryUserCache.getIfPresent(userId);
+                user = this.temporaryUserCache.getById(userId);
 
                 if (null == user) {
                     // the session must have expired. Create a new user and run this method again.
@@ -1591,8 +1565,7 @@ public class UserAccountManager implements IUserAccountManager {
      * Count the number of anonymous users currently in our temporary user cache
      * @return the number of anonymous users
      */
-    public Long getNumberOfAnonymousUsers() {
-        return temporaryUserCache.size();
+    public Long getNumberOfAnonymousUsers() throws SegueDatabaseException {
+        return temporaryUserCache.getCountOfAnonymousUsers();
     }
-
 }

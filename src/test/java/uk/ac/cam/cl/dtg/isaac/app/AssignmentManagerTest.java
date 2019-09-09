@@ -15,32 +15,27 @@
  */
 package uk.ac.cam.cl.dtg.isaac.app;
 
-import static org.easymock.EasyMock.*;
-import static org.junit.Assert.*;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-
 import org.junit.Before;
 import org.junit.Test;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-
 import org.powermock.reflect.Whitebox;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.dao.IAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgAssignmentPersistenceManager;
-import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+
+import java.util.Date;
+
+import static org.easymock.EasyMock.createMock;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 /**
  * Test class for the user manager class.
@@ -57,12 +52,10 @@ public class AssignmentManagerTest {
 
 	/**
 	 * Initial configuration of tests.
-	 * 
-	 * @throws Exception
-	 *             - test exception
-	 */
+	 *
+     */
 	@Before
-	public final void setUp() throws Exception {
+	public final void setUp() {
 		this.dummyGroupManager = createMock(GroupManager.class);
 		this.dummyAssignmentPersistenceManager = createMock(PgAssignmentPersistenceManager.class);
         this.dummyEmailManager = createMock(EmailManager.class);
@@ -72,31 +65,6 @@ public class AssignmentManagerTest {
 		this.dummyPropertiesLoader = createMock(PropertiesLoader.class);
 	}
 
-	/**
-	 * Verify that when an empty gameboard is noticed a 204 is returned.
-	 * @throws SegueDatabaseException - if an error occurs
-	 * 
-	 * @throws NoUserLoggedInException
-	 * @throws ContentManagerException
-	 */
-	@Test
-	@PowerMockIgnore({ "javax.ws.*" })
-	public final void getAssignments_checkNoGroups_emptyListReturned() throws SegueDatabaseException {
-		
-        AssignmentManager am = new AssignmentManager(dummyAssignmentPersistenceManager, dummyGroupManager,
-                dummyEmailManager, dummyUserManager, dummyGameManager, null, dummyPropertiesLoader);
-		RegisteredUserDTO dummyUser = createMock(RegisteredUserDTO.class);
-		
-        expect(dummyGroupManager.getGroupMembershipList(dummyUser)).andReturn(new ArrayList<UserGroupDTO>());
-
-        replay(dummyGroupManager);
-		
-		Collection<AssignmentDTO> assignments = am.getAssignments(dummyUser);
-		
-		assertTrue(assignments != null);
-		assertTrue(assignments.size() == 0);
-	}
-
     /**
      * Test teacher user name extraction.
      */
@@ -104,7 +72,7 @@ public class AssignmentManagerTest {
     public final void testGetTeacherNameFromUser() throws Exception {
 
         AssignmentManager am = new AssignmentManager(dummyAssignmentPersistenceManager, dummyGroupManager,
-                dummyEmailManager, dummyUserManager, dummyGameManager, null, dummyPropertiesLoader);
+                dummyEmailManager, dummyUserManager, dummyGameManager, userAssociationManager, dummyPropertiesLoader);
 
         // Check case with both first and last name:
         RegisteredUserDTO dummyUserFirstLast = new RegisteredUserDTO();
@@ -134,7 +102,7 @@ public class AssignmentManagerTest {
     public final void testGetFilteredGroupNameFromGroup() throws Exception {
 
         AssignmentManager am = new AssignmentManager(dummyAssignmentPersistenceManager, dummyGroupManager,
-                dummyEmailManager, dummyUserManager, dummyGameManager, null, dummyPropertiesLoader);
+                dummyEmailManager, dummyUserManager, dummyGameManager, userAssociationManager, dummyPropertiesLoader);
 
         String groupName = "Group Name";
 

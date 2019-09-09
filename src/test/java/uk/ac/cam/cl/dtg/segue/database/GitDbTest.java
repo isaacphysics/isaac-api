@@ -23,40 +23,32 @@ import org.easymock.EasyMock;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.lib.Repository;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-
 
 import org.powermock.api.easymock.PowerMock;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.legacy.PowerMockRunner;
- 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(Git.class)
-@PowerMockIgnore({"javax.ws.*"})
+
 public class GitDbTest {
 
 	@Test
 	public void gitDb_checkForBadParameters_exceptionsShouldBeThrown() throws IOException {
 		PowerMock.mockStatic(Git.class);
-		
-		// Test that if you provide an empty string or null, an IllegalArgumentException gets thrown and git.open never gets called. 
-		
+
+		// Test that if you provide an empty string or null, an IllegalArgumentException gets thrown and git.open never gets called.
+
 		PowerMock.replay(Git.class);
-		
+
 		try {
 			new GitDb("");
 			fail("GitDb constructor was given an empty string, but didn't throw an exception");
-		} catch (IllegalArgumentException e) { 
+		} catch (IllegalArgumentException e) {
 			// Exception correctly thrown.
 		} catch (Exception e) {
 			fail("GitDb constructor threw wrong exception type: " + e);
 		}
-		
+
 		try {
 			new GitDb((String)null);
 			fail("GitDb constructor was given null, but didn't throw an exception");
-		} catch (NullPointerException e) { 
+		} catch (NullPointerException e) {
 			// Exception correctly thrown.
 		} catch (Exception e) {
 			fail("GitDb constructor threw wrong exception type: " + e);
@@ -65,37 +57,37 @@ public class GitDbTest {
 
 	@Test
 	public void gitDbOtherConstructor_checkForBadParameters_exceptionsShouldBeThrown() {
-		// Test that if you provide an empty string or null, an IllegalArgumentException gets thrown and git.open never gets called. 
-		
+		// Test that if you provide an empty string or null, an IllegalArgumentException gets thrown and git.open never gets called.
+
 		PowerMock.replay(Git.class);
-		
+
 		try {
 			new GitDb("", null, null);
 			fail("GitDb constructor was given an empty string, but didn't throw an exception");
-		} catch (IllegalArgumentException e) { 
+		} catch (IllegalArgumentException e) {
 			// Exception correctly thrown.
 		} catch (Exception e) {
 			fail("GitDb constructor threw wrong exception type: " + e);
 		}
-		
+
 		try {
 			new GitDb(null, null, null);
 			fail("GitDb constructor was given null, but didn't throw an exception");
-		} catch (NullPointerException e) { 
+		} catch (NullPointerException e) {
 			// Exception correctly thrown.
 		} catch (Exception e) {
 			fail("GitDb constructor threw wrong exception type: " + e);
 		}
-		
+
 	}
 
 	@Test
 	public void getTreeWalk_checkThatBlankPathsAreAllowed_noExceptionThrown() throws IOException {
-		
+
 		Git git = EasyMock.createMock(Git.class);
-		
+
 		GitDb db = new GitDb(git);
-		
+
 		try {
 			db.getTreeWalk("", "");
 			fail("Failed to throw required exception on blank sha.");
@@ -103,8 +95,8 @@ public class GitDbTest {
 			// Exception correctly thrown.
 		} catch (Exception e) {
 			fail("Wrong type of exception thrown on blank sha");
-		}		
-		
+		}
+
 		try {
 			db.getTreeWalk(null, "");
 			fail("Failed to throw required exception on null sha.");
@@ -113,7 +105,7 @@ public class GitDbTest {
 		} catch (Exception e) {
 			fail("Wrong type of exception thrown on null sha");
 		}
-		
+
 		try {
 			db.getTreeWalk("sha", null);
 			fail("Failed to throw required exception on null path.");
@@ -121,16 +113,16 @@ public class GitDbTest {
 			// Exception correctly thrown.
 		} catch (Exception e) {
 			fail("Wrong type of exception thrown on null path");
-		}		
+		}
 
 		Repository repo = EasyMock.createMock(Repository.class);
-		
+
 		EasyMock.expect(git.getRepository()).andReturn(repo);
 		EasyMock.expect(repo.resolve("sha")).andReturn(null);
-		
+
 		EasyMock.replay(git);
 		EasyMock.replay(repo);
-		
+
 		assertNull(db.getTreeWalk("sha", "")); // Blank path is explicitly allowed. This should not throw an exception. But in this case we've passed an invalid sha, so we should get null back.
 	}
 }

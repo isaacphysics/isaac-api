@@ -203,8 +203,8 @@ public class IsaacController extends AbstractIsaacFacade {
             return cachedResponse;
         }
 
-        ResultsWrapper<ContentDTO> searchResults;
         try {
+            ResultsWrapper<ContentDTO> searchResults;
             Map<String, List<String>> typesThatMustMatch = null;
 
             if (null != types) {
@@ -214,24 +214,30 @@ public class IsaacController extends AbstractIsaacFacade {
 
             searchResults = this.contentManager.searchForContent(this.contentIndex,
                     searchString, typesThatMustMatch, startIndex, limit);
+
+
+            ImmutableMap<String, String> logMap = new ImmutableMap.Builder<String, String>()
+                    .put(TYPE_FIELDNAME, types)
+                    .put("searchString", searchString)
+                    .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
+
+            getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
+                    IsaacLogType.GLOBAL_SITE_SEARCH, logMap);
+            return Response
+                    .ok(this.extractContentSummaryFromResultsWrapper(searchResults,
+                            this.getProperties().getProperty(PROXY_PATH))).tag(etag)
+                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
+                    .build();
+
+        } catch (SegueDatabaseException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Database error while looking up user information.", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
         } catch (ContentManagerException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to retrieve content requested", e)
                     .toResponse();
         }
-
-        ImmutableMap<String, String> logMap = new ImmutableMap.Builder<String, String>()
-                .put(TYPE_FIELDNAME, types)
-                .put("searchString", searchString)
-                .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
-
-        getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
-                IsaacLogType.GLOBAL_SITE_SEARCH, logMap);
-
-        return Response
-                .ok(this.extractContentSummaryFromResultsWrapper(searchResults,
-                        this.getProperties().getProperty(PROXY_PATH))).tag(etag)
-                .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
-                .build();
     }
 
     /**

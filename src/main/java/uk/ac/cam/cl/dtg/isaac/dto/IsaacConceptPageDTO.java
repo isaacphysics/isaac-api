@@ -24,10 +24,4 @@ import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
  */
 public class IsaacConceptPageDTO extends SeguePageDTO {
 
-    @Override
-    @JsonIgnore(false) // Override the parent class decorator!
-    public String getCanonicalSourceFile() {
-        return this.canonicalSourceFile;
-    }
-
 }
