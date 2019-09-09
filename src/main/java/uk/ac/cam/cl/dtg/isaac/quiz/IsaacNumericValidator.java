@@ -215,8 +215,9 @@ public class IsaacNumericValidator implements IValidator {
                 }
 
                 String unitsFromChoice = quantityFromQuestion.getUnits().trim();
+                String quantityFromChoice = quantityFromQuestion.getValue().trim();
 
-                boolean numericValuesMatched = numericValuesMatch(quantityFromQuestion.getValue(), answerFromUser.getValue(),
+                boolean numericValuesMatched = numericValuesMatch(quantityFromChoice, answerFromUser.getValue(),
                         sigFigsToValidateWith);
 
                 // What sort of match do we have:
