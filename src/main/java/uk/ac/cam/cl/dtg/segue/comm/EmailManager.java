@@ -154,8 +154,9 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         propertiesToReplace.putAll(this.flattenTokenMap(userPropertiesMap, Maps.newHashMap(), ""));
 
         // default properties
-        //TODO: We should find and replace this in templates as the case is wrong.
-        propertiesToReplace.putIfAbsent("givenname", userDTO.getGivenName() == null ? "" : StringEscapeUtils.escapeHtml4(userDTO.getGivenName()));
+        for(Map.Entry<Object, Object> entry : propertiesToReplace.entrySet()) {
+            propertiesToReplace.put(entry.getKey(), StringEscapeUtils.escapeHtml4(entry.getValue().toString()));
+        }
 
         EmailCommunicationMessage emailCommunicationMessage
                 = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), emailContentTemplate, propertiesToReplace,

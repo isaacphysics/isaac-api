@@ -218,10 +218,10 @@ public class EmailFacade extends AbstractSegueFacade {
             Map userPropertiesMap = new org.apache.commons.beanutils.BeanMap(currentUser);
             previewProperties.putAll(emailManager.flattenTokenMap(userPropertiesMap, Maps.newHashMap(), ""));
 
-            //TODO: backwards compat - fix content so that case is correct.
             //Sanitizes name inputs from users
-            previewProperties.put("givenname", currentUser.getGivenName() == null ? "" : StringEscapeUtils.escapeHtml4(currentUser.getGivenName()));
-            previewProperties.put("familyname", currentUser.getFamilyName() == null ? "" : StringEscapeUtils.escapeHtml4(currentUser.getFamilyName()));
+            for(Map.Entry<Object, Object> entry : previewProperties.entrySet()) {
+                previewProperties.put(entry.getKey(), StringEscapeUtils.escapeHtml4(entry.getValue().toString()));
+            }
 
             EmailCommunicationMessage ecm = this.emailManager.constructMultiPartEmail(currentUser.getId(),
                     currentUser.getEmail(), emailTemplateDTO, previewProperties, EmailType.SYSTEM);
