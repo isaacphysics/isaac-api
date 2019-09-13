@@ -9,14 +9,27 @@ RUN curl -kfsSL https://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/bin
 
 ENV MAVEN_HOME /usr/share/maven
 
+# Setup JavaJDK - until we move the build of the war file to somewhere else.
+RUN apt-get update && \
+    apt-get install -y openjdk-8-jdk && \
+    apt-get clean;
+
+# Fix certificate issues
+RUN apt-get update && \
+    apt-get install ca-certificates-java && \
+    apt-get clean && \
+    update-ca-certificates -f;
+
+ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64/
+RUN export JAVA_HOME
+# end of jdk stuff
+
 COPY . /isaac-api 
-
 WORKDIR /isaac-api
-
 VOLUME /root/.m2
 
 # build isaac api without unit tests
-RUN mvn package -Dmaven.test.skip=true
+RUN mvn clean package -Dmaven.test.skip=true
 
 #RUN sed -i -e 's#dev/random#dev/./urandom#g' $JAVA_HOME/jre/lib/security/java.security
 
@@ -28,4 +41,3 @@ RUN chown jetty /var/lib/jetty/webapps/*
 # prepare things so that jetty runs in the docker entrypoint
 USER jetty
 WORKDIR $JETTY_BASE
-
