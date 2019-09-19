@@ -16,8 +16,10 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
 import com.google.api.client.util.Lists;
+import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.jboss.resteasy.annotations.GZIP;
@@ -32,6 +34,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
+import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
@@ -42,7 +45,9 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -69,6 +74,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.google.common.collect.Maps.immutableEntry;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
@@ -89,6 +95,10 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     private final QuestionManager questionManager;
     private final Set<String> fastTrackGamebaordIds;
 
+    private final String contentIndex;
+
+    private final SegueContentFacade api;
+
     /**
      * GamesFacade. For management of gameboards etc.
      * 
@@ -108,12 +118,13 @@ public class GameboardsFacade extends AbstractIsaacFacade {
      *            - for updating badge information.
      */
     @Inject
-    public GameboardsFacade(final PropertiesLoader properties, final ILogManager logManager,
-            final GameManager gameManager, final QuestionManager questionManager, final UserAccountManager userManager,
-            final UserAssociationManager associationManager,
-                            final UserBadgeManager userBadgeManager) {
+    public GameboardsFacade(final SegueContentFacade api, final PropertiesLoader properties, final ILogManager logManager,
+                            final GameManager gameManager, final QuestionManager questionManager,
+                            final UserAccountManager userManager, final UserAssociationManager associationManager,
+                            final UserBadgeManager userBadgeManager, @Named(CONTENT_INDEX) final String contentIndex) {
         super(properties, logManager);
 
+        this.api = api;
         this.userBadgeManager = userBadgeManager;
         this.gameManager = gameManager;
         this.questionManager = questionManager;
@@ -121,6 +132,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
         this.associationManager = associationManager;
         String commaSeparatedIds = this.getProperties().getProperty(Constants.FASTTRACK_GAMEBOARD_WHITELIST);
         this.fastTrackGamebaordIds = new HashSet<>(Arrays.asList(commaSeparatedIds.split(",")));
+        this.contentIndex = contentIndex;
     }
 
     /**
@@ -292,12 +304,74 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @ApiOperation(value = "Get the progress of the current user at a FastTrack gameboard.")
+    @Deprecated // See below
     public final Response getFastTrackConceptProgress(@Context final Request request,
                                                       @Context final HttpServletRequest httpServletRequest,
                                                       @PathParam("gameboard_id") final String gameboardId,
                                                       @QueryParam("concept") final String conceptTitle) {
 
         try {
+            if (!fastTrackGamebaordIds.contains(gameboardId)) {
+                return new SegueErrorResponse(Status.NOT_FOUND, "Gameboard id not a valid FastTrack gameboard id.")
+                        .toResponse();
+            }
+            AbstractSegueUserDTO randomUser = this.userManager.getCurrentUser(httpServletRequest);
+            Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts = this.questionManager
+                    .getQuestionAttemptsByUser(randomUser);
+
+            // attempt to augment the gameboard with user information.
+            List<GameboardItem> conceptQuestionsProgress
+                    = gameManager.getFastTrackConceptProgress(gameboardId, conceptTitle, userQuestionAttempts);
+
+            return Response.ok(conceptQuestionsProgress).build();
+        } catch (SegueDatabaseException e) {
+            String message = "Error whilst trying to access the FastTrack progress in the database.";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        } catch (ContentManagerException e1) {
+            SegueErrorResponse error = new SegueErrorResponse(
+                    Status.NOT_FOUND, "Error locating the version requested", e1);
+            log.error(error.getErrorMessage(), e1);
+            return error.toResponse();
+        }
+    }
+
+    /**
+     * REST endpoint to retrieve every question (and its status) associated with a particular FastTrack gameboard and
+     * history.
+     *
+     * @param request usually used for caching.
+     * @param httpServletRequest so that we can extract the users session information if available.
+     * @param gameboardId the unique id of the FastTrack gameboard which links the questions.
+     * @param history the list of questions that were traversed to get to the current question.
+     * @return a Response containing a list of augmented gameboard items for the gamebaord-concept pair or an error.
+     */
+    @GET
+    @Path("fasttrack/{gameboard_id}/concepts_from_history/")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @ApiOperation(value = "Get the progress of the current user at a FastTrack gameboard.")
+    public final Response getFastTrackConceptFromHistory(@Context final Request request,
+                                                         @Context final HttpServletRequest httpServletRequest,
+                                                         @PathParam("gameboard_id") final String gameboardId,
+                                                         @QueryParam("history") final String history) {
+
+        try {
+            List<String> historyList = Arrays.asList(history.split(","));
+            List<String> uppers = historyList.stream().filter(q -> q.contains("upper")).collect(Collectors.toList());
+            String lastUpper = uppers.get(uppers.size()-1);
+
+            Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
+            fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(FAST_TRACK_QUESTION_TYPE));
+            fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(lastUpper));
+            ResultsWrapper<ContentDTO> resultsList = this.api.findMatchingContent(this.contentIndex,
+                    SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch), null, null);
+
+            String conceptTitle = "";
+            if (resultsList.getTotalResults() == 1) {
+                conceptTitle = resultsList.getResults().get(0).getTitle();
+            }
+
             if (!fastTrackGamebaordIds.contains(gameboardId)) {
                 return new SegueErrorResponse(Status.NOT_FOUND, "Gameboard id not a valid FastTrack gameboard id.")
                         .toResponse();
