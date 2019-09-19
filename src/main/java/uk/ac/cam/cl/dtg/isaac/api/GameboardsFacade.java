@@ -304,7 +304,6 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @ApiOperation(value = "Get the progress of the current user at a FastTrack gameboard.")
-    @Deprecated // See below
     public final Response getFastTrackConceptProgress(@Context final Request request,
                                                       @Context final HttpServletRequest httpServletRequest,
                                                       @PathParam("gameboard_id") final String gameboardId,
@@ -347,23 +346,19 @@ public class GameboardsFacade extends AbstractIsaacFacade {
      * @return a Response containing a list of augmented gameboard items for the gamebaord-concept pair or an error.
      */
     @GET
-    @Path("fasttrack/{gameboard_id}/concepts_from_history/")
+    @Path("fasttrack/{gameboard_id}/concepts_with_upper/")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @ApiOperation(value = "Get the progress of the current user at a FastTrack gameboard.")
     public final Response getFastTrackConceptFromHistory(@Context final Request request,
                                                          @Context final HttpServletRequest httpServletRequest,
                                                          @PathParam("gameboard_id") final String gameboardId,
-                                                         @QueryParam("history") final String history) {
+                                                         @QueryParam("upper") final String upper) {
 
         try {
-            List<String> historyList = Arrays.asList(history.split(","));
-            List<String> uppers = historyList.stream().filter(q -> q.contains("upper")).collect(Collectors.toList());
-            String lastUpper = uppers.get(uppers.size()-1);
-
             Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
             fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(FAST_TRACK_QUESTION_TYPE));
-            fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(lastUpper));
+            fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(upper));
             ResultsWrapper<ContentDTO> resultsList = this.api.findMatchingContent(this.contentIndex,
                     SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch), null, null);
 
