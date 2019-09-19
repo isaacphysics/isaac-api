@@ -23,6 +23,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.Validate;
+import org.apache.commons.text.StringEscapeUtils;
 import org.eclipse.jgit.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,14 +45,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import javax.annotation.Nullable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -150,12 +144,18 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         propertiesToReplace.putAll(this.flattenTokenMap(tokenToValueMapping, Maps.newHashMap(), ""));
 
         // Add all properties in the user DTO (preserving types) so they are available to email templates.
+        System.out.println(userDTO);
         Map userPropertiesMap = new org.apache.commons.beanutils.BeanMap(userDTO);
-        propertiesToReplace.putAll(this.flattenTokenMap(userPropertiesMap, Maps.newHashMap(), ""));
+        Map<String, Object> userProps = new HashMap<>();
+        // Sanitizes user inputs
+        for (Object o : userPropertiesMap.entrySet()) {
+            Map.Entry<String, Object> entry = (Map.Entry<String, Object>) o;
+            String key = entry.getKey();
+            Object value = entry.getValue();
+            userProps.put(key, value != null ? StringEscapeUtils.escapeHtml4(value.toString()) : null);
+        }
 
-        // default properties
-        //TODO: We should find and replace this in templates as the case is wrong.
-        propertiesToReplace.putIfAbsent("givenname", userDTO.getGivenName() == null ? "" : userDTO.getGivenName());
+        propertiesToReplace.putAll(this.flattenTokenMap(userProps, Maps.newHashMap(), ""));
 
         EmailCommunicationMessage emailCommunicationMessage
                 = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), emailContentTemplate, propertiesToReplace,

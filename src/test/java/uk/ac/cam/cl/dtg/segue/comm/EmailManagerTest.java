@@ -213,7 +213,7 @@ public class EmailManagerTest {
     public final void sendTemplatedEmailToUser_checkForTemplateCompletion_emailShouldBeSentWithTemplateTagsFilledIn() {
         EasyMock.replay(userManager);
 
-        EmailTemplateDTO template = createDummyEmailTemplate("Hi, {{givenname}}."
+        EmailTemplateDTO template = createDummyEmailTemplate("Hi, {{givenName}}."
                 + "\nThanks for registering!\nYour Isaac email address is: "
                 + "</a href='mailto:{{email}}'>{{email}}<a>.\naddress</a>\n{{sig}}");
 
@@ -291,7 +291,7 @@ public class EmailManagerTest {
     @Test
     public final void sendFederatedPasswordReset_checkForTemplateCompletion_emailShouldBeSentWithTemplateTagsFilledIn() {
 
-        EmailTemplateDTO template = createDummyEmailTemplate("Hello, {{givenname}}.\n\nYou requested a "
+        EmailTemplateDTO template = createDummyEmailTemplate("Hello, {{givenName}}.\n\nYou requested a "
                 + "password reset. However you use {{providerString}} to log in to our site. You need"
                 + " to go to your authentication {{providerWord}} to reset your password.\n\nRegards,\n\n{{sig}}");
 
@@ -436,7 +436,7 @@ public class EmailManagerTest {
      */
     @Test(expected = IllegalArgumentException.class)
     public final void sendRegistrationConfirmation_checkForInvalidTemplateTags_throwIllegalArgumentException() {
-        EmailTemplateDTO template = createDummyEmailTemplate("Hi, {{givenname}} {{surname}}.\n"
+        EmailTemplateDTO template = createDummyEmailTemplate("Hi, {{givenName}} {{surname}}.\n"
                 + "Thanks for registering!\nYour Isaac email address is: "
                 + "</a href='mailto:{{email}}'>{{email}}<a>.\naddress</a>\n{{sig}}");
 
@@ -618,8 +618,8 @@ public class EmailManagerTest {
         EasyMock.replay(userPreferenceManager);
 
         ContentDTO htmlTemplate = createDummyContentTemplate("{{content}}");
-        EmailTemplateDTO emailTemplate = createDummyEmailTemplate("Hello {{givenname}}, "
-                + "how are you {{familyname}}? {{sig}}");
+        EmailTemplateDTO emailTemplate = createDummyEmailTemplate("Hello {{givenName}}, "
+                + "how are you {{familyName}}? {{sig}}");
         String contentObjectId = "test-email-template";
 
         try {

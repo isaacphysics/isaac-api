@@ -24,6 +24,7 @@ import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.apache.commons.lang3.EnumUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -214,12 +215,18 @@ public class EmailFacade extends AbstractSegueFacade {
 		try {
             Properties previewProperties = new Properties();
             // Add all properties in the user DTO (preserving types) so they are available to email templates.
+            System.out.println(currentUser);
             Map userPropertiesMap = new org.apache.commons.beanutils.BeanMap(currentUser);
-            previewProperties.putAll(emailManager.flattenTokenMap(userPropertiesMap, Maps.newHashMap(), ""));
+            // Sanitizes name inputs from users
+            Map<String, Object> userProps = new HashMap<>();
+            for (Object o : userPropertiesMap.entrySet()) {
+                Map.Entry<String, Object> entry = (Map.Entry<String, Object>) o;
+                String key = entry.getKey();
+                Object value = entry.getValue();
+                userProps.put(key, value != null ? StringEscapeUtils.escapeHtml4(value.toString()) : null);
+            }
 
-            //TODO: backwards compat - fix content so that case is correct.
-            previewProperties.put("givenname", currentUser.getGivenName() == null ? "" : currentUser.getGivenName());
-            previewProperties.put("familyname", currentUser.getFamilyName() == null ? "" : currentUser.getFamilyName());
+            previewProperties.putAll(emailManager.flattenTokenMap(userProps, Maps.newHashMap(), ""));
 
             EmailCommunicationMessage ecm = this.emailManager.constructMultiPartEmail(currentUser.getId(),
                     currentUser.getEmail(), emailTemplateDTO, previewProperties, EmailType.SYSTEM);
