@@ -105,6 +105,22 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     }
 
     /**
+     * Escape any HTML present in the email before sending
+     *
+     * @param emailParameters - the parameters to be inserted into the email
+     */
+    public static void sanitizeEmailParameters(final Map<Object, Object> emailParameters) {
+        for (Map.Entry<Object, Object> entry : emailParameters.entrySet()) {
+            String key = entry.getKey().toString();
+            if (key.contains("event.") || key.contains("assignmentsInfo")) {
+            }
+            else {
+                emailParameters.put(entry.getKey(), StringEscapeUtils.escapeHtml4(entry.getValue().toString()));
+            }
+        }
+    }
+
+    /**
      * Send an email to a user based on a content template.
      *
      * @param userDTO - the user to email
@@ -144,18 +160,11 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         propertiesToReplace.putAll(this.flattenTokenMap(tokenToValueMapping, Maps.newHashMap(), ""));
 
         // Add all properties in the user DTO (preserving types) so they are available to email templates.
-        System.out.println(userDTO);
         Map userPropertiesMap = new org.apache.commons.beanutils.BeanMap(userDTO);
-        Map<String, Object> userProps = new HashMap<>();
-        // Sanitizes user inputs
-        for (Object o : userPropertiesMap.entrySet()) {
-            Map.Entry<String, Object> entry = (Map.Entry<String, Object>) o;
-            String key = entry.getKey();
-            Object value = entry.getValue();
-            userProps.put(key, value != null ? StringEscapeUtils.escapeHtml4(value.toString()) : null);
-        }
 
-        propertiesToReplace.putAll(this.flattenTokenMap(userProps, Maps.newHashMap(), ""));
+        propertiesToReplace.putAll(this.flattenTokenMap(userPropertiesMap, Maps.newHashMap(), ""));
+
+        sanitizeEmailParameters(propertiesToReplace);
 
         EmailCommunicationMessage emailCommunicationMessage
                 = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), emailContentTemplate, propertiesToReplace,
