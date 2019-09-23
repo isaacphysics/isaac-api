@@ -206,6 +206,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         propertiesToReplace.putAll(this.globalStringTokens);
         propertiesToReplace.putAll(this.flattenTokenMap(emailValues, Maps.newHashMap(), ""));
 
+        sanitizeEmailParameters(propertiesToReplace);
+
         EmailCommunicationMessage e = constructMultiPartEmail(null, recipientEmailAddress, emailContent,
                 propertiesToReplace, EmailType.SYSTEM, null);
 
@@ -243,10 +245,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             Map userPropertiesMap = new org.apache.commons.beanutils.BeanMap(user);
             p.putAll(this.flattenTokenMap(userPropertiesMap, Maps.newHashMap(), ""));
 
-            // TODO - Remove once content templates have all been replaced with correct tokens
-            p.put("givenname", user.getGivenName() == null ? "" : user.getGivenName());
-            p.put("familyname", user.getFamilyName() == null ? "" : user.getFamilyName());
-            p.put("id", user.getId().toString());
+            sanitizeEmailParameters(p);
 
             EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(), emailContent, p,
                     emailType, null);
