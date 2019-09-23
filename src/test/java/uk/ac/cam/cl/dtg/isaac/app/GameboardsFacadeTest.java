@@ -70,7 +70,7 @@ public class GameboardsFacadeTest {
 	 */
 	@Before
 	public final void setUp() throws Exception {
-		this.dummyAPI = createMock(SegueDefaultFacade.class);
+		this.dummyAPI = createMock(SegueContentFacade.class);
 		this.dummyPropertiesLoader = createMock(PropertiesLoader.class);
 		this.dummyGameManager = createMock(GameManager.class);
 		this.dummyLogManager = createMock(ILogManager.class);
