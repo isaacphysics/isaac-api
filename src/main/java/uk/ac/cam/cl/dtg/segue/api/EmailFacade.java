@@ -214,12 +214,11 @@ public class EmailFacade extends AbstractSegueFacade {
 		try {
             Properties previewProperties = new Properties();
             // Add all properties in the user DTO (preserving types) so they are available to email templates.
-            System.out.println(currentUser);
             Map userPropertiesMap = new org.apache.commons.beanutils.BeanMap(currentUser);
-            // Sanitizes name inputs from users
 
             previewProperties.putAll(emailManager.flattenTokenMap(userPropertiesMap, Maps.newHashMap(), ""));
 
+            // Sanitizes inputs from users
             EmailManager.sanitizeEmailParameters(previewProperties);
 
             EmailCommunicationMessage ecm = this.emailManager.constructMultiPartEmail(currentUser.getId(),

@@ -45,7 +45,14 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import javax.annotation.Nullable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -164,6 +171,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         propertiesToReplace.putAll(this.flattenTokenMap(userPropertiesMap, Maps.newHashMap(), ""));
 
+        // Sanitizes inputs from users
         sanitizeEmailParameters(propertiesToReplace);
 
         EmailCommunicationMessage emailCommunicationMessage
