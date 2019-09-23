@@ -33,6 +33,7 @@ import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.api.GameboardsFacade;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.NoWildcardException;
+import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
 import uk.ac.cam.cl.dtg.segue.api.SegueDefaultFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
@@ -52,7 +53,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
  */
 public class GameboardsFacadeTest {
 
-	private SegueDefaultFacade dummyAPI = null;
+	private SegueContentFacade dummyAPI = null;
 	private PropertiesLoader dummyPropertiesLoader = null;
 	private GameManager dummyGameManager = null;
 	private ILogManager dummyLogManager = null;
@@ -93,8 +94,8 @@ public class GameboardsFacadeTest {
 	public final void isaacEndPoint_checkEmptyGameboardCausesErrorNoUser_SegueErrorResponseShouldBeReturned()
 			throws NoWildcardException, SegueDatabaseException, NoUserLoggedInException,
 			ContentManagerException {
-		GameboardsFacade gameboardFacade = new GameboardsFacade(dummyPropertiesLoader, dummyLogManager,
-				dummyGameManager, questionManager, userManager, userAssociationManager, userBadgeManager);
+		GameboardsFacade gameboardFacade = new GameboardsFacade(dummyAPI, dummyPropertiesLoader, dummyLogManager,
+				dummyGameManager, questionManager, userManager, userAssociationManager, userBadgeManager, "latest");
 
 		HttpServletRequest dummyRequest = createMock(HttpServletRequest.class);
 		String subjects = "physics";
