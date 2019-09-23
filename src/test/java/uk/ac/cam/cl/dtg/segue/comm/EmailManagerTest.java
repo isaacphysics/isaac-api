@@ -363,7 +363,7 @@ public class EmailManagerTest {
     @Test
     public final void sendPasswordReset_checkForTemplateCompletion_emailShouldBeSentWithTemplateTagsFilledIn() {
 
-        EmailTemplateDTO template = createDummyEmailTemplate("Hello, {{givenname}}.\n\nA request has been "
+        EmailTemplateDTO template = createDummyEmailTemplate("Hello, {{givenName}}.\n\nA request has been "
                 + "made to reset the password for the account: </a href='mailto:{{email}}'>{{email}}<a>"
                 + ".\n\nTo reset your password <a href='{{resetURL}}'>Click Here</a>\n\nRegards,\n\n{{sig}}");
 
