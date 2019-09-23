@@ -353,7 +353,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     public final Response getFastTrackConceptFromHistory(@Context final Request request,
                                                          @Context final HttpServletRequest httpServletRequest,
                                                          @PathParam("gameboard_id") final String gameboardId,
-                                                         @QueryParam("upper") final String upper) {
+                                                         @QueryParam("upper") final String upper,
+                                                         @QueryParam("conceptTitle") final String currentConceptTitle) {
 
         try {
             Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
@@ -375,11 +376,17 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts = this.questionManager
                     .getQuestionAttemptsByUser(randomUser);
 
-            // attempt to augment the gameboard with user information.
+            // Insanity lies ahead. Look away while you can.
+            List<GameboardItem> currentConceptQuestionsProgress
+                    = gameManager.getFastTrackConceptProgress(gameboardId, currentConceptTitle, userQuestionAttempts)
+                      .stream().filter(e -> e.getTags().contains("ft_lower")).collect(Collectors.toList());
             List<GameboardItem> conceptQuestionsProgress
-                    = gameManager.getFastTrackConceptProgress(gameboardId, conceptTitle, userQuestionAttempts);
+                    = gameManager.getFastTrackConceptProgress(gameboardId, conceptTitle, userQuestionAttempts)
+                      .stream().filter(e -> e.getTags().contains("ft_upper")).collect(Collectors.toList());
 
-            return Response.ok(conceptQuestionsProgress).build();
+            List<GameboardItem> allProgress = currentConceptQuestionsProgress;
+            allProgress.addAll(conceptQuestionsProgress);
+            return Response.ok(allProgress).build();
         } catch (SegueDatabaseException e) {
             String message = "Error whilst trying to access the FastTrack progress in the database.";
             log.error(message, e);
