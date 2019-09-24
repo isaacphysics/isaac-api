@@ -342,7 +342,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
      * @param request usually used for caching.
      * @param httpServletRequest so that we can extract the users session information if available.
      * @param gameboardId the unique id of the FastTrack gameboard which links the questions.
-     * @param history the list of questions that were traversed to get to the current question.
+     * @param upper the latest upper level question that is in the history.
+     * @param conceptTitle the concept title that the user is currently working on.
      * @return a Response containing a list of augmented gameboard items for the gamebaord-concept pair or an error.
      */
     @GET
