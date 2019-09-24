@@ -23,6 +23,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.Validate;
+import org.apache.commons.text.StringEscapeUtils;
 import org.eclipse.jgit.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -111,6 +112,20 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     }
 
     /**
+     * Escape any HTML present in the email before sending
+     *
+     * @param emailParameters - the parameters to be inserted into the email
+     */
+    public static void sanitizeEmailParameters(final Map<Object, Object> emailParameters) {
+        for (Map.Entry<Object, Object> entry : emailParameters.entrySet()) {
+            String key = entry.getKey().toString();
+            if (!(key.startsWith("event.") || key.startsWith("assignmentsInfo"))) {
+                emailParameters.put(entry.getKey(), StringEscapeUtils.escapeHtml4(entry.getValue().toString()));
+            }
+        }
+    }
+
+    /**
      * Send an email to a user based on a content template.
      *
      * @param userDTO - the user to email
@@ -151,11 +166,11 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         // Add all properties in the user DTO (preserving types) so they are available to email templates.
         Map userPropertiesMap = new org.apache.commons.beanutils.BeanMap(userDTO);
+
         propertiesToReplace.putAll(this.flattenTokenMap(userPropertiesMap, Maps.newHashMap(), ""));
 
-        // default properties
-        //TODO: We should find and replace this in templates as the case is wrong.
-        propertiesToReplace.putIfAbsent("givenname", userDTO.getGivenName() == null ? "" : userDTO.getGivenName());
+        // Sanitizes inputs from users
+        sanitizeEmailParameters(propertiesToReplace);
 
         EmailCommunicationMessage emailCommunicationMessage
                 = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), emailContentTemplate, propertiesToReplace,
@@ -188,6 +203,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         Properties propertiesToReplace = new Properties();
         propertiesToReplace.putAll(this.globalStringTokens);
         propertiesToReplace.putAll(this.flattenTokenMap(emailValues, Maps.newHashMap(), ""));
+
+        sanitizeEmailParameters(propertiesToReplace);
 
         EmailCommunicationMessage e = constructMultiPartEmail(null, recipientEmailAddress, emailContent,
                 propertiesToReplace, EmailType.SYSTEM, null);
@@ -226,10 +243,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             Map userPropertiesMap = new org.apache.commons.beanutils.BeanMap(user);
             p.putAll(this.flattenTokenMap(userPropertiesMap, Maps.newHashMap(), ""));
 
-            // TODO - Remove once content templates have all been replaced with correct tokens
-            p.put("givenname", user.getGivenName() == null ? "" : user.getGivenName());
-            p.put("familyname", user.getFamilyName() == null ? "" : user.getFamilyName());
-            p.put("id", user.getId().toString());
+            sanitizeEmailParameters(p);
 
             EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(), emailContent, p,
                     emailType, null);
