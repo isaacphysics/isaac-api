@@ -983,7 +983,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(EVENT_TYPE));
 
         try {
-            if (!isUserAnAdminOrEventManager(userManager, request)) {
+            if (!isUserAbleToManageEvents(userManager, request)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
