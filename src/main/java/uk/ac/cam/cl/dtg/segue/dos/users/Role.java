@@ -19,5 +19,5 @@ package uk.ac.cam.cl.dtg.segue.dos.users;
  * Enum of valid roles for users of Segue to have.
  */
 public enum Role {
-    STUDENT, TEACHER, TESTER, EVENT_MANAGER, STAFF, CONTENT_EDITOR, ADMIN
+    STUDENT, TEACHER, EVENT_LEADER, TESTER, EVENT_MANAGER, STAFF, CONTENT_EDITOR, ADMIN
 }
