@@ -29,6 +29,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -82,6 +83,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.dos.AbstractUserPreferenceManager;
+import uk.ac.cam.cl.dtg.segue.dos.UserAssociation;
 import uk.ac.cam.cl.dtg.segue.dos.UserPreference;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
@@ -632,7 +634,7 @@ public class UsersFacade extends AbstractSegueFacade {
     public Response getUserIdToSchoolMap(@Context final HttpServletRequest httpServletRequest,
                                          @QueryParam("user_ids") final String userIdsQueryParam) {
         try {
-            if (!isUserStaff(this.userManager, httpServletRequest)) {
+            if (!isUserStaff(this.userManager, httpServletRequest) || !isUserAnEventLeader(this.userManager, httpServletRequest)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be a staff member to access this endpoint.")
                         .toResponse();
             }
@@ -642,14 +644,20 @@ public class UsersFacade extends AbstractSegueFacade {
                         .toResponse();
             }
 
-            String[] userIdsAsList = userIdsQueryParam.split(",");
-            List<Long> userLongIds = Lists.newArrayList();
+            List<Long> userIds = Arrays.stream(userIdsQueryParam.split(","))
+                    .map(schoolId -> Long.parseLong(schoolId))
+                    .collect(Collectors.toList());
 
-            for (String anUserIdsAsList : userIdsAsList) {
-                userLongIds.add(Long.parseLong(anUserIdsAsList));
+            // Restrict event leader queries to users who have granted access to their data
+            if (isUserAnEventLeader(userManager, httpServletRequest)) {
+                RegisteredUserDTO eventLeader = userManager.getCurrentRegisteredUser(httpServletRequest);
+                Set<Long> associations = userAssociationManager.getAssociationsForOthers(eventLeader).stream()
+                        .map(UserAssociation::getUserIdGrantingPermission)
+                        .collect(Collectors.toSet());
+                userIds = userIds.stream().filter(id -> associations.contains(id)).collect(Collectors.toList());
             }
 
-            final List<RegisteredUserDTO> users = this.userManager.findUsers(userLongIds);
+            final List<RegisteredUserDTO> users = this.userManager.findUsers(userIds);
             final ImmutableMap.Builder<String, Object> builder = ImmutableMap.builder();
             for (RegisteredUserDTO user : users) {
                 if (user.getSchoolId() != null) {
