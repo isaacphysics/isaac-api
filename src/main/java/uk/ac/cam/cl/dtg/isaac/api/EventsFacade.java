@@ -50,10 +50,13 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dos.UserAssociation;
+import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
+import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.DateRangeFilterInstruction;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -405,19 +408,25 @@ public class EventsFacade extends AbstractIsaacFacade {
                                                      @PathParam("event_id") final String eventId,
                                                      @PathParam("user_id") final Long userId, final Map<String, String> additionalInformation) {
         try {
-            if (!isUserAnAdminOrEventManager(userManager, request)) {
+            if (!isUserAbleToManageEvents(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be a staff user to access this endpoint.")
                     .toResponse();
             }
 
+            RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(request);
             RegisteredUserDTO userOfInterest = this.userManager.getUserDTOById(userId);
-
             IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
+
+            // Event leaders must have permission to perform this action
+            if (currentUser.getRole() == Role.EVENT_LEADER && !userAssociationManager.hasPermission(currentUser, userOfInterest)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You do not have authorisation to change this user's booking.")
+                        .toResponse();
+            }
 
             EventBookingDTO eventBookingDTO
                     = this.bookingManager.promoteFromWaitingListOrCancelled(event, userOfInterest);
 
-            this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
+            this.getLogManager().logEvent(currentUser, request,
                     SegueLogType.ADMIN_EVENT_WAITING_LIST_PROMOTION, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId(),
                                                                          USER_ID_FKEY_FIELDNAME, userId));
             return Response.ok(eventBookingDTO).build();
@@ -525,14 +534,19 @@ public class EventsFacade extends AbstractIsaacFacade {
     public final Response createBookingForGivenUser(@Context final HttpServletRequest request,
             @PathParam("event_id") final String eventId, @PathParam("user_id") final Long userId, final Map<String, String> additionalInformation) {
         try {
-            if (!isUserAnAdminOrEventManager(userManager, request)) {
+            if (!isUserAbleToManageEvents(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
                         .toResponse();
             }
 
+            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
             RegisteredUserDTO bookedUser = userManager.getUserDTOById(userId);
-
             IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
+
+            if (currentUser.getRole() == Role.EVENT_LEADER && !userAssociationManager.hasPermission(currentUser, bookedUser)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You do not have authorisation to change this user's booking.")
+                        .toResponse();
+            }
 
             if (bookingManager.isUserBooked(eventId, userId)) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "User is already booked on this event.")
@@ -540,7 +554,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             }
 
             EventBookingDTO booking = bookingManager.createBookingOrAddToWaitingList(event, bookedUser, additionalInformation);
-            this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
+            this.getLogManager().logEvent(currentUser, request,
                     SegueLogType.ADMIN_EVENT_BOOKING_CREATED,
                     ImmutableMap.of(
                         EVENT_ID_FKEY_FIELDNAME, event.getId(),
@@ -755,9 +769,15 @@ public class EventsFacade extends AbstractIsaacFacade {
             }
 
             // if the user id is null then it means they are changing their own booking.
-            if (userId != null && !isUserAnAdminOrEventManager(userManager, request) ) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to change another user's booking.")
-                    .toResponse();
+            if (userId != null) {
+                if(isUserAbleToManageEvents(userManager, request)) {
+                    return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to change another user's booking.")
+                            .toResponse();
+                }
+                if (userLoggedIn.getRole() == Role.EVENT_LEADER && !userAssociationManager.hasPermission(userLoggedIn, userOwningBooking)) {
+                    return new SegueErrorResponse(Status.FORBIDDEN, "You do not have authorisation to change this user's booking.")
+                            .toResponse();
+                }
             }
 
             Set<BookingStatus> cancelableStatuses =
@@ -769,10 +789,10 @@ public class EventsFacade extends AbstractIsaacFacade {
             bookingManager.cancelBooking(event, userOwningBooking);
 
             if (!userOwningBooking.equals(userLoggedIn)) {
-                this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
+                this.getLogManager().logEvent(userLoggedIn, request,
                         SegueLogType.ADMIN_EVENT_BOOKING_CANCELLED, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId(), USER_ID_FKEY_FIELDNAME, userOwningBooking.getId()));
             } else {
-                this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
+                this.getLogManager().logEvent(userLoggedIn, request,
                         SegueLogType.EVENT_BOOKING_CANCELLED, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId()));
             }
 
@@ -811,17 +831,23 @@ public class EventsFacade extends AbstractIsaacFacade {
     public final Response resendEventEmail(@Context final HttpServletRequest request,
                                         @PathParam("event_id") final String eventId, @PathParam("user_id") final Long userId) {
         try {
-            if (!isUserAnAdminOrEventManager(userManager,request)) {
+            if (!isUserAbleToManageEvents(userManager,request)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
             IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
-            RegisteredUserDTO user = this.userManager.getUserDTOById(userId);
+            RegisteredUserDTO bookedUser = this.userManager.getUserDTOById(userId);
+            RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(request);
 
-            this.bookingManager.resendEventEmail(event, user);
+            if (currentUser.getRole() == Role.EVENT_LEADER && !userAssociationManager.hasPermission(currentUser, bookedUser)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You do not have authorisation to change this user's booking.")
+                        .toResponse();
+            }
+
+            this.bookingManager.resendEventEmail(event, bookedUser);
 
             log.info(String.format("User (%s) has just resent an event email to user id (%s)",
-                    this.userManager.getCurrentRegisteredUser(request).getEmail(), user.getId()));
+                    currentUser.getEmail(), bookedUser.getId()));
 
             return Response.noContent().build();
         } catch (NoUserLoggedInException e) {
@@ -918,16 +944,22 @@ public class EventsFacade extends AbstractIsaacFacade {
                                                 @PathParam("user_id") final Long userId,
                                                 @QueryParam("attended") final Boolean attended) {
         try {
-            if (!isUserAnAdminOrEventManager(userManager, request)) {
+            if (!isUserAbleToManageEvents(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be a staff user to access this endpoint.")
                         .toResponse();
             }
 
+            RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(request);
             RegisteredUserDTO userOfInterest = this.userManager.getUserDTOById(userId);
             IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
 
+            if (currentUser.getRole() == Role.EVENT_LEADER && !userAssociationManager.hasPermission(currentUser, userOfInterest)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You do not have authorisation to change this user's booking.")
+                        .toResponse();
+            }
+
             EventBookingDTO eventBookingDTO = this.bookingManager.recordAttendance(event, userOfInterest, attended);
-            this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
+            this.getLogManager().logEvent(currentUser, request,
                     SegueLogType.ADMIN_EVENT_ATTENDANCE_RECORDED,
                     ImmutableMap.of(
                         EVENT_ID_FKEY_FIELDNAME, event.getId(),

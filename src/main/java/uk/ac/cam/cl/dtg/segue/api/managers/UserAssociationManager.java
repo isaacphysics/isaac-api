@@ -46,6 +46,7 @@ public class UserAssociationManager {
     
     private final IAssociationDataManager associationDatabase;
     private final GroupManager userGroupManager;
+    private final UserAccountManager userManager;
 
     /**
      * UserAssociationManager.
@@ -56,9 +57,12 @@ public class UserAssociationManager {
      *            - IAssociationDataManager providing access to the database.
      */
     @Inject
-    public UserAssociationManager(final IAssociationDataManager associationDatabase, 
+    public UserAssociationManager(
+            final IAssociationDataManager associationDatabase,
+            final UserAccountManager userManager,
             final GroupManager userGroupManager) {
         this.associationDatabase = associationDatabase;
+        this.userManager = userManager;
         this.userGroupManager = userGroupManager;
         log.debug("Creating an instance of the UserAssociationManager.");
     }
@@ -366,4 +370,17 @@ public class UserAssociationManager {
             return false;
         }
     }
+
+    /**
+     * Overloaded method to handle different user representation object
+     * @param currentUser
+     *            - requesting permission
+     * @param userRequested
+     *            - the owner of the data to view.
+     * @return true if yes false if no.
+     */
+    public boolean hasPermission(final RegisteredUserDTO currentUser, final RegisteredUserDTO userRequested) {
+        return this.hasPermission(currentUser, userManager.convertToUserSummaryObject(userRequested));
+    }
+
 }
