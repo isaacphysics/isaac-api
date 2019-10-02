@@ -654,6 +654,7 @@ public class UsersFacade extends AbstractSegueFacade {
                 Set<Long> associations = userAssociationManager.getAssociationsForOthers(eventLeader).stream()
                         .map(UserAssociation::getUserIdGrantingPermission)
                         .collect(Collectors.toSet());
+                associations.add(eventLeader.getId());
                 userIds = userIds.stream().filter(id -> associations.contains(id)).collect(Collectors.toList());
             }
 

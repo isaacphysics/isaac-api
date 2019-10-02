@@ -500,6 +500,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                 Set<Long> associations = userAssociationManager.getAssociationsForOthers(eventLeader).stream()
                         .map(UserAssociation::getUserIdGrantingPermission)
                         .collect(Collectors.toSet());
+                associations.add(eventLeader.getId());
                 eventBookings = bookingManager.getBookingByEventId(eventId).stream()
                         .filter(booking -> associations.contains(booking.getUserBooked().getId()))
                         .collect(Collectors.toList());
