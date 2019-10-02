@@ -634,7 +634,7 @@ public class UsersFacade extends AbstractSegueFacade {
     public Response getUserIdToSchoolMap(@Context final HttpServletRequest httpServletRequest,
                                          @QueryParam("user_ids") final String userIdsQueryParam) {
         try {
-            if (!isUserStaff(this.userManager, httpServletRequest) || !isUserAnEventLeader(this.userManager, httpServletRequest)) {
+            if (!isUserStaff(this.userManager, httpServletRequest) && !isUserAnEventLeader(this.userManager, httpServletRequest)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be a staff member to access this endpoint.")
                         .toResponse();
             }

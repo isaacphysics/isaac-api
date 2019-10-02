@@ -358,8 +358,8 @@ public class UserAssociationManager {
     public boolean hasPermission(final RegisteredUserDTO currentUser, final UserSummaryDTO userRequested) {
         try {
             return currentUser.getId().equals(userRequested.getId())
-                    || this.associationDatabase.hasValidAssociation(currentUser.getId(), userRequested.getId())
-                    || Role.ADMIN.equals(currentUser.getRole());
+                    || Role.ADMIN.equals(currentUser.getRole())
+                    || this.associationDatabase.hasValidAssociation(currentUser.getId(), userRequested.getId());
         } catch (SegueDatabaseException e) {
             log.error("Database Error: Unable to determine whether a user has permission to view another users data.",
                     e);
