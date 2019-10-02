@@ -38,6 +38,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
+import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
@@ -47,13 +48,16 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.segue.dos.UserAssociation;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
@@ -101,6 +105,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     private final IContentManager contentManager;
     private final String contentIndex;
     private final UserBadgeManager userBadgeManager;
+    private final GroupManager groupManager;
     private final UserAssociationManager userAssociationManager;
 
     /**
@@ -123,6 +128,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                         final UserAccountManager userManager, final IContentManager contentManager,
                         @Named(Constants.CONTENT_INDEX) final String contentIndex,
                         final UserBadgeManager userBadgeManager,
+                        final GroupManager groupManager,
                         final UserAssociationManager userAssociationManager) {
         super(properties, logManager);
         this.bookingManager = bookingManager;
@@ -130,6 +136,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         this.contentManager = contentManager;
         this.contentIndex = contentIndex;
         this.userBadgeManager = userBadgeManager;
+        this.groupManager = groupManager;
         this.userAssociationManager = userAssociationManager;
     }
 
@@ -1040,6 +1047,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             if (!isUserAbleToManageEvents(userManager, request)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
+            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
 
             Map<String, AbstractFilterInstruction> filterInstructions = null;
             if (filter != null) {
@@ -1073,8 +1081,29 @@ public class EventsFacade extends AbstractIsaacFacade {
                 if (!(c instanceof  IsaacEventPageDTO)) {
                     continue;
                 }
-
                 IsaacEventPageDTO e = (IsaacEventPageDTO) c;
+
+                // Event leaders can only see the events which they are associated with (through the event's group token)
+                if (currentUser.getRole() == Role.EVENT_LEADER) {
+                    try {
+                        if (e.getIsaacGroupToken() == null || e.getIsaacGroupToken().isEmpty()) {
+                            continue;
+                        }
+
+                        AssociationToken eventGroupToken =
+                                userAssociationManager.lookupTokenDetails(currentUser, e.getIsaacGroupToken());
+                        UserGroupDTO eventGroup = groupManager.getGroupById(eventGroupToken.getGroupId());
+
+                        if (!GroupManager.isOwnerOrAdditionalManager(eventGroup, currentUser.getId())) {
+                            continue;
+                        }
+                    } catch (InvalidUserAssociationTokenException error) {
+                        log.error(String.format("Unable to show event overview for %s because of invalid token %s",
+                                e.getId(), e.getIsaacGroupToken()));
+                        continue;
+                    }
+                }
+
                 ImmutableMap.Builder<String, Object> eventOverviewBuilder = new ImmutableMap.Builder<>();
                 eventOverviewBuilder.put("id", e.getId());
                 eventOverviewBuilder.put("title", e.getTitle());
@@ -1119,7 +1148,6 @@ public class EventsFacade extends AbstractIsaacFacade {
             log.error("Error occurred during event overview look up", e);
             return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid request format.").toResponse();
         }
-
     }
 
     /**
