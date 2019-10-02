@@ -39,6 +39,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
@@ -48,6 +49,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dos.UserAssociation;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
@@ -76,6 +78,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -95,6 +98,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     private final IContentManager contentManager;
     private final String contentIndex;
     private final UserBadgeManager userBadgeManager;
+    private final UserAssociationManager userAssociationManager;
 
     /**
      * EventsFacade.
@@ -115,13 +119,15 @@ public class EventsFacade extends AbstractIsaacFacade {
                         final EventBookingManager bookingManager,
                         final UserAccountManager userManager, final IContentManager contentManager,
                         @Named(Constants.CONTENT_INDEX) final String contentIndex,
-                        final UserBadgeManager userBadgeManager) {
+                        final UserBadgeManager userBadgeManager,
+                        final UserAssociationManager userAssociationManager) {
         super(properties, logManager);
         this.bookingManager = bookingManager;
         this.userManager = userManager;
         this.contentManager = contentManager;
         this.contentIndex = contentIndex;
         this.userBadgeManager = userBadgeManager;
+        this.userAssociationManager = userAssociationManager;
     }
 
     /**
@@ -465,12 +471,28 @@ public class EventsFacade extends AbstractIsaacFacade {
     public final Response getEventBookingByEventId(@Context final HttpServletRequest request,
             @PathParam("event_id") final String eventId) {
         try {
-            if (!isUserAnAdminOrEventManager(userManager, request)) {
+            if (!isUserAbleToManageEvents(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
                         .toResponse();
             }
 
-            return Response.ok(bookingManager.getBookingByEventId(eventId)).build();
+            List<EventBookingDTO> eventBookings;
+
+            // Event leaders are only allowed to see the bookings of connected users
+            if (isUserAnEventLeader(userManager, request)) {
+                RegisteredUserDTO eventLeader = userManager.getCurrentRegisteredUser(request);
+                Set<Long> associations = userAssociationManager.getAssociationsForOthers(eventLeader).stream()
+                        .map(UserAssociation::getUserIdGrantingPermission)
+                        .collect(Collectors.toSet());
+                eventBookings = bookingManager.getBookingByEventId(eventId).stream()
+                        .filter(booking -> associations.contains(booking.getUserBooked().getId()))
+                        .collect(Collectors.toList());
+            } else {
+                eventBookings = bookingManager.getBookingByEventId(eventId);
+            }
+
+            return Response.ok(eventBookings).build();
+
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {

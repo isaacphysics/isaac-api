@@ -232,6 +232,22 @@ public abstract class AbstractSegueFacade {
     }
 
     /**
+     * Is the current user in an event leader role.
+     *
+     * @param userManager
+     *            - Instance of User Manager
+     * @param request
+     *            - with session information
+     * @return true if user is logged in as an admin, false otherwise.
+     * @throws NoUserLoggedInException
+     *             - if we are unable to tell because they are not logged in.
+     */
+    public static boolean isUserAnEventLeader(final UserAccountManager userManager,
+                                              final HttpServletRequest request) throws NoUserLoggedInException {
+        return userManager.checkUserRole(request, Arrays.asList(Role.EVENT_LEADER));
+    }
+
+    /**
      * Is the current user in an admin, event manager or event leader role.
      *
      * @param userManager
