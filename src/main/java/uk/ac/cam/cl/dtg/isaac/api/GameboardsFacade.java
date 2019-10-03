@@ -291,103 +291,64 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
     /**
      * REST endpoint to retrieve every question (and its status) associated with a particular FastTrack gameboard and
-     * concept.
-     *
-     * @param request usually used for caching.
-     * @param httpServletRequest so that we can extract the users session information if available.
-     * @param gameboardId the unique id of the FastTrack gameboard which links the questions.
-     * @param conceptTitle the title of the concept which the client wants.
-     * @return a Response containing a list of augmented gameboard items for the gamebaord-concept pair or an error.
-     */
-    @GET
-    @Path("fasttrack/{gameboard_id}/concepts/")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @ApiOperation(value = "Get the progress of the current user at a FastTrack gameboard.")
-    public final Response getFastTrackConceptProgress(@Context final Request request,
-                                                      @Context final HttpServletRequest httpServletRequest,
-                                                      @PathParam("gameboard_id") final String gameboardId,
-                                                      @QueryParam("concept") final String conceptTitle) {
-
-        try {
-            if (!fastTrackGamebaordIds.contains(gameboardId)) {
-                return new SegueErrorResponse(Status.NOT_FOUND, "Gameboard id not a valid FastTrack gameboard id.")
-                        .toResponse();
-            }
-            AbstractSegueUserDTO randomUser = this.userManager.getCurrentUser(httpServletRequest);
-            Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts = this.questionManager
-                    .getQuestionAttemptsByUser(randomUser);
-
-            // attempt to augment the gameboard with user information.
-            List<GameboardItem> conceptQuestionsProgress
-                    = gameManager.getFastTrackConceptProgress(gameboardId, conceptTitle, userQuestionAttempts);
-
-            return Response.ok(conceptQuestionsProgress).build();
-        } catch (SegueDatabaseException e) {
-            String message = "Error whilst trying to access the FastTrack progress in the database.";
-            log.error(message, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
-        } catch (ContentManagerException e1) {
-            SegueErrorResponse error = new SegueErrorResponse(
-                    Status.NOT_FOUND, "Error locating the version requested", e1);
-            log.error(error.getErrorMessage(), e1);
-            return error.toResponse();
-        }
-    }
-
-    /**
-     * REST endpoint to retrieve every question (and its status) associated with a particular FastTrack gameboard and
      * history.
      *
      * @param request usually used for caching.
      * @param httpServletRequest so that we can extract the users session information if available.
      * @param gameboardId the unique id of the FastTrack gameboard which links the questions.
-     * @param upper the latest upper level question that is in the history.
      * @param currentConceptTitle the concept title that the user is currently working on.
+     * @param upperQuestionId the latest upper level question that is in the history.
      * @return a Response containing a list of augmented gameboard items for the gamebaord-concept pair or an error.
      */
     @GET
-    @Path("fasttrack/{gameboard_id}/concepts_with_upper/")
+    @Path("fasttrack/{gameboard_id}/concepts")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @ApiOperation(value = "Get the progress of the current user at a FastTrack gameboard.")
     public final Response getFastTrackConceptFromHistory(@Context final Request request,
                                                          @Context final HttpServletRequest httpServletRequest,
                                                          @PathParam("gameboard_id") final String gameboardId,
-                                                         @QueryParam("upper") final String upper,
-                                                         @QueryParam("conceptTitle") final String currentConceptTitle) {
+                                                         @QueryParam("concept") final String currentConceptTitle,
+                                                         @QueryParam("upper_question_id") final String upperQuestionId) {
 
         try {
-            Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-            fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(FAST_TRACK_QUESTION_TYPE));
-            fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(upper));
-            ResultsWrapper<ContentDTO> resultsList = this.api.findMatchingContent(this.contentIndex,
-                    SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch), null, null);
-
-            String conceptTitle = "";
-            if (resultsList.getTotalResults() == 1) {
-                conceptTitle = resultsList.getResults().get(0).getTitle();
-            }
-
             if (!fastTrackGamebaordIds.contains(gameboardId)) {
                 return new SegueErrorResponse(Status.NOT_FOUND, "Gameboard id not a valid FastTrack gameboard id.")
                         .toResponse();
             }
-            AbstractSegueUserDTO randomUser = this.userManager.getCurrentUser(httpServletRequest);
+
+            AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(httpServletRequest);
             Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts = this.questionManager
-                    .getQuestionAttemptsByUser(randomUser);
+                    .getQuestionAttemptsByUser(currentUser);
 
-            // Insanity lies ahead. Look away while you can.
-            List<GameboardItem> currentConceptQuestionsProgress
-                    = gameManager.getFastTrackConceptProgress(gameboardId, currentConceptTitle, userQuestionAttempts)
-                      .stream().filter(e -> e.getTags().contains("ft_lower")).collect(Collectors.toList());
-            List<GameboardItem> conceptQuestionsProgress
-                    = gameManager.getFastTrackConceptProgress(gameboardId, conceptTitle, userQuestionAttempts)
-                      .stream().filter(e -> e.getTags().contains("ft_upper")).collect(Collectors.toList());
+            Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
+            fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(FAST_TRACK_QUESTION_TYPE));
+            fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(upperQuestionId));
+            ResultsWrapper<ContentDTO> resultsList = this.api.findMatchingContent(this.contentIndex,
+                    SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch), null, null);
 
-            List<GameboardItem> allProgress = currentConceptQuestionsProgress;
-            allProgress.addAll(conceptQuestionsProgress);
-            return Response.ok(allProgress).build();
+            if (upperQuestionId.isEmpty()) {
+                // attempt to augment the gameboard with user information.
+                List<GameboardItem> conceptQuestionsProgress
+                        = gameManager.getFastTrackConceptProgress(gameboardId, currentConceptTitle, userQuestionAttempts);
+                return Response.ok(conceptQuestionsProgress).build();
+            } else {
+                String upperConceptTitle = "";
+                if (resultsList.getTotalResults() == 1) {
+                    upperConceptTitle = resultsList.getResults().get(0).getTitle();
+                }
+                // Insanity lies ahead. Look away while you can.
+                List<GameboardItem> currentConceptQuestionsProgress
+                                    = gameManager.getFastTrackConceptProgress(gameboardId, currentConceptTitle, userQuestionAttempts)
+                                    .stream().filter(e -> e.getTags().contains("ft_lower")).collect(Collectors.toList());
+                List<GameboardItem> upperConceptQuestionsProgress
+                                    = gameManager.getFastTrackConceptProgress(gameboardId, upperConceptTitle, userQuestionAttempts)
+                                    .stream().filter(e -> e.getTags().contains("ft_upper")).collect(Collectors.toList());
+
+                List<GameboardItem> allProgress = currentConceptQuestionsProgress;
+                allProgress.addAll(upperConceptQuestionsProgress);
+                return Response.ok(allProgress).build();
+            }
         } catch (SegueDatabaseException e) {
             String message = "Error whilst trying to access the FastTrack progress in the database.";
             log.error(message, e);
