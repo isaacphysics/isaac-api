@@ -44,6 +44,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
@@ -97,7 +98,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
     private final String contentIndex;
 
-    private final SegueContentFacade api;
+    private final IContentManager contentManager;
 
     /**
      * GamesFacade. For management of gameboards etc.
@@ -118,13 +119,13 @@ public class GameboardsFacade extends AbstractIsaacFacade {
      *            - for updating badge information.
      */
     @Inject
-    public GameboardsFacade(final SegueContentFacade api, final PropertiesLoader properties, final ILogManager logManager,
+    public GameboardsFacade(final IContentManager contentManager, final PropertiesLoader properties, final ILogManager logManager,
                             final GameManager gameManager, final QuestionManager questionManager,
                             final UserAccountManager userManager, final UserAssociationManager associationManager,
                             final UserBadgeManager userBadgeManager, @Named(CONTENT_INDEX) final String contentIndex) {
         super(properties, logManager);
 
-        this.api = api;
+        this.contentManager = contentManager;
         this.userBadgeManager = userBadgeManager;
         this.gameManager = gameManager;
         this.questionManager = questionManager;
@@ -324,8 +325,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
             fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(FAST_TRACK_QUESTION_TYPE));
             fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(upperQuestionId));
-            ResultsWrapper<ContentDTO> resultsList = this.api.findMatchingContent(this.contentIndex,
-                    SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch), null, null);
+            ResultsWrapper<ContentDTO> resultsList = this.contentManager.findByFieldNames(this.contentIndex,
+                    SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch), 0, DEFAULT_RESULTS_LIMIT);
 
             if (upperQuestionId.isEmpty()) {
                 // attempt to augment the gameboard with user information.
