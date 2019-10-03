@@ -16,7 +16,7 @@
 package uk.ac.cam.cl.dtg.isaac.dos;
 
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacParsonsQuestionDTO;
-import uk.ac.cam.cl.dtg.isaac.quiz.IsaacItemQuestionValidator;
+import uk.ac.cam.cl.dtg.isaac.quiz.IsaacParsonsQuestionValidator;
 import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
@@ -28,7 +28,7 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
  */
 @DTOMapping(IsaacParsonsQuestionDTO.class)
 @JsonContentType("isaacParsonsQuestion")
-@ValidatesWith(IsaacItemQuestionValidator.class)
+@ValidatesWith(IsaacParsonsQuestionValidator.class)
 public class IsaacParsonsQuestion extends IsaacItemQuestion {
 
     private Boolean requiresIndentation;

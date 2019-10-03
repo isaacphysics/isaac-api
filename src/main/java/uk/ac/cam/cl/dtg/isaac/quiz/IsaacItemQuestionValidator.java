@@ -15,20 +15,16 @@
  */
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
-import com.google.common.collect.Lists;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacItemQuestion;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacParsonsQuestion;
 import uk.ac.cam.cl.dtg.segue.dos.ItemQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Item;
 import uk.ac.cam.cl.dtg.segue.dos.content.ItemChoice;
-import uk.ac.cam.cl.dtg.segue.dos.content.ParsonsChoice;
-import uk.ac.cam.cl.dtg.segue.dos.content.ParsonsItem;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 
@@ -46,156 +42,134 @@ import java.util.stream.Collectors;
 public class IsaacItemQuestionValidator implements IValidator {
     private static final Logger log = LoggerFactory.getLogger(IsaacItemQuestionValidator.class);
 
-    @Override
-    public final QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
+    protected void checkQuestionAndAnswerTypes(final Question question, final Choice answer) {
         Validate.notNull(question);
         Validate.notNull(answer);
 
-        if (!(question instanceof IsaacItemQuestion)) {
+        if (!(question.getClass() == IsaacItemQuestion.class)) {
             throw new IllegalArgumentException(String.format(
                     "This validator only works with IsaacItemQuestions (%s is not ItemQuestion)", question.getId()));
         }
 
-        if (!(answer instanceof ItemChoice)) {
+        if (!(answer.getClass() == ItemChoice.class)) {
             throw new IllegalArgumentException(String.format(
                     "Expected ItemChoice for IsaacItemQuestion: %s. Received (%s) ", question.getId(), answer.getClass()));
         }
+    }
 
-        // Check that question type and choice type match: Don't allow child choice types:
-        if (question instanceof IsaacParsonsQuestion && !(answer instanceof ParsonsChoice)) {
-            throw new IllegalArgumentException(String.format(
-                    "Expected ParsonsChoice for IsaacParsonsQuestion: %s. Received (%s) ", question.getId(), answer.getClass()));
-        } else if (!(question instanceof IsaacParsonsQuestion) && answer instanceof ParsonsChoice) {
-            throw new IllegalArgumentException(String.format(
-                    "Expected ItemChoice for IsaacItemQuestion: %s. Received (%s) ", question.getId(), answer.getClass()));
-        }
+    private ItemQuestionValidationResponse checkQuestionIsAnswerable(
+            IsaacItemQuestion itemQuestion, ItemChoice submittedChoice) {
 
-        // These variables store the important features of the response we'll send.
-        Content feedback = null;                // The feedback we send the user
-        List<String> incorrectItemIds = null;   // Additional info about incorrect items
-        boolean responseCorrect = false;        // Whether we're right or wrong
-
-        IsaacItemQuestion itemQuestion = (IsaacItemQuestion) question;
-        ItemChoice submittedChoice = (ItemChoice) answer;
-        boolean isParsonQuestion = question instanceof IsaacParsonsQuestion;
-
-        // STEP 0: Is it even possible to answer this question?
+        ItemQuestionValidationResponse defaultFailedResponse =
+                ItemQuestionValidationResponse.createDefaultFailedResponse(itemQuestion.getId(), submittedChoice);
 
         if (null == itemQuestion.getChoices() || itemQuestion.getChoices().isEmpty()) {
-            log.error("Question does not have any answers. " + question.getId() + " src: "
-                    + question.getCanonicalSourceFile());
-            feedback = new Content("This question does not have any correct answers!");
+            log.error("Question does not have any answers. " + itemQuestion.getId() + " src: "
+                    + itemQuestion.getCanonicalSourceFile());
+            defaultFailedResponse.setExplanation(new Content("This question does not have any correct answers!"));
+            return defaultFailedResponse;
         }
 
         if (null == itemQuestion.getItems() || itemQuestion.getItems().isEmpty()) {
-            log.error("ItemQuestion does not have any items. " + question.getId() + " src: "
-                    + question.getCanonicalSourceFile());
-            feedback = new Content("This question does not have any items to choose from!");
+            log.error("ItemQuestion does not have any items. " + itemQuestion.getId() + " src: "
+                    + itemQuestion.getCanonicalSourceFile());
+            defaultFailedResponse.setExplanation(new Content("This question does not have any items to choose from!"));
+            return defaultFailedResponse;
         }
 
-        // STEP 1: Did they provide a valid answer?
+        return null;
+    }
 
-        if (null == feedback && (null == submittedChoice.getItems() || submittedChoice.getItems().isEmpty())) {
-            feedback = new Content("You did not provide an answer");
+    private ItemQuestionValidationResponse checkAnswerIsValid(IsaacItemQuestion itemQuestion, ItemChoice submittedChoice) {
+        ItemQuestionValidationResponse defaultFailedResponse =
+                ItemQuestionValidationResponse.createDefaultFailedResponse(itemQuestion.getId(), submittedChoice);
+
+        if (null == submittedChoice.getItems() || submittedChoice.getItems().isEmpty()) {
+            defaultFailedResponse.setExplanation(new Content("You did not provide an answer"));
+            return defaultFailedResponse;
         }
 
-        Collection<String> submittedItemIds = null;
         Set<String> allowedItemIds;
         if (null != submittedChoice.getItems() && null != itemQuestion.getItems()) {
-            // Item order doesn't matter for ItemQuestions so use set not a list:
-            if (isParsonQuestion) {
-                submittedItemIds = submittedChoice.getItems().stream().map(Item::getId).collect(Collectors.toList());
-            } else {
-                submittedItemIds = submittedChoice.getItems().stream().map(Item::getId).collect(Collectors.toSet());
-            }
+            Collection<String> submittedItemIds = submittedChoice.getItems().stream().map(Item::getId).collect(Collectors.toSet());
             allowedItemIds = itemQuestion.getItems().stream().map(Item::getId).collect(Collectors.toSet());
             if (!allowedItemIds.containsAll(submittedItemIds)) {
-                feedback = new Content("You did not provide a valid answer; it contained unrecognised items");
+                defaultFailedResponse.setExplanation(
+                        new Content("You did not provide a valid answer; it contained unrecognised items"));
+                return defaultFailedResponse;
             }
         }
+        return null;
+    }
 
-        // STEP 2: If they did, does their answer match a known answer?
+    protected ItemQuestionValidationResponse checkIfAnswerMatchesAKnownAnswer(
+            IsaacItemQuestion itemQuestion, ItemChoice submittedChoice) {
 
-        if (null == feedback && null != submittedItemIds) {
-            // Sort the choices so that we match incorrect choices last, taking precedence over correct ones.
-            List<Choice> orderedChoices = getOrderedChoices(itemQuestion.getChoices());
+        // Order does not matter for Item Questions
+        Set<String> submittedItemIds = submittedChoice.getItems().stream().map(Item::getId).collect(Collectors.toSet());
 
-            // For all the choices on this question...
-            for (Choice c : orderedChoices) {
+        // Sort the choices so that we match incorrect choices last, taking precedence over correct ones.
+        List<Choice> orderedChoices = getOrderedChoices(itemQuestion.getChoices());
 
-                // ... that are the right type of ItemChoices, ...
-                if (!(c instanceof ItemChoice)) {
-                    log.error(String.format(
-                            "Validator for question (%s) expected there to be an ItemChoice. Instead it found a %s.",
-                            itemQuestion.getId(), c.getClass().toString()));
-                    continue;
-                } else if (!(c instanceof ParsonsChoice) && isParsonQuestion) {
-                    log.error(String.format(
-                            "Validator for question (%s) expected there to be an ParsonsChoice. Instead it found a %s.",
-                            itemQuestion.getId(), c.getClass().toString()));
-                    continue;
-                }
+        // For all the choices on this question...
+        for (Choice c : orderedChoices) {
 
-                ItemChoice itemChoice = (ItemChoice) c;
+            // ... that are the right type of ItemChoices, ...
+            if (!(c instanceof ItemChoice)) {
+                log.error(String.format(
+                        "Validator for question (%s) expected there to be an ItemChoice. Instead it found a %s.",
+                        itemQuestion.getId(), c.getClass().toString()));
+                continue;
+            }
 
-                // ... and that have items ...
-                if (null == itemChoice.getItems() || itemChoice.getItems().isEmpty()) {
-                    log.error(String.format("Missing Item list in choice for question id (%s)!", itemQuestion.getId()));
-                    continue;
-                }
+            ItemChoice itemChoice = (ItemChoice) c;
 
-                // ... look for a match to the submitted answer:
-                if (itemChoice.getItems().size() != submittedChoice.getItems().size()) {
-                    continue;
-                }
+            // ... and that have items ...
+            if (null == itemChoice.getItems() || itemChoice.getItems().isEmpty()) {
+                log.error(String.format("Missing Item list in choice for question id (%s)!", itemQuestion.getId()));
+                continue;
+            }
 
-                boolean itemTypeMismatch = false;
-                List<Integer> submittedItemIndentations = new ArrayList<>();
-                Collection<String> choiceItemIds = isParsonQuestion ? new ArrayList<>() : new HashSet<>();
-                List<Integer> choiceItemIndentations = new ArrayList<>();
-                for (int i = 0; i < itemChoice.getItems().size(); i++) {
-                    Item choiceItem = itemChoice.getItems().get(i);
-                    Item submittedItem = submittedChoice.getItems().get(i);
+            // ... look for a match to the submitted answer:
+            if (itemChoice.getItems().size() != submittedChoice.getItems().size()) {
+                continue;
+            }
 
-                    choiceItemIds.add(choiceItem.getId());
-                    if (isParsonQuestion) {
-                        if (!(submittedItem instanceof ParsonsItem)) {
-                            throw new IllegalArgumentException("Expected ParsonsChoice to contain ParsonsItems!");
-                        }
-                        if (!(choiceItem instanceof ParsonsItem)) {
-                            log.error("ParsonsChoice contained non-ParsonsItem. Skipping!");
-                            itemTypeMismatch = true;
-                            break;
-                        }
+            Collection<String> choiceItemIds = new HashSet<>();
+            for (Item choiceItem : itemChoice.getItems()) {
+                choiceItemIds.add(choiceItem.getId());
+            }
 
-                        Integer submittedItemIndentation = ((ParsonsItem) submittedItem).getIndentation();
-                        Integer choiceItemIndentation = ((ParsonsItem) choiceItem).getIndentation();
-                        submittedItemIndentations.add(submittedItemIndentation);
-                        choiceItemIndentations.add(choiceItemIndentation);
-
-                        if (itemChoice.isCorrect() && null == incorrectItemIds) {
-                            if (!choiceItem.getId().equals(submittedItem.getId()) || !choiceItemIndentation.equals(submittedItemIndentation)) {
-                                incorrectItemIds = Lists.newArrayList(submittedItem.getId());
-                            }
-                        }
-                    }
-                }
-
-                if (itemTypeMismatch) {
-                    // A problem with the choice itself. Maybe another one will be a better match?
-                    continue;
-                }
-
-                if (choiceItemIds.equals(submittedItemIds) && choiceItemIndentations.equals(submittedItemIndentations)) {
-                    responseCorrect = c.isCorrect();
-                    incorrectItemIds = new ArrayList<>();
-                    feedback = (Content) c.getExplanation();
-                    break;
-                }
+            if (choiceItemIds.equals(submittedItemIds)) {
+                return new ItemQuestionValidationResponse(
+                        itemQuestion.getId(),
+                        submittedChoice,
+                        c.isCorrect(),
+                        (Content) c.getExplanation(),
+                        new ArrayList<>(),
+                        new Date()
+                );
             }
         }
+        return new ItemQuestionValidationResponse(
+                itemQuestion.getId(), submittedChoice, false, null, null, new Date());
+    }
 
-        return new ItemQuestionValidationResponse(question.getId(), answer, responseCorrect, feedback, incorrectItemIds, new Date());
+    @Override
+    public QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
+        ItemQuestionValidationResponse response = null;
+        checkQuestionAndAnswerTypes(question, answer);
+
+        IsaacItemQuestion itemQuestion = (IsaacItemQuestion) question;
+        ItemChoice submittedChoice = (ItemChoice) answer;
+
+        response = checkQuestionIsAnswerable(itemQuestion, submittedChoice);
+        if (null != response) {return response;}
+
+        response = checkAnswerIsValid(itemQuestion, submittedChoice);
+        if (null != response) {return response;}
+
+        return checkIfAnswerMatchesAKnownAnswer(itemQuestion, submittedChoice);
     }
 
 }

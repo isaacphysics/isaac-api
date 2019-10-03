@@ -29,6 +29,11 @@ import java.util.List;
  */
 @DTOMapping(ItemQuestionValidationResponseDTO.class)
 public class ItemQuestionValidationResponse extends QuestionValidationResponse {
+    public static ItemQuestionValidationResponse createDefaultFailedResponse(
+            final String questionId, final Choice submittedChoice) {
+        return new ItemQuestionValidationResponse(questionId, submittedChoice, false, null, null, new Date());
+    }
+
     private List<String> incorrectItemIds;
 
     /**
@@ -88,4 +93,3 @@ public class ItemQuestionValidationResponse extends QuestionValidationResponse {
         return "ItemQuestionValidationResponse [incorrectItemIds=" + value + "]";
     }
 }
-

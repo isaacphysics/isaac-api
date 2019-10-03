@@ -44,7 +44,7 @@ import static org.junit.Assert.assertTrue;
  */
 @PowerMockIgnore({"javax.ws.*"})
 public class IsaacParsonsValidatorTest {
-    private IsaacItemQuestionValidator validator;
+    private IsaacParsonsQuestionValidator validator;
     private IsaacParsonsQuestion someParsonsQuestion;
     private String incorrectExplanation = "EXPLANATION";
 
@@ -56,7 +56,7 @@ public class IsaacParsonsValidatorTest {
      */
     @Before
     public final void setUp() {
-        validator = new IsaacItemQuestionValidator();
+        validator = new IsaacParsonsQuestionValidator();
 
         // Set up the question object:
         someParsonsQuestion = new IsaacParsonsQuestion();
