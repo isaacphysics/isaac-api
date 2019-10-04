@@ -43,6 +43,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -53,7 +54,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
  */
 public class GameboardsFacadeTest {
 
-	private SegueContentFacade dummyAPI = null;
+	private IContentManager dummyContentManager = null;
 	private PropertiesLoader dummyPropertiesLoader = null;
 	private GameManager dummyGameManager = null;
 	private ILogManager dummyLogManager = null;
@@ -70,7 +71,7 @@ public class GameboardsFacadeTest {
 	 */
 	@Before
 	public final void setUp() throws Exception {
-		this.dummyAPI = createMock(SegueContentFacade.class);
+		this.dummyContentManager = createMock(IContentManager.class);
 		this.dummyPropertiesLoader = createMock(PropertiesLoader.class);
 		this.dummyGameManager = createMock(GameManager.class);
 		this.dummyLogManager = createMock(ILogManager.class);
@@ -94,7 +95,7 @@ public class GameboardsFacadeTest {
 	public final void isaacEndPoint_checkEmptyGameboardCausesErrorNoUser_SegueErrorResponseShouldBeReturned()
 			throws NoWildcardException, SegueDatabaseException, NoUserLoggedInException,
 			ContentManagerException {
-		GameboardsFacade gameboardFacade = new GameboardsFacade(dummyAPI, dummyPropertiesLoader, dummyLogManager,
+		GameboardsFacade gameboardFacade = new GameboardsFacade(dummyContentManager, dummyPropertiesLoader, dummyLogManager,
 				dummyGameManager, questionManager, userManager, userAssociationManager, userBadgeManager, "latest");
 
 		HttpServletRequest dummyRequest = createMock(HttpServletRequest.class);
@@ -116,12 +117,12 @@ public class GameboardsFacadeTest {
 				.atLeastOnce();
 
 		replay(dummyGameManager);
-		replay(dummyAPI);
+		replay(dummyContentManager);
 
 		Response r = gameboardFacade.generateTemporaryGameboard(dummyRequest, title, subjects, fields, topics,
 				levels, concepts);
 
 		assertTrue(r.getStatus() == Status.NO_CONTENT.getStatusCode());
-		verify(dummyAPI, dummyGameManager);
+		verify(dummyContentManager, dummyGameManager);
 	}
 }
