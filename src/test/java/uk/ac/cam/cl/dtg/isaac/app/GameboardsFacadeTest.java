@@ -31,6 +31,7 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.api.GameboardsFacade;
+import uk.ac.cam.cl.dtg.isaac.api.managers.FastTrackManger;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.NoWildcardException;
 import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
@@ -54,7 +55,6 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
  */
 public class GameboardsFacadeTest {
 
-	private IContentManager dummyContentManager = null;
 	private PropertiesLoader dummyPropertiesLoader = null;
 	private GameManager dummyGameManager = null;
 	private ILogManager dummyLogManager = null;
@@ -62,6 +62,7 @@ public class GameboardsFacadeTest {
 	private UserAssociationManager userAssociationManager;
     private QuestionManager questionManager;
     private UserBadgeManager userBadgeManager;
+	private FastTrackManger fastTrackManager;
 
 	/**
 	 * Initial configuration of tests.
@@ -71,7 +72,6 @@ public class GameboardsFacadeTest {
 	 */
 	@Before
 	public final void setUp() throws Exception {
-		this.dummyContentManager = createMock(IContentManager.class);
 		this.dummyPropertiesLoader = createMock(PropertiesLoader.class);
 		this.dummyGameManager = createMock(GameManager.class);
 		this.dummyLogManager = createMock(ILogManager.class);
@@ -79,6 +79,7 @@ public class GameboardsFacadeTest {
 	    this.questionManager = createMock(QuestionManager.class);
 		this.userAssociationManager = createMock(UserAssociationManager.class);
 		this.userBadgeManager = createMock(UserBadgeManager.class);
+		this.fastTrackManager = createMock(FastTrackManger.class);
 		expect(this.dummyPropertiesLoader.getProperty(Constants.FASTTRACK_GAMEBOARD_WHITELIST))
 				.andReturn("ft_board_1,ft_board_2").anyTimes();
 		replay(this.dummyPropertiesLoader);
@@ -95,8 +96,9 @@ public class GameboardsFacadeTest {
 	public final void isaacEndPoint_checkEmptyGameboardCausesErrorNoUser_SegueErrorResponseShouldBeReturned()
 			throws NoWildcardException, SegueDatabaseException, NoUserLoggedInException,
 			ContentManagerException {
-		GameboardsFacade gameboardFacade = new GameboardsFacade(dummyContentManager, dummyPropertiesLoader, dummyLogManager,
-				dummyGameManager, questionManager, userManager, userAssociationManager, userBadgeManager, "latest");
+		GameboardsFacade gameboardFacade = new GameboardsFacade(
+				dummyPropertiesLoader, dummyLogManager, dummyGameManager, questionManager,
+				userManager, userAssociationManager, userBadgeManager, fastTrackManager);
 
 		HttpServletRequest dummyRequest = createMock(HttpServletRequest.class);
 		String subjects = "physics";
@@ -117,12 +119,11 @@ public class GameboardsFacadeTest {
 				.atLeastOnce();
 
 		replay(dummyGameManager);
-		replay(dummyContentManager);
 
 		Response r = gameboardFacade.generateTemporaryGameboard(dummyRequest, title, subjects, fields, topics,
 				levels, concepts);
 
 		assertTrue(r.getStatus() == Status.NO_CONTENT.getStatusCode());
-		verify(dummyContentManager, dummyGameManager);
+		verify(dummyGameManager);
 	}
 }

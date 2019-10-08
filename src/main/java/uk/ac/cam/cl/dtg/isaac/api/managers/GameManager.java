@@ -332,22 +332,6 @@ public class GameManager {
     }
 
     /**
-     * getFastTrackConceptProgress.
-     *
-     * @param gameboardId to look up.
-     * @param conceptTitle concept title.
-     * @param userQuestionAttempts - the map of user's question attempts.
-     * @return list of gameboard items.
-     * @throws ContentManagerException if there is a problem retrieving the content.
-     */
-    public final List<GameboardItem> getFastTrackConceptProgress(final String gameboardId, final String conceptTitle,
-             final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts)
-            throws ContentManagerException {
-        List<ContentDTO> fastTrackAssociatedQuestions = this.getFastTrackConceptQuestions(gameboardId, conceptTitle);
-        return this.getGameboardItemProgress(fastTrackAssociatedQuestions, userQuestionAttempts);
-    }
-
-    /**
      * Lookup gameboards belonging to a current user.
      * 
      * @param user
@@ -759,7 +743,7 @@ public class GameManager {
      * @param userQuestionAttempts the user's question attempt history.
      * @return list of augmented gameboard items.
      */
-    private List<GameboardItem> getGameboardItemProgress(List<ContentDTO> questions,
+    public List<GameboardItem> getGameboardItemProgress(List<ContentDTO> questions,
                                                          final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts) {
 
         return questions.stream()
@@ -925,33 +909,6 @@ public class GameManager {
         Collections.shuffle(gameboardQuestionList);
 
         return gameboardQuestionList;
-    }
-
-    /**
-     * Queries the search provider for questions tagged with this board name and concept title.
-     * The result is returned sorted.
-     *
-     * @param boardTag the tag which marks question's association with a certain board - the board's ID.
-     * @param conceptTitle the title of the concept which is being searched for.
-     * @return ordered list of concept questions associated with the board.
-     * @throws ContentManagerException if there is a problem with the content manager (i.e. Elasticsearch)
-     */
-    private List<ContentDTO> getFastTrackConceptQuestions(final String boardTag, final String conceptTitle)
-            throws ContentManagerException {
-        Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
-
-        fieldsToMap.put(immutableEntry(
-                BooleanOperator.OR, TYPE_FIELDNAME), Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
-        fieldsToMap.put(immutableEntry(
-                BooleanOperator.AND, TITLE_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX), Collections.singletonList(conceptTitle));
-        fieldsToMap.put(immutableEntry(
-                BooleanOperator.AND, TAGS_FIELDNAME), Collections.singletonList(boardTag));
-
-        Map<String, SortOrder> sortInstructions = Maps.newHashMap();
-        sortInstructions.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, SortOrder.ASC);
-
-        return this.contentManager.findByFieldNames(
-                this.contentIndex, fieldsToMap, 0, SEARCH_MAX_WINDOW_SIZE, sortInstructions).getResults();
     }
 
     /**

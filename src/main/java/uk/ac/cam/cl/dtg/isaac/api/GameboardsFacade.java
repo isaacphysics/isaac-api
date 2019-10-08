@@ -16,16 +16,15 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
 import com.google.api.client.util.Lists;
-import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateGameboardException;
+import uk.ac.cam.cl.dtg.isaac.api.managers.FastTrackManger;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.InvalidGameboardException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.NoWildcardException;
@@ -34,7 +33,6 @@ import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
-import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
@@ -44,11 +42,8 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
-import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -70,11 +65,10 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.google.common.collect.Maps.immutableEntry;
@@ -94,11 +88,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
     private static final Logger log = LoggerFactory.getLogger(GameboardsFacade.class);
     private final QuestionManager questionManager;
-    private final Set<String> fastTrackGamebaordIds;
 
-    private final String contentIndex;
-
-    private final IContentManager contentManager;
+    private final FastTrackManger fastTrackManger;
 
     /**
      * GamesFacade. For management of gameboards etc.
@@ -119,21 +110,18 @@ public class GameboardsFacade extends AbstractIsaacFacade {
      *            - for updating badge information.
      */
     @Inject
-    public GameboardsFacade(final IContentManager contentManager, final PropertiesLoader properties, final ILogManager logManager,
+    public GameboardsFacade(final PropertiesLoader properties, final ILogManager logManager,
                             final GameManager gameManager, final QuestionManager questionManager,
                             final UserAccountManager userManager, final UserAssociationManager associationManager,
-                            final UserBadgeManager userBadgeManager, @Named(CONTENT_INDEX) final String contentIndex) {
+                            final UserBadgeManager userBadgeManager, final FastTrackManger fastTrackManger) {
         super(properties, logManager);
 
-        this.contentManager = contentManager;
         this.userBadgeManager = userBadgeManager;
         this.gameManager = gameManager;
         this.questionManager = questionManager;
         this.userManager = userManager;
         this.associationManager = associationManager;
-        String commaSeparatedIds = this.getProperties().getProperty(Constants.FASTTRACK_GAMEBOARD_WHITELIST);
-        this.fastTrackGamebaordIds = new HashSet<>(Arrays.asList(commaSeparatedIds.split(",")));
-        this.contentIndex = contentIndex;
+        this.fastTrackManger = fastTrackManger;
     }
 
     /**
@@ -313,43 +301,31 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                                                          @QueryParam("upper_question_id") final String upperQuestionId) {
 
         try {
-            if (!fastTrackGamebaordIds.contains(gameboardId)) {
+            if (!fastTrackManger.isValidFasTrackGameboardId(gameboardId)) {
                 return new SegueErrorResponse(Status.NOT_FOUND, "Gameboard id not a valid FastTrack gameboard id.")
                         .toResponse();
             }
 
             AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(httpServletRequest);
-            Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts = this.questionManager
-                    .getQuestionAttemptsByUser(currentUser);
 
-            Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-            fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(FAST_TRACK_QUESTION_TYPE));
-            fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(upperQuestionId));
-            ResultsWrapper<ContentDTO> resultsList = this.contentManager.findByFieldNames(this.contentIndex,
-                    SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch), 0, DEFAULT_RESULTS_LIMIT);
+            Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts =
+                    this.questionManager.getQuestionAttemptsByUser(currentUser);
 
+            List<GameboardItem> conceptQuestionsProgress = Lists.newArrayList();
             if (upperQuestionId.isEmpty()) {
-                // attempt to augment the gameboard with user information.
-                List<GameboardItem> conceptQuestionsProgress
-                        = gameManager.getFastTrackConceptProgress(gameboardId, currentConceptTitle, userQuestionAttempts);
-                return Response.ok(conceptQuestionsProgress).build();
+                List<FASTTRACK_LEVEL> upperAndLower = Arrays.asList(FASTTRACK_LEVEL.ft_upper, FASTTRACK_LEVEL.ft_lower);
+                conceptQuestionsProgress.addAll(fastTrackManger.getConceptProgress(
+                        gameboardId, upperAndLower, currentConceptTitle, userQuestionAttempts));
             } else {
-                String upperConceptTitle = "";
-                if (resultsList.getTotalResults() == 1) {
-                    upperConceptTitle = resultsList.getResults().get(0).getTitle();
-                }
-                // Insanity lies ahead. Look away while you can.
-                List<GameboardItem> currentConceptQuestionsProgress
-                                    = gameManager.getFastTrackConceptProgress(gameboardId, currentConceptTitle, userQuestionAttempts)
-                                    .stream().filter(e -> e.getTags().contains("ft_lower")).collect(Collectors.toList());
-                List<GameboardItem> upperConceptQuestionsProgress
-                                    = gameManager.getFastTrackConceptProgress(gameboardId, upperConceptTitle, userQuestionAttempts)
-                                    .stream().filter(e -> e.getTags().contains("ft_upper")).collect(Collectors.toList());
-
-                List<GameboardItem> allProgress = currentConceptQuestionsProgress;
-                allProgress.addAll(upperConceptQuestionsProgress);
-                return Response.ok(allProgress).build();
+                String upperConceptTitle = fastTrackManger.getConceptFromQuestionId(upperQuestionId);
+                conceptQuestionsProgress.addAll(fastTrackManger.getConceptProgress(
+                        gameboardId, Collections.singletonList(FASTTRACK_LEVEL.ft_upper), upperConceptTitle, userQuestionAttempts));
+                conceptQuestionsProgress.addAll(fastTrackManger.getConceptProgress(
+                        gameboardId, Collections.singletonList(FASTTRACK_LEVEL.ft_lower), currentConceptTitle, userQuestionAttempts));
             }
+
+            return Response.ok(conceptQuestionsProgress).build();
+
         } catch (SegueDatabaseException e) {
             String message = "Error whilst trying to access the FastTrack progress in the database.";
             log.error(message, e);
