@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,5 +19,5 @@ package uk.ac.cam.cl.dtg.segue.dos.users;
  * Enum of valid roles for users of Segue to have.
  */
 public enum Role {
-    STUDENT, TEACHER, EVENT_LEADER, TESTER, EVENT_MANAGER, STAFF, CONTENT_EDITOR, ADMIN
+    STUDENT, TEACHER, EVENT_LEADER, CONTENT_EDITOR, EVENT_MANAGER, ADMIN
 }

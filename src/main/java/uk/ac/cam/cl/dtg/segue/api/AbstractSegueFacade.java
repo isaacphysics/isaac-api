@@ -277,7 +277,7 @@ public abstract class AbstractSegueFacade {
     public static boolean isUserStaff(final UserAccountManager userManager, final HttpServletRequest request)
             throws NoUserLoggedInException {
         return userManager.checkUserRole(request,
-                Arrays.asList(Role.ADMIN, Role.STAFF, Role.CONTENT_EDITOR, Role.EVENT_MANAGER));
+                Arrays.asList(Role.ADMIN, Role.EVENT_MANAGER, Role.CONTENT_EDITOR));
     }
 
     /**
@@ -294,6 +294,6 @@ public abstract class AbstractSegueFacade {
     public static boolean isUserStaff(final UserAccountManager userManager, final RegisteredUserDTO userDTO)
             throws NoUserLoggedInException {
         return userManager.checkUserRole(userDTO,
-                Arrays.asList(Role.ADMIN, Role.STAFF, Role.CONTENT_EDITOR, Role.EVENT_MANAGER));
+                Arrays.asList(Role.ADMIN, Role.EVENT_MANAGER, Role.CONTENT_EDITOR));
     }
 }
