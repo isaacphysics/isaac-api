@@ -681,9 +681,7 @@ public class UserAccountManager implements IUserAccountManager {
 
         try {
             authenticator.createEmailVerificationTokenForUser(userToSave, userToSave.getEmail());
-        } catch (NoSuchAlgorithmException e1) {
-            log.error("Creation of email verification token failed: " + e1.getMessage());
-        } catch (InvalidKeySpecException e1) {
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e1) {
             log.error("Creation of email verification token failed: " + e1.getMessage());
         }
 
@@ -744,11 +742,10 @@ public class UserAccountManager implements IUserAccountManager {
     public RegisteredUserDTO updateUserObject(final RegisteredUser updatedUser, final String newPassword) throws InvalidPasswordException,
             MissingRequiredFieldException, SegueDatabaseException, AuthenticationProviderMappingException {
         Validate.notNull(updatedUser.getId());
-        MapperFacade mapper = this.dtoMapper;
 
         // We want to map to DTO first to make sure that the user cannot
         // change fields that aren't exposed to them
-        RegisteredUserDTO userDTOContainingUpdates = mapper.map(updatedUser, RegisteredUserDTO.class);
+        RegisteredUserDTO userDTOContainingUpdates = this.dtoMapper.map(updatedUser, RegisteredUserDTO.class);
         if (updatedUser.getId() == null) {
             throw new IllegalArgumentException(
                     "The user object specified does not have an id. Users cannot be updated without a specific id set.");
@@ -776,21 +773,18 @@ public class UserAccountManager implements IUserAccountManager {
             RegisteredUserDTO existingUserDTO = this.getUserDTOById(existingUser.getId());
             if (updatedUser.getRole() != existingUser.getRole()) {
                 //TODO: refactor and just use updateUserRole method for the below
-                switch (updatedUser.getRole()) {
-                    case TEACHER:
-                        emailManager.sendTemplatedEmailToUser(existingUserDTO,
-                                emailManager.getEmailTemplateDTO("email-template-teacher-welcome"),
-                                ImmutableMap.of("oldrole", existingUserDTO.getRole().toString(),
-                                        "newrole", updatedUser.getRole().toString()),
-                                EmailType.SYSTEM);
-                        break;
-                    default:
-                        emailManager.sendTemplatedEmailToUser(existingUserDTO,
-                                emailManager.getEmailTemplateDTO("email-template-default-role-change"),
-                                ImmutableMap.of("oldrole", existingUserDTO.getRole().toString(),
-                                        "newrole", updatedUser.getRole().toString()),
-                                EmailType.SYSTEM);
-                        break;
+                if (updatedUser.getRole() == Role.TEACHER) {
+                    emailManager.sendTemplatedEmailToUser(existingUserDTO,
+                            emailManager.getEmailTemplateDTO("email-template-teacher-welcome"),
+                            ImmutableMap.of("oldrole", existingUserDTO.getRole().toString(),
+                                    "newrole", updatedUser.getRole().toString()),
+                            EmailType.SYSTEM);
+                } else {
+                    emailManager.sendTemplatedEmailToUser(existingUserDTO,
+                            emailManager.getEmailTemplateDTO("email-template-default-role-change"),
+                            ImmutableMap.of("oldrole", existingUserDTO.getRole().toString(),
+                                    "newrole", updatedUser.getRole().toString()),
+                            EmailType.SYSTEM);
                 }
             }
         } catch (ContentManagerException | NoUserException e) {
