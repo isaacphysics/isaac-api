@@ -673,7 +673,7 @@ public class UserAccountManager implements IUserAccountManager {
 
         // Before save we should validate the user for mandatory fields.
         if (!this.isUserValid(userToSave)) {
-            throw new MissingRequiredFieldException("The user provided is missing a mandatory field");
+            throw new MissingRequiredFieldException("The user object provided is invalid.");
         }
 
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
@@ -808,6 +808,13 @@ public class UserAccountManager implements IUserAccountManager {
             userToSave.setSchoolOther(null);
         }
 
+        // Before save we should validate the user for mandatory fields.
+        // Doing this before the email change code is necessary to ensure that (a) users cannot try and change to an
+        // invalid email, and (b) that users with an invalid email can change their email to a valid one!
+        if (!this.isUserValid(userToSave)) {
+            throw new MissingRequiredFieldException("The user object provided is invalid.");
+        }
+
         // Make sure the email address is preserved (can't be changed until new email is verified)
         // Send a new verification email if the user has changed their email
         if (!existingUser.getEmail().equals(updatedUser.getEmail())) {
@@ -826,11 +833,6 @@ public class UserAccountManager implements IUserAccountManager {
             }
 
             userToSave.setEmail(existingUser.getEmail());
-        }
-
-        // Before save we should validate the user for mandatory fields.
-        if (!this.isUserValid(userToSave)) {
-            throw new MissingRequiredFieldException("The user provided is missing a mandatory field");
         }
 
         // save the user
@@ -1378,7 +1380,7 @@ public class UserAccountManager implements IUserAccountManager {
         boolean isValid = true;
 
         if (userToValidate.getEmail() == null || userToValidate.getEmail().isEmpty()
-                || userToValidate.getEmail().matches(".*@|-(facebook|google|twitter)$")) {
+                || !userToValidate.getEmail().matches(".*(@.+\\.[^.]+|-(facebook|google|twitter)$)")) {
             isValid = false;
         }
         
