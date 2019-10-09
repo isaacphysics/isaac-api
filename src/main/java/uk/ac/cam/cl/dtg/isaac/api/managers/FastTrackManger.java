@@ -39,7 +39,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.UNPROCESSED_SEARCH_FIELD_SUFF
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.FASTTRACK_GAMEBOARD_WHITELIST;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.FASTTRACK_LEVEL;
 
-public class FastTrackManger extends AbstractIsaacFacade {
+public class FastTrackManger {
     private static final Logger log = LoggerFactory.getLogger(FastTrackManger.class);
 
     private final String contentIndex;
@@ -58,15 +58,13 @@ public class FastTrackManger extends AbstractIsaacFacade {
      *            - the current content index of interest.
      */
     @Inject
-    public FastTrackManger(final PropertiesLoader properties, final ILogManager logManager,
-                           final IContentManager contentManager, final GameManager gameboardManager,
+    public FastTrackManger(final PropertiesLoader properties, final IContentManager contentManager, final GameManager gameboardManager,
                            @Named(CONTENT_INDEX) final String contentIndex) {
-        super(properties, logManager);
 
         this.contentManager = contentManager;
         this.contentIndex = contentIndex;
         this.gameboardManager = gameboardManager;
-        String commaSeparatedIds = this.getProperties().getProperty(FASTTRACK_GAMEBOARD_WHITELIST);
+        String commaSeparatedIds = properties.getProperty(FASTTRACK_GAMEBOARD_WHITELIST);
         this.fastTrackGamebaordIds = new HashSet<>(Arrays.asList(commaSeparatedIds.split(",")));
     }
 
