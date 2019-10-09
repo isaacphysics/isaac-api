@@ -33,6 +33,7 @@ import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
@@ -134,10 +135,14 @@ public class GlossaryFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Please specify a term_id.").toResponse();
         }
 
-        ResultsWrapper<ContentDTO> c;
+        Content c = null;
         try {
-            c = this.contentManager.getContentMatchingIds(this.contentIndex, Collections.singletonList(term_id), 0, DEFAULT_RESULTS_LIMIT);
-            return Response.ok(c).build();
+            c = this.contentManager.getContentDOById(this.contentIndex, term_id);
+            if (null == c) {
+                SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "No glossary term found with id: " + term_id);
+                log.debug(error.getErrorMessage());
+                return error.toResponse();
+            }
         } catch (NumberFormatException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST,
                     "Unable to convert one of the integer parameters provided into numbers. "
@@ -146,5 +151,6 @@ public class GlossaryFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Content acquisition error.", e).toResponse();
         }
+        return Response.ok(c).build();
     }
 }
