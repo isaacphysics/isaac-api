@@ -524,8 +524,8 @@ public class UserAuthenticationManager {
             this.database.unlinkAuthProviderFromUser(userDO, this.mapToProvider(providerString)
                     .getAuthenticationProvider());
         } else {
-            throw new MissingRequiredFieldException("This modification would mean that the user"
-                    + " no longer has a way of authenticating. Failing change.");
+            throw new MissingRequiredFieldException("This modification would mean that you"
+                    + " no longer have a way to log in and has been ignored.");
         }
     }
     

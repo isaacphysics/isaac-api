@@ -336,7 +336,7 @@ public class EmailFacade extends AbstractSegueFacade {
         try {
             String email = payload.get("email");
             if (email == null || email.isEmpty()) {
-                throw new MissingRequiredFieldException("No email provided with request");
+                throw new MissingRequiredFieldException("No email address was provided.");
             }
 
             misuseMonitor.notifyEvent(email, EmailVerificationRequestMisuseHandler.class.toString());

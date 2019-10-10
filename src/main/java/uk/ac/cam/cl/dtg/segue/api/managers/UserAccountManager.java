@@ -673,7 +673,7 @@ public class UserAccountManager implements IUserAccountManager {
 
         // Before save we should validate the user for mandatory fields.
         if (!this.isUserValid(userToSave)) {
-            throw new MissingRequiredFieldException("The user object provided is invalid.");
+            throw new MissingRequiredFieldException("The email address provided is invalid.");
         }
 
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
@@ -812,7 +812,7 @@ public class UserAccountManager implements IUserAccountManager {
         // Doing this before the email change code is necessary to ensure that (a) users cannot try and change to an
         // invalid email, and (b) that users with an invalid email can change their email to a valid one!
         if (!this.isUserValid(userToSave)) {
-            throw new MissingRequiredFieldException("The user object provided is invalid.");
+            throw new MissingRequiredFieldException("The email address provided is invalid.");
         }
 
         // Make sure the email address is preserved (can't be changed until new email is verified)
