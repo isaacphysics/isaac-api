@@ -69,7 +69,8 @@ public class GlossaryFacade extends AbstractSegueFacade {
 
     /**
      * @param properties     - to allow access to system properties.
-     * @param contentManager - So that metadata about content can be accessed.
+     * @param contentManager - so that metadata about content can be accessed.
+     * @param contentIndex   - to access the right version of the content.
      * @param logManager     - for logging events using the logging api.
      */
     @Inject
@@ -83,12 +84,19 @@ public class GlossaryFacade extends AbstractSegueFacade {
 
     /**
      * Gets all the glossary terms that are indexed.
+     *
+     * @param limit      - Maximum amount of terms to retrieve. Used for pagination.
+     * @param startIndex - Index from which to start retrieving when results exceed limit.
+     *
+     * @return Paginated list of glossary terms.
      */
     @GET
     @Path("terms")
     @Produces(MediaType.APPLICATION_JSON)
     @ApiOperation(value = "Get all the glossary terms that are indexed.")
-    public final Response getTerms(@QueryParam("start_index") final String startIndex, @QueryParam("limit") final String limit) {
+    public final Response getTerms(@QueryParam("start_index") final String startIndex,
+                                   @QueryParam("limit") final String limit) {
+
         Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMatch = Maps.newHashMap();
         fieldsToMatch.put(immutableEntry(BooleanOperator.AND, TYPE_FIELDNAME), Collections.singletonList("glossaryTerm"));
 
@@ -124,6 +132,8 @@ public class GlossaryFacade extends AbstractSegueFacade {
     /**
      * Gets the current version of the segue application.
      *
+     * @param term_id - The ID of the term to retrieve.
+     *
      * @return segue version as a string wrapped in a response.
      */
     @GET
@@ -131,6 +141,7 @@ public class GlossaryFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @ApiOperation(value = "Get the term with the given id.")
     public final Response getTermById(@PathParam("term_id") final String term_id) {
+
         if (null == term_id) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Please specify a term_id.").toResponse();
         }
