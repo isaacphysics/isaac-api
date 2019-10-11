@@ -29,6 +29,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
@@ -651,11 +652,7 @@ public class UsersFacade extends AbstractSegueFacade {
             // Restrict event leader queries to users who have granted access to their data
             if (isUserAnEventLeader(userManager, httpServletRequest)) {
                 RegisteredUserDTO eventLeader = userManager.getCurrentRegisteredUser(httpServletRequest);
-                Set<Long> associations = userAssociationManager.getAssociationsForOthers(eventLeader).stream()
-                        .map(UserAssociation::getUserIdGrantingPermission)
-                        .collect(Collectors.toSet());
-                associations.add(eventLeader.getId());
-                userIds = userIds.stream().filter(id -> associations.contains(id)).collect(Collectors.toList());
+                userIds = userAssociationManager.filterUnassociatedRecords(eventLeader, userIds);
             }
 
             final List<RegisteredUserDTO> users = this.userManager.findUsers(userIds);

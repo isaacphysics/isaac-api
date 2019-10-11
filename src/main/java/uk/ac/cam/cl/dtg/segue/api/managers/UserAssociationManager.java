@@ -16,7 +16,11 @@
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import java.security.SecureRandom;
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
@@ -28,6 +32,7 @@ import uk.ac.cam.cl.dtg.segue.dao.associations.UserGroupNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.segue.dos.UserAssociation;
+import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -383,4 +388,42 @@ public class UserAssociationManager {
         return this.hasPermission(currentUser, userManager.convertToUserSummaryObject(userRequested));
     }
 
+    /**
+     * Filter a list of records on whether a user ID has an association with the current user
+     * @param currentUser the user which might have been granted access.
+     * @param records a list of objects containing an ID.
+     * @param userIdKey a function which takes the record and returns the user ID.
+     * @param <T> the type of the object containing an ID.
+     * @return a filtered list of type List<T>.
+     * @throws SegueDatabaseException if it was not able to get the user's associations form the database.
+     */
+    public <T> List<T> filterUnassociatedRecords(
+            final RegisteredUserDTO currentUser,
+            final List<T> records,
+            final Function<T, Long> userIdKey
+    ) throws SegueDatabaseException {
+        // Get current user's associated IDs
+        Set<Long> associations = this.getAssociationsForOthers(currentUser).stream()
+                .map(UserAssociation::getUserIdGrantingPermission)
+                .collect(Collectors.toSet());
+        // Add own ID to associations
+        associations.add(currentUser.getId());
+
+        return records.stream()
+                .filter(item -> associations.contains(userIdKey.apply(item)))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * A special case of the generic filterUnassociatedRecords for when the records are a list of user IDs
+     * @param currentUser the user which might have been granted access.
+     * @param userIds a list of user IDs.
+     * @return a list of user ID which has granted the current user to view their data.
+     * @throws SegueDatabaseException if it was not able to get the user's associations form the database.
+     */
+    public List<Long> filterUnassociatedRecords(
+            final RegisteredUserDTO currentUser, final List<Long> userIds
+    ) throws SegueDatabaseException {
+        return this.filterUnassociatedRecords(currentUser, userIds, Function.identity());
+    }
 }
