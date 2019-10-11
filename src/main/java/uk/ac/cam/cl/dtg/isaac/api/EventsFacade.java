@@ -930,7 +930,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     }
 
     /**
-     * Allow a staff user to promote a user from the waiting list.
+     * Allow a staff user to record event attendance.
      *
      * @param request
      *            - so we can determine if the user is logged in
