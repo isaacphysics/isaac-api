@@ -425,7 +425,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
 
             // Event leaders must have permission to perform this action
-            if (currentUser.getRole() == Role.EVENT_LEADER && !userAssociationManager.hasPermission(currentUser, userOfInterest)) {
+            if (Role.EVENT_LEADER.equals(currentUser.getRole()) && !userAssociationManager.hasPermission(currentUser, userOfInterest)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have authorisation to change this user's booking.")
                         .toResponse();
             }
@@ -547,7 +547,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             RegisteredUserDTO bookedUser = userManager.getUserDTOById(userId);
             IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
 
-            if (currentUser.getRole() == Role.EVENT_LEADER && !userAssociationManager.hasPermission(currentUser, bookedUser)) {
+            if (Role.EVENT_LEADER.equals(currentUser.getRole()) && !userAssociationManager.hasPermission(currentUser, bookedUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have authorisation to change this user's booking.")
                         .toResponse();
             }
@@ -778,7 +778,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                     return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to change another user's booking.")
                             .toResponse();
                 }
-                if (userLoggedIn.getRole() == Role.EVENT_LEADER && !userAssociationManager.hasPermission(userLoggedIn, userOwningBooking)) {
+                if (Role.EVENT_LEADER.equals(userLoggedIn.getRole()) && !userAssociationManager.hasPermission(userLoggedIn, userOwningBooking)) {
                     return new SegueErrorResponse(Status.FORBIDDEN, "You do not have authorisation to change this user's booking.")
                             .toResponse();
                 }
@@ -843,7 +843,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             RegisteredUserDTO bookedUser = this.userManager.getUserDTOById(userId);
             RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(request);
 
-            if (currentUser.getRole() == Role.EVENT_LEADER && !userAssociationManager.hasPermission(currentUser, bookedUser)) {
+            if (Role.EVENT_LEADER.equals(currentUser.getRole()) && !userAssociationManager.hasPermission(currentUser, bookedUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have authorisation to change this user's booking.")
                         .toResponse();
             }
@@ -957,7 +957,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             RegisteredUserDTO userOfInterest = this.userManager.getUserDTOById(userId);
             IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
 
-            if (currentUser.getRole() == Role.EVENT_LEADER && !userAssociationManager.hasPermission(currentUser, userOfInterest)) {
+            if (Role.EVENT_LEADER.equals(currentUser.getRole()) && !userAssociationManager.hasPermission(currentUser, userOfInterest)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have authorisation to change this user's booking.")
                         .toResponse();
             }
@@ -1081,7 +1081,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                 IsaacEventPageDTO e = (IsaacEventPageDTO) c;
 
                 // Event leaders can only see the events which they are associated with (through the event's group token)
-                if (currentUser.getRole() == Role.EVENT_LEADER) {
+                if (Role.EVENT_LEADER.equals(currentUser.getRole())) {
                     try {
                         if (e.getIsaacGroupToken() == null || e.getIsaacGroupToken().isEmpty()) {
                             continue;
