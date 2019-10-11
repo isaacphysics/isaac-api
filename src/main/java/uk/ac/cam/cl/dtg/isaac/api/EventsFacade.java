@@ -492,16 +492,13 @@ public class EventsFacade extends AbstractIsaacFacade {
                         .toResponse();
             }
 
-            List<EventBookingDTO> eventBookings;
+            List<EventBookingDTO> eventBookings = bookingManager.getBookingByEventId(eventId);
 
             // Event leaders are only allowed to see the bookings of connected users
             if (isUserAnEventLeader(userManager, request)) {
                 RegisteredUserDTO eventLeader = userManager.getCurrentRegisteredUser(request);
                 eventBookings = userAssociationManager.filterUnassociatedRecords(
-                        eventLeader, bookingManager.getBookingByEventId(eventId),
-                        booking -> booking.getUserBooked().getId());
-            } else {
-                eventBookings = bookingManager.getBookingByEventId(eventId);
+                        eventLeader, eventBookings, booking -> booking.getUserBooked().getId());
             }
 
             return Response.ok(eventBookings).build();
