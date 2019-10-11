@@ -105,6 +105,16 @@ public interface EventBookings {
     Iterable<EventBooking> findAllByEventId(final String eventId) throws SegueDatabaseException;
 
     /**
+     * countAllEventBookings.
+     *
+     * Note: This will include any with users who have been deleted.
+     *
+     * @return the current count of all event bookings.
+     * @throws SegueDatabaseException if there is a problem accessing the db
+     */
+    Long countAllEventBookings() throws SegueDatabaseException;
+
+    /**
      * Find all bookings for a given event with a given status.
      *
      * Useful for finding all on a waiting list or confirmed.

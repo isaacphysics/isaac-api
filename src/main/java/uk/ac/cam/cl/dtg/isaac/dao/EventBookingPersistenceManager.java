@@ -131,6 +131,17 @@ public class EventBookingPersistenceManager {
     }
 
     /**
+     * Count all bookings in the database.
+     *
+     * @return count of event bookings
+     * @throws SegueDatabaseException
+     *             - if an error occurs.
+     */
+    public Long countAllBookings() throws SegueDatabaseException {
+        return dao.countAllEventBookings();
+    }
+
+    /**
      * Get event bookings by an event id.
      * TODO - if an event disappears (either by being unpublished or being deleted, then this method will not pull back the event.
      *

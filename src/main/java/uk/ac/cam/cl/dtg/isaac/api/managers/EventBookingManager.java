@@ -122,6 +122,16 @@ public class EventBookingManager {
     }
 
     /**
+     * Count all bookings in the database.
+     *
+     * @return event bookings
+     * @throws SegueDatabaseException - if an error occurs.
+     */
+    public Long getCountOfEventBookings() throws SegueDatabaseException {
+        return this.bookingPersistenceManager.countAllBookings();
+    }
+
+    /**
      * @param eventId - of interest
      * @return event bookings
      * @throws SegueDatabaseException - if an error occurs.

@@ -313,6 +313,20 @@ public class PgEventBookings implements EventBookings {
         return this.findAllByEventIdAndStatus(eventId, (BookingStatus) null);
     }
 
+    @Override
+    public Long countAllEventBookings() throws SegueDatabaseException {
+        try (Connection conn = ds.getDatabaseConnection()) {
+            PreparedStatement pst;
+            pst = conn.prepareStatement("SELECT COUNT(1) AS TOTAL FROM event_bookings");
+
+            ResultSet results = pst.executeQuery();
+            results.next();
+            return results.getLong("TOTAL");
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        }
+    }
+
     /**
      * Find all bookings for a given event with a given status.
      * <p>
