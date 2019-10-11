@@ -118,19 +118,6 @@ public class EventBookingPersistenceManager {
     }
 
     /**
-     * Get all bookings in the database..
-     *
-     * Warning, this is likely to be slow.
-     *
-     * @return event bookings
-     * @throws SegueDatabaseException
-     *             - if an error occurs.
-     */
-    public List<EventBookingDTO> getAllBookings() throws SegueDatabaseException {
-        return this.convertToDTO(Lists.newArrayList(dao.findAll()));
-    }
-
-    /**
      * Count all bookings in the database.
      *
      * @return count of event bookings

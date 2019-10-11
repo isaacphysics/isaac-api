@@ -85,15 +85,6 @@ public interface EventBookings {
     void releaseDistributedLock(String resourceId) throws SegueDatabaseException;
 
     /**
-     * get all events.
-     * 
-     * @return an iterable with all events in it.
-     * @throws SegueDatabaseException
-     *             - if an error occurs.
-     */
-    Iterable<EventBooking> findAll() throws SegueDatabaseException;
-
-    /**
      * Find all bookings for a given event.
      * 
      * @param eventId
