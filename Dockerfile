@@ -1,4 +1,4 @@
-FROM jetty:9.4.18
+FROM jetty:9.3.27
 
 USER root
 ENV MAVEN_VERSION 3.3.9
@@ -29,7 +29,7 @@ WORKDIR /isaac-api
 VOLUME /root/.m2
 
 # build isaac api without unit tests
-RUN mvn clean package -Dmaven.test.skip=true
+RUN mvn package -Dmaven.test.skip=true
 
 #RUN sed -i -e 's#dev/random#dev/./urandom#g' $JAVA_HOME/jre/lib/security/java.security
 
@@ -37,6 +37,8 @@ RUN mvn clean package -Dmaven.test.skip=true
 RUN cp ./target/isaac-api.war /var/lib/jetty/webapps
 RUN chmod 755 /var/lib/jetty/webapps/*
 RUN chown jetty /var/lib/jetty/webapps/*
+
+# TODO: Tidy up jdk installation and replace with jre or move to separate built container
 
 # prepare things so that jetty runs in the docker entrypoint
 USER jetty
