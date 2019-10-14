@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.dos.content;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import uk.ac.cam.cl.dtg.segue.dto.content.GlossaryTermDTO;
 
 /**
@@ -26,6 +27,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.GlossaryTermDTO;
 @JsonContentType("glossaryTerm")
 public class GlossaryTerm extends Content {
     protected Content explanation;
+    protected boolean autoId;
 
     /**
      * Default constructor, required for mappers.
@@ -52,4 +54,8 @@ public class GlossaryTerm extends Content {
     public final void setExplanation(final Content explanation) {
         this.explanation = explanation;
     }
+
+    @JsonIgnore
+    public final boolean getAutoId() { return autoId; }
+    public final void setAutoId(final boolean autoId) { this.autoId = autoId; }
 }
