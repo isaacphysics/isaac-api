@@ -169,11 +169,11 @@ public class EventBookingManager {
                 }
                 AssociationToken eventGroupToken = userAssociationManager.lookupTokenDetails(user, eventGroupTokenString);
                 UserGroupDTO eventGroup = groupManager.getGroupById(eventGroupToken.getGroupId());
-                if (!GroupManager.isOwnerOrAdditionalManager(eventGroup, user.getId())) {
+                if (GroupManager.isOwnerOrAdditionalManager(eventGroup, user.getId())) {
                     return true;
                 }
             } catch (InvalidUserAssociationTokenException e) {
-                log.error("Event {} has an invalid user association token - ignoring", event.getId());
+                log.error("Event %s has an invalid user association token - ignoring", event.getId());
             }
         }
         return false;
