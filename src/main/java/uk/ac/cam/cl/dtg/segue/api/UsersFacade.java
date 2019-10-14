@@ -635,9 +635,9 @@ public class UsersFacade extends AbstractSegueFacade {
     public Response getUserIdToSchoolMap(@Context final HttpServletRequest httpServletRequest,
                                          @QueryParam("user_ids") final String userIdsQueryParam) {
         try {
-            if (!isUserStaff(this.userManager, httpServletRequest) && !isUserAnEventLeader(this.userManager, httpServletRequest)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be a staff member to access this endpoint.")
-                        .toResponse();
+            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
+            if (!isUserStaff(userManager, currentUser) && !Role.EVENT_LEADER.equals(currentUser.getRole())) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
             if (null == userIdsQueryParam || userIdsQueryParam.isEmpty()) {
@@ -650,7 +650,7 @@ public class UsersFacade extends AbstractSegueFacade {
                     .collect(Collectors.toList());
 
             // Restrict event leader queries to users who have granted access to their data
-            if (isUserAnEventLeader(userManager, httpServletRequest)) {
+            if (Role.EVENT_LEADER.equals(currentUser.getRole())) {
                 RegisteredUserDTO eventLeader = userManager.getCurrentRegisteredUser(httpServletRequest);
                 userIds = userAssociationManager.filterUnassociatedRecords(eventLeader, userIds);
             }

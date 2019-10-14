@@ -42,6 +42,7 @@ import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenExcept
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
+import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -147,6 +148,28 @@ public class EventBookingManager {
             }
         }
         return v;
+    }
+
+    public boolean isUserAbleToManageEvent(RegisteredUserDTO user, IsaacEventPageDTO event) throws SegueDatabaseException {
+        if (Arrays.asList(Role.EVENT_MANAGER, Role.ADMIN).contains(user.getRole())) {
+            return true;
+        }
+        if (Role.EVENT_LEADER.equals(user.getRole())) {
+            try {
+                String eventGroupTokenString = event.getIsaacGroupToken();
+                if (eventGroupTokenString == null || eventGroupTokenString.isEmpty()) {
+                    return false;
+                }
+                AssociationToken eventGroupToken = userAssociationManager.lookupTokenDetails(user, eventGroupTokenString);
+                UserGroupDTO eventGroup = groupManager.getGroupById(eventGroupToken.getGroupId());
+                if (!GroupManager.isOwnerOrAdditionalManager(eventGroup, user.getId())) {
+                    return true;
+                }
+            } catch (InvalidUserAssociationTokenException e) {
+                log.error("Event {} has an invalid user association token - ignoring", event.getId());
+            }
+        }
+        return false;
     }
 
     /**

@@ -415,19 +415,12 @@ public class EventsFacade extends AbstractIsaacFacade {
                                                      @PathParam("event_id") final String eventId,
                                                      @PathParam("user_id") final Long userId, final Map<String, String> additionalInformation) {
         try {
-            if (!isUserAbleToManageEvents(userManager, request)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be a staff user to access this endpoint.")
-                    .toResponse();
-            }
-
             RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(request);
             RegisteredUserDTO userOfInterest = this.userManager.getUserDTOById(userId);
             IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
 
-            // Event leaders must have permission to perform this action
-            if (Role.EVENT_LEADER.equals(currentUser.getRole()) && !userAssociationManager.hasPermission(currentUser, userOfInterest)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You do not have authorisation to change this user's booking.")
-                        .toResponse();
+            if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
             EventBookingDTO eventBookingDTO
@@ -487,18 +480,17 @@ public class EventsFacade extends AbstractIsaacFacade {
     public final Response getEventBookingByEventId(@Context final HttpServletRequest request,
             @PathParam("event_id") final String eventId) {
         try {
-            if (!isUserAbleToManageEvents(userManager, request)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
-                        .toResponse();
+            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
+            if (!Arrays.asList(Role.EVENT_LEADER, Role.EVENT_MANAGER, Role.ADMIN).contains(currentUser.getRole())) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
             List<EventBookingDTO> eventBookings = bookingManager.getBookingByEventId(eventId);
 
             // Event leaders are only allowed to see the bookings of connected users
-            if (isUserAnEventLeader(userManager, request)) {
-                RegisteredUserDTO eventLeader = userManager.getCurrentRegisteredUser(request);
+            if (Role.EVENT_LEADER.equals(currentUser.getRole())) {
                 eventBookings = userAssociationManager.filterUnassociatedRecords(
-                        eventLeader, eventBookings, booking -> booking.getUserBooked().getId());
+                        currentUser, eventBookings, booking -> booking.getUserBooked().getId());
             }
 
             return Response.ok(eventBookings).build();
@@ -535,18 +527,12 @@ public class EventsFacade extends AbstractIsaacFacade {
     public final Response createBookingForGivenUser(@Context final HttpServletRequest request,
             @PathParam("event_id") final String eventId, @PathParam("user_id") final Long userId, final Map<String, String> additionalInformation) {
         try {
-            if (!isUserAbleToManageEvents(userManager, request)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
-                        .toResponse();
-            }
-
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
             RegisteredUserDTO bookedUser = userManager.getUserDTOById(userId);
             IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
 
-            if (Role.EVENT_LEADER.equals(currentUser.getRole()) && !userAssociationManager.hasPermission(currentUser, bookedUser)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You do not have authorisation to change this user's booking.")
-                        .toResponse();
+            if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
             if (bookingManager.isUserBooked(eventId, userId)) {
@@ -771,13 +757,8 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             // if the user id is null then it means they are changing their own booking.
             if (userId != null) {
-                if(isUserAbleToManageEvents(userManager, request)) {
-                    return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to change another user's booking.")
-                            .toResponse();
-                }
-                if (Role.EVENT_LEADER.equals(userLoggedIn.getRole()) && !userAssociationManager.hasPermission(userLoggedIn, userOwningBooking)) {
-                    return new SegueErrorResponse(Status.FORBIDDEN, "You do not have authorisation to change this user's booking.")
-                            .toResponse();
+                if (!bookingManager.isUserAbleToManageEvent(userLoggedIn, event)) {
+                    return SegueErrorResponse.getIncorrectRoleResponse();
                 }
             }
 
@@ -832,17 +813,12 @@ public class EventsFacade extends AbstractIsaacFacade {
     public final Response resendEventEmail(@Context final HttpServletRequest request,
                                         @PathParam("event_id") final String eventId, @PathParam("user_id") final Long userId) {
         try {
-            if (!isUserAbleToManageEvents(userManager,request)) {
-                return SegueErrorResponse.getIncorrectRoleResponse();
-            }
-
             IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
             RegisteredUserDTO bookedUser = this.userManager.getUserDTOById(userId);
             RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(request);
 
-            if (Role.EVENT_LEADER.equals(currentUser.getRole()) && !userAssociationManager.hasPermission(currentUser, bookedUser)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You do not have authorisation to change this user's booking.")
-                        .toResponse();
+            if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
             this.bookingManager.resendEventEmail(event, bookedUser);
@@ -945,18 +921,12 @@ public class EventsFacade extends AbstractIsaacFacade {
                                                 @PathParam("user_id") final Long userId,
                                                 @QueryParam("attended") final Boolean attended) {
         try {
-            if (!isUserAbleToManageEvents(userManager, request)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be a staff user to access this endpoint.")
-                        .toResponse();
-            }
-
             RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(request);
             RegisteredUserDTO userOfInterest = this.userManager.getUserDTOById(userId);
             IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
 
-            if (Role.EVENT_LEADER.equals(currentUser.getRole()) && !userAssociationManager.hasPermission(currentUser, userOfInterest)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You do not have authorisation to change this user's booking.")
-                        .toResponse();
+            if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
             EventBookingDTO eventBookingDTO = this.bookingManager.recordAttendance(event, userOfInterest, attended);
@@ -1038,10 +1008,10 @@ public class EventsFacade extends AbstractIsaacFacade {
         fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(EVENT_TYPE));
 
         try {
-            if (!isUserAbleToManageEvents(userManager, request)) {
+            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
+            if (!Arrays.asList(Role.EVENT_LEADER, Role.EVENT_MANAGER, Role.ADMIN).contains(currentUser.getRole())) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
-            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
 
             Map<String, AbstractFilterInstruction> filterInstructions = null;
             if (filter != null) {
@@ -1075,53 +1045,36 @@ public class EventsFacade extends AbstractIsaacFacade {
                 if (!(c instanceof  IsaacEventPageDTO)) {
                     continue;
                 }
-                IsaacEventPageDTO e = (IsaacEventPageDTO) c;
+                IsaacEventPageDTO event = (IsaacEventPageDTO) c;
 
-                // Event leaders can only see the events which they are associated with (through the event's group token)
-                if (Role.EVENT_LEADER.equals(currentUser.getRole())) {
-                    try {
-                        if (e.getIsaacGroupToken() == null || e.getIsaacGroupToken().isEmpty()) {
-                            continue;
-                        }
-
-                        AssociationToken eventGroupToken =
-                                userAssociationManager.lookupTokenDetails(currentUser, e.getIsaacGroupToken());
-                        UserGroupDTO eventGroup = groupManager.getGroupById(eventGroupToken.getGroupId());
-
-                        if (!GroupManager.isOwnerOrAdditionalManager(eventGroup, currentUser.getId())) {
-                            continue;
-                        }
-                    } catch (InvalidUserAssociationTokenException error) {
-                        log.error(String.format("Unable to show event overview for %s because of invalid token %s",
-                                e.getId(), e.getIsaacGroupToken()));
-                        continue;
-                    }
+                if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
+                    continue;
                 }
 
                 ImmutableMap.Builder<String, Object> eventOverviewBuilder = new ImmutableMap.Builder<>();
-                eventOverviewBuilder.put("id", e.getId());
-                eventOverviewBuilder.put("title", e.getTitle());
-                eventOverviewBuilder.put("subtitle", e.getSubtitle());
-                eventOverviewBuilder.put("date", e.getDate());
+                eventOverviewBuilder.put("id", event.getId());
+                eventOverviewBuilder.put("title", event.getTitle());
+                eventOverviewBuilder.put("subtitle", event.getSubtitle());
+                eventOverviewBuilder.put("date", event.getDate());
                 eventOverviewBuilder.put("bookingDeadline",
-                        e.getBookingDeadline() == null ? e.getDate() : e.getBookingDeadline());
-                eventOverviewBuilder.put("eventStatus", e.getEventStatus());
+                        event.getBookingDeadline() == null ? event.getDate() : event.getBookingDeadline());
+                eventOverviewBuilder.put("eventStatus", event.getEventStatus());
 
-                if (null != e.getLocation()) {
-                    eventOverviewBuilder.put("location", e.getLocation());
+                if (null != event.getLocation()) {
+                    eventOverviewBuilder.put("location", event.getLocation());
                 }
 
                 eventOverviewBuilder.put("numberOfConfirmedBookings",
-                        this.bookingManager.countNumberOfBookingsWithStatus(e.getId(), BookingStatus.CONFIRMED));
+                        this.bookingManager.countNumberOfBookingsWithStatus(event.getId(), BookingStatus.CONFIRMED));
                 eventOverviewBuilder.put("numberOfWaitingListBookings",
-                        this.bookingManager.countNumberOfBookingsWithStatus(e.getId(), BookingStatus.WAITING_LIST));
+                        this.bookingManager.countNumberOfBookingsWithStatus(event.getId(), BookingStatus.WAITING_LIST));
                 eventOverviewBuilder.put("numberAttended",
-                        this.bookingManager.countNumberOfBookingsWithStatus(e.getId(), BookingStatus.ATTENDED));
+                        this.bookingManager.countNumberOfBookingsWithStatus(event.getId(), BookingStatus.ATTENDED));
                 eventOverviewBuilder.put("numberAbsent",
-                        this.bookingManager.countNumberOfBookingsWithStatus(e.getId(), BookingStatus.ABSENT));
+                        this.bookingManager.countNumberOfBookingsWithStatus(event.getId(), BookingStatus.ABSENT));
 
-                if (null != e.getNumberOfPlaces()) {
-                    eventOverviewBuilder.put("numberOfPlaces", e.getNumberOfPlaces());
+                if (null != event.getNumberOfPlaces()) {
+                    eventOverviewBuilder.put("numberOfPlaces", event.getNumberOfPlaces());
                 }
 
                 resultList.add(eventOverviewBuilder.build());
