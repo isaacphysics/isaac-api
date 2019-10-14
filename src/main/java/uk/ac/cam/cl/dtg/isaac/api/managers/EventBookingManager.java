@@ -173,7 +173,7 @@ public class EventBookingManager {
                     return true;
                 }
             } catch (InvalidUserAssociationTokenException e) {
-                log.error("Event %s has an invalid user association token - ignoring", event.getId());
+                log.error("Event {} has an invalid user association token - ignoring", event.getId());
             }
         }
         return false;
