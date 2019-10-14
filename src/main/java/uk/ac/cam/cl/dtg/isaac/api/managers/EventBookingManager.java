@@ -27,7 +27,6 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.EventStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
-import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.EventBooking;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
@@ -42,7 +41,6 @@ import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenExcept
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
-import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -150,6 +148,15 @@ public class EventBookingManager {
         return v;
     }
 
+    /**
+     * Check if the registered user is able to manage the given event.
+     * Event managers and admins can manage all events where as event leaders can only manage events for which they are
+     * managers of the event's associated group.
+     * @param user wishing to manage the event.
+     * @param event to be managed.
+     * @return either true or false if the user is able to manage the event.
+     * @throws SegueDatabaseException if there is a problem with the database while retrieving associations or groups.
+     */
     public boolean isUserAbleToManageEvent(RegisteredUserDTO user, IsaacEventPageDTO event) throws SegueDatabaseException {
         if (Arrays.asList(Role.EVENT_MANAGER, Role.ADMIN).contains(user.getRole())) {
             return true;

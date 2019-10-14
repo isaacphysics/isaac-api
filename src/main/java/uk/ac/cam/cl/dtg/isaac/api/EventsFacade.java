@@ -38,7 +38,6 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
-import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
@@ -48,19 +47,13 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
-import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
-import uk.ac.cam.cl.dtg.segue.dos.UserAssociation;
-import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.DateRangeFilterInstruction;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -85,7 +78,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -105,7 +97,6 @@ public class EventsFacade extends AbstractIsaacFacade {
     private final IContentManager contentManager;
     private final String contentIndex;
     private final UserBadgeManager userBadgeManager;
-    private final GroupManager groupManager;
     private final UserAssociationManager userAssociationManager;
 
     /**
@@ -128,7 +119,6 @@ public class EventsFacade extends AbstractIsaacFacade {
                         final UserAccountManager userManager, final IContentManager contentManager,
                         @Named(Constants.CONTENT_INDEX) final String contentIndex,
                         final UserBadgeManager userBadgeManager,
-                        final GroupManager groupManager,
                         final UserAssociationManager userAssociationManager) {
         super(properties, logManager);
         this.bookingManager = bookingManager;
@@ -136,7 +126,6 @@ public class EventsFacade extends AbstractIsaacFacade {
         this.contentManager = contentManager;
         this.contentIndex = contentIndex;
         this.userBadgeManager = userBadgeManager;
-        this.groupManager = groupManager;
         this.userAssociationManager = userAssociationManager;
     }
 
