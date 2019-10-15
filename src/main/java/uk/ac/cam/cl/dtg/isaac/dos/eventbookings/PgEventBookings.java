@@ -287,30 +287,22 @@ public class PgEventBookings implements EventBookings {
      * @see uk.ac.cam.cl.dtg.isaac.dos.eventbookings.EventBookings#iterate()
      */
     @Override
-    public Iterable<EventBooking> findAll() throws SegueDatabaseException {
+    public Iterable<EventBooking> findAllByEventId(final String eventId) throws SegueDatabaseException {
+        return this.findAllByEventIdAndStatus(eventId, (BookingStatus) null);
+    }
+
+    @Override
+    public Long countAllEventBookings() throws SegueDatabaseException {
         try (Connection conn = ds.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM event_bookings");
+            pst = conn.prepareStatement("SELECT COUNT(1) AS TOTAL FROM event_bookings");
 
             ResultSet results = pst.executeQuery();
-            List<EventBooking> returnResult = Lists.newArrayList();
-            while (results.next()) {
-                returnResult.add(buildPgEventBooking(results));
-            }
-            return returnResult;
+            results.next();
+            return results.getLong("TOTAL");
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see uk.ac.cam.cl.dtg.isaac.dos.eventbookings.EventBookings#iterate()
-     */
-    @Override
-    public Iterable<EventBooking> findAllByEventId(final String eventId) throws SegueDatabaseException {
-        return this.findAllByEventIdAndStatus(eventId, (BookingStatus) null);
     }
 
     /**

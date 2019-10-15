@@ -306,32 +306,25 @@ public class EventsFacade extends AbstractIsaacFacade {
     }
 
     /**
-     * getAllEventBookings.
+     * Count all event bookings.
      * 
      * @param request
      *            - so we can determine if the user is logged in
-     * @param countOnly
-     *            - If we only want to return a count
      * @return a list of booking objects
      */
     @GET
-    @Path("/bookings")
+    @Path("/bookings/count")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "List all event bookings.")
-    public final Response getAllEventBookings(@Context final HttpServletRequest request,
-            @QueryParam("count_only") final Boolean countOnly) {
+    @ApiOperation(value = "Count all event bookings.")
+    public final Response getCountForAllEventBookings(@Context final HttpServletRequest request) {
         try {
             if (!isUserAnAdminOrEventManager(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
                         .toResponse();
             }
 
-            if (countOnly != null && countOnly) {
-                return Response.ok(ImmutableMap.of("count", bookingManager.getAllBookings().size())).build();
-            }
-
-            return Response.ok(ImmutableMap.of("results", bookingManager.getAllBookings())).build();
+            return Response.ok(ImmutableMap.of("count", bookingManager.getCountOfEventBookings())).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {

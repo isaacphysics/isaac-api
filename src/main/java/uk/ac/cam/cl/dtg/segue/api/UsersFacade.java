@@ -851,8 +851,7 @@ public class UsersFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
         } catch (MissingRequiredFieldException e) {
             log.warn("Missing field during update operation. ", e);
-            return new SegueErrorResponse(Status.BAD_REQUEST, "You are missing a required field. "
-                    + "Please make sure you have specified all mandatory fields in your response.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
         } catch (AuthenticationProviderMappingException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Unable to map to a known authenticator. The provider: is unknown").toResponse();
