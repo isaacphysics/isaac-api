@@ -1,6 +1,7 @@
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 import com.google.api.client.util.Maps;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import org.junit.Before;
 import org.junit.Test;
@@ -13,9 +14,10 @@ import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
-import uk.ac.cam.cl.dtg.segue.comm.EmailType;
+import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
+import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.EmailTemplateDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
@@ -36,10 +38,10 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class EventBookingManagerTest {
     private EventBookingPersistenceManager dummyEventBookingPersistenceManager;
     private EmailManager dummyEmailManager;
-    private UserAssociationManager userAssociationManager;
+    private UserAssociationManager dummyUserAssociationManager;
     private Map<String, String> someAdditionalInformation;
     private PropertiesLoader dummyPropertiesLoader;
-    private GroupManager groupManager;
+    private GroupManager dummyGroupManager;
 
     /**
      * Initial configuration of tests.
@@ -50,8 +52,8 @@ public class EventBookingManagerTest {
     public final void setUp() throws Exception {
         this.dummyEmailManager = createMock(EmailManager.class);
         this.dummyEventBookingPersistenceManager = createMock(EventBookingPersistenceManager.class);
-        this.userAssociationManager = createMock(UserAssociationManager.class);
-        this.groupManager = createMock(GroupManager.class);
+        this.dummyUserAssociationManager = createMock(UserAssociationManager.class);
+        this.dummyGroupManager = createMock(GroupManager.class);
         this.dummyPropertiesLoader = createMock(PropertiesLoader.class);
         expect(this.dummyPropertiesLoader.getProperty(HOST_NAME)).andReturn("hostname.com").anyTimes();
         expect(this.dummyPropertiesLoader.getProperty(MAIL_NAME)).andReturn("Isaac Physics").anyTimes();
@@ -573,7 +575,76 @@ public class EventBookingManagerTest {
                 placesAvailable, expectedPlacesAvailable);
     }
 
+    @Test
+    public void isUserAbleToManageEvent_checkUsersWithDifferentRoles_success() throws Exception {
+        EventBookingManager eventBookingManager = this.buildEventBookingManager();
+
+        // Users to test
+        RegisteredUserDTO teacher = new RegisteredUserDTO();
+        teacher.setId(1L);
+        teacher.setRole(Role.TEACHER);
+
+        RegisteredUserDTO unassociatedEventLeader = new RegisteredUserDTO();
+        unassociatedEventLeader.setId(2L);
+        unassociatedEventLeader.setRole(Role.EVENT_LEADER);
+
+        RegisteredUserDTO associatedEventLeader = new RegisteredUserDTO();
+        associatedEventLeader.setId(3L);
+        associatedEventLeader.setRole(Role.EVENT_LEADER);
+
+        RegisteredUserDTO eventManager = new RegisteredUserDTO();
+        eventManager.setId(4L);
+        eventManager.setRole(Role.EVENT_MANAGER);
+
+        RegisteredUserDTO admin = new RegisteredUserDTO();
+        admin.setId(5L);
+        admin.setRole(Role.ADMIN);
+
+        // Event and associated group
+        UserGroupDTO testEventGroup = new UserGroupDTO();
+        testEventGroup.setId(0L);
+        testEventGroup.setOwnerId(associatedEventLeader.getId());
+
+        AssociationToken testAssociationToken = new AssociationToken();
+        testAssociationToken.setToken("EVENT_GROUP_TOKEN");
+        testAssociationToken.setOwnerUserId(testEventGroup.getOwnerId());
+        testAssociationToken.setGroupId(testEventGroup.getId());
+
+        IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
+        testEvent.setId("someEventId");
+        testEvent.setIsaacGroupToken(testAssociationToken.getToken());
+
+        // Expected mocked method calls
+        expect(dummyUserAssociationManager.lookupTokenDetails(unassociatedEventLeader, testEvent.getIsaacGroupToken()))
+                .andReturn(testAssociationToken);
+        expect(dummyGroupManager.getGroupById(testAssociationToken.getGroupId()))
+                .andReturn(testEventGroup);
+
+        expect(dummyUserAssociationManager.lookupTokenDetails(associatedEventLeader, testEvent.getIsaacGroupToken()))
+                .andReturn(testAssociationToken);
+        expect(dummyGroupManager.getGroupById(testAssociationToken.getGroupId()))
+                .andReturn(testEventGroup);
+
+        replay(dummyUserAssociationManager);
+        replay(dummyGroupManager);
+
+        // Expected results
+        Map<RegisteredUserDTO, Boolean> expectedResults =  ImmutableMap.of(
+            teacher, false,
+            unassociatedEventLeader, false,
+            associatedEventLeader, true,
+            eventManager, true,
+            admin, true
+        );
+
+        for (RegisteredUserDTO user : expectedResults.keySet()) {
+            assertEquals(String.format("Test case: %s", user.getRole()),
+                    expectedResults.get(user),
+                    eventBookingManager.isUserAbleToManageEvent(user, testEvent));
+        }
+    }
+
     private EventBookingManager buildEventBookingManager() {
-        return new EventBookingManager(dummyEventBookingPersistenceManager, dummyEmailManager, userAssociationManager, dummyPropertiesLoader, groupManager);
+        return new EventBookingManager(dummyEventBookingPersistenceManager, dummyEmailManager, dummyUserAssociationManager, dummyPropertiesLoader, dummyGroupManager);
     }
 }
