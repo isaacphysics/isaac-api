@@ -649,8 +649,7 @@ public class UsersFacade extends AbstractSegueFacade {
 
             // Restrict event leader queries to users who have granted access to their data
             if (Role.EVENT_LEADER.equals(currentUser.getRole())) {
-                RegisteredUserDTO eventLeader = userManager.getCurrentRegisteredUser(httpServletRequest);
-                userIds = userAssociationManager.filterUnassociatedRecords(eventLeader, userIds);
+                userIds = userAssociationManager.filterUnassociatedRecords(currentUser, userIds);
             }
 
             final List<RegisteredUserDTO> users = this.userManager.findUsers(userIds);
