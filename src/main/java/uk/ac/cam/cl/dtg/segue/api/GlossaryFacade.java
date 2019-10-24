@@ -118,10 +118,6 @@ public class GlossaryFacade extends AbstractSegueFacade {
             }
 
             c = this.contentManager.findByFieldNames(this.contentIndex, fieldsToMatch, startIndexOfResults, resultsLimit);
-        } catch (NumberFormatException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST,
-                    "Unable to convert one of the integer parameters provided into numbers. "
-                            + "Params provided were: limit" + DEFAULT_RESULTS_LIMIT + " and startIndex " + 0, e).toResponse();
         } catch (ContentManagerException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Content acquisition error.", e).toResponse();
