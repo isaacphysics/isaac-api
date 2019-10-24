@@ -118,7 +118,6 @@ public class GlossaryFacade extends AbstractSegueFacade {
             }
 
             c = this.contentManager.findByFieldNames(this.contentIndex, fieldsToMatch, startIndexOfResults, resultsLimit);
-            return Response.ok(c).build();
         } catch (NumberFormatException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST,
                     "Unable to convert one of the integer parameters provided into numbers. "
@@ -127,6 +126,10 @@ public class GlossaryFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Content acquisition error.", e).toResponse();
         }
+        // Calculate the ETag on last modified date of tags list
+        // NOTE: Assumes that the latest version of the content is being used.
+        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + "");
+        return Response.ok(c).tag(etag).build();
     }
 
     /**
@@ -154,14 +157,13 @@ public class GlossaryFacade extends AbstractSegueFacade {
                 log.debug(error.getErrorMessage());
                 return error.toResponse();
             }
-        } catch (NumberFormatException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST,
-                    "Unable to convert one of the integer parameters provided into numbers. "
-                            + "Params provided were: limit" + DEFAULT_RESULTS_LIMIT + " and startIndex 0", e).toResponse();
         } catch (ContentManagerException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Content acquisition error.", e).toResponse();
         }
-        return Response.ok(c).build();
+        // Calculate the ETag on last modified date of tags list
+        // NOTE: Assumes that the latest version of the content is being used.
+        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + "");
+        return Response.ok(c).tag(etag).build();
     }
 }
