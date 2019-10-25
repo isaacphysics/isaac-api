@@ -676,6 +676,7 @@ public class ContentIndexer {
                 if (f.getSrc() != null && !f.getSrc().startsWith("http")) {
                     ByteArrayOutputStream fileData = null;
                     try {
+                        // This will return null if the file is not found:
                         fileData = database.getFileByCommitSHA(sha, f.getSrc());
                     } catch (IOException | UnsupportedOperationException e) {
                         // Leave fileData = null;
