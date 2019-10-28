@@ -118,7 +118,7 @@ public class QuestionManager {
      * @return a Validator
      */
     @SuppressWarnings("unchecked")
-    private static IValidator locateValidator(final Class<? extends Question> questionType) {
+    public static IValidator locateValidator(final Class<? extends Question> questionType) {
         // check we haven't gone too high up the superclass tree
         if (!Question.class.isAssignableFrom(questionType)) {
             return null;
