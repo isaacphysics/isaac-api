@@ -28,6 +28,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.GlossaryTermDTO;
 public class GlossaryTerm extends Content {
     protected Content explanation;
     protected boolean autoId;
+    protected String examBoard;
 
     /**
      * Default constructor, required for mappers.
@@ -53,6 +54,14 @@ public class GlossaryTerm extends Content {
      */
     public final void setExplanation(final Content explanation) {
         this.explanation = explanation;
+    }
+
+    public final String getExamBoard() {
+        return this.examBoard;
+    }
+
+    public final void setExamBoard(final String examBoard) {
+        this.examBoard = examBoard;
     }
 
     @JsonIgnore

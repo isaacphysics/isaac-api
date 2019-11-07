@@ -27,10 +27,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class GlossaryTermDTO extends ContentDTO {
     protected ContentDTO explanation;
     protected boolean autoId;
+    protected String examBoard;
 
     @JsonCreator
-    public GlossaryTermDTO(@JsonProperty("explanation") ContentDTO explanation) {
+    public GlossaryTermDTO(@JsonProperty("explanation") ContentDTO explanation, @JsonProperty("examBoard") String examBoard) {
         this.explanation = explanation;
+        this.examBoard = examBoard != null ? examBoard : "";
     }
 
     public ContentDTO getExplanation() {
@@ -39,6 +41,14 @@ public class GlossaryTermDTO extends ContentDTO {
 
     public void setExplanation(ContentDTO explanation) {
         this.explanation = explanation;
+    }
+
+    public String getExamBoard() {
+        return this.examBoard;
+    }
+
+    public void setExamBoard(String examBoard) {
+        this.examBoard = examBoard;
     }
 
     @JsonIgnore
