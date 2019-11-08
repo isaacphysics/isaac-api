@@ -24,6 +24,7 @@ import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateGameboardException;
+import uk.ac.cam.cl.dtg.isaac.api.managers.FastTrackManger;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.InvalidGameboardException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.NoWildcardException;
@@ -64,11 +65,11 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.google.common.collect.Maps.immutableEntry;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
@@ -87,7 +88,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
     private static final Logger log = LoggerFactory.getLogger(GameboardsFacade.class);
     private final QuestionManager questionManager;
-    private final Set<String> fastTrackGamebaordIds;
+
+    private final FastTrackManger fastTrackManger;
 
     /**
      * GamesFacade. For management of gameboards etc.
@@ -109,9 +111,9 @@ public class GameboardsFacade extends AbstractIsaacFacade {
      */
     @Inject
     public GameboardsFacade(final PropertiesLoader properties, final ILogManager logManager,
-            final GameManager gameManager, final QuestionManager questionManager, final UserAccountManager userManager,
-            final UserAssociationManager associationManager,
-                            final UserBadgeManager userBadgeManager) {
+                            final GameManager gameManager, final QuestionManager questionManager,
+                            final UserAccountManager userManager, final UserAssociationManager associationManager,
+                            final UserBadgeManager userBadgeManager, final FastTrackManger fastTrackManger) {
         super(properties, logManager);
 
         this.userBadgeManager = userBadgeManager;
@@ -119,8 +121,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
         this.questionManager = questionManager;
         this.userManager = userManager;
         this.associationManager = associationManager;
-        String commaSeparatedIds = this.getProperties().getProperty(Constants.FASTTRACK_GAMEBOARD_WHITELIST);
-        this.fastTrackGamebaordIds = new HashSet<>(Arrays.asList(commaSeparatedIds.split(",")));
+        this.fastTrackManger = fastTrackManger;
     }
 
     /**
@@ -279,38 +280,52 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
     /**
      * REST endpoint to retrieve every question (and its status) associated with a particular FastTrack gameboard and
-     * concept.
+     * history.
      *
      * @param request usually used for caching.
      * @param httpServletRequest so that we can extract the users session information if available.
      * @param gameboardId the unique id of the FastTrack gameboard which links the questions.
-     * @param conceptTitle the title of the concept which the client wants.
+     * @param currentConceptTitle the concept title that the user is currently working on.
+     * @param upperQuestionId the latest upper level question that is in the history.
      * @return a Response containing a list of augmented gameboard items for the gamebaord-concept pair or an error.
      */
     @GET
-    @Path("fasttrack/{gameboard_id}/concepts/")
+    @Path("fasttrack/{gameboard_id}/concepts")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @ApiOperation(value = "Get the progress of the current user at a FastTrack gameboard.")
-    public final Response getFastTrackConceptProgress(@Context final Request request,
-                                                      @Context final HttpServletRequest httpServletRequest,
-                                                      @PathParam("gameboard_id") final String gameboardId,
-                                                      @QueryParam("concept") final String conceptTitle) {
+    public final Response getFastTrackConceptFromHistory(@Context final Request request,
+                                                         @Context final HttpServletRequest httpServletRequest,
+                                                         @PathParam("gameboard_id") final String gameboardId,
+                                                         @QueryParam("concept") final String currentConceptTitle,
+                                                         @QueryParam("upper_question_id") final String upperQuestionId) {
 
         try {
-            if (!fastTrackGamebaordIds.contains(gameboardId)) {
+            if (!fastTrackManger.isValidFasTrackGameboardId(gameboardId)) {
                 return new SegueErrorResponse(Status.NOT_FOUND, "Gameboard id not a valid FastTrack gameboard id.")
                         .toResponse();
             }
-            AbstractSegueUserDTO randomUser = this.userManager.getCurrentUser(httpServletRequest);
-            Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts = this.questionManager
-                    .getQuestionAttemptsByUser(randomUser);
 
-            // attempt to augment the gameboard with user information.
-            List<GameboardItem> conceptQuestionsProgress
-                    = gameManager.getFastTrackConceptProgress(gameboardId, conceptTitle, userQuestionAttempts);
+            AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(httpServletRequest);
+
+            Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts =
+                    this.questionManager.getQuestionAttemptsByUser(currentUser);
+
+            List<GameboardItem> conceptQuestionsProgress = Lists.newArrayList();
+            if (upperQuestionId.isEmpty()) {
+                List<FASTTRACK_LEVEL> upperAndLower = Arrays.asList(FASTTRACK_LEVEL.ft_upper, FASTTRACK_LEVEL.ft_lower);
+                conceptQuestionsProgress.addAll(fastTrackManger.getConceptProgress(
+                        gameboardId, upperAndLower, currentConceptTitle, userQuestionAttempts));
+            } else {
+                String upperConceptTitle = fastTrackManger.getConceptFromQuestionId(upperQuestionId);
+                conceptQuestionsProgress.addAll(fastTrackManger.getConceptProgress(
+                        gameboardId, Collections.singletonList(FASTTRACK_LEVEL.ft_upper), upperConceptTitle, userQuestionAttempts));
+                conceptQuestionsProgress.addAll(fastTrackManger.getConceptProgress(
+                        gameboardId, Collections.singletonList(FASTTRACK_LEVEL.ft_lower), currentConceptTitle, userQuestionAttempts));
+            }
 
             return Response.ok(conceptQuestionsProgress).build();
+
         } catch (SegueDatabaseException e) {
             String message = "Error whilst trying to access the FastTrack progress in the database.";
             log.error(message, e);
@@ -422,8 +437,9 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a gameboard object").toResponse();
             }
 
-            if ((newGameboardObject.getId() != null || newGameboardObject.getTags().size() > 0) && !isUserStaff(userManager, request)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You cannot provide a gameboard ID or tags.").toResponse();
+            if ((newGameboardObject.getId() != null || newGameboardObject.getTags().size() > 0
+                    || newGameboardObject.getWildCard() != null) && !isUserStaff(userManager, request)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You cannot provide a gameboard wildcard, ID or tags.").toResponse();
             }
         } catch (NoUserLoggedInException e1) {
             return SegueErrorResponse.getNotLoggedInResponse();

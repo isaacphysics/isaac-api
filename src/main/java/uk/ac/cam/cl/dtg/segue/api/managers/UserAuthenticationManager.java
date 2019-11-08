@@ -82,6 +82,7 @@ public class UserAuthenticationManager {
     private final EmailManager emailManager;
     private final ObjectMapper serializationMapper;
     private final boolean checkOriginHeader;
+    private final boolean setSecureCookies;
     
     private final Map<AuthenticationProvider, IAuthenticator> registeredAuthProviders;
     
@@ -115,7 +116,9 @@ public class UserAuthenticationManager {
 
         this.emailManager = emailQueue;
         this.serializationMapper = new ObjectMapper();
-        this.checkOriginHeader = properties.getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(EnvironmentType.PROD.name());
+        Boolean isProduction = properties.getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(EnvironmentType.PROD.name());
+        this.checkOriginHeader = isProduction;
+        this.setSecureCookies = isProduction;
     }
 
     /**
@@ -416,8 +419,10 @@ public class UserAuthenticationManager {
             request.getSession().invalidate();
             Cookie logoutCookie = new Cookie(SEGUE_AUTH_COOKIE, "");
             logoutCookie.setPath("/");
-            logoutCookie.setMaxAge(0);
+            logoutCookie.setMaxAge(0);  // This will lead to it being removed by the browser immediately.
             logoutCookie.setHttpOnly(true);
+            logoutCookie.setSecure(setSecureCookies);
+            // TODO - set sameSite=Lax at minimum when Jetty supports this (9.4.x)
 
             response.addCookie(logoutCookie);
         } catch (IllegalStateException e) {
@@ -519,8 +524,8 @@ public class UserAuthenticationManager {
             this.database.unlinkAuthProviderFromUser(userDO, this.mapToProvider(providerString)
                     .getAuthenticationProvider());
         } else {
-            throw new MissingRequiredFieldException("This modification would mean that the user"
-                    + " no longer has a way of authenticating. Failing change.");
+            throw new MissingRequiredFieldException("This modification would mean that you"
+                    + " no longer have a way to log in and has been ignored.");
         }
     }
     
@@ -813,6 +818,8 @@ public class UserAuthenticationManager {
             authCookie.setMaxAge(sessionExpiryTimeInSeconds);
             authCookie.setPath("/");
             authCookie.setHttpOnly(true);
+            authCookie.setSecure(setSecureCookies);
+            // TODO - set sameSite=Lax at minimum when Jetty supports this (9.4.x)
 
             log.debug(String.format("Creating AuthCookie for user (%s) with value %s", userId, authCookie.getValue()));
 

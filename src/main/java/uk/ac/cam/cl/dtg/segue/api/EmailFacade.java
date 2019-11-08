@@ -215,11 +215,11 @@ public class EmailFacade extends AbstractSegueFacade {
             Properties previewProperties = new Properties();
             // Add all properties in the user DTO (preserving types) so they are available to email templates.
             Map userPropertiesMap = new org.apache.commons.beanutils.BeanMap(currentUser);
+
             previewProperties.putAll(emailManager.flattenTokenMap(userPropertiesMap, Maps.newHashMap(), ""));
 
-            //TODO: backwards compat - fix content so that case is correct.
-            previewProperties.put("givenname", currentUser.getGivenName() == null ? "" : currentUser.getGivenName());
-            previewProperties.put("familyname", currentUser.getFamilyName() == null ? "" : currentUser.getFamilyName());
+            // Sanitizes inputs from users
+            EmailManager.sanitizeEmailParameters(previewProperties);
 
             EmailCommunicationMessage ecm = this.emailManager.constructMultiPartEmail(currentUser.getId(),
                     currentUser.getEmail(), emailTemplateDTO, previewProperties, EmailType.SYSTEM);
@@ -336,7 +336,7 @@ public class EmailFacade extends AbstractSegueFacade {
         try {
             String email = payload.get("email");
             if (email == null || email.isEmpty()) {
-                throw new MissingRequiredFieldException("No email provided with request");
+                throw new MissingRequiredFieldException("No email address was provided.");
             }
 
             misuseMonitor.notifyEvent(email, EmailVerificationRequestMisuseHandler.class.toString());

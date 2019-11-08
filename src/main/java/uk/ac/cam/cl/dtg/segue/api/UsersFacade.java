@@ -29,6 +29,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -632,9 +633,9 @@ public class UsersFacade extends AbstractSegueFacade {
     public Response getUserIdToSchoolMap(@Context final HttpServletRequest httpServletRequest,
                                          @QueryParam("user_ids") final String userIdsQueryParam) {
         try {
-            if (!isUserStaff(this.userManager, httpServletRequest)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be a staff member to access this endpoint.")
-                        .toResponse();
+            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
+            if (!isUserStaff(userManager, currentUser) && !Role.EVENT_LEADER.equals(currentUser.getRole())) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
             if (null == userIdsQueryParam || userIdsQueryParam.isEmpty()) {
@@ -642,14 +643,16 @@ public class UsersFacade extends AbstractSegueFacade {
                         .toResponse();
             }
 
-            String[] userIdsAsList = userIdsQueryParam.split(",");
-            List<Long> userLongIds = Lists.newArrayList();
+            List<Long> userIds = Arrays.stream(userIdsQueryParam.split(","))
+                    .map(schoolId -> Long.parseLong(schoolId))
+                    .collect(Collectors.toList());
 
-            for (String anUserIdsAsList : userIdsAsList) {
-                userLongIds.add(Long.parseLong(anUserIdsAsList));
+            // Restrict event leader queries to users who have granted access to their data
+            if (Role.EVENT_LEADER.equals(currentUser.getRole())) {
+                userIds = userAssociationManager.filterUnassociatedRecords(currentUser, userIds);
             }
 
-            final List<RegisteredUserDTO> users = this.userManager.findUsers(userLongIds);
+            final List<RegisteredUserDTO> users = this.userManager.findUsers(userIds);
             final ImmutableMap.Builder<String, Object> builder = ImmutableMap.builder();
             for (RegisteredUserDTO user : users) {
                 if (user.getSchoolId() != null) {
@@ -851,8 +854,7 @@ public class UsersFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
         } catch (MissingRequiredFieldException e) {
             log.warn("Missing field during update operation. ", e);
-            return new SegueErrorResponse(Status.BAD_REQUEST, "You are missing a required field. "
-                    + "Please make sure you have specified all mandatory fields in your response.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
         } catch (AuthenticationProviderMappingException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Unable to map to a known authenticator. The provider: is unknown").toResponse();

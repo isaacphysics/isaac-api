@@ -17,6 +17,9 @@ package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import java.security.SecureRandom;
 import java.util.List;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
@@ -46,6 +49,7 @@ public class UserAssociationManager {
     
     private final IAssociationDataManager associationDatabase;
     private final GroupManager userGroupManager;
+    private final UserAccountManager userManager;
 
     /**
      * UserAssociationManager.
@@ -56,9 +60,12 @@ public class UserAssociationManager {
      *            - IAssociationDataManager providing access to the database.
      */
     @Inject
-    public UserAssociationManager(final IAssociationDataManager associationDatabase, 
+    public UserAssociationManager(
+            final IAssociationDataManager associationDatabase,
+            final UserAccountManager userManager,
             final GroupManager userGroupManager) {
         this.associationDatabase = associationDatabase;
+        this.userManager = userManager;
         this.userGroupManager = userGroupManager;
         log.debug("Creating an instance of the UserAssociationManager.");
     }
@@ -358,12 +365,63 @@ public class UserAssociationManager {
     public boolean hasPermission(final RegisteredUserDTO currentUser, final UserSummaryDTO userRequested) {
         try {
             return currentUser.getId().equals(userRequested.getId())
-                    || this.associationDatabase.hasValidAssociation(currentUser.getId(), userRequested.getId())
-                    || Role.ADMIN.equals(currentUser.getRole());
+                    || Role.ADMIN.equals(currentUser.getRole())
+                    || this.associationDatabase.hasValidAssociation(currentUser.getId(), userRequested.getId());
         } catch (SegueDatabaseException e) {
             log.error("Database Error: Unable to determine whether a user has permission to view another users data.",
                     e);
             return false;
         }
+    }
+
+    /**
+     * Overloaded method to handle different user representation object
+     * @param currentUser
+     *            - requesting permission
+     * @param userRequested
+     *            - the owner of the data to view.
+     * @return true if yes false if no.
+     */
+    public boolean hasPermission(final RegisteredUserDTO currentUser, final RegisteredUserDTO userRequested) {
+        return this.hasPermission(currentUser, userManager.convertToUserSummaryObject(userRequested));
+    }
+
+    /**
+     * Filter a list of records on whether a user ID has an association with the current user
+     * @param currentUser the user which might have been granted access.
+     * @param records a list of objects containing an ID.
+     * @param userIdKey a function which takes the record and returns the user ID.
+     * @param <T> the type of the object containing an ID.
+     * @return a filtered list of type List<T>.
+     * @throws SegueDatabaseException if it was not able to get the user's associations form the database.
+     */
+    public <T> List<T> filterUnassociatedRecords(
+            final RegisteredUserDTO currentUser,
+            final List<T> records,
+            final Function<T, Long> userIdKey
+    ) throws SegueDatabaseException {
+        // Get current user's associated IDs
+        Set<Long> associations = this.getAssociationsForOthers(currentUser).stream()
+                .map(UserAssociation::getUserIdGrantingPermission)
+                .collect(Collectors.toSet());
+        // Add own ID to associations
+        associations.add(currentUser.getId());
+
+        return records.stream()
+                .filter(item -> associations.contains(userIdKey.apply(item)))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * A special case of the generic filterUnassociatedRecords for when the records are a list of user IDs
+     * @param currentUser the user which might have been granted access.
+     * @param userIds a list of user IDs.
+     * @return a list of user ID which has granted the current user to view their data.
+     * @throws SegueDatabaseException if it was not able to get the user's associations form the database.
+     */
+    public List<Long> filterUnassociatedRecords(
+            final RegisteredUserDTO currentUser, final List<Long> userIds
+    ) throws SegueDatabaseException {
+        return this.filterUnassociatedRecords(currentUser, userIds, Function.identity());
     }
 }

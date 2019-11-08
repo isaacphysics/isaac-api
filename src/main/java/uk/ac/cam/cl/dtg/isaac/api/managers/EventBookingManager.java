@@ -27,7 +27,6 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.EventStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
-import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.EventBooking;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
@@ -114,11 +113,13 @@ public class EventBookingManager {
     }
 
     /**
+     * Count all bookings in the database.
+     *
      * @return event bookings
      * @throws SegueDatabaseException - if an error occurs.
      */
-    public List<EventBookingDTO> getAllBookings() throws SegueDatabaseException {
-        return this.bookingPersistenceManager.getAllBookings();
+    public Long getCountOfEventBookings() throws SegueDatabaseException {
+        return this.bookingPersistenceManager.countAllBookings();
     }
 
     /**
@@ -147,6 +148,37 @@ public class EventBookingManager {
             }
         }
         return v;
+    }
+
+    /**
+     * Check if the registered user is able to manage the given event.
+     * Event managers and admins can manage all events where as event leaders can only manage events for which they are
+     * managers of the event's associated group.
+     * @param user wishing to manage the event.
+     * @param event to be managed.
+     * @return either true or false if the user is able to manage the event.
+     * @throws SegueDatabaseException if there is a problem with the database while retrieving associations or groups.
+     */
+    public boolean isUserAbleToManageEvent(RegisteredUserDTO user, IsaacEventPageDTO event) throws SegueDatabaseException {
+        if (Arrays.asList(Role.EVENT_MANAGER, Role.ADMIN).contains(user.getRole())) {
+            return true;
+        }
+        if (Role.EVENT_LEADER.equals(user.getRole())) {
+            try {
+                String eventGroupTokenString = event.getIsaacGroupToken();
+                if (eventGroupTokenString == null || eventGroupTokenString.isEmpty()) {
+                    return false;
+                }
+                AssociationToken eventGroupToken = userAssociationManager.lookupTokenDetails(user, eventGroupTokenString);
+                UserGroupDTO eventGroup = groupManager.getGroupById(eventGroupToken.getGroupId());
+                if (GroupManager.isOwnerOrAdditionalManager(eventGroup, user.getId())) {
+                    return true;
+                }
+            } catch (InvalidUserAssociationTokenException e) {
+                log.error("Event {} has an invalid user association token - ignoring", event.getId());
+            }
+        }
+        return false;
     }
 
     /**

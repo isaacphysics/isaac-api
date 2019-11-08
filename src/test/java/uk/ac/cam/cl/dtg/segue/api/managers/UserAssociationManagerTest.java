@@ -42,6 +42,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 public class UserAssociationManagerTest {
 	private IAssociationDataManager dummyAssociationDataManager;
 	private GroupManager dummyGroupDataManager;
+	private UserAccountManager dummyUserManager;
 
 	/**
 	 * Initial configuration of tests.
@@ -64,8 +65,8 @@ public class UserAssociationManagerTest {
 	@Test
 	public final void userAssociationManager_generateToken_tokenShouldBeCreatedAndPersisted()
 		throws SegueDatabaseException, UserGroupNotFoundException {
-		UserAssociationManager managerUnderTest = new UserAssociationManager(dummyAssociationDataManager,
-				dummyGroupDataManager);
+		UserAssociationManager managerUnderTest = new UserAssociationManager(
+				dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
 
 		Long someUserId = 89745531132231213L;
 
@@ -97,8 +98,8 @@ public class UserAssociationManagerTest {
 	@Test
 	public final void userAssociationManager_createAssociationWithTokenAndAddToGroup_associationShouldBeCreatedAndUserAddedToGroup()
 			throws SegueDatabaseException, UserGroupNotFoundException {
-		UserAssociationManager managerUnderTest = new UserAssociationManager(dummyAssociationDataManager,
-				dummyGroupDataManager);
+		UserAssociationManager managerUnderTest = new UserAssociationManager(
+				dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
 
 		Long someUserIdGrantingAccess = 89745531132231213L;
 		Long someGroupOwnerUserId = 17659214141L;
@@ -146,8 +147,8 @@ public class UserAssociationManagerTest {
 	@Test
 	public final void userAssociationManager_DuplicateAssociationButAddToGroupAnyway_associationShouldNotBeCreatedButUserShouldBeAddedToGroup()
 			throws SegueDatabaseException, UserGroupNotFoundException {
-		UserAssociationManager managerUnderTest = new UserAssociationManager(dummyAssociationDataManager,
-				dummyGroupDataManager);
+		UserAssociationManager managerUnderTest = new UserAssociationManager(
+				dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
 
 		Long someUserIdGrantingAccess = 89745531132231213L;
 		Long someGroupOwnerUserId = 17659214141L;
@@ -191,8 +192,8 @@ public class UserAssociationManagerTest {
 	@Test
 	public final void userAssociationManager_createAssociationWithTokenNoGroup_associationShouldBeCreated()
 			throws SegueDatabaseException, UserGroupNotFoundException {
-		UserAssociationManager managerUnderTest = new UserAssociationManager(dummyAssociationDataManager,
-				dummyGroupDataManager);
+		UserAssociationManager managerUnderTest = new UserAssociationManager(
+				dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
 
 		Long someUserIdGrantingAccess = 89745531132231213L;
 		Long someGroupOwnerUserId = 17659214141L;
@@ -232,8 +233,8 @@ public class UserAssociationManagerTest {
 	@Test
 	public final void userAssociationManager_createAssociationWithBadToken_exceptionShouldBeThrown()
 			throws SegueDatabaseException, UserGroupNotFoundException {
-		UserAssociationManager managerUnderTest = new UserAssociationManager(dummyAssociationDataManager,
-				dummyGroupDataManager);
+		UserAssociationManager managerUnderTest = new UserAssociationManager(
+				dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
 
 		Long someUserIdGrantingAccess = 89745531132231213L;
 		Long someGroupOwnerUserId = 17659214141L;
@@ -265,8 +266,8 @@ public class UserAssociationManagerTest {
 	@Test
 	public final void userAssociationManager_hasPermissionUserIsTheOwner_trueShouldBeRetured()
 			throws SegueDatabaseException, UserGroupNotFoundException {
-		UserAssociationManager managerUnderTest = new UserAssociationManager(dummyAssociationDataManager,
-				dummyGroupDataManager);
+		UserAssociationManager managerUnderTest = new UserAssociationManager(
+				dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
 
 		Long someGroupOwnerUserId = 17659214141L;
 
@@ -288,8 +289,8 @@ public class UserAssociationManagerTest {
 	@Test
 	public final void userAssociationManager_hasPermissionUserIsAdmin_trueShouldBeRetured()
 			throws SegueDatabaseException, UserGroupNotFoundException {
-		UserAssociationManager managerUnderTest = new UserAssociationManager(dummyAssociationDataManager,
-				dummyGroupDataManager);
+		UserAssociationManager managerUnderTest = new UserAssociationManager(
+				dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
 
 		Long someUserIdGrantingAccess = 89745531132231213L;
 		Long someGroupOwnerUserId = 17659214141L;
@@ -315,8 +316,8 @@ public class UserAssociationManagerTest {
 	@Test
 	public final void userAssociationManager_hasPermissionUserHasValidAssociation_trueShouldBeRetured()
 			throws SegueDatabaseException, UserGroupNotFoundException {
-		UserAssociationManager managerUnderTest = new UserAssociationManager(dummyAssociationDataManager,
-				dummyGroupDataManager);
+		UserAssociationManager managerUnderTest = new UserAssociationManager(
+				dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
 
 		Long someUserIdGrantingAccess = 89745531132231213L;
 		Long someGroupOwnerUserId = 17659214141L;
@@ -346,8 +347,8 @@ public class UserAssociationManagerTest {
 	@Test
 	public final void userAssociationManager_NoPermissionUserHasNoValidAssociation_falseShouldBeRetured()
 			throws SegueDatabaseException, UserGroupNotFoundException {
-		UserAssociationManager managerUnderTest = new UserAssociationManager(dummyAssociationDataManager,
-				dummyGroupDataManager);
+		UserAssociationManager managerUnderTest = new UserAssociationManager(
+				dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
 
 		Long someUserIdNotGrantingAccess = 89745531132231213L;
 		Long someGroupOwnerUserId = 17659214141L;
@@ -378,8 +379,8 @@ public class UserAssociationManagerTest {
 	@Test
 	public final void userAssociationManager_TokenMustBeSixCharactersAndRandom()
 			throws SegueDatabaseException, UserGroupNotFoundException {
-		UserAssociationManager managerUnderTest = new UserAssociationManager(dummyAssociationDataManager,
-				dummyGroupDataManager);
+		UserAssociationManager managerUnderTest = new UserAssociationManager(
+				dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
 		Long someAssociatedGroupId = 5654811L;
 
 		RegisteredUserDTO someUserRequestingAccess = createMock(RegisteredUserDTO.class);

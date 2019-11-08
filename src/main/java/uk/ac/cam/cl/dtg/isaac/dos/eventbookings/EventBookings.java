@@ -85,15 +85,6 @@ public interface EventBookings {
     void releaseDistributedLock(String resourceId) throws SegueDatabaseException;
 
     /**
-     * get all events.
-     * 
-     * @return an iterable with all events in it.
-     * @throws SegueDatabaseException
-     *             - if an error occurs.
-     */
-    Iterable<EventBooking> findAll() throws SegueDatabaseException;
-
-    /**
      * Find all bookings for a given event.
      * 
      * @param eventId
@@ -103,6 +94,16 @@ public interface EventBookings {
      *             - if an error occurs.
      */
     Iterable<EventBooking> findAllByEventId(final String eventId) throws SegueDatabaseException;
+
+    /**
+     * countAllEventBookings.
+     *
+     * Note: This will include any with users who have been deleted.
+     *
+     * @return the current count of all event bookings.
+     * @throws SegueDatabaseException if there is a problem accessing the db
+     */
+    Long countAllEventBookings() throws SegueDatabaseException;
 
     /**
      * Find all bookings for a given event with a given status.
