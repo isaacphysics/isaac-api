@@ -11,10 +11,14 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<segue.version>2.8.11-SNAPSHOT</segue.version>
-		<resteasy.version>4.3.0.Final</resteasy.version>
-		<jackson.version>2.9.9</jackson.version>
-		<powermock.version>1.7.1</powermock.version>
+		<log4j.version>2.12.1</log4j.version>
+		<resteasy.version>4.4.0.Final</resteasy.version>
+		<guice.version>4.2.2</guice.version>
+		<oauth-client.version>1.30.4</oauth-client.version>
+		<jackson.version>2.10.0</jackson.version>
+		<powermock.version>2.0.4</powermock.version>
 		<swagger-ui-version>3.19.5</swagger-ui-version>
+		<prometheus.version>0.8.0</prometheus.version>
 		<jetty-maven-version>9.3.27.v20190418</jetty-maven-version>
 		<jetty.port.api>8080</jetty.port.api>
 		<jetty.port.etl>8090</jetty.port.etl>
@@ -33,7 +37,6 @@
 		</repository>
 	</repositories>
 	<dependencies>
-
 		<dependency>
 			<groupId>org.isaacphysics.thirdparty</groupId>
 			<artifactId>openmark-pmatch</artifactId>
@@ -43,13 +46,13 @@
 		<dependency>
 			<groupId>org.javassist</groupId>
 			<artifactId>javassist</artifactId>
-			<version>3.18.2-GA</version>
+			<version>3.26.0-GA</version>
 		</dependency>
 
 		<dependency>
 			<groupId>javax.servlet</groupId>
 			<artifactId>javax.servlet-api</artifactId>
-			<version>3.0.1</version>
+			<version>4.0.1</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -104,18 +107,18 @@
 		<dependency>
 			<groupId>com.google.inject</groupId>
 			<artifactId>guice</artifactId>
-			<version>3.0</version>
+			<version>${guice.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.inject.extensions</groupId>
 			<artifactId>guice-multibindings</artifactId>
-			<version>3.0</version>
+			<version>${guice.version}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.eclipse.jgit</groupId>
 			<artifactId>org.eclipse.jgit</artifactId>
-			<version>5.4.0.201906121030-r</version>
+			<version>5.5.1.201910021850-r</version>
 		</dependency>
 
 		<dependency>
@@ -127,18 +130,18 @@
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
-			<version>27.0-jre</version>
+			<version>28.1-jre</version>
 		</dependency>
 
 		<dependency>
 			<groupId>com.google.oauth-client</groupId>
 			<artifactId>google-oauth-client</artifactId>
-			<version>1.23.0</version>
+			<version>${oauth-client.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.oauth-client</groupId>
 			<artifactId>google-oauth-client-servlet</artifactId>
-			<version>1.23.0</version>
+			<version>${oauth-client.version}</version>
 			<exclusions>
 				<exclusion>
 					<artifactId>servlet-api</artifactId>
@@ -155,7 +158,7 @@
 		<dependency>
 			<groupId>com.google.apis</groupId>
 			<artifactId>google-api-services-oauth2</artifactId>
-			<version>v2-rev134-1.23.0</version>
+			<version>v2-rev151-1.25.0</version>
 			<exclusions>
 				<exclusion>
 					<artifactId>guava</artifactId>
@@ -167,7 +170,7 @@
 		<dependency>
 			<groupId>org.twitter4j</groupId>
 			<artifactId>twitter4j-core</artifactId>
-			<version>4.0.6</version>
+			<version>4.0.7</version>
 		</dependency>
 
 		<dependency>
@@ -179,7 +182,7 @@
 		<dependency>
 			<groupId>io.swagger</groupId>
 			<artifactId>swagger-jaxrs</artifactId>
-			<version>1.5.21</version>
+			<version>1.5.24</version>
 			<exclusions>
 				<exclusion>
 					<artifactId>reflections</artifactId>
@@ -215,22 +218,23 @@
             <groupId>org.easymock</groupId>
             <artifactId>easymock</artifactId>
             <version>3.6</version>
+			<scope>test</scope>
         </dependency>
 
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-api</artifactId>
-			<version>2.6.2</version>
+			<version>${log4j.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-core</artifactId>
-			<version>2.6.2</version>
+			<version>${log4j.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-slf4j-impl</artifactId>
-			<version>2.6.2</version>
+			<version>${log4j.version}</version>
 		</dependency>
 
 		<dependency>
@@ -262,56 +266,56 @@
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-collections4</artifactId>
-			<version>4.3</version>
+			<version>4.4</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.quartz-scheduler</groupId>
 			<artifactId>quartz</artifactId>
-			<version>2.3.0</version>
+			<version>2.3.2</version>
 		</dependency>
 
 		<dependency>
 			<groupId>io.prometheus</groupId>
 			<artifactId>simpleclient</artifactId>
-			<version>0.5.0</version>
+			<version>${prometheus.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>io.prometheus</groupId>
 			<artifactId>simpleclient_hotspot</artifactId>
-			<version>0.5.0</version>
+			<version>${prometheus.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>io.prometheus</groupId>
 			<artifactId>simpleclient_servlet</artifactId>
-			<version>0.5.0</version>
+			<version>${prometheus.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>io.prometheus</groupId>
 			<artifactId>simpleclient_httpserver</artifactId>
-			<version>0.5.0</version>
+			<version>${prometheus.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>io.prometheus</groupId>
 			<artifactId>simpleclient_pushgateway</artifactId>
-			<version>0.5.0</version>
+			<version>${prometheus.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>io.prometheus</groupId>
 			<artifactId>simpleclient_guava</artifactId>
-			<version>0.5.0</version>
+			<version>${prometheus.version}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
-			<version>42.2.5</version>
+			<version>42.2.8</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-dbcp2</artifactId>
-			<version>2.6.0</version>
+			<version>2.7.0</version>
 		</dependency>
 
 		<dependency>
@@ -328,7 +332,7 @@
 		<dependency>
 			<groupId>joda-time</groupId>
 			<artifactId>joda-time</artifactId>
-			<version>2.7</version>
+			<version>2.10.5</version>
 		</dependency>
 
 		<dependency>
@@ -339,12 +343,12 @@
 		<dependency>
 			<groupId>com.opencsv</groupId>
 			<artifactId>opencsv</artifactId>
-			<version>3.8</version>
+			<version>3.10</version>
 		</dependency>
 		<dependency>
 			<groupId>net.sf.biweekly</groupId>
 			<artifactId>biweekly</artifactId>
-			<version>0.6.1</version>
+			<version>0.6.3</version>
 		</dependency>
 
 		<!--Jetty JSR-356 Websocket server side dependency -->
