@@ -39,6 +39,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
@@ -48,6 +49,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
@@ -95,6 +97,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     private final IContentManager contentManager;
     private final String contentIndex;
     private final UserBadgeManager userBadgeManager;
+    private final UserAssociationManager userAssociationManager;
 
     /**
      * EventsFacade.
@@ -115,13 +118,15 @@ public class EventsFacade extends AbstractIsaacFacade {
                         final EventBookingManager bookingManager,
                         final UserAccountManager userManager, final IContentManager contentManager,
                         @Named(Constants.CONTENT_INDEX) final String contentIndex,
-                        final UserBadgeManager userBadgeManager) {
+                        final UserBadgeManager userBadgeManager,
+                        final UserAssociationManager userAssociationManager) {
         super(properties, logManager);
         this.bookingManager = bookingManager;
         this.userManager = userManager;
         this.contentManager = contentManager;
         this.contentIndex = contentIndex;
         this.userBadgeManager = userBadgeManager;
+        this.userAssociationManager = userAssociationManager;
     }
 
     /**
@@ -392,19 +397,18 @@ public class EventsFacade extends AbstractIsaacFacade {
                                                      @PathParam("event_id") final String eventId,
                                                      @PathParam("user_id") final Long userId, final Map<String, String> additionalInformation) {
         try {
-            if (!isUserAnAdminOrEventManager(userManager, request)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be a staff user to access this endpoint.")
-                    .toResponse();
-            }
-
+            RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(request);
             RegisteredUserDTO userOfInterest = this.userManager.getUserDTOById(userId);
-
             IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
+
+            if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
 
             EventBookingDTO eventBookingDTO
                     = this.bookingManager.promoteFromWaitingListOrCancelled(event, userOfInterest);
 
-            this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
+            this.getLogManager().logEvent(currentUser, request,
                     SegueLogType.ADMIN_EVENT_WAITING_LIST_PROMOTION, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId(),
                                                                          USER_ID_FKEY_FIELDNAME, userId));
             return Response.ok(eventBookingDTO).build();
@@ -458,12 +462,21 @@ public class EventsFacade extends AbstractIsaacFacade {
     public final Response getEventBookingByEventId(@Context final HttpServletRequest request,
             @PathParam("event_id") final String eventId) {
         try {
-            if (!isUserAnAdminOrEventManager(userManager, request)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
-                        .toResponse();
+            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
+            if (!Arrays.asList(Role.EVENT_LEADER, Role.EVENT_MANAGER, Role.ADMIN).contains(currentUser.getRole())) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
-            return Response.ok(bookingManager.getBookingByEventId(eventId)).build();
+            List<EventBookingDTO> eventBookings = bookingManager.getBookingByEventId(eventId);
+
+            // Event leaders are only allowed to see the bookings of connected users
+            if (Role.EVENT_LEADER.equals(currentUser.getRole())) {
+                eventBookings = userAssociationManager.filterUnassociatedRecords(
+                        currentUser, eventBookings, booking -> booking.getUserBooked().getId());
+            }
+
+            return Response.ok(eventBookings).build();
+
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
@@ -496,14 +509,13 @@ public class EventsFacade extends AbstractIsaacFacade {
     public final Response createBookingForGivenUser(@Context final HttpServletRequest request,
             @PathParam("event_id") final String eventId, @PathParam("user_id") final Long userId, final Map<String, String> additionalInformation) {
         try {
-            if (!isUserAnAdminOrEventManager(userManager, request)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
-                        .toResponse();
-            }
-
+            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
             RegisteredUserDTO bookedUser = userManager.getUserDTOById(userId);
-
             IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
+
+            if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
 
             if (bookingManager.isUserBooked(eventId, userId)) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "User is already booked on this event.")
@@ -511,7 +523,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             }
 
             EventBookingDTO booking = bookingManager.createBookingOrAddToWaitingList(event, bookedUser, additionalInformation);
-            this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
+            this.getLogManager().logEvent(currentUser, request,
                     SegueLogType.ADMIN_EVENT_BOOKING_CREATED,
                     ImmutableMap.of(
                         EVENT_ID_FKEY_FIELDNAME, event.getId(),
@@ -726,9 +738,10 @@ public class EventsFacade extends AbstractIsaacFacade {
             }
 
             // if the user id is null then it means they are changing their own booking.
-            if (userId != null && !isUserAnAdminOrEventManager(userManager, request) ) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to change another user's booking.")
-                    .toResponse();
+            if (userId != null) {
+                if (!bookingManager.isUserAbleToManageEvent(userLoggedIn, event)) {
+                    return SegueErrorResponse.getIncorrectRoleResponse();
+                }
             }
 
             Set<BookingStatus> cancelableStatuses =
@@ -740,10 +753,10 @@ public class EventsFacade extends AbstractIsaacFacade {
             bookingManager.cancelBooking(event, userOwningBooking);
 
             if (!userOwningBooking.equals(userLoggedIn)) {
-                this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
+                this.getLogManager().logEvent(userLoggedIn, request,
                         SegueLogType.ADMIN_EVENT_BOOKING_CANCELLED, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId(), USER_ID_FKEY_FIELDNAME, userOwningBooking.getId()));
             } else {
-                this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
+                this.getLogManager().logEvent(userLoggedIn, request,
                         SegueLogType.EVENT_BOOKING_CANCELLED, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId()));
             }
 
@@ -782,17 +795,18 @@ public class EventsFacade extends AbstractIsaacFacade {
     public final Response resendEventEmail(@Context final HttpServletRequest request,
                                         @PathParam("event_id") final String eventId, @PathParam("user_id") final Long userId) {
         try {
-            if (!isUserAnAdminOrEventManager(userManager,request)) {
+            IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
+            RegisteredUserDTO bookedUser = this.userManager.getUserDTOById(userId);
+            RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(request);
+
+            if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
-            IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
-            RegisteredUserDTO user = this.userManager.getUserDTOById(userId);
-
-            this.bookingManager.resendEventEmail(event, user);
+            this.bookingManager.resendEventEmail(event, bookedUser);
 
             log.info(String.format("User (%s) has just resent an event email to user id (%s)",
-                    this.userManager.getCurrentRegisteredUser(request).getEmail(), user.getId()));
+                    currentUser.getEmail(), bookedUser.getId()));
 
             return Response.noContent().build();
         } catch (NoUserLoggedInException e) {
@@ -867,7 +881,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     }
 
     /**
-     * Allow a staff user to promote a user from the waiting list.
+     * Allow a staff user to record event attendance.
      *
      * @param request
      *            - so we can determine if the user is logged in
@@ -889,16 +903,16 @@ public class EventsFacade extends AbstractIsaacFacade {
                                                 @PathParam("user_id") final Long userId,
                                                 @QueryParam("attended") final Boolean attended) {
         try {
-            if (!isUserAnAdminOrEventManager(userManager, request)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be a staff user to access this endpoint.")
-                        .toResponse();
-            }
-
+            RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(request);
             RegisteredUserDTO userOfInterest = this.userManager.getUserDTOById(userId);
             IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
 
+            if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
             EventBookingDTO eventBookingDTO = this.bookingManager.recordAttendance(event, userOfInterest, attended);
-            this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
+            this.getLogManager().logEvent(currentUser, request,
                     SegueLogType.ADMIN_EVENT_ATTENDANCE_RECORDED,
                     ImmutableMap.of(
                         EVENT_ID_FKEY_FIELDNAME, event.getId(),
@@ -976,7 +990,8 @@ public class EventsFacade extends AbstractIsaacFacade {
         fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(EVENT_TYPE));
 
         try {
-            if (!isUserAnAdminOrEventManager(userManager, request)) {
+            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
+            if (!Arrays.asList(Role.EVENT_LEADER, Role.EVENT_MANAGER, Role.ADMIN).contains(currentUser.getRole())) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
@@ -1012,32 +1027,36 @@ public class EventsFacade extends AbstractIsaacFacade {
                 if (!(c instanceof  IsaacEventPageDTO)) {
                     continue;
                 }
+                IsaacEventPageDTO event = (IsaacEventPageDTO) c;
 
-                IsaacEventPageDTO e = (IsaacEventPageDTO) c;
+                if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
+                    continue;
+                }
+
                 ImmutableMap.Builder<String, Object> eventOverviewBuilder = new ImmutableMap.Builder<>();
-                eventOverviewBuilder.put("id", e.getId());
-                eventOverviewBuilder.put("title", e.getTitle());
-                eventOverviewBuilder.put("subtitle", e.getSubtitle());
-                eventOverviewBuilder.put("date", e.getDate());
+                eventOverviewBuilder.put("id", event.getId());
+                eventOverviewBuilder.put("title", event.getTitle());
+                eventOverviewBuilder.put("subtitle", event.getSubtitle());
+                eventOverviewBuilder.put("date", event.getDate());
                 eventOverviewBuilder.put("bookingDeadline",
-                        e.getBookingDeadline() == null ? e.getDate() : e.getBookingDeadline());
-                eventOverviewBuilder.put("eventStatus", e.getEventStatus());
+                        event.getBookingDeadline() == null ? event.getDate() : event.getBookingDeadline());
+                eventOverviewBuilder.put("eventStatus", event.getEventStatus());
 
-                if (null != e.getLocation()) {
-                    eventOverviewBuilder.put("location", e.getLocation());
+                if (null != event.getLocation()) {
+                    eventOverviewBuilder.put("location", event.getLocation());
                 }
 
                 eventOverviewBuilder.put("numberOfConfirmedBookings",
-                        this.bookingManager.countNumberOfBookingsWithStatus(e.getId(), BookingStatus.CONFIRMED));
+                        this.bookingManager.countNumberOfBookingsWithStatus(event.getId(), BookingStatus.CONFIRMED));
                 eventOverviewBuilder.put("numberOfWaitingListBookings",
-                        this.bookingManager.countNumberOfBookingsWithStatus(e.getId(), BookingStatus.WAITING_LIST));
+                        this.bookingManager.countNumberOfBookingsWithStatus(event.getId(), BookingStatus.WAITING_LIST));
                 eventOverviewBuilder.put("numberAttended",
-                        this.bookingManager.countNumberOfBookingsWithStatus(e.getId(), BookingStatus.ATTENDED));
+                        this.bookingManager.countNumberOfBookingsWithStatus(event.getId(), BookingStatus.ATTENDED));
                 eventOverviewBuilder.put("numberAbsent",
-                        this.bookingManager.countNumberOfBookingsWithStatus(e.getId(), BookingStatus.ABSENT));
+                        this.bookingManager.countNumberOfBookingsWithStatus(event.getId(), BookingStatus.ABSENT));
 
-                if (null != e.getNumberOfPlaces()) {
-                    eventOverviewBuilder.put("numberOfPlaces", e.getNumberOfPlaces());
+                if (null != event.getNumberOfPlaces()) {
+                    eventOverviewBuilder.put("numberOfPlaces", event.getNumberOfPlaces());
                 }
 
                 resultList.add(eventOverviewBuilder.build());
@@ -1058,7 +1077,6 @@ public class EventsFacade extends AbstractIsaacFacade {
             log.error("Error occurred during event overview look up", e);
             return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid request format.").toResponse();
         }
-
     }
 
     /**
