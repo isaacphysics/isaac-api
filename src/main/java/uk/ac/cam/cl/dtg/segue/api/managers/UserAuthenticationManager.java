@@ -814,6 +814,8 @@ public class UserAuthenticationManager {
             authCookie.setPath("/");
             authCookie.setHttpOnly(true);
 
+            log.debug(String.format("Creating AuthCookie for user (%s) with value %s", userId, authCookie.getValue()));
+
             response.addCookie(authCookie);
             
         } catch (JsonProcessingException e1) {

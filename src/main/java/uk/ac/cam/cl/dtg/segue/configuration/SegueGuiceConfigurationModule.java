@@ -164,10 +164,13 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
             try {
                 if (null == configLocation) {
-                    throw new FileNotFoundException("Segue configuration location not specified, please provide it as either a java system property (config.locatioin) or environment variable SEGUE_CONFIG_LOCATION");
+                    throw new FileNotFoundException("Segue configuration location not specified, please provide it as either a java system property (config.location) or environment variable SEGUE_CONFIG_LOCATION");
                 }
 
                 globalProperties = new PropertiesLoader(configLocation);
+
+                log.info(String.format("Segue using configuration file: %s", configLocation));
+
             } catch (IOException e) {
                 log.error("Error loading properties file.", e);
             }
