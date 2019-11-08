@@ -23,7 +23,6 @@ import javax.annotation.Nullable;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.api.client.util.Sets;
-import org.mongojack.ObjectId;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithEmailAddressDTO;
@@ -80,12 +79,12 @@ public class UserGroupDTO {
      * Gets the _id.
      * 
      * @return the _id
+     * @deprecated - TODO need to remove _id from frontend
      */
     @JsonProperty("_id")
-    @ObjectId
     @Deprecated
     public Long getMongoId() {
-        return id;
+        return this.getId();
     }
 
     /**
@@ -93,12 +92,12 @@ public class UserGroupDTO {
      *
      * @param id
      *            the _id to set
+     * @deprecated - TODO need to remove _id from frontend
      */
     @JsonProperty("_id")
-    @ObjectId
     @Deprecated
     public void setMongoId(final Long id) {
-        this.id = id;
+        this.setId(id);
     }
 
     /**
@@ -106,7 +105,6 @@ public class UserGroupDTO {
      *
      * @return the id
      */
-    @JsonProperty("id")
     public Long getId() {
         return id;
     }
@@ -114,9 +112,8 @@ public class UserGroupDTO {
     /**
      * Gets the id.
      *
-     * @return the id
+     * @param id the id
      */
-    @JsonProperty("id")
     public void setId(final Long id) {
         this.id = id;
     }
@@ -308,12 +305,11 @@ public class UserGroupDTO {
     }
 
     /**
-     * Get the set of user ids who have access
+     * Get the set of user ids who have access.
      * @return set of ids
      */
     @JsonIgnore
     public Set<Long> getAdditionalManagersUserIds() {
         return additionalManagers.stream().map(UserSummaryWithEmailAddressDTO::getId).collect(Collectors.toSet());
     }
-
 }

@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,8 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.segue.dos.users;
 
-import org.mongojack.ObjectId;
-
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -28,7 +26,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class LinkedAccount {
 
-    @JsonProperty("_id")
     private String id;
     private String localUserId;
     private AuthenticationProvider provider;
@@ -54,7 +51,7 @@ public class LinkedAccount {
      *            - provider's user Id.
      */
     @JsonCreator
-    public LinkedAccount(@JsonProperty("_id") final String id, @JsonProperty("localUserId") final String localUserId,
+    public LinkedAccount(@JsonProperty("id") final String id, @JsonProperty("localUserId") final String localUserId,
             @JsonProperty("provider") final AuthenticationProvider provider,
             @JsonProperty("providerId") final String providerUserId) {
         this.id = id;
@@ -68,8 +65,6 @@ public class LinkedAccount {
      * 
      * @return database id
      */
-    @JsonProperty("_id")
-    @ObjectId
     public final String getId() {
         return id;
     }
@@ -80,8 +75,6 @@ public class LinkedAccount {
      * @param id
      *            - database id
      */
-    @JsonProperty("_id")
-    @ObjectId
     public final void setId(final String id) {
         this.id = id;
     }

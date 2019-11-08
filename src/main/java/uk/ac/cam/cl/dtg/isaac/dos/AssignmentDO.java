@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,16 +17,12 @@ package uk.ac.cam.cl.dtg.isaac.dos;
 
 import java.util.Date;
 
-import org.mongojack.ObjectId;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * This class is the Domain Object used to store Assignments in the isaac CMS.
  */
 public class AssignmentDO {
-	@ObjectId
-	@JsonProperty("_id")
 	private Long id;
 	private String gameboardId;
 	private Long groupId;
@@ -71,8 +67,6 @@ public class AssignmentDO {
 	 * Gets the id.
 	 * @return the id
 	 */
-	@JsonProperty("_id")
-	@ObjectId
 	public Long getId() {
 		return id;
 	}
@@ -81,8 +75,6 @@ public class AssignmentDO {
 	 * Sets the id.
 	 * @param id the id to set
 	 */
-	@JsonProperty("_id")
-	@ObjectId
 	public void setId(final Long id) {
 		this.id = id;
 	}
@@ -182,16 +174,16 @@ public class AssignmentDO {
     }
 
 	/**
-	 * get the due date of the assignment
-	 * @return
+	 * get the due date of the assignment.
+	 * @return dueDate
 	 */
 	public Date getDueDate() {
 		return dueDate;
 	}
 
 	/**
-	 * set the due date of an assignment
-	 * @param dueDate
+	 * set the due date of an assignment.
+	 * @param dueDate - date due
 	 */
 	public void setDueDate(Date dueDate) {
 		this.dueDate = dueDate;
