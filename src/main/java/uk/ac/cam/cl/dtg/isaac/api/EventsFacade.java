@@ -74,6 +74,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import java.io.IOException;
 import java.io.StringWriter;
 import java.util.*;
 
@@ -473,9 +474,6 @@ public class EventsFacade extends AbstractIsaacFacade {
                         currentUser, eventBookings, booking -> booking.getUserBooked().getId());
             }
 
-            eventBookings.stream().forEachOrdered(booking -> System.out.println(booking.getAdditionalInformation()));
-            System.out.println(Response.ok(eventBookings).build());
-
             return Response.ok(eventBookings).build();
 
         } catch (NoUserLoggedInException e) {
@@ -519,9 +517,6 @@ public class EventsFacade extends AbstractIsaacFacade {
                         currentUser, eventBookings, booking -> booking.getUserBooked().getId());
             }
 
-            eventBookings.stream().forEachOrdered(booking -> System.out.println(booking.getAdditionalInformation()));
-            System.out.println(Response.ok(eventBookings).build());
-
             List<String[]> rows = Lists.newArrayList();
             StringWriter stringWriter = new StringWriter();
             CSVWriter csvWriter = new CSVWriter(stringWriter);
@@ -541,15 +536,35 @@ public class EventsFacade extends AbstractIsaacFacade {
             for (EventBookingDTO booking : eventBookings) {
                 ArrayList<String> resultRow = Lists.newArrayList();
                 UserSummaryDTO resultUser = booking.getUserBooked();
-//                List<RegisteredUserDTO> thisUser = UserAccountManager.findUsers(Arrays.asList(resultUser.getId());
+                RegisteredUserDTO resultRegisteredUser = this.userAccountManager.getUserDTOById(resultUser.getId());
                 Map<String, String> resultAdditionalInformation = booking.getAdditionalInformation();
-                BookingStatus resultBookingStatusbooking = booking.getBookingStatus();
+                BookingStatus resultBookingStatus = booking.getBookingStatus();
                 Date resultBookingUpdated = booking.getUpdated();
                 resultRow.add(resultUser.getGivenName() + " " + resultUser.getFamilyName());
+                resultRow.add(resultRegisteredUser.getEmail());
+                resultRow.add(resultRegisteredUser.getRole().toString());
+                resultRow.add(resultRegisteredUser.getSchoolId());
+//                resultRow.add(resultAdditionalInformation)
+                resultRow.add(resultBookingStatus.toString());
+                System.out.println(resultRow);
+                System.out.println(resultRegisteredUser);
+                Collections.addAll(resultRows, resultRow.toArray(new String[0]));
             }
 
-            return Response.ok(eventBookings).build();
+            rows.add(totalsRow.toArray(new String[0]));
+            rows.add("Last Name,First Name".split(","));
+            rows.addAll(resultRows);
+            csvWriter.writeAll(rows);
+            csvWriter.close();
 
+            return Response.ok(headerBuilder.toString())
+                    .header("Content-Disposition", "attachment; filename=event_attendees.csv")
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
+
+        } catch (IOException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while building the CSV file.").toResponse();
+        } catch (NoUserException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "No user found with this ID!").toResponse();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
