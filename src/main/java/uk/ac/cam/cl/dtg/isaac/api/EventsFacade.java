@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.opencsv.CSVWriter;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.jboss.resteasy.annotations.GZIP;
@@ -49,11 +50,13 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.DateRangeFilterInstruction;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -71,13 +74,8 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.io.StringWriter;
+import java.util.*;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -98,6 +96,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     private final String contentIndex;
     private final UserBadgeManager userBadgeManager;
     private final UserAssociationManager userAssociationManager;
+    private final UserAccountManager userAccountManager;
 
     /**
      * EventsFacade.
@@ -119,7 +118,8 @@ public class EventsFacade extends AbstractIsaacFacade {
                         final UserAccountManager userManager, final IContentManager contentManager,
                         @Named(Constants.CONTENT_INDEX) final String contentIndex,
                         final UserBadgeManager userBadgeManager,
-                        final UserAssociationManager userAssociationManager) {
+                        final UserAssociationManager userAssociationManager,
+                        final UserAccountManager userAccountManager) {
         super(properties, logManager);
         this.bookingManager = bookingManager;
         this.userManager = userManager;
@@ -127,6 +127,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         this.contentIndex = contentIndex;
         this.userBadgeManager = userBadgeManager;
         this.userAssociationManager = userAssociationManager;
+        this.userAccountManager = userAccountManager;
     }
 
     /**
@@ -463,7 +464,50 @@ public class EventsFacade extends AbstractIsaacFacade {
             @PathParam("event_id") final String eventId) {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
-            if (!Arrays.asList(Role.EVENT_LEADER, Role.EVENT_MANAGER, Role.ADMIN).contains(currentUser.getRole())) {
+
+            List<EventBookingDTO> eventBookings = bookingManager.getBookingByEventId(eventId);
+
+            // Event leaders are only allowed to see the bookings of connected users
+            if (Role.EVENT_LEADER.equals(currentUser.getRole())) {
+                eventBookings = userAssociationManager.filterUnassociatedRecords(
+                        currentUser, eventBookings, booking -> booking.getUserBooked().getId());
+            }
+
+            eventBookings.stream().forEachOrdered(booking -> System.out.println(booking.getAdditionalInformation()));
+            System.out.println(Response.ok(eventBookings).build());
+
+            return Response.ok(eventBookings).build();
+
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            String message = "Database error occurred while trying to retrieve all event booking information.";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        }
+    }
+
+    /**
+     * Allows authorised users to view a csv of event attendees
+     *
+     * @param request
+     *            - so we can determine if the user is logged in
+     * @param eventId
+     *            - the event of interest.
+     * @return list of bookings csv.
+     */
+    @GET
+    @Path("{event_id}/bookings/download")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @ApiOperation(value = "Download event attendance csv.")
+    public Response getEventBookingCSV(@Context final HttpServletRequest request,
+                                                   @PathParam("event_id") final String eventId) {
+        try {
+            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
+            IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
+
+            if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
@@ -475,6 +519,35 @@ public class EventsFacade extends AbstractIsaacFacade {
                         currentUser, eventBookings, booking -> booking.getUserBooked().getId());
             }
 
+            eventBookings.stream().forEachOrdered(booking -> System.out.println(booking.getAdditionalInformation()));
+            System.out.println(Response.ok(eventBookings).build());
+
+            List<String[]> rows = Lists.newArrayList();
+            StringWriter stringWriter = new StringWriter();
+            CSVWriter csvWriter = new CSVWriter(stringWriter);
+            StringBuilder headerBuilder = new StringBuilder();
+            headerBuilder.append(String.format("Event (%s) Attendance: Downloaded on %s \nGenerated by: %s %s \n\n",
+                    eventId, new Date(), currentUser.getGivenName(),
+                    currentUser.getFamilyName()));
+
+            List<String> headerRow = Lists.newArrayList(Arrays.asList("", ""));
+
+            rows.add(headerRow.toArray(new String[0]));
+
+            List<String> totalsRow = Lists.newArrayList();
+
+            List<String[]> resultRows = Lists.newArrayList();
+
+            for (EventBookingDTO booking : eventBookings) {
+                ArrayList<String> resultRow = Lists.newArrayList();
+                UserSummaryDTO resultUser = booking.getUserBooked();
+//                List<RegisteredUserDTO> thisUser = UserAccountManager.findUsers(Arrays.asList(resultUser.getId());
+                Map<String, String> resultAdditionalInformation = booking.getAdditionalInformation();
+                BookingStatus resultBookingStatusbooking = booking.getBookingStatus();
+                Date resultBookingUpdated = booking.getUpdated();
+                resultRow.add(resultUser.getGivenName() + " " + resultUser.getFamilyName());
+            }
+
             return Response.ok(eventBookings).build();
 
         } catch (NoUserLoggedInException e) {
@@ -483,6 +556,10 @@ public class EventsFacade extends AbstractIsaacFacade {
             String message = "Database error occurred while trying to retrieve all event booking information.";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        }   catch (ContentManagerException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Content Database error occurred while trying to retrieve event booking information.")
+                    .toResponse();
         }
     }
 
