@@ -721,7 +721,7 @@ public class AdminFacade extends AbstractSegueFacade {
             }
 
             if (null != email && !email.isEmpty()) {
-                if (currentUser.getRole().equals(Role.EVENT_MANAGER) && email.replaceAll("[^A-z]", "").length() < 4) {
+                if (currentUser.getRole().equals(Role.EVENT_MANAGER) && email.replaceAll("[^A-z0-9]", "").length() < 4) {
                     return new SegueErrorResponse(Status.FORBIDDEN,
                             "You do not have permission to do wildcard searches with less than 4 characters.")
                             .toResponse();
