@@ -27,6 +27,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacTopicSummaryPage;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacTopicSummaryPageDTO;
 import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
@@ -37,6 +39,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
@@ -64,7 +67,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -490,46 +492,59 @@ public class PagesFacade extends AbstractIsaacFacade {
         // Topic summary pages have the ID convention "topic_summary_[tag_name]"
         String summaryPageId = String.format("topic_summary_%s", topicId);
 
-        // Load the summary page:
-        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-        fieldsToMatch.put(TYPE_FIELDNAME, Collections.singletonList(TOPIC_SUMMARY_PAGE_TYPE));
-        if (null != summaryPageId) {
-            fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singletonList(summaryPageId));
-        }
-
         try {
+            // Load the summary page:
+            Content contentDOById = this.contentManager.getContentDOById(this.contentManager.getCurrentContentSHA(), summaryPageId);
+            ContentDTO contentDTOById = this.contentManager.getContentById(this.contentManager.getCurrentContentSHA(), summaryPageId);
+
+            if (!(contentDOById instanceof IsaacTopicSummaryPage && contentDTOById instanceof IsaacTopicSummaryPageDTO)) {
+                return SegueErrorResponse.getResourceNotFoundResponse(String.format(
+                        "Unable to locate topic summary page with id: %s", summaryPageId));
+            }
+            IsaacTopicSummaryPage topicSummaryDO = (IsaacTopicSummaryPage) contentDOById;
+            IsaacTopicSummaryPageDTO topicSummaryDTO = (IsaacTopicSummaryPageDTO) contentDTOById;
+
             AbstractSegueUserDTO user = userManager.getCurrentUser(httpServletRequest);
             Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts;
-            try {
-                userQuestionAttempts = questionManager.getQuestionAttemptsByUser(user);
-            } catch (SegueDatabaseException e) {
-                String message = "SegueDatabaseException whilst trying to retrieve user question attempt data";
-                log.error(message, e);
-                return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+
+            // Augment related questions with attempt information:
+            userQuestionAttempts = questionManager.getQuestionAttemptsByUser(user);
+            this.augmentContentWithRelatedContent(this.contentIndex, topicSummaryDTO, userQuestionAttempts);
+
+            // Augment linked gameboards using the list in the DO:
+            // FIXME: this requires loading both the DO and DTO separately, since augmenting things is hard right now.
+            ArrayList<GameboardDTO> linkedGameboards = new ArrayList<>();
+            for (String linkedGameboardId : topicSummaryDO.getLinkedGameboards()) {
+                try {
+                    GameboardDTO liteGameboard = this.gameManager.getLiteGameboard(linkedGameboardId);
+                    if (liteGameboard != null) {
+                        linkedGameboards.add(liteGameboard);
+                    } else {
+                        log.error(String.format("Unable to locate gameboard (%s) for topic summary page (%s)!",
+                                linkedGameboardId, topicId));
+                    }
+
+                } catch (SegueDatabaseException e) {
+                    log.info(String.format("Problem with retrieving gameboard: %s", linkedGameboardId));
+                }
             }
+            topicSummaryDTO.setLinkedGameboards(linkedGameboards);
 
-            Response result = this.findSingleResult(fieldsToMatch, userQuestionAttempts);
+            // Log the request:
+            ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
+                    .put(PAGE_ID_LOG_FIELDNAME, summaryPageId)
+                    .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
+            getLogManager().logEvent(user, httpServletRequest, IsaacLogType.VIEW_TOPIC_SUMMARY_PAGE, logEntry);
 
-            // If we have a topic summary, log the request:
-            Object resultEntity = result.getEntity();
-            if (resultEntity instanceof IsaacTopicSummaryPageDTO) {
-                IsaacTopicSummaryPageDTO topicSummaryPageDTO = (IsaacTopicSummaryPageDTO) resultEntity;
-
-                // Log the request:
-                ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
-                        .put(PAGE_ID_LOG_FIELDNAME, summaryPageId)
-                        .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
-                getLogManager().logEvent(user, httpServletRequest, IsaacLogType.VIEW_TOPIC_SUMMARY_PAGE, logEntry);
-
-            }
-
-            return Response.status(result.getStatus()).entity(resultEntity)
+            return Response.status(Status.OK).entity(topicSummaryDTO)
                     .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
         } catch (SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Database error while looking up user information.", e);
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
+        } catch (ContentManagerException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Failed to load topic summary.", e).toResponse();
         }
     }
     
