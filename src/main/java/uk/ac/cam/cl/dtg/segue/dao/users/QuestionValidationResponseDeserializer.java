@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,8 +16,6 @@
 package uk.ac.cam.cl.dtg.segue.dao.users;
 
 import java.io.IOException;
-
-import org.mongojack.internal.MongoJackModule;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -63,8 +61,6 @@ public class QuestionValidationResponseDeserializer extends JsonDeserializer<Que
             
             mapper = new ObjectMapper();
             mapper.registerModule(contentDeserializerModule);
-
-            MongoJackModule.configure(mapper);            
         }
     }
 

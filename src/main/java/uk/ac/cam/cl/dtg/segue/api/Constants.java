@@ -115,6 +115,7 @@ public final class Constants {
      * Constant representing the segue application mode. e.g. either debug or production
      */
     public static final String SEGUE_APP_ENVIRONMENT = "SEGUE_APP_ENVIRONMENT";
+    public static final String DEFAULT_LINUX_CONFIG_LOCATION = "/local/data/rutherford/conf/segue-config.properties";
 
     /**
      * Enum to describe types of server environment / profile.

@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2015 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,10 +16,6 @@
 package uk.ac.cam.cl.dtg.segue.dos;
 
 import java.util.Date;
-
-import org.mongojack.ObjectId;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * An object that represents a log event.
@@ -76,8 +72,6 @@ public class LogEvent {
      * 
      * @return the id
      */
-    @JsonProperty("_id")
-    @ObjectId
     public String getId() {
         return id;
     }
@@ -88,8 +82,6 @@ public class LogEvent {
      * @param id
      *            the id to set
      */
-    @JsonProperty("_id")
-    @ObjectId
     public void setId(final String id) {
         this.id = id;
     }
