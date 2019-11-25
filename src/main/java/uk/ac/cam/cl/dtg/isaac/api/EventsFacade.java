@@ -50,7 +50,6 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
-import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
@@ -496,8 +495,9 @@ public class EventsFacade extends AbstractIsaacFacade {
      */
     @GET
     @Path("{event_id}/bookings/download")
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces("text/csv")
     @GZIP
+
     @ApiOperation(value = "Download event attendance csv.")
     public Response getEventBookingCSV(@Context final HttpServletRequest request,
                                                    @PathParam("event_id") final String eventId) {
@@ -539,24 +539,29 @@ public class EventsFacade extends AbstractIsaacFacade {
                 RegisteredUserDTO resultRegisteredUser = this.userAccountManager.getUserDTOById(resultUser.getId());
                 Map<String, String> resultAdditionalInformation = booking.getAdditionalInformation();
                 BookingStatus resultBookingStatus = booking.getBookingStatus();
-                Date resultBookingUpdated = booking.getUpdated();
                 resultRow.add(resultUser.getGivenName() + " " + resultUser.getFamilyName());
                 resultRow.add(resultRegisteredUser.getEmail());
                 resultRow.add(resultRegisteredUser.getRole().toString());
                 resultRow.add(resultRegisteredUser.getSchoolId());
-//                resultRow.add(resultAdditionalInformation)
                 resultRow.add(resultBookingStatus.toString());
-                System.out.println(resultRow);
-                System.out.println(resultRegisteredUser);
+                resultRow.add(resultAdditionalInformation.get("yearGroup"));
+                resultRow.add(resultAdditionalInformation.get("jobTitle"));
+                resultRow.add(resultAdditionalInformation.get("medicalRequirements"));
+                resultRow.add(resultAdditionalInformation.get("accessibilityRequirements"));
+                resultRow.add(resultAdditionalInformation.get("emergencyName"));
+                resultRow.add(resultAdditionalInformation.get("emergencyNumber"));
                 Collections.addAll(resultRows, resultRow.toArray(new String[0]));
             }
 
+
             rows.add(totalsRow.toArray(new String[0]));
-            rows.add("Last Name,First Name".split(","));
+            rows.add(("Name,Email Address,Role,School Id,Booking Status,Year Group,Job Title," +
+                    "Medical/ Dietary Requirements,Accessibility Requirements,Emergency Name,Emergency Number").split(","));
             rows.addAll(resultRows);
             csvWriter.writeAll(rows);
             csvWriter.close();
 
+            headerBuilder.append(stringWriter.toString());
             return Response.ok(headerBuilder.toString())
                     .header("Content-Disposition", "attachment; filename=event_attendees.csv")
                     .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
