@@ -540,10 +540,11 @@ public class EventsFacade extends AbstractIsaacFacade {
                 Map<String, String> resultAdditionalInformation = booking.getAdditionalInformation();
                 BookingStatus resultBookingStatus = booking.getBookingStatus();
                 resultRow.add(resultUser.getGivenName() + " " + resultUser.getFamilyName());
-                resultRow.add(resultRegisteredUser.getEmail());
                 resultRow.add(resultRegisteredUser.getRole().toString());
                 resultRow.add(resultRegisteredUser.getSchoolId());
                 resultRow.add(resultBookingStatus.toString());
+                resultRow.add(booking.getBookingDate().toString());
+                resultRow.add(booking.getUpdated().toString());
                 resultRow.add(resultAdditionalInformation.get("yearGroup"));
                 resultRow.add(resultAdditionalInformation.get("jobTitle"));
                 resultRow.add(resultAdditionalInformation.get("medicalRequirements"));
@@ -555,7 +556,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
 
             rows.add(totalsRow.toArray(new String[0]));
-            rows.add(("Name,Email Address,Role,School Id,Booking Status,Year Group,Job Title," +
+            rows.add(("Name,Role,School Id,Booking Status,Booking Date,Updated Date,Year Group,Job Title," +
                     "Medical/ Dietary Requirements,Accessibility Requirements,Emergency Name,Emergency Number").split(","));
             rows.addAll(resultRows);
             csvWriter.writeAll(rows);
