@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,8 +17,6 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 
 import java.util.Date;
 
-import org.mongojack.ObjectId;
-
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -27,8 +25,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * This class is the Data Transfer Object used to store Assignments in the isaac CMS.
  */
 public class AssignmentDTO {
-    @ObjectId
-    @JsonProperty("_id")
     private Long id;
     private String gameboardId;
     private GameboardDTO gameboard;
@@ -75,9 +71,19 @@ public class AssignmentDTO {
      * Gets the id.
      * 
      * @return the id
+     * @deprecated use getId  - TODO need to remove _id from frontend
      */
     @JsonProperty("_id")
-    @ObjectId
+    @Deprecated
+    public Long getLegacyId() {
+        return getId();
+    }
+
+    /**
+     * Gets the id.
+     *
+     * @return the id
+     */
     public Long getId() {
         return id;
     }
@@ -86,10 +92,21 @@ public class AssignmentDTO {
      * Sets the id.
      * 
      * @param id
-     *            the id to set
+     *            the id to set.
+     * @deprecated use setId  - TODO need to remove _id from frontend
      */
     @JsonProperty("_id")
-    @ObjectId
+    @Deprecated
+    public void setLegacyId(final Long id) {
+        this.setId(id);
+    }
+
+    /**
+     * Sets the id.
+     *
+     * @param id
+     *            the id to set
+     */
     public void setId(final Long id) {
         this.id = id;
     }
@@ -206,16 +223,16 @@ public class AssignmentDTO {
     }
 
     /**
-     * get the due date of the assignment
-     * @return
+     * get the due date of the assignment.
+     * @return dueDate
      */
     public Date getDueDate() {
         return dueDate;
     }
 
     /**
-     * set the due date of an assignment
-     * @param dueDate
+     * set the due date of an assignment.
+     * @param dueDate - date due
      */
     public void setDueDate(Date dueDate) {
         this.dueDate = dueDate;

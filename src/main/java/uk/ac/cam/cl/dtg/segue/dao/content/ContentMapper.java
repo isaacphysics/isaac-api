@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,13 +21,11 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.api.client.util.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import com.mongodb.DBObject;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.converter.ConverterFactory;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
 import org.apache.commons.lang3.Validate;
-import org.mongojack.internal.MongoJackModule;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,11 +40,9 @@ import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.segue.dos.content.Item;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
-import uk.ac.cam.cl.dtg.segue.dos.users.AnonymousUser;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -146,40 +142,6 @@ public class ContentMapper {
             return JsonLoader.load(docJson, cls);
         } else {
             return JsonLoader.load(docJson, Content.class);
-        }
-    }
-
-    /**
-     * Map a DBObject into the appropriate Content DTO, without having to know what type it is.
-     * 
-     * It so happens that RestEasy will correctly serialize Content or any of its subtypes when it is provided with an
-     * object from this method (without having to do instanceof checks or anything).
-     * 
-     * @param obj
-     *            to the DBObject obj
-     * @return A content object or any subclass of Content or Null if the obj param is not provided.
-     */
-    public Content mapDBObjectToContentDO(final DBObject obj) {
-        Validate.notNull(obj);
-
-        // Create an ObjectMapper capable of deserializing mongo ObjectIDs
-        ObjectMapper contentMapper = MongoJackModule.configure(new ObjectMapper());
-
-        // Find out what type label the JSON object has
-        String labelledType = (String) obj.get("type");
-
-        // Lookup the matching POJO class
-        Class<? extends Content> contentClass = jsonTypes.get(labelledType);
-
-        if (null == contentClass) {
-            // We haven't registered this type. Deserialize into the Content
-            // base class.
-
-            return contentMapper.convertValue(obj, Content.class);
-        } else {
-
-            // We have a registered POJO class. Deserialize into it.
-            return contentMapper.convertValue(obj, contentClass);
         }
     }
 

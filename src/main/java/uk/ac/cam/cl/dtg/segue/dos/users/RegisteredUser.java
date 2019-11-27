@@ -25,7 +25,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * 
  */
 public class RegisteredUser extends AbstractSegueUser {
-    @JsonProperty("_id")
     private Long id;
 
     private String givenName;
@@ -109,13 +108,24 @@ public class RegisteredUser extends AbstractSegueUser {
     /**
      * Gets the id (integer form).
      * @return the id
+     * @deprecated use getId
      */
     @JsonProperty("_id")
+    @Deprecated
     //TODO: Deprecate all usage of old mongo ids e.g. _id
+    public Long getLegacyId() {
+        return this.getId();
+    }
+
+
+    /**
+     * Gets the id (integer form).
+     * @return the id
+     */
+    @JsonProperty("id")
     public Long getId() {
         return id;
     }
-    
 
     /**
      * Sets the id.
