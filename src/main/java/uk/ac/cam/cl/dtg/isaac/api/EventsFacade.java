@@ -253,7 +253,9 @@ public class EventsFacade extends AbstractIsaacFacade {
      * @throws SegueDatabaseException
      * @throws ContentManagerException
      */
-    private ResultsWrapper<ContentDTO> getEventsBookedByUser(final HttpServletRequest request, final List<String> tags, final RegisteredUserDTO currentUser) throws SegueDatabaseException, ContentManagerException {
+    private ResultsWrapper<ContentDTO> getEventsBookedByUser(final HttpServletRequest request, final List<String> tags,
+                                                             final RegisteredUserDTO currentUser)
+            throws SegueDatabaseException, ContentManagerException {
         List<ContentDTO> filteredResults = Lists.newArrayList();
 
         Map<String, BookingStatus> userBookingMap = this.bookingManager.getAllEventStatesForUser(currentUser.getId());
@@ -395,7 +397,8 @@ public class EventsFacade extends AbstractIsaacFacade {
     @ApiOperation(value = "Move a user from an event waiting list to a confirmed booking.")
     public final Response promoteUserFromWaitingList(@Context final HttpServletRequest request,
                                                      @PathParam("event_id") final String eventId,
-                                                     @PathParam("user_id") final Long userId, final Map<String, String> additionalInformation) {
+                                                     @PathParam("user_id") final Long userId,
+                                                     final Map<String, String> additionalInformation) {
         try {
             RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(request);
             RegisteredUserDTO userOfInterest = this.userManager.getUserDTOById(userId);
@@ -507,7 +510,9 @@ public class EventsFacade extends AbstractIsaacFacade {
     @GZIP
     @ApiOperation(value = "Create an event booking for a user.")
     public final Response createBookingForGivenUser(@Context final HttpServletRequest request,
-            @PathParam("event_id") final String eventId, @PathParam("user_id") final Long userId, final Map<String, String> additionalInformation) {
+                                                    @PathParam("event_id") final String eventId,
+                                                    @PathParam("user_id") final Long userId,
+                                                    final Map<String, String> additionalInformation) {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
             RegisteredUserDTO bookedUser = userManager.getUserDTOById(userId);
@@ -567,7 +572,8 @@ public class EventsFacade extends AbstractIsaacFacade {
     @GZIP
     @ApiOperation(value = "Create an event booking for the current user.")
     public final Response createBookingForMe(@Context final HttpServletRequest request,
-                                             @PathParam("event_id") final String eventId, final Map<String, String> additionalInformation) {
+                                             @PathParam("event_id") final String eventId,
+                                             final Map<String, String> additionalInformation) {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
@@ -638,7 +644,8 @@ public class EventsFacade extends AbstractIsaacFacade {
     @GZIP
     @ApiOperation(value = "Add the current user to an event waiting list.")
     public final Response addMeToWaitingList(@Context final HttpServletRequest request,
-                                             @PathParam("event_id") final String eventId, final Map<String, String> additionalInformation) {
+                                             @PathParam("event_id") final String eventId,
+                                             final Map<String, String> additionalInformation) {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
@@ -719,7 +726,8 @@ public class EventsFacade extends AbstractIsaacFacade {
     @GZIP
     @ApiOperation(value = "Cancel a user's booking on an event.")
     public final Response cancelBooking(@Context final HttpServletRequest request,
-                                        @PathParam("event_id") final String eventId, @PathParam("user_id") final Long userId) {
+                                        @PathParam("event_id") final String eventId,
+                                        @PathParam("user_id") final Long userId) {
         try {
             IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
 
@@ -793,7 +801,8 @@ public class EventsFacade extends AbstractIsaacFacade {
     @GZIP
     @ApiOperation(value = "Resend an event booking confirmation to a user.")
     public final Response resendEventEmail(@Context final HttpServletRequest request,
-                                        @PathParam("event_id") final String eventId, @PathParam("user_id") final Long userId) {
+                                           @PathParam("event_id") final String eventId,
+                                           @PathParam("user_id") final Long userId) {
         try {
             IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
             RegisteredUserDTO bookedUser = this.userManager.getUserDTOById(userId);
@@ -844,7 +853,8 @@ public class EventsFacade extends AbstractIsaacFacade {
     @ApiOperation(value = "Erase a user's booking on an event.",
                   notes = "This method removes the booking entirely, rather than recording the booking as cancelled.")
     public final Response deleteBooking(@Context final HttpServletRequest request,
-            @PathParam("event_id") final String eventId, @PathParam("user_id") final Long userId) {
+                                        @PathParam("event_id") final String eventId,
+                                        @PathParam("user_id") final Long userId) {
         try {
             if (!isUserAnAdmin(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an Admin user to access this endpoint.")
@@ -969,9 +979,9 @@ public class EventsFacade extends AbstractIsaacFacade {
     @GZIP
     @ApiOperation(value = "List summary information of events matching the provided criteria.")
     public final Response getEventOverviews(@Context final HttpServletRequest request,
-                                    @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
-                                    @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit,
-                                    @QueryParam("filter") final String filter) {
+                                            @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
+                                            @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit,
+                                            @QueryParam("filter") final String filter) {
         Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 
         Integer newLimit = null;
@@ -1193,7 +1203,8 @@ public class EventsFacade extends AbstractIsaacFacade {
      * @throws ContentManagerException - if there is a problem finding the event information
      * @throws SegueDatabaseException if there is a database error.
 	 */
-    private IsaacEventPageDTO getEventDTOById(final HttpServletRequest request, final String id) throws ContentManagerException, SegueDatabaseException {
+    private IsaacEventPageDTO getEventDTOById(final HttpServletRequest request, final String id)
+            throws ContentManagerException, SegueDatabaseException {
 
         ContentDTO c = this.contentManager.getContentById(this.contentManager.getCurrentContentSHA(), id);
 
@@ -1229,7 +1240,9 @@ public class EventsFacade extends AbstractIsaacFacade {
      * @return an augmented IsaacEventPageDTO.
      * @throws SegueDatabaseException
      */
-    private IsaacEventPageDTO augmentEventWithBookingInformation(final HttpServletRequest request, final ContentDTO possibleEvent) throws SegueDatabaseException {
+    private IsaacEventPageDTO augmentEventWithBookingInformation(final HttpServletRequest request,
+                                                                 final ContentDTO possibleEvent)
+            throws SegueDatabaseException {
         if (possibleEvent instanceof IsaacEventPageDTO) {
             IsaacEventPageDTO page = (IsaacEventPageDTO) possibleEvent;
 
