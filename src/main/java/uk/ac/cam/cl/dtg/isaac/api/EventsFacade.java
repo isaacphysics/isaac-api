@@ -27,12 +27,7 @@ import io.swagger.annotations.ApiOperation;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateBookingException;
-import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
-import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingUpdateException;
-import uk.ac.cam.cl.dtg.isaac.api.managers.EventDeadlineException;
-import uk.ac.cam.cl.dtg.isaac.api.managers.EventIsFullException;
-import uk.ac.cam.cl.dtg.isaac.api.managers.EventIsNotFullException;
+import uk.ac.cam.cl.dtg.isaac.api.managers.*;
 import uk.ac.cam.cl.dtg.isaac.dos.EventStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
@@ -50,7 +45,10 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
+import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
+import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
@@ -61,14 +59,7 @@ import uk.ac.cam.cl.dtg.segue.search.DateRangeFilterInstruction;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -97,6 +88,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     private final UserBadgeManager userBadgeManager;
     private final UserAssociationManager userAssociationManager;
     private final UserAccountManager userAccountManager;
+    private final SchoolListReader schoolListReader;
 
     /**
      * EventsFacade.
@@ -119,7 +111,8 @@ public class EventsFacade extends AbstractIsaacFacade {
                         @Named(Constants.CONTENT_INDEX) final String contentIndex,
                         final UserBadgeManager userBadgeManager,
                         final UserAssociationManager userAssociationManager,
-                        final UserAccountManager userAccountManager) {
+                        final UserAccountManager userAccountManager,
+                        final SchoolListReader schoolListReader) {
         super(properties, logManager);
         this.bookingManager = bookingManager;
         this.userManager = userManager;
@@ -128,6 +121,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         this.userBadgeManager = userBadgeManager;
         this.userAssociationManager = userAssociationManager;
         this.userAccountManager = userAccountManager;
+        this.schoolListReader = schoolListReader;
     }
 
     /**
@@ -537,11 +531,21 @@ public class EventsFacade extends AbstractIsaacFacade {
                 ArrayList<String> resultRow = Lists.newArrayList();
                 UserSummaryDTO resultUser = booking.getUserBooked();
                 RegisteredUserDTO resultRegisteredUser = this.userAccountManager.getUserDTOById(resultUser.getId());
+                String schoolId = resultRegisteredUser.getSchoolId();
                 Map<String, String> resultAdditionalInformation = booking.getAdditionalInformation();
                 BookingStatus resultBookingStatus = booking.getBookingStatus();
                 resultRow.add(resultUser.getGivenName() + " " + resultUser.getFamilyName());
                 resultRow.add(resultRegisteredUser.getRole().toString());
-                resultRow.add(resultRegisteredUser.getSchoolId());
+                if (schoolId != null) {
+                    School school = schoolListReader.findSchoolById(schoolId);
+                    if (null != school) {
+                        resultRow.add(school.getName());
+                    } else {
+                        resultRow.add(schoolId);
+                    }
+                } else {
+                    resultRow.add(resultRegisteredUser.getSchoolOther());
+                }
                 resultRow.add(resultBookingStatus.toString());
                 resultRow.add(booking.getBookingDate().toString());
                 resultRow.add(booking.getUpdated().toString());
@@ -581,7 +585,10 @@ public class EventsFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Content Database error occurred while trying to retrieve event booking information.")
                     .toResponse();
-        }
+        } catch (UnableToIndexSchoolsException e) {
+        return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while looking up schools", e)
+                .toResponse();
+    }
     }
 
     /**
