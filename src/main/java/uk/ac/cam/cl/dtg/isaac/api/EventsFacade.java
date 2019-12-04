@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.sun.xml.bind.v2.TODO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.jboss.resteasy.annotations.GZIP;
@@ -38,6 +39,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
+import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
@@ -49,9 +51,11 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
@@ -78,6 +82,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -93,6 +98,8 @@ public class EventsFacade extends AbstractIsaacFacade {
     private final EventBookingManager bookingManager;
 
     private final UserAccountManager userManager;
+
+    private final GroupManager groupManager;
 
     private final IContentManager contentManager;
     private final String contentIndex;
@@ -119,7 +126,8 @@ public class EventsFacade extends AbstractIsaacFacade {
                         final UserAccountManager userManager, final IContentManager contentManager,
                         @Named(Constants.CONTENT_INDEX) final String contentIndex,
                         final UserBadgeManager userBadgeManager,
-                        final UserAssociationManager userAssociationManager) {
+                        final UserAssociationManager userAssociationManager,
+                        final GroupManager groupManager) {
         super(properties, logManager);
         this.bookingManager = bookingManager;
         this.userManager = userManager;
@@ -127,6 +135,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         this.contentIndex = contentIndex;
         this.userBadgeManager = userBadgeManager;
         this.userAssociationManager = userAssociationManager;
+        this.groupManager = groupManager;
     }
 
     /**
@@ -486,6 +495,47 @@ public class EventsFacade extends AbstractIsaacFacade {
             String message = "Database error occurred while trying to retrieve all event booking information.";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        }
+    }
+
+    /** gets a list of event bookings based on a given group id.
+     *
+     */
+    @GET
+    @Path("{event_id}/bookings/for_group/{group_id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @ApiOperation(value = "List event bookings for a specific event and group.")
+    public final Response getEventBookingForGivenGroup(@Context final HttpServletRequest request,
+                                                       @PathParam("event_id") final String eventId,
+                                                       @PathParam("group_id") final String groupId) {
+        try {
+            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
+            if (!Arrays.asList(Role.TEACHER, Role.EVENT_LEADER, Role.EVENT_MANAGER, Role.ADMIN).contains(currentUser.getRole())) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
+            UserGroupDTO group = groupManager.getGroupById(Long.parseLong(groupId));
+            // TODO: Might make sense to check whether the currentUser is allowed to interact with the group
+
+            List<Long> groupMemberIds = groupManager.getUsersInGroup(group)
+                    .stream().map(RegisteredUserDTO::getId)
+                    .collect(Collectors.toList());
+
+            // Filter eventBookings based on whether the booked user is a member of the given group
+            List<EventBookingDTO> eventBookings = bookingManager.getBookingByEventId(eventId)
+                    .stream().filter(booking -> groupMemberIds.contains(booking.getUserBooked().getId()))
+                    .collect(Collectors.toList());
+
+            // Event leaders are only allowed to see the bookings of connected users
+            if (Role.EVENT_LEADER.equals(currentUser.getRole())) {
+                eventBookings = userAssociationManager.filterUnassociatedRecords(
+                        currentUser, eventBookings, booking -> booking.getUserBooked().getId());
+            }
+
+            return Response.ok(eventBookings).build();
+        } catch (Exception e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, e.getMessage()).toResponse();
         }
     }
 
