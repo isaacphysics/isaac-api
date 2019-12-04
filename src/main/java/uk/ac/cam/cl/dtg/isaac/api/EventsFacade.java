@@ -535,6 +535,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             return Response.ok(eventBookings).build();
         } catch (Exception e) {
+            // TODO: DON'T DO THIS. DO IT RIGHT.
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, e.getMessage()).toResponse();
         }
     }
