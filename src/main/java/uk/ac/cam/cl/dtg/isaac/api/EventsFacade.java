@@ -21,7 +21,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import com.sun.xml.bind.v2.TODO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.jboss.resteasy.annotations.GZIP;
@@ -51,7 +50,6 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
-import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
@@ -532,6 +530,8 @@ public class EventsFacade extends AbstractIsaacFacade {
                 eventBookings = userAssociationManager.filterUnassociatedRecords(
                         currentUser, eventBookings, booking -> booking.getUserBooked().getId());
             }
+
+            // TODO: This seems to return UserSummaryWithEmailAddressDTOs even when the request is done as a TEACHER.
 
             return Response.ok(eventBookings).build();
         } catch (Exception e) {
