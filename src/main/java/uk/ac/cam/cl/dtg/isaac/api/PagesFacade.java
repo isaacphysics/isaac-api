@@ -514,18 +514,20 @@ public class PagesFacade extends AbstractIsaacFacade {
             // Augment linked gameboards using the list in the DO:
             // FIXME: this requires loading both the DO and DTO separately, since augmenting things is hard right now.
             ArrayList<GameboardDTO> linkedGameboards = new ArrayList<>();
-            for (String linkedGameboardId : topicSummaryDO.getLinkedGameboards()) {
-                try {
-                    GameboardDTO liteGameboard = this.gameManager.getLiteGameboard(linkedGameboardId);
-                    if (liteGameboard != null) {
-                        linkedGameboards.add(liteGameboard);
-                    } else {
-                        log.error(String.format("Unable to locate gameboard (%s) for topic summary page (%s)!",
-                                linkedGameboardId, topicId));
-                    }
+            if (null != topicSummaryDO.getLinkedGameboards()) {
+                for (String linkedGameboardId : topicSummaryDO.getLinkedGameboards()) {
+                    try {
+                        GameboardDTO liteGameboard = this.gameManager.getLiteGameboard(linkedGameboardId);
+                        if (liteGameboard != null) {
+                            linkedGameboards.add(liteGameboard);
+                        } else {
+                            log.error(String.format("Unable to locate gameboard (%s) for topic summary page (%s)!",
+                                    linkedGameboardId, topicId));
+                        }
 
-                } catch (SegueDatabaseException e) {
-                    log.info(String.format("Problem with retrieving gameboard: %s", linkedGameboardId));
+                    } catch (SegueDatabaseException e) {
+                        log.info(String.format("Problem with retrieving gameboard: %s", linkedGameboardId));
+                    }
                 }
             }
             topicSummaryDTO.setLinkedGameboards(linkedGameboards);
