@@ -20,6 +20,8 @@ import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.segue.dos.content.SeguePage;
 
+import java.util.List;
+
 /**
  * Isaac Topic Summary Page DO.
  *
@@ -30,4 +32,23 @@ import uk.ac.cam.cl.dtg.segue.dos.content.SeguePage;
 @DTOMapping(IsaacTopicSummaryPageDTO.class)
 @JsonContentType("isaacTopicSummaryPage")
 public class IsaacTopicSummaryPage extends SeguePage {
+
+    private List<String> linkedGameboards;
+
+    /**
+     * Gets the list of linked gameboard IDs.
+     * @return the linked gameboard IDs
+     */
+    public List<String> getLinkedGameboards() {
+        return linkedGameboards;
+    }
+
+    /**
+     * Sets the list of linked gameboard IDs.
+     * @param linkedGameboards the linked gameboard IDs to set
+     */
+    public void setLinkedGameboards(final List<String> linkedGameboards) {
+        this.linkedGameboards = linkedGameboards;
+    }
+
 }
