@@ -188,7 +188,7 @@ public class EventBookingPersistenceManager {
         try {
             final EventBooking bookingByEventAndUser = dao.findBookingByEventAndUser(eventId, userId);
             List<BookingStatus> bookedStatuses = Arrays.asList(
-                    BookingStatus.CONFIRMED, BookingStatus.ATTENDED, BookingStatus.ABSENT);
+                    BookingStatus.CONFIRMED, BookingStatus.ATTENDED, BookingStatus.ABSENT, BookingStatus.RESERVED);
             return bookingByEventAndUser != null && bookedStatuses.contains(bookingByEventAndUser.getBookingStatus());
         } catch (ResourceNotFoundException e) {
             return false;

@@ -41,6 +41,7 @@ import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenExcept
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
+import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -373,6 +374,80 @@ public class EventBookingManager {
             } catch (ContentManagerException e) {
                 log.error(String.format("Unable to send welcome email (%s) to user (%s)", event.getId(), user
                         .getEmail()), e);
+            }
+
+            // auto add them to the group and grant the owner permission
+            if (event.getIsaacGroupToken() != null && !event.getIsaacGroupToken().isEmpty()) {
+                try {
+                    this.userAssociationManager.createAssociationWithToken(event.getIsaacGroupToken(), user);
+                } catch (InvalidUserAssociationTokenException e) {
+                    log.error(String.format("Unable to auto add user (%s) using token (%s) as the token is invalid.",
+                            user.getEmail(), event.getIsaacGroupToken()));
+                }
+            }
+
+            return booking;
+        } finally {
+            // release lock
+            this.bookingPersistenceManager.releaseDistributedLock(event.getId());
+        }
+    }
+
+    /**
+     * Request a reservation for the given user on the given event.
+     * This method will allow teachers and group managers to "soft-book" students providing they do not exceed their
+     * allocated limit.
+     * There is no additional event information passed now, this can be filled in later when actual bookings are
+     * requested.
+     *
+     * @param event - to reserve the user on
+     * @param user  - to reserve on the event
+     * @return confirmation of reservation
+     */
+    public EventBookingDTO requestReservation(final IsaacEventPageDTO event, final RegisteredUserDTO user)
+            throws SegueDatabaseException, DuplicateBookingException, EventDeadlineException,
+                   EmailMustBeVerifiedException, EventIsFullException {
+        this.ensureValidBooking(event, user, true);
+
+        try {
+            // Obtain an exclusive database lock to lock the event
+            this.bookingPersistenceManager.acquireDistributedLock(event.getId());
+
+            // is there space on the event? Teachers don't count for student events.
+            // work out capacity information for the event at this moment in time.
+            // TODO: If there is no space, the whole batch should fail. Throw an exception and handle in EventsFacade.
+            this.ensureCapacity(event, user);
+
+            // attempt to book them on the event
+            EventBookingDTO booking;
+
+            // attempt to book them on the event
+            if (this.hasBookingWithStatus(event.getId(), user.getId(), BookingStatus.CANCELLED)) {
+                // if the user has previously cancelled we should let them book again.
+                booking = this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(),
+                        BookingStatus.RESERVED, null);
+            } else {
+                booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(),
+                        BookingStatus.RESERVED, null);
+            }
+
+            try {
+                // TODO: Use the correct email template here.
+                emailManager.sendTemplatedEmailToUser(user,
+                        emailManager.getEmailTemplateDTO("email-event-booking-confirmed"),
+                        new ImmutableMap.Builder<String, Object>()
+                                .put("contactUsURL", generateEventContactUsURL(event))
+                                .put("authorizationLink", String.format("https://%s/account?authToken=%s",
+                                        propertiesLoader.getProperty(HOST_NAME), event.getIsaacGroupToken()))
+                                .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
+                                .put("event", event)
+                                .build(),
+                        EmailType.SYSTEM,
+                        Collections.singletonList(generateEventICSFile(event, booking)));
+
+            } catch (ContentManagerException e) {
+                log.error(String.format("Unable to send welcome email (%s) to user (%s)",
+                                        event.getId(), user.getEmail()), e);
             }
 
             // auto add them to the group and grant the owner permission

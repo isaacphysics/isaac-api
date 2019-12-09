@@ -297,7 +297,7 @@ public class IsaacEventPageDTO extends ContentDTO {
      * @return the numberOfPlaces
      */
     public Integer getNumberOfPlaces() {
-        return numberOfPlaces;
+        return 3; //numberOfPlaces;
     }
 
     /**

@@ -73,13 +73,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
@@ -605,6 +599,71 @@ public class EventsFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST,
                 "User already booked on this event. Unable to create a duplicate booking.")
                 .toResponse();
+        }
+    }
+
+    /**
+     * Add event reservations for the given users.
+     *
+     * @param request
+     *            - so we can determine who is making the request
+     * @param eventId
+     *            - event id
+     * @param userIds
+     *            - the users to reserve spaces for
+     * @return the list of bookings/reservations
+     */
+    @POST
+    @Path("{event_id}/reserve")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Add event reservations for the given users.")
+    public final Response createReservationsForGivenUsers(@Context final HttpServletRequest request,
+                                                          @PathParam("event_id") final String eventId,
+                                                          final List<Long> userIds) {
+        try {
+            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
+            if (!Arrays.asList(Role.TEACHER, Role.EVENT_LEADER, Role.EVENT_MANAGER, Role.ADMIN).contains(currentUser.getRole())) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
+            IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
+
+//            if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
+//                return SegueErrorResponse.getIncorrectRoleResponse();
+//            }
+
+            List<Long> bookableIds = new ArrayList<>();
+            List<Long> unbookableIds = new ArrayList<>();
+            for (Long userId : userIds) {
+                if (bookingManager.isUserBooked(eventId, userId)) {
+                    unbookableIds.add(userId);
+                } else {
+                    bookableIds.add(userId);
+                }
+            }
+            if (unbookableIds.size() > 0) {
+                return new SegueErrorResponse(Status.BAD_REQUEST,
+                        "The following user IDs are already booked or reserved on this event." + unbookableIds)
+                        .toResponse();
+            }
+
+            List<EventBookingDTO> bookings = new ArrayList<>();
+            for (Long userId : bookableIds) {
+                RegisteredUserDTO bookedUser = userManager.getUserDTOById(userId);
+                bookings.add(bookingManager.requestReservation(event, bookedUser));
+            }
+            this.getLogManager().logEvent(currentUser, request,
+                    SegueLogType.EVENT_RESERVATION_CREATED,
+                    ImmutableMap.of(
+                            EVENT_ID_FKEY_FIELDNAME, event.getId(),
+                            USER_ID_FKEY_FIELDNAME, currentUser.getId(),
+                            BOOKING_STATUS_FIELDNAME, BookingStatus.RESERVED.toString()
+                    ));
+
+            return Response.ok(bookings).build();
+        } catch (Exception e) {
+            // TODO: DON'T DO THIS. DO IT RIGHT.
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, e.getMessage()).toResponse();
         }
     }
 
