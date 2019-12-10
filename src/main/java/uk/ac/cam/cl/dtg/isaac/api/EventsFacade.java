@@ -73,7 +73,14 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import java.util.*;
+import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
@@ -620,19 +627,22 @@ public class EventsFacade extends AbstractIsaacFacade {
     public final Response createReservationsForGivenUsers(@Context final HttpServletRequest request,
                                                           @PathParam("event_id") final String eventId,
                                                           final List<Long> userIds) {
+        RegisteredUserDTO currentUser;
+        IsaacEventPageDTO event;
+        List<Long> bookableIds;
         try {
-            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
+            currentUser = userManager.getCurrentRegisteredUser(request);
             if (!Arrays.asList(Role.TEACHER, Role.EVENT_LEADER, Role.EVENT_MANAGER, Role.ADMIN).contains(currentUser.getRole())) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
+            event = this.getEventDTOById(request, eventId);
 
-            IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
+            // TODO: Make sure this makes sense, adapt it, or remove it
+            /* if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            } */
 
-//            if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
-//                return SegueErrorResponse.getIncorrectRoleResponse();
-//            }
-
-            List<Long> bookableIds = new ArrayList<>();
+            bookableIds = new ArrayList<>();
             List<Long> unbookableIds = new ArrayList<>();
             for (Long userId : userIds) {
                 if (bookingManager.isUserBooked(eventId, userId)) {
@@ -646,24 +656,58 @@ public class EventsFacade extends AbstractIsaacFacade {
                         "The following user IDs are already booked or reserved on this event." + unbookableIds)
                         .toResponse();
             }
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            String errorMsg = "Database error occurred while trying to reserve space for a user onto an event.";
+            log.error(errorMsg, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
+        } catch (ContentManagerException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Content Database error occurred while trying to retrieve all event booking information.")
+                    .toResponse();
+        }
 
-            List<EventBookingDTO> bookings = new ArrayList<>();
-            for (Long userId : bookableIds) {
-                RegisteredUserDTO bookedUser = userManager.getUserDTOById(userId);
-                bookings.add(bookingManager.requestReservation(event, bookedUser));
+        try {
+            // This would be neater with streams and lambdas, but handling exceptions in lambdas is ugly.
+            List<RegisteredUserDTO> usersToBook = new ArrayList<>();
+            for (Long bookableId : bookableIds) {
+                RegisteredUserDTO userDTOById = userManager.getUserDTOById(bookableId);
+                usersToBook.add(userDTOById);
             }
+            List<EventBookingDTO> bookings = bookingManager.requestReservations(event, usersToBook);
             this.getLogManager().logEvent(currentUser, request,
-                    SegueLogType.EVENT_RESERVATION_CREATED,
+                    SegueLogType.EVENT_RESERVATIONS_CREATED,
                     ImmutableMap.of(
                             EVENT_ID_FKEY_FIELDNAME, event.getId(),
                             USER_ID_FKEY_FIELDNAME, currentUser.getId(),
+                            USER_ID_LIST_FKEY_FIELDNAME, usersToBook,
                             BOOKING_STATUS_FIELDNAME, BookingStatus.RESERVED.toString()
                     ));
-
             return Response.ok(bookings).build();
-        } catch (Exception e) {
-            // TODO: DON'T DO THIS. DO IT RIGHT.
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, e.getMessage()).toResponse();
+        } catch (EventIsFullException e) {
+            // TODO: Return the number of available spaces maybe?
+            return new SegueErrorResponse(Status.CONFLICT,
+                    "There are not enough spaces available for this event. Please try again with fewer users.")
+                    .toResponse();
+        } catch (EventDeadlineException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                    "The booking deadline for this event has passed. No more bookings or reservations are being accepted.")
+                    .toResponse();
+        } catch (DuplicateBookingException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                    "One of the users requested is already booked or reserved on this event. Unable to create a duplicate booking.")
+                    .toResponse();
+        } catch (NoUserException e) {
+            return SegueErrorResponse.getResourceNotFoundResponse("Unable to locate one of the users specified.");
+        } catch (SegueDatabaseException e) {
+            String errorMsg = "Database error occurred while trying to reserve users onto an event.";
+            log.error(errorMsg, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
+        } catch (EmailMustBeVerifiedException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                    "All users must have a verified email address before they can be reserved on this event.")
+                    .toResponse();
         }
     }
 

@@ -41,7 +41,6 @@ import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenExcept
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
-import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -49,7 +48,13 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.*;
+import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Collections;
 import java.text.DateFormat;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -394,73 +399,93 @@ public class EventBookingManager {
     }
 
     /**
-     * Request a reservation for the given user on the given event.
+     * Request a reservation for the given batch of users on the given event.
      * This method will allow teachers and group managers to "soft-book" students providing they do not exceed their
      * allocated limit.
      * There is no additional event information passed now, this can be filled in later when actual bookings are
      * requested.
      *
      * @param event - to reserve the user on
-     * @param user  - to reserve on the event
+     * @param users - to reserve on the event
      * @return confirmation of reservation
      */
-    public EventBookingDTO requestReservation(final IsaacEventPageDTO event, final RegisteredUserDTO user)
-            throws SegueDatabaseException, DuplicateBookingException, EventDeadlineException,
-                   EmailMustBeVerifiedException, EventIsFullException {
-        this.ensureValidBooking(event, user, true);
+    public List<EventBookingDTO> requestReservations(final IsaacEventPageDTO event, final List<RegisteredUserDTO> users)
+            throws EventDeadlineException, EmailMustBeVerifiedException,
+            DuplicateBookingException, SegueDatabaseException, EventIsFullException {
 
+        // TODO: Is it wise to do this before acquiring a database lock?
+        for (RegisteredUserDTO user : users) {
+            this.ensureValidBooking(event, user, true);
+        }
+
+        List<EventBookingDTO> reservations = new ArrayList<>();
         try {
             // Obtain an exclusive database lock to lock the event
             this.bookingPersistenceManager.acquireDistributedLock(event.getId());
 
             // is there space on the event? Teachers don't count for student events.
             // work out capacity information for the event at this moment in time.
-            // TODO: If there is no space, the whole batch should fail. Throw an exception and handle in EventsFacade.
-            this.ensureCapacity(event, user);
+            // If there is no space, no reservations are made. Throw an exception and handle in EventsFacade.
+            this.ensureCapacity(event, users);
 
-            // attempt to book them on the event
-            EventBookingDTO booking;
+            // IMPORTANT: Any non-ignorable exception past this point must roll back any reservation made thus far.
+            for (RegisteredUserDTO user : users) {
+                // attempt to book them on the event
+                EventBookingDTO reservation;
 
-            // attempt to book them on the event
-            if (this.hasBookingWithStatus(event.getId(), user.getId(), BookingStatus.CANCELLED)) {
-                // if the user has previously cancelled we should let them book again.
-                booking = this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(),
-                        BookingStatus.RESERVED, null);
-            } else {
-                booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(),
-                        BookingStatus.RESERVED, null);
-            }
+                // attempt to book them on the event
+                if (this.hasBookingWithStatus(event.getId(), user.getId(), BookingStatus.CANCELLED)) {
+                    // if the user has previously cancelled we should let them book again.
+                    reservation = this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(),
+                            BookingStatus.RESERVED, null);
+                } else {
+                    reservation = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(),
+                            BookingStatus.RESERVED, null);
+                }
+                reservations.add(reservation);
 
-            try {
-                // TODO: Use the correct email template here.
-                emailManager.sendTemplatedEmailToUser(user,
-                        emailManager.getEmailTemplateDTO("email-event-booking-confirmed"),
-                        new ImmutableMap.Builder<String, Object>()
-                                .put("contactUsURL", generateEventContactUsURL(event))
-                                .put("authorizationLink", String.format("https://%s/account?authToken=%s",
-                                        propertiesLoader.getProperty(HOST_NAME), event.getIsaacGroupToken()))
-                                .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
-                                .put("event", event)
-                                .build(),
-                        EmailType.SYSTEM,
-                        Collections.singletonList(generateEventICSFile(event, booking)));
-
-            } catch (ContentManagerException e) {
-                log.error(String.format("Unable to send welcome email (%s) to user (%s)",
-                                        event.getId(), user.getEmail()), e);
-            }
-
-            // auto add them to the group and grant the owner permission
-            if (event.getIsaacGroupToken() != null && !event.getIsaacGroupToken().isEmpty()) {
                 try {
-                    this.userAssociationManager.createAssociationWithToken(event.getIsaacGroupToken(), user);
-                } catch (InvalidUserAssociationTokenException e) {
-                    log.error(String.format("Unable to auto add user (%s) using token (%s) as the token is invalid.",
-                            user.getEmail(), event.getIsaacGroupToken()));
+                    // TODO: Use the correct email template here.
+                    emailManager.sendTemplatedEmailToUser(user,
+                            emailManager.getEmailTemplateDTO("email-event-booking-confirmed"),
+                            new ImmutableMap.Builder<String, Object>()
+                                    .put("contactUsURL", generateEventContactUsURL(event))
+                                    .put("authorizationLink", String.format("https://%s/account?authToken=%s",
+                                            propertiesLoader.getProperty(HOST_NAME), event.getIsaacGroupToken()))
+                                    .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
+                                    .put("event", event)
+                                    .build(),
+                            EmailType.SYSTEM,
+                            Collections.singletonList(generateEventICSFile(event, reservation)));
+
+                } catch (SegueDatabaseException | ContentManagerException e) {
+                    log.error(String.format("Unable to send welcome email (%s) to user (%s)",
+                            event.getId(), user.getEmail()), e);
+                }
+
+                // auto add them to the group and grant the owner permission
+                if (event.getIsaacGroupToken() != null && !event.getIsaacGroupToken().isEmpty()) {
+                    try {
+                        this.userAssociationManager.createAssociationWithToken(event.getIsaacGroupToken(), user);
+                    } catch (InvalidUserAssociationTokenException e) {
+                        log.error(String.format("Unable to auto add user (%s) using token (%s) as the token is invalid.",
+                                user.getEmail(), event.getIsaacGroupToken()));
+                    }
                 }
             }
+            return reservations;
 
-            return booking;
+        } catch (EventIsFullException | SegueDatabaseException e) {
+            for (EventBookingDTO reservation : reservations) {
+                try {
+                    bookingPersistenceManager.deleteBooking(event.getId(), reservation.getUserBooked().getId());
+                } catch (SegueDatabaseException f) {
+                    // Tough luck?
+                    log.error(String.format("Unable to unroll reservation (%s) on event (%s)",
+                            reservation, event), f);
+                }
+            }
+            throw e;
         } finally {
             // release lock
             this.bookingPersistenceManager.releaseDistributedLock(event.getId());
@@ -927,6 +952,29 @@ public class EventBookingManager {
                     || (!isStudentEvent && numberOfPlaces <= 0)) {
                 throw new EventIsFullException(String.format("Unable to book user (%s) onto event (%s) as it is full"
                         + ".", user.getEmail(), event.getId()));
+            }
+        }
+    }
+
+    /**
+     * Helper method to ensure a batch can be booked onto an event without violating space restrictions on the event.
+     * <p>
+     * If it does an exception will be thrown if a new booking wouldn't no exception will be thrown.
+     *
+     * @param event the event the user wants to book on to
+     * @param users  the users who are trying to be booked onto the event.
+     * @throws SegueDatabaseException - if an error occurs
+     * @throws EventIsFullException   - if the event is full according to the event rules established.
+     */
+    private void ensureCapacity(final IsaacEventPageDTO event, final List<RegisteredUserDTO> users) throws
+            SegueDatabaseException, EventIsFullException {
+        final boolean isStudentEvent = event.getTags().contains("student");
+        Integer numberOfPlaces = getPlacesAvailable(event);
+        if (numberOfPlaces != null) {
+            long numberOfRequests = users.stream().filter(user -> !isStudentEvent || !Role.TEACHER.equals(user.getRole())).count();
+            if (numberOfPlaces - numberOfRequests < 0) {
+                throw  new EventIsFullException(String.format("Unable to book batch (%s) onto event (%s) as there are"
+                        + "not enough places available", users, event.getId()));
             }
         }
     }
