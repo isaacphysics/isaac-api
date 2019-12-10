@@ -50,11 +50,12 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Collections;
+import java.util.TimeZone;
 import java.text.DateFormat;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
