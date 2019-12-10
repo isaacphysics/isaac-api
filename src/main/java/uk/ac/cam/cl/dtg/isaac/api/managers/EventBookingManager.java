@@ -482,7 +482,7 @@ public class EventBookingManager {
                     bookingPersistenceManager.deleteBooking(event.getId(), reservation.getUserBooked().getId());
                 } catch (SegueDatabaseException f) {
                     // Tough luck?
-                    log.error(String.format("Unable to unroll reservation (%s) on event (%s)",
+                    log.error(String.format("Unable to roll back reservation (%s) on event (%s)",
                             reservation, event), f);
                 }
             }
