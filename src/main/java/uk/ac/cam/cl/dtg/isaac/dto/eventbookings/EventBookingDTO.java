@@ -124,14 +124,18 @@ public class EventBookingDTO {
      *
      * @return the user who created the reservation.
      */
-    public UserSummaryDTO getReservedBy() { return reservedBy; }
+    public UserSummaryDTO getReservedBy() {
+        return reservedBy;
+    }
 
     /**
      * Sets the user who created the reservation.
      *
      * @param reservedBy - the user who created the reservation.
      */
-    public void setReservedBy(UserSummaryDTO reservedBy) { this.reservedBy = reservedBy; }
+    public void setReservedBy(UserSummaryDTO reservedBy) {
+        this.reservedBy = reservedBy;
+    }
 
     /**
      * Gets the eventId.

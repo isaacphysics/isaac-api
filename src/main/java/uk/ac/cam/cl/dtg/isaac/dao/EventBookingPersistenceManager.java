@@ -255,7 +255,12 @@ public class EventBookingPersistenceManager {
         try {
             UserSummaryWithEmailAddressDTO user = userManager.convertToDetailedUserSummaryObject(userManager.getUserDTOById(eb
                     .getUserId()), UserSummaryWithEmailAddressDTO.class);
-
+            Long reservedById = eb.getReservedBy();
+            // TODO: Make this null, not 0L...
+            if (!reservedById.equals(0L)) {
+                UserSummaryWithEmailAddressDTO reservingUser = userManager.convertToDetailedUserSummaryObject(userManager.getUserDTOById(reservedById), UserSummaryWithEmailAddressDTO.class);
+                result.setReservedBy(reservingUser);
+            }
             result.setBookingId(eb.getId());
             result.setEventDate(eventInformation.getDate());
             result.setEventId(eventInformation.getId());

@@ -98,7 +98,7 @@ public class PgEventBookings implements EventBookings {
             try (ResultSet generatedKeys = pst.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
                     Long id = generatedKeys.getLong(1);
-                    return new PgEventBooking(ds, id, userId, eventId, status, creationDate, creationDate, additionalEventInformation);
+                    return new PgEventBooking(ds, id, userId, reserveById, eventId, status, creationDate, creationDate, additionalEventInformation);
                 } else {
                     throw new SQLException("Creating event booking failed, no ID obtained.");
                 }
@@ -123,7 +123,11 @@ public class PgEventBookings implements EventBookings {
                     "WHERE event_id = ? AND user_id = ?;");
                 pst.setString(1, status.name());
                 pst.setTimestamp(2, new java.sql.Timestamp(new Date().getTime()));
-                pst.setLong(3, reservedById);
+                try {
+                    pst.setLong(3, reservedById);
+                } catch (NullPointerException e) {
+                    pst.setNull(3, Types.INTEGER);
+                }
                 pst.setString(4, objectMapper.writeValueAsString(additionalEventInformation));
                 pst.setString(5, eventId);
                 pst.setLong(6, userId);
@@ -133,7 +137,11 @@ public class PgEventBookings implements EventBookings {
                     "WHERE event_id = ? AND user_id = ?;");
                 pst.setString(1, status.name());
                 pst.setTimestamp(2, new java.sql.Timestamp(new Date().getTime()));
-                pst.setLong(3, reservedById);
+                try {
+                    pst.setLong(3, reservedById);
+                } catch (NullPointerException e) {
+                    pst.setNull(3, Types.INTEGER);
+                }
                 pst.setString(4, eventId);
                 pst.setLong(5, userId);
             }
@@ -383,7 +391,15 @@ public class PgEventBookings implements EventBookings {
      *             - if an error occurs.
      */
     private PgEventBooking buildPgEventBooking(final ResultSet results) throws SQLException, SegueDatabaseException {
-        return new PgEventBooking(ds, results.getLong("id"), results.getLong("user_id"),
-                results.getString("event_id"), BookingStatus.valueOf(results.getString("status")), results.getTimestamp("created"), results.getTimestamp("updated"), results.getObject("additional_booking_information"));
+        return new PgEventBooking(ds,
+                results.getLong("id"),
+                results.getLong("user_id"),
+                results.getLong("reserved_by"),
+                results.getString("event_id"),
+                BookingStatus.valueOf(results.getString("status")),
+                results.getTimestamp("created"),
+                results.getTimestamp("updated"),
+                results.getObject("additional_booking_information")
+        );
     }
 }
