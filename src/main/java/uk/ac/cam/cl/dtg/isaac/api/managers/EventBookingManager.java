@@ -273,7 +273,7 @@ public class EventBookingManager {
                 this.ensureCapacity(event, user);
             }
 
-            booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), status,
+            booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), null, status,
                     additionalEventInformation);
 
             if (BookingStatus.CONFIRMED.equals(status)) {
@@ -357,10 +357,10 @@ public class EventBookingManager {
             // attempt to book them on the event
             if (this.hasBookingWithStatus(event.getId(), user.getId(), BookingStatus.CANCELLED)) {
                 // if the user has previously cancelled we should let them book again.
-                booking = this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(),
+                booking = this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(), null,
                         BookingStatus.CONFIRMED, additionalEventInformation);
             } else {
-                booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), BookingStatus
+                booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), null, BookingStatus
                         .CONFIRMED, additionalEventInformation);
             }
 
@@ -410,7 +410,7 @@ public class EventBookingManager {
      * @param users - to reserve on the event
      * @return confirmation of reservation
      */
-    public List<EventBookingDTO> requestReservations(final IsaacEventPageDTO event, final List<RegisteredUserDTO> users)
+    public List<EventBookingDTO> requestReservations(final IsaacEventPageDTO event, final List<RegisteredUserDTO> users, final RegisteredUserDTO reservingUser)
             throws EventDeadlineException, EmailMustBeVerifiedException,
             DuplicateBookingException, SegueDatabaseException, EventIsFullException {
 
@@ -437,10 +437,10 @@ public class EventBookingManager {
                 // attempt to book them on the event
                 if (this.hasBookingWithStatus(event.getId(), user.getId(), BookingStatus.CANCELLED)) {
                     // if the user has previously cancelled we should let them book again.
-                    reservation = this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(),
+                    reservation = this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(), reservingUser.getId(),
                             BookingStatus.RESERVED, null);
                 } else {
-                    reservation = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(),
+                    reservation = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), reservingUser.getId(),
                             BookingStatus.RESERVED, null);
                 }
                 reservations.add(reservation);
@@ -541,11 +541,13 @@ public class EventBookingManager {
                 // if the user has previously cancelled we should let them book again.
                 booking = this.bookingPersistenceManager.updateBookingStatus(event.getId(),
                         user.getId(),
+                        null,
                         BookingStatus.WAITING_LIST,
                         additionalInformation);
             } else {
                 booking = this.bookingPersistenceManager.createBooking(event.getId(),
                         user.getId(),
+                        null,
                         BookingStatus.WAITING_LIST,
                         additionalInformation);
             }
@@ -622,7 +624,7 @@ public class EventBookingManager {
         // probably want to send a waiting list promotion email.
         try {
             updatedStatus = this.bookingPersistenceManager.updateBookingStatus(eventBooking.getEventId(), userDTO
-                    .getId(), BookingStatus.CONFIRMED, eventBooking.getAdditionalInformation());
+                    .getId(), null, BookingStatus.CONFIRMED, eventBooking.getAdditionalInformation());
 
             emailManager.sendTemplatedEmailToUser(userDTO,
                     emailManager.getEmailTemplateDTO("email-event-booking-waiting-list-promotion-confirmed"),
@@ -683,7 +685,7 @@ public class EventBookingManager {
         }
 
         EventBookingDTO updatedStatus = this.bookingPersistenceManager.updateBookingStatus(eventBooking.getEventId(),
-                userDTO.getId(), attendanceStatus, eventBooking.getAdditionalInformation());
+                userDTO.getId(), null, attendanceStatus, eventBooking.getAdditionalInformation());
 
         return updatedStatus;
     }
@@ -833,7 +835,7 @@ public class EventBookingManager {
         try {
             // Obtain an exclusive database lock to lock the booking
             this.bookingPersistenceManager.acquireDistributedLock(event.getId());
-            this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(),
+            this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(), null,
                     BookingStatus.CANCELLED,
                     null);
 

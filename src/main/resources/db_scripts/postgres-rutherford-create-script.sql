@@ -79,6 +79,7 @@ CREATE TABLE public.event_bookings (
     event_id text NOT NULL,
     created timestamp without time zone NOT NULL,
     user_id integer NOT NULL,
+    reserved_by integer DEFAULT NULL,
     status text DEFAULT 'CONFIRMED'::text NOT NULL,
     updated timestamp without time zone,
     additional_booking_information jsonb
@@ -1003,7 +1004,8 @@ ALTER TABLE ONLY public.assignments
 
 ALTER TABLE ONLY public.event_bookings
     ADD CONSTRAINT event_bookings_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
-
+ALTER TABLE ONLY public.event_bookings
+    ADD CONSTRAINT event_bookings_users_id_fkey FOREIGN KEY (reserved_by) REFERENCES public.users(id) ON DELETE CASCADE;
 
 --
 -- Name: group_additional_managers fk_group_id; Type: FK CONSTRAINT; Schema: public; Owner: rutherford

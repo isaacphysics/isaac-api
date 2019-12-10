@@ -675,7 +675,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                 RegisteredUserDTO userDTOById = userManager.getUserDTOById(bookableId);
                 usersToBook.add(userDTOById);
             }
-            List<EventBookingDTO> bookings = bookingManager.requestReservations(event, usersToBook);
+            List<EventBookingDTO> bookings = bookingManager.requestReservations(event, usersToBook, currentUser);
             this.getLogManager().logEvent(currentUser, request,
                     SegueLogType.EVENT_RESERVATIONS_CREATED,
                     ImmutableMap.of(
