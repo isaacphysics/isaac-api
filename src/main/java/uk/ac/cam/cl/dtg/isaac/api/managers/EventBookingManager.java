@@ -414,7 +414,7 @@ public class EventBookingManager {
             throws EventDeadlineException, EmailMustBeVerifiedException,
             DuplicateBookingException, SegueDatabaseException, EventIsFullException {
 
-        // TODO: Is it wise to do this before acquiring a database lock?
+        // af599 TODO: Is it wise to do this before acquiring a database lock?
         for (RegisteredUserDTO user : users) {
             this.ensureValidBooking(event, user, true);
         }
@@ -446,7 +446,8 @@ public class EventBookingManager {
                 reservations.add(reservation);
 
                 try {
-                    // TODO: Use the correct email template here.
+                    // af599 TODO: Use the correct email template here.
+                    // af599 TODO: Content team action.
                     emailManager.sendTemplatedEmailToUser(user,
                             emailManager.getEmailTemplateDTO("email-event-booking-confirmed"),
                             new ImmutableMap.Builder<String, Object>()

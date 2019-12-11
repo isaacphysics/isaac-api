@@ -515,7 +515,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             }
 
             UserGroupDTO group = groupManager.getGroupById(Long.parseLong(groupId));
-            // TODO: Might make sense to check whether the currentUser is allowed to interact with the group
+            // af599 TODO: Might make sense to check whether the currentUser is allowed to interact with the group
 
             List<Long> groupMemberIds = groupManager.getUsersInGroup(group)
                     .stream().map(RegisteredUserDTO::getId)
@@ -532,11 +532,11 @@ public class EventsFacade extends AbstractIsaacFacade {
                         currentUser, eventBookings, booking -> booking.getUserBooked().getId());
             }
 
-            // TODO: This seems to return UserSummaryWithEmailAddressDTOs even when the request is done as a TEACHER.
+            // af599 TODO: This seems to return UserSummaryWithEmailAddressDTOs even when the request is done as a TEACHER.
 
             return Response.ok(eventBookings).build();
         } catch (Exception e) {
-            // TODO: DON'T DO THIS. DO IT RIGHT.
+            // af599 TODO: DON'T DO THIS. DO IT RIGHT.
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, e.getMessage()).toResponse();
         }
     }
@@ -637,7 +637,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             }
             event = this.getEventDTOById(request, eventId);
 
-            // TODO: Make sure this makes sense, adapt it, or remove it
+            // af599 TODO: Make sure this makes sense, adapt it, or remove it
             /* if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             } */
@@ -686,7 +686,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                     ));
             return Response.ok(bookings).build();
         } catch (EventIsFullException e) {
-            // TODO: Return the number of available spaces maybe?
+            // af599 TODO: Return the number of available spaces maybe?
             return new SegueErrorResponse(Status.CONFLICT,
                     "There are not enough spaces available for this event. Please try again with fewer users.")
                     .toResponse();

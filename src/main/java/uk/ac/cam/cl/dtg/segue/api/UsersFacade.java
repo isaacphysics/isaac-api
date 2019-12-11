@@ -634,7 +634,8 @@ public class UsersFacade extends AbstractSegueFacade {
                                          @QueryParam("user_ids") final String userIdsQueryParam) {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
-            // TODO: Check that including TEACHERs is OK -- old code: !Role.EVENT_LEADER.equals(currentUser.getRole())
+            // af599 TODO: Check that including TEACHERs is OK -- old code: !Role.EVENT_LEADER.equals(currentUser.getRole())
+            // af599: This may not be necessary anymore as we are not doing a school lookup when grabbing event reservations.
             if (!isUserStaff(userManager, currentUser) && !Arrays.asList(Role.EVENT_LEADER, Role.TEACHER).contains(currentUser.getRole())) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
