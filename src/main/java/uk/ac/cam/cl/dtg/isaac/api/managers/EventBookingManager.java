@@ -976,7 +976,7 @@ public class EventBookingManager {
         if (numberOfPlaces != null) {
             long numberOfRequests = users.stream().filter(user -> !isStudentEvent || !Role.TEACHER.equals(user.getRole())).count();
             if (numberOfPlaces - numberOfRequests < 0) {
-                throw  new EventIsFullException(String.format("Unable to book batch (%s) onto event (%s) as there are"
+                throw  new EventIsFullException(String.format("Unable to book batch (%s) onto event (%s) as there are "
                         + "not enough places available", users, event.getId()));
             }
         }
