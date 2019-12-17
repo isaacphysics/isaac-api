@@ -419,6 +419,7 @@
                     <reuseForks>false</reuseForks>
                     <systemPropertyVariables>
                         <log.path>${log.path}</log.path>
+                        <segue.version>${segue.version}</segue.version>
                     </systemPropertyVariables>
                     <useSystemClassLoader>false</useSystemClassLoader>
                 </configuration>
