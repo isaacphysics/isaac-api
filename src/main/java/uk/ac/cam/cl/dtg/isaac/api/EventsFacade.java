@@ -27,7 +27,12 @@ import io.swagger.annotations.ApiOperation;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.api.managers.*;
+import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateBookingException;
+import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingUpdateException;
+import uk.ac.cam.cl.dtg.isaac.api.managers.EventDeadlineException;
+import uk.ac.cam.cl.dtg.isaac.api.managers.EventIsFullException;
+import uk.ac.cam.cl.dtg.isaac.api.managers.EventIsNotFullException;
 import uk.ac.cam.cl.dtg.isaac.dos.EventStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
@@ -59,17 +64,46 @@ import uk.ac.cam.cl.dtg.segue.search.DateRangeFilterInstruction;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.ADMIN_BOOKING_REASON_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.ATTENDED_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.BOOKING_STATUS_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT_AS_STRING;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_START_INDEX_AS_STRING;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_DATE_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_ID_FKEY_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_TAGS_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.EventFilterOption;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueLogType;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TAGS_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_FKEY_FIELDNAME;
 
 /**
  * Events Facade.
@@ -560,7 +594,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
 
             rows.add(totalsRow.toArray(new String[0]));
-            rows.add(("Name,Role,School Id,Booking Status,Booking Date,Updated Date,Year Group,Job Title," +
+            rows.add(("Name,Role,School Id,Booking Status,Booking Date,Updated Date,Year Group,Job Title," +  // lgtm [java/missing-space-in-concatenation]
                     "Medical/ Dietary Requirements,Accessibility Requirements,Emergency Name,Emergency Number").split(","));
             rows.addAll(resultRows);
             csvWriter.writeAll(rows);
@@ -568,7 +602,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             headerBuilder.append(stringWriter.toString());
             return Response.ok(headerBuilder.toString())
-                    .header("Content-Disposition", "attachment; filename=event_attendees.csv")
+                    .header("Content-Disposition", String.format("attachment; filename=event_attendees_%s.csv", eventId))
                     .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
 
         } catch (IOException e) {
