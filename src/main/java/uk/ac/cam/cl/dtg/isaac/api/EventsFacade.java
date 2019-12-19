@@ -78,6 +78,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -560,6 +561,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             List<String> totalsRow = Lists.newArrayList();
 
             List<String[]> resultRows = Lists.newArrayList();
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
             for (EventBookingDTO booking : eventBookings) {
                 ArrayList<String> resultRow = Lists.newArrayList();
@@ -581,8 +583,8 @@ public class EventsFacade extends AbstractIsaacFacade {
                     resultRow.add(resultRegisteredUser.getSchoolOther());
                 }
                 resultRow.add(resultBookingStatus.toString());
-                resultRow.add(booking.getBookingDate().toString());
-                resultRow.add(booking.getUpdated().toString());
+                resultRow.add(dateFormat.format(booking.getBookingDate()));
+                resultRow.add(dateFormat.format(booking.getUpdated()));
                 resultRow.add(resultAdditionalInformation.get("yearGroup"));
                 resultRow.add(resultAdditionalInformation.get("jobTitle"));
                 resultRow.add(resultAdditionalInformation.get("medicalRequirements"));
@@ -594,8 +596,8 @@ public class EventsFacade extends AbstractIsaacFacade {
 
 
             rows.add(totalsRow.toArray(new String[0]));
-            rows.add(("Name,Role,School Id,Booking Status,Booking Date,Updated Date,Year Group,Job Title," +  // lgtm [java/missing-space-in-concatenation]
-                    "Medical/ Dietary Requirements,Accessibility Requirements,Emergency Name,Emergency Number").split(","));
+            rows.add(("Name,Role,School,Booking status,Booking date,Last updated date,Year group,Job title," +  // lgtm [java/missing-space-in-concatenation]
+                    "Medical/dietary requirements,Accessibility requirements,Emergency name,Emergency number").split(","));
             rows.addAll(resultRows);
             csvWriter.writeAll(rows);
             csvWriter.close();
