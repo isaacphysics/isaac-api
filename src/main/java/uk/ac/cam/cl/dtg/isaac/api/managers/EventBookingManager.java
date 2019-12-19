@@ -271,7 +271,7 @@ public class EventBookingManager {
 
             // Send an email notifying the user (unless they are being added after the event for the sake of our records)
             Date bookingDate = new Date();
-            if (bookingDate.before(event.getEndDate())) {
+            if (event.getEndDate() == null || bookingDate.before(event.getEndDate())) {
                 if (BookingStatus.CONFIRMED.equals(status)) {
                     emailManager.sendTemplatedEmailToUser(user,
                             emailManager.getEmailTemplateDTO("email-event-booking-confirmed"),
@@ -526,7 +526,7 @@ public class EventBookingManager {
 
                 // Send an email notifying the user (unless they are being promoted after the event for the sake of our records)
                 Date promotionDate = new Date();
-                if (promotionDate.before(event.getEndDate())) {
+                if (event.getEndDate() == null || promotionDate.before(event.getEndDate())) {
                     emailManager.sendTemplatedEmailToUser(userDTO,
                             emailManager.getEmailTemplateDTO("email-event-booking-waiting-list-promotion-confirmed"),
                             new ImmutableMap.Builder<String, Object>()
@@ -743,7 +743,7 @@ public class EventBookingManager {
 
             // Send an email notifying the user (unless they are being canceled after the event for the sake of our records)
             Date bookingCancellationDate = new Date();
-            if (bookingCancellationDate.before(event.getEndDate())) {
+            if (event.getEndDate() == null || bookingCancellationDate.before(event.getEndDate())) {
                 emailManager.sendTemplatedEmailToUser(user,
                         emailManager.getEmailTemplateDTO("email-event-booking-cancellation-confirmed"),
                         new ImmutableMap.Builder<String, Object>()
