@@ -284,7 +284,6 @@ public class EventBookingManager {
                                     .build(),
                             EmailType.SYSTEM,
                             Arrays.asList(generateEventICSFile(event, booking)));
-
                 } else if (BookingStatus.WAITING_LIST.equals(status)) {
                     emailManager.sendTemplatedEmailToUser(user,
                             emailManager.getEmailTemplateDTO("email-event-waiting-list-addition-notification"),
@@ -500,31 +499,30 @@ public class EventBookingManager {
             userDTO)
             throws SegueDatabaseException, EmailMustBeVerifiedException,
             DuplicateBookingException, EventBookingUpdateException, EventIsFullException {
-
-        this.bookingPersistenceManager.acquireDistributedLock(event.getId());
-
-        final EventBookingDTO eventBooking = this.bookingPersistenceManager.getBookingByEventIdAndUserId(
-                event.getId(), userDTO.getId());
-        if (null == eventBooking) {
-            throw new EventBookingUpdateException("Unable to promote a booking that doesn't exist.");
-        }
-
-        if (this.isUserBooked(event.getId(), userDTO.getId())) {
-            throw new EventBookingUpdateException("Unable to promote a booking that is CONFIRMED already.");
-        }
-
-        final Integer placesAvailable = this.getPlacesAvailable(event, true);
-        if (placesAvailable != null && placesAvailable <= 0) {
-            throw new EventIsFullException("The event you are attempting promote a booking for is at or "
-                    + "over capacity.");
-        }
-
         EventBookingDTO updatedStatus;
-
-        // probably want to send a waiting list promotion email.
         try {
-            updatedStatus = this.bookingPersistenceManager.updateBookingStatus(eventBooking.getEventId(), userDTO
-                    .getId(), BookingStatus.CONFIRMED, eventBooking.getAdditionalInformation());
+            this.bookingPersistenceManager.acquireDistributedLock(event.getId());
+
+            final EventBookingDTO eventBooking = this.bookingPersistenceManager.getBookingByEventIdAndUserId(
+                    event.getId(), userDTO.getId());
+            if (null == eventBooking) {
+                throw new EventBookingUpdateException("Unable to promote a booking that doesn't exist.");
+            }
+
+            if (this.isUserBooked(event.getId(), userDTO.getId())) {
+                throw new EventBookingUpdateException("Unable to promote a booking that is CONFIRMED already.");
+            }
+
+            final Integer placesAvailable = this.getPlacesAvailable(event, true);
+            if (placesAvailable != null && placesAvailable <= 0) {
+                throw new EventIsFullException("The event you are attempting promote a booking for is at or "
+                        + "over capacity.");
+            }
+
+            // probably want to send a waiting list promotion email.
+            try {
+                updatedStatus = this.bookingPersistenceManager.updateBookingStatus(eventBooking.getEventId(), userDTO
+                        .getId(), BookingStatus.CONFIRMED, eventBooking.getAdditionalInformation());
 
                 // Send an email notifying the user (unless they are being promoted after the event for the sake of our records)
                 Date promotionDate = new Date();
@@ -541,10 +539,11 @@ public class EventBookingManager {
                             EmailType.SYSTEM,
                             Arrays.asList(generateEventICSFile(event, updatedStatus)));
                 }
-        } catch (ContentManagerException e) {
-            log.error(String.format("Unable to send welcome email (%s) to user (%s)", event.getId(),
-                    userDTO.getEmail()), e);
-            throw new EventBookingUpdateException("Unable to send welcome email, failed to update event booking");
+            } catch (ContentManagerException e) {
+                log.error(String.format("Unable to send welcome email (%s) to user (%s)", event.getId(),
+                        userDTO.getEmail()), e);
+                throw new EventBookingUpdateException("Unable to send welcome email, failed to update event booking");
+            }
         } finally {
             this.bookingPersistenceManager.releaseDistributedLock(event.getId());
         }
