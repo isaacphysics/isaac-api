@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,11 +17,7 @@ package uk.ac.cam.cl.dtg.segue.dos.content;
 
 import java.util.Set;
 
-import org.mongojack.ObjectId;
-
 import uk.ac.cam.cl.dtg.segue.dao.TrimWhitespaceDeserializer;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 /**

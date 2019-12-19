@@ -304,3 +304,175 @@ $BODY$
 LANGUAGE plpgsql;
 
 ALTER FUNCTION user_streaks_current_progress(useridofinterest BIGINT, defaultquestionsperday INTEGER) OWNER TO rutherford;
+
+
+--
+-- Calculate User Weekly Streaks
+--
+-- Authors: James Sharkey
+-- Last Modified: 2019-12-06
+--
+
+CREATE OR REPLACE FUNCTION user_streaks_weekly(useridofinterest bigint, defaultquestionsperweek integer DEFAULT 10)
+    RETURNS TABLE(streaklength bigint, startdate date, enddate date, totalweeks bigint)
+    LANGUAGE plpgsql
+AS
+$$
+BEGIN
+    RETURN QUERY
+        -----
+        -----
+        WITH
+
+            -- Filter only users first correct attempts at questions:
+            first_correct_attempts AS (
+                SELECT
+                    question_id,
+                    MIN(timestamp) AS timestamp
+                FROM question_attempts
+                WHERE correct AND user_id=useridofinterest
+                GROUP BY question_id
+            ),
+
+            -- Count how many of these first correct attempts per week:
+            weekly_counts AS (
+                SELECT
+                    date_trunc('WEEK', timestamp)::DATE AS date,
+                    COUNT(DISTINCT question_id) AS count
+                FROM first_correct_attempts
+                GROUP BY date
+            ),
+
+            -- Create the list of targets and dates, allowing NULL end dates to mean "to present":
+            weekly_targets AS (
+                SELECT
+                    generate_series(date_trunc('WEEK', start_date), date_trunc('WEEK', COALESCE(end_date, CURRENT_DATE)), INTERVAL '7 DAY')::DATE AS date,
+                    MIN(target_count) AS target_count
+                FROM user_streak_targets
+                WHERE user_id=useridofinterest
+                GROUP BY date
+            ),
+
+            -- Filter the list of dates by the minimum number of parts required.
+            -- If no user-specific target, use global default:
+            active_dates AS (
+                SELECT
+                    weekly_counts.date
+                FROM weekly_counts LEFT OUTER JOIN weekly_targets
+                                                   ON weekly_counts.date=weekly_targets.date
+                WHERE count >= COALESCE(target_count, defaultquestionsperweek)
+            ),
+
+            -- Create a list of dates streaks were frozen on, allowing NULL end dates to mean "to present":
+            frozen_dates AS (
+                SELECT
+                    DISTINCT generate_series(date_trunc('WEEK', start_date), date_trunc('WEEK', COALESCE(end_date, CURRENT_DATE)), INTERVAL '7 DAY')::DATE AS date
+                FROM user_streak_freezes
+                WHERE user_id=useridofinterest
+            ),
+
+            -- Merge in streak freeze dates if there was no activity on that date:
+            date_list(date, activity) AS (
+                SELECT date, 1 FROM active_dates
+                UNION
+                SELECT date, 0 FROM frozen_dates WHERE date NOT IN (SELECT date FROM active_dates)
+                ORDER BY date ASC
+            ),
+
+            -- Group consecutive dates in this merged list, this is the magic part.
+            groups AS (
+                SELECT
+                        date - (ROW_NUMBER() OVER (ORDER BY date) * INTERVAL '7 day') AS grp,
+                        date,
+                        activity
+                FROM date_list
+            )
+
+            -- Return the data in a human-readable format.
+            -- The length of the streak is the sum of active days.
+        SELECT
+            SUM(activity) AS streak_length,
+            MIN(date) AS start_date,
+            MAX(date) AS end_date,
+            COUNT(*) AS total_weeks
+        FROM groups
+        GROUP BY grp
+        ORDER BY end_date DESC;
+    -----
+    -----
+END
+$$;
+
+ALTER FUNCTION user_streaks_weekly(BIGINT, INTEGER) OWNER TO rutherford;
+
+
+--
+-- Calculate Current Progress towards User Weekly Streak
+--
+-- Authors: James Sharkey
+-- Last Modified: 2019-12-06
+--
+
+CREATE OR REPLACE FUNCTION user_streaks_weekly_current_progress(useridofinterest bigint, defaultquestionsperweek integer DEFAULT 10)
+    RETURNS TABLE(currentweek date, currentprogress bigint, targetprogress bigint)
+    LANGUAGE plpgsql
+AS
+$$
+BEGIN
+    RETURN QUERY
+        -----
+        -----
+        WITH
+
+            -- Filter only users first correct attempts at questions:
+            first_correct_attempts AS (
+                SELECT
+                    question_id,
+                    MIN(timestamp) AS timestamp
+                FROM question_attempts
+                WHERE correct AND user_id=useridofinterest
+                GROUP BY question_id
+            ),
+
+            -- Count how many of these first correct attempts are this week:
+            weekly_count AS (
+                SELECT
+                    date_trunc('WEEK', timestamp)::DATE AS date,
+                    COUNT(DISTINCT question_id) AS count
+                FROM first_correct_attempts
+                WHERE timestamp >= date_trunc('WEEK', CURRENT_DATE)
+                GROUP BY date
+            ),
+
+            -- Create the list of targets and dates, allowing NULL end dates to mean "to present":
+            weekly_targets AS (
+                SELECT
+                    generate_series(date_trunc('WEEK', start_date), date_trunc('WEEK', COALESCE(end_date, CURRENT_DATE)), INTERVAL '7 DAY')::DATE AS date,
+                    MIN(target_count) AS target_count
+                FROM user_streak_targets
+                WHERE user_id=useridofinterest
+                GROUP BY date
+            ),
+
+            -- To ensure there is always a return value, make a row containing only this week's date:
+            date_of_interest AS (
+                SELECT date_trunc('WEEK', CURRENT_DATE)::DATE AS date
+            )
+
+            -- Using LEFT OUTER JOINs to ensure always keep the date; if there is a daily count
+            -- then join to it, else use zero; and if there is a custom target join to it, else
+            -- use the global streak target default.
+        SELECT
+            date_of_interest.date AS currentweek,
+            COALESCE(weekly_count.count, 0)::BIGINT AS currentprogress,
+            COALESCE(target_count, defaultquestionsperweek)::BIGINT AS targetprogress
+        FROM
+            (date_of_interest LEFT OUTER JOIN weekly_count ON date_of_interest.date=weekly_count.date)
+                LEFT OUTER JOIN
+            weekly_targets ON date_of_interest.date=weekly_targets.date;
+    -----
+    -----
+END
+$$;
+
+ALTER FUNCTION user_streaks_weekly_current_progress(BIGINT, INTEGER) OWNER TO rutherford;
