@@ -1,20 +1,23 @@
-FROM openjdk:8-jdk
-
-ENV MAVEN_VERSION 3.3.9
-ENV MAVEN_OPTS -Xms2g -Xmx2g
-RUN curl -kfsSL https://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar xzf - -C /usr/share \
-  && mv /usr/share/apache-maven-$MAVEN_VERSION /usr/share/maven \
-  && ln -s /usr/share/maven/bin/mvn /usr/bin/mvn
-
-ENV MAVEN_HOME /usr/share/maven
+# Step : Download dependencies so that they are cached in the docker layer if the pom file doesn't change
+FROM maven:3.5.3-jdk-8-alpine as target
+WORKDIR /isaac-api
+COPY pom.xml .
+RUN mvn dependency:go-offline
 
 COPY . /isaac-api
 
-WORKDIR /isaac-api
+# build isaac api war file without unit tests
+RUN mvn package -Dmaven.test.skip=true
 
-VOLUME /root/.m2
-#RUN mvn package -P deploy
+# create clean jetty docker container
+FROM jetty:9.3.27 as server
+USER root
+COPY --from=target /isaac-api/target/isaac-api.war /var/lib/jetty/webapps/isaac-api.war
+RUN chmod 755 /var/lib/jetty/webapps/*
+RUN chown jetty /var/lib/jetty/webapps/*
 
-RUN sed -i -e 's#dev/random#dev/./urandom#g' $JAVA_HOME/jre/lib/security/java.security
+#RUN sed -i -e 's#dev/random#dev/./urandom#g' $JAVA_HOME/jre/lib/security/java.security
 
-CMD ["mvn", "jetty:run", "-P", "deploy"] 
+# prepare things so that jetty runs in the docker entrypoint
+USER jetty
+WORKDIR $JETTY_BASE

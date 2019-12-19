@@ -29,7 +29,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * 
  */
 public class RegisteredUserDTO extends AbstractSegueUserDTO {
-    @JsonProperty("_id")
     private Long id;
 
     private String givenName;
@@ -116,22 +115,24 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
     /**
      * Gets the id.
      * @return the id
+     * @deprecated - TODO need to remove _id from frontend
      */
     @JsonProperty("_id")
     @Deprecated
     public Long getLegacyId() {
-        return id;
+        return this.getId();
     }
 
 
     /**
      * Sets the id.
      * @param id the id to set
+     * @deprecated - TODO need to remove _id from frontend
      */
     @JsonProperty("_id")
     @Deprecated
     public void setLegacyId(final Long id) {
-        this.id = id;
+        this.setId(id);
     }
 
     /**

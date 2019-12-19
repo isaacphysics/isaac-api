@@ -821,6 +821,8 @@ public class UserAuthenticationManager {
             authCookie.setSecure(setSecureCookies);
             // TODO - set sameSite=Lax at minimum when Jetty supports this (9.4.x)
 
+            log.debug(String.format("Creating AuthCookie for user (%s) with value %s", userId, authCookie.getValue()));
+
             response.addCookie(authCookie);
             
         } catch (JsonProcessingException e1) {

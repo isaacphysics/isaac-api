@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,10 +17,6 @@ package uk.ac.cam.cl.dtg.segue.dos;
 
 import java.util.Date;
 import javax.annotation.Nullable;
-
-import org.mongojack.ObjectId;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * UserGroupDO - this object represents a group or collection of users
@@ -71,7 +67,6 @@ public class UserGroup {
      *
      * @return the id
      */
-    @JsonProperty("id")
     public Long getId() {
         return id;
     }
@@ -79,35 +74,9 @@ public class UserGroup {
     /**
      * Gets the id.
      *
-     * @return the id
+     * @param id - the id.
      */
-    @JsonProperty("id")
     public void setId(final Long id) {
-        this.id = id;
-    }
-
-    /**
-     * Gets the _id.
-     * 
-     * @return the _id
-     */
-    @JsonProperty("_id")
-    @ObjectId
-    @Deprecated
-    public Long getMongoId() {
-        return id;
-    }
-
-    /**
-     * Sets the _id.
-     * 
-     * @param id
-     *            the _id to set
-     */
-    @JsonProperty("_id")
-    @ObjectId
-    @Deprecated
-    public void setMongoId(final Long id) {
         this.id = id;
     }
 
@@ -150,7 +119,8 @@ public class UserGroup {
     }
 
     /**
-     * Get the status of the group
+     * Get the status of the group.
+     *
      * @return the status of the group - i.e. active or deleted
      */
     public GroupStatus getStatus() {
@@ -158,10 +128,11 @@ public class UserGroup {
     }
 
     /**
-     * Set the status of the group
+     * Set the status of the group.
+     *
      * @param status e.g. active or deleted.
      */
-    public void setStatus(GroupStatus status) {
+    public void setStatus(final GroupStatus status) {
         this.status = status;
     }
 

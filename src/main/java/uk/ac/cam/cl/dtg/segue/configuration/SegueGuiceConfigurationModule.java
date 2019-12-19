@@ -28,6 +28,7 @@ import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import ma.glasnost.orika.MapperFacade;
+import org.apache.commons.lang3.SystemUtils;
 import org.elasticsearch.client.Client;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
@@ -101,6 +102,7 @@ import uk.ac.cam.cl.dtg.util.locations.PostCodeLocationResolver;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.sql.SQLException;
@@ -150,8 +152,25 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      */
     public SegueGuiceConfigurationModule() {
         if (globalProperties == null) {
+            // check the following places to determine where config file location may be.
+            // 1) system env variable, 2) java param (system property), 3) use a default from the constant file.
+            String configLocation = SystemUtils.IS_OS_LINUX ? DEFAULT_LINUX_CONFIG_LOCATION : null;
+            if (System.getProperty("config.location") != null) {
+                configLocation = System.getProperty("config.location");
+            }
+            if (System.getenv("SEGUE_CONFIG_LOCATION") != null){
+                configLocation = System.getenv("SEGUE_CONFIG_LOCATION");
+            }
+
             try {
-                globalProperties = new PropertiesLoader(System.getProperty("config.location"));
+                if (null == configLocation) {
+                    throw new FileNotFoundException("Segue configuration location not specified, please provide it as either a java system property (config.location) or environment variable SEGUE_CONFIG_LOCATION");
+                }
+
+                globalProperties = new PropertiesLoader(configLocation);
+
+                log.info(String.format("Segue using configuration file: %s", configLocation));
+
             } catch (IOException e) {
                 log.error("Error loading properties file.", e);
             }
@@ -878,7 +897,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *
      * @return reflections.
      */
-    public static Reflections getReflectionsClass(String pkg) {
+    public static Reflections getReflectionsClass(final String pkg) {
         if (!reflections.containsKey(pkg)) {
             log.info("Caching reflections scan on uk.ac.cam.cl.dtg.segue....");
             reflections.put(pkg, new Reflections(pkg));
