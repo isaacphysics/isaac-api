@@ -27,7 +27,6 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.EventStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
-import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.EventBooking;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
@@ -152,6 +151,37 @@ public class EventBookingManager {
     }
 
     /**
+     * Check if the registered user is able to manage the given event.
+     * Event managers and admins can manage all events where as event leaders can only manage events for which they are
+     * managers of the event's associated group.
+     * @param user wishing to manage the event.
+     * @param event to be managed.
+     * @return either true or false if the user is able to manage the event.
+     * @throws SegueDatabaseException if there is a problem with the database while retrieving associations or groups.
+     */
+    public boolean isUserAbleToManageEvent(RegisteredUserDTO user, IsaacEventPageDTO event) throws SegueDatabaseException {
+        if (Arrays.asList(Role.EVENT_MANAGER, Role.ADMIN).contains(user.getRole())) {
+            return true;
+        }
+        if (Role.EVENT_LEADER.equals(user.getRole())) {
+            try {
+                String eventGroupTokenString = event.getIsaacGroupToken();
+                if (eventGroupTokenString == null || eventGroupTokenString.isEmpty()) {
+                    return false;
+                }
+                AssociationToken eventGroupToken = userAssociationManager.lookupTokenDetails(user, eventGroupTokenString);
+                UserGroupDTO eventGroup = groupManager.getGroupById(eventGroupToken.getGroupId());
+                if (GroupManager.isOwnerOrAdditionalManager(eventGroup, user.getId())) {
+                    return true;
+                }
+            } catch (InvalidUserAssociationTokenException e) {
+                log.error("Event {} has an invalid user association token - ignoring", event.getId());
+            }
+        }
+        return false;
+    }
+
+    /**
      * Create booking on behalf of a user.
      * This method will allow users to be booked onto an event providing there is space. If there is no space the user
      * will simply be added to the waiting list.
@@ -239,30 +269,32 @@ public class EventBookingManager {
             booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), status,
                     additionalEventInformation);
 
-            if (BookingStatus.CONFIRMED.equals(status)) {
-                emailManager.sendTemplatedEmailToUser(user,
-                        emailManager.getEmailTemplateDTO("email-event-booking-confirmed"),
-                        new ImmutableMap.Builder<String, Object>()
-                                .put("contactUsURL", generateEventContactUsURL(event))
-                                .put("authorizationLink", String.format("https://%s/account?authToken=%s",
-                                        propertiesLoader.getProperty(HOST_NAME), event.getIsaacGroupToken()))
-                                .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
-                                .put("event", event)
-                                .build(),
-                        EmailType.SYSTEM,
-                        Arrays.asList(generateEventICSFile(event, booking)));
-
-            } else if (BookingStatus.WAITING_LIST.equals(status)) {
-                emailManager.sendTemplatedEmailToUser(user,
-                        emailManager.getEmailTemplateDTO("email-event-waiting-list-addition-notification"),
-                        new ImmutableMap.Builder<String, Object>()
-                                .put("contactUsURL", generateEventContactUsURL(event))
-                                .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
-                                .put("event", event)
-                                .build(),
-                        EmailType.SYSTEM);
+            // Send an email notifying the user (unless they are being added after the event for the sake of our records)
+            Date bookingDate = new Date();
+            if (event.getEndDate() == null || bookingDate.before(event.getEndDate())) {
+                if (BookingStatus.CONFIRMED.equals(status)) {
+                    emailManager.sendTemplatedEmailToUser(user,
+                            emailManager.getEmailTemplateDTO("email-event-booking-confirmed"),
+                            new ImmutableMap.Builder<String, Object>()
+                                    .put("contactUsURL", generateEventContactUsURL(event))
+                                    .put("authorizationLink", String.format("https://%s/account?authToken=%s",
+                                            propertiesLoader.getProperty(HOST_NAME), event.getIsaacGroupToken()))
+                                    .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
+                                    .put("event", event)
+                                    .build(),
+                            EmailType.SYSTEM,
+                            Arrays.asList(generateEventICSFile(event, booking)));
+                } else if (BookingStatus.WAITING_LIST.equals(status)) {
+                    emailManager.sendTemplatedEmailToUser(user,
+                            emailManager.getEmailTemplateDTO("email-event-waiting-list-addition-notification"),
+                            new ImmutableMap.Builder<String, Object>()
+                                    .put("contactUsURL", generateEventContactUsURL(event))
+                                    .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
+                                    .put("event", event)
+                                    .build(),
+                            EmailType.SYSTEM);
+                }
             }
-        
         } catch (ContentManagerException e) {
             log.error(String.format("Unable to send booking confirmation email (%s) to user (%s)", event.getId(), user
                     .getEmail()), e);
@@ -467,48 +499,51 @@ public class EventBookingManager {
             userDTO)
             throws SegueDatabaseException, EmailMustBeVerifiedException,
             DuplicateBookingException, EventBookingUpdateException, EventIsFullException {
-
-        this.bookingPersistenceManager.acquireDistributedLock(event.getId());
-
-        final EventBookingDTO eventBooking = this.bookingPersistenceManager.getBookingByEventIdAndUserId(
-                event.getId(), userDTO.getId());
-        if (null == eventBooking) {
-            throw new EventBookingUpdateException("Unable to promote a booking that doesn't exist.");
-        }
-
-        if (this.isUserBooked(event.getId(), userDTO.getId())) {
-            throw new EventBookingUpdateException("Unable to promote a booking that is CONFIRMED already.");
-        }
-
-        final Integer placesAvailable = this.getPlacesAvailable(event, true);
-        if (placesAvailable != null && placesAvailable <= 0) {
-            throw new EventIsFullException("The event you are attempting promote a booking for is at or "
-                    + "over capacity.");
-        }
-
         EventBookingDTO updatedStatus;
-
-        // probably want to send a waiting list promotion email.
         try {
-            updatedStatus = this.bookingPersistenceManager.updateBookingStatus(eventBooking.getEventId(), userDTO
-                    .getId(), BookingStatus.CONFIRMED, eventBooking.getAdditionalInformation());
+            this.bookingPersistenceManager.acquireDistributedLock(event.getId());
 
-            emailManager.sendTemplatedEmailToUser(userDTO,
-                    emailManager.getEmailTemplateDTO("email-event-booking-waiting-list-promotion-confirmed"),
-                    new ImmutableMap.Builder<String, Object>()
-                            .put("contactUsURL", generateEventContactUsURL(event))
-                            .put("authorizationLink", String.format("https://%s/account?authToken=%s",
-                                    propertiesLoader.getProperty(HOST_NAME), event.getIsaacGroupToken()))
-                            .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
-                            .put("event", event)
-                            .build(),
-                    EmailType.SYSTEM,
-                    Arrays.asList(generateEventICSFile(event, updatedStatus)));
+            final EventBookingDTO eventBooking = this.bookingPersistenceManager.getBookingByEventIdAndUserId(
+                    event.getId(), userDTO.getId());
+            if (null == eventBooking) {
+                throw new EventBookingUpdateException("Unable to promote a booking that doesn't exist.");
+            }
 
-        } catch (ContentManagerException e) {
-            log.error(String.format("Unable to send welcome email (%s) to user (%s)", event.getId(),
-                    userDTO.getEmail()), e);
-            throw new EventBookingUpdateException("Unable to send welcome email, failed to update event booking");
+            if (this.isUserBooked(event.getId(), userDTO.getId())) {
+                throw new EventBookingUpdateException("Unable to promote a booking that is CONFIRMED already.");
+            }
+
+            final Integer placesAvailable = this.getPlacesAvailable(event, true);
+            if (placesAvailable != null && placesAvailable <= 0) {
+                throw new EventIsFullException("The event you are attempting promote a booking for is at or "
+                        + "over capacity.");
+            }
+
+            // probably want to send a waiting list promotion email.
+            try {
+                updatedStatus = this.bookingPersistenceManager.updateBookingStatus(eventBooking.getEventId(), userDTO
+                        .getId(), BookingStatus.CONFIRMED, eventBooking.getAdditionalInformation());
+
+                // Send an email notifying the user (unless they are being promoted after the event for the sake of our records)
+                Date promotionDate = new Date();
+                if (event.getEndDate() == null || promotionDate.before(event.getEndDate())) {
+                    emailManager.sendTemplatedEmailToUser(userDTO,
+                            emailManager.getEmailTemplateDTO("email-event-booking-waiting-list-promotion-confirmed"),
+                            new ImmutableMap.Builder<String, Object>()
+                                    .put("contactUsURL", generateEventContactUsURL(event))
+                                    .put("authorizationLink", String.format("https://%s/account?authToken=%s",
+                                            propertiesLoader.getProperty(HOST_NAME), event.getIsaacGroupToken()))
+                                    .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
+                                    .put("event", event)
+                                    .build(),
+                            EmailType.SYSTEM,
+                            Arrays.asList(generateEventICSFile(event, updatedStatus)));
+                }
+            } catch (ContentManagerException e) {
+                log.error(String.format("Unable to send welcome email (%s) to user (%s)", event.getId(),
+                        userDTO.getEmail()), e);
+                throw new EventBookingUpdateException("Unable to send welcome email, failed to update event booking");
+            }
         } finally {
             this.bookingPersistenceManager.releaseDistributedLock(event.getId());
         }
@@ -706,14 +741,18 @@ public class EventBookingManager {
                     BookingStatus.CANCELLED,
                     null);
 
-            emailManager.sendTemplatedEmailToUser(user,
-                    emailManager.getEmailTemplateDTO("email-event-booking-cancellation-confirmed"),
-                    new ImmutableMap.Builder<String, Object>()
-                            .put("contactUsURL", generateEventContactUsURL(event))
-                            .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
-                            .put("event", event)
-                            .build(),
-                    EmailType.SYSTEM);
+            // Send an email notifying the user (unless they are being canceled after the event for the sake of our records)
+            Date bookingCancellationDate = new Date();
+            if (event.getEndDate() == null || bookingCancellationDate.before(event.getEndDate())) {
+                emailManager.sendTemplatedEmailToUser(user,
+                        emailManager.getEmailTemplateDTO("email-event-booking-cancellation-confirmed"),
+                        new ImmutableMap.Builder<String, Object>()
+                                .put("contactUsURL", generateEventContactUsURL(event))
+                                .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
+                                .put("event", event)
+                                .build(),
+                        EmailType.SYSTEM);
+            }
 
             // auto remove them from the group
             this.removeUserFromEventGroup(event, user);

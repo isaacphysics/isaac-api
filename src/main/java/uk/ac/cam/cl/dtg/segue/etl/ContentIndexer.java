@@ -54,6 +54,8 @@ public class ContentIndexer {
     private GitDb database;
     private ContentMapper mapper;
 
+    private static final int MEDIA_FILE_SIZE_LIMIT = 300 * 1024; // Bytes
+
     @Inject
     public ContentIndexer(GitDb database, ElasticSearchIndexer es, ContentMapper mapper) {
         this.database = database;
@@ -671,10 +673,22 @@ public class ContentIndexer {
             if (c instanceof Media) {
                 Media f = (Media) c;
 
-                if (f.getSrc() != null
-                        && !f.getSrc().startsWith("http") && !database.verifyGitObject(sha, f.getSrc())) {
-                    this.registerContentProblem(c, "Unable to find Image: " + f.getSrc()
-                            + " in Git. Could the reference be incorrect? SourceFile is " + c.getCanonicalSourceFile(), indexProblemCache);
+                if (f.getSrc() != null && !f.getSrc().startsWith("http")) {
+                    ByteArrayOutputStream fileData = null;
+                    try {
+                        // This will return null if the file is not found:
+                        fileData = database.getFileByCommitSHA(sha, f.getSrc());
+                    } catch (IOException | UnsupportedOperationException e) {
+                        // Leave fileData = null;
+                    }
+                    if (null == fileData) {
+                        this.registerContentProblem(c, "Unable to find Image: " + f.getSrc()
+                                + " in Git. Could the reference be incorrect? SourceFile is " + c.getCanonicalSourceFile(), indexProblemCache);
+                    } else if (fileData.size() > MEDIA_FILE_SIZE_LIMIT) {
+                        int sizeInKiloBytes = fileData.size() / 1024;
+                        this.registerContentProblem(c, String.format("Image (%s) is %s kB and exceeds file size warning limit!",
+                                f.getSrc(), sizeInKiloBytes), indexProblemCache);
+                    }
                 }
 
                 // check that there is some alt text.

@@ -18,6 +18,8 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
 
+import java.util.List;
+
 /**
  * Isaac Topic Summary Page DTO.
  *
@@ -27,4 +29,23 @@ import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
  */
 @JsonContentType("isaacTopicSummaryPage")
 public class IsaacTopicSummaryPageDTO extends SeguePageDTO {
+
+    private List<GameboardDTO> linkedGameboards;
+
+    /**
+     * Gets the list of linked gameboard DTOs.
+     * @return the linked gameboard DTOs
+     */
+    public List<GameboardDTO> getLinkedGameboards() {
+        return linkedGameboards;
+    }
+
+    /**
+     * Sets the list of linked gameboard DTOs.
+     * @param linkedGameboards the linked gameboard DTOs to set
+     */
+    public void setLinkedGameboards(final List<GameboardDTO> linkedGameboards) {
+        this.linkedGameboards = linkedGameboards;
+    }
+
 }
