@@ -556,7 +556,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                     .collect(Collectors.toList());
 
             // Event leaders are only allowed to see the bookings of connected users
-            if (Role.EVENT_LEADER.equals(currentUser.getRole())) {
+            if (Arrays.asList(Role.TEACHER, Role.EVENT_LEADER).contains(currentUser.getRole())) {
                 eventBookings = userAssociationManager.filterUnassociatedRecords(
                         currentUser, eventBookings, booking -> booking.getUserBooked().getId());
             }
@@ -564,9 +564,14 @@ public class EventsFacade extends AbstractIsaacFacade {
             // af599 TODO: This seems to return UserSummaryWithEmailAddressDTOs even when the request is done as a TEACHER.
 
             return Response.ok(eventBookings).build();
-        } catch (Exception e) {
-            // af599 TODO: DON'T DO THIS. DO IT RIGHT.
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, e.getMessage()).toResponse();
+        } catch (SegueDatabaseException e) {
+            String errorMsg = String.format(
+                    "Database error occurred while trying retrieve bookings for group (%s) on event (%s).",
+                    groupId, eventId);
+            log.error(errorMsg, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
         }
     }
 
@@ -799,19 +804,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                         "The following user IDs are already booked or reserved on this event." + unbookableIds)
                         .toResponse();
             }
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (SegueDatabaseException e) {
-            String errorMsg = "Database error occurred while trying to reserve space for a user onto an event.";
-            log.error(errorMsg, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
-        } catch (ContentManagerException e) {
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Content Database error occurred while trying to retrieve all event booking information.")
-                    .toResponse();
-        }
 
-        try {
             // This would be neater with streams and lambdas, but handling exceptions in lambdas is ugly.
             List<RegisteredUserDTO> usersToBook = new ArrayList<>();
             for (Long bookableId : bookableIds) {
@@ -828,6 +821,17 @@ public class EventsFacade extends AbstractIsaacFacade {
                             BOOKING_STATUS_FIELDNAME, BookingStatus.RESERVED.toString()
                     ));
             return Response.ok(bookings).build();
+
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            String errorMsg = "Database error occurred while trying to reserve space for a user onto an event.";
+            log.error(errorMsg, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
+        } catch (ContentManagerException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Content Database error occurred while trying to retrieve all event booking information.")
+                    .toResponse();
         } catch (EventIsFullException e) {
             // af599 TODO: Return the number of available spaces maybe?
             return new SegueErrorResponse(Status.CONFLICT,
@@ -843,10 +847,6 @@ public class EventsFacade extends AbstractIsaacFacade {
                     .toResponse();
         } catch (NoUserException e) {
             return SegueErrorResponse.getResourceNotFoundResponse("Unable to locate one of the users specified.");
-        } catch (SegueDatabaseException e) {
-            String errorMsg = "Database error occurred while trying to reserve users onto an event.";
-            log.error(errorMsg, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
         } catch (EmailMustBeVerifiedException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST,
                     "All users must have a verified email address before they can be reserved on this event.")

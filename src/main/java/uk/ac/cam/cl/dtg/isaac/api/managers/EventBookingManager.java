@@ -380,7 +380,7 @@ public class EventBookingManager {
                         Arrays.asList(generateEventICSFile(event, booking)));
 
             } catch (ContentManagerException e) {
-                log.error(String.format("Unable to send welcome email (%s) to user (%s)", event.getId(), user
+                log.error(String.format("Unable to send event email (%s) to user (%s)", event.getId(), user
                         .getEmail()), e);
             }
 
@@ -463,7 +463,7 @@ public class EventBookingManager {
                             Collections.singletonList(generateEventICSFile(event, reservation)));
 
                 } catch (SegueDatabaseException | ContentManagerException e) {
-                    log.error(String.format("Unable to send welcome email (%s) to user (%s)",
+                    log.error(String.format("Unable to send event email (%s) to user (%s)",
                             event.getId(), user.getEmail()), e);
                 }
 
@@ -576,7 +576,7 @@ public class EventBookingManager {
                         EmailType.SYSTEM);
 
             } catch (ContentManagerException e) {
-                log.error(String.format("Unable to send welcome email (%s) to user (%s)", event.getId(), user
+                log.error(String.format("Unable to send event email (%s) to user (%s)", event.getId(), user
                         .getEmail()), e);
             }
 
@@ -644,9 +644,9 @@ public class EventBookingManager {
                             Arrays.asList(generateEventICSFile(event, updatedStatus)));
                 }
             } catch (ContentManagerException e) {
-                log.error(String.format("Unable to send welcome email (%s) to user (%s)", event.getId(),
+                log.error(String.format("Unable to send event email (%s) to user (%s)", event.getId(),
                         userDTO.getEmail()), e);
-                throw new EventBookingUpdateException("Unable to send welcome email, failed to update event booking");
+                throw new EventBookingUpdateException("Unable to send event email, failed to update event booking");
             }
         } finally {
             this.bookingPersistenceManager.releaseDistributedLock(event.getId());
