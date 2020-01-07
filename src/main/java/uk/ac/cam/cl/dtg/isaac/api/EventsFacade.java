@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.opencsv.CSVWriter;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.jboss.resteasy.annotations.GZIP;
@@ -50,12 +51,16 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
+import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
+import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.DateRangeFilterInstruction;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -73,9 +78,13 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import java.util.Arrays;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -83,8 +92,25 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.DATE_FIELDNAME;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.ENDDATE_FIELDNAME;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.EVENT_TYPE;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.ADMIN_BOOKING_REASON_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.ATTENDED_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.BOOKING_STATUS_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT_AS_STRING;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_START_INDEX_AS_STRING;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_DATE_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_ID_FKEY_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_TAGS_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.EventFilterOption;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueLogType;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TAGS_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_FKEY_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_LIST_FKEY_FIELDNAME;
 
 /**
  * Events Facade.
@@ -104,6 +130,8 @@ public class EventsFacade extends AbstractIsaacFacade {
     private final String contentIndex;
     private final UserBadgeManager userBadgeManager;
     private final UserAssociationManager userAssociationManager;
+    private final UserAccountManager userAccountManager;
+    private final SchoolListReader schoolListReader;
 
     /**
      * EventsFacade.
@@ -126,7 +154,9 @@ public class EventsFacade extends AbstractIsaacFacade {
                         @Named(Constants.CONTENT_INDEX) final String contentIndex,
                         final UserBadgeManager userBadgeManager,
                         final UserAssociationManager userAssociationManager,
-                        final GroupManager groupManager) {
+                        final GroupManager groupManager,
+                        final UserAccountManager userAccountManager,
+                        final SchoolListReader schoolListReader) {
         super(properties, logManager);
         this.bookingManager = bookingManager;
         this.userManager = userManager;
@@ -135,6 +165,8 @@ public class EventsFacade extends AbstractIsaacFacade {
         this.userBadgeManager = userBadgeManager;
         this.userAssociationManager = userAssociationManager;
         this.groupManager = groupManager;
+        this.userAccountManager = userAccountManager;
+        this.schoolListReader = schoolListReader;
     }
 
     /**
@@ -474,9 +506,6 @@ public class EventsFacade extends AbstractIsaacFacade {
             @PathParam("event_id") final String eventId) {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
-            if (!Arrays.asList(Role.EVENT_LEADER, Role.EVENT_MANAGER, Role.ADMIN).contains(currentUser.getRole())) {
-                return SegueErrorResponse.getIncorrectRoleResponse();
-            }
 
             List<EventBookingDTO> eventBookings = bookingManager.getBookingByEventId(eventId);
 
@@ -539,6 +568,120 @@ public class EventsFacade extends AbstractIsaacFacade {
             // af599 TODO: DON'T DO THIS. DO IT RIGHT.
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, e.getMessage()).toResponse();
         }
+    }
+
+    /**
+     * Allows authorised users to view a csv of event attendees
+     *
+     * @param request
+     *            - so we can determine if the user is logged in
+     * @param eventId
+     *            - the event of interest.
+     * @return list of bookings csv.
+     */
+    @GET
+    @Path("{event_id}/bookings/download")
+    @Produces("text/csv")
+    @GZIP
+
+    @ApiOperation(value = "Download event attendance csv.")
+    public Response getEventBookingCSV(@Context final HttpServletRequest request,
+                                                   @PathParam("event_id") final String eventId) {
+        try {
+            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
+            IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
+
+            if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
+            List<EventBookingDTO> eventBookings = bookingManager.getBookingByEventId(eventId);
+
+            // Event leaders are only allowed to see the bookings of connected users
+            if (Role.EVENT_LEADER.equals(currentUser.getRole())) {
+                eventBookings = userAssociationManager.filterUnassociatedRecords(
+                        currentUser, eventBookings, booking -> booking.getUserBooked().getId());
+            }
+
+            List<String[]> rows = Lists.newArrayList();
+            StringWriter stringWriter = new StringWriter();
+            CSVWriter csvWriter = new CSVWriter(stringWriter);
+            StringBuilder headerBuilder = new StringBuilder();
+            headerBuilder.append(String.format("Event (%s) Attendance: Downloaded on %s \nGenerated by: %s %s \n\n",
+                    eventId, new Date(), currentUser.getGivenName(),
+                    currentUser.getFamilyName()));
+
+            List<String> headerRow = Lists.newArrayList(Arrays.asList("", ""));
+
+            rows.add(headerRow.toArray(new String[0]));
+
+            List<String> totalsRow = Lists.newArrayList();
+
+            List<String[]> resultRows = Lists.newArrayList();
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+
+            for (EventBookingDTO booking : eventBookings) {
+                ArrayList<String> resultRow = Lists.newArrayList();
+                UserSummaryDTO resultUser = booking.getUserBooked();
+                RegisteredUserDTO resultRegisteredUser = this.userAccountManager.getUserDTOById(resultUser.getId());
+                String schoolId = resultRegisteredUser.getSchoolId();
+                Map<String, String> resultAdditionalInformation = booking.getAdditionalInformation();
+                BookingStatus resultBookingStatus = booking.getBookingStatus();
+                resultRow.add(resultUser.getGivenName() + " " + resultUser.getFamilyName());
+                resultRow.add(resultRegisteredUser.getRole().toString());
+                if (schoolId != null) {
+                    School school = schoolListReader.findSchoolById(schoolId);
+                    if (null != school) {
+                        resultRow.add(school.getName());
+                    } else {
+                        resultRow.add(schoolId);
+                    }
+                } else {
+                    resultRow.add(resultRegisteredUser.getSchoolOther());
+                }
+                resultRow.add(resultBookingStatus.toString());
+                resultRow.add(dateFormat.format(booking.getBookingDate()));
+                resultRow.add(dateFormat.format(booking.getUpdated()));
+                resultRow.add(resultAdditionalInformation.get("yearGroup"));
+                resultRow.add(resultAdditionalInformation.get("jobTitle"));
+                resultRow.add(resultAdditionalInformation.get("medicalRequirements"));
+                resultRow.add(resultAdditionalInformation.get("accessibilityRequirements"));
+                resultRow.add(resultAdditionalInformation.get("emergencyName"));
+                resultRow.add(resultAdditionalInformation.get("emergencyNumber"));
+                Collections.addAll(resultRows, resultRow.toArray(new String[0]));
+            }
+
+
+            rows.add(totalsRow.toArray(new String[0]));
+            rows.add(("Name,Role,School,Booking status,Booking date,Last updated date,Year group,Job title," +  // lgtm [java/missing-space-in-concatenation]
+                    "Medical/dietary requirements,Accessibility requirements,Emergency name,Emergency number").split(","));
+            rows.addAll(resultRows);
+            csvWriter.writeAll(rows);
+            csvWriter.close();
+
+            headerBuilder.append(stringWriter.toString());
+            return Response.ok(headerBuilder.toString())
+                    .header("Content-Disposition", String.format("attachment; filename=event_attendees_%s.csv", eventId))
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
+
+        } catch (IOException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while building the CSV file.").toResponse();
+        } catch (NoUserException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "No user found with this ID!").toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            String message = "Database error occurred while trying to retrieve all event booking information.";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        }   catch (ContentManagerException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Content Database error occurred while trying to retrieve event booking information.")
+                    .toResponse();
+        } catch (UnableToIndexSchoolsException e) {
+        return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while looking up schools", e)
+                .toResponse();
+    }
     }
 
     /**

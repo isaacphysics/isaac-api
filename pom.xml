@@ -10,7 +10,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <segue.version>2.9.2-SNAPSHOT</segue.version>
+        <segue.version>2.10.2-SNAPSHOT</segue.version>
         <log4j.version>2.12.1</log4j.version>
         <resteasy.version>4.4.0.Final</resteasy.version>
         <guice.version>4.2.2</guice.version>
@@ -419,6 +419,7 @@
                     <reuseForks>false</reuseForks>
                     <systemPropertyVariables>
                         <log.path>${log.path}</log.path>
+                        <segue.version>${segue.version}</segue.version>
                     </systemPropertyVariables>
                     <useSystemClassLoader>false</useSystemClassLoader>
                 </configuration>
