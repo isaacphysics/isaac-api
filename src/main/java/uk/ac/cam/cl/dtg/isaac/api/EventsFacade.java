@@ -1044,13 +1044,14 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             // if the user id is null then it means they are changing their own booking.
             if (userId != null) {
-                if (!bookingManager.isUserAbleToManageEvent(userLoggedIn, event)) {
+                if (!(bookingManager.isUserAbleToManageEvent(userLoggedIn, event) ||
+                      bookingManager.isReservationMadeByRequestingUser(userLoggedIn, userOwningBooking, event))) {
                     return SegueErrorResponse.getIncorrectRoleResponse();
                 }
             }
 
             Set<BookingStatus> cancelableStatuses =
-                    new HashSet<>(Arrays.asList(BookingStatus.CONFIRMED, BookingStatus.WAITING_LIST));
+                    new HashSet<>(Arrays.asList(BookingStatus.CONFIRMED, BookingStatus.WAITING_LIST, BookingStatus.RESERVED));
             if (!bookingManager.hasBookingWithAnyOfStatuses(eventId, userOwningBooking.getId(), cancelableStatuses)) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "User is not booked on this event.").toResponse();
             }

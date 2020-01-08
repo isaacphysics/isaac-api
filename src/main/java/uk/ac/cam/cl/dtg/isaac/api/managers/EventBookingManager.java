@@ -44,6 +44,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.io.UnsupportedEncodingException;
@@ -138,6 +139,10 @@ public class EventBookingManager {
         return this.bookingPersistenceManager.getBookingByEventId(eventId);
     }
 
+    public EventBookingDTO getBookingByEventIdAndUserId(final String eventId, final Long userId) throws SegueDatabaseException {
+        return this.bookingPersistenceManager.getBookingByEventIdAndUserId(eventId, userId);
+    }
+
     /**
      * Utility method to provide a count of the number of bookings on a given event with a given status.
      *
@@ -186,6 +191,29 @@ public class EventBookingManager {
             }
         }
         return false;
+    }
+
+    /**
+     * Check if the requesting/logged-in user is the one who made the reservation.
+     *
+     * @param user                  The logged in user
+     * @param userOwningReservation The reserved user
+     * @param event                 The event on which the reserved user is reserved
+     * @return either true or false whether the requesting user made the reservation
+     * @throws SegueDatabaseException
+     */
+    public boolean isReservationMadeByRequestingUser(RegisteredUserDTO user,
+                                                     RegisteredUserDTO userOwningReservation,
+                                                     IsaacEventPageDTO event)
+            throws SegueDatabaseException {
+
+        EventBookingDTO booking = this.getBookingByEventIdAndUserId(event.getId(), userOwningReservation.getId());
+        UserSummaryDTO reservingUser = booking.getReservedBy();
+        if (null != reservingUser) {
+            return reservingUser.getId().equals(user.getId());
+        } else {
+            return false;
+        }
     }
 
     /**
