@@ -494,16 +494,6 @@ public class EventBookingManager {
                     log.error(String.format("Unable to send event email (%s) to user (%s)",
                             event.getId(), user.getEmail()), e);
                 }
-
-                // auto add them to the group and grant the owner permission
-                if (event.getIsaacGroupToken() != null && !event.getIsaacGroupToken().isEmpty()) {
-                    try {
-                        this.userAssociationManager.createAssociationWithToken(event.getIsaacGroupToken(), user);
-                    } catch (InvalidUserAssociationTokenException e) {
-                        log.error(String.format("Unable to auto add user (%s) using token (%s) as the token is invalid.",
-                                user.getEmail(), event.getIsaacGroupToken()));
-                    }
-                }
             }
             return reservations;
 
