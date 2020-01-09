@@ -4,7 +4,7 @@
 #COPY pom.xml .
 #RUN mvn dependency:go-offline
 
-FROM isaac-api-base
+FROM isaac-api-base:latest as target
 
 COPY . /isaac-api
 
