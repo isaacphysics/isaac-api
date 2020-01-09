@@ -31,7 +31,7 @@
         </init-param>
         <init-param>
             <param-name>allowedOrigins</param-name>
-            <param-value>(https://*.isaac(physics|computerscience).org|http://localhost:800[0123])</param-value>
+            <param-value>(https://*.isaac(physics|computerscience).org|http://localhost:800[01234])</param-value>
         </init-param>
     </filter>
     <filter-mapping>
