@@ -24,6 +24,7 @@
         <jetty.port.etl>8090</jetty.port.etl>
         <config.location>/local/data/conf/segue-config.properties</config.location>
         <log.path>/isaac-logs</log.path>
+        <web.xml>override-api-web.xml</web.xml>
     </properties>
 
     <repositories>
@@ -407,7 +408,7 @@
                 <artifactId>maven-war-plugin</artifactId>
                 <version>3.2.3</version>
                 <configuration>
-                    <webXml>${basedir}/override-api-web.xml</webXml>
+                    <webXml>${basedir}/${web.xml}</webXml>
                 </configuration>
             </plugin>
             <plugin>
@@ -543,6 +544,7 @@
             <id>etl</id>
             <properties>
                 <build.profile.id>etl</build.profile.id>
+                <web.xml>override-etl-web.xml</web.xml>
             </properties>
             <build>
                 <plugins>

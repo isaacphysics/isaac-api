@@ -1,13 +1,9 @@
-# Step : Download dependencies so that they are cached in the docker layer if the pom file doesn't change
-FROM maven:3.5.3-jdk-8-alpine as target
-WORKDIR /isaac-api
-COPY pom.xml .
-RUN mvn dependency:go-offline
+FROM isaac-api-base:latest as target
 
 COPY . /isaac-api
 
 # build isaac api war file without unit tests
-RUN mvn package -Dmaven.test.skip=true
+RUN mvn package -Dmaven.test.skip=true -P etl
 
 # create clean jetty docker container
 FROM jetty:9.3.27 as server
