@@ -231,6 +231,10 @@ public class EventBookingManager {
     public EventBookingDTO createBookingOrAddToWaitingList(final IsaacEventPageDTO event, final RegisteredUserDTO user,
                                          final Map<String, String> additionalEventInformation)
             throws SegueDatabaseException, DuplicateBookingException {
+        // If a reservation exists, delete it before creating a booking
+        if (this.isUserReserved(event.getId(), user.getId())) {
+            this.deleteBooking(event, user);
+        }
         // check if already booked
         if (this.isUserBooked(event.getId(), user.getId())) {
             throw new DuplicateBookingException(String.format("Unable to book onto event (%s) as user (%s) is already"
@@ -286,6 +290,10 @@ public class EventBookingManager {
                                          final Map<String, String> additionalEventInformation,
                                          final BookingStatus status)
             throws SegueDatabaseException, DuplicateBookingException, EventIsFullException {
+        // If a reservation exists, delete it before creating a booking
+        if (this.isUserReserved(event.getId(), user.getId())) {
+            this.deleteBooking(event, user);
+        }
         // check if already booked
         if (this.isUserBooked(event.getId(), user.getId())) {
             throw new DuplicateBookingException(String.format("Unable to book onto event (%s) as user (%s) is already"
@@ -806,6 +814,10 @@ public class EventBookingManager {
         return this.bookingPersistenceManager.isUserBooked(eventId, userId);
     }
 
+    public boolean isUserReserved(final String eventId, final Long userId) throws SegueDatabaseException {
+        return this.bookingPersistenceManager.isUserReserved(eventId, userId);
+    }
+
     /**
      * Find out if a user has a booking with a given status.
      *
@@ -1037,6 +1049,10 @@ public class EventBookingManager {
             throw new EventDeadlineException("The booking deadline has passed.");
         }
 
+        if (this.isUserReserved(event.getId(), user.getId())) {
+            throw new DuplicateBookingException(String.format("Unable to reserve onto event (%s) as user (%s) is"
+                    + " already reserved on to it.", event.getId(), user.getEmail()));
+        }
         // check if already booked
         if (this.isUserBooked(event.getId(), user.getId())) {
             throw new DuplicateBookingException(String.format("Unable to book onto event (%s) as user (%s) is already"

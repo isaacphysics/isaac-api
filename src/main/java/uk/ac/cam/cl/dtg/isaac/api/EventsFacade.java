@@ -727,6 +727,12 @@ public class EventsFacade extends AbstractIsaacFacade {
                         .toResponse();
             }
 
+            // If there is a reservation, delete the reservation before creating a booking.
+            // The alternative is to modify the EventBookingManager::createBookingOrAddToWaitingList method called below.
+            if (bookingManager.isUserReserved(eventId, userId)) {
+                bookingManager.deleteBooking(event, bookedUser);
+            }
+
             EventBookingDTO booking = bookingManager.createBookingOrAddToWaitingList(event, bookedUser, additionalInformation);
             this.getLogManager().logEvent(currentUser, request,
                     SegueLogType.ADMIN_EVENT_BOOKING_CREATED,
@@ -793,7 +799,8 @@ public class EventsFacade extends AbstractIsaacFacade {
             bookableIds = new ArrayList<>();
             List<Long> unbookableIds = new ArrayList<>();
             for (Long userId : userIds) {
-                if (bookingManager.isUserBooked(eventId, userId)) {
+                // Do not add a reservation if a user is already booked or reserved.
+                if (bookingManager.isUserBooked(eventId, userId) || bookingManager.isUserReserved(eventId, userId)) {
                     unbookableIds.add(userId);
                 } else {
                     bookableIds.add(userId);
@@ -886,6 +893,11 @@ public class EventsFacade extends AbstractIsaacFacade {
                         .toResponse();
             }
 
+            // If there is a reservation, delete the reservation before creating a booking.
+            if (bookingManager.isUserReserved(eventId, user.getId())) {
+                bookingManager.deleteBooking(event, user);
+            }
+
             if (bookingManager.isUserBooked(eventId, user.getId())) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "You are already booked on this event.")
                     .toResponse();
@@ -948,8 +960,9 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
 
-            if (bookingManager.isUserBooked(eventId, user.getId())) {
-                return new SegueErrorResponse(Status.BAD_REQUEST, "You are already booked on this event.")
+            // Fail if the user is already booked or reserved for this event, so there's no need to add to a waiting list.
+            if (bookingManager.isUserBooked(eventId, user.getId()) || bookingManager.isUserReserved(eventId, user.getId())) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You are already booked or reserved on this event.")
                     .toResponse();
             }
 
@@ -1517,7 +1530,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             try {
                 RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
-                Boolean userBooked = this.bookingManager.isUserBooked(id, user.getId());
+                Boolean userBooked = this.bookingManager.isUserBooked(id, user.getId()) || this.bookingManager.isUserReserved(id, user.getId());
                 page.setUserBooked(userBooked);
                 page.setUserOnWaitList(this.bookingManager.hasBookingWithStatus(id, user.getId(), BookingStatus.WAITING_LIST));
             } catch (NoUserLoggedInException e) {
@@ -1547,7 +1560,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             try {
                 RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
-                Boolean userBooked = this.bookingManager.isUserBooked(page.getId(), user.getId());
+                Boolean userBooked = this.bookingManager.isUserBooked(page.getId(), user.getId()) || this.bookingManager.isUserReserved(page.getId(), user.getId());
                 page.setUserBooked(userBooked);
                 page.setUserOnWaitList(this.bookingManager.hasBookingWithStatus(page.getId(), user.getId(), BookingStatus.WAITING_LIST));
             } catch (NoUserLoggedInException e) {

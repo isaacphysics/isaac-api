@@ -188,8 +188,17 @@ public class EventBookingPersistenceManager {
         try {
             final EventBooking bookingByEventAndUser = dao.findBookingByEventAndUser(eventId, userId);
             List<BookingStatus> bookedStatuses = Arrays.asList(
-                    BookingStatus.CONFIRMED, BookingStatus.ATTENDED, BookingStatus.ABSENT, BookingStatus.RESERVED);
+                    BookingStatus.CONFIRMED, BookingStatus.ATTENDED, BookingStatus.ABSENT);
             return bookingByEventAndUser != null && bookedStatuses.contains(bookingByEventAndUser.getBookingStatus());
+        } catch (ResourceNotFoundException e) {
+            return false;
+        }
+    }
+
+    public boolean isUserReserved(final String eventId, final Long userId) throws SegueDatabaseException {
+        try {
+            final EventBooking bookingByEventAndUser = dao.findBookingByEventAndUser(eventId, userId);
+            return bookingByEventAndUser.getBookingStatus().equals(BookingStatus.RESERVED);
         } catch (ResourceNotFoundException e) {
             return false;
         }
