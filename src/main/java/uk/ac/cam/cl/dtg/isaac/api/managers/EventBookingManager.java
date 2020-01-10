@@ -49,15 +49,21 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TimeZone;
 import java.text.DateFormat;
+import java.util.stream.Stream;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
@@ -472,14 +478,24 @@ public class EventBookingManager {
                 // attempt to book them on the event
                 EventBookingDTO reservation;
 
+                Calendar calendar = Calendar.getInstance();
+                calendar.add(Calendar.DAY_OF_MONTH, EVENT_RESERVATION_CLOSE_INTERVAL_DAYS);
+                Date reservationCloseDate = Stream.of(calendar.getTime(), event.getDate())
+                        .min(Comparator.comparing(Date::getTime))
+                        .orElseThrow(NoSuchElementException::new);
+
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+                Map<String, String> additionalEventInformation = new HashMap<>();
+                additionalEventInformation.put("reservationCloseDate", dateFormat.format(reservationCloseDate));
+
                 // attempt to book them on the event
                 if (this.hasBookingWithStatus(event.getId(), user.getId(), BookingStatus.CANCELLED)) {
                     // if the user has previously cancelled we should let them book again.
                     reservation = this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(), reservingUser.getId(),
-                            BookingStatus.RESERVED, null);
+                            BookingStatus.RESERVED, additionalEventInformation);
                 } else {
                     reservation = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), reservingUser.getId(),
-                            BookingStatus.RESERVED, null);
+                            BookingStatus.RESERVED, additionalEventInformation);
                 }
                 reservations.add(reservation);
 

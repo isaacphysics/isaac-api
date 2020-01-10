@@ -388,6 +388,8 @@ public final class Constants {
     public static final String EVENT_TAGS_FIELDNAME = "eventTags";
     public static final String CONTENT_VERSION_FIELDNAME = "contentVersion";
 
+    public static final Integer EVENT_RESERVATION_CLOSE_INTERVAL_DAYS = 14;
+
     /**
      *  Enum to represent filter values for event management.
      */
