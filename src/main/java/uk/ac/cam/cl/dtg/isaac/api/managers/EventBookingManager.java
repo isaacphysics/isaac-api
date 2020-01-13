@@ -41,6 +41,7 @@ import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenExcept
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
+import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -63,6 +64,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TimeZone;
 import java.text.DateFormat;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -455,8 +457,8 @@ public class EventBookingManager {
      * @return confirmation of reservation
      */
     public List<EventBookingDTO> requestReservations(final IsaacEventPageDTO event, final List<RegisteredUserDTO> users, final RegisteredUserDTO reservingUser)
-            throws EventDeadlineException, EmailMustBeVerifiedException,
-            DuplicateBookingException, SegueDatabaseException, EventIsFullException {
+            throws EventDeadlineException, EmailMustBeVerifiedException, DuplicateBookingException,
+            SegueDatabaseException, EventIsFullException, EventGroupReservationLimitException {
 
         // af599 TODO: Is it wise to do this before acquiring a database lock?
         for (RegisteredUserDTO user : users) {
@@ -472,6 +474,9 @@ public class EventBookingManager {
             // work out capacity information for the event at this moment in time.
             // If there is no space, no reservations are made. Throw an exception and handle in EventsFacade.
             this.ensureCapacity(event, users);
+
+            // Is the request for more reservations that this event allows?
+            this.enforceReservationLimit(event, users, reservingUser);
 
             // IMPORTANT: Any non-ignorable exception past this point must roll back any reservation made thus far.
             for (RegisteredUserDTO user : users) {
@@ -521,7 +526,7 @@ public class EventBookingManager {
             }
             return reservations;
 
-        } catch (EventIsFullException | SegueDatabaseException e) {
+        } catch (EventIsFullException | SegueDatabaseException | EventGroupReservationLimitException e) {
             for (EventBookingDTO reservation : reservations) {
                 try {
                     bookingPersistenceManager.deleteBooking(event.getId(), reservation.getUserBooked().getId());
@@ -1034,6 +1039,26 @@ public class EventBookingManager {
             if (numberOfPlaces - numberOfRequests < 0) {
                 throw  new EventIsFullException(String.format("Unable to book batch (%s) onto event (%s) as there are "
                         + "not enough places available", users, event.getId()));
+            }
+        }
+    }
+
+    private void enforceReservationLimit(final IsaacEventPageDTO event, final List<RegisteredUserDTO> users,
+                                         final RegisteredUserDTO reservingUser)
+            throws SegueDatabaseException, EventGroupReservationLimitException {
+
+        long numberOfExistingReservations = getBookingByEventId(event.getId())
+                .stream()
+                .filter(reservation -> reservation.getBookingStatus().equals(BookingStatus.RESERVED) &&
+                                       reservation.getReservedBy().getId().equals(reservingUser.getId())).count();
+        final boolean isStudentEvent = event.getTags().contains("student");
+        Integer groupReservationLimit = event.getGroupReservationLimit();
+        // This should never be null
+        if (groupReservationLimit != null) {
+            long numberOfRequests = users.stream().filter(user -> !isStudentEvent || !Role.TEACHER.equals(user.getRole())).count();
+            if (groupReservationLimit - numberOfExistingReservations - numberOfRequests < 0) {
+                throw new EventGroupReservationLimitException(String.format("You can request a maximum of %d student "
+                        + "reservations for event (%s)", numberOfRequests, event.getId()));
             }
         }
     }

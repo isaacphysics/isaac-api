@@ -32,6 +32,8 @@ import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.util.locations.Address;
 import uk.ac.cam.cl.dtg.util.locations.Location;
 
+import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_GROUP_RESERVATION_LIMIT;
+
 /**
  * DO for isaac Event.
  */
@@ -64,6 +66,8 @@ public class IsaacEventPage extends Content {
 
 	private String isaacGroupToken;
 
+	private Integer groupReservationLimit;
+
 	@JsonCreator
 	public IsaacEventPage(@JsonProperty("id") String id,
 						  @JsonProperty("title") String title,
@@ -84,7 +88,8 @@ public class IsaacEventPage extends Content {
 						  @JsonProperty("postResources") List<ExternalReference> postResources,
 						  @JsonProperty("eventThumbnail") Image eventThumbnail,
 						  @JsonProperty("numberOfPlaces") Integer numberOfPlaces,
-						  @JsonProperty("EventStatus") EventStatus eventStatus) {
+						  @JsonProperty("EventStatus") EventStatus eventStatus,
+						  @JsonProperty("groupReservationLimit") Integer groupReservationLimit) {
 		super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, null,
 			null, relatedContent, published, tags, null);
 
@@ -98,6 +103,7 @@ public class IsaacEventPage extends Content {
 		this.eventThumbnail = eventThumbnail;
 		this.numberOfPlaces = numberOfPlaces;
 		this.eventStatus = eventStatus;
+		this.groupReservationLimit = groupReservationLimit != null ? groupReservationLimit : EVENT_GROUP_RESERVATION_LIMIT;
 	}
 
 	/**
@@ -431,4 +437,21 @@ public class IsaacEventPage extends Content {
 	public void setEmailWaitingListBookingText(String emailWaitingListBookingText) {
 		this.emailWaitingListBookingText = emailWaitingListBookingText;
 	}
+
+	/**
+	 * Get the maximum number of reservations per event that a teacher can request.
+	 * @return groupReservationLimit
+	 */
+	public Integer getGroupReservationLimit() {
+		return groupReservationLimit;
+	}
+
+	/**
+	 * Set the maximum number of reservations per event that a teacher can request.
+	 * @param groupReservationLimit
+	 */
+	public void setGroupReservationLimit(Integer groupReservationLimit) {
+		this.groupReservationLimit = groupReservationLimit;
+	}
+
 }

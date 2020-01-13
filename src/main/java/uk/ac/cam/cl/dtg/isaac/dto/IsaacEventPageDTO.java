@@ -33,6 +33,8 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ImageDTO;
 import uk.ac.cam.cl.dtg.util.locations.Address;
 import uk.ac.cam.cl.dtg.util.locations.Location;
 
+import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_GROUP_RESERVATION_LIMIT;
+
 /**
  * DTO for isaac Event.
  *
@@ -67,7 +69,9 @@ public class IsaacEventPageDTO extends ContentDTO {
 
     private Integer placesAvailable;
 
-	/**
+    private Integer groupReservationLimit;
+
+    /**
      *
      * @param id
      * @param title
@@ -92,19 +96,28 @@ public class IsaacEventPageDTO extends ContentDTO {
 	 */
     @JsonCreator
     public IsaacEventPageDTO(@JsonProperty("id") String id,
-            @JsonProperty("title") String title, @JsonProperty("subtitle") String subtitle,
-            @JsonProperty("type") String type, @JsonProperty("author") String author,
-            @JsonProperty("encoding") String encoding, @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
-            @JsonProperty("layout") String layout, @JsonProperty("children") List<ContentBaseDTO> children,
-            @JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
-            @JsonProperty("version") boolean published, @JsonProperty("tags") Set<String> tags,
-            @JsonProperty("date") Date date, @JsonProperty("end_date") Date end_date,
-            @JsonProperty("bookingDeadline") Date bookingDeadline, @JsonProperty("prepWorkDeadline") Date prepWorkDeadline,
-            @JsonProperty("location") Location location,
-            @JsonProperty("preResources") List<ExternalReference> preResources,
-            @JsonProperty("postResources") List<ExternalReference> postResources,
-            @JsonProperty("eventThumbnail") ImageDTO eventThumbnail,
-            @JsonProperty("numberOfPlaces") Integer numberOfPlaces, @JsonProperty("EventStatus") EventStatus eventStatus) {
+                             @JsonProperty("title") String title,
+                             @JsonProperty("subtitle") String subtitle,
+                             @JsonProperty("type") String type,
+                             @JsonProperty("author") String author,
+                             @JsonProperty("encoding") String encoding,
+                             @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
+                             @JsonProperty("layout") String layout,
+                             @JsonProperty("children") List<ContentBaseDTO> children,
+                             @JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
+                             @JsonProperty("version") boolean published,
+                             @JsonProperty("tags") Set<String> tags,
+                             @JsonProperty("date") Date date,
+                             @JsonProperty("end_date") Date end_date,
+                             @JsonProperty("bookingDeadline") Date bookingDeadline,
+                             @JsonProperty("prepWorkDeadline") Date prepWorkDeadline,
+                             @JsonProperty("location") Location location,
+                             @JsonProperty("preResources") List<ExternalReference> preResources,
+                             @JsonProperty("postResources") List<ExternalReference> postResources,
+                             @JsonProperty("eventThumbnail") ImageDTO eventThumbnail,
+                             @JsonProperty("numberOfPlaces") Integer numberOfPlaces,
+                             @JsonProperty("EventStatus") EventStatus eventStatus,
+                             @JsonProperty("groupReservationLimit") Integer groupReservationLimit) {
         super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, null, null,
                 relatedContent, published, tags, null);
 
@@ -118,6 +131,7 @@ public class IsaacEventPageDTO extends ContentDTO {
         this.eventThumbnail = eventThumbnail;
         this.numberOfPlaces = numberOfPlaces;
         this.eventStatus = eventStatus;
+        this.groupReservationLimit = groupReservationLimit != null ? groupReservationLimit : EVENT_GROUP_RESERVATION_LIMIT;
     }
 
     /**
@@ -506,5 +520,13 @@ public class IsaacEventPageDTO extends ContentDTO {
      */
     public void setEmailWaitingListBookingText(String emailWaitingListBookingText) {
         this.emailWaitingListBookingText = emailWaitingListBookingText;
+    }
+
+    public Integer getGroupReservationLimit() {
+        return groupReservationLimit;
+    }
+
+    public void setGroupReservationLimit(Integer groupReservationLimit) {
+        this.groupReservationLimit = groupReservationLimit;
     }
 }

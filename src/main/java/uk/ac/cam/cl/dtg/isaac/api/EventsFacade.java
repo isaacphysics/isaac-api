@@ -31,6 +31,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateBookingException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingUpdateException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventDeadlineException;
+import uk.ac.cam.cl.dtg.isaac.api.managers.EventGroupReservationLimitException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventIsFullException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventIsNotFullException;
 import uk.ac.cam.cl.dtg.isaac.dos.EventStatus;
@@ -101,6 +102,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.BOOKING_STATUS_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT_AS_STRING;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_START_INDEX_AS_STRING;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_DATE_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_GROUP_RESERVATION_LIMIT;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_ID_FKEY_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_TAGS_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.EventFilterOption;
@@ -782,7 +784,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                                                           @PathParam("event_id") final String eventId,
                                                           final List<Long> userIds) {
         RegisteredUserDTO currentUser;
-        IsaacEventPageDTO event;
+        IsaacEventPageDTO event = null;
         List<Long> bookableIds;
         try {
             currentUser = userManager.getCurrentRegisteredUser(request);
@@ -843,6 +845,11 @@ public class EventsFacade extends AbstractIsaacFacade {
             // af599 TODO: Return the number of available spaces maybe?
             return new SegueErrorResponse(Status.CONFLICT,
                     "There are not enough spaces available for this event. Please try again with fewer users.")
+                    .toResponse();
+        } catch (EventGroupReservationLimitException e) {
+            return new SegueErrorResponse(Status.CONFLICT,
+                    String.format("You can only request a maximum of %d student reservations for this event.",
+                            event != null ? event.getGroupReservationLimit() : EVENT_GROUP_RESERVATION_LIMIT))
                     .toResponse();
         } catch (EventDeadlineException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST,
