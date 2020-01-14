@@ -10,7 +10,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <segue.version>2.9.2-SNAPSHOT</segue.version>
+        <segue.version>2.10.2-SNAPSHOT</segue.version>
         <log4j.version>2.12.1</log4j.version>
         <resteasy.version>4.4.0.Final</resteasy.version>
         <guice.version>4.2.2</guice.version>
@@ -24,6 +24,7 @@
         <jetty.port.etl>8090</jetty.port.etl>
         <config.location>/local/data/conf/segue-config.properties</config.location>
         <log.path>/isaac-logs</log.path>
+        <web.xml>override-api-web.xml</web.xml>
     </properties>
 
     <repositories>
@@ -407,7 +408,7 @@
                 <artifactId>maven-war-plugin</artifactId>
                 <version>3.2.3</version>
                 <configuration>
-                    <webXml>${basedir}/override-api-web.xml</webXml>
+                    <webXml>${basedir}/${web.xml}</webXml>
                 </configuration>
             </plugin>
             <plugin>
@@ -419,6 +420,7 @@
                     <reuseForks>false</reuseForks>
                     <systemPropertyVariables>
                         <log.path>${log.path}</log.path>
+                        <segue.version>${segue.version}</segue.version>
                     </systemPropertyVariables>
                     <useSystemClassLoader>false</useSystemClassLoader>
                 </configuration>
@@ -542,6 +544,7 @@
             <id>etl</id>
             <properties>
                 <build.profile.id>etl</build.profile.id>
+                <web.xml>override-etl-web.xml</web.xml>
             </properties>
             <build>
                 <plugins>

@@ -317,11 +317,15 @@ public class IsaacController extends AbstractIsaacFacade {
                         .getUserQuestionInformation(userOfInterestFull);
 
                 // augment details with user snapshot data (perhaps one day we will replace the entire endpoint with this call)
-                Map<String, Object> streakRecord = userStreaksManager.getCurrentStreakRecord(userOfInterestFull);
-                streakRecord.put("largestStreak", userStreaksManager.getLongestStreak(userOfInterestFull));
+                Map<String, Object> dailyStreakRecord = userStreaksManager.getCurrentStreakRecord(userOfInterestFull);
+                dailyStreakRecord.put("largestStreak", userStreaksManager.getLongestStreak(userOfInterestFull));
+
+                Map<String, Object> weeklyStreakRecord = userStreaksManager.getCurrentWeeklyStreakRecord(userOfInterestFull);
+                weeklyStreakRecord.put("largestStreak", userStreaksManager.getLongestWeeklyStreak(userOfInterestFull));
 
                 Map<String, Object> userSnapshot = ImmutableMap.of(
-                        "streakRecord", streakRecord,
+                        "dailyStreakRecord", dailyStreakRecord,
+                        "weeklyStreakRecord", weeklyStreakRecord,
                         "achievementsRecord", userBadgeManager.getAllUserBadges(userOfInterestFull)
                 );
 

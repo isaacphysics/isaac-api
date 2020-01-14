@@ -602,6 +602,10 @@ public class SegueContentFacade extends AbstractSegueFacade {
                 mimeType = "image/png";
                 break;
 
+            case "gif":
+                mimeType = "image/gif";
+                break;
+
             default:
                 // if it is an unknown type return an error as they shouldn't be
                 // using this endpoint.

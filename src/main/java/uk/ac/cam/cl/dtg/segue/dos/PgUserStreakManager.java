@@ -90,6 +90,57 @@ public class PgUserStreakManager implements IUserStreaksManager {
     }
 
     @Override
+    public Map<String, Object> getCurrentWeeklyStreakRecord(final RegisteredUserDTO user) {
+
+        Map<String, Object> streakRecord = Maps.newHashMap();
+        streakRecord.put("currentActivity", 0);
+        streakRecord.put("currentStreak", 0);
+
+        try (Connection conn = database.getDatabaseConnection()) {
+            PreparedStatement pst;
+            pst = conn.prepareStatement("SELECT * FROM"
+                    + " user_streaks_weekly_current_progress(?) LEFT JOIN user_streaks_weekly(?)"
+                    + " ON user_streaks_weekly_current_progress.currentweek - user_streaks_weekly.enddate <= 1"
+                    + " AND user_streaks_weekly.startdate <= user_streaks_weekly_current_progress.currentweek");
+
+            pst.setLong(1, user.getId());
+            pst.setLong(2, user.getId());
+            ResultSet results = pst.executeQuery();
+
+            if (results.next()) {
+                streakRecord.put("currentActivity", results.getInt("currentprogress"));
+                streakRecord.put("currentStreak", results.getInt("streaklength"));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return streakRecord;
+    }
+
+    @Override
+    public int getLongestWeeklyStreak(final RegisteredUserDTO user) {
+
+        try (Connection conn = database.getDatabaseConnection()) {
+            PreparedStatement pst;
+            pst = conn.prepareStatement("SELECT * FROM user_streaks_weekly(?) ORDER BY streaklength DESC LIMIT 1");
+
+            pst.setLong(1, user.getId());
+            ResultSet results = pst.executeQuery();
+
+            if (results.next()) {
+                return results.getInt("streaklength");
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
+
+    @Override
     public void notifyUserOfStreakChange(final RegisteredUserDTO user) {
         // FIXME - it is unlikely that this is the best location for this code!
         // It is better than in the already bloated facade method, however!
@@ -101,7 +152,7 @@ public class PgUserStreakManager implements IUserStreaksManager {
 
             UserAlertsWebSocket.notifyUserOfAlert(userId, alert);
         } catch (JsonProcessingException e) {
-            log.error(String.format("Unable to serialize user streak change JSON for user {}: {}",
+            log.error(String.format("Unable to serialize user streak change JSON for user %s: %s",
                     user.getId(), e.getMessage()));
         }
     }
