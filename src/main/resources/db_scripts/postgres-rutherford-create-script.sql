@@ -552,6 +552,7 @@ CREATE TABLE public.users (
     registration_date timestamp without time zone,
     school_id text,
     school_other text,
+    exam_board text,
     last_updated timestamp without time zone,
     email_verification_status character varying(255),
     last_seen timestamp without time zone,
