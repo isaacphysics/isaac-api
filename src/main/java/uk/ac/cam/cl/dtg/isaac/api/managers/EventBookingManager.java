@@ -400,13 +400,14 @@ public class EventBookingManager {
             EventBookingDTO booking;
 
             // attempt to book them on the event
+            Long reservedById = reservedBy == null ? null : reservedBy.getId();
             if (this.hasBookingWithStatus(event.getId(), user.getId(), BookingStatus.CANCELLED)) {
                 // if the user has previously cancelled we should let them book again.
-                booking = this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(), reservedBy.getId(),
+                booking = this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(), reservedById,
                         BookingStatus.CONFIRMED, additionalEventInformation);
             } else {
-                booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), reservedBy.getId(), BookingStatus
-                        .CONFIRMED, additionalEventInformation);
+                booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), reservedById,
+                        BookingStatus.CONFIRMED, additionalEventInformation);
             }
 
             try {
