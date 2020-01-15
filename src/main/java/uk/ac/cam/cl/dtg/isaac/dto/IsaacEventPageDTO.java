@@ -24,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import uk.ac.cam.cl.dtg.isaac.dos.EventStatus;
+import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.segue.dos.content.ExternalReference;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
@@ -66,6 +67,7 @@ public class IsaacEventPageDTO extends ContentDTO {
 
     private Boolean isUserBooked;
     private Boolean isUserOnWaitList;
+    private BookingStatus userBookingStatus;
 
     private Integer placesAvailable;
 
@@ -529,4 +531,13 @@ public class IsaacEventPageDTO extends ContentDTO {
     public void setGroupReservationLimit(Integer groupReservationLimit) {
         this.groupReservationLimit = groupReservationLimit;
     }
+
+    public BookingStatus getUserBookingStatus() {
+        return userBookingStatus;
+    }
+
+    public void setUserBookingStatus(BookingStatus userBookingStatus) {
+        this.userBookingStatus = userBookingStatus;
+    }
+
 }

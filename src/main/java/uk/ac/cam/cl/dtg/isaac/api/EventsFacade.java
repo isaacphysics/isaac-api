@@ -887,7 +887,6 @@ public class EventsFacade extends AbstractIsaacFacade {
                                              final Map<String, String> additionalInformation) {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
-
             IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
 
             if (EventStatus.CLOSED.equals(event.getEventStatus())) {
@@ -1537,9 +1536,10 @@ public class EventsFacade extends AbstractIsaacFacade {
             try {
                 RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
-                Boolean userBooked = this.bookingManager.isUserBooked(id, user.getId()) || this.bookingManager.isUserReserved(id, user.getId());
+                Boolean userBooked = this.bookingManager.isUserBooked(id, user.getId());
                 page.setUserBooked(userBooked);
                 page.setUserOnWaitList(this.bookingManager.hasBookingWithStatus(id, user.getId(), BookingStatus.WAITING_LIST));
+                page.setUserBookingStatus(this.bookingManager.getBookingStatus(id, user.getId()));
             } catch (NoUserLoggedInException e) {
                 // no action as we don't require the user to be logged in.
                 page.setUserBooked(null);

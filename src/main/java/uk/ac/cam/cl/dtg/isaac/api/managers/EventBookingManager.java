@@ -41,7 +41,6 @@ import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenExcept
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
-import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -64,7 +63,6 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TimeZone;
 import java.text.DateFormat;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -878,6 +876,24 @@ public class EventBookingManager {
     }
 
     /**
+     * Return the booking status for the given user and event IDs.
+     *
+     * @param eventId - of interest
+     * @param userId - of interest.
+     * @return bookingStatus - the status of the booking.
+     * @throws SegueDatabaseException - if an error occurs.
+     */
+    public BookingStatus getBookingStatus(final String eventId, final Long userId)
+        throws SegueDatabaseException {
+        try {
+            EventBookingDTO eb = this.bookingPersistenceManager.getBookingByEventIdAndUserId(eventId, userId);
+            return eb != null ? eb.getBookingStatus() : null;
+        } catch (ResourceNotFoundException e) {
+            return null;
+        }
+    }
+
+    /**
      * Cancel a booking.
      * <p>
      * Note: cancelled bookings no longer occupy space on an events capacity calculations.
@@ -1049,8 +1065,9 @@ public class EventBookingManager {
 
         long numberOfExistingReservations = getBookingByEventId(event.getId())
                 .stream()
-                .filter(reservation -> reservation.getBookingStatus().equals(BookingStatus.RESERVED) &&
-                                       reservation.getReservedBy().getId().equals(reservingUser.getId())).count();
+                .filter(reservation -> reservation.getReservedBy().getId().equals(reservingUser.getId())).count();
+//                .filter(reservation -> reservation.getBookingStatus().equals(BookingStatus.RESERVED) &&
+//                reservation.getReservedBy().getId().equals(reservingUser.getId())).count();
         final boolean isStudentEvent = event.getTags().contains("student");
         Integer groupReservationLimit = event.getGroupReservationLimit();
         // This should never be null
