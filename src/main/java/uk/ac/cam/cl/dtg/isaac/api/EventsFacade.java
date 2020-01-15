@@ -799,11 +799,6 @@ public class EventsFacade extends AbstractIsaacFacade {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
-            // af599 TODO: Make sure this makes sense, adapt it, or remove it
-            /* if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
-                return SegueErrorResponse.getIncorrectRoleResponse();
-            } */
-
             bookableIds = new ArrayList<>();
             List<Long> unbookableIds = new ArrayList<>();
             for (Long userId : userIds) {
