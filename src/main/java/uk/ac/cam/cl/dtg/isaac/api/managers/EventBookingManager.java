@@ -382,6 +382,7 @@ public class EventBookingManager {
      * @throws EventDeadlineException       - The deadline for booking has passed.
      */
     public EventBookingDTO requestBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user,
+                                          final RegisteredUserDTO reservedBy,
                                           final Map<String, String> additionalEventInformation)
             throws SegueDatabaseException, EmailMustBeVerifiedException, DuplicateBookingException,
             EventIsFullException, EventDeadlineException {
@@ -401,10 +402,10 @@ public class EventBookingManager {
             // attempt to book them on the event
             if (this.hasBookingWithStatus(event.getId(), user.getId(), BookingStatus.CANCELLED)) {
                 // if the user has previously cancelled we should let them book again.
-                booking = this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(), null,
+                booking = this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(), reservedBy.getId(),
                         BookingStatus.CONFIRMED, additionalEventInformation);
             } else {
-                booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), null, BookingStatus
+                booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), reservedBy.getId(), BookingStatus
                         .CONFIRMED, additionalEventInformation);
             }
 
@@ -948,6 +949,16 @@ public class EventBookingManager {
 
             this.removeUserFromEventGroup(event, user);
 
+        } finally {
+            this.bookingPersistenceManager.releaseDistributedLock(event.getId());
+        }
+    }
+
+    public void deleteReservation(final IsaacEventPageDTO event, final RegisteredUserDTO user) throws SegueDatabaseException {
+        try {
+            // Obtain an exclusive database lock to lock the booking
+            this.bookingPersistenceManager.acquireDistributedLock(event.getId());
+            this.bookingPersistenceManager.deleteBooking(event.getId(), user.getId());
         } finally {
             this.bookingPersistenceManager.releaseDistributedLock(event.getId());
         }

@@ -900,8 +900,12 @@ public class EventsFacade extends AbstractIsaacFacade {
             }
 
             // If there is a reservation, delete the reservation before creating a booking.
+            RegisteredUserDTO reservedBy = null;
             if (bookingManager.isUserReserved(eventId, user.getId())) {
-                bookingManager.deleteBooking(event, user);
+                EventBookingDTO booking = bookingManager.getBookingByEventIdAndUserId(eventId, user.getId());
+                // This could be handled by setting reservedBy to null instead of failing altogether.
+                reservedBy = userManager.getUserDTOById(booking.getReservedBy().getId());
+                bookingManager.deleteReservation(event, user);
             }
 
             if (bookingManager.isUserBooked(eventId, user.getId())) {
@@ -909,7 +913,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                     .toResponse();
             }
 
-            EventBookingDTO eventBookingDTO = bookingManager.requestBooking(event, user, additionalInformation);
+            EventBookingDTO eventBookingDTO = bookingManager.requestBooking(event, user, reservedBy, additionalInformation);
 
             this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
                     SegueLogType.EVENT_BOOKING, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId()));
@@ -941,6 +945,10 @@ public class EventsFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST,
                 "The booking deadline for this event has passed. No more bookings are being accepted.")
                 .toResponse();
+        } catch (NoUserException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                    "The reserving user doesn't exist, so unable to book the requesting user onto an event", e)
+                    .toResponse();
         }
     }
 
