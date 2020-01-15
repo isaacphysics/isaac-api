@@ -102,7 +102,6 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.BOOKING_STATUS_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT_AS_STRING;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_START_INDEX_AS_STRING;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_DATE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_GROUP_RESERVATION_LIMIT;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_ID_FKEY_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_TAGS_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.EventFilterOption;
@@ -784,14 +783,21 @@ public class EventsFacade extends AbstractIsaacFacade {
                                                           @PathParam("event_id") final String eventId,
                                                           final List<Long> userIds) {
         RegisteredUserDTO currentUser;
-        IsaacEventPageDTO event = null;
+        IsaacEventPageDTO event;
+        try {
+            event = this.getEventDTOById(request, eventId);
+        } catch (SegueDatabaseException | ContentManagerException e) {
+            return SegueErrorResponse.getResourceNotFoundResponse(
+                    String.format("Unable to retrieve event of id %s", eventId);
+            );
+        }
+
         List<Long> bookableIds;
         try {
             currentUser = userManager.getCurrentRegisteredUser(request);
             if (!Arrays.asList(Role.TEACHER, Role.EVENT_LEADER, Role.EVENT_MANAGER, Role.ADMIN).contains(currentUser.getRole())) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
-            event = this.getEventDTOById(request, eventId);
 
             // af599 TODO: Make sure this makes sense, adapt it, or remove it
             /* if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
@@ -849,8 +855,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         } catch (EventGroupReservationLimitException e) {
             return new SegueErrorResponse(Status.CONFLICT,
                     String.format("You can only request a maximum of %d student reservations for this event.",
-                            event != null ? event.getGroupReservationLimit() : EVENT_GROUP_RESERVATION_LIMIT))
-                    .toResponse();
+                            event.getGroupReservationLimit())).toResponse();
         } catch (EventDeadlineException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST,
                     "The booking deadline for this event has passed. No more bookings or reservations are being accepted.")
