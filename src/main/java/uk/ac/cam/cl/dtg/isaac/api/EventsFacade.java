@@ -788,7 +788,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             event = this.getEventDTOById(request, eventId);
         } catch (SegueDatabaseException | ContentManagerException e) {
             return SegueErrorResponse.getResourceNotFoundResponse(
-                    String.format("Unable to retrieve event of id %s", eventId);
+                    String.format("Unable to retrieve event of id %s", eventId)
             );
         }
 
