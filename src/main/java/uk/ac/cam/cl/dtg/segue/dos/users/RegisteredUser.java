@@ -36,6 +36,7 @@ public class RegisteredUser extends AbstractSegueUser {
     private Date registrationDate;
     private String schoolId;
     private String schoolOther;
+    private ExamBoard examBoard;
 
     private String emailVerificationToken;
     private String emailToVerify;
@@ -309,6 +310,26 @@ public class RegisteredUser extends AbstractSegueUser {
      */
     public void setSchoolOther(final String schoolOther) {
         this.schoolOther = schoolOther;
+    }
+
+
+    /**
+     * Gets the examBoard.
+     *
+     * @return the examBoard
+     */
+    public ExamBoard getExamBoard() {
+        return examBoard;
+    }
+
+    /**
+     * Sets the examBoard.
+     *
+     * @param examBoard
+     *            the examBoard to set
+     */
+    public void setExamBoard(final ExamBoard examBoard) {
+        this.examBoard = examBoard;
     }
 
     /**
