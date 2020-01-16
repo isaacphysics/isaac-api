@@ -512,9 +512,9 @@ public class EventBookingManager {
                 reservations.add(reservation);
 
                 try {
-                    // af599 TODO: Use the correct email template here.
-                    // af599 TODO: Content team action.
                     emailManager.sendTemplatedEmailToUser(user,
+                            // af599 TODO: Use the correct email template and parameters here.
+                            // af599 TODO: Content team action.
                             emailManager.getEmailTemplateDTO("email-event-booking-confirmed"),
                             new ImmutableMap.Builder<String, Object>()
                                     .put("contactUsURL", generateEventContactUsURL(event))
@@ -947,6 +947,8 @@ public class EventBookingManager {
             Date bookingCancellationDate = new Date();
             if (event.getEndDate() == null || bookingCancellationDate.before(event.getEndDate())) {
                 emailManager.sendTemplatedEmailToUser(user,
+                        // af599 TODO: See if we want a special "reservation cancelled" email here or we are OK with this.
+                        // af599 TODO: Content team action.
                         emailManager.getEmailTemplateDTO("email-event-booking-cancellation-confirmed"),
                         new ImmutableMap.Builder<String, Object>()
                                 .put("contactUsURL", generateEventContactUsURL(event))
@@ -956,7 +958,6 @@ public class EventBookingManager {
                         EmailType.SYSTEM);
 
                 if (previousBookingStatus.equals(BookingStatus.RESERVED) && reservedBy != null) {
-                    // af599 TODO: Email reservedBy to let them know the user cancelled a reservation.
                     emailManager.sendTemplatedEmailToUser(userAccountManager.getUserDTOById(reservedBy.getId()),
                             emailManager.getEmailTemplateDTO("email-event-reservation-cancellation-confirmed"),
                             new ImmutableMap.Builder<String, Object>()

@@ -562,8 +562,6 @@ public class EventsFacade extends AbstractIsaacFacade {
                         currentUser, eventBookings, booking -> booking.getUserBooked().getId());
             }
 
-            // af599 TODO: This seems to return UserSummaryWithEmailAddressDTOs even when the request is done as a TEACHER.
-
             return Response.ok(eventBookings).build();
         } catch (SegueDatabaseException e) {
             String errorMsg = String.format(
