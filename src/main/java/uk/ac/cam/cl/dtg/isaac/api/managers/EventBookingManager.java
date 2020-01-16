@@ -927,6 +927,7 @@ public class EventBookingManager {
             UserSummaryDTO reservedBy = this.bookingPersistenceManager
                     .getBookingByEventIdAndUserId(event.getId(), user.getId()).getReservedBy();
             Long reservedById = reservedBy == null ? null : reservedBy.getId();
+            BookingStatus previousBookingStatus = this.getBookingStatus(event.getId(), user.getId());
             this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(), reservedById,
                     BookingStatus.CANCELLED,
                     null);
@@ -944,8 +945,11 @@ public class EventBookingManager {
                         EmailType.SYSTEM);
             }
 
-            // auto remove them from the group
-            this.removeUserFromEventGroup(event, user);
+            // Reservations do not auto add users to the event's group, so no need to remove them.
+            if (!previousBookingStatus.equals(BookingStatus.RESERVED)) {
+                // auto remove them from the group
+                this.removeUserFromEventGroup(event, user);
+            }
 
         } finally {
             this.bookingPersistenceManager.releaseDistributedLock(event.getId());
