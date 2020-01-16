@@ -11,6 +11,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
@@ -39,6 +40,7 @@ public class EventBookingManagerTest {
     private EventBookingPersistenceManager dummyEventBookingPersistenceManager;
     private EmailManager dummyEmailManager;
     private UserAssociationManager dummyUserAssociationManager;
+    private UserAccountManager dummyUserAccountManager;
     private Map<String, String> someAdditionalInformation;
     private PropertiesLoader dummyPropertiesLoader;
     private GroupManager dummyGroupManager;
@@ -654,6 +656,6 @@ public class EventBookingManagerTest {
     }
 
     private EventBookingManager buildEventBookingManager() {
-        return new EventBookingManager(dummyEventBookingPersistenceManager, dummyEmailManager, dummyUserAssociationManager, dummyPropertiesLoader, dummyGroupManager);
+        return new EventBookingManager(dummyEventBookingPersistenceManager, dummyEmailManager, dummyUserAssociationManager, dummyUserAccountManager, dummyPropertiesLoader, dummyGroupManager);
     }
 }

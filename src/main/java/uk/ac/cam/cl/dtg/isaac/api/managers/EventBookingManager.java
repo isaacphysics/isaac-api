@@ -30,7 +30,9 @@ import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailAttachment;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
@@ -78,6 +80,7 @@ public class EventBookingManager {
     private final EventBookingPersistenceManager bookingPersistenceManager;
     private final EmailManager emailManager;
     private final UserAssociationManager userAssociationManager;
+    private final UserAccountManager userAccountManager;
     private final PropertiesLoader propertiesLoader;
     private final GroupManager groupManager;
 
@@ -92,11 +95,13 @@ public class EventBookingManager {
     public EventBookingManager(final EventBookingPersistenceManager bookingPersistenceManager,
                                final EmailManager emailManager,
                                final UserAssociationManager userAssociationManager,
+                               final UserAccountManager userAccountManager,
                                final PropertiesLoader propertiesLoader,
                                final GroupManager groupManager) {
         this.bookingPersistenceManager = bookingPersistenceManager;
         this.emailManager = emailManager;
         this.userAssociationManager = userAssociationManager;
+        this.userAccountManager = userAccountManager;
         this.propertiesLoader = propertiesLoader;
         this.groupManager = groupManager;
     }
@@ -919,16 +924,24 @@ public class EventBookingManager {
      */
     public void cancelBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user)
             throws SegueDatabaseException, ContentManagerException {
+
+        Long reservedById = null;
         try {
             // Obtain an exclusive database lock to lock the booking
             this.bookingPersistenceManager.acquireDistributedLock(event.getId());
             UserSummaryDTO reservedBy = this.bookingPersistenceManager
                     .getBookingByEventIdAndUserId(event.getId(), user.getId()).getReservedBy();
-            Long reservedById = reservedBy == null ? null : reservedBy.getId();
+            reservedById = reservedBy == null ? null : reservedBy.getId();
             BookingStatus previousBookingStatus = this.getBookingStatus(event.getId(), user.getId());
             this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(), reservedById,
                     BookingStatus.CANCELLED,
                     null);
+
+            // Reservations do not auto add users to the event's group, so no need to remove them.
+            if (!previousBookingStatus.equals(BookingStatus.RESERVED)) {
+                // auto remove them from the group
+                this.removeUserFromEventGroup(event, user);
+            }
 
             // Send an email notifying the user (unless they are being canceled after the event for the sake of our records)
             Date bookingCancellationDate = new Date();
@@ -941,14 +954,22 @@ public class EventBookingManager {
                                 .put("event", event)
                                 .build(),
                         EmailType.SYSTEM);
-            }
 
-            // Reservations do not auto add users to the event's group, so no need to remove them.
-            if (!previousBookingStatus.equals(BookingStatus.RESERVED)) {
-                // auto remove them from the group
-                this.removeUserFromEventGroup(event, user);
+                if (previousBookingStatus.equals(BookingStatus.RESERVED) && reservedBy != null) {
+                    // af599 TODO: Email reservedBy to let them know the user cancelled a reservation.
+                    emailManager.sendTemplatedEmailToUser(userAccountManager.getUserDTOById(reservedBy.getId()),
+                            emailManager.getEmailTemplateDTO("email-event-reservation-cancellation-confirmed"),
+                            new ImmutableMap.Builder<String, Object>()
+                                    .put("contactUsURL", generateEventContactUsURL(event))
+                                    .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
+                                    .put("event", event)
+                                    .build(),
+                            EmailType.SYSTEM);
+                }
             }
-
+        } catch (NoUserException e) {
+            log.error(String.format("Unable to find reserving user id (%d) while cancelling reservation for user (%s).",
+                    reservedById, user.getEmail()));
         } finally {
             this.bookingPersistenceManager.releaseDistributedLock(event.getId());
         }
