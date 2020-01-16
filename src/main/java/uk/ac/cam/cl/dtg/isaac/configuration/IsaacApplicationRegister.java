@@ -30,13 +30,12 @@ import uk.ac.cam.cl.dtg.isaac.api.EventsFacade;
 import uk.ac.cam.cl.dtg.isaac.api.GameboardsFacade;
 import uk.ac.cam.cl.dtg.isaac.api.IsaacController;
 import uk.ac.cam.cl.dtg.isaac.api.PagesFacade;
-import uk.ac.cam.cl.dtg.isaac.api.TestsFacade;
+import uk.ac.cam.cl.dtg.isaac.api.BuilderFacade;
 import uk.ac.cam.cl.dtg.segue.api.*;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.PerformanceMonitor;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
-import uk.ac.cam.cl.dtg.segue.dos.content.GlossaryTerm;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
@@ -114,7 +113,7 @@ public class IsaacApplicationRegister extends Application {
             this.singletons.add(injector.getInstance(NotificationFacade.class));
             this.singletons.add(injector.getInstance(EmailFacade.class));
             this.singletons.add(injector.getInstance(UserBadgeManager.class));
-            this.singletons.add(injector.getInstance(TestsFacade.class));
+            this.singletons.add(injector.getInstance(BuilderFacade.class));
         }
 
         return this.singletons;

@@ -23,15 +23,15 @@ import java.util.List;
 /**
  * DTO for constructing a test question and the answer cases we expect
  */
-public class TestDTO {
-    List<Choice> choices;
+public class QuestionTestDTO {
+    List<Choice> questionChoices;
     List<TestCaseDTO> testCases;
 
-    public void setChoices(List<Choice> choices) {
-        this.choices = choices;
+    public void setQuestionChoices(List<Choice> questionChoices) {
+        this.questionChoices = questionChoices;
     }
-    public List<Choice> getChoices() {
-        return this.choices;
+    public List<Choice> getQuestionChoices() {
+        return this.questionChoices;
     }
 
     public void setTestCases(List<TestCaseDTO> tests) {

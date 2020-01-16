@@ -25,7 +25,7 @@ import org.jboss.resteasy.annotations.jaxrs.QueryParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dto.TestCaseDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.TestDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.QuestionTestDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
@@ -54,33 +54,42 @@ import java.io.IOException;
 import java.util.List;
 
 
-// TODO documentation
-@Path("/tests")
-@Api(value = "/tests")
-public class TestsFacade extends AbstractIsaacFacade {
+/**
+ * A facade to define the endpoint(s) needed to help with the building of questions.
+ */
+@Path("/builder")
+@Api(value = "/builder")
+public class BuilderFacade extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(PagesFacade.class);
 
     private final UserAccountManager userManager;
     private final ContentMapper mapper;
 
     @Inject
-    public TestsFacade(final PropertiesLoader propertiesLoader, final ILogManager logManager,
-                       final UserAccountManager userManager, final ContentMapper mapper) {
+    public BuilderFacade(final PropertiesLoader propertiesLoader, final ILogManager logManager,
+                         final UserAccountManager userManager, final ContentMapper mapper) {
         super(propertiesLoader, logManager);
         this.userManager = userManager;
         this.mapper = mapper;
     }
 
+    /**
+     * A generic question tester where a fake question is created form received choices and evaluated against a series
+     * of example student answers
+     * @param request - the incoming request
+     * @param response - the outgoing response
+     * @param questionType - the type of question to construct from the available choices in testJson
+     * @param testJson - a JSON structure to represent the possible choices and
+     * @return a list of test cases matching those that were sent to the endpoint augmented with the validator's results
+     */
     @POST
-    @Path("/question")
+    @Path("/test_question")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @ApiOperation(value = "Create a new user or update an existing user.")
-    public Response createOrUpdateUserSettings(@Context final HttpServletRequest request,
-                                               @Context final HttpServletResponse response,
-                                               @QueryParam("type") final String questionType,
-                                               final String testJson) {
+    public Response testQuestion(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                                 @QueryParam("type") final String questionType, final String testJson) {
         try {
             // User authorisation
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
@@ -89,7 +98,7 @@ public class TestsFacade extends AbstractIsaacFacade {
             }
 
             ObjectMapper sharedContentMapper = mapper.getSharedContentObjectMapper();
-            TestDTO test = sharedContentMapper.readValue(testJson, TestDTO.class);
+            QuestionTestDTO testDefinition = sharedContentMapper.readValue(testJson, QuestionTestDTO.class);
 
             // Create a fake question
             Class<? extends Content> questionClass = mapper.getClassByType(questionType);
@@ -97,16 +106,16 @@ public class TestsFacade extends AbstractIsaacFacade {
                 throw new BadRequestException(String.format("Not a valid questionType (%s)", questionType));
             }
             ChoiceQuestion testQuestion = (ChoiceQuestion) questionClass.newInstance();
-            testQuestion.setChoices(test.getChoices());
+            testQuestion.setChoices(testDefinition.getQuestionChoices());
 
             IValidator questionValidator = QuestionManager.locateValidator(testQuestion.getClass());
             if (null == questionValidator) {
                 throw new ValidatorUnavailableException("Could not find a validator for the question");
             }
 
-            // For each test, check its results against the fake question
+            // For each test, check its actual results against the response of the validator on the fake question
             List<TestCaseDTO> results = Lists.newArrayList();
-            for (TestCaseDTO testCase : test.getTestCases()) {
+            for (TestCaseDTO testCase : testDefinition.getTestCases()) {
                 QuestionValidationResponse questionValidationResponse =
                         questionValidator.validateQuestionResponse(testQuestion, testCase.getChoice());
                 testCase.setActual(questionValidationResponse.isCorrect());

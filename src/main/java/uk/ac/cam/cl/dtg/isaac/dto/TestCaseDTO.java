@@ -19,7 +19,8 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 
 /**
- * DTO for holding choices and their expected values
+ * DTO for holding example user submitted questionChoices and their expected and actual values when run against our
+ * validators
  */
 public class TestCaseDTO {
     Choice choice;
