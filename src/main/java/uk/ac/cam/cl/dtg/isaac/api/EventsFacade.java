@@ -838,10 +838,6 @@ public class EventsFacade extends AbstractIsaacFacade {
             String errorMsg = "Database error occurred while trying to reserve space for a user onto an event.";
             log.error(errorMsg, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
-        } catch (ContentManagerException e) {
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Content Database error occurred while trying to retrieve all event booking information.")
-                    .toResponse();
         } catch (EventIsFullException e) {
             // af599 TODO: Return the number of available spaces maybe?
             return new SegueErrorResponse(Status.CONFLICT,

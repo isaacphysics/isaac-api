@@ -41,7 +41,9 @@ import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenExcept
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
+import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
+import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
@@ -63,6 +65,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TimeZone;
 import java.text.DateFormat;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -456,7 +459,8 @@ public class EventBookingManager {
      * @param users - to reserve on the event
      * @return confirmation of reservation
      */
-    public List<EventBookingDTO> requestReservations(final IsaacEventPageDTO event, final List<RegisteredUserDTO> users, final RegisteredUserDTO reservingUser)
+    public List<EventBookingDTO> requestReservations(final IsaacEventPageDTO event, final List<RegisteredUserDTO> users,
+                                                     final RegisteredUserDTO reservingUser)
             throws EventDeadlineException, EmailMustBeVerifiedException, DuplicateBookingException,
             SegueDatabaseException, EventIsFullException, EventGroupReservationLimitException {
 
@@ -526,7 +530,7 @@ public class EventBookingManager {
             }
             return reservations;
 
-        } catch (EventIsFullException | SegueDatabaseException | EventGroupReservationLimitException e) {
+        } catch (EventIsFullException | SegueDatabaseException | EventGroupReservationLimitException | NullPointerException e) {
             for (EventBookingDTO reservation : reservations) {
                 try {
                     bookingPersistenceManager.deleteBooking(event.getId(), reservation.getUserBooked().getId());
@@ -588,10 +592,12 @@ public class EventBookingManager {
 
             // attempt to book them on the waiting list of the event.
             if (this.hasBookingWithStatus(event.getId(), user.getId(), BookingStatus.CANCELLED)) {
+                UserSummaryDTO reservedBy = this.bookingPersistenceManager.getBookingByEventIdAndUserId(event.getId(), user.getId()).getReservedBy();
+                Long reservedById = reservedBy == null ? null : reservedBy.getId();
                 // if the user has previously cancelled we should let them book again.
                 booking = this.bookingPersistenceManager.updateBookingStatus(event.getId(),
                         user.getId(),
-                        null,
+                        reservedById,
                         BookingStatus.WAITING_LIST,
                         additionalInformation);
             } else {
@@ -672,8 +678,13 @@ public class EventBookingManager {
 
             // probably want to send a waiting list promotion email.
             try {
-                updatedStatus = this.bookingPersistenceManager.updateBookingStatus(eventBooking.getEventId(), userDTO
-                        .getId(), null, BookingStatus.CONFIRMED, eventBooking.getAdditionalInformation());
+                UserSummaryDTO reservedBy = this.bookingPersistenceManager
+                        .getBookingByEventIdAndUserId(event.getId(), userDTO.getId()).getReservedBy();
+                Long reservedById = reservedBy == null ? null : reservedBy.getId();
+                updatedStatus = this.bookingPersistenceManager
+                        .updateBookingStatus(eventBooking.getEventId(), userDTO.getId(), reservedById,
+                                BookingStatus.CONFIRMED, eventBooking.getAdditionalInformation()
+                        );
 
                 // Send an email notifying the user (unless they are being promoted after the event for the sake of our records)
                 Date promotionDate = new Date();
@@ -737,8 +748,11 @@ public class EventBookingManager {
             throw new EventBookingUpdateException("Booking attendance is already registered.");
         }
 
+        UserSummaryDTO reservedBy = this.bookingPersistenceManager
+                .getBookingByEventIdAndUserId(event.getId(), userDTO.getId()).getReservedBy();
+        Long reservedById = reservedBy == null ? null : reservedBy.getId();
         EventBookingDTO updatedStatus = this.bookingPersistenceManager.updateBookingStatus(eventBooking.getEventId(),
-                userDTO.getId(), null, attendanceStatus, eventBooking.getAdditionalInformation());
+                userDTO.getId(), reservedById, attendanceStatus, eventBooking.getAdditionalInformation());
 
         return updatedStatus;
     }
@@ -910,7 +924,10 @@ public class EventBookingManager {
         try {
             // Obtain an exclusive database lock to lock the booking
             this.bookingPersistenceManager.acquireDistributedLock(event.getId());
-            this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(), null,
+            UserSummaryDTO reservedBy = this.bookingPersistenceManager
+                    .getBookingByEventIdAndUserId(event.getId(), user.getId()).getReservedBy();
+            Long reservedById = reservedBy == null ? null : reservedBy.getId();
+            this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(), reservedById,
                     BookingStatus.CANCELLED,
                     null);
 
@@ -1073,13 +1090,18 @@ public class EventBookingManager {
 
     private void enforceReservationLimit(final IsaacEventPageDTO event, final List<RegisteredUserDTO> users,
                                          final RegisteredUserDTO reservingUser)
-            throws SegueDatabaseException, EventGroupReservationLimitException {
+            throws SegueDatabaseException, EventGroupReservationLimitException, NullPointerException {
 
-        long numberOfExistingReservations = getBookingByEventId(event.getId())
-                .stream()
-                .filter(reservation -> reservation.getReservedBy().getId().equals(reservingUser.getId())).count();
-//                .filter(reservation -> reservation.getBookingStatus().equals(BookingStatus.RESERVED) &&
-//                reservation.getReservedBy().getId().equals(reservingUser.getId())).count();
+        if (reservingUser == null) {
+            throw new NullPointerException("Reserving user must be specified.");
+        }
+
+        List<EventBookingDTO> existingReservations = getBookingByEventId(event.getId()).stream()
+                .filter(reservation -> {
+                    UserSummaryDTO u = reservation.getReservedBy();
+                    return u != null && u.getId().equals(reservingUser.getId());
+                }).collect(Collectors.toList());
+        long numberOfExistingReservations = existingReservations.size();
         final boolean isStudentEvent = event.getTags().contains("student");
         Integer groupReservationLimit = event.getGroupReservationLimit();
         // This should never be null
