@@ -23,7 +23,6 @@
         <jetty.port.api>8080</jetty.port.api>
         <jetty.port.etl>8090</jetty.port.etl>
         <config.location>/local/data/conf/segue-config.properties</config.location>
-        <log.path>/isaac-logs</log.path>
         <web.xml>override-api-web.xml</web.xml>
     </properties>
 
@@ -469,10 +468,6 @@
                             <value>${config.location}</value>
                         </systemProperty>
                         <systemProperty>
-                            <name>log.path</name>
-                            <value>${log.path}</value>
-                        </systemProperty>
-                        <systemProperty>
                             <name>segue.version</name>
                             <value>${segue.version}</value>
                         </systemProperty>
@@ -567,10 +562,6 @@
                                 <systemProperty>
                                     <name>config.location</name>
                                     <value>${config.location}</value>
-                                </systemProperty>
-                                <systemProperty>
-                                    <name>log.path</name>
-                                    <value>${log.path}</value>
                                 </systemProperty>
                                 <systemProperty>
                                     <name>segue.version</name>
