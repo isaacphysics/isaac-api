@@ -15,44 +15,19 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto;
 
-import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
-import uk.ac.cam.cl.dtg.segue.dos.content.Content;
+import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 
 /**
  * DTO for holding example user submitted questionChoices and their expected and actual values when run against our
  * validators
  */
-public class TestCaseDTO {
-    Choice choice;
+public class TestCaseDTO extends QuestionValidationResponseDTO {
     Boolean expected;
-    Boolean actual;
-    Content explanation;
-
-    public void setChoice(Choice choice) {
-        this.choice = choice;
-    }
-    public Choice getChoice() {
-        return this.choice;
-    }
 
     public void setExpected(Boolean expected) {
         this.expected = expected;
     }
     public Boolean getExpected() {
         return this.expected;
-    }
-
-    public void setActual(Boolean actual) {
-        this.actual = actual;
-    }
-    public Boolean getActual() {
-        return this.actual;
-    }
-
-    public void setExplanation(Content explanation) {
-        this.explanation = explanation;
-    }
-    public Content getExplanation() {
-        return this.explanation;
     }
 }

@@ -17,7 +17,6 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
@@ -25,6 +24,8 @@ import io.swagger.annotations.ApiOperation;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dto.TestCaseDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.TestQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -45,7 +46,6 @@ import uk.ac.cam.cl.dtg.segue.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
-import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
@@ -53,6 +53,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.quiz.ValidatorUnavailableException;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 
@@ -72,7 +73,9 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueLogType;
 
 /**
  * Question Facade
@@ -353,6 +356,37 @@ public class QuestionFacade extends AbstractSegueFacade {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to save question attempt. Try again later!");
             log.error("Unable to to record question attempt.", e);
             return error.toResponse();
+        }
+    }
+
+    /**
+     * A generic question tester where a fake question is created form received choices and evaluated against a series
+     * of example student answers
+     * @param request - the incoming request
+     * @param questionType - the type of question to construct from the available choices in testJson
+     * @param testJson - a JSON structure to represent the possible choices and
+     * @return a list of test cases matching those that were sent to the endpoint augmented with the validator's results
+     */
+    @POST
+    @Path("/test")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @ApiOperation(value = "Test a list of choices with some expected answer values")
+    public Response testQuestion(@Context final HttpServletRequest request,
+                                 @QueryParam("type") final String questionType, final String testJson) {
+        try {
+            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
+            if (!isUserStaff(userManager, currentUser)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+            TestQuestionDTO testDefinition = mapper.getSharedContentObjectMapper().readValue(testJson, TestQuestionDTO.class);
+            List<TestCaseDTO> results = questionManager.testQuestion(questionType, testDefinition);
+            return Response.ok(results).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (ValidatorUnavailableException | IOException e) {
+            return SegueErrorResponse.getServiceUnavailableResponse(e.getMessage());
         }
     }
 
