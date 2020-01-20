@@ -87,7 +87,7 @@ public class BuilderFacade extends AbstractIsaacFacade {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Create a new user or update an existing user.")
+    @ApiOperation(value = "Test a list of choices with some expected answer values.")
     public Response testQuestion(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                  @QueryParam("type") final String questionType, final String testJson) {
         try {
