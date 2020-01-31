@@ -2,7 +2,7 @@ Configuration:
   properties:
     property:
         - name: LOG_PATH_VAR
-          value: ${env:SEGUE_LOGGING_PATH:-${sys:logging.path:-/isaac-logs}}
+          value: ${env:SEGUE_LOGGING_PATH:-${sys:log.path:-/isaac-logs}}
         - name: CONSOLE_LOGGING_LEVEL
           value: ${env:SEGUE_LOGGING_LEVEL:-info}
 
