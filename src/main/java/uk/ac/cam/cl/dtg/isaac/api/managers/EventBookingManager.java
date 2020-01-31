@@ -636,7 +636,7 @@ public class EventBookingManager {
         if (null == numberOfPlaces) {
             return null;
         }
-
+        //TODO: can we optimise this as we just want counts to use DB queries instead.
         List<EventBookingDTO> getCurrentBookings = this.getBookingByEventId(event.getId());
 
         int studentCount = 0;

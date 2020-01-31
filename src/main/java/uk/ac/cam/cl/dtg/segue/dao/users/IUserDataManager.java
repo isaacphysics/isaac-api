@@ -163,7 +163,18 @@ public interface IUserDataManager {
      * @throws SegueDatabaseException - if there is a database problem.
      */
     RegisteredUser getById(Long id) throws SegueDatabaseException;
-    
+
+    /**
+     * This function will also include tombstoned results back to the caller.
+     * WARNING- Do not expect complete RegisteredUser Objects as data may be missing.
+     *
+     * @param id user id.
+     * @param includeDeletedUsers true will allow inclusion of tombstoned users false will filter them out.
+     * @return the user the matches
+     * @throws SegueDatabaseException - if there is a database problem.
+     */
+    RegisteredUser getById(Long id, boolean includeDeletedUsers) throws SegueDatabaseException;
+
     /**
      * Get a user by email.
      *

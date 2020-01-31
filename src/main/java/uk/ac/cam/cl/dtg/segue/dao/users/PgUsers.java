@@ -282,21 +282,33 @@ public class PgUsers implements IUserDataManager {
 
     @Override
     public RegisteredUser getById(final Long id) throws SegueDatabaseException {
+        return getById(id, false);
+    }
+
+    @Override
+    public RegisteredUser getById(final Long id, final boolean includeDeletedUsers) throws SegueDatabaseException {
         if (null == id) {
             return null;
         }
-        
+
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM users WHERE id = ? AND NOT deleted");
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("SELECT * FROM users WHERE id = ?");
+            if (!includeDeletedUsers) {
+                sb.append(" AND NOT deleted");
+            }
+
+            pst = conn.prepareStatement(sb.toString());
             pst.setLong(1, id);
 
             ResultSet results = pst.executeQuery();
-            
+
             return this.findOneUser(results);
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
-        }        
+        }
     }
 
     @Override

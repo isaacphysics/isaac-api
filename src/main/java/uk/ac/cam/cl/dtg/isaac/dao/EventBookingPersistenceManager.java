@@ -253,9 +253,11 @@ public class EventBookingPersistenceManager {
         EventBookingDTO result = new EventBookingDTO();
 
         try {
+            // Note: This will pull back deleted users for the purpose of the events system
             UserSummaryWithEmailAddressDTO user = userManager.convertToDetailedUserSummaryObject(userManager.getUserDTOById(eb
-                    .getUserId()), UserSummaryWithEmailAddressDTO.class);
+                    .getUserId(),true), UserSummaryWithEmailAddressDTO.class);
 
+            result.setUserBooked(user);
             result.setBookingId(eb.getId());
             result.setEventDate(eventInformation.getDate());
             result.setEventId(eventInformation.getId());
@@ -263,7 +265,6 @@ public class EventBookingPersistenceManager {
             result.setBookingDate(eb.getCreationDate());
             result.setUpdated(eb.getUpdateDate());
             result.setBookingStatus(eb.getBookingStatus());
-            result.setUserBooked(user);
             result.setAdditionalInformation(eb.getAdditionalInformation());
 
             return result;
