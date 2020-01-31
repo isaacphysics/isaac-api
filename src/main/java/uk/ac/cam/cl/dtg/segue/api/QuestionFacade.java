@@ -24,6 +24,7 @@ import io.swagger.annotations.ApiOperation;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.TestQuestion;
 import uk.ac.cam.cl.dtg.isaac.dto.TestCaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.TestQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
@@ -71,6 +72,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
@@ -380,9 +382,13 @@ public class QuestionFacade extends AbstractSegueFacade {
             if (!isUserStaff(userManager, currentUser)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
-            TestQuestionDTO testDefinition = mapper.getSharedContentObjectMapper().readValue(testJson, TestQuestionDTO.class);
-            List<TestCaseDTO> results = questionManager.testQuestion(questionType, testDefinition);
+
+            // Remove untrusted fields from JSON
+            TestQuestion testDefinition = mapper.getSharedContentObjectMapper().readValue(testJson, TestQuestion.class);
+            TestQuestionDTO testDefinitionDTO = mapper.getAutoMapper().map(testDefinition, TestQuestionDTO.class);
+            List<TestCaseDTO> results = questionManager.testQuestion(questionType, testDefinitionDTO);
             return Response.ok(results).build();
+
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (ValidatorUnavailableException | IOException e) {

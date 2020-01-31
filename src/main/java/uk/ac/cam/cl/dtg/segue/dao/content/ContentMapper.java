@@ -420,10 +420,8 @@ public class ContentMapper {
            ItemDeserializer inside it too. The perils of a recursive content model! */
         ItemDeserializer itemDeserializer = new ItemDeserializer(contentDeserializer);
         ChoiceDeserializer choiceDeserializer = new ChoiceDeserializer(contentDeserializer, itemDeserializer);
-
-        QuestionValidationResponseDeserializer validationResponseDeserializer 
-            = new QuestionValidationResponseDeserializer(
-                contentDeserializer, choiceDeserializer);
+        QuestionValidationResponseDeserializer validationResponseDeserializer =
+                new QuestionValidationResponseDeserializer(contentDeserializer, choiceDeserializer);
 
         SimpleModule contentDeserializerModule = new SimpleModule("ContentDeserializerModule");
         contentDeserializerModule.addDeserializer(ContentBase.class, contentDeserializer);

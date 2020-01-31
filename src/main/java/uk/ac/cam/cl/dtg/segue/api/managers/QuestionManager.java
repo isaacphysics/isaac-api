@@ -25,6 +25,7 @@ import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.configuration.IsaacApplicationRegister;
+import uk.ac.cam.cl.dtg.isaac.dos.TestQuestion;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacItemQuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.TestCaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.TestQuestionDTO;
@@ -68,6 +69,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 /**
  * This class is responsible for validating correct answers using the ValidatesWith annotation when it is applied on to
@@ -332,30 +334,32 @@ public class QuestionManager {
     public List<TestCaseDTO> testQuestion(final String questionType, final TestQuestionDTO testDefinition)
             throws BadRequestException, ValidatorUnavailableException {
         try {
+            MapperFacade autoMapper = mapper.getAutoMapper();
+
             // Create a fake question
             Class<? extends Content> questionClass = mapper.getClassByType(questionType);
             if (null == questionClass || !ChoiceQuestion.class.isAssignableFrom(questionClass)) {
                 throw new BadRequestException(String.format("Not a valid questionType (%s)", questionType));
             }
             ChoiceQuestion testQuestion = (ChoiceQuestion) questionClass.newInstance();
-            testQuestion.setChoices(testDefinition.getChoices());
-
+            testQuestion.setChoices(testDefinition.getChoices().stream()
+                    .map(c -> autoMapper.map(c, Choice.class)).collect(Collectors.toList()));
             IValidator questionValidator = QuestionManager.locateValidator(testQuestion.getClass());
             if (null == questionValidator) {
                 throw new ValidatorUnavailableException("Could not find a validator for the question");
             }
 
             // For each test, check its actual results against the response of the validator on the fake question
-            MapperFacade autoMapper = mapper.getAutoMapper();
             List<TestCaseDTO> results = Lists.newArrayList();
             for (TestCaseDTO testCase : testDefinition.getTestCases()) {
                 // This will need to be changed to support other choices in the future
                 QuestionValidationResponse questionValidationResponse = questionValidator
-                        .validateQuestionResponse(testQuestion, autoMapper.map(testCase.getAnswer(), StringChoice.class));
+                        .validateQuestionResponse(testQuestion, autoMapper.map(testCase.getAnswer(), Choice.class));
                 testCase.setCorrect(questionValidationResponse.isCorrect());
                 testCase.setExplanation(autoMapper.map(questionValidationResponse.getExplanation(), ContentDTO.class));
                 results.add(testCase);
             }
+
 
             return results;
         } catch (InstantiationException | IllegalAccessException e) {

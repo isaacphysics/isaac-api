@@ -15,15 +15,14 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto;
 
-
-import uk.ac.cam.cl.dtg.segue.dos.content.ChoiceQuestion;
+import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceQuestionDTO;
 
 import java.util.List;
 
 /**
  * DTO for constructing a test question and the answer cases we expect
  */
-public class TestQuestionDTO extends ChoiceQuestion { // extends DO not DTO as the fake test question requires DO fields
+public class TestQuestionDTO extends ChoiceQuestionDTO {
     List<TestCaseDTO> testCases;
 
     public void setTestCases(List<TestCaseDTO> tests) {
