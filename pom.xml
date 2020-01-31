@@ -22,8 +22,6 @@
         <jetty-maven-version>9.3.27.v20190418</jetty-maven-version>
         <jetty.port.api>8080</jetty.port.api>
         <jetty.port.etl>8090</jetty.port.etl>
-        <config.location>/local/data/conf/segue-config.properties</config.location>
-        <log.path>/isaac-logs</log.path>
         <web.xml>override-api-web.xml</web.xml>
     </properties>
 
@@ -419,7 +417,6 @@
                     <forkCount>3</forkCount>
                     <reuseForks>false</reuseForks>
                     <systemPropertyVariables>
-                        <log.path>${log.path}</log.path>
                         <segue.version>${segue.version}</segue.version>
                     </systemPropertyVariables>
                     <useSystemClassLoader>false</useSystemClassLoader>
@@ -463,14 +460,6 @@
                         <systemProperty>
                             <name>jetty.port</name>
                             <value>${jetty.port.api}</value>
-                        </systemProperty>
-                        <systemProperty>
-                            <name>config.location</name>
-                            <value>${config.location}</value>
-                        </systemProperty>
-                        <systemProperty>
-                            <name>log.path</name>
-                            <value>${log.path}</value>
                         </systemProperty>
                         <systemProperty>
                             <name>segue.version</name>
@@ -563,14 +552,6 @@
                                 <systemProperty>
                                     <name>jetty.port</name>
                                     <value>${jetty.port.etl}</value>
-                                </systemProperty>
-                                <systemProperty>
-                                    <name>config.location</name>
-                                    <value>${config.location}</value>
-                                </systemProperty>
-                                <systemProperty>
-                                    <name>log.path</name>
-                                    <value>${log.path}</value>
                                 </systemProperty>
                                 <systemProperty>
                                     <name>segue.version</name>

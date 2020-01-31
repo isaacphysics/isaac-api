@@ -1,7 +1,12 @@
 Configuration:
+  properties:
+    property:
+        - name: LOG_PATH_VAR
+          value: ${env:SEGUE_LOGGING_PATH:-${sys:log.path:-/isaac-logs}}
+        - name: CONSOLE_LOGGING_LEVEL
+          value: ${env:SEGUE_LOGGING_LEVEL:-info}
 
   Appenders:
-
     Console:
       - name: Console_Appender
         target: SYSTEM_OUT
@@ -10,8 +15,8 @@ Configuration:
 
     RollingFile:
       - name: Isaac_Appender
-        fileName: ${sys:log.path}/isaac.log
-        filePattern: ${sys:log.path}/isaac.log.%d{yyyy-MM-dd}.gz
+        fileName: ${LOG_PATH_VAR}/isaac.log
+        filePattern: ${LOG_PATH_VAR}/isaac.log.%d{yyyy-MM-dd}.gz
         Policies:
           TimeBasedTriggeringPolicy:
             interval: 10
@@ -19,8 +24,8 @@ Configuration:
           pattern: "[%d{yyyy-MM-dd HH:mm:ss}] [%-5p] %c{1}:%L - %m%n"
 
       - name: Perf_Appender
-        fileName: ${sys:log.path}/perf.log
-        filePattern: ${sys:log.path}/perf.log.%d{yyyy-MM-dd}.gz
+        fileName: ${LOG_PATH_VAR}/perf.log
+        filePattern: ${LOG_PATH_VAR}/perf.log.%d{yyyy-MM-dd}.gz
         Policies:
           TimeBasedTriggeringPolicy:
             interval: 10
@@ -28,15 +33,14 @@ Configuration:
           pattern: "[%d{yyyy-MM-dd HH:mm:ss}] [%-5p] %m%n"
 
   Loggers:
-
       Root:
-        level: info
+        level: ${CONSOLE_LOGGING_LEVEL}
         AppenderRef:
           - ref: Console_Appender
 
       Logger:
         - name: uk.ac.cam.cl.dtg
-          level: info
+          level: ${CONSOLE_LOGGING_LEVEL}
           AppenderRef:
             - ref: Isaac_Appender
 
