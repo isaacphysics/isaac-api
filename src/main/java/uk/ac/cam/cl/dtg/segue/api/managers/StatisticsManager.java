@@ -24,7 +24,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.apache.commons.lang3.Validate;
-import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
@@ -49,6 +48,10 @@ import uk.ac.cam.cl.dtg.util.locations.Location;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.Month;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
@@ -61,11 +64,11 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ID_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueLogType;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval.SIX_MONTHS;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval.NINETY_DAYS;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval.THIRTY_DAYS;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval.SEVEN_DAYS;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval.NINETY_DAYS;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval.SEVEN_DAYS;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval.SIX_MONTHS;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval.THIRTY_DAYS;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX;
 
 /**
@@ -393,10 +396,12 @@ public class StatisticsManager implements IStatisticsManager {
         // FIXME: there was a TODO here about tidying this up and moving it elsewhere.
         // It has been improved and tidied, but may still better belong elsewhere . . .
 
-        int questionsAnsweredCorrectly = 0;
-        int questionPartsAnsweredCorrectly = 0;
-        int totalQuestionsAttempted = 0;
-        int totalQuestionPartsAttempted = 0;
+        int correctQuestions = 0;
+        int correctQuestionParts = 0;
+        int correctQuestionsThisAcademicYear = 0;
+        int correctQuestionsPartsThisAcademicYear = 0;
+        int attemptedQuestions = 0;
+        int attemptedQuestionParts = 0;
         Map<String, Integer> questionAttemptsByTagStats = Maps.newHashMap();
         Map<String, Integer> questionsCorrectByTagStats = Maps.newHashMap();
         Map<String, Integer> questionAttemptsByLevelStats = Maps.newHashMap();
@@ -404,14 +409,20 @@ public class StatisticsManager implements IStatisticsManager {
         Map<String, Integer> questionAttemptsByTypeStats = Maps.newHashMap();
         Map<String, Integer> questionsCorrectByTypeStats = Maps.newHashMap();
 
+        LocalDate now = LocalDate.now();
+        LocalDate septemberThisYear = LocalDate.of(now.getYear(), Month.SEPTEMBER,1);
+        LocalDate septemberLastYear = LocalDate.of(now.getYear() -1, Month.SEPTEMBER,1);
+        LocalDate firstDayOfAcademicYear = now.isAfter(septemberThisYear) ? septemberThisYear : septemberLastYear;
+
         Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsByUser = questionManager.getQuestionAttemptsByUser(userOfInterest);
         Map<String, ContentDTO> questionMap = this.getQuestionMap(questionAttemptsByUser.keySet());
 
         // Loop through each Question attempted:
         for (Entry<String, Map<String, List<QuestionValidationResponse>>> question : questionAttemptsByUser.entrySet()) {
-            totalQuestionsAttempted++;
+            attemptedQuestions++;
 
             boolean questionCorrect = true;  // Are all Parts of the Question correct?
+            LocalDate oldestQuestionPartCompleted = null;
             // Loop through each Part of the Question:
             // TODO - We might be able to avoid using a GameManager here!
             // The question page content object is questionMap.get(question.getKey()) and we could search this instead!
@@ -420,14 +431,21 @@ public class StatisticsManager implements IStatisticsManager {
                 boolean questionPartCorrect = false;  // Is this Part of the Question correct?
                 // Has the user attempted this part of the question at all?
                 if (question.getValue().containsKey(questionPart.getId())) {
-                    totalQuestionPartsAttempted++;
+                    attemptedQuestionParts++;
 
                     // Loop through each attempt at the Question Part if they have attempted it:
                     for (QuestionValidationResponse validationResponse : question.getValue().get(questionPart.getId())) {
-
                         if (validationResponse.isCorrect() != null && validationResponse.isCorrect()) {
-                            questionPartsAnsweredCorrectly++;
+                            correctQuestionParts++;
                             questionPartCorrect = true;
+                            LocalDate dateAttempted = LocalDateTime.ofInstant(
+                                    validationResponse.getDateAttempted().toInstant(), ZoneId.systemDefault()).toLocalDate();
+                            if (dateAttempted.isAfter(firstDayOfAcademicYear)) {
+                                correctQuestionsPartsThisAcademicYear++;
+                                if (oldestQuestionPartCompleted == null || dateAttempted.isAfter(oldestQuestionPartCompleted)) {
+                                    oldestQuestionPartCompleted = dateAttempted;
+                                }
+                            }
                             break;
                         }
                     }
@@ -485,7 +503,10 @@ public class StatisticsManager implements IStatisticsManager {
             }
             // If it's correct, count this globally and for the Question's level too:
             if (questionCorrect) {
-                questionsAnsweredCorrectly++;
+                correctQuestions++;
+                if (oldestQuestionPartCompleted.isAfter(firstDayOfAcademicYear)) {
+                    correctQuestionsThisAcademicYear++;
+                }
                 if (questionsCorrectByLevelStats.containsKey(questionLevel)) {
                     questionsCorrectByLevelStats.put(questionLevel, questionsCorrectByLevelStats.get(questionLevel) + 1);
                 } else {
@@ -496,10 +517,12 @@ public class StatisticsManager implements IStatisticsManager {
 
         Map<String, Object> questionInfo = Maps.newHashMap();
 
-        questionInfo.put("totalQuestionsAttempted", totalQuestionsAttempted);
-        questionInfo.put("totalQuestionsCorrect", questionsAnsweredCorrectly);
-        questionInfo.put("totalQuestionPartsAttempted", totalQuestionPartsAttempted);
-        questionInfo.put("totalQuestionPartsCorrect", questionPartsAnsweredCorrectly);
+        questionInfo.put("totalQuestionsAttempted", attemptedQuestions);
+        questionInfo.put("totalQuestionsCorrect", correctQuestions);
+        questionInfo.put("totalQuestionPartsAttempted", attemptedQuestionParts);
+        questionInfo.put("totalQuestionPartsCorrect", correctQuestionParts);
+        questionInfo.put("totalQuestionsCorrectThisAcademicYear", correctQuestionsThisAcademicYear);
+        questionInfo.put("totalQuestionPartsCorrectThisAcademicYear", correctQuestionsPartsThisAcademicYear);
         questionInfo.put("attemptsByTag", questionAttemptsByTagStats);
         questionInfo.put("correctByTag", questionsCorrectByTagStats);
         questionInfo.put("attemptsByLevel", questionAttemptsByLevelStats);
@@ -526,7 +549,7 @@ public class StatisticsManager implements IStatisticsManager {
      * @return Map of eventType --> map of dates and frequency
      * @throws SegueDatabaseException 
      */
-    public Map<String, Map<LocalDate, Long>> getEventLogsByDate(final Collection<String> eventTypes,
+    public Map<String, Map<org.joda.time.LocalDate, Long>> getEventLogsByDate(final Collection<String> eventTypes,
             final Date fromDate, final Date toDate, final boolean binDataByMonth) throws SegueDatabaseException {
         return this.getEventLogsByDateAndUserList(eventTypes, fromDate, toDate, null, binDataByMonth);
     }
@@ -547,7 +570,7 @@ public class StatisticsManager implements IStatisticsManager {
      * @return Map of eventType --> map of dates and frequency
      * @throws SegueDatabaseException 
      */
-    public Map<String, Map<LocalDate, Long>> getEventLogsByDateAndUserList(final Collection<String> eventTypes,
+    public Map<String, Map<org.joda.time.LocalDate, Long>> getEventLogsByDateAndUserList(final Collection<String> eventTypes,
             final Date fromDate, final Date toDate, final List<RegisteredUserDTO> userList,
             final boolean binDataByMonth) throws SegueDatabaseException {
         Validate.notNull(eventTypes);
