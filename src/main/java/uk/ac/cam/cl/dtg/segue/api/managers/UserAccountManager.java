@@ -552,7 +552,31 @@ public class UserAccountManager implements IUserAccountManager {
      *             - If there is another database error       
      */
     public final RegisteredUserDTO getUserDTOById(final Long id) throws NoUserException, SegueDatabaseException {
-        RegisteredUser user = this.findUserById(id);
+        return this.getUserDTOById(id, false);
+    }
+
+    /**
+     * This function can be used to find user information about a user when given an id - EVEN if it is a deleted user.
+     *
+     * WARNING- Do not expect complete RegisteredUser Objects as data may be missing if you include deleted users
+     * @param id
+     *            - the id of the user to search for.
+     * @param includeDeleted
+     *            - include deleted users in results - true for yes false for no
+     * @return the userDTO
+     * @throws NoUserException
+     *             - If we cannot find a valid user with the email address provided.
+     * @throws SegueDatabaseException
+     *             - If there is another database error
+     */
+    public final RegisteredUserDTO getUserDTOById(final Long id, final boolean includeDeleted) throws NoUserException, SegueDatabaseException {
+        RegisteredUser user;
+        if (includeDeleted) {
+            user = this.database.getById(id, true);
+        } else {
+            user = this.findUserById(id);
+        }
+
         if (null == user) {
             throw new NoUserException("No user found with this ID!");
         }

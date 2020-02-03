@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.isaac.dos.eventbookings;
 
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 
 import javax.annotation.Nullable;
 import java.util.Map;
@@ -104,6 +105,16 @@ public interface EventBookings {
      * @throws SegueDatabaseException if there is a problem accessing the db
      */
     Long countAllEventBookings() throws SegueDatabaseException;
+
+    /**
+     * For a given event provide a count of the current bookings and their statuses.
+     *
+     * @param eventId - the event id we care about
+     * @param includeDeletedUsersInCounts - true will include deleted users in the numbers, false will not.
+     * @return Map of booking status to number of bookings for the event.
+     * @throws SegueDatabaseException - if there is a problem accessing the db
+     */
+    Map<BookingStatus, Map<Role, Long>> getEventBookingStatusCounts(String eventId, boolean includeDeletedUsersInCounts) throws SegueDatabaseException;
 
     /**
      * Find all bookings for a given event with a given status.
