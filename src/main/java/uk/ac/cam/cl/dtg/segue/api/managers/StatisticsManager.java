@@ -397,11 +397,13 @@ public class StatisticsManager implements IStatisticsManager {
         // It has been improved and tidied, but may still better belong elsewhere . . .
 
         int correctQuestions = 0;
-        int correctQuestionParts = 0;
-        int correctQuestionsThisAcademicYear = 0;
-        int correctQuestionsPartsThisAcademicYear = 0;
         int attemptedQuestions = 0;
+        int correctQuestionParts = 0;
         int attemptedQuestionParts = 0;
+        int correctQuestionsThisAcademicYear = 0;
+        int attemptedQuestionsThisAcademicYear = 0;
+        int correctQuestionPartsThisAcademicYear = 0;
+        int attemptedQuestionPartsThisAcademicYear = 0;
         Map<String, Integer> questionAttemptsByTagStats = Maps.newHashMap();
         Map<String, Integer> questionsCorrectByTagStats = Maps.newHashMap();
         Map<String, Integer> questionAttemptsByLevelStats = Maps.newHashMap();
@@ -410,9 +412,10 @@ public class StatisticsManager implements IStatisticsManager {
         Map<String, Integer> questionsCorrectByTypeStats = Maps.newHashMap();
 
         LocalDate now = LocalDate.now();
-        LocalDate septemberThisYear = LocalDate.of(now.getYear(), Month.SEPTEMBER,1);
-        LocalDate septemberLastYear = LocalDate.of(now.getYear() -1, Month.SEPTEMBER,1);
-        LocalDate firstDayOfAcademicYear = now.isAfter(septemberThisYear) ? septemberThisYear : septemberLastYear;
+        LocalDate endOfAugustThisYear = LocalDate.of(now.getYear(), Month.AUGUST, 31);
+        LocalDate endOfAugustLastYear = LocalDate.of(now.getYear() -1, Month.AUGUST, 31);
+        LocalDate lastDayOfPreviousAcademicYear =
+                now.isAfter(endOfAugustThisYear) ? endOfAugustThisYear : endOfAugustLastYear;
 
         Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsByUser = questionManager.getQuestionAttemptsByUser(userOfInterest);
         Map<String, ContentDTO> questionMap = this.getQuestionMap(questionAttemptsByUser.keySet());
@@ -421,34 +424,41 @@ public class StatisticsManager implements IStatisticsManager {
         for (Entry<String, Map<String, List<QuestionValidationResponse>>> question : questionAttemptsByUser.entrySet()) {
             attemptedQuestions++;
 
-            boolean questionCorrect = true;  // Are all Parts of the Question correct?
-            LocalDate oldestQuestionPartCompleted = null;
+            boolean questionIsCorrect = true;  // Are all Parts of the Question correct?
+            LocalDate mostRecentCorrectQuestionPart = null;
+            LocalDate mostRecentAttemptAtQuestion = null;
             // Loop through each Part of the Question:
             // TODO - We might be able to avoid using a GameManager here!
             // The question page content object is questionMap.get(question.getKey()) and we could search this instead!
             for (QuestionDTO questionPart : gameManager.getAllMarkableQuestionPartsDFSOrder(question.getKey())) {
 
-                boolean questionPartCorrect = false;  // Is this Part of the Question correct?
+                boolean questionPartIsCorrect = false;  // Is this Part of the Question correct?
                 // Has the user attempted this part of the question at all?
                 if (question.getValue().containsKey(questionPart.getId())) {
                     attemptedQuestionParts++;
 
+                    LocalDate mostRecentAttemptAtThisQuestionPart = null;
+
                     // Loop through each attempt at the Question Part if they have attempted it:
                     for (QuestionValidationResponse validationResponse : question.getValue().get(questionPart.getId())) {
+                        LocalDate dateAttempted = LocalDateTime.ofInstant(
+                                validationResponse.getDateAttempted().toInstant(), ZoneId.systemDefault()).toLocalDate();
+                        if (mostRecentAttemptAtThisQuestionPart == null || dateAttempted.isAfter(mostRecentAttemptAtThisQuestionPart)) {
+                            mostRecentAttemptAtThisQuestionPart = dateAttempted;
+                        }
                         if (validationResponse.isCorrect() != null && validationResponse.isCorrect()) {
                             correctQuestionParts++;
-                            questionPartCorrect = true;
-                            LocalDate dateAttempted = LocalDateTime.ofInstant(
-                                    validationResponse.getDateAttempted().toInstant(), ZoneId.systemDefault()).toLocalDate();
-                            if (dateAttempted.isAfter(firstDayOfAcademicYear)) {
-                                correctQuestionsPartsThisAcademicYear++;
-                                if (oldestQuestionPartCompleted == null || dateAttempted.isAfter(oldestQuestionPartCompleted)) {
-                                    oldestQuestionPartCompleted = dateAttempted;
+                            if (dateAttempted.isAfter(lastDayOfPreviousAcademicYear)) {
+                                correctQuestionPartsThisAcademicYear++;
+                                if (mostRecentCorrectQuestionPart == null || dateAttempted.isAfter(mostRecentCorrectQuestionPart)) {
+                                    mostRecentCorrectQuestionPart = dateAttempted;
                                 }
                             }
-                            break;
+                            questionPartIsCorrect = true;
+                            break; // early so that later attempts are ignored
                         }
                     }
+
                     // Type Stats - Count the attempt at the Question Part:
                     String questionPartType = questionPart.getType();
                     if (questionAttemptsByTypeStats.containsKey(questionPartType)) {
@@ -456,8 +466,17 @@ public class StatisticsManager implements IStatisticsManager {
                     } else {
                         questionAttemptsByTypeStats.put(questionPartType, 1);
                     }
+
+                    if (mostRecentAttemptAtThisQuestionPart.isAfter(lastDayOfPreviousAcademicYear)) {
+                        attemptedQuestionPartsThisAcademicYear++;
+                    }
+
+                    if (mostRecentAttemptAtQuestion == null || mostRecentAttemptAtThisQuestionPart.isAfter(mostRecentAttemptAtQuestion)) {
+                        mostRecentAttemptAtQuestion = mostRecentAttemptAtThisQuestionPart;
+                    }
+
                     // If this Question Part is correct, count this too:
-                    if (questionPartCorrect) {
+                    if (questionPartIsCorrect) {
                         if (questionsCorrectByTypeStats.containsKey(questionPartType)) {
                             questionsCorrectByTypeStats.put(questionPartType, questionsCorrectByTypeStats.get(questionPartType) + 1);
                         } else {
@@ -467,7 +486,7 @@ public class StatisticsManager implements IStatisticsManager {
                 }
 
                 // Correctness of whole Question: is the Question correct so far, and is this Question Part also correct?
-                questionCorrect = questionCorrect && questionPartCorrect;
+                questionIsCorrect = questionIsCorrect && questionPartIsCorrect;
             }
 
             ContentDTO questionContentDTO = questionMap.get(question.getKey());
@@ -485,7 +504,7 @@ public class StatisticsManager implements IStatisticsManager {
                     questionAttemptsByTagStats.put(tag, 1);
                 }
                 // If it's correct, count this too:
-                if (questionCorrect) {
+                if (questionIsCorrect) {
                     if (questionsCorrectByTagStats.containsKey(tag)) {
                         questionsCorrectByTagStats.put(tag, questionsCorrectByTagStats.get(tag) + 1);
                     } else {
@@ -501,10 +520,15 @@ public class StatisticsManager implements IStatisticsManager {
             } else {
                 questionAttemptsByLevelStats.put(questionLevel, 1);
             }
+
+            if (mostRecentAttemptAtQuestion.isAfter(lastDayOfPreviousAcademicYear)) {
+                attemptedQuestionsThisAcademicYear++;
+            }
+
             // If it's correct, count this globally and for the Question's level too:
-            if (questionCorrect) {
+            if (questionIsCorrect) {
                 correctQuestions++;
-                if (oldestQuestionPartCompleted.isAfter(firstDayOfAcademicYear)) {
+                if (mostRecentCorrectQuestionPart.isAfter(lastDayOfPreviousAcademicYear)) {
                     correctQuestionsThisAcademicYear++;
                 }
                 if (questionsCorrectByLevelStats.containsKey(questionLevel)) {
@@ -522,7 +546,9 @@ public class StatisticsManager implements IStatisticsManager {
         questionInfo.put("totalQuestionPartsAttempted", attemptedQuestionParts);
         questionInfo.put("totalQuestionPartsCorrect", correctQuestionParts);
         questionInfo.put("totalQuestionsCorrectThisAcademicYear", correctQuestionsThisAcademicYear);
-        questionInfo.put("totalQuestionPartsCorrectThisAcademicYear", correctQuestionsPartsThisAcademicYear);
+        questionInfo.put("totalQuestionsAttemptedThisAcademicYear", attemptedQuestionsThisAcademicYear);
+        questionInfo.put("totalQuestionPartsCorrectThisAcademicYear", correctQuestionPartsThisAcademicYear);
+        questionInfo.put("totalQuestionPartsAttemptedThisAcademicYear", attemptedQuestionPartsThisAcademicYear);
         questionInfo.put("attemptsByTag", questionAttemptsByTagStats);
         questionInfo.put("correctByTag", questionsCorrectByTagStats);
         questionInfo.put("attemptsByLevel", questionAttemptsByLevelStats);
