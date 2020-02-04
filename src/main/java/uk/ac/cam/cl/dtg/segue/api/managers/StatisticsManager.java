@@ -467,12 +467,14 @@ public class StatisticsManager implements IStatisticsManager {
                         questionAttemptsByTypeStats.put(questionPartType, 1);
                     }
 
-                    if (mostRecentAttemptAtThisQuestionPart.isAfter(lastDayOfPreviousAcademicYear)) {
-                        attemptedQuestionPartsThisAcademicYear++;
-                    }
+                    if (mostRecentAttemptAtThisQuestionPart != null) {
+                        if (mostRecentAttemptAtThisQuestionPart.isAfter(lastDayOfPreviousAcademicYear)) {
+                            attemptedQuestionPartsThisAcademicYear++;
+                        }
 
-                    if (mostRecentAttemptAtQuestion == null || mostRecentAttemptAtThisQuestionPart.isAfter(mostRecentAttemptAtQuestion)) {
-                        mostRecentAttemptAtQuestion = mostRecentAttemptAtThisQuestionPart;
+                        if (mostRecentAttemptAtQuestion == null || mostRecentAttemptAtThisQuestionPart.isAfter(mostRecentAttemptAtQuestion)) {
+                            mostRecentAttemptAtQuestion = mostRecentAttemptAtThisQuestionPart;
+                        }
                     }
 
                     // If this Question Part is correct, count this too:
@@ -521,14 +523,14 @@ public class StatisticsManager implements IStatisticsManager {
                 questionAttemptsByLevelStats.put(questionLevel, 1);
             }
 
-            if (mostRecentAttemptAtQuestion.isAfter(lastDayOfPreviousAcademicYear)) {
+            if (mostRecentAttemptAtQuestion != null && mostRecentAttemptAtQuestion.isAfter(lastDayOfPreviousAcademicYear)) {
                 attemptedQuestionsThisAcademicYear++;
             }
 
             // If it's correct, count this globally and for the Question's level too:
             if (questionIsCorrect) {
                 correctQuestions++;
-                if (mostRecentCorrectQuestionPart.isAfter(lastDayOfPreviousAcademicYear)) {
+                if (mostRecentCorrectQuestionPart != null && mostRecentCorrectQuestionPart.isAfter(lastDayOfPreviousAcademicYear)) {
                     correctQuestionsThisAcademicYear++;
                 }
                 if (questionsCorrectByLevelStats.containsKey(questionLevel)) {
