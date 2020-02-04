@@ -125,6 +125,6 @@ public interface IQuestionAttemptManager {
      * @throws SegueDatabaseException
      *             - if we cannot retrieve the data from the database.
      */
-    Map<Date, Long> getQuestionAttemptCountForUserByDateRange(Date fromDate,
-                                                              Date toDate, Long userId) throws SegueDatabaseException;
+    Map<Date, Long> getQuestionAttemptCountForUserByDateRange(Date fromDate, Date toDate,
+                                                              Long userId, Boolean perDay) throws SegueDatabaseException;
 }
