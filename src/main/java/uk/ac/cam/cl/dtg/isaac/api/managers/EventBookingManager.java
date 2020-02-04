@@ -1110,7 +1110,7 @@ public class EventBookingManager {
     private void ensureCapacity(final IsaacEventPageDTO event, final List<RegisteredUserDTO> users) throws
             SegueDatabaseException, EventIsFullException {
         final boolean isStudentEvent = event.getTags().contains("student");
-        Integer numberOfPlaces = getPlacesAvailable(event);
+        Long numberOfPlaces = getPlacesAvailable(event);
         if (numberOfPlaces != null) {
             long numberOfRequests = users.stream().filter(user -> !isStudentEvent || !Role.TEACHER.equals(user.getRole())).count();
             if (numberOfPlaces - numberOfRequests < 0) {
