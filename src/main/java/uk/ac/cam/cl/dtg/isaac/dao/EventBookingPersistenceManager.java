@@ -112,8 +112,8 @@ public class EventBookingPersistenceManager {
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    public EventBookingDTO updateBookingStatus(final String eventId, final Long userId, final Long reservedById, final BookingStatus bookingStatus, final Map additionalEventInformation) throws SegueDatabaseException {
-        dao.updateStatus(eventId, userId, reservedById, bookingStatus, additionalEventInformation);
+    public EventBookingDTO updateBookingStatus(final String eventId, final Long userId, final BookingStatus bookingStatus, final Map additionalEventInformation) throws SegueDatabaseException {
+        dao.updateStatus(eventId, userId, bookingStatus, additionalEventInformation);
 
         return this.getBookingByEventIdAndUserId(eventId, userId);
     }

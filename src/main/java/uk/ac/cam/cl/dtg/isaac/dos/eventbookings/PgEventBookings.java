@@ -113,36 +113,26 @@ public class PgEventBookings implements EventBookings {
     }
 
     @Override
-    public void updateStatus(final String eventId, final Long userId, final Long reservedById, final BookingStatus status, final Map<String, String> additionalEventInformation) throws SegueDatabaseException {
+    public void updateStatus(final String eventId, final Long userId, final BookingStatus status, final Map<String, String> additionalEventInformation) throws SegueDatabaseException {
         PreparedStatement pst;
 
         try (Connection conn = ds.getDatabaseConnection()) {
 
             if (additionalEventInformation != null) {
                 pst = conn.prepareStatement("UPDATE event_bookings " +
-                    "SET status = ?, updated = ?, reserved_by = ?, additional_booking_information = ?::text::jsonb " +
+                    "SET status = ?, updated = ?, additional_booking_information = ?::text::jsonb " +
                     "WHERE event_id = ? AND user_id = ?;");
                 pst.setString(1, status.name());
                 pst.setTimestamp(2, new java.sql.Timestamp(new Date().getTime()));
-                try {
-                    pst.setLong(3, reservedById);
-                } catch (NullPointerException e) {
-                    pst.setNull(3, Types.INTEGER);
-                }
                 pst.setString(4, objectMapper.writeValueAsString(additionalEventInformation));
                 pst.setString(5, eventId);
                 pst.setLong(6, userId);
             } else {
                 pst = conn.prepareStatement("UPDATE event_bookings " +
-                    "SET status = ?, updated = ?, reserved_by = ? " +
+                    "SET status = ?, updated = ? " +
                     "WHERE event_id = ? AND user_id = ?;");
                 pst.setString(1, status.name());
                 pst.setTimestamp(2, new java.sql.Timestamp(new Date().getTime()));
-                try {
-                    pst.setLong(3, reservedById);
-                } catch (NullPointerException e) {
-                    pst.setNull(3, Types.INTEGER);
-                }
                 pst.setString(4, eventId);
                 pst.setLong(5, userId);
             }

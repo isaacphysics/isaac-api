@@ -409,7 +409,7 @@ public class EventBookingManager {
             Long reservedById = reservedBy == null ? null : reservedBy.getId();
             if (this.hasBookingWithStatus(event.getId(), user.getId(), BookingStatus.CANCELLED)) {
                 // if the user has previously cancelled we should let them book again.
-                booking = this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(), reservedById,
+                booking = this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(),
                         BookingStatus.CONFIRMED, additionalEventInformation);
             } else {
                 booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), reservedById,
@@ -503,7 +503,7 @@ public class EventBookingManager {
                 // attempt to book them on the event
                 if (this.hasBookingWithStatus(event.getId(), user.getId(), BookingStatus.CANCELLED)) {
                     // if the user has previously cancelled we should let them book again.
-                    reservation = this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(), reservingUser.getId(),
+                    reservation = this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(),
                             BookingStatus.RESERVED, additionalEventInformation);
                 } else {
                     reservation = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), reservingUser.getId(),
@@ -600,7 +600,6 @@ public class EventBookingManager {
                 // if the user has previously cancelled we should let them book again.
                 booking = this.bookingPersistenceManager.updateBookingStatus(event.getId(),
                         user.getId(),
-                        reservedById,
                         BookingStatus.WAITING_LIST,
                         additionalInformation);
             } else {
@@ -685,7 +684,7 @@ public class EventBookingManager {
                         .getBookingByEventIdAndUserId(event.getId(), userDTO.getId()).getReservedBy();
                 Long reservedById = reservedBy == null ? null : reservedBy.getId();
                 updatedStatus = this.bookingPersistenceManager
-                        .updateBookingStatus(eventBooking.getEventId(), userDTO.getId(), reservedById,
+                        .updateBookingStatus(eventBooking.getEventId(), userDTO.getId(),
                                 BookingStatus.CONFIRMED, eventBooking.getAdditionalInformation()
                         );
 
@@ -755,7 +754,7 @@ public class EventBookingManager {
                 .getBookingByEventIdAndUserId(event.getId(), userDTO.getId()).getReservedBy();
         Long reservedById = reservedBy == null ? null : reservedBy.getId();
         EventBookingDTO updatedStatus = this.bookingPersistenceManager.updateBookingStatus(eventBooking.getEventId(),
-                userDTO.getId(), reservedById, attendanceStatus, eventBooking.getAdditionalInformation());
+                userDTO.getId(), attendanceStatus, eventBooking.getAdditionalInformation());
 
         return updatedStatus;
     }
@@ -941,7 +940,7 @@ public class EventBookingManager {
                     .getBookingByEventIdAndUserId(event.getId(), user.getId()).getReservedBy();
             reservedById = reservedBy == null ? null : reservedBy.getId();
             BookingStatus previousBookingStatus = this.getBookingStatus(event.getId(), user.getId());
-            this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(), reservedById,
+            this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(),
                     BookingStatus.CANCELLED,
                     null);
 
