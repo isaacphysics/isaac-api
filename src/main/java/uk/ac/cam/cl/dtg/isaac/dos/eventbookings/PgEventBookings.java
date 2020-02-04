@@ -33,6 +33,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 import com.google.api.client.util.Lists;
+import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 
 import javax.annotation.Nullable;
 
@@ -312,6 +313,42 @@ public class PgEventBookings implements EventBookings {
             results.next();
             return results.getLong("TOTAL");
         } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        }
+    }
+
+    @Override
+    public Map<BookingStatus, Map<Role, Long>> getEventBookingStatusCounts(final String eventId, final boolean includeDeletedUsersInCounts) throws SegueDatabaseException {
+        // Note this method joins at the db table mainly to allow inclusion of deleted users in the counts.
+        StringBuilder sb = new StringBuilder();
+        sb.append("SELECT event_bookings.status, users.role, COUNT(event_bookings.id) FROM event_bookings \n" +
+                "INNER JOIN users ON event_bookings.user_id = users.id\n" +
+                "WHERE event_bookings.event_id=?"
+        );
+
+        if (!includeDeletedUsersInCounts) {
+            sb.append(" AND users.deleted = 'f'\n" );
+        }
+
+        sb.append(" GROUP BY event_bookings.status, users.role;");
+
+        try (Connection conn = ds.getDatabaseConnection()) {
+            PreparedStatement pst;
+            pst = conn.prepareStatement(sb.toString());
+            pst.setString(1, eventId);
+
+            ResultSet results = pst.executeQuery();
+
+            Map<BookingStatus, Map<Role, Long>> returnResult = Maps.newHashMap();
+            Map<Role, Long> roleCountMap = Maps.newHashMap();
+            while (results.next()) {
+                roleCountMap.put(Role.valueOf(results.getString("role")), results.getLong("count"));
+                returnResult.put(BookingStatus.valueOf(results.getString("status")), roleCountMap);
+            }
+
+            return returnResult;
+        } catch (SQLException e) {
+            log.error("DB error ", e);
             throw new SegueDatabaseException("Postgres exception", e);
         }
     }

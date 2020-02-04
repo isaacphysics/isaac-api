@@ -73,6 +73,7 @@ public class EventBookingManagerTest {
         testEvent.setNumberOfPlaces(1);
         testEvent.setTags(ImmutableSet.of("student", "physics"));
         testEvent.setEmailEventDetails("Some Details");
+        testEvent.setDate(new Date(System.currentTimeMillis()+24*60*60*1000)); // future dated
 
         RegisteredUserDTO someUser = new RegisteredUserDTO();
         someUser.setId(6L);
@@ -86,6 +87,10 @@ public class EventBookingManagerTest {
         firstBooking.setUserBooked(firstUser);
         firstBooking.setBookingStatus(BookingStatus.CONFIRMED);
         List<EventBookingDTO> currentBookings = Arrays.asList(firstBooking);
+
+        Map<BookingStatus, Map<Role, Long>> placesAvailableMap = generatePlacesAvailableMap();
+        placesAvailableMap.get(BookingStatus.CONFIRMED).put(Role.TEACHER, 1L);
+        expect(dummyEventBookingPersistenceManager.getEventBookingStatusCounts(testEvent.getId(), false)).andReturn(placesAvailableMap).atLeastOnce();
 
         expect(dummyEventBookingPersistenceManager.getBookingByEventId(testEvent.getId())).andReturn(currentBookings);
         expect(dummyEventBookingPersistenceManager.getBookingByEventIdAndUserId(testEvent.getId(), someUser.getId()))
@@ -120,6 +125,7 @@ public class EventBookingManagerTest {
         testEvent.setId("someEventId");
         testEvent.setNumberOfPlaces(1);
         testEvent.setTags(ImmutableSet.of("student", "physics"));
+        testEvent.setDate(new Date(System.currentTimeMillis()+24*60*60*1000)); // future dated
 
         RegisteredUserDTO someUser = new RegisteredUserDTO();
         someUser.setId(6L);
@@ -132,6 +138,10 @@ public class EventBookingManagerTest {
         firstBooking.setUserBooked(firstUser);
         firstBooking.setBookingStatus(BookingStatus.CONFIRMED);
         List<EventBookingDTO> currentBookings = Arrays.asList(firstBooking);
+
+        Map<BookingStatus, Map<Role, Long>> placesAvailableMap = generatePlacesAvailableMap();
+        placesAvailableMap.get(BookingStatus.CONFIRMED).put(Role.STUDENT, 1L);
+        expect(dummyEventBookingPersistenceManager.getEventBookingStatusCounts(testEvent.getId(), false)).andReturn(placesAvailableMap).atLeastOnce();
 
         expect(dummyEventBookingPersistenceManager.getBookingByEventId(testEvent.getId())).andReturn(currentBookings);
         expect(dummyEventBookingPersistenceManager.isUserBooked(testEvent.getId(), someUser.getId())).andReturn(false);
@@ -163,6 +173,7 @@ public class EventBookingManagerTest {
         testEvent.setId("someEventId");
         testEvent.setNumberOfPlaces(1);
         testEvent.setTags(ImmutableSet.of("teacher", "physics"));
+        testEvent.setDate(new Date(System.currentTimeMillis()+24*60*60*1000)); // future dated
 
         RegisteredUserDTO someUser = new RegisteredUserDTO();
         someUser.setId(6L);
@@ -175,6 +186,10 @@ public class EventBookingManagerTest {
         firstBooking.setUserBooked(firstUser);
         firstBooking.setBookingStatus(BookingStatus.CONFIRMED);
         List<EventBookingDTO> currentBookings = Arrays.asList(firstBooking);
+
+        Map<BookingStatus, Map<Role, Long>> placesAvailableMap = generatePlacesAvailableMap();
+        placesAvailableMap.get(BookingStatus.CONFIRMED).put(Role.TEACHER, 1L);
+        expect(dummyEventBookingPersistenceManager.getEventBookingStatusCounts(testEvent.getId(), false)).andReturn(placesAvailableMap).atLeastOnce();
 
         expect(dummyEventBookingPersistenceManager.getBookingByEventId(testEvent.getId())).andReturn(currentBookings);
         expect(dummyEventBookingPersistenceManager.isUserBooked(testEvent.getId(), someUser.getId())).andReturn(false);
@@ -260,6 +275,7 @@ public class EventBookingManagerTest {
         testEvent.setId("someEventId");
         testEvent.setNumberOfPlaces(1);
         testEvent.setTags(ImmutableSet.of("teacher", "physics"));
+        testEvent.setDate(new Date(System.currentTimeMillis()+24*60*60*1000)); // future dated
 
         RegisteredUserDTO someUser = new RegisteredUserDTO();
         someUser.setId(6L);
@@ -277,6 +293,11 @@ public class EventBookingManagerTest {
         secondUser.setRole(Role.TEACHER);
         secondBooking.setUserBooked(firstUser);
         secondBooking.setBookingStatus(BookingStatus.WAITING_LIST);
+
+        Map<BookingStatus, Map<Role, Long>> placesAvailableMap = generatePlacesAvailableMap();
+        placesAvailableMap.get(BookingStatus.WAITING_LIST).put(Role.TEACHER, 1L);
+        placesAvailableMap.get(BookingStatus.CANCELLED).put(Role.TEACHER, 1L);
+        expect(dummyEventBookingPersistenceManager.getEventBookingStatusCounts(testEvent.getId(), false)).andReturn(placesAvailableMap).atLeastOnce();
 
         List<EventBookingDTO> currentBookings = Arrays.asList(firstBooking, secondBooking);
 
@@ -311,6 +332,7 @@ public class EventBookingManagerTest {
         testEvent.setNumberOfPlaces(1);
         testEvent.setTags(ImmutableSet.of("teacher", "physics"));
         testEvent.setEmailEventDetails("Some Details");
+        testEvent.setDate(new Date(System.currentTimeMillis()+24*60*60*1000)); // future dated
 
         RegisteredUserDTO someUser = new RegisteredUserDTO();
         someUser.setId(6L);
@@ -323,6 +345,10 @@ public class EventBookingManagerTest {
         secondUser.setId(7L);
         secondBooking.setUserBooked(secondUser);
         secondBooking.setBookingStatus(BookingStatus.CANCELLED);
+
+        Map<BookingStatus, Map<Role, Long>> placesAvailableMap = generatePlacesAvailableMap();
+        placesAvailableMap.get(BookingStatus.CANCELLED).put(Role.TEACHER, 1L);
+        expect(dummyEventBookingPersistenceManager.getEventBookingStatusCounts(testEvent.getId(), false)).andReturn(placesAvailableMap).atLeastOnce();
 
         List<EventBookingDTO> currentBookings = Arrays.asList(secondBooking);
 
@@ -365,6 +391,7 @@ public class EventBookingManagerTest {
         testEvent.setNumberOfPlaces(2);
         testEvent.setTags(ImmutableSet.of("teacher", "physics"));
         testEvent.setEmailEventDetails("Some Details");
+        testEvent.setDate(new Date(System.currentTimeMillis()+24*60*60*1000)); // future dated
 
         RegisteredUserDTO firstUserFull = new RegisteredUserDTO();
         firstUserFull.setId(6L);
@@ -387,6 +414,11 @@ public class EventBookingManagerTest {
         secondBooking.setBookingStatus(BookingStatus.CANCELLED);
 
         List<EventBookingDTO> currentBookings = Arrays.asList(firstBooking, secondBooking);
+
+        Map<BookingStatus, Map<Role, Long>> placesAvailableMap = generatePlacesAvailableMap();
+        placesAvailableMap.get(BookingStatus.CANCELLED).put(Role.TEACHER, 1L);
+        placesAvailableMap.get(BookingStatus.WAITING_LIST).put(Role.TEACHER, 1L);
+        expect(dummyEventBookingPersistenceManager.getEventBookingStatusCounts(testEvent.getId(), false)).andReturn(placesAvailableMap).atLeastOnce();
 
         expect(dummyEventBookingPersistenceManager.getBookingByEventId(testEvent.getId())).andReturn(currentBookings);
         expect(dummyEventBookingPersistenceManager.getBookingByEventIdAndUserId(testEvent.getId(), firstUserFull
@@ -427,6 +459,7 @@ public class EventBookingManagerTest {
         testEvent.setNumberOfPlaces(1);
         testEvent.setTags(ImmutableSet.of("teacher", "physics"));
         testEvent.setEmailEventDetails("some details");
+        testEvent.setDate(new Date(System.currentTimeMillis()+24*60*60*1000)); // future dated
 
         RegisteredUserDTO someUser = new RegisteredUserDTO();
         someUser.setId(6L);
@@ -450,6 +483,11 @@ public class EventBookingManagerTest {
         secondBooking.setUserBooked(firstUser);
         secondBooking.setBookingStatus(BookingStatus.CANCELLED);
         secondBooking.setAdditionalInformation(someAdditionalInformation);
+
+        Map<BookingStatus, Map<Role, Long>> placesAvailableMap = generatePlacesAvailableMap();
+        placesAvailableMap.get(BookingStatus.CANCELLED).put(Role.TEACHER, 1L);
+        placesAvailableMap.get(BookingStatus.WAITING_LIST).put(Role.TEACHER, 1L);
+        expect(dummyEventBookingPersistenceManager.getEventBookingStatusCounts(testEvent.getId(), false)).andReturn(placesAvailableMap).atLeastOnce();
 
         List<EventBookingDTO> currentBookings = Arrays.asList(firstBooking, secondBooking);
 
@@ -491,6 +529,7 @@ public class EventBookingManagerTest {
         testEvent.setId("someEventId");
         testEvent.setNumberOfPlaces(1);
         testEvent.setTags(ImmutableSet.of("teacher", "physics"));
+        testEvent.setDate(new Date(System.currentTimeMillis()+24*60*60*1000)); // future dated
 
         RegisteredUserDTO someUser = new RegisteredUserDTO();
         someUser.setId(6L);
@@ -514,6 +553,11 @@ public class EventBookingManagerTest {
         secondBooking.setBookingStatus(BookingStatus.CONFIRMED);
 
         List<EventBookingDTO> currentBookings = Arrays.asList(firstBooking, secondBooking);
+
+        Map<BookingStatus, Map<Role, Long>> placesAvailableMap = generatePlacesAvailableMap();
+        placesAvailableMap.get(BookingStatus.CONFIRMED).put(Role.TEACHER, 1L);
+        placesAvailableMap.get(BookingStatus.WAITING_LIST).put(Role.TEACHER, 1L);
+        expect(dummyEventBookingPersistenceManager.getEventBookingStatusCounts(testEvent.getId(), false)).andReturn(placesAvailableMap).atLeastOnce();
 
         expect(dummyEventBookingPersistenceManager.getBookingByEventId(testEvent.getId())).andReturn(currentBookings);
         expect(dummyEventBookingPersistenceManager.isUserBooked(testEvent.getId(), someUser.getId())).andReturn(false);
@@ -547,6 +591,7 @@ public class EventBookingManagerTest {
         testEvent.setNumberOfPlaces(2);
         testEvent.setTags(ImmutableSet.of("student", "physics"));
         testEvent.setEventStatus(EventStatus.WAITING_LIST_ONLY);
+        testEvent.setDate(new Date(System.currentTimeMillis()+24*60*60*1000)); // future dated
 
         RegisteredUserDTO someUser = new RegisteredUserDTO();
         someUser.setId(6L);
@@ -567,6 +612,11 @@ public class EventBookingManagerTest {
 
         List<EventBookingDTO> currentBookings = Arrays.asList(firstBooking, secondBooking);
 
+        Map<BookingStatus, Map<Role, Long>> placesAvailableMap = generatePlacesAvailableMap();
+        placesAvailableMap.get(BookingStatus.CONFIRMED).put(Role.STUDENT, 1L);
+        placesAvailableMap.get(BookingStatus.WAITING_LIST).put(Role.STUDENT, 1L);
+        expect(dummyEventBookingPersistenceManager.getEventBookingStatusCounts(testEvent.getId(), false)).andReturn(placesAvailableMap).atLeastOnce();
+
         expect(dummyEventBookingPersistenceManager.getBookingByEventId(testEvent.getId())).andReturn(currentBookings);
         expect(dummyEventBookingPersistenceManager.isUserBooked(testEvent.getId(), someUser.getId())).andReturn(false);
 
@@ -580,8 +630,8 @@ public class EventBookingManagerTest {
         expectLastCall().atLeastOnce();
 
         replay(dummyEventBookingPersistenceManager);
-        Integer placesAvailable = ebm.getPlacesAvailable(testEvent);
-        Integer expectedPlacesAvailable = 1;
+        Long placesAvailable = ebm.getPlacesAvailable(testEvent);
+        Long expectedPlacesAvailable = 1L;
         assertEquals("WAITING_LIST_ONLY events should only count confirmed places in availability calculations",
                 placesAvailable, expectedPlacesAvailable);
     }
@@ -657,5 +707,14 @@ public class EventBookingManagerTest {
 
     private EventBookingManager buildEventBookingManager() {
         return new EventBookingManager(dummyEventBookingPersistenceManager, dummyEmailManager, dummyUserAssociationManager, dummyUserAccountManager, dummyPropertiesLoader, dummyGroupManager);
+    }
+
+
+    private Map<BookingStatus, Map<Role, Long>> generatePlacesAvailableMap() {
+        Map<BookingStatus, Map<Role, Long>> placesAvailableMap = Maps.newHashMap();
+        placesAvailableMap.put(BookingStatus.CANCELLED, Maps.newHashMap());
+        placesAvailableMap.put(BookingStatus.WAITING_LIST, Maps.newHashMap());
+        placesAvailableMap.put(BookingStatus.CONFIRMED, Maps.newHashMap());
+        return placesAvailableMap;
     }
 }

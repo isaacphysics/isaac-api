@@ -44,7 +44,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * @author sac92
@@ -389,8 +389,8 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
     }
 
     @Override
-    public Map<Date, Long> getQuestionAttemptCountForUserByDateRange(final Date fromDate,
-                                                                     final Date toDate, final Long userId) throws SegueDatabaseException {
+    public Map<Date, Long> getQuestionAttemptCountForUserByDateRange(final Date fromDate, final Date toDate,
+                                                                     final Long userId, final Boolean perDay) throws SegueDatabaseException {
         Validate.notNull(fromDate);
         Validate.notNull(toDate);
 
@@ -400,10 +400,15 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
         // The following LEFT JOIN gives us months with no events in as required, but need count(id) not count(1) to
         // count actual logged events (where id strictly NOT NULL) in those months, and not count an extra '1' for
         // empty months where id is NULL by definition of the JOIN.
-        queryToBuild.append("SELECT to_char(gen_month, 'YYYY-MM-01'), count(id)");
-        queryToBuild.append(" FROM generate_series(date_trunc('month', ?::timestamp), ?, INTERVAL '1' MONTH) m(gen_month)");
-        queryToBuild.append(" LEFT OUTER JOIN filtered_attempts ON ( date_trunc('month', \"timestamp\") = date_trunc('month', gen_month) )");
-        queryToBuild.append(" GROUP BY gen_month ORDER BY gen_month ASC;");
+        queryToBuild.append("SELECT to_char(gen_date, 'YYYY-MM-DD'), count(id)");
+        if (perDay != null && perDay) {
+            queryToBuild.append(" FROM generate_series(date_trunc('day', ?::timestamp), ?, INTERVAL '1' DAY) m(gen_date)");
+            queryToBuild.append(" LEFT OUTER JOIN filtered_attempts ON ( date_trunc('day', \"timestamp\") = date_trunc('day', gen_date) )");
+        } else {
+            queryToBuild.append(" FROM generate_series(date_trunc('month', ?::timestamp), ?, INTERVAL '1' MONTH) m(gen_date)");
+            queryToBuild.append(" LEFT OUTER JOIN filtered_attempts ON ( date_trunc('month', \"timestamp\") = date_trunc('month', gen_date) )");
+        }
+        queryToBuild.append(" GROUP BY gen_date ORDER BY gen_date ASC;");
 
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
