@@ -25,10 +25,9 @@ import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.configuration.IsaacApplicationRegister;
+import uk.ac.cam.cl.dtg.isaac.dos.TestCase;
 import uk.ac.cam.cl.dtg.isaac.dos.TestQuestion;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacItemQuestionDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.TestCaseDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.TestQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -40,7 +39,6 @@ import uk.ac.cam.cl.dtg.segue.dos.content.ChoiceQuestion;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
-import uk.ac.cam.cl.dtg.segue.dos.content.StringChoice;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
@@ -331,7 +329,7 @@ public class QuestionManager {
     }
 
     /** Test a question of a particular type against a series of test cases **/
-    public List<TestCaseDTO> testQuestion(final String questionType, final TestQuestionDTO testDefinition)
+    public List<TestCase> testQuestion(final String questionType, final TestQuestion testDefinition)
             throws BadRequestException, ValidatorUnavailableException {
         try {
             MapperFacade autoMapper = mapper.getAutoMapper();
@@ -342,24 +340,23 @@ public class QuestionManager {
                 throw new BadRequestException(String.format("Not a valid questionType (%s)", questionType));
             }
             ChoiceQuestion testQuestion = (ChoiceQuestion) questionClass.newInstance();
-            testQuestion.setChoices(testDefinition.getChoices().stream()
-                    .map(c -> autoMapper.map(c, Choice.class)).collect(Collectors.toList()));
+            testQuestion.setChoices(testDefinition.getUserDefinedChoices());
             IValidator questionValidator = QuestionManager.locateValidator(testQuestion.getClass());
             if (null == questionValidator) {
                 throw new ValidatorUnavailableException("Could not find a validator for the question");
             }
 
             // For each test, check its actual results against the response of the validator on the fake question
-            List<TestCaseDTO> results = Lists.newArrayList();
-            for (TestCaseDTO testCase : testDefinition.getTestCases()) {
-                // This will need to be changed to support other choices in the future
+            List<TestCase> results = Lists.newArrayList();
+            for (TestCase testCase : testDefinition.getTestCases()) {
+                Choice inferredChoiceSubclass =
+                        autoMapper.map(autoMapper.map(testCase.getAnswer(), ChoiceDTO.class), Choice.class);
                 QuestionValidationResponse questionValidationResponse = questionValidator
-                        .validateQuestionResponse(testQuestion, autoMapper.map(testCase.getAnswer(), Choice.class));
+                        .validateQuestionResponse(testQuestion, inferredChoiceSubclass);
                 testCase.setCorrect(questionValidationResponse.isCorrect());
-                testCase.setExplanation(autoMapper.map(questionValidationResponse.getExplanation(), ContentDTO.class));
+                testCase.setExplanation(questionValidationResponse.getExplanation());
                 results.add(testCase);
             }
-
 
             return results;
         } catch (InstantiationException | IllegalAccessException e) {

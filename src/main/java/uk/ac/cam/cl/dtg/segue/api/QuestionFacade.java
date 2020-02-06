@@ -24,6 +24,7 @@ import io.swagger.annotations.ApiOperation;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.TestCase;
 import uk.ac.cam.cl.dtg.isaac.dos.TestQuestion;
 import uk.ac.cam.cl.dtg.isaac.dto.TestCaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.TestQuestionDTO;
@@ -385,8 +386,7 @@ public class QuestionFacade extends AbstractSegueFacade {
 
             // Remove untrusted fields from JSON
             TestQuestion testDefinition = mapper.getSharedContentObjectMapper().readValue(testJson, TestQuestion.class);
-            TestQuestionDTO testDefinitionDTO = mapper.getAutoMapper().map(testDefinition, TestQuestionDTO.class);
-            List<TestCaseDTO> results = questionManager.testQuestion(questionType, testDefinitionDTO);
+            List<TestCase> results = questionManager.testQuestion(questionType, testDefinition);
             return Response.ok(results).build();
 
         } catch (NoUserLoggedInException e) {

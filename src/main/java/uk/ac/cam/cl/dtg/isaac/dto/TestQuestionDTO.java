@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto;
 
+import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceQuestionDTO;
 
 import java.util.List;
@@ -22,9 +23,16 @@ import java.util.List;
 /**
  * DTO for constructing a test question and the answer cases we expect
  */
-public class TestQuestionDTO extends ChoiceQuestionDTO {
+public class TestQuestionDTO {
     List<TestCaseDTO> testCases;
+    List<Choice> userDefinedChoices;
 
+    public void setUserDefinedChoices(List<Choice> userDefinedChoices) {
+        this.userDefinedChoices = userDefinedChoices;
+    }
+    public List<Choice> getUserDefinedChoices() {
+        return this.userDefinedChoices;
+    }
     public void setTestCases(List<TestCaseDTO> tests) {
         this.testCases = tests;
     }
