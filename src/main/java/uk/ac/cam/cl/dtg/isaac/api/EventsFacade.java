@@ -557,10 +557,8 @@ public class EventsFacade extends AbstractIsaacFacade {
                     .collect(Collectors.toList());
 
             // Event leaders are only allowed to see the bookings of connected users
-            if (Arrays.asList(Role.TEACHER, Role.EVENT_LEADER).contains(currentUser.getRole())) {
-                eventBookings = userAssociationManager.filterUnassociatedRecords(
-                        currentUser, eventBookings, booking -> booking.getUserBooked().getId());
-            }
+            eventBookings = userAssociationManager.filterUnassociatedRecords(currentUser, eventBookings,
+                    booking -> booking.getUserBooked().getId());
 
             return Response.ok(eventBookings).build();
         } catch (SegueDatabaseException e) {
