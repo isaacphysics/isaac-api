@@ -829,7 +829,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                     ImmutableMap.of(
                             EVENT_ID_FKEY_FIELDNAME, event.getId(),
                             USER_ID_FKEY_FIELDNAME, currentUser.getId(),
-                            USER_ID_LIST_FKEY_FIELDNAME, usersToBook,
+                            USER_ID_LIST_FKEY_FIELDNAME, bookableIds,
                             BOOKING_STATUS_FIELDNAME, BookingStatus.RESERVED.toString()
                     ));
             return Response.ok(bookings).build();
