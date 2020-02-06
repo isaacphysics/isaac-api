@@ -101,7 +101,7 @@ public class EventBookingManagerTest {
         dummyEventBookingPersistenceManager.acquireDistributedLock(testEvent.getId());
         expectLastCall().atLeastOnce();
 
-        expect(dummyEventBookingPersistenceManager.createBooking(testEvent.getId(), someUser.getId(), null, BookingStatus
+        expect(dummyEventBookingPersistenceManager.createBooking(testEvent.getId(), someUser.getId(), BookingStatus
 				.CONFIRMED, someAdditionalInformation)).andReturn(firstBooking).atLeastOnce();
 
         dummyEventBookingPersistenceManager.releaseDistributedLock(testEvent.getId());
@@ -362,7 +362,7 @@ public class EventBookingManagerTest {
         dummyEventBookingPersistenceManager.acquireDistributedLock(testEvent.getId());
         expectLastCall().atLeastOnce();
 
-        expect(dummyEventBookingPersistenceManager.createBooking(testEvent.getId(), someUser.getId(), null,
+        expect(dummyEventBookingPersistenceManager.createBooking(testEvent.getId(), someUser.getId(),
                 BookingStatus.CONFIRMED, someAdditionalInformation)).andReturn(secondBooking).atLeastOnce();
 
         dummyEventBookingPersistenceManager.releaseDistributedLock(testEvent.getId());
@@ -430,7 +430,7 @@ public class EventBookingManagerTest {
         dummyEventBookingPersistenceManager.acquireDistributedLock(testEvent.getId());
         expectLastCall().atLeastOnce();
 
-        expect(dummyEventBookingPersistenceManager.createBooking(testEvent.getId(), firstUserFull.getId(), null,
+        expect(dummyEventBookingPersistenceManager.createBooking(testEvent.getId(), firstUserFull.getId(),
 				BookingStatus.CONFIRMED, someAdditionalInformation)).andReturn(secondBooking).atLeastOnce();
 
         dummyEventBookingPersistenceManager.releaseDistributedLock(testEvent.getId());
