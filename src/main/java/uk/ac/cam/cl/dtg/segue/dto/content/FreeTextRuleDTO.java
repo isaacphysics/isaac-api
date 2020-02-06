@@ -21,28 +21,18 @@ public class FreeTextRuleDTO extends ChoiceDTO {
     private boolean allowsExtraWords;
     private boolean allowsMisspelling;
 
+    public FreeTextRuleDTO() {}
+
     public void setCaseInsensitive(final boolean caseInsensitive) {
         this.caseInsensitive = caseInsensitive;
-    }
-    public boolean isCaseInsensitive() {
-        return this.caseInsensitive;
     }
     public void setAllowsAnyOrder(final boolean allowsAnyOrder) {
         this.allowsAnyOrder = allowsAnyOrder;
     }
-    public boolean getAllowsAnyOrder() {
-        return this.allowsAnyOrder;
-    }
     public void setAllowsExtraWords(final boolean allowsExtraWords) {
         this.allowsExtraWords = allowsExtraWords;
     }
-    public boolean getAllowsExtraWords() {
-        return this.allowsExtraWords;
-    }
     public void setAllowsMisspelling(final boolean allowsMisspelling) {
         this.allowsMisspelling = allowsMisspelling;
-    }
-    public boolean getAllowsMisspelling() {
-        return this.allowsMisspelling;
     }
 }

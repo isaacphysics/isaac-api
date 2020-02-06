@@ -25,6 +25,8 @@ public class FreeTextRule extends Choice {
     private boolean allowsExtraWords;
     private boolean allowsMisspelling;
 
+    public FreeTextRule() {}
+
     public void setCaseInsensitive(final boolean caseInsensitive) {
         this.caseInsensitive = caseInsensitive;
     }

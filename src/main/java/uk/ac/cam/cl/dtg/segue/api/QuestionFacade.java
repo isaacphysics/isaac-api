@@ -383,7 +383,6 @@ public class QuestionFacade extends AbstractSegueFacade {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
-            // Remove untrusted fields from JSON
             TestQuestion testDefinition = mapper.getSharedContentObjectMapper().readValue(testJson, TestQuestion.class);
             List<TestCase> results = questionManager.testQuestion(questionType, testDefinition);
             return Response.ok(results).build();
