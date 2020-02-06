@@ -176,14 +176,31 @@ public class EventBookingPersistenceManager {
      *            - of interest
      * @param userId
      *            - user to book on to the event.
+     * @param reservingId
+     *            - user making the reservation
      * @param status
      *            - The status of the booking to create.
      * @return the newly created booking.
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    public EventBookingDTO createBooking(final String eventId, final Long userId, final Long reservedById, final BookingStatus status, final Map<String,String> additionalInformation) throws SegueDatabaseException {
-        return this.convertToDTO(dao.add(eventId, userId, reservedById, status, additionalInformation));
+    public EventBookingDTO createBooking(final String eventId, final Long userId, final Long reservingId, final BookingStatus status, final Map<String,String> additionalInformation) throws SegueDatabaseException {
+        return this.convertToDTO(dao.add(eventId, userId, reservingId, status, additionalInformation));
+    }
+
+    /**
+     * @param eventId
+     *            - of interest
+     * @param userId
+     *            - user to book on to the event.
+     * @param status
+     *            - The status of the booking to create.
+     * @return the newly created booking.
+     * @throws SegueDatabaseException
+     *             - if an error occurs.
+     */
+    public EventBookingDTO createBooking(final String eventId, final Long userId, final BookingStatus status, final Map<String,String> additionalInformation) throws SegueDatabaseException {
+        return this.convertToDTO(dao.add(eventId, userId, status, additionalInformation));
     }
 
     /**

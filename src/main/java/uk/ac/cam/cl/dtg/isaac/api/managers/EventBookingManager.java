@@ -59,6 +59,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -243,10 +244,6 @@ public class EventBookingManager {
     public EventBookingDTO createBookingOrAddToWaitingList(final IsaacEventPageDTO event, final RegisteredUserDTO user,
                                          final Map<String, String> additionalEventInformation)
             throws SegueDatabaseException, DuplicateBookingException {
-        // If a reservation exists, delete it before creating a booking
-        if (this.isUserReserved(event.getId(), user.getId())) {
-            this.deleteBooking(event, user);
-        }
         // check if already booked
         if (this.isUserBooked(event.getId(), user.getId())) {
             throw new DuplicateBookingException(String.format("Unable to book onto event (%s) as user (%s) is already"
@@ -302,10 +299,6 @@ public class EventBookingManager {
                                          final Map<String, String> additionalEventInformation,
                                          final BookingStatus status)
             throws SegueDatabaseException, DuplicateBookingException, EventIsFullException {
-        // If a reservation exists, delete it before creating a booking
-        if (this.isUserReserved(event.getId(), user.getId())) {
-            this.deleteBooking(event, user);
-        }
         // check if already booked
         if (this.isUserBooked(event.getId(), user.getId())) {
             throw new DuplicateBookingException(String.format("Unable to book onto event (%s) as user (%s) is already"
@@ -321,7 +314,7 @@ public class EventBookingManager {
                 this.ensureCapacity(event, user);
             }
 
-            booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), null, status,
+            booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), status,
                     additionalEventInformation);
 
             // Send an email notifying the user (unless they are being added after the event for the sake of our records)
@@ -388,7 +381,7 @@ public class EventBookingManager {
      * @throws EventDeadlineException       - The deadline for booking has passed.
      */
     public EventBookingDTO requestBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user,
-                                          final RegisteredUserDTO reservedBy,
+//                                          final RegisteredUserDTO reservedBy,
                                           final Map<String, String> additionalEventInformation)
             throws SegueDatabaseException, EmailMustBeVerifiedException, DuplicateBookingException,
             EventIsFullException, EventDeadlineException {
@@ -406,13 +399,13 @@ public class EventBookingManager {
             EventBookingDTO booking;
 
             // attempt to book them on the event
-            Long reservedById = reservedBy == null ? null : reservedBy.getId();
-            if (this.hasBookingWithStatus(event.getId(), user.getId(), BookingStatus.CANCELLED)) {
+            Set<BookingStatus> upgradableStatuses = new HashSet<>(Arrays.asList(BookingStatus.CANCELLED, BookingStatus.RESERVED));
+            if (this.hasBookingWithAnyOfStatuses(event.getId(), user.getId(), upgradableStatuses)) {
                 // if the user has previously cancelled we should let them book again.
                 booking = this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(),
                         BookingStatus.CONFIRMED, additionalEventInformation);
             } else {
-                booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), reservedById,
+                booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(),
                         BookingStatus.CONFIRMED, additionalEventInformation);
             }
 

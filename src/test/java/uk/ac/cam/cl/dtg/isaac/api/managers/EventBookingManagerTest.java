@@ -114,7 +114,7 @@ public class EventBookingManagerTest {
 
         replay(dummyEventBookingPersistenceManager, dummyPropertiesLoader, dummyEmailManager);
 
-        ebm.requestBooking(testEvent, someUser, null, someAdditionalInformation);
+        ebm.requestBooking(testEvent, someUser, someAdditionalInformation);
     }
 
     @Test
@@ -158,7 +158,7 @@ public class EventBookingManagerTest {
 
         replay(dummyEventBookingPersistenceManager);
         try {
-            ebm.requestBooking(testEvent, someUser, null, someAdditionalInformation);
+            ebm.requestBooking(testEvent, someUser, someAdditionalInformation);
             fail("Expected an EventFullException and one didn't happen.");
         } catch (EventIsFullException e) {
             // success !
@@ -206,7 +206,7 @@ public class EventBookingManagerTest {
 
         replay(dummyEventBookingPersistenceManager);
         try {
-            ebm.requestBooking(testEvent, someUser, null, someAdditionalInformation);
+            ebm.requestBooking(testEvent, someUser, someAdditionalInformation);
             fail("Expected an EventFullException and one didn't happen.");
         } catch (EventIsFullException e) {
             // success !
@@ -231,7 +231,7 @@ public class EventBookingManagerTest {
 
         replay(dummyEventBookingPersistenceManager);
         try {
-            ebm.requestBooking(testEvent, someUser, null, someAdditionalInformation);
+            ebm.requestBooking(testEvent, someUser, someAdditionalInformation);
             fail("Expected an EventFullException and one didn't happen.");
         } catch (EmailMustBeVerifiedException e) {
             // success !
@@ -261,7 +261,7 @@ public class EventBookingManagerTest {
 
         replay(dummyEventBookingPersistenceManager);
         try {
-            ebm.requestBooking(testEvent, someUser, null, someAdditionalInformation);
+            ebm.requestBooking(testEvent, someUser, someAdditionalInformation);
             fail("Expected an Event Expiry Exception and one didn't happen.");
         } catch (EventDeadlineException e) {
             // success !
@@ -317,7 +317,7 @@ public class EventBookingManagerTest {
 
         replay(dummyEventBookingPersistenceManager);
         try {
-            ebm.requestBooking(testEvent, someUser, null, someAdditionalInformation);
+            ebm.requestBooking(testEvent, someUser, someAdditionalInformation);
             fail("Expected an EventFullException and one didn't happen.");
         } catch (EventIsFullException e) {
             // success !
@@ -376,7 +376,7 @@ public class EventBookingManagerTest {
         replay(dummyEventBookingPersistenceManager, dummyPropertiesLoader, dummyEmailManager);
 
         try {
-            ebm.requestBooking(testEvent, someUser, null, someAdditionalInformation);
+            ebm.requestBooking(testEvent, someUser, someAdditionalInformation);
             // success
         } catch (EventIsFullException e) {
             fail("Expected successful booking as no waiting list bookings.");
@@ -444,7 +444,7 @@ public class EventBookingManagerTest {
         replay(dummyEventBookingPersistenceManager, dummyPropertiesLoader, dummyEmailManager);
 
         try {
-            ebm.requestBooking(testEvent, firstUserFull, null, someAdditionalInformation);
+            ebm.requestBooking(testEvent, firstUserFull, someAdditionalInformation);
             // success
         } catch (EventIsFullException e) {
             fail("Expected successful booking as no waiting list bookings.");

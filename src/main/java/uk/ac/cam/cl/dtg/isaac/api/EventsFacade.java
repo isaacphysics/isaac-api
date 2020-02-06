@@ -728,12 +728,6 @@ public class EventsFacade extends AbstractIsaacFacade {
                         .toResponse();
             }
 
-            // If there is a reservation, delete the reservation before creating a booking.
-            // The alternative is to modify the EventBookingManager::createBookingOrAddToWaitingList method called below.
-            if (bookingManager.isUserReserved(eventId, userId)) {
-                bookingManager.deleteBooking(event, bookedUser);
-            }
-
             EventBookingDTO booking = bookingManager.createBookingOrAddToWaitingList(event, bookedUser, additionalInformation);
             this.getLogManager().logEvent(currentUser, request,
                     SegueLogType.ADMIN_EVENT_BOOKING_CREATED,
@@ -895,21 +889,13 @@ public class EventsFacade extends AbstractIsaacFacade {
                         .toResponse();
             }
 
-            // If there is a reservation, delete the reservation before creating a booking.
-            RegisteredUserDTO reservedBy = null;
-            if (bookingManager.isUserReserved(eventId, user.getId())) {
-                EventBookingDTO booking = bookingManager.getBookingByEventIdAndUserId(eventId, user.getId());
-                // This could be handled by setting reservedBy to null instead of failing altogether.
-                reservedBy = userManager.getUserDTOById(booking.getReservedBy().getId());
-                bookingManager.deleteReservation(event, user);
-            }
-
             if (bookingManager.isUserBooked(eventId, user.getId())) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "You are already booked on this event.")
                     .toResponse();
             }
 
-            EventBookingDTO eventBookingDTO = bookingManager.requestBooking(event, user, reservedBy, additionalInformation);
+            // reservedBy is null. If there is a reservation for me, it will be updated to CONFIRMED.
+            EventBookingDTO eventBookingDTO = bookingManager.requestBooking(event, user, additionalInformation);
 
             this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
                     SegueLogType.EVENT_BOOKING, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId()));
@@ -941,10 +927,6 @@ public class EventsFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST,
                 "The booking deadline for this event has passed. No more bookings are being accepted.")
                 .toResponse();
-        } catch (NoUserException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST,
-                    "The reserving user doesn't exist, so unable to book the requesting user onto an event", e)
-                    .toResponse();
         }
     }
 

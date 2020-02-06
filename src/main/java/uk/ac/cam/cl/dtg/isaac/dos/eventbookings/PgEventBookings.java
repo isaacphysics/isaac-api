@@ -82,10 +82,10 @@ public class PgEventBookings implements EventBookings {
                     "INSERT INTO event_bookings (id, user_id, reserved_by, event_id, status, created, updated, additional_booking_information) VALUES (DEFAULT, ?, ?, ?, ?, ?, ?, ?::text::jsonb)",
                     Statement.RETURN_GENERATED_KEYS);
             pst.setLong(1, userId);
-            try {
-                pst.setLong(2, reserveById);
-            } catch (NullPointerException e) {
+            if (reserveById == null) {
                 pst.setNull(2, Types.INTEGER);
+            } else {
+                pst.setLong(2, reserveById);
             }
             pst.setString(3, eventId);
             pst.setString(4, status.name());
@@ -113,6 +113,11 @@ public class PgEventBookings implements EventBookings {
     }
 
     @Override
+    public EventBooking add(final String eventId, final Long userId, final BookingStatus status, Map<String, String> additionalEventInformation) throws SegueDatabaseException {
+        return add(eventId, userId, null, status, additionalEventInformation);
+    }
+
+    @Override
     public void updateStatus(final String eventId, final Long userId, final BookingStatus status, final Map<String, String> additionalEventInformation) throws SegueDatabaseException {
         PreparedStatement pst;
 
@@ -124,17 +129,17 @@ public class PgEventBookings implements EventBookings {
                     "WHERE event_id = ? AND user_id = ?;");
                 pst.setString(1, status.name());
                 pst.setTimestamp(2, new java.sql.Timestamp(new Date().getTime()));
-                pst.setString(4, objectMapper.writeValueAsString(additionalEventInformation));
-                pst.setString(5, eventId);
-                pst.setLong(6, userId);
+                pst.setString(3, objectMapper.writeValueAsString(additionalEventInformation));
+                pst.setString(4, eventId);
+                pst.setLong(5, userId);
             } else {
                 pst = conn.prepareStatement("UPDATE event_bookings " +
                     "SET status = ?, updated = ? " +
                     "WHERE event_id = ? AND user_id = ?;");
                 pst.setString(1, status.name());
                 pst.setTimestamp(2, new java.sql.Timestamp(new Date().getTime()));
-                pst.setString(4, eventId);
-                pst.setLong(5, userId);
+                pst.setString(3, eventId);
+                pst.setLong(4, userId);
             }
 
             int executeUpdate = pst.executeUpdate();
