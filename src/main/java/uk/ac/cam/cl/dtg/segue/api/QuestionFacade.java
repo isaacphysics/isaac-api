@@ -176,6 +176,7 @@ public class QuestionFacade extends AbstractSegueFacade {
      * @param userIdOfInterest - The user id that the query is focused on
      * @param fromDate - the date to start counting (and the month that will be first in the response map)
      * @param toDate - The date to finish counting and the month that will be last in the response map
+     * @param perDay - Whether to bin by day, instead of by month as default.
      * @return an object containing dates (first of each month) mapped to number (number of question attempts)
      */
     @GET
@@ -185,7 +186,8 @@ public class QuestionFacade extends AbstractSegueFacade {
     public Response getQuestionsAnswered(@Context final HttpServletRequest request,
                                       @PathParam("user_id") final Long userIdOfInterest,
                                       @QueryParam("from_date") final Long fromDate,
-                                      @QueryParam("to_date") final Long toDate) {
+                                      @QueryParam("to_date") final Long toDate,
+                                      @QueryParam("per_day") final Boolean perDay) {
         try {
 
             if (null == fromDate || null == toDate) {
@@ -216,7 +218,7 @@ public class QuestionFacade extends AbstractSegueFacade {
                 fromDateObject = userOfInterest.getRegistrationDate();
             }
 
-            return Response.ok(this.questionManager.getUsersQuestionAttemptCountsByDate(userOfInterest, fromDateObject, new Date(toDate))).build();
+            return Response.ok(this.questionManager.getUsersQuestionAttemptCountsByDate(userOfInterest, fromDateObject, new Date(toDate), perDay)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (NoUserException e) {

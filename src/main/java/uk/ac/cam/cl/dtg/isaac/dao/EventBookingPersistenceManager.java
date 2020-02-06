@@ -23,6 +23,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
+import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithEmailAddressDTO;
 
@@ -126,6 +127,18 @@ public class EventBookingPersistenceManager {
      */
     public Long countAllBookings() throws SegueDatabaseException {
         return dao.countAllEventBookings();
+    }
+
+    /**
+     * Get the current booking counts for the event specified.
+     *
+     * @param eventId - event specified
+     * @param includeDeletedUsersInCounts - true if you want to include deleted users in the counts or not
+     * @return Map of booking status, role to count
+     * @throws SegueDatabaseException - if something is wrong with the database
+     */
+    public Map<BookingStatus, Map<Role, Long>> getEventBookingStatusCounts(final String eventId, final boolean includeDeletedUsersInCounts) throws SegueDatabaseException {
+        return dao.getEventBookingStatusCounts(eventId, includeDeletedUsersInCounts);
     }
 
     /**
@@ -253,9 +266,11 @@ public class EventBookingPersistenceManager {
         EventBookingDTO result = new EventBookingDTO();
 
         try {
+            // Note: This will pull back deleted users for the purpose of the events system
             UserSummaryWithEmailAddressDTO user = userManager.convertToDetailedUserSummaryObject(userManager.getUserDTOById(eb
-                    .getUserId()), UserSummaryWithEmailAddressDTO.class);
+                    .getUserId(),true), UserSummaryWithEmailAddressDTO.class);
 
+            result.setUserBooked(user);
             result.setBookingId(eb.getId());
             result.setEventDate(eventInformation.getDate());
             result.setEventId(eventInformation.getId());
@@ -263,7 +278,6 @@ public class EventBookingPersistenceManager {
             result.setBookingDate(eb.getCreationDate());
             result.setUpdated(eb.getUpdateDate());
             result.setBookingStatus(eb.getBookingStatus());
-            result.setUserBooked(user);
             result.setAdditionalInformation(eb.getAdditionalInformation());
 
             return result;

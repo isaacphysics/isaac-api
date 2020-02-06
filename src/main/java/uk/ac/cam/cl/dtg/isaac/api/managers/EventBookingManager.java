@@ -424,7 +424,7 @@ public class EventBookingManager {
             // Obtain an exclusive database lock to lock the event
             this.bookingPersistenceManager.acquireDistributedLock(event.getId());
 
-            Integer numberOfPlaces = getPlacesAvailable(event);
+            Long numberOfPlaces = getPlacesAvailable(event);
             if (numberOfPlaces != null) {
                 // check the number of places - if some available then check if the event deadline has passed. If not
                 // throw error.
@@ -513,7 +513,7 @@ public class EventBookingManager {
                 throw new EventBookingUpdateException("Unable to promote a booking that is CONFIRMED already.");
             }
 
-            final Integer placesAvailable = this.getPlacesAvailable(event, true);
+            final Long placesAvailable = this.getPlacesAvailable(event, true);
             if (placesAvailable != null && placesAvailable <= 0) {
                 throw new EventIsFullException("The event you are attempting promote a booking for is at or "
                         + "over capacity.");
@@ -609,7 +609,7 @@ public class EventBookingManager {
      * the method will only return 0. This allows for manual overbooking.
      * @throws SegueDatabaseException - if we cannot contact the database.
      */
-    public Integer getPlacesAvailable(final IsaacEventPageDTO event) throws SegueDatabaseException {
+    public Long getPlacesAvailable(final IsaacEventPageDTO event) throws SegueDatabaseException {
         if (EventStatus.WAITING_LIST_ONLY.equals(event.getEventStatus())) {
             return this.getPlacesAvailable(event, true);
         } else {
@@ -629,7 +629,7 @@ public class EventBookingManager {
      * the method will only return 0. This allows for manual overbooking.
      * @throws SegueDatabaseException - if we cannot contact the database.
      */
-    private Integer getPlacesAvailable(final IsaacEventPageDTO event, final boolean countOnlyConfirmed)
+    private Long getPlacesAvailable(final IsaacEventPageDTO event, final boolean countOnlyConfirmed)
             throws SegueDatabaseException {
         boolean isStudentEvent = event.getTags().contains("student");
         Integer numberOfPlaces = event.getNumberOfPlaces();
@@ -637,27 +637,35 @@ public class EventBookingManager {
             return null;
         }
 
-        List<EventBookingDTO> getCurrentBookings = this.getBookingByEventId(event.getId());
+        // include deleted users' bookings events only if the event is in the past so it doesn't mess with ability for new users to book on future events.
+        boolean includeDeletedUsersInCounts = false;
+        if (event.getDate() != null && event.getDate().before(new Date())) {
+            includeDeletedUsersInCounts = true;
+        }
 
-        int studentCount = 0;
-        int totalBooked = 0;
-        for (EventBookingDTO booking : getCurrentBookings) {
-            // don't count cancelled bookings
-            if (BookingStatus.CANCELLED.equals(booking.getBookingStatus())) {
-                continue;
+        Map<BookingStatus, Map<Role, Long>> eventBookingStatusCounts = this.bookingPersistenceManager.getEventBookingStatusCounts(event.getId(), includeDeletedUsersInCounts);
+
+        Long totalBooked = 0L;
+        Long studentCount = 0L;
+
+        if (eventBookingStatusCounts.get(BookingStatus.CONFIRMED) != null) {
+            for (Map.Entry<Role, Long> roleLongEntry : eventBookingStatusCounts.get(BookingStatus.CONFIRMED).entrySet()) {
+                if (Role.STUDENT.equals(roleLongEntry.getKey())) {
+                    studentCount = roleLongEntry.getValue();
+                }
+
+                totalBooked = totalBooked + roleLongEntry.getValue();
             }
+        }
 
-            if (countOnlyConfirmed && BookingStatus.WAITING_LIST.equals(booking.getBookingStatus())) {
-                continue;
+        if (!countOnlyConfirmed && eventBookingStatusCounts.get(BookingStatus.WAITING_LIST) != null) {
+            for (Map.Entry<Role, Long> roleLongEntry : eventBookingStatusCounts.get(BookingStatus.WAITING_LIST).entrySet()) {
+                if (Role.STUDENT.equals(roleLongEntry.getKey())) {
+                    studentCount = studentCount + roleLongEntry.getValue();
+                }
+
+                totalBooked = totalBooked + roleLongEntry.getValue();
             }
-
-            // we are still counting WAITING_LIST bookings as we want these to occupy space.
-
-            if (booking.getUserBooked().getRole().equals(Role.STUDENT)) {
-                studentCount++;
-            }
-
-            totalBooked++;
         }
 
         // capacity of the event
@@ -666,7 +674,7 @@ public class EventBookingManager {
         }
 
         if (totalBooked > numberOfPlaces) {
-            return 0;
+            return 0L;
         }
 
         return numberOfPlaces - totalBooked;
@@ -854,7 +862,7 @@ public class EventBookingManager {
     private void ensureCapacity(final IsaacEventPageDTO event, final RegisteredUserDTO user) throws
             SegueDatabaseException, EventIsFullException {
         final boolean isStudentEvent = event.getTags().contains("student");
-        Integer numberOfPlaces = getPlacesAvailable(event);
+        Long numberOfPlaces = getPlacesAvailable(event);
         if (numberOfPlaces != null) {
             // teachers can book on student events and do not count towards capacity
             if ((isStudentEvent && !Role.TEACHER.equals(user.getRole()) && numberOfPlaces <= 0)
