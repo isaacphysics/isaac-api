@@ -222,11 +222,7 @@ public class EventBookingManager {
 
         EventBookingDTO booking = this.getBookingByEventIdAndUserId(event.getId(), userOwningReservation.getId());
         Long reservingUserId = booking.getReservedById();
-        if (null != reservingUserId) {
-            return reservingUserId.equals(user.getId());
-        } else {
-            return false;
-        }
+        return user.getId().equals(reservingUserId);
     }
 
     /**
