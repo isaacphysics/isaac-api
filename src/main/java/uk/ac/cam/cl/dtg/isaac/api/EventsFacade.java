@@ -319,7 +319,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
 			filteredResults.add(eventDTOById);
 		}
-        return new ResultsWrapper<>(filteredResults, new Long(filteredResults.size()));
+        return new ResultsWrapper<>(filteredResults, (long) filteredResults.size());
     }
 
     /**
@@ -465,14 +465,6 @@ public class EventsFacade extends AbstractIsaacFacade {
         } catch (ContentManagerException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                 "Content Database error occurred while trying to retrieve event booking information.")
-                .toResponse();
-        } catch (EmailMustBeVerifiedException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST,
-                "In order to book on this event the user account must have a verified email address. ")
-                .toResponse();
-        } catch (DuplicateBookingException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST,
-                "The user has already been booked on this event. Unable to create a duplicate booking.")
                 .toResponse();
         } catch (EventIsFullException e) {
             return new SegueErrorResponse(Status.CONFLICT,
@@ -1300,7 +1292,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         final Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
         sortInstructions.put(DATE_FIELDNAME, SortOrder.DESC);
 
-        fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(EVENT_TYPE));
+        fieldsToMatch.put(TYPE_FIELDNAME, Collections.singletonList(EVENT_TYPE));
 
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
@@ -1433,7 +1425,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         final Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
         sortInstructions.put(DATE_FIELDNAME, SortOrder.DESC);
 
-        fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(EVENT_TYPE));
+        fieldsToMatch.put(TYPE_FIELDNAME, Collections.singletonList(EVENT_TYPE));
 
         Map<String, AbstractFilterInstruction> filterInstructions = null;
         if (null == showActiveOnly || showActiveOnly) {

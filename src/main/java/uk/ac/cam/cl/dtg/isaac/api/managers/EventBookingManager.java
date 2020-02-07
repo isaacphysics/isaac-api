@@ -213,7 +213,7 @@ public class EventBookingManager {
      * @param userOwningReservation The reserved user
      * @param event                 The event on which the reserved user is reserved
      * @return either true or false whether the requesting user made the reservation
-     * @throws SegueDatabaseException
+     * @throws SegueDatabaseException if there is a problem retrieving the event and booking info
      */
     public boolean isReservationMadeByRequestingUser(RegisteredUserDTO user,
                                                      RegisteredUserDTO userOwningReservation,
@@ -331,7 +331,7 @@ public class EventBookingManager {
                                     .put("event", event)
                                     .build(),
                             EmailType.SYSTEM,
-                            Arrays.asList(generateEventICSFile(event, booking)));
+                            Collections.singletonList(generateEventICSFile(event, booking)));
                 } else if (BookingStatus.WAITING_LIST.equals(status)) {
                     emailManager.sendTemplatedEmailToUser(user,
                             emailManager.getEmailTemplateDTO("email-event-waiting-list-addition-notification"),
@@ -420,7 +420,7 @@ public class EventBookingManager {
                                 .put("event", event)
                                 .build(),
                         EmailType.SYSTEM,
-                        Arrays.asList(generateEventICSFile(event, booking)));
+                        Collections.singletonList(generateEventICSFile(event, booking)));
 
             } catch (ContentManagerException e) {
                 log.error(String.format("Unable to send event email (%s) to user (%s)", event.getId(), user
@@ -588,8 +588,6 @@ public class EventBookingManager {
 
             // attempt to book them on the waiting list of the event.
             if (this.hasBookingWithStatus(event.getId(), user.getId(), BookingStatus.CANCELLED)) {
-                UserSummaryDTO reservedBy = this.bookingPersistenceManager.getBookingByEventIdAndUserId(event.getId(), user.getId()).getReservedBy();
-                Long reservedById = reservedBy == null ? null : reservedBy.getId();
                 // if the user has previously cancelled we should let them book again.
                 booking = this.bookingPersistenceManager.updateBookingStatus(event.getId(),
                         user.getId(),
@@ -642,15 +640,12 @@ public class EventBookingManager {
      * @param userDTO               - The user whose booking should be updated
      * @return the updated booking.
      * @throws SegueDatabaseException       - if there is a database error
-     * @throws EmailMustBeVerifiedException - if this method requires a validated e-mail address.
-     * @throws DuplicateBookingException    - Duplicate booking, only unique bookings.
      * @throws EventIsFullException         - No space on the event
      * @throws EventBookingUpdateException  - Unable to update the event booking.
      */
     public EventBookingDTO promoteFromWaitingListOrCancelled(final IsaacEventPageDTO event, final RegisteredUserDTO
             userDTO)
-            throws SegueDatabaseException, EmailMustBeVerifiedException,
-            DuplicateBookingException, EventBookingUpdateException, EventIsFullException {
+            throws SegueDatabaseException, EventBookingUpdateException, EventIsFullException {
         EventBookingDTO updatedStatus;
         try {
             this.bookingPersistenceManager.acquireDistributedLock(event.getId());
@@ -673,9 +668,6 @@ public class EventBookingManager {
 
             // probably want to send a waiting list promotion email.
             try {
-                UserSummaryDTO reservedBy = this.bookingPersistenceManager
-                        .getBookingByEventIdAndUserId(event.getId(), userDTO.getId()).getReservedBy();
-                Long reservedById = reservedBy == null ? null : reservedBy.getId();
                 updatedStatus = this.bookingPersistenceManager
                         .updateBookingStatus(eventBooking.getEventId(), userDTO.getId(),
                                 BookingStatus.CONFIRMED, eventBooking.getAdditionalInformation()
@@ -694,7 +686,7 @@ public class EventBookingManager {
                                     .put("event", event)
                                     .build(),
                             EmailType.SYSTEM,
-                            Arrays.asList(generateEventICSFile(event, updatedStatus)));
+                            Collections.singletonList(generateEventICSFile(event, updatedStatus)));
                 }
             } catch (ContentManagerException e) {
                 log.error(String.format("Unable to send event email (%s) to user (%s)", event.getId(),
@@ -743,9 +735,6 @@ public class EventBookingManager {
             throw new EventBookingUpdateException("Booking attendance is already registered.");
         }
 
-        UserSummaryDTO reservedBy = this.bookingPersistenceManager
-                .getBookingByEventIdAndUserId(event.getId(), userDTO.getId()).getReservedBy();
-        Long reservedById = reservedBy == null ? null : reservedBy.getId();
         EventBookingDTO updatedStatus = this.bookingPersistenceManager.updateBookingStatus(eventBooking.getEventId(),
                 userDTO.getId(), attendanceStatus, eventBooking.getAdditionalInformation());
 
@@ -996,16 +985,6 @@ public class EventBookingManager {
         }
     }
 
-    public void deleteReservation(final IsaacEventPageDTO event, final RegisteredUserDTO user) throws SegueDatabaseException {
-        try {
-            // Obtain an exclusive database lock to lock the booking
-            this.bookingPersistenceManager.acquireDistributedLock(event.getId());
-            this.bookingPersistenceManager.deleteBooking(event.getId(), user.getId());
-        } finally {
-            this.bookingPersistenceManager.releaseDistributedLock(event.getId());
-        }
-    }
-
     /**
      * Expunge additional information fields for all of a given user's bookings i.e. to remove PII.
      *
@@ -1039,7 +1018,7 @@ public class EventBookingManager {
                             .put("event", event)
                             .build(),
                     EmailType.SYSTEM,
-                    Arrays.asList(generateEventICSFile(event, booking)));
+                    Collections.singletonList(generateEventICSFile(event, booking)));
 
         } else if (booking.getBookingStatus().equals(BookingStatus.CANCELLED)) {
             emailManager.sendTemplatedEmailToUser(user,
