@@ -43,7 +43,7 @@ public class PgEventBooking implements EventBooking {
 
     private Long bookingId;
     private Long userId;
-    private Long reservedBy;
+    private Long reservedById;
     private String eventId;
     private BookingStatus bookingStatus;
     private Date created;
@@ -80,12 +80,12 @@ public class PgEventBooking implements EventBooking {
      * @param created
      *            - the date the booking was made.
      */
-    public PgEventBooking(final PostgresSqlDb ds, final Long bookingId, final Long userId, final Long reservedBy, final String eventId,
+    public PgEventBooking(final PostgresSqlDb ds, final Long bookingId, final Long userId, final Long reservedById, final String eventId,
             final BookingStatus bookingStatus, final Date created, final Date updated, final Object additionalInformation) throws SegueDatabaseException {
         this.ds = ds;
         this.bookingId = bookingId;
         this.userId = userId;
-        this.reservedBy = reservedBy;
+        this.reservedById = reservedById;
         this.eventId = eventId;
         this.bookingStatus = bookingStatus;
         this.updated = updated;
@@ -112,8 +112,8 @@ public class PgEventBooking implements EventBooking {
     }
 
     @Override
-    public Long getReservedBy() {
-        return reservedBy;
+    public Long getReservedById() {
+        return reservedById;
     }
 
     @Override
@@ -181,7 +181,7 @@ public class PgEventBooking implements EventBooking {
                 this.bookingId = results.getLong("id");
                 this.eventId = results.getString("event_id");
                 this.userId = results.getLong("user_id");
-                this.reservedBy = results.getLong("reserved_by");
+                this.reservedById = results.getLong("reserved_by");
                 this.bookingStatus = BookingStatus.valueOf(results.getString("booking_status"));
                 this.created = results.getDate("created");
                 this.updated = results.getDate("updated");

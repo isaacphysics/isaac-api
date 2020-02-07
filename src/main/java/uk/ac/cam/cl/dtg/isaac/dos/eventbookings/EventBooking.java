@@ -45,7 +45,7 @@ public interface EventBooking {
      *
      * @return User Id
      */
-    Long getReservedBy();
+    Long getReservedById();
 
     /**
      * Getter for event id.

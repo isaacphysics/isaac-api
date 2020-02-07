@@ -30,7 +30,7 @@ public class EventBookingDTO {
 
     private UserSummaryDTO userBooked;
 
-    private UserSummaryDTO reservedBy;
+    private Long reservedById;
 
     private String eventId;
 
@@ -67,12 +67,12 @@ public class EventBookingDTO {
      * @param bookingDate
      *            booking date.
      */
-    public EventBookingDTO(final Long bookingId, final UserSummaryDTO userBooked, final UserSummaryDTO reservedBy,
+    public EventBookingDTO(final Long bookingId, final UserSummaryDTO userBooked, final Long reservedById,
                            final String eventId, final String eventTitle, final Date eventDate, final Date bookingDate,
                            final Date lastUpdated, final BookingStatus status) {
         this.bookingId = bookingId;
         this.userBooked = userBooked;
-        this.reservedBy = reservedBy;
+        this.reservedById = reservedById;
         this.eventId = eventId;
         this.eventTitle = eventTitle;
         this.eventDate = eventDate;
@@ -124,17 +124,17 @@ public class EventBookingDTO {
      *
      * @return the user who created the reservation.
      */
-    public UserSummaryDTO getReservedBy() {
-        return reservedBy;
+    public Long getReservedById() {
+        return reservedById;
     }
 
     /**
      * Sets the user who created the reservation.
      *
-     * @param reservedBy - the user who created the reservation.
+     * @param reservedById - the user who created the reservation.
      */
-    public void setReservedBy(UserSummaryDTO reservedBy) {
-        this.reservedBy = reservedBy;
+    public void setReservedById(Long reservedById) {
+        this.reservedById = reservedById;
     }
 
     /**

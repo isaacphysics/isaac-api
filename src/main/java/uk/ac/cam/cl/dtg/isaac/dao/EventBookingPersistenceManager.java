@@ -295,12 +295,7 @@ public class EventBookingPersistenceManager {
             // Note: This will pull back deleted users for the purpose of the events system
             UserSummaryWithEmailAddressDTO user = userManager.convertToDetailedUserSummaryObject(userManager.getUserDTOById(eb
                     .getUserId(), true), UserSummaryWithEmailAddressDTO.class);
-            Long reservedById = eb.getReservedBy();
-            if (reservedById != null && !reservedById.equals(0L)) {
-                UserSummaryWithEmailAddressDTO reservingUser = userManager.convertToDetailedUserSummaryObject(userManager.getUserDTOById(reservedById), UserSummaryWithEmailAddressDTO.class);
-                result.setReservedBy(reservingUser);
-            }
-
+            result.setReservedById(eb.getReservedById());
             result.setUserBooked(user);
             result.setBookingId(eb.getId());
             result.setEventDate(eventInformation.getDate());

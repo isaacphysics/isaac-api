@@ -221,9 +221,9 @@ public class EventBookingManager {
             throws SegueDatabaseException {
 
         EventBookingDTO booking = this.getBookingByEventIdAndUserId(event.getId(), userOwningReservation.getId());
-        UserSummaryDTO reservingUser = booking.getReservedBy();
-        if (null != reservingUser) {
-            return reservingUser.getId().equals(user.getId());
+        Long reservingUserId = booking.getReservedById();
+        if (null != reservingUserId) {
+            return reservingUserId.equals(user.getId());
         } else {
             return false;
         }
@@ -918,9 +918,8 @@ public class EventBookingManager {
         try {
             // Obtain an exclusive database lock to lock the booking
             this.bookingPersistenceManager.acquireDistributedLock(event.getId());
-            UserSummaryDTO reservedBy = this.bookingPersistenceManager
-                    .getBookingByEventIdAndUserId(event.getId(), user.getId()).getReservedBy();
-            reservedById = reservedBy == null ? null : reservedBy.getId();
+            reservedById = this.bookingPersistenceManager
+                    .getBookingByEventIdAndUserId(event.getId(), user.getId()).getReservedById();
             BookingStatus previousBookingStatus = this.getBookingStatus(event.getId(), user.getId());
             this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(),
                     BookingStatus.CANCELLED,
@@ -946,8 +945,8 @@ public class EventBookingManager {
                                 .build(),
                         EmailType.SYSTEM);
 
-                if (previousBookingStatus.equals(BookingStatus.RESERVED) && reservedBy != null) {
-                    emailManager.sendTemplatedEmailToUser(userAccountManager.getUserDTOById(reservedBy.getId()),
+                if (previousBookingStatus.equals(BookingStatus.RESERVED) && reservedById != null) {
+                    emailManager.sendTemplatedEmailToUser(userAccountManager.getUserDTOById(reservedById),
                             emailManager.getEmailTemplateDTO("email-event-reservation-cancellation-confirmed"),
                             new ImmutableMap.Builder<String, Object>()
                                     .put("contactUsURL", generateEventContactUsURL(event))
@@ -1101,8 +1100,8 @@ public class EventBookingManager {
 
         List<EventBookingDTO> existingReservations = getBookingByEventId(event.getId()).stream()
                 .filter(reservation -> {
-                    UserSummaryDTO u = reservation.getReservedBy();
-                    return u != null && u.getId().equals(reservingUser.getId());
+                    Long reservedById = reservation.getReservedById();
+                    return reservedById != null && reservedById.equals(reservingUser.getId());
                 }).collect(Collectors.toList());
         long numberOfExistingReservations = existingReservations.size();
         final boolean isStudentEvent = event.getTags().contains("student");
