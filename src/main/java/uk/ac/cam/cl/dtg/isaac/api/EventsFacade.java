@@ -87,6 +87,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -778,21 +779,27 @@ public class EventsFacade extends AbstractIsaacFacade {
             );
         }
 
-        List<Long> bookableIds;
+        Map<Long, RegisteredUserDTO> bookableUsers;
         try {
             currentUser = userManager.getCurrentRegisteredUser(request);
             if (!Arrays.asList(Role.TEACHER, Role.EVENT_LEADER, Role.EVENT_MANAGER, Role.ADMIN).contains(currentUser.getRole())) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
-            bookableIds = new ArrayList<>();
+            bookableUsers = new HashMap<>();
             List<Long> unbookableIds = new ArrayList<>();
             for (Long userId : userIds) {
                 // Do not add a reservation if a user is already booked or reserved.
+                RegisteredUserDTO u = userManager.getUserDTOById(userId);
+                if (!userAssociationManager.hasPermission(currentUser, u)) {
+                    return new SegueErrorResponse(Status.FORBIDDEN,
+                            "You are not authorized to interact with some of the user IDs specified.")
+                            .toResponse();
+                }
                 if (bookingManager.isUserBooked(eventId, userId) || bookingManager.isUserReserved(eventId, userId)) {
                     unbookableIds.add(userId);
                 } else {
-                    bookableIds.add(userId);
+                    bookableUsers.put(userId, u);
                 }
             }
             if (unbookableIds.size() > 0) {
@@ -803,9 +810,8 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             // This would be neater with streams and lambdas, but handling exceptions in lambdas is ugly.
             List<RegisteredUserDTO> usersToBook = new ArrayList<>();
-            for (Long bookableId : bookableIds) {
-                RegisteredUserDTO userDTOById = userManager.getUserDTOById(bookableId);
-                usersToBook.add(userDTOById);
+            for (Long bookableId : bookableUsers.keySet()) {
+                usersToBook.add(bookableUsers.get(bookableId));
             }
             List<EventBookingDTO> bookings = bookingManager.requestReservations(event, usersToBook, currentUser);
             this.getLogManager().logEvent(currentUser, request,
@@ -813,7 +819,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                     ImmutableMap.of(
                             EVENT_ID_FKEY_FIELDNAME, event.getId(),
                             USER_ID_FKEY_FIELDNAME, currentUser.getId(),
-                            USER_ID_LIST_FKEY_FIELDNAME, bookableIds,
+                            USER_ID_LIST_FKEY_FIELDNAME, bookableUsers.keySet().toArray(),
                             BOOKING_STATUS_FIELDNAME, BookingStatus.RESERVED.toString()
                     ));
             return Response.ok(bookings).build();
