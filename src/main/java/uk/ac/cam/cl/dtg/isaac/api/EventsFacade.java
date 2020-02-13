@@ -534,11 +534,6 @@ public class EventsFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
             UserGroupDTO group = groupManager.getGroupById(Long.parseLong(groupId));
-            IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
-            if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
-                return SegueErrorResponse.getIncorrectRoleResponse();
-            }
-
 
             List<Long> groupMemberIds = groupManager.getUsersInGroup(group)
                     .stream().map(RegisteredUserDTO::getId)
@@ -562,10 +557,6 @@ public class EventsFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (ContentManagerException e) {
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Content Database error occurred while trying to retrieve event booking information.")
-                    .toResponse();
         }
     }
 

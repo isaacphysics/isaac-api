@@ -377,7 +377,6 @@ public class EventBookingManager {
      * @throws EventDeadlineException       - The deadline for booking has passed.
      */
     public EventBookingDTO requestBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user,
-//                                          final RegisteredUserDTO reservedBy,
                                           final Map<String, String> additionalEventInformation)
             throws SegueDatabaseException, EmailMustBeVerifiedException, DuplicateBookingException,
             EventIsFullException, EventDeadlineException {
@@ -504,15 +503,18 @@ public class EventBookingManager {
                     emailManager.sendTemplatedEmailToUser(user,
                             // af599 TODO: Use the correct email template and parameters here.
                             // af599 TODO: Content team action.
-                            emailManager.getEmailTemplateDTO("email-event-booking-confirmed"),
+                            emailManager.getEmailTemplateDTO("email-event-reservation-requested"),
                             new ImmutableMap.Builder<String, Object>()
+                                    // af599 TODO Investigate flattening users
+                                    .put("reservingUser.givenName", reservingUser.getGivenName())
+                                    .put("reservingUser.familyName", reservingUser.getFamilyName())
                                     .put("contactUsURL", generateEventContactUsURL(event))
-                                    .put("authorizationLink", String.format("https://%s/account?authToken=%s",
-                                            propertiesLoader.getProperty(HOST_NAME), event.getIsaacGroupToken()))
+                                    .put("eventURL", "") // af599 TODO Add the event's URL
                                     .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
                                     .put("event", event)
                                     .build(),
                             EmailType.SYSTEM,
+                            // af599 TODO Maybe don't attach a calendar event file for a reservation
                             Collections.singletonList(generateEventICSFile(event, reservation)));
 
                 } catch (SegueDatabaseException | ContentManagerException e) {
