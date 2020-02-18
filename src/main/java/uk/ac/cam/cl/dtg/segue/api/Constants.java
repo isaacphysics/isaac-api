@@ -330,6 +330,7 @@ public final class Constants {
         EVENT_BOOKING_CANCELLED,
         EVENT_WAITING_LIST_BOOKING,
         EVENT_RESERVATIONS_CREATED,
+        EVENT_RESERVATIONS_CANCELLED,
         LOG_IN,
         LOG_OUT,
         MERGE_USER,

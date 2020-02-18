@@ -54,6 +54,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
+import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
@@ -754,7 +755,7 @@ public class EventsFacade extends AbstractIsaacFacade {
      * @return the list of bookings/reservations
      */
     @POST
-    @Path("{event_id}/reserve")
+    @Path("{event_id}/reservations")
     @Produces(MediaType.APPLICATION_JSON)
     @ApiOperation(value = "Add event reservations for the given users.")
     public final Response createReservationsForGivenUsers(@Context final HttpServletRequest request,
@@ -795,7 +796,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             }
             if (unbookableIds.size() > 0) {
                 return new SegueErrorResponse(Status.BAD_REQUEST,
-                        "The following user IDs are already booked or reserved on this event." + unbookableIds)
+                        "Some of the users you requested are already booked or reserved on this event.")
                         .toResponse();
             }
 
@@ -844,6 +845,83 @@ public class EventsFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST,
                     "All users must have a verified email address before they can be reserved on this event.")
                     .toResponse();
+        }
+    }
+
+    /**
+     * This function allows cancellation of the reservations for the given users
+     *
+     * @param request
+     *            - so we can determine if the user is logged in
+     * @param eventId
+     *            - event id
+     * @param userIds
+     *            - user ids
+     */
+    @POST
+    @Path("{event_id}/reservations/cancel")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @ApiOperation(value = "Cancel a reservations on an event for a set of users.")
+    public final Response cancelReservations(@Context final HttpServletRequest request,
+                                        @PathParam("event_id") final String eventId,
+                                        final List<Long> userIds) {
+        try {
+            IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
+            RegisteredUserDTO userLoggedIn = this.userManager.getCurrentRegisteredUser(request);
+
+            if (event.getDate() != null && new Date().after(event.getDate())) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You cannot cancel a reservation on an event that has already started.")
+                        .toResponse();
+            }
+
+            Boolean userIsAbleToManageEvent = bookingManager.isUserAbleToManageEvent(userLoggedIn, event);
+
+            List<RegisteredUserDTO> validUsers = new ArrayList<>();
+            for (Long userId : userIds) {
+                RegisteredUserDTO userOwningBooking = userManager.getUserDTOById(userId);
+                if (userIsAbleToManageEvent || (bookingManager.isReservationMadeByRequestingUser(userLoggedIn, userOwningBooking, event) && userAssociationManager.hasPermission(userLoggedIn, userOwningBooking))) {
+                    if (bookingManager.hasBookingWithAnyOfStatuses(eventId, userId, new HashSet<>(Arrays.asList(BookingStatus.CONFIRMED, BookingStatus.WAITING_LIST, BookingStatus.RESERVED)))) {
+                        validUsers.add(userOwningBooking);
+                    } else {
+                        // Maybe silently carry on instead?
+                        return new SegueErrorResponse(Status.fromStatusCode(422), // Unprocessable Entity
+                                "Some of the reservations cannot be cancelled. Please reload the page and try again.")
+                                .toResponse();
+                    }
+                } else {
+                    return new SegueErrorResponse(Status.FORBIDDEN,
+                            "You are not authorized to cancel some of the reservations specified.")
+                            .toResponse();
+                }
+            }
+
+            for (RegisteredUserDTO user : validUsers) {
+                bookingManager.cancelBooking(event, user);
+            }
+
+            this.getLogManager().logEvent(userLoggedIn, request,
+                    SegueLogType.EVENT_RESERVATIONS_CANCELLED,
+                    ImmutableMap.of(
+                            EVENT_ID_FKEY_FIELDNAME, event.getId(),
+                            USER_ID_FKEY_FIELDNAME, userLoggedIn.getId(),
+                            USER_ID_LIST_FKEY_FIELDNAME, validUsers.stream().map(RegisteredUserDTO::getId).toArray(),
+                            BOOKING_STATUS_FIELDNAME, BookingStatus.CANCELLED.toString()
+                    ));
+            return Response.noContent().build();
+
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (ContentManagerException e) {
+            log.error("Error during event request", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content you requested.")
+                    .toResponse();
+        } catch (SegueDatabaseException e) {
+            String errorMsg = "Database error occurred while trying to delete an event booking.";
+            log.error(errorMsg, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
+        } catch (NoUserException e) {
+            return SegueErrorResponse.getResourceNotFoundResponse("Unable to locate user specified.");
         }
     }
 
