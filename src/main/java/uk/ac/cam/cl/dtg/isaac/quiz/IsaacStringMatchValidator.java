@@ -52,6 +52,8 @@ public class IsaacStringMatchValidator implements IValidator {
                     answer.getClass()));
         }
 
+        StringChoice userAnswer = (StringChoice) answer;
+
         IsaacStringMatchQuestion stringMatchQuestion = (IsaacStringMatchQuestion) question;
 
         // These variables store the important features of the response we'll send.
@@ -67,7 +69,7 @@ public class IsaacStringMatchValidator implements IValidator {
 
         // STEP 1: Did they provide an answer at all?
 
-        if (null == feedback && (null == answer.getValue() || answer.getValue().isEmpty())) {
+        if (null == feedback && (null == userAnswer.getValue() || userAnswer.getValue().isEmpty())) {
             feedback = new Content("You did not provide an answer");
         }
 
@@ -96,14 +98,14 @@ public class IsaacStringMatchValidator implements IValidator {
                 }
 
                 // ... check if they match the choice, ...
-                if (stringChoice.isCaseInsensitive()) {
-                    // ... allowing case-insensitive matching only if haven't already matched a correct answer ...
-                    if (stringChoice.getValue().toLowerCase().equals(answer.getValue().toLowerCase()) && !responseCorrect) {
-                        feedback = (Content) stringChoice.getExplanation();
-                        responseCorrect = stringChoice.isCorrect();
-                    }
-                } else {
-                    if (stringChoice.getValue().equals(answer.getValue())) {
+                if (valuesMatch(stringChoice, userAnswer, stringChoice.isCaseInsensitive(), stringMatchQuestion.getPreserveWhitespace())) {
+                    if (stringChoice.isCaseInsensitive()) {
+                        if (!responseCorrect) {
+                            // ... allowing case-insensitive matching only if haven't already matched a correct answer ...
+                            feedback = (Content) stringChoice.getExplanation();
+                            responseCorrect = stringChoice.isCorrect();
+                        }
+                    } else {
                         feedback = (Content) stringChoice.getExplanation();
                         responseCorrect = stringChoice.isCorrect();
                         // ... and taking exact case-sensitive matches to be the best possible and stopping if found.
@@ -113,7 +115,28 @@ public class IsaacStringMatchValidator implements IValidator {
             }
         }
 
-        return new QuestionValidationResponse(question.getId(), answer, responseCorrect, feedback, new Date());
+        return new QuestionValidationResponse(question.getId(), userAnswer, responseCorrect, feedback, new Date());
     }
 
+    private boolean valuesMatch(final StringChoice trustedChoice, final StringChoice userChoice,
+                                final Boolean caseInsensitive, final Boolean preserveWhitespace) {
+        String trustedValue = trustedChoice.getValue();
+        String userValue = userChoice.getValue();
+
+        if (null == trustedValue || null == userValue) {
+            return false;
+        }
+
+        if (null != caseInsensitive && caseInsensitive) {
+            trustedValue = trustedValue.toLowerCase();
+            userValue = userValue.toLowerCase();
+        }
+        if (null == preserveWhitespace || !preserveWhitespace) {
+            // Strip whitespace by default:
+            trustedValue = trustedValue.trim();
+            userValue = userValue.trim();
+        }
+
+        return trustedValue.equals(userValue);
+    }
 }
