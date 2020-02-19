@@ -509,8 +509,10 @@ public class EventBookingManager {
                                     .put("reservingUser.givenName", reservingUser.getGivenName())
                                     .put("reservingUser.familyName", reservingUser.getFamilyName())
                                     .put("contactUsURL", generateEventContactUsURL(event))
-                                    .put("eventURL", "") // af599 TODO Add the event's URL
-                                    .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
+                                    .put("eventURL", String.format("https://%s/eventbooking/%s",
+                                            propertiesLoader.getProperty(HOST_NAME), event.getId()))
+                                    .put("event.emailEventDetails",
+                                            event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
                                     .put("event", event)
                                     .build(),
                             EmailType.SYSTEM,
@@ -933,8 +935,6 @@ public class EventBookingManager {
             Date bookingCancellationDate = new Date();
             if (event.getEndDate() == null || bookingCancellationDate.before(event.getEndDate())) {
                 emailManager.sendTemplatedEmailToUser(user,
-                        // af599 TODO: See if we want a special "reservation cancelled" email here or we are OK with this.
-                        // af599 TODO: Content team action.
                         emailManager.getEmailTemplateDTO("email-event-booking-cancellation-confirmed"),
                         new ImmutableMap.Builder<String, Object>()
                                 .put("contactUsURL", generateEventContactUsURL(event))
@@ -943,6 +943,7 @@ public class EventBookingManager {
                                 .build(),
                         EmailType.SYSTEM);
 
+                // af599 TODO: Fix this. Doesn't seem to pick up the previous state as a reservation.
                 if (previousBookingStatus.equals(BookingStatus.RESERVED) && reservedById != null) {
                     emailManager.sendTemplatedEmailToUser(userAccountManager.getUserDTOById(reservedById),
                             emailManager.getEmailTemplateDTO("email-event-reservation-cancellation-confirmed"),
@@ -1036,6 +1037,8 @@ public class EventBookingManager {
                             .put("event", event)
                             .build(),
                     EmailType.SYSTEM);
+        } else if (booking.getBookingStatus().equals(BookingStatus.RESERVED)) {
+            // af599 TODO: Fill this in.
         } else {
             log.error("Unknown event booking status. Unable to select correct email.");
         }
