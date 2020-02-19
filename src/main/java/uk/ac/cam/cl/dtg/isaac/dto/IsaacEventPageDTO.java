@@ -73,6 +73,8 @@ public class IsaacEventPageDTO extends ContentDTO {
 
     private Integer groupReservationLimit;
 
+    private Boolean allowGroupReservations;
+
     /**
      *
      * @param id
@@ -119,7 +121,8 @@ public class IsaacEventPageDTO extends ContentDTO {
                              @JsonProperty("eventThumbnail") ImageDTO eventThumbnail,
                              @JsonProperty("numberOfPlaces") Integer numberOfPlaces,
                              @JsonProperty("EventStatus") EventStatus eventStatus,
-                             @JsonProperty("groupReservationLimit") Integer groupReservationLimit) {
+                             @JsonProperty("groupReservationLimit") Integer groupReservationLimit,
+                             @JsonProperty("allowGroupReservations") Boolean allowGroupReservations) {
         super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, null, null,
                 relatedContent, published, tags, null);
 
@@ -134,6 +137,7 @@ public class IsaacEventPageDTO extends ContentDTO {
         this.numberOfPlaces = numberOfPlaces;
         this.eventStatus = eventStatus;
         this.groupReservationLimit = groupReservationLimit != null ? groupReservationLimit : EVENT_GROUP_RESERVATION_LIMIT;
+        this.allowGroupReservations = allowGroupReservations;
     }
 
     /**
@@ -538,6 +542,14 @@ public class IsaacEventPageDTO extends ContentDTO {
 
     public void setUserBookingStatus(BookingStatus userBookingStatus) {
         this.userBookingStatus = userBookingStatus;
+    }
+
+    public Boolean getAllowGroupReservations() {
+        return allowGroupReservations;
+    }
+
+    public void setAllowGroupReservations(Boolean allowGroupReservations) {
+        this.allowGroupReservations = allowGroupReservations;
     }
 
 }

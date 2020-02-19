@@ -68,6 +68,8 @@ public class IsaacEventPage extends Content {
 
 	private Integer groupReservationLimit;
 
+	private Boolean allowGroupReservations;
+
 	@JsonCreator
 	public IsaacEventPage(@JsonProperty("id") String id,
 						  @JsonProperty("title") String title,
@@ -89,7 +91,8 @@ public class IsaacEventPage extends Content {
 						  @JsonProperty("eventThumbnail") Image eventThumbnail,
 						  @JsonProperty("numberOfPlaces") Integer numberOfPlaces,
 						  @JsonProperty("EventStatus") EventStatus eventStatus,
-						  @JsonProperty("groupReservationLimit") Integer groupReservationLimit) {
+						  @JsonProperty("groupReservationLimit") Integer groupReservationLimit,
+						  @JsonProperty("allowGroupReservations") Boolean allowGroupReservations) {
 		super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, null,
 			null, relatedContent, published, tags, null);
 
@@ -104,6 +107,7 @@ public class IsaacEventPage extends Content {
 		this.numberOfPlaces = numberOfPlaces;
 		this.eventStatus = eventStatus;
 		this.groupReservationLimit = groupReservationLimit != null ? groupReservationLimit : EVENT_GROUP_RESERVATION_LIMIT;
+		this.allowGroupReservations = allowGroupReservations;
 	}
 
 	/**
@@ -453,5 +457,14 @@ public class IsaacEventPage extends Content {
 	public void setGroupReservationLimit(Integer groupReservationLimit) {
 		this.groupReservationLimit = groupReservationLimit;
 	}
+
+	public Boolean getAllowGroupReservations() {
+		return allowGroupReservations;
+	}
+
+	public void setAllowGroupReservations(Boolean allowGroupReservations) {
+		this.allowGroupReservations = allowGroupReservations;
+	}
+
 
 }
