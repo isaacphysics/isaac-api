@@ -875,7 +875,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                         .toResponse();
             }
 
-            Boolean userIsAbleToManageEvent = bookingManager.isUserAbleToManageEvent(userLoggedIn, event);
+            boolean userIsAbleToManageEvent = bookingManager.isUserAbleToManageEvent(userLoggedIn, event);
 
             List<RegisteredUserDTO> validUsers = new ArrayList<>();
             for (Long userId : userIds) {
