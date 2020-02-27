@@ -934,19 +934,19 @@ public class EventBookingManager {
             // Send an email notifying the user (unless they are being canceled after the event for the sake of our records)
             Date bookingCancellationDate = new Date();
             if (event.getEndDate() == null || bookingCancellationDate.before(event.getEndDate())) {
-                emailManager.sendTemplatedEmailToUser(user,
-                        emailManager.getEmailTemplateDTO("email-event-booking-cancellation-confirmed"),
-                        new ImmutableMap.Builder<String, Object>()
-                                .put("contactUsURL", generateEventContactUsURL(event))
-                                .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
-                                .put("event", event)
-                                .build(),
-                        EmailType.SYSTEM);
-
-                // af599 TODO: Fix this. Doesn't seem to pick up the previous state as a reservation.
                 if (previousBookingStatus.equals(BookingStatus.RESERVED) && reservedById != null) {
-                    emailManager.sendTemplatedEmailToUser(userAccountManager.getUserDTOById(reservedById),
+                    emailManager.sendTemplatedEmailToUser(user,
                             emailManager.getEmailTemplateDTO("email-event-reservation-cancellation-confirmed"),
+                            new ImmutableMap.Builder<String, Object>()
+                                    .put("contactUsURL", generateEventContactUsURL(event))
+                                    .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
+                                    .put("event", event)
+                                    .build(),
+                            EmailType.SYSTEM);
+                    // We may also want to send an email to userAccountManager.getUserDTOById(reservedById)
+                } else {
+                    emailManager.sendTemplatedEmailToUser(user,
+                            emailManager.getEmailTemplateDTO("email-event-booking-cancellation-confirmed"),
                             new ImmutableMap.Builder<String, Object>()
                                     .put("contactUsURL", generateEventContactUsURL(event))
                                     .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
@@ -955,9 +955,6 @@ public class EventBookingManager {
                             EmailType.SYSTEM);
                 }
             }
-        } catch (NoUserException e) {
-            log.error(String.format("Unable to find reserving user id (%d) while cancelling reservation for user (%s).",
-                    reservedById, user.getEmail()));
         } finally {
             this.bookingPersistenceManager.releaseDistributedLock(event.getId());
         }
