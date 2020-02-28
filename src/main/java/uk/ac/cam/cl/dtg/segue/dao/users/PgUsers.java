@@ -762,7 +762,16 @@ public class PgUsers implements IUserDataManager {
         u.setGivenName(results.getString("given_name"));
         u.setEmail(results.getString("email"));
         u.setRole(results.getString("role") != null ? Role.valueOf(results.getString("role")) : null);
-        u.setDateOfBirth(results.getDate("date_of_birth"));
+        java.sql.Date dateOfBirth = results.getDate("date_of_birth");
+        // So, DOB is a date in the database.
+        // Because Java is Java, and this code goes back to 1996, the date is interpreted as a datetime at midnight
+        // in the local timezone. This is obviously insane, but there you go.
+        // It works on the servers because they are sensibly set to a UTC timezone. However, it is broken on local
+        // machines where the timezone is London time.
+        // The front-end expects a timestamp in UTC, so this line uses four deprecated functions to make one. The joy!
+        Date utcDate = new Date(
+            Date.UTC(dateOfBirth.getYear(), dateOfBirth.getMonth(), dateOfBirth.getDate(), 0, 0, 0));
+        u.setDateOfBirth(utcDate);
         u.setGender(results.getString("gender") != null ? Gender.valueOf(results.getString("gender")) : null);
         u.setRegistrationDate(results.getTimestamp("registration_date"));
         
