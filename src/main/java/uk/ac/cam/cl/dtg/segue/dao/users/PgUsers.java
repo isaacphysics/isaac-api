@@ -769,9 +769,11 @@ public class PgUsers implements IUserDataManager {
         // It works on the servers because they are sensibly set to a UTC timezone. However, it is broken on local
         // machines where the timezone is London time.
         // The front-end expects a timestamp in UTC, so this line uses four deprecated functions to make one. The joy!
-        Date utcDate = new Date(
-            Date.UTC(dateOfBirth.getYear(), dateOfBirth.getMonth(), dateOfBirth.getDate(), 0, 0, 0));
-        u.setDateOfBirth(utcDate);
+        if (null != dateOfBirth) {
+            Date utcDate = new Date(
+                    Date.UTC(dateOfBirth.getYear(), dateOfBirth.getMonth(), dateOfBirth.getDate(), 0, 0, 0));
+            u.setDateOfBirth(utcDate);
+        }
         u.setGender(results.getString("gender") != null ? Gender.valueOf(results.getString("gender")) : null);
         u.setRegistrationDate(results.getTimestamp("registration_date"));
         
