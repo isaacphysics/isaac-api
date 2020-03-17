@@ -54,7 +54,6 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
-import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
@@ -95,25 +94,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.DATE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.ENDDATE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.EVENT_TYPE;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.ADMIN_BOOKING_REASON_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.ATTENDED_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.BOOKING_STATUS_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT_AS_STRING;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_START_INDEX_AS_STRING;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_DATE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_ID_FKEY_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_TAGS_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.EventFilterOption;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueLogType;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TAGS_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_FKEY_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_LIST_FKEY_FIELDNAME;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Events Facade.
@@ -308,7 +290,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 				continue;
 			}
 
-			final IsaacEventPageDTO eventDTOById = this.getEventDTOById(request, eventId);
+			final IsaacEventPageDTO eventDTOById = this.getAugmentedEventDTOById(request, eventId);
 
 			if (tags != null) {
 				Set<String> tagsList = Sets.newHashSet(tags);
@@ -341,7 +323,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     public final Response getEvent(@Context final HttpServletRequest request,
             @PathParam("event_id") final String eventId) {
         try {
-            IsaacEventPageDTO page = getEventDTOById(request, eventId);
+            IsaacEventPageDTO page = getAugmentedEventDTOById(request, eventId);
 
             return Response.ok(page).build();
         } catch (ContentManagerException e) {
@@ -445,7 +427,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(request);
             RegisteredUserDTO userOfInterest = this.userManager.getUserDTOById(userId);
-            IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
+            IsaacEventPageDTO event = this.getAugmentedEventDTOById(request, eventId);
 
             if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
@@ -536,6 +518,18 @@ public class EventsFacade extends AbstractIsaacFacade {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
             UserGroupDTO group = groupManager.getGroupById(Long.parseLong(groupId));
 
+            if (!(isUserAnAdmin(userManager, currentUser) || GroupManager.isOwnerOrAdditionalManager(group, currentUser.getId()))) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You are not the owner or manager of this group.").toResponse();
+            }
+
+            IsaacEventPageDTO eventPageDTO = getRawEventDTOById(eventId);
+            if (null == eventPageDTO) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "No event found with this ID.").toResponse();
+            }
+            if (!EventBookingManager.eventAllowsGroupBookings(eventPageDTO)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "This event does not accept group bookings.").toResponse();
+            }
+
             List<Long> groupMemberIds = groupManager.getUsersInGroup(group)
                     .stream().map(RegisteredUserDTO::getId)
                     .collect(Collectors.toList());
@@ -547,7 +541,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             // Event leaders are only allowed to see the bookings of connected users
             eventBookings = userAssociationManager.filterUnassociatedRecords(currentUser, eventBookings,
-                    booking -> booking.getUserBooked().getId());
+                booking -> booking.getUserBooked().getId());
 
             return Response.ok(eventBookings).build();
         } catch (SegueDatabaseException e) {
@@ -558,6 +552,10 @@ public class EventsFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (ContentManagerException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Content Database error occurred while trying to retrieve event information.")
+                    .toResponse();
         }
     }
 
@@ -574,13 +572,12 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Path("{event_id}/bookings/download")
     @Produces("text/csv")
     @GZIP
-
     @ApiOperation(value = "Download event attendance csv.")
     public Response getEventBookingCSV(@Context final HttpServletRequest request,
                                                    @PathParam("event_id") final String eventId) {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
-            IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
+            IsaacEventPageDTO event = this.getRawEventDTOById(eventId);
 
             if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
@@ -702,7 +699,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
             RegisteredUserDTO bookedUser = userManager.getUserDTOById(userId);
-            IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
+            IsaacEventPageDTO event = this.getAugmentedEventDTOById(request, eventId);
 
             if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
@@ -764,11 +761,15 @@ public class EventsFacade extends AbstractIsaacFacade {
         RegisteredUserDTO currentUser;
         IsaacEventPageDTO event;
         try {
-            event = this.getEventDTOById(request, eventId);
+            event = this.getRawEventDTOById(eventId);
         } catch (SegueDatabaseException | ContentManagerException e) {
-            return SegueErrorResponse.getResourceNotFoundResponse(
-                    String.format("Unable to retrieve event of id %s", eventId)
-            );
+            event = null;
+        }
+        if (null == event) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "No event found with this ID.").toResponse();
+        }
+        if (!EventBookingManager.eventAllowsGroupBookings(event)) {
+            return new SegueErrorResponse(Status.FORBIDDEN, "This event does not accept group bookings.").toResponse();
         }
 
         Map<Long, RegisteredUserDTO> bookableUsers;
@@ -867,7 +868,10 @@ public class EventsFacade extends AbstractIsaacFacade {
                                         @PathParam("event_id") final String eventId,
                                         final List<Long> userIds) {
         try {
-            IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
+            IsaacEventPageDTO event = getRawEventDTOById(eventId);
+            if (null == event) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "No event found with this ID.").toResponse();
+            }
             RegisteredUserDTO userLoggedIn = this.userManager.getCurrentRegisteredUser(request);
 
             if (event.getDate() != null && new Date().after(event.getDate())) {
@@ -885,7 +889,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                         validUsers.add(userOwningBooking);
                     } else {
                         // Maybe silently carry on instead?
-                        return new SegueErrorResponse(Status.fromStatusCode(422), // Unprocessable Entity
+                        return new SegueErrorResponse(Status.BAD_REQUEST,
                                 "Some of the reservations cannot be cancelled. Please reload the page and try again.")
                                 .toResponse();
                     }
@@ -944,7 +948,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                                              final Map<String, String> additionalInformation) {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
-            IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
+            IsaacEventPageDTO event = this.getAugmentedEventDTOById(request, eventId);
 
             if (EventStatus.CLOSED.equals(event.getEventStatus())) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "Sorry booking for this event is closed. Please try again later.")
@@ -1017,7 +1021,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
-            IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
+            IsaacEventPageDTO event = this.getAugmentedEventDTOById(request, eventId);
 
             // Fail if the user is already booked or reserved for this event, so there's no need to add to a waiting list.
             if (bookingManager.isUserBooked(eventId, user.getId()) || bookingManager.isUserReserved(eventId, user.getId())) {
@@ -1098,7 +1102,10 @@ public class EventsFacade extends AbstractIsaacFacade {
                                         @PathParam("event_id") final String eventId,
                                         @PathParam("user_id") final Long userId) {
         try {
-            IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
+            IsaacEventPageDTO event = getRawEventDTOById(eventId);
+            if (null == event) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "No event found with this ID.").toResponse();
+            }
 
             RegisteredUserDTO userLoggedIn = this.userManager.getCurrentRegisteredUser(request);
             RegisteredUserDTO userOwningBooking;
@@ -1174,7 +1181,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                                            @PathParam("event_id") final String eventId,
                                            @PathParam("user_id") final Long userId) {
         try {
-            IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
+            IsaacEventPageDTO event = this.getAugmentedEventDTOById(request, eventId);
             RegisteredUserDTO bookedUser = this.userManager.getUserDTOById(userId);
             RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(request);
 
@@ -1236,7 +1243,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "User is not booked on this event.").toResponse();
             }
 
-            IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
+            IsaacEventPageDTO event = this.getAugmentedEventDTOById(request, eventId);
             RegisteredUserDTO user = this.userManager.getUserDTOById(userId);
 
             bookingManager.deleteBooking(event, user);
@@ -1285,7 +1292,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(request);
             RegisteredUserDTO userOfInterest = this.userManager.getUserDTOById(userId);
-            IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
+            IsaacEventPageDTO event = this.getAugmentedEventDTOById(request, eventId);
 
             if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
@@ -1564,43 +1571,42 @@ public class EventsFacade extends AbstractIsaacFacade {
     }
 
     /**
+     * A helper method for retrieving an event object without augmented information
+     *
+     * @param eventId the id of the event of interest
+     * @return the fully populated event dto with user context information.
+     * @throws ContentManagerException - if there is a problem finding the event information
+     * @throws SegueDatabaseException if there is a database error.
+     */
+    private IsaacEventPageDTO getRawEventDTOById(final String eventId)
+            throws ContentManagerException, SegueDatabaseException {
+
+        ContentDTO possibleEvent = this.contentManager.getContentById(this.contentManager.getCurrentContentSHA(), eventId);
+
+        if (null == possibleEvent) {
+            throw new ResourceNotFoundException(String.format("Unable to locate the event with id; %s", eventId));
+        }
+
+        if (possibleEvent instanceof IsaacEventPageDTO) {
+            return (IsaacEventPageDTO) possibleEvent;
+        }
+        return null;
+    }
+
+    /**
      * A helper method for retrieving an event and the number of places available and if the user is booked or not.
      *
      *
      * @param request so we can determine if the user is logged in
-     * @param id the id of the event of interest
+     * @param eventId the id of the event of interest
      * @return the fully populated event dto with user context information.
      * @throws ContentManagerException - if there is a problem finding the event information
      * @throws SegueDatabaseException if there is a database error.
 	 */
-    private IsaacEventPageDTO getEventDTOById(final HttpServletRequest request, final String id)
+    private IsaacEventPageDTO getAugmentedEventDTOById(final HttpServletRequest request, final String eventId)
             throws ContentManagerException, SegueDatabaseException {
-
-        ContentDTO c = this.contentManager.getContentById(this.contentManager.getCurrentContentSHA(), id);
-
-        if (null == c) {
-            throw new ResourceNotFoundException(String.format("Unable to locate the event with id; %s", id));
-        }
-
-        IsaacEventPageDTO page = null;
-        if (c instanceof IsaacEventPageDTO) {
-            page = (IsaacEventPageDTO) c;
-
-            try {
-                RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
-
-                Boolean userBooked = this.bookingManager.isUserBooked(id, user.getId());
-                page.setUserBooked(userBooked);
-                page.setUserOnWaitList(this.bookingManager.hasBookingWithStatus(id, user.getId(), BookingStatus.WAITING_LIST));
-                page.setUserBookingStatus(this.bookingManager.getBookingStatus(id, user.getId()));
-            } catch (NoUserLoggedInException e) {
-                // no action as we don't require the user to be logged in.
-                page.setUserBooked(null);
-            }
-
-            page.setPlacesAvailable(this.bookingManager.getPlacesAvailable(page));
-        }
-        return page;
+        IsaacEventPageDTO event = getRawEventDTOById(eventId);
+        return augmentEventWithBookingInformation(request, event);
     }
 
 	/**
@@ -1619,10 +1625,10 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             try {
                 RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
-
-                Boolean userBooked = this.bookingManager.isUserBooked(page.getId(), user.getId());
-                page.setUserBooked(userBooked);
+                page.setUserBooked(this.bookingManager.isUserBooked(page.getId(), user.getId()));
                 page.setUserOnWaitList(this.bookingManager.hasBookingWithStatus(page.getId(), user.getId(), BookingStatus.WAITING_LIST));
+                // TODO: Are either of the above attributes necessary with this new booking status attribute?
+                page.setUserBookingStatus(this.bookingManager.getBookingStatus(page.getId(), user.getId()));
             } catch (NoUserLoggedInException e) {
                 // no action as we don't require the user to be logged in.
                 page.setUserBooked(null);
