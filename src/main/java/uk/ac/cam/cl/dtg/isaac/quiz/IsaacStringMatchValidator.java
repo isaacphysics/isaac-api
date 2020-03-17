@@ -28,12 +28,14 @@ import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 
 import java.util.Date;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * Validator that only provides functionality to validate String Match questions.
  */
 public class IsaacStringMatchValidator implements IValidator {
     private static final Logger log = LoggerFactory.getLogger(IsaacStringMatchValidator.class);
+    private static final Pattern TRAILING_SPACES = Pattern.compile("\\s+$", Pattern.MULTILINE);
     
     @Override
     public final QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
@@ -98,7 +100,7 @@ public class IsaacStringMatchValidator implements IValidator {
                 }
 
                 // ... check if they match the choice, ...
-                if (valuesMatch(stringChoice, userAnswer, stringChoice.isCaseInsensitive(), stringMatchQuestion.getPreserveWhitespace())) {
+                if (valuesMatch(stringChoice, userAnswer, stringChoice.isCaseInsensitive(), stringMatchQuestion.getPreserveTrailingWhitespace())) {
                     if (stringChoice.isCaseInsensitive()) {
                         if (!responseCorrect) {
                             // ... allowing case-insensitive matching only if haven't already matched a correct answer ...
@@ -119,7 +121,7 @@ public class IsaacStringMatchValidator implements IValidator {
     }
 
     private boolean valuesMatch(final StringChoice trustedChoice, final StringChoice userChoice,
-                                final Boolean caseInsensitive, final Boolean preserveWhitespace) {
+                                final Boolean caseInsensitive, final Boolean preserveTrailingWhitespace) {
         String trustedValue = trustedChoice.getValue();
         String userValue = userChoice.getValue();
 
@@ -131,10 +133,10 @@ public class IsaacStringMatchValidator implements IValidator {
             trustedValue = trustedValue.toLowerCase();
             userValue = userValue.toLowerCase();
         }
-        if (null == preserveWhitespace || !preserveWhitespace) {
-            // Strip whitespace by default:
-            trustedValue = trustedValue.trim();
-            userValue = userValue.trim();
+        if (null == preserveTrailingWhitespace || !preserveTrailingWhitespace) {
+            // Strip trailing whitespace by default:
+            trustedValue = TRAILING_SPACES.matcher(trustedValue).replaceAll("");
+            userValue = TRAILING_SPACES.matcher(userValue).replaceAll("");
         }
 
         return trustedValue.equals(userValue);
