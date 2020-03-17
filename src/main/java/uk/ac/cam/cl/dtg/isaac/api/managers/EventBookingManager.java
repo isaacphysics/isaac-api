@@ -170,6 +170,15 @@ public class EventBookingManager {
     }
 
     /**
+     * Ensure an event allows group bookings.
+     * @param event The ID of the event
+     * @return whether group bookings are allowed
+     */
+    public static boolean eventAllowsGroupBookings(final IsaacEventPageDTO event) {
+        return event.getAllowGroupReservations() != null && event.getAllowGroupReservations();
+    }
+
+    /**
      * Check if the registered user is able to manage the given event.
      * Event managers and admins can manage all events where as event leaders can only manage events for which they are
      * managers of the event's associated group.
