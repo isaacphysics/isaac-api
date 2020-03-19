@@ -147,31 +147,66 @@ public class IsaacStringMatchValidatorTest {
     }
 
     /*
-       Test that incorrect case-sensitive match takes priority over case-insensitive correct match.
+       Test that the default behavior for String Match Questions trims trailing spaces.
     */
     @Test
-    public final void isaacStringMatchValidator_CaseSensitivePriority_IncorrectResponseShouldBeReturned() {
+    public final void isaacStringMatchValidator_CorrectWithTrailingSpaces_CorrectResponseShouldBeReturned() {
+        // Set up user answer:
+        StringChoice c = new StringChoice();
+        c.setValue(String.format("%s     ", caseSensitiveAnswer));
+
+        // Test response:
+        QuestionValidationResponse response = validator.validateQuestionResponse(someStringMatchQuestion, c);
+        assertTrue(response.isCorrect());
+    }
+
+    /*
+       Test that trailing whitespace on multiple lines is removed before matching by default.
+    */
+    @Test
+    public final void isaacStringMatchValidator_TrailingSpacesMultiline_CorrectResponseShouldBeReturned() {
         // Set up the question object:
         IsaacStringMatchQuestion someStringMatchQuestion = new IsaacStringMatchQuestion();
 
         List<Choice> answerList = Lists.newArrayList();
         StringChoice someCorrectAnswer = new StringChoice();
-        someCorrectAnswer.setValue("testing123");
+        someCorrectAnswer.setValue("THIS\nIS\nA\nTEST\nMULTILINE\nVALUE");
         someCorrectAnswer.setCorrect(true);
         someCorrectAnswer.setCaseInsensitive(true);
         answerList.add(someCorrectAnswer);
 
-        StringChoice someIncorrectAnswer = new StringChoice();
-        someIncorrectAnswer.setValue("TESTing123");
-        someIncorrectAnswer.setCorrect(false);
-        someIncorrectAnswer.setCaseInsensitive(false);
-        answerList.add(someIncorrectAnswer);
+        someStringMatchQuestion.setChoices(answerList);
+
+        // Set up user answer, matches correct but with trailing spaces on each line:
+        StringChoice c = new StringChoice();
+        c.setValue("THIS  \nIS  \nA  \nTEST  \nMULTILINE  \nVALUE   ");
+
+        // Test response:
+        QuestionValidationResponse response = validator.validateQuestionResponse(someStringMatchQuestion, c);
+        assertTrue(response.isCorrect());
+    }
+
+    /*
+       Test that trailing whitespace on multiple lines is preserved when flag set.
+    */
+    @Test
+    public final void isaacStringMatchValidator_TrailingSpacesMultilinePreserved_IncorrectResponseShouldBeReturned() {
+        // Set up the question object:
+        IsaacStringMatchQuestion someStringMatchQuestion = new IsaacStringMatchQuestion();
+        someStringMatchQuestion.setPreserveTrailingWhitespace(true);
+
+        List<Choice> answerList = Lists.newArrayList();
+        StringChoice someCorrectAnswer = new StringChoice();
+        someCorrectAnswer.setValue("THIS\nIS\nA\nTEST\nMULTILINE\nVALUE");
+        someCorrectAnswer.setCorrect(true);
+        someCorrectAnswer.setCaseInsensitive(true);
+        answerList.add(someCorrectAnswer);
 
         someStringMatchQuestion.setChoices(answerList);
 
-        // Set up user answer, matches both correct and incorrect but incorrect answer more strongly:
+        // Set up user answer, matches correct but with trailing spaces on each line:
         StringChoice c = new StringChoice();
-        c.setValue("TESTing123");
+        c.setValue("THIS  \nIS  \nA  \nTEST  \nMULTILINE  \nVALUE   ");
 
         // Test response:
         QuestionValidationResponse response = validator.validateQuestionResponse(someStringMatchQuestion, c);
@@ -245,6 +280,40 @@ public class IsaacStringMatchValidatorTest {
         QuestionValidationResponse response = validator.validateQuestionResponse(someStringMatchQuestion, c);
         assertTrue(response.isCorrect());
     }
+
+
+    /*
+   Test that incorrect case-sensitive match takes priority over case-insensitive correct match.
+*/
+    @Test
+    public final void isaacStringMatchValidator_CaseSensitivePriority_IncorrectResponseShouldBeReturned() {
+        // Set up the question object:
+        IsaacStringMatchQuestion someStringMatchQuestion = new IsaacStringMatchQuestion();
+
+        List<Choice> answerList = Lists.newArrayList();
+        StringChoice someCorrectAnswer = new StringChoice();
+        someCorrectAnswer.setValue("testing123");
+        someCorrectAnswer.setCorrect(true);
+        someCorrectAnswer.setCaseInsensitive(true);
+        answerList.add(someCorrectAnswer);
+
+        StringChoice someIncorrectAnswer = new StringChoice();
+        someIncorrectAnswer.setValue("TESTing123");
+        someIncorrectAnswer.setCorrect(false);
+        someIncorrectAnswer.setCaseInsensitive(false);
+        answerList.add(someIncorrectAnswer);
+
+        someStringMatchQuestion.setChoices(answerList);
+
+        // Set up user answer, matches both correct and incorrect but incorrect answer more strongly:
+        StringChoice c = new StringChoice();
+        c.setValue("TESTing123");
+
+        // Test response:
+        QuestionValidationResponse response = validator.validateQuestionResponse(someStringMatchQuestion, c);
+        assertFalse(response.isCorrect());
+    }
+
 
     //  ---------- Tests from here test invalid questions themselves ----------
 

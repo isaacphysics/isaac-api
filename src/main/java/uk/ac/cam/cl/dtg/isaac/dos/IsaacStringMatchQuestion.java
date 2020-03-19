@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2017 James Sharkey
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,6 +30,7 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 @ValidatesWith(IsaacStringMatchValidator.class)
 public class IsaacStringMatchQuestion extends IsaacQuestionBase {
     private Boolean multiLineEntry;
+    private Boolean preserveTrailingWhitespace;
 
     public Boolean getMultiLineEntry() {
         return multiLineEntry;
@@ -37,5 +38,13 @@ public class IsaacStringMatchQuestion extends IsaacQuestionBase {
 
     public void setMultiLineEntry(final Boolean multiLineEntry) {
         this.multiLineEntry = multiLineEntry;
+    }
+
+    public Boolean getPreserveTrailingWhitespace() {
+        return preserveTrailingWhitespace;
+    }
+
+    public void setPreserveTrailingWhitespace(final Boolean preserveTrailingWhitespace) {
+        this.preserveTrailingWhitespace = preserveTrailingWhitespace;
     }
 }

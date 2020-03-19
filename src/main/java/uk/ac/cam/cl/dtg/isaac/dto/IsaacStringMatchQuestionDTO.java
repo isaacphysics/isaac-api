@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2017 James Sharkey
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,14 +15,9 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacStringMatchValidator;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
-import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
-
-import java.util.List;
 
 /**
  * DTO for isaacStringMatchQuestion.
@@ -32,6 +27,7 @@ import java.util.List;
 @ValidatesWith(IsaacStringMatchValidator.class)
 public class IsaacStringMatchQuestionDTO extends IsaacQuestionBaseDTO {
     private Boolean multiLineEntry;
+    private Boolean preserveTrailingWhitespace;
 
     public Boolean getMultiLineEntry() {
         return multiLineEntry;
@@ -39,5 +35,13 @@ public class IsaacStringMatchQuestionDTO extends IsaacQuestionBaseDTO {
 
     public void setMultiLineEntry(final Boolean multiLineEntry) {
         this.multiLineEntry = multiLineEntry;
+    }
+
+    public Boolean getPreserveTrailingWhitespace() {
+        return preserveTrailingWhitespace;
+    }
+
+    public void setPreserveTrailingWhitespace(final Boolean preserveTrailingWhitespace) {
+        this.preserveTrailingWhitespace = preserveTrailingWhitespace;
     }
 }
