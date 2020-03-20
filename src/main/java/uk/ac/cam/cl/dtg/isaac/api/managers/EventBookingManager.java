@@ -383,7 +383,7 @@ public class EventBookingManager {
                                           final Map<String, String> additionalEventInformation)
             throws SegueDatabaseException, EmailMustBeVerifiedException, DuplicateBookingException,
             EventIsFullException, EventDeadlineException {
-        this.ensureValidBooking(event, user, true);
+        this.ensureValidBooking(event, user, true, BookingStatus.CONFIRMED);
 
         try {
             // Obtain an exclusive database lock to lock the event
@@ -460,7 +460,7 @@ public class EventBookingManager {
 
         // af599 TODO: Is it wise to do this before acquiring a database lock?
         for (RegisteredUserDTO user : users) {
-            this.ensureValidBooking(event, user, true);
+            this.ensureValidBooking(event, user, true, BookingStatus.RESERVED);
         }
 
         List<EventBookingDTO> reservations = new ArrayList<>();
@@ -565,7 +565,7 @@ public class EventBookingManager {
             EventDeadlineException, EventIsNotFullException {
         final Date now = new Date();
 
-        this.ensureValidBooking(event, user, false);
+        this.ensureValidBooking(event, user, false, BookingStatus.WAITING_LIST);
 
         if (this.hasBookingWithStatus(event.getId(), user.getId(), BookingStatus.WAITING_LIST)) {
             throw new DuplicateBookingException(String.format("Unable to book onto event (%s) as user (%s) is already"
@@ -1129,8 +1129,8 @@ public class EventBookingManager {
      * @throws EventDeadlineException       - The deadline for booking has passed.
      */
     private void ensureValidBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user, final boolean
-            enforceBookingDeadline) throws SegueDatabaseException, EmailMustBeVerifiedException,
-            DuplicateBookingException, EventDeadlineException {
+            enforceBookingDeadline, final BookingStatus requestedBookingStatus) throws SegueDatabaseException,
+            EmailMustBeVerifiedException, DuplicateBookingException, EventDeadlineException {
         Date now = new Date();
 
         // check if if the end date has passed. Allowed to add to wait list after deadline.
@@ -1143,16 +1143,17 @@ public class EventBookingManager {
         if (enforceBookingDeadline && event.getBookingDeadline() != null && now.after(event.getBookingDeadline())) {
             throw new EventDeadlineException("The booking deadline has passed.");
         }
-
-        if (this.isUserReserved(event.getId(), user.getId())) {
+        // check if already reserved
+        if (requestedBookingStatus.equals(BookingStatus.RESERVED) && this.isUserReserved(event.getId(), user.getId())) {
             throw new DuplicateBookingException(String.format("Unable to reserve onto event (%s) as user (%s) is"
                     + " already reserved on to it.", event.getId(), user.getEmail()));
         }
         // check if already booked
-        if (this.isUserBooked(event.getId(), user.getId())) {
+        if (requestedBookingStatus.equals(BookingStatus.CONFIRMED) && this.isUserBooked(event.getId(), user.getId())) {
             throw new DuplicateBookingException(String.format("Unable to book onto event (%s) as user (%s) is already"
                     + " booked on to it.", event.getId(), user.getEmail()));
         }
+        // should we check if already on waiting list too?
 
         // must have verified email
         if (!EmailVerificationStatus.VERIFIED.equals(user.getEmailVerificationStatus())) {
