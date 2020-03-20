@@ -15,23 +15,18 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
-import java.util.*;
-
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-
+import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
+import com.google.inject.Inject;
 import com.google.inject.Injector;
+import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.Validate;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.api.client.util.Lists;
-import com.google.inject.Inject;
-
 import uk.ac.cam.cl.dtg.isaac.configuration.IsaacApplicationRegister;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacItemQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.TestCase;
+import uk.ac.cam.cl.dtg.isaac.dos.TestQuestion;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacItemQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
@@ -40,17 +35,39 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
+import uk.ac.cam.cl.dtg.segue.dos.content.ChoiceQuestion;
+import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.segue.dto.content.*;
+import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceQuestionDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.segue.quiz.*;
+import uk.ac.cam.cl.dtg.segue.quiz.IQuestionAttemptManager;
+import uk.ac.cam.cl.dtg.segue.quiz.ISpecifier;
+import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
+import uk.ac.cam.cl.dtg.segue.quiz.SpecifiesWith;
+import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
+import uk.ac.cam.cl.dtg.segue.quiz.ValidatorUnavailableException;
+
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.core.Response;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.stream.Collectors;
 
 /**
  * This class is responsible for validating correct answers using the ValidatesWith annotation when it is applied on to
@@ -308,6 +325,42 @@ public class QuestionManager {
                     questionPageId[0], questionResponse.getQuestionId(), questionResponseDO);
         } else {
             log.error("Unexpected user type. Unable to record question response");
+        }
+    }
+
+    /** Test a question of a particular type against a series of test cases **/
+    public List<TestCase> testQuestion(final String questionType, final TestQuestion testDefinition)
+            throws BadRequestException, ValidatorUnavailableException {
+        try {
+            MapperFacade autoMapper = mapper.getAutoMapper();
+
+            // Create a fake question
+            Class<? extends Content> questionClass = mapper.getClassByType(questionType);
+            if (null == questionClass || !ChoiceQuestion.class.isAssignableFrom(questionClass)) {
+                throw new BadRequestException(String.format("Not a valid questionType (%s)", questionType));
+            }
+            ChoiceQuestion testQuestion = (ChoiceQuestion) questionClass.newInstance();
+            testQuestion.setChoices(testDefinition.getUserDefinedChoices());
+            IValidator questionValidator = QuestionManager.locateValidator(testQuestion.getClass());
+            if (null == questionValidator) {
+                throw new ValidatorUnavailableException("Could not find a validator for the question");
+            }
+
+            // For each test, check its actual results against the response of the validator on the fake question
+            List<TestCase> results = Lists.newArrayList();
+            for (TestCase testCase : testDefinition.getTestCases()) {
+                Choice inferredChoiceSubclass =
+                        autoMapper.map(autoMapper.map(testCase.getAnswer(), ChoiceDTO.class), Choice.class);
+                QuestionValidationResponse questionValidationResponse = questionValidator
+                        .validateQuestionResponse(testQuestion, inferredChoiceSubclass);
+                testCase.setCorrect(questionValidationResponse.isCorrect());
+                testCase.setExplanation(questionValidationResponse.getExplanation());
+                results.add(testCase);
+            }
+
+            return results;
+        } catch (InstantiationException | IllegalAccessException e) {
+            throw new BadRequestException(String.format(e.getMessage()));
         }
     }
     

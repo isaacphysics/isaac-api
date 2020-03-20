@@ -10,7 +10,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <segue.version>2.10.3-SNAPSHOT</segue.version>
+        <segue.version>2.10.4-SNAPSHOT</segue.version>
         <log4j.version>2.12.1</log4j.version>
         <resteasy.version>4.4.0.Final</resteasy.version>
         <guice.version>4.2.2</guice.version>
@@ -249,7 +249,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.9.10.1</version>
+            <version>2.9.10.3</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
