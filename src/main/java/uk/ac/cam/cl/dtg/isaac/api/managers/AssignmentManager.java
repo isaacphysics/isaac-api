@@ -38,14 +38,13 @@ import uk.ac.cam.cl.dtg.segue.dos.GroupMembershipStatus;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.GroupMembershipDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithEmailAddressDTO;
+import uk.ac.cam.cl.dtg.util.NameFormatter;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -55,6 +54,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.util.NameFormatter.getFilteredGroupNameFromGroup;
+import static uk.ac.cam.cl.dtg.util.NameFormatter.getTeacherNameFromUser;
 
 /**
  * AssignmentManager.
@@ -412,7 +413,7 @@ public class AssignmentManager implements IGroupObserver {
         String teacherInfo;
         if (!userGroup.getAdditionalManagers().isEmpty()) {
             teacherInfo = String.format("your teachers %s and %s",
-                    userGroup.getAdditionalManagers().stream().map(this::getTeacherNameFromUser).collect(Collectors.joining(", ")),
+                    userGroup.getAdditionalManagers().stream().map(NameFormatter::getTeacherNameFromUser).collect(Collectors.joining(", ")),
                     groupOwnerName);
         } else {
             teacherInfo = String.format("your teacher %s", groupOwnerName);
@@ -488,57 +489,4 @@ public class AssignmentManager implements IGroupObserver {
         }
         return results;
     }
-
-    /**
-     * Form the short version of a teacher name with only a first initial.
-     * @param teacherUser - The user summary object of the teacher user
-     * @return The short name with first initial
-     */
-    private String getTeacherNameFromUser(final UserSummaryDTO teacherUser) {
-        return formatTeacherName(teacherUser.getGivenName(), teacherUser.getFamilyName());
-    }
-
-
-    /**
-     * Form the short version of a teacher name with only a first initial.
-     * @param teacherUser - The user summary object of the teacher user
-     * @return The short name with first initial
-     */
-    private String getTeacherNameFromUser(final RegisteredUserDTO teacherUser) {
-        return formatTeacherName(teacherUser.getGivenName(), teacherUser.getFamilyName());
-    }
-
-    /**
-     * Form the short version of a teacher name with only a first initial.
-     * @param givenName The user's first name
-     * @param familyName The user's last name
-     * @return The short name with first initial
-     */
-    private String formatTeacherName(final String givenName, final String familyName) {
-        String teacherName = "Unknown";
-        if (familyName != null) {
-            teacherName = familyName;
-        }
-
-        if (givenName != null && !givenName.isEmpty()) {
-            teacherName = givenName.substring(0, 1) + ". " + teacherName;
-        }
-        return teacherName;
-    }
-
-    /**
-     * Get the group name, if it is allowed to be shared, else a placeholder.
-     * @param group - the group to extract the name from
-     * @return the group name to show to students.
-     */
-    private String getFilteredGroupNameFromGroup(final UserGroupDTO group) {
-        // Check the group has a last updated date: if not it means that we shouldn't show students the group name
-        // as teachers may not have realised the names are public:
-        String groupName = String.format("Group %s", group.getId());
-        if (group.getLastUpdated() != null) {
-            groupName = group.getGroupName();
-        }
-        return groupName;
-    }
-
 }

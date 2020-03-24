@@ -67,6 +67,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.util.NameFormatter.getTeacherNameFromUser;
 
 /**
  * EventBookingManager.
@@ -504,13 +505,9 @@ public class EventBookingManager {
 
                 try {
                     emailManager.sendTemplatedEmailToUser(user,
-                            // af599 TODO: Use the correct email template and parameters here.
-                            // af599 TODO: Content team action.
                             emailManager.getEmailTemplateDTO("email-event-reservation-requested"),
                             new ImmutableMap.Builder<String, Object>()
-                                    // af599 TODO Investigate flattening users
-                                    .put("reservingUser.givenName", reservingUser.getGivenName())
-                                    .put("reservingUser.familyName", reservingUser.getFamilyName())
+                                    .put("reservingUser", getTeacherNameFromUser(reservingUser))
                                     .put("contactUsURL", generateEventContactUsURL(event))
                                     .put("eventURL", String.format("https://%s/eventbooking/%s",
                                             propertiesLoader.getProperty(HOST_NAME), event.getId()))
@@ -518,9 +515,7 @@ public class EventBookingManager {
                                             event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
                                     .put("event", event)
                                     .build(),
-                            EmailType.SYSTEM,
-                            // af599 TODO Maybe don't attach a calendar event file for a reservation
-                            Collections.singletonList(generateEventICSFile(event, reservation)));
+                            EmailType.SYSTEM);
 
                 } catch (SegueDatabaseException | ContentManagerException e) {
                     log.error(String.format("Unable to send event email (%s) to user (%s)",
@@ -1038,7 +1033,18 @@ public class EventBookingManager {
                             .build(),
                     EmailType.SYSTEM);
         } else if (booking.getBookingStatus().equals(BookingStatus.RESERVED)) {
-            // af599 TODO: Fill this in.
+            emailManager.sendTemplatedEmailToUser(user,
+                    emailManager.getEmailTemplateDTO("email-event-reservation-requested"),
+                    new ImmutableMap.Builder<String, Object>()
+                            .put("reservingUser", "")  // FIXME: no UserManager to find details of booking.getReservedById()
+                            .put("contactUsURL", generateEventContactUsURL(event))
+                            .put("eventURL", String.format("https://%s/eventbooking/%s",
+                                    propertiesLoader.getProperty(HOST_NAME), event.getId()))
+                            .put("event.emailEventDetails",
+                                    event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
+                            .put("event", event)
+                            .build(),
+                    EmailType.SYSTEM);
         } else {
             log.error("Unknown event booking status. Unable to select correct email.");
         }
