@@ -824,7 +824,6 @@ public class EventsFacade extends AbstractIsaacFacade {
             log.error(errorMsg, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
         } catch (EventIsFullException e) {
-            // af599 TODO: Return the number of available spaces maybe?
             return new SegueErrorResponse(Status.CONFLICT,
                     "There are not enough spaces available for this event. Please try again with fewer users.")
                     .toResponse();
