@@ -11,11 +11,11 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <segue.version>2.10.4-SNAPSHOT</segue.version>
-        <log4j.version>2.12.1</log4j.version>
+        <log4j.version>2.13.1</log4j.version>
         <resteasy.version>4.4.0.Final</resteasy.version>
         <guice.version>4.2.2</guice.version>
         <oauth-client.version>1.30.4</oauth-client.version>
-        <jackson.version>2.10.0</jackson.version>
+        <jackson.version>2.10.2</jackson.version>
         <powermock.version>2.0.4</powermock.version>
         <swagger-ui-version>3.19.5</swagger-ui-version>
         <prometheus.version>0.8.0</prometheus.version>
@@ -129,7 +129,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>28.1-jre</version>
+            <version>28.2-jre</version>
         </dependency>
 
         <dependency>
@@ -249,7 +249,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.9.10.3</version>
+            <version>${jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
