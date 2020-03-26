@@ -786,7 +786,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                 RegisteredUserDTO u = userManager.getUserDTOById(userId);
                 if (!userAssociationManager.hasPermission(currentUser, u)) {
                     return new SegueErrorResponse(Status.FORBIDDEN,
-                            "You are not authorized to interact with some of the user IDs specified.")
+                            "You do not have permission to book or reserve some of these users onto this event.")
                             .toResponse();
                 }
                 if (bookingManager.isUserBooked(eventId, userId) || bookingManager.isUserReserved(eventId, userId)) {
