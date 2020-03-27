@@ -637,6 +637,64 @@ public class EventBookingManagerTest {
     }
 
     @Test
+    public void getEventPage_checkStudentEventReservedBookings_capacityCalculatedCorrectly() throws
+            Exception {
+        EventBookingManager ebm = this.buildEventBookingManager();
+        IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
+        testEvent.setId("someEventId");
+        testEvent.setNumberOfPlaces(2);
+        testEvent.setTags(ImmutableSet.of("student", "physics"));
+        testEvent.setEventStatus(EventStatus.OPEN);
+        testEvent.setDate(new Date(System.currentTimeMillis()+24*60*60*1000)); // future dated
+        testEvent.setAllowGroupReservations(true);
+
+        // Mocks the counts for the places available calculation from the database
+        // TODO we should make this a helper method in the test really
+        Map<BookingStatus, Map<Role, Long>> placesAvailableMap = generatePlacesAvailableMap();
+
+        RegisteredUserDTO someUser = new RegisteredUserDTO();
+        someUser.setId(6L);
+        someUser.setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
+        someUser.setRole(Role.STUDENT);
+
+        EventBookingDTO firstBooking = new EventBookingDTO();
+        UserSummaryDTO firstUser = new UserSummaryDTO();
+        firstUser.setRole(Role.STUDENT);
+        firstBooking.setUserBooked(firstUser);
+        firstBooking.setBookingStatus(BookingStatus.RESERVED);
+        placesAvailableMap.get(BookingStatus.RESERVED).put(Role.STUDENT, 1L);
+
+        EventBookingDTO secondBooking = new EventBookingDTO();
+        UserSummaryDTO secondUser = new UserSummaryDTO();
+        secondUser.setRole(Role.STUDENT);
+        secondBooking.setUserBooked(secondUser);
+        secondBooking.setBookingStatus(BookingStatus.CONFIRMED);
+        placesAvailableMap.get(BookingStatus.CONFIRMED).put(Role.STUDENT, 1L);
+
+        List<EventBookingDTO> currentBookings = Arrays.asList(firstBooking, secondBooking);
+
+        expect(dummyEventBookingPersistenceManager.getEventBookingStatusCounts(testEvent.getId(), false)).andReturn(placesAvailableMap).atLeastOnce();
+
+        expect(dummyEventBookingPersistenceManager.getBookingByEventId(testEvent.getId())).andReturn(currentBookings);
+        expect(dummyEventBookingPersistenceManager.isUserBooked(testEvent.getId(), someUser.getId())).andReturn(false);
+
+        dummyEventBookingPersistenceManager.acquireDistributedLock(testEvent.getId());
+        expectLastCall().atLeastOnce();
+
+        expect(dummyEventBookingPersistenceManager.createBooking(testEvent.getId(), someUser.getId(), null,
+                BookingStatus.CONFIRMED, someAdditionalInformation)).andReturn(firstBooking).atLeastOnce();
+
+        dummyEventBookingPersistenceManager.releaseDistributedLock(testEvent.getId());
+        expectLastCall().atLeastOnce();
+
+        replay(dummyEventBookingPersistenceManager);
+        Long placesAvailable = ebm.getPlacesAvailable(testEvent);
+        Long expectedPlacesAvailable = 0L;
+        assertEquals("RESERVED bookings should count towards the places available in availability calculations",
+                expectedPlacesAvailable, placesAvailable);
+    }
+
+    @Test
     public void isUserAbleToManageEvent_checkUsersWithDifferentRoles_success() throws Exception {
         EventBookingManager eventBookingManager = this.buildEventBookingManager();
 
@@ -715,6 +773,7 @@ public class EventBookingManagerTest {
         placesAvailableMap.put(BookingStatus.CANCELLED, Maps.newHashMap());
         placesAvailableMap.put(BookingStatus.WAITING_LIST, Maps.newHashMap());
         placesAvailableMap.put(BookingStatus.CONFIRMED, Maps.newHashMap());
+        placesAvailableMap.put(BookingStatus.RESERVED, Maps.newHashMap());
         return placesAvailableMap;
     }
 }
