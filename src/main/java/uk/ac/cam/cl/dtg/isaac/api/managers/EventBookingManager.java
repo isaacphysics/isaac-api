@@ -815,6 +815,16 @@ public class EventBookingManager {
             }
         }
 
+        if (!countOnlyConfirmed && eventBookingStatusCounts.get(BookingStatus.RESERVED) != null) {
+            for (Map.Entry<Role, Long> roleLongEntry : eventBookingStatusCounts.get(BookingStatus.RESERVED).entrySet()) {
+                if (Role.STUDENT.equals(roleLongEntry.getKey())) {
+                    studentCount = studentCount + roleLongEntry.getValue();
+                }
+
+                totalBooked = totalBooked + roleLongEntry.getValue();
+            }
+        }
+
         // capacity of the event
         if (isStudentEvent) {
             return numberOfPlaces - studentCount;
