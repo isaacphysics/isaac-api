@@ -42,6 +42,7 @@ public class EventBookingManagerTest {
     private Map<String, String> someAdditionalInformation;
     private PropertiesLoader dummyPropertiesLoader;
     private GroupManager dummyGroupManager;
+    private Date someFutureDate;
 
     /**
      * Initial configuration of tests.
@@ -60,6 +61,7 @@ public class EventBookingManagerTest {
         expect(this.dummyPropertiesLoader.getProperty(EVENT_ADMIN_EMAIL)).andReturn("admin@hostname.com").anyTimes();
         expect(this.dummyPropertiesLoader.getProperty(EVENT_ICAL_UID_DOMAIN)).andReturn("hostname.com").anyTimes();
         this.someAdditionalInformation = Maps.newHashMap();
+        this.someFutureDate = new Date(System.currentTimeMillis()+7*24*60*60*1000);
     }
 
     @Test
@@ -71,7 +73,7 @@ public class EventBookingManagerTest {
         testEvent.setNumberOfPlaces(1);
         testEvent.setTags(ImmutableSet.of("student", "physics"));
         testEvent.setEmailEventDetails("Some Details");
-        testEvent.setDate(new Date(System.currentTimeMillis()+24*60*60*1000)); // future dated
+        testEvent.setDate(someFutureDate);
 
         RegisteredUserDTO someUser = new RegisteredUserDTO();
         someUser.setId(6L);
@@ -122,7 +124,7 @@ public class EventBookingManagerTest {
         testEvent.setId("someEventId");
         testEvent.setNumberOfPlaces(1);
         testEvent.setTags(ImmutableSet.of("student", "physics"));
-        testEvent.setDate(new Date(System.currentTimeMillis()+24*60*60*1000)); // future dated
+        testEvent.setDate(someFutureDate);
 
         RegisteredUserDTO someUser = new RegisteredUserDTO();
         someUser.setId(6L);
@@ -169,7 +171,7 @@ public class EventBookingManagerTest {
         testEvent.setId("someEventId");
         testEvent.setNumberOfPlaces(1);
         testEvent.setTags(ImmutableSet.of("teacher", "physics"));
-        testEvent.setDate(new Date(System.currentTimeMillis()+24*60*60*1000)); // future dated
+        testEvent.setDate(someFutureDate);
 
         RegisteredUserDTO someUser = new RegisteredUserDTO();
         someUser.setId(6L);
@@ -269,7 +271,7 @@ public class EventBookingManagerTest {
         testEvent.setId("someEventId");
         testEvent.setNumberOfPlaces(1);
         testEvent.setTags(ImmutableSet.of("teacher", "physics"));
-        testEvent.setDate(new Date(System.currentTimeMillis()+24*60*60*1000)); // future dated
+        testEvent.setDate(someFutureDate);
 
         RegisteredUserDTO someUser = new RegisteredUserDTO();
         someUser.setId(6L);
@@ -324,7 +326,7 @@ public class EventBookingManagerTest {
         testEvent.setNumberOfPlaces(1);
         testEvent.setTags(ImmutableSet.of("teacher", "physics"));
         testEvent.setEmailEventDetails("Some Details");
-        testEvent.setDate(new Date(System.currentTimeMillis()+24*60*60*1000)); // future dated
+        testEvent.setDate(someFutureDate);
 
         RegisteredUserDTO someUser = new RegisteredUserDTO();
         someUser.setId(6L);
@@ -382,7 +384,7 @@ public class EventBookingManagerTest {
         testEvent.setNumberOfPlaces(2);
         testEvent.setTags(ImmutableSet.of("teacher", "physics"));
         testEvent.setEmailEventDetails("Some Details");
-        testEvent.setDate(new Date(System.currentTimeMillis()+24*60*60*1000)); // future dated
+        testEvent.setDate(someFutureDate);
 
         RegisteredUserDTO firstUserFull = new RegisteredUserDTO();
         firstUserFull.setId(6L);
@@ -449,7 +451,7 @@ public class EventBookingManagerTest {
         testEvent.setNumberOfPlaces(1);
         testEvent.setTags(ImmutableSet.of("teacher", "physics"));
         testEvent.setEmailEventDetails("some details");
-        testEvent.setDate(new Date(System.currentTimeMillis()+24*60*60*1000)); // future dated
+        testEvent.setDate(someFutureDate);
 
         RegisteredUserDTO someUser = new RegisteredUserDTO();
         someUser.setId(6L);
@@ -518,7 +520,7 @@ public class EventBookingManagerTest {
         testEvent.setId("someEventId");
         testEvent.setNumberOfPlaces(1);
         testEvent.setTags(ImmutableSet.of("teacher", "physics"));
-        testEvent.setDate(new Date(System.currentTimeMillis()+24*60*60*1000)); // future dated
+        testEvent.setDate(someFutureDate);
 
         RegisteredUserDTO someUser = new RegisteredUserDTO();
         someUser.setId(6L);
@@ -572,6 +574,41 @@ public class EventBookingManagerTest {
     }
 
     @Test
+    public void getPlacesAvailable_checkEventCapacity_capacityCalculatedCorrectly() throws Exception {
+        // Create a future event and event booking manager
+        EventBookingManager ebm = this.buildEventBookingManager();
+        int initialNumberOfPlaces = 1000;
+        IsaacEventPageDTO testEvent = new IsaacEventPageDTO() {{
+            setId("someEventId");
+            setNumberOfPlaces(initialNumberOfPlaces);
+            setTags(ImmutableSet.of("student"));
+            setEventStatus(EventStatus.OPEN);
+            setDate(someFutureDate);
+        }};
+
+        // Mock the event booking status count result from the event booking persistence manager
+        Map<BookingStatus, Map<Role, Long>> placesAvailableMap = generatePlacesAvailableMap();
+        // Student places
+        placesAvailableMap.get(BookingStatus.CONFIRMED).put(Role.STUDENT, 1L);
+        placesAvailableMap.get(BookingStatus.WAITING_LIST).put(Role.STUDENT, 10L);
+        placesAvailableMap.get(BookingStatus.CANCELLED).put(Role.STUDENT, 100L);
+        // Teacher places
+        placesAvailableMap.get(BookingStatus.CONFIRMED).put(Role.TEACHER, 2L);
+        placesAvailableMap.get(BookingStatus.WAITING_LIST).put(Role.TEACHER, 20L);
+        placesAvailableMap.get(BookingStatus.CANCELLED).put(Role.TEACHER, 200L);
+
+        expect(dummyEventBookingPersistenceManager.getEventBookingStatusCounts(testEvent.getId(), false))
+                .andReturn(placesAvailableMap).atLeastOnce();
+
+        // Run the test for a student event
+        replay(dummyEventBookingPersistenceManager);
+        Long actualPlacesAvailable = ebm.getPlacesAvailable(testEvent);
+        Long expectedPlacesAvailable = (long)initialNumberOfPlaces - 1 - 10;
+        assertEquals("STUDENT events should only count confirmed and waiting list student places in availability calculations",
+                expectedPlacesAvailable, actualPlacesAvailable);
+    }
+
+    @Test
     public void getEventPage_checkWaitingListOnlyEventCapacity_capacityCalculatedCorrectly() throws
             Exception {
         EventBookingManager ebm = this.buildEventBookingManager();
@@ -580,7 +617,7 @@ public class EventBookingManagerTest {
         testEvent.setNumberOfPlaces(2);
         testEvent.setTags(ImmutableSet.of("student", "physics"));
         testEvent.setEventStatus(EventStatus.WAITING_LIST_ONLY);
-        testEvent.setDate(new Date(System.currentTimeMillis()+24*60*60*1000)); // future dated
+        testEvent.setDate(someFutureDate);
 
         RegisteredUserDTO someUser = new RegisteredUserDTO();
         someUser.setId(6L);
@@ -699,7 +736,7 @@ public class EventBookingManagerTest {
     }
 
 
-    private Map<BookingStatus, Map<Role, Long>> generatePlacesAvailableMap() {
+    static public Map<BookingStatus, Map<Role, Long>> generatePlacesAvailableMap() {
         Map<BookingStatus, Map<Role, Long>> placesAvailableMap = Maps.newHashMap();
         placesAvailableMap.put(BookingStatus.CANCELLED, Maps.newHashMap());
         placesAvailableMap.put(BookingStatus.WAITING_LIST, Maps.newHashMap());
