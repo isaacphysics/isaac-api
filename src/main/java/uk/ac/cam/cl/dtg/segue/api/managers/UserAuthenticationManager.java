@@ -321,14 +321,18 @@ public class UserAuthenticationManager {
             if (null == referrer) {
                 log.warn("Authenticated request has no 'Referer' information set! Accessing: "
                         + request.getPathInfo());
-            } else if (!referrer.startsWith("https://" + properties.getProperty(HOST_NAME) + "/")) {
+            } else if (!(referrer.startsWith("https://" + properties.getProperty(HOST_NAME) + "/")
+                || referrer.startsWith("https://beta." + properties.getProperty(HOST_NAME) + "/"))) { // FIXME: Remove beta!
+
                 log.warn("Authenticated request has unexpected Referer: '" + referrer + "'. Accessing: "
                         + request.getPathInfo());
             }
             // If the client sends an Origin header, we can check its value. If they do not send the header,
             // we can draw no conclusions.
             String origin = request.getHeader("Origin");
-            if (null != origin && !origin.equals("https://" + properties.getProperty(HOST_NAME))) {
+            if (null != origin && !(origin.equals("https://" + properties.getProperty(HOST_NAME))
+                || origin.equals("https://beta." + properties.getProperty(HOST_NAME)))) { // FIXME: Remove beta!
+
                 log.warn("Authenticated request has unexpected Origin: '" + origin + "'. Accessing: "
                         + request.getMethod() + " " + request.getPathInfo());
             }
