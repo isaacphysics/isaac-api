@@ -329,8 +329,9 @@ public class PgEventBookings implements EventBookings {
             ResultSet results = pst.executeQuery();
 
             Map<BookingStatus, Map<Role, Long>> returnResult = Maps.newHashMap();
-            Map<Role, Long> roleCountMap = Maps.newHashMap();
             while (results.next()) {
+                Map<Role, Long> roleCountMap = returnResult.getOrDefault(
+                        BookingStatus.valueOf(results.getString("status")), Maps.newHashMap());
                 roleCountMap.put(Role.valueOf(results.getString("role")), results.getLong("count"));
                 returnResult.put(BookingStatus.valueOf(results.getString("status")), roleCountMap);
             }
