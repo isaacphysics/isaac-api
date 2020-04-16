@@ -28,9 +28,17 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import static org.easymock.EasyMock.*;
-import static org.junit.Assert.*;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static org.easymock.EasyMock.anyObject;
+import static org.easymock.EasyMock.createMock;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.expectLastCall;
+import static org.easymock.EasyMock.replay;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_ADMIN_EMAIL;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_ICAL_UID_DOMAIN;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.MAIL_NAME;
 
 /**
  * EventBookingManagerTest.
@@ -736,7 +744,7 @@ public class EventBookingManagerTest {
     }
 
 
-    static public Map<BookingStatus, Map<Role, Long>> generatePlacesAvailableMap() {
+    static private Map<BookingStatus, Map<Role, Long>> generatePlacesAvailableMap() {
         Map<BookingStatus, Map<Role, Long>> placesAvailableMap = Maps.newHashMap();
         placesAvailableMap.put(BookingStatus.CANCELLED, Maps.newHashMap());
         placesAvailableMap.put(BookingStatus.WAITING_LIST, Maps.newHashMap());
