@@ -1,6 +1,7 @@
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 import com.google.api.client.util.Maps;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import org.junit.Before;
@@ -808,10 +809,37 @@ public class EventBookingManagerTest {
         }
     }
 
+    @Test
+    public void eventAllowsGroupBookings_checkAllCases_defaultIsFalseAndOtherwiseReportedCorrectly() throws Exception {
+        class TestCase {IsaacEventPageDTO eventPageDTO; Boolean expected; String assertion;}
+
+        List<TestCase> testCases = ImmutableList.of(
+            new TestCase() {{
+                eventPageDTO = new IsaacEventPageDTO();
+                expected = false;
+                assertion = "The default case should return false";
+            }},
+            new TestCase() {{
+                eventPageDTO = new IsaacEventPageDTO() {{setAllowGroupReservations(true);}};
+                expected = true;
+                assertion = "Events which allow group reservations should return true";
+            }},
+            new TestCase() {{
+                eventPageDTO = new IsaacEventPageDTO() {{setAllowGroupReservations(false);}};
+                expected = false;
+                assertion = "Events which explicitly disallow group reservations should return false";
+            }}
+        );
+
+        for (TestCase testCase : testCases) {
+            boolean actual = EventBookingManager.eventAllowsGroupBookings(testCase.eventPageDTO);
+            assertEquals(testCase.assertion, testCase.expected, actual);
+        }
+    }
+
     private EventBookingManager buildEventBookingManager() {
         return new EventBookingManager(dummyEventBookingPersistenceManager, dummyEmailManager, dummyUserAssociationManager, dummyPropertiesLoader, dummyGroupManager);
     }
-
 
     static private Map<BookingStatus, Map<Role, Long>> generatePlacesAvailableMap() {
         Map<BookingStatus, Map<Role, Long>> placesAvailableMap = Maps.newHashMap();
