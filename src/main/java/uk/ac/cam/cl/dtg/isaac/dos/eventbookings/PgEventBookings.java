@@ -15,27 +15,29 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dos.eventbookings;
 
-import java.sql.*;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.zip.CRC32;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
-
-import com.google.api.client.util.Lists;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 
 import javax.annotation.Nullable;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.zip.CRC32;
 
 /**
  * PgEventBookings.
@@ -335,10 +337,14 @@ public class PgEventBookings implements EventBookings {
             ResultSet results = pst.executeQuery();
 
             Map<BookingStatus, Map<Role, Long>> returnResult = Maps.newHashMap();
-            Map<Role, Long> roleCountMap = Maps.newHashMap();
             while (results.next()) {
-                roleCountMap.put(Role.valueOf(results.getString("role")), results.getLong("count"));
-                returnResult.put(BookingStatus.valueOf(results.getString("status")), roleCountMap);
+                BookingStatus bookingStatus = BookingStatus.valueOf(results.getString("status"));
+                Role role = Role.valueOf(results.getString("role"));
+                Long count = results.getLong("count");
+
+                Map<Role, Long> roleCountMap = returnResult.getOrDefault(bookingStatus, Maps.newHashMap());
+                roleCountMap.put(role, count);
+                returnResult.put(bookingStatus, roleCountMap);
             }
 
             return returnResult;
