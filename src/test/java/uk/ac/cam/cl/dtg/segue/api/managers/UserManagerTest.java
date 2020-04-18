@@ -708,7 +708,7 @@ public class UserManagerTest {
     private Map<String, String> getSessionInformationAsAMap(UserAuthenticationManager userAuthManager, String userId, String dateExpires, Integer sessionToken)
             throws Exception {
         String validHMAC = Whitebox.<String> invokeMethod(userAuthManager, "calculateSessionHMAC", dummyHMACSalt, userId,
-                dateExpires, sessionToken.toString());
+                dateExpires, sessionToken.toString(), null);
         return ImmutableMap.of(Constants.SESSION_USER_ID, userId, Constants.DATE_EXPIRES, dateExpires, Constants.HMAC,
                 validHMAC, Constants.SESSION_TOKEN, sessionToken.toString());
     }

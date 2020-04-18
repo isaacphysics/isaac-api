@@ -17,13 +17,16 @@ package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
+
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.Validate;
 import org.eclipse.jetty.websocket.api.UpgradeRequest;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
@@ -34,6 +37,7 @@ import uk.ac.cam.cl.dtg.segue.auth.IOAuth1Authenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuthAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IPasswordAuthenticator;
+
 import uk.ac.cam.cl.dtg.segue.auth.OAuth1Token;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.*;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
@@ -43,10 +47,12 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
+import uk.ac.cam.cl.dtg.segue.dos.users.TOTPSharedSecret;
 import uk.ac.cam.cl.dtg.segue.dos.users.UserFromAuthProvider;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
+import javax.annotation.Nullable;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import javax.servlet.http.Cookie;
@@ -62,6 +68,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -85,25 +92,23 @@ public class UserAuthenticationManager {
     private final boolean setSecureCookies;
     
     private final Map<AuthenticationProvider, IAuthenticator> registeredAuthProviders;
-    
+
     /**
      * Fully injectable constructor.
-     * 
-     * @param database
+     *  @param database
      *            - an IUserDataManager that will support persistence.
      * @param properties
      *            - A property loader
      * @param providersToRegister
-     *            - A map of known authentication providers.
+ *            - A map of known authentication providers.
      * @param dtoMapper
-     *            - the preconfigured DO to DTO object mapper for user objects.
+*            - the preconfigured DO to DTO object mapper for user objects.
      * @param emailQueue
-     *            - the preconfigured communicator manager for sending e-mails.
      */
     @Inject
     public UserAuthenticationManager(final IUserDataManager database,
-            final PropertiesLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
-            final MapperFacade dtoMapper, final EmailManager emailQueue) {
+                                     final PropertiesLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
+                                     final MapperFacade dtoMapper, final EmailManager emailQueue) {
         Validate.notNull(properties.getProperty(HMAC_SALT));
         Validate.notNull(Integer.parseInt(properties.getProperty(SESSION_EXPIRY_SECONDS)));
         Validate.notNull(properties.getProperty(HOST_NAME));
@@ -298,7 +303,7 @@ public class UserAuthenticationManager {
      * @param request containing session information
      * @return either a user or null if we couldn't find the user for whatever reason.
      */
-    public RegisteredUser getUserFromSession(final HttpServletRequest request) {
+    public RegisteredUser getUserFromSession(final HttpServletRequest request, final boolean allowIncompleteLoginsToReturnUser) {
         // WARNING: There are two public getUserFromSession methods: ensure you check both!
         Validate.notNull(request);
 
@@ -338,11 +343,11 @@ public class UserAuthenticationManager {
             }
         }
 
-        return getUserFromSessionInformationMap(currentSessionInformation);
+        return getUserFromSessionInformationMap(currentSessionInformation, allowIncompleteLoginsToReturnUser);
     }
 
     /**
-     * @see #getUserFromSession(HttpServletRequest) - the two types of "request" have identical methods but are not
+     * @see #getUserFromSession(HttpServletRequest,boolean) - the two types of "request" have identical methods but are not
      *           related by interfaces or inheritance and so require duplicated methods!
      */
     public RegisteredUser getUserFromSession(final UpgradeRequest request) {
@@ -361,19 +366,35 @@ public class UserAuthenticationManager {
             return null;
         }
 
-        return getUserFromSessionInformationMap(currentSessionInformation);
+        return getUserFromSessionInformationMap(currentSessionInformation, false);
     }
 
     /**
      * This method tries to address some of the duplication when extracting a user from a request.
      *
-     * @see #getUserFromSession(HttpServletRequest) - there are two types of "request" and they have identical methods
+     * Note: This method has an important security enforcing function. Users who haven't completed MFA will have a cookie
+     * as per normal users but will have an additional status flag that indicates they haven't completed MFA.
+     * This method will act upon that by refusing to return the user if the boolean parameter is set to false.
+     *
+     * @see #getUserFromSession(HttpServletRequest, boolean) - there are two types of "request" and they have identical methods
      * @see #getUserFromSession(UpgradeRequest) -     but unrelated by interfaces/inheritance, so require duplication!
      *
      * @param currentSessionInformation - the session information map extracted from the cookie.
+     * @param allowIncompleteLoginsToReturnUser - boolean if true will allow users that haven't completed MFA to be returned,
+     *                                          false will be stricter and return null if user hasn't completed MFA.
      * @return either the valid user from the cookie, or null if no valid user
      */
-    private RegisteredUser getUserFromSessionInformationMap(final Map<String, String> currentSessionInformation) {
+    private RegisteredUser getUserFromSessionInformationMap(final Map<String, String> currentSessionInformation,
+                                                            final boolean allowIncompleteLoginsToReturnUser) {
+        if (!allowIncompleteLoginsToReturnUser) {
+            // check if the session has a caveat about incomplete MFA Login
+            if (!Strings.isNullOrEmpty(currentSessionInformation.get(AUTH_COOKIE_ADDITIONAL_DATA))
+                    && currentSessionInformation.get(AUTH_COOKIE_ADDITIONAL_DATA).contains(INCOMPLETE_MFA_LOGIN)) {
+                // login is incomplete we cannot proceed.
+                log.debug("Incomplete MFA flow - no user object to be provided");
+                return null;
+            }
+        }
         // Retrieve the user from database.
         try {
             // Get the user the cookie claims to belong to from the session information:
@@ -405,10 +426,24 @@ public class UserAuthenticationManager {
      */
     public RegisteredUser createUserSession(final HttpServletRequest request, final HttpServletResponse response,
             final RegisteredUser user) {
-        this.createSession(request, response, user);
+        this.createSession(request, response, user, null);
         return user;
     }
-    
+
+    /**
+     * Create a signed session based on the user DO provided and the http request and response.
+     *
+     * @param request - for creating the session
+     * @param response - for creating the session
+     * @param user - the user who should be logged in.
+     * @return the request and response will be modified and the original userDO will be returned for convenience.
+     */
+    public RegisteredUser createIncompleteLoginUserSession(final HttpServletRequest request, final HttpServletResponse response,
+                                            final RegisteredUser user) {
+        this.createSession(request, response, user, Collections.singletonList(INCOMPLETE_MFA_LOGIN));
+        return user;
+    }
+
     /**
      * Destroy a session attached to the request.
      * 
@@ -792,7 +827,7 @@ public class UserAuthenticationManager {
      *            account to associate the session with.
      */
     private void createSession(final HttpServletRequest request, final HttpServletResponse response,
-            final RegisteredUser user) {
+            final RegisteredUser user, @Nullable final List<String> additionalCookieFlags) {
         Validate.notNull(response);
         Validate.notNull(user);
         Validate.notNull(user.getId());
@@ -808,14 +843,21 @@ public class UserAuthenticationManager {
             calendar.add(Calendar.SECOND, sessionExpiryTimeInSeconds);
             String sessionExpiryDate = sessionDateFormat.format(calendar.getTime());
 
-            String sessionHMAC = this.calculateSessionHMAC(hmacKey, userId, sessionExpiryDate, userSessionToken);
+            ImmutableMap.Builder<String, String> sessionInformationBuilder = new ImmutableMap.Builder<>();
+            sessionInformationBuilder.put(SESSION_USER_ID, userId);
+            sessionInformationBuilder.put(SESSION_TOKEN, userSessionToken);
+            sessionInformationBuilder.put(DATE_EXPIRES, sessionExpiryDate);
 
-            Map<String, String> sessionInformation = ImmutableMap.of(
-                    SESSION_USER_ID, userId,
-                    SESSION_TOKEN, userSessionToken,
-                    DATE_EXPIRES, sessionExpiryDate,
-                    HMAC, sessionHMAC
-            );
+            String additionalFlagsAsString = null;
+            if (additionalCookieFlags != null) {
+                additionalFlagsAsString = serializationMapper.writeValueAsString(additionalCookieFlags);
+                sessionInformationBuilder.put(AUTH_COOKIE_ADDITIONAL_DATA, serializationMapper.writeValueAsString(additionalCookieFlags));
+            }
+
+            String sessionHMAC = this.calculateSessionHMAC(hmacKey, userId, sessionExpiryDate, userSessionToken, additionalFlagsAsString);
+            sessionInformationBuilder.put(HMAC, sessionHMAC);
+
+            Map<String, String> sessionInformation = sessionInformationBuilder.build();
 
             Cookie authCookie = new Cookie(SEGUE_AUTH_COOKIE,
                     serializationMapper.writeValueAsString(sessionInformation));
@@ -833,7 +875,6 @@ public class UserAuthenticationManager {
             log.error("Unable to save cookie.", e1);
         }
     }
-    
     
     /**
      * Executes checks on the users sessions to ensure it is valid
@@ -859,6 +900,7 @@ public class UserAuthenticationManager {
         String userId = sessionInformation.get(SESSION_USER_ID);
         String userSessionToken = sessionInformation.get(SESSION_TOKEN);
         String sessionDate;
+        String additionalInformation = sessionInformation.get(AUTH_COOKIE_ADDITIONAL_DATA);
         String sessionHMAC = sessionInformation.get(HMAC);
 
         // FIXME: old cookies should be deprecated soon, by removing the userSessionToken is null case!
@@ -868,7 +910,7 @@ public class UserAuthenticationManager {
             ourHMAC = this.calculateSessionHMAC(hmacKey, userId, sessionDate);
         } else {
             sessionDate = sessionInformation.get(DATE_EXPIRES);
-            ourHMAC = this.calculateSessionHMAC(hmacKey, userId, sessionDate, userSessionToken);
+            ourHMAC = this.calculateSessionHMAC(hmacKey, userId, sessionDate, userSessionToken, additionalInformation);
         }
 
         // Check that there is a user ID provided:
@@ -909,7 +951,7 @@ public class UserAuthenticationManager {
 
         return true;
     }
-    
+
     /**
      * Calculate the session HMAC value based on the properties of interest.
      * 
@@ -923,8 +965,14 @@ public class UserAuthenticationManager {
      *            - a token allowing session invalidation
      * @return HMAC signature.
      */
-    private String calculateSessionHMAC(final String key, final String userId, final String currentDate, final String sessionToken) {
-        return UserAuthenticationManager.calculateHMAC(key, userId + "|" + currentDate + "|" + sessionToken);
+    private String calculateSessionHMAC(final String key, final String userId, final String currentDate, final String sessionToken, final String additionalInformation) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(userId);
+        sb.append("|").append(currentDate);
+        sb.append("|").append(sessionToken);
+        sb.append("|").append(additionalInformation);
+
+        return UserAuthenticationManager.calculateHMAC(key, sb.toString());
     }
 
     /**

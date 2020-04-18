@@ -136,6 +136,16 @@ public final class Constants {
     public static final String DATE_EXPIRES = "DATE_EXPIRES";
 
     /**
+     * Constant representing the key for the additional date property - used in HMAC calculations.
+     */
+    public static final String AUTH_COOKIE_ADDITIONAL_DATA = "AUTH_COOKIE_ADDITIONAL_DATA";
+
+    /**
+     * Constant representing the key for the additional date property - used in HMAC calculations.
+     */
+    public static final String INCOMPLETE_MFA_LOGIN = "INCOMPLETE_MFA_LOGIN";
+
+    /**
      * Constant representing the key for the HMAC property - used in HMAC calculations.
      */
     public static final String HMAC = "HMAC";

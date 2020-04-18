@@ -16,10 +16,12 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
 import com.google.api.client.util.Maps;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
@@ -27,21 +29,10 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AccountAlreadyLinkedException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationCodeException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.*;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dos.users.Role;
+
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -93,14 +84,14 @@ public class AuthenticationFacade extends AbstractSegueFacade {
      */
     @Inject
     public AuthenticationFacade(final PropertiesLoader properties, final UserAccountManager userManager,
-            final ILogManager logManager, final IMisuseMonitor misuseMonitor) {
+                                final ILogManager logManager, final IMisuseMonitor misuseMonitor) {
         super(properties, logManager);
         this.userManager = userManager;
         this.misuseMonitor = misuseMonitor;
     }
 
     /**
-     * Get authentication provider information for the current user
+     * Get authentication provider information for the current user.
      *
      * @param request
      *            - the http request containing session information of the user currently logged in
@@ -116,7 +107,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     }
 
     /**
-     * Get authentication provider information for the specified user
+     * Get authentication provider information for the specified user.
      *
      * @param request
      *            - the http request containing session information of the user currently logged in
@@ -377,9 +368,15 @@ public class AuthenticationFacade extends AbstractSegueFacade {
         // ok we need to hand over to user manager
         try {
             RegisteredUserDTO userToReturn = userManager.authenticateWithCredentials(request, response, signinProvider, email, password);
+
             this.getLogManager().logEvent(userToReturn, request, SegueLogType.LOG_IN, Maps.newHashMap());
             SegueMetrics.LOG_IN.inc();
+
             return Response.ok(userToReturn).build();
+        } catch (AdditionalAuthenticationRequiredException e) {
+            // in this case the users account has been configured to require a second factor
+            // The password challange has completed successfully but they must complete the second step of the flow
+            return Response.accepted(ImmutableMap.of("2FA_REQUIRED", true)).build();
         } catch (AuthenticationProviderMappingException e) {
             String errorMsg = "Unable to locate the provider specified";
             log.error(errorMsg, e);
@@ -432,6 +429,46 @@ public class AuthenticationFacade extends AbstractSegueFacade {
             String errorMsg = "Internal Database error has occurred during logout.";
             log.error(errorMsg, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
+        }
+    }
+
+    /**
+     * 2nd step of authentication process for local user/passwords to check TOTP token.
+     *
+     * @param request - http request
+     * @param response - http response - to add modified cookie
+     * @param mfaResponse - mfaResponse
+     * @return successfully logged in user or error
+     */
+    @POST
+    @Path("mfa/challenge")
+    @ApiOperation(value = "Continuation of login flow for users who have 2FA enabled")
+    @Produces(MediaType.APPLICATION_JSON)
+    public final Response challenge(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                                    final Map<String, String> mfaResponse) {
+        if (Strings.isNullOrEmpty(mfaResponse.get("mfaVerificationCode"))) {
+            return SegueErrorResponse.getBadRequestResponse("Response must include mfaVerificationCode");
+        }
+
+        final Integer verificationCode = Integer.parseInt(mfaResponse.get("mfaVerificationCode"));
+        try {
+            RegisteredUserDTO userToReturn = this.userManager.authenticateMFA(request, response, verificationCode);
+
+            this.getLogManager().logEvent(userToReturn, request, SegueLogType.LOG_IN, Maps.newHashMap());
+            SegueMetrics.LOG_IN.inc();
+
+            return Response.ok(userToReturn).build();
+        } catch (NumberFormatException e) {
+            return SegueErrorResponse.getBadRequestResponse("Verification code is not in the correct format.");
+        } catch (IncorrectCredentialsProvidedException | NoCredentialsAvailableException e) {
+            log.debug("Incorrect credentials in MFA" , e);
+            return new SegueErrorResponse(Status.UNAUTHORIZED, "Incorrect credentials provided.").toResponse();
+        } catch (SegueDatabaseException e) {
+            String errorMsg = "Internal Database error has occurred during mfa challenge.";
+            log.error(errorMsg, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getBadRequestResponse("Unable to complete 2FA process as the user hasn't started the login flow.");
         }
     }
 }

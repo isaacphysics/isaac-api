@@ -16,8 +16,6 @@
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import com.google.api.client.util.Lists;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import ma.glasnost.orika.MapperFacade;
@@ -29,23 +27,11 @@ import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IPasswordAuthenticator;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationCodeException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
+import uk.ac.cam.cl.dtg.segue.auth.ISecondFactorAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.*;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
@@ -60,6 +46,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
+import uk.ac.cam.cl.dtg.segue.dos.users.TOTPSharedSecret;
 import uk.ac.cam.cl.dtg.segue.dos.users.UserAuthenticationSettings;
 import uk.ac.cam.cl.dtg.segue.dos.users.UserFromAuthProvider;
 import uk.ac.cam.cl.dtg.segue.dto.content.EmailTemplateDTO;
@@ -109,33 +96,34 @@ public class UserAccountManager implements IUserAccountManager {
     private final UserAuthenticationManager userAuthenticationManager;
     private final PropertiesLoader properties;
 
+    private final ISecondFactorAuthenticator secondFactorManager;
+
     /**
      * Create an instance of the user manager class.
-     * 
-     * @param database
+     *  @param database
      *            - an IUserDataManager that will support persistence.
      * @param questionDb
-     *            - allows this class to instruct the questionDB to merge an anonymous user with a registered user.  
+     *            - allows this class to instruct the questionDB to merge an anonymous user with a registered user.
      * @param properties
-     *            - A property loader
+ *            - A property loader
      * @param providersToRegister
-     *            - A map of known authentication providers.
+*            - A map of known authentication providers.
      * @param dtoMapper
-     *            - the preconfigured DO to DTO object mapper for user objects.
+*            - the preconfigured DO to DTO object mapper for user objects.
      * @param emailQueue
-     *            - the preconfigured communicator manager for sending e-mails.
+*            - the preconfigured communicator manager for sending e-mails.
      * @param temporaryUserCache
-     *            - temporary user cache for anonymous users
+*            - temporary user cache for anonymous users
      * @param logManager
-     *            - so that we can log events for users.
+*            - so that we can log events for users.
      * @param userAuthenticationManager
-     *            - Class responsible for handling sessions, passwords and linked accounts.
+     * @param secondFactorManager
      */
     @Inject
     public UserAccountManager(final IUserDataManager database, final QuestionManager questionDb,
-            final PropertiesLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
-            final MapperFacade dtoMapper, final EmailManager emailQueue, final IAnonymousUserDataManager temporaryUserCache, final ILogManager logManager,
-            final UserAuthenticationManager userAuthenticationManager) {
+                              final PropertiesLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
+                              final MapperFacade dtoMapper, final EmailManager emailQueue, final IAnonymousUserDataManager temporaryUserCache, final ILogManager logManager,
+                              final UserAuthenticationManager userAuthenticationManager, final ISecondFactorAuthenticator secondFactorManager) {
         Validate.notNull(properties.getProperty(HMAC_SALT));
         Validate.notNull(properties.getProperty(SESSION_EXPIRY_SECONDS));
         Validate.notNull(properties.getProperty(HOST_NAME));
@@ -154,6 +142,8 @@ public class UserAccountManager implements IUserAccountManager {
         this.emailManager = emailQueue;
 
         this.userAuthenticationManager = userAuthenticationManager;
+
+        this.secondFactorManager = secondFactorManager;
     }
 
     /**
@@ -325,7 +315,7 @@ public class UserAccountManager implements IUserAccountManager {
     public final RegisteredUserDTO authenticateWithCredentials(final HttpServletRequest request,
             final HttpServletResponse response, final String provider, final String email, final String password)
             throws AuthenticationProviderMappingException, IncorrectCredentialsProvidedException, NoUserException,
-            NoCredentialsAvailableException, SegueDatabaseException {
+            NoCredentialsAvailableException, SegueDatabaseException, AdditionalAuthenticationRequiredException {
         Validate.notBlank(email);
         Validate.notBlank(password);
 
@@ -340,9 +330,30 @@ public class UserAccountManager implements IUserAccountManager {
         RegisteredUser user = this.userAuthenticationManager.getSegueUserFromCredentials(provider, email, password);
         log.debug(String.format("UserId (%s) authenticated with credentials", user.getId()));
 
-        return this.logUserIn(request, response, user);
+        // check if user has MFA enabled, if so we can't just log them in - also they won't have the correct cookie
+        if (secondFactorManager.has2FAConfigured(convertUserDOToUserDTO(user))) {
+            // we can't just log them in we have to set a caveat cookie
+            this.partialLogInForMFA(request, response, user);
+            throw new AdditionalAuthenticationRequiredException();
+        } else {
+            return this.logUserIn(request, response, user);
+        }
     }
-    
+
+    public RegisteredUserDTO authenticateMFA(final HttpServletRequest request, final HttpServletResponse response, final Integer TOTPCode)
+            throws IncorrectCredentialsProvidedException, NoCredentialsAvailableException, SegueDatabaseException, NoUserLoggedInException {
+        RegisteredUser registeredUser = this.retrievePartialLogInForMFA(request);
+
+        if (registeredUser == null) {
+            throw new NoUserLoggedInException();
+        }
+        RegisteredUserDTO userToReturn = convertUserDOToUserDTO(registeredUser);
+        this.secondFactorManager.authenticate2ndFactor(userToReturn, TOTPCode);
+
+        // replace cookie to no longer have caveat
+        return this.logUserIn(request, response, registeredUser);
+    }
+
     /**
      * Utility method to ensure that the credentials provided are the current correct ones. If they are invalid an
      * exception will be thrown otherwise nothing will happen.
@@ -1131,6 +1142,38 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     /**
+     * Check if account has MFA configured.
+     * @param user - who requested it
+     * @return true if yes false if not.
+     */
+    public boolean has2FAConfigured(final RegisteredUserDTO user) throws SegueDatabaseException {
+        return this.secondFactorManager.has2FAConfigured(user);
+    }
+
+    /**
+     * Generate a random shared secret - currently not stored against the users account.
+     *
+     * @param user - who requested it
+     * @return TOTPSharedSecret object
+     */
+    public TOTPSharedSecret getNewSharedSecret(final RegisteredUserDTO user) {
+        return this.secondFactorManager.getNewSharedSecret(user);
+    }
+
+    /**
+     * Activate MFA for user's account by passing secret and code submitted.
+     *
+     * @param user - registered user
+     * @param sharedSecret - shared secret provided by getNewSharedSecret call
+     * @param codeSubmitted - latest TOTP code to confirm successful recording of secret.
+     * @return true if it is now active on the account, false if secret / TOTP code do not match.
+     * @throws SegueDatabaseException - unable to save secret to account.
+     */
+    public boolean activateMFAForUser(final RegisteredUserDTO user, final String sharedSecret, final Integer codeSubmitted) throws SegueDatabaseException {
+        return this.secondFactorManager.activate2FAForUser(user, sharedSecret, codeSubmitted);
+    }
+
+    /**
      * Helper method to convert a user object into a userSummary DTO with as little detail as possible about the user.
      * 
      * @param userToConvert
@@ -1257,8 +1300,30 @@ public class UserAccountManager implements IUserAccountManager {
 
         // now we want to clean up any data generated by the user while they weren't logged in.
         mergeAnonymousUserWithRegisteredUser(anonymousUser, user);
-        
+
         return this.convertUserDOToUserDTO(this.userAuthenticationManager.createUserSession(request, response, user));
+    }
+
+    /**
+     * generate a partially logged in session for the user based on successful password authentication.
+     * To complete this the user must also complete MFA authentication.
+     * @param request
+     * @param response
+     * @param user
+     */
+    private void partialLogInForMFA(final HttpServletRequest request, final HttpServletResponse response,
+                                                 final RegisteredUser user) {
+        this.userAuthenticationManager.createIncompleteLoginUserSession(request, response, user);
+    }
+
+    /**
+     * retrieve a partially logged in session for the user based on successful password authentication.
+     * NOTE: You should not treat users has having logged in using this method as they haven't completed login.
+     *
+     * @param request
+     */
+    private RegisteredUser retrievePartialLogInForMFA(final HttpServletRequest request) {
+        return this.userAuthenticationManager.getUserFromSession(request,true);
     }
 
     /**
@@ -1458,7 +1523,7 @@ public class UserAccountManager implements IUserAccountManager {
      *         invalid session
      */
     private RegisteredUser getCurrentRegisteredUserDO(final HttpServletRequest request) {
-        return this.userAuthenticationManager.getUserFromSession(request);
+        return this.userAuthenticationManager.getUserFromSession(request, false);
     }
 
     /**

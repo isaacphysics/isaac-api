@@ -19,6 +19,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacUserPreferences; // FIXME: Isaac class in Segue!
 
 import com.google.api.client.util.Maps;
+import com.google.common.base.Strings;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.Lists;
@@ -50,6 +51,7 @@ import javax.ws.rs.core.Response.Status;
 import io.swagger.annotations.ApiOperation;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.Validate;
+
 import org.jboss.resteasy.annotations.GZIP;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
@@ -518,6 +520,91 @@ public class UsersFacade extends AbstractSegueFacade {
         }
 
         return Response.ok().build();
+    }
+
+    /**
+     * Endpoint to generate non-persistent new secret for the client.
+     *
+     * This can be used with an appropriate challenge to setup 2FA on the account.
+     *
+     * @param request - http request so we can determine the user.
+     * @return TOTPSharedSecret to allow user next step of setup process
+     */
+    @GET
+    @Path("users/current_user/mfa/new_secret")
+    @ApiOperation(value = "Generate a new 2FA secret for the current user.")
+    @Produces(MediaType.APPLICATION_JSON)
+    public final Response generateMFACode(@Context final HttpServletRequest request) {
+        try {
+            RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(request);
+
+            return Response.ok(this.userManager.getNewSharedSecret(user)).build();
+
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
+    }
+
+    /**
+     * Endpoint to determine whether the current user has MFA enabled or not.
+     *
+     * @param request - http request so we can determine the user.
+     * @return TOTPSharedSecret to allow user next step of setup process
+     */
+    @GET
+    @Path("users/current_user/mfa")
+    @ApiOperation(value = "Does the current user have MFA enabled?.")
+    @Produces(MediaType.APPLICATION_JSON)
+    public final Response getAccountMFAStatus(@Context final HttpServletRequest request) {
+        try {
+            RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(request);
+
+            return Response.ok(ImmutableMap.of("mfaStatus", this.userManager.has2FAConfigured(user))).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            String errorMsg = "Internal Database error has occurred during setup of MFA.";
+            log.error(errorMsg, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
+        }
+    }
+
+    /**
+     * This endpoint is used to setup MFA on a local segue account. User must have requested a shared secret already.
+     *
+     * @param request - containing user information
+     * @param mfaResponse - map which must contain the sharedSecret and mfaVerificationCode
+     * @return success response or error response
+     */
+    @POST
+    @Path("users/current_user/mfa")
+    @ApiOperation(value = "Setup MFA based on successful challenge / response")
+    @Produces(MediaType.APPLICATION_JSON)
+    public final Response setupMFA(@Context final HttpServletRequest request, final Map<String, String> mfaResponse) {
+        try {
+            if (Strings.isNullOrEmpty(mfaResponse.get("sharedSecret")) || Strings.isNullOrEmpty(mfaResponse.get("mfaVerificationCode"))) {
+                return SegueErrorResponse.getBadRequestResponse("Response must include full sharedSecret object and mfaVerificationCode");
+            }
+
+            final String sharedSecret = mfaResponse.get("sharedSecret");
+            final Integer verificationCode = Integer.parseInt(mfaResponse.get("mfaVerificationCode"));
+
+            RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(request);
+            if (this.userManager.activateMFAForUser(user, sharedSecret, verificationCode)) {
+                return Response.ok().build();
+            } else {
+                return SegueErrorResponse.getBadRequestResponse("Verification code is incorrect");
+            }
+
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            String errorMsg = "Internal Database error has occurred during setup of MFA.";
+            log.error(errorMsg, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
+        } catch (NumberFormatException e) {
+            return SegueErrorResponse.getBadRequestResponse("Verification code is not in the correct format.");
+        }
     }
 
     /**
