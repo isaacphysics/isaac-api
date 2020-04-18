@@ -17,8 +17,6 @@ package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import ma.glasnost.orika.MapperFacade;
@@ -33,6 +31,7 @@ import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
+import uk.ac.cam.cl.dtg.segue.auth.ISecondFactorAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
@@ -59,14 +58,12 @@ import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.net.URI;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.createMock;
@@ -99,6 +96,7 @@ public class UserManagerTest {
     private ILogManager dummyLogManager;
     private SegueLocalAuthenticator dummyLocalAuth;
 
+    private ISecondFactorAuthenticator dummySecondFactorAuthenticator;
 
     /**
      * Initial configuration of tests.
@@ -125,6 +123,8 @@ public class UserManagerTest {
         this.dummyUserCache = createMock(IAnonymousUserDataManager.class);
 
         this.dummyLogManager = createMock(ILogManager.class);
+
+        this.dummySecondFactorAuthenticator = createMock(ISecondFactorAuthenticator.class);
 
         expect(this.dummyPropertiesLoader.getProperty(Constants.HMAC_SALT)).andReturn(dummyHMACSalt).anyTimes();
         expect(this.dummyPropertiesLoader.getProperty(Constants.HOST_NAME)).andReturn(dummyHostName).anyTimes();
@@ -689,7 +689,7 @@ public class UserManagerTest {
         providerMap.put(provider, authenticator);
         return new UserAccountManager(dummyDatabase, this.dummyQuestionDatabase, this.dummyPropertiesLoader,
                 providerMap, this.dummyMapper, this.dummyQueue, this.dummyUserCache, this.dummyLogManager,
-                buildTestAuthenticationManager(provider, authenticator));
+                buildTestAuthenticationManager(provider, authenticator), dummySecondFactorAuthenticator);
     }
     
     private UserAuthenticationManager buildTestAuthenticationManager() {
