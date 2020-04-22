@@ -390,20 +390,21 @@ public class EventBookingManager {
             // Obtain an exclusive database lock to lock the event
             this.bookingPersistenceManager.acquireDistributedLock(event.getId());
 
-            // is there space on the event? Teachers don't count for student events.
-            // work out capacity information for the event at this moment in time.
-            this.ensureCapacity(event, user);
-
             // attempt to book them on the event
+            BookingStatus existingBookingStatus = this.getBookingStatus(event.getId(), user.getId());
             EventBookingDTO booking;
-
-            // attempt to book them on the event
-            Set<BookingStatus> upgradableStatuses = new HashSet<>(Arrays.asList(BookingStatus.CANCELLED, BookingStatus.RESERVED));
-            if (this.hasBookingWithAnyOfStatuses(event.getId(), user.getId(), upgradableStatuses)) {
-                // if the user has previously cancelled we should let them book again.
+            if (BookingStatus.RESERVED.equals(existingBookingStatus)) {
+                // as reserved bookings already count toward capacity we DO NOT check capacity
+                booking = this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(),
+                        BookingStatus.CONFIRMED, additionalEventInformation);
+            } else if (BookingStatus.CANCELLED.equals(existingBookingStatus)) {
+                // if the user has previously cancelled we should check capacity and let them book again.
+                this.ensureCapacity(event, user);
                 booking = this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(),
                         BookingStatus.CONFIRMED, additionalEventInformation);
             } else {
+                // check capacity at this moment in time and then create booking
+                this.ensureCapacity(event, user);
                 booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(),
                         BookingStatus.CONFIRMED, additionalEventInformation);
             }
