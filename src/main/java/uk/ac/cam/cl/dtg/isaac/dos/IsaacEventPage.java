@@ -107,7 +107,7 @@ public class IsaacEventPage extends Content {
 		this.numberOfPlaces = numberOfPlaces;
 		this.eventStatus = eventStatus;
 		this.groupReservationLimit = groupReservationLimit != null ? groupReservationLimit : EVENT_GROUP_RESERVATION_LIMIT;
-		this.allowGroupReservations = allowGroupReservations;
+		this.allowGroupReservations = allowGroupReservations != null ? allowGroupReservations : false;
 	}
 
 	/**
