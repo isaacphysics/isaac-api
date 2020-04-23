@@ -857,6 +857,10 @@ public class EventBookingManager {
         return this.bookingPersistenceManager.isUserReserved(eventId, userId);
     }
 
+    public boolean isUserInWaitingList(final String eventId, final Long userId) throws SegueDatabaseException {
+        return this.bookingPersistenceManager.isUserInWaitingList(eventId, userId);
+    }
+
     /**
      * Find out if a user has a booking with a given status.
      *
@@ -1172,16 +1176,15 @@ public class EventBookingManager {
             throw new EventDeadlineException("The booking deadline has passed.");
         }
         // check if already reserved
-        if (requestedBookingStatus.equals(BookingStatus.RESERVED) && this.isUserReserved(event.getId(), user.getId())) {
+        if (requestedBookingStatus.equals(BookingStatus.RESERVED) && (this.isUserReserved(event.getId(), user.getId()) || this.isUserInWaitingList(event.getId(), user.getId()))) {
             throw new DuplicateBookingException(String.format("Unable to reserve onto event (%s) as user (%s) is"
                     + " already reserved on to it.", event.getId(), user.getEmail()));
         }
         // check if already booked
-        if (requestedBookingStatus.equals(BookingStatus.CONFIRMED) && this.isUserBooked(event.getId(), user.getId())) {
+        if (requestedBookingStatus.equals(BookingStatus.CONFIRMED) && (this.isUserBooked(event.getId(), user.getId()) || this.isUserInWaitingList(event.getId(), user.getId()))) {
             throw new DuplicateBookingException(String.format("Unable to book onto event (%s) as user (%s) is already"
                     + " booked on to it.", event.getId(), user.getEmail()));
         }
-        // should we check if already on waiting list too?
 
         // must have verified email
         if (!EmailVerificationStatus.VERIFIED.equals(user.getEmailVerificationStatus())) {
