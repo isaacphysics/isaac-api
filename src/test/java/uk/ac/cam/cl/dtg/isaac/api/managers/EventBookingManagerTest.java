@@ -853,6 +853,7 @@ public class EventBookingManagerTest {
 
         // Define expected external calls
         expect(dummyEventBookingPersistenceManager.isUserReserved(anyString(), anyLong())).andReturn(false).atLeastOnce();
+        expect(dummyEventBookingPersistenceManager.isUserInWaitingList(anyString(), anyLong())).andReturn(false).atLeastOnce();
         dummyEventBookingPersistenceManager.acquireDistributedLock(testCase.event.getId());
         expectLastCall().atLeastOnce();
 
@@ -907,6 +908,7 @@ public class EventBookingManagerTest {
 
         // Define expected external calls
         expect(dummyEventBookingPersistenceManager.isUserReserved(anyString(), anyLong())).andReturn(false).atLeastOnce();
+        expect(dummyEventBookingPersistenceManager.isUserInWaitingList(anyString(), anyLong())).andReturn(false).atLeastOnce();
         dummyEventBookingPersistenceManager.acquireDistributedLock(testCase.event.getId());
         expectLastCall().atLeastOnce();
 
@@ -947,6 +949,7 @@ public class EventBookingManagerTest {
 
         // Define expected external calls
         expect(dummyEventBookingPersistenceManager.isUserReserved(anyString(), anyLong())).andReturn(false).atLeastOnce();
+        expect(dummyEventBookingPersistenceManager.isUserInWaitingList(anyString(), anyLong())).andReturn(false).atLeastOnce();
         dummyEventBookingPersistenceManager.acquireDistributedLock(testCase.event.getId());
         expectLastCall().atLeastOnce();
         expect(dummyEventBookingPersistenceManager
