@@ -12,6 +12,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
@@ -57,6 +58,7 @@ public class EventBookingManagerTest {
     private Map<String, String> someAdditionalInformation;
     private PropertiesLoader dummyPropertiesLoader;
     private GroupManager dummyGroupManager;
+    private UserAccountManager dummyUserAccountManager;
 
     /**
      * Initial configuration of tests.
@@ -67,6 +69,7 @@ public class EventBookingManagerTest {
         this.dummyEventBookingPersistenceManager = createMock(EventBookingPersistenceManager.class);
         this.dummyUserAssociationManager = createMock(UserAssociationManager.class);
         this.dummyGroupManager = createMock(GroupManager.class);
+        this.dummyUserAccountManager = createMock(UserAccountManager.class);
         this.dummyPropertiesLoader = createMock(PropertiesLoader.class);
         expect(this.dummyPropertiesLoader.getProperty(HOST_NAME)).andReturn("hostname.com").anyTimes();
         expect(this.dummyPropertiesLoader.getProperty(MAIL_NAME)).andReturn("Isaac Physics").anyTimes();
@@ -986,7 +989,7 @@ public class EventBookingManagerTest {
     }
 
     private EventBookingManager buildEventBookingManager() {
-        return new EventBookingManager(dummyEventBookingPersistenceManager, dummyEmailManager, dummyUserAssociationManager, dummyPropertiesLoader, dummyGroupManager);
+        return new EventBookingManager(dummyEventBookingPersistenceManager, dummyEmailManager, dummyUserAssociationManager, dummyPropertiesLoader, dummyGroupManager, dummyUserAccountManager);
     }
 
     static private Map<BookingStatus, Map<Role, Long>> generatePlacesAvailableMap() {
