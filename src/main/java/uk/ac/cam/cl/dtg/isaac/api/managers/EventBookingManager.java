@@ -30,7 +30,9 @@ import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailAttachment;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
@@ -57,7 +59,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -81,6 +82,7 @@ public class EventBookingManager {
     private final UserAssociationManager userAssociationManager;
     private final PropertiesLoader propertiesLoader;
     private final GroupManager groupManager;
+    private final UserAccountManager userAccountManager;
 
     /**
      * EventBookingManager.
@@ -94,12 +96,14 @@ public class EventBookingManager {
                                final EmailManager emailManager,
                                final UserAssociationManager userAssociationManager,
                                final PropertiesLoader propertiesLoader,
-                               final GroupManager groupManager) {
+                               final GroupManager groupManager,
+                               final UserAccountManager userAccountManager) {
         this.bookingPersistenceManager = bookingPersistenceManager;
         this.emailManager = emailManager;
         this.userAssociationManager = userAssociationManager;
         this.propertiesLoader = propertiesLoader;
         this.groupManager = groupManager;
+        this.userAccountManager = userAccountManager;
     }
 
     /**
@@ -1043,10 +1047,18 @@ public class EventBookingManager {
                             .build(),
                     EmailType.SYSTEM);
         } else if (booking.getBookingStatus().equals(BookingStatus.RESERVED)) {
+            String reservingUserName;
+            try {
+                RegisteredUserDTO reservedByUser = userAccountManager.getUserDTOById(booking.getReservedById(), true);
+                reservingUserName = String.format("%s %s", reservedByUser.getGivenName(), reservedByUser.getFamilyName());
+            } catch (NoUserException e) {
+                reservingUserName = "";
+                log.error(String.format("Unable to find the reserving user (%d) for this event (%s).", booking.getReservedById(), event.getId()));
+            }
             emailManager.sendTemplatedEmailToUser(user,
                     emailManager.getEmailTemplateDTO("email-event-reservation-requested"),
                     new ImmutableMap.Builder<String, Object>()
-                            .put("reservingUser", "")  // FIXME: no UserManager to find details of booking.getReservedById()
+                            .put("reservingUser", reservingUserName)
                             .put("contactUsURL", generateEventContactUsURL(event))
                             .put("eventURL", String.format("https://%s/eventbooking/%s",
                                     propertiesLoader.getProperty(HOST_NAME), event.getId()))
