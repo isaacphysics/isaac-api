@@ -460,15 +460,14 @@ public class EventBookingManager {
             throws EventDeadlineException, EmailMustBeVerifiedException, DuplicateBookingException,
             SegueDatabaseException, EventIsFullException, EventGroupReservationLimitException {
 
-        // af599 TODO: Is it wise to do this before acquiring a database lock?
-        for (RegisteredUserDTO user : users) {
-            this.ensureValidBooking(event, user, true, BookingStatus.RESERVED);
-        }
-
         List<EventBookingDTO> reservations = new ArrayList<>();
         try {
             // Obtain an exclusive database lock to lock the event
             this.bookingPersistenceManager.acquireDistributedLock(event.getId());
+
+            for (RegisteredUserDTO user : users) {
+                this.ensureValidBooking(event, user, true, BookingStatus.RESERVED);
+            }
 
             // is there space on the event? Teachers don't count for student events.
             // work out capacity information for the event at this moment in time.
