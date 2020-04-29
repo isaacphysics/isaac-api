@@ -499,7 +499,7 @@ public class EventBookingManager {
                 // attempt to book them on the event
                 if (this.hasBookingWithStatus(event.getId(), user.getId(), BookingStatus.CANCELLED)) {
                     // if the user has previously cancelled we should let them book again.
-                    reservation = this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(),
+                    reservation = this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(), reservingUser.getId(),
                             BookingStatus.RESERVED, additionalEventInformation);
                 } else {
                     reservation = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), reservingUser.getId(),

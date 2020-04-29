@@ -107,13 +107,30 @@ public class EventBookingPersistenceManager {
      *
      * @param eventId - the id of the event
      * @param userId = the user who is registered against the event
+     * @param reservingUserId - the user who is updating this booking to be a reservation
+     * @param bookingStatus - the new booking status for this booking.
+     * @return The newly updated event booking
+     * @throws SegueDatabaseException
+     *             - if an error occurs.
+     */
+    public EventBookingDTO updateBookingStatus(final String eventId, final Long userId, final Long reservingUserId, final BookingStatus bookingStatus, final Map additionalEventInformation) throws SegueDatabaseException {
+        dao.updateStatus(eventId, userId, reservingUserId, bookingStatus, additionalEventInformation);
+
+        return this.getBookingByEventIdAndUserId(eventId, userId);
+    }
+
+    /**
+     * Modify an existing event booking's status
+     *
+     * @param eventId - the id of the event
+     * @param userId = the user who is registered against the event
      * @param bookingStatus - the new booking status for this booking.
      * @return The newly updated event booking
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
     public EventBookingDTO updateBookingStatus(final String eventId, final Long userId, final BookingStatus bookingStatus, final Map additionalEventInformation) throws SegueDatabaseException {
-        dao.updateStatus(eventId, userId, bookingStatus, additionalEventInformation);
+        dao.updateStatus(eventId, userId, null, bookingStatus, additionalEventInformation);
 
         return this.getBookingByEventIdAndUserId(eventId, userId);
     }

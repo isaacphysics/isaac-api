@@ -120,28 +120,45 @@ public class PgEventBookings implements EventBookings {
     }
 
     @Override
-    public void updateStatus(final String eventId, final Long userId, final BookingStatus status, final Map<String, String> additionalEventInformation) throws SegueDatabaseException {
+    public void updateStatus(final String eventId, final Long userId, final Long reservingUserId, final BookingStatus status, final Map<String, String> additionalEventInformation) throws SegueDatabaseException {
         PreparedStatement pst;
 
         try (Connection conn = ds.getDatabaseConnection()) {
 
+            String reservingUserIdClause = "";
+            if (reservingUserId != null) {
+                reservingUserIdClause = ", reservedBy = ? ";
+            }
+
             if (additionalEventInformation != null) {
                 pst = conn.prepareStatement("UPDATE event_bookings " +
-                    "SET status = ?, updated = ?, additional_booking_information = ?::text::jsonb " +
+                    "SET status = ?, updated = ?, additional_booking_information = ?::text::jsonb " + reservingUserIdClause +
                     "WHERE event_id = ? AND user_id = ?;");
                 pst.setString(1, status.name());
                 pst.setTimestamp(2, new java.sql.Timestamp(new Date().getTime()));
                 pst.setString(3, objectMapper.writeValueAsString(additionalEventInformation));
-                pst.setString(4, eventId);
-                pst.setLong(5, userId);
+                if (reservingUserId != null) {
+                    pst.setLong(4, reservingUserId);
+                    pst.setString(5, eventId);
+                    pst.setLong(6, userId);
+                } else {
+                    pst.setString(4, eventId);
+                    pst.setLong(5, userId);
+                }
             } else {
                 pst = conn.prepareStatement("UPDATE event_bookings " +
-                    "SET status = ?, updated = ? " +
+                    "SET status = ?, updated = ? " + reservingUserIdClause +
                     "WHERE event_id = ? AND user_id = ?;");
                 pst.setString(1, status.name());
                 pst.setTimestamp(2, new java.sql.Timestamp(new Date().getTime()));
-                pst.setString(3, eventId);
-                pst.setLong(4, userId);
+                if (reservingUserId != null) {
+                    pst.setLong(3, reservingUserId);
+                    pst.setString(4, eventId);
+                    pst.setLong(5, userId);
+                } else {
+                    pst.setString(3, eventId);
+                    pst.setLong(4, userId);
+                }
             }
 
             int executeUpdate = pst.executeUpdate();

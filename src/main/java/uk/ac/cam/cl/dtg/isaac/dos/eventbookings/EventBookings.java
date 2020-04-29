@@ -74,7 +74,7 @@ public interface EventBookings {
      * @return the newly updated event booking.
      * @throws SegueDatabaseException - if the database goes wrong.
      */
-    void updateStatus(final String eventId, final Long userId, final BookingStatus status, Map<String, String> additionalEventInformation) throws SegueDatabaseException;
+    void updateStatus(final String eventId, final Long userId, final Long reservingUserId, final BookingStatus status, Map<String, String> additionalEventInformation) throws SegueDatabaseException;
 
     /**
      * Remove booking from the database.
