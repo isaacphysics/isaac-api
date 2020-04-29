@@ -878,7 +878,7 @@ public class EventBookingManagerTest {
                 .getBookingByEventIdAndUserId(testCase.event.getId(), testCase.student2.getId()))
                 .andReturn(student2sCancelledBooking).once();
         expect(dummyEventBookingPersistenceManager
-                .updateBookingStatus(eq(testCase.event.getId()), eq(testCase.student2.getId()), eq(BookingStatus.RESERVED), anyObject()))
+                .updateBookingStatus(eq(testCase.event.getId()), eq(testCase.student2.getId()), eq(testCase.teacher.getId()), eq(BookingStatus.RESERVED), anyObject()))
                 .andReturn(testCase.student2Booking).once();
         expect(dummyEmailManager
                 .getEmailTemplateDTO(("email-event-reservation-requested")))
