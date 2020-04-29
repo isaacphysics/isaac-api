@@ -5,6 +5,8 @@ Configuration:
           value: ${env:SEGUE_LOGGING_PATH:-${sys:log.path:-/isaac-logs}}
         - name: CONSOLE_LOGGING_LEVEL
           value: ${env:SEGUE_LOGGING_LEVEL:-info}
+        - name: LOG_FILE_SUFFIX
+          value: ${sys:segue.version:-log}
 
   Appenders:
     Console:
@@ -15,8 +17,8 @@ Configuration:
 
     RollingFile:
       - name: Isaac_Appender
-        fileName: ${LOG_PATH_VAR}/isaac.log
-        filePattern: ${LOG_PATH_VAR}/isaac.log.%d{yyyy-MM-dd}.gz
+        fileName: ${LOG_PATH_VAR}/isaac-${LOG_FILE_SUFFIX}.log
+        filePattern: ${LOG_PATH_VAR}/isaac-${LOG_FILE_SUFFIX}.log.%d{yyyy-MM-dd}.gz
         Policies:
           TimeBasedTriggeringPolicy:
             interval: 10
@@ -24,8 +26,8 @@ Configuration:
           pattern: "[%d{yyyy-MM-dd HH:mm:ss}] [%-5p] %c{1}:%L - %m%n"
 
       - name: Perf_Appender
-        fileName: ${LOG_PATH_VAR}/perf.log
-        filePattern: ${LOG_PATH_VAR}/perf.log.%d{yyyy-MM-dd}.gz
+        fileName: ${LOG_PATH_VAR}/perf-${LOG_FILE_SUFFIX}.log
+        filePattern: ${LOG_PATH_VAR}/perf-${LOG_FILE_SUFFIX}.log.%d{yyyy-MM-dd}.gz
         Policies:
           TimeBasedTriggeringPolicy:
             interval: 10
