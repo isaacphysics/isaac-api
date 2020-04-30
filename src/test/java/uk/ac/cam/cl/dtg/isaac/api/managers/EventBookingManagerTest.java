@@ -12,12 +12,14 @@ import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.ITransactionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
+import uk.ac.cam.cl.dtg.segue.dos.ITransaction;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
@@ -38,6 +40,7 @@ import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
+import static org.easymock.EasyMock.mock;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
 import static org.junit.Assert.assertEquals;
@@ -59,6 +62,7 @@ public class EventBookingManagerTest {
     private PropertiesLoader dummyPropertiesLoader;
     private GroupManager dummyGroupManager;
     private UserAccountManager dummyUserAccountManager;
+    private ITransactionManager dummyTransactionManager;
 
     /**
      * Initial configuration of tests.
@@ -71,6 +75,7 @@ public class EventBookingManagerTest {
         this.dummyGroupManager = createMock(GroupManager.class);
         this.dummyUserAccountManager = createMock(UserAccountManager.class);
         this.dummyPropertiesLoader = createMock(PropertiesLoader.class);
+        this.dummyTransactionManager = createMock(ITransactionManager.class);
         expect(this.dummyPropertiesLoader.getProperty(HOST_NAME)).andReturn("hostname.com").anyTimes();
         expect(this.dummyPropertiesLoader.getProperty(MAIL_NAME)).andReturn("Isaac Physics").anyTimes();
         expect(this.dummyPropertiesLoader.getProperty(EVENT_ADMIN_EMAIL)).andReturn("admin@hostname.com").anyTimes();
@@ -889,8 +894,12 @@ public class EventBookingManagerTest {
         dummyEventBookingPersistenceManager.releaseDistributedLock(testCase.event.getId());
         expectLastCall().atLeastOnce();
 
+        expect(dummyTransactionManager.getTransaction()).andReturn(mock(ITransaction.class)).once();
+
+        expect(dummyUserAccountManager.getUserDTOById(testCase.student1.getId())).andReturn(testCase.student1).once();
+
         // Run the test for a student event
-        Object[] mockedObjects = {dummyEventBookingPersistenceManager, dummyEmailManager, dummyPropertiesLoader};
+        Object[] mockedObjects = {dummyEventBookingPersistenceManager, dummyEmailManager, dummyPropertiesLoader, dummyTransactionManager, dummyUserAccountManager};
         replay(mockedObjects);
         List<EventBookingDTO> actualResults = eventBookingManager.requestReservations(testCase.event, students, testCase.teacher);
         List<EventBookingDTO> expectedResults = ImmutableList.of(testCase.student1Booking, testCase.student2Booking);
@@ -992,7 +1001,7 @@ public class EventBookingManagerTest {
     }
 
     private EventBookingManager buildEventBookingManager() {
-        return new EventBookingManager(dummyEventBookingPersistenceManager, dummyEmailManager, dummyUserAssociationManager, dummyPropertiesLoader, dummyGroupManager, dummyUserAccountManager);
+        return new EventBookingManager(dummyEventBookingPersistenceManager, dummyEmailManager, dummyUserAssociationManager, dummyPropertiesLoader, dummyGroupManager, dummyUserAccountManager, dummyTransactionManager);
     }
 
     static private Map<BookingStatus, Map<Role, Long>> generatePlacesAvailableMap() {
