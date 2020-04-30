@@ -39,4 +39,17 @@ public class PgTransaction implements ITransaction {
             throw new SegueDatabaseException("Transaction Commit Failure!", e);
         }
     }
+
+    @Override
+    public void rollback() throws SegueDatabaseException {
+        try {
+            try {
+                conn.rollback();
+            } finally {
+                conn.close();
+            }
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Transaction Rollback Failure!", e);
+        }
+    }
 }
