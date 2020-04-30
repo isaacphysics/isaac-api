@@ -30,6 +30,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.ITransactionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
@@ -42,10 +43,12 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
+import uk.ac.cam.cl.dtg.segue.dos.ITransaction;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.io.UnsupportedEncodingException;
@@ -67,7 +70,12 @@ import java.util.TimeZone;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_TIME_LOCALITY;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_ADMIN_EMAIL;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_ICAL_UID_DOMAIN;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_RESERVATION_CLOSE_INTERVAL_DAYS;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.MAIL_NAME;
 import static uk.ac.cam.cl.dtg.util.NameFormatter.getTeacherNameFromUser;
 
 /**
@@ -83,6 +91,7 @@ public class EventBookingManager {
     private final PropertiesLoader propertiesLoader;
     private final GroupManager groupManager;
     private final UserAccountManager userAccountManager;
+    private final ITransactionManager transactionManager;
 
     /**
      * EventBookingManager.
@@ -97,13 +106,15 @@ public class EventBookingManager {
                                final UserAssociationManager userAssociationManager,
                                final PropertiesLoader propertiesLoader,
                                final GroupManager groupManager,
-                               final UserAccountManager userAccountManager) {
+                               final UserAccountManager userAccountManager,
+                               final ITransactionManager transactionManager) {
         this.bookingPersistenceManager = bookingPersistenceManager;
         this.emailManager = emailManager;
         this.userAssociationManager = userAssociationManager;
         this.propertiesLoader = propertiesLoader;
         this.groupManager = groupManager;
         this.userAccountManager = userAccountManager;
+        this.transactionManager = transactionManager;
     }
 
     /**
@@ -461,12 +472,12 @@ public class EventBookingManager {
      */
     public List<EventBookingDTO> requestReservations(final IsaacEventPageDTO event, final List<RegisteredUserDTO> users,
                                                      final RegisteredUserDTO reservingUser)
-            throws EventDeadlineException, EmailMustBeVerifiedException, DuplicateBookingException,
-            SegueDatabaseException, EventIsFullException, EventGroupReservationLimitException {
+    throws EventDeadlineException, EmailMustBeVerifiedException, DuplicateBookingException, EventIsFullException,
+           EventGroupReservationLimitException, SegueDatabaseException {
 
         List<EventBookingDTO> reservations = new ArrayList<>();
         try {
-            // Obtain an exclusive database lock to lock the event
+            // Obtain an exclusive database lock for the event
             this.bookingPersistenceManager.acquireDistributedLock(event.getId());
 
             for (RegisteredUserDTO user : users) {
@@ -481,68 +492,78 @@ public class EventBookingManager {
             // Is the request for more reservations that this event allows?
             this.enforceReservationLimit(event, users, reservingUser);
 
-            // IMPORTANT: Any non-ignorable exception past this point must roll back any reservation made thus far.
-            for (RegisteredUserDTO user : users) {
-                // attempt to book them on the event
-                EventBookingDTO reservation;
+            // Wrap this into a database transaction
+            ITransaction transaction = transactionManager.getTransaction();
 
-                Calendar calendar = Calendar.getInstance();
-                calendar.add(Calendar.DAY_OF_MONTH, EVENT_RESERVATION_CLOSE_INTERVAL_DAYS);
-                Date reservationCloseDate = Stream.of(calendar.getTime(), event.getDate())
-                        .min(Comparator.comparing(Date::getTime))
-                        .orElseThrow(NoSuchElementException::new);
+            try {
+                for (RegisteredUserDTO user : users) {
+                    // attempt to book them on the event
+                    EventBookingDTO reservation;
 
-                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
-                Map<String, String> additionalEventInformation = new HashMap<>();
-                additionalEventInformation.put("reservationCloseDate", dateFormat.format(reservationCloseDate));
+                    Calendar calendar = Calendar.getInstance();
+                    calendar.add(Calendar.DAY_OF_MONTH, EVENT_RESERVATION_CLOSE_INTERVAL_DAYS);
+                    Date reservationCloseDate = Stream.of(calendar.getTime(), event.getDate())
+                            .min(Comparator.comparing(Date::getTime))
+                            .orElseThrow(NoSuchElementException::new);
 
-                // attempt to book them on the event
-                if (this.hasBookingWithStatus(event.getId(), user.getId(), BookingStatus.CANCELLED)) {
-                    // if the user has previously cancelled we should let them book again.
-                    reservation = this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(), reservingUser.getId(),
-                            BookingStatus.RESERVED, additionalEventInformation);
-                } else {
-                    reservation = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), reservingUser.getId(),
-                            BookingStatus.RESERVED, additionalEventInformation);
+                    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+                    Map<String, String> additionalEventInformation = new HashMap<>();
+                    additionalEventInformation.put("reservationCloseDate", dateFormat.format(reservationCloseDate));
+
+                    // attempt to book them on the event
+                    if (this.hasBookingWithStatus(event.getId(), user.getId(), BookingStatus.CANCELLED)) {
+                        // if the user has previously cancelled we should let them book again.
+                        reservation = this.bookingPersistenceManager.updateBookingStatus(event.getId(),
+                                user.getId(), reservingUser.getId(), BookingStatus.RESERVED,
+                                additionalEventInformation);
+                    } else {
+                        reservation = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(),
+                                reservingUser.getId(), BookingStatus.RESERVED, additionalEventInformation);
+                    }
+                    reservations.add(reservation);
                 }
-                reservations.add(reservation);
-
-                try {
-                    emailManager.sendTemplatedEmailToUser(user,
-                            emailManager.getEmailTemplateDTO("email-event-reservation-requested"),
-                            new ImmutableMap.Builder<String, Object>()
-                                    .put("reservingUser", getTeacherNameFromUser(reservingUser))
-                                    .put("contactUsURL", generateEventContactUsURL(event))
-                                    .put("eventURL", String.format("https://%s/eventbooking/%s",
-                                            propertiesLoader.getProperty(HOST_NAME), event.getId()))
-                                    .put("event.emailEventDetails",
-                                            event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
-                                    .put("event", event)
-                                    .build(),
-                            EmailType.SYSTEM);
-
-                } catch (SegueDatabaseException | ContentManagerException e) {
-                    log.error(String.format("Unable to send event email (%s) to user (%s)",
-                            event.getId(), user.getEmail()), e);
-                }
+            } catch (SegueDatabaseException e) {
+                // Something happened, we just roll the transaction back and rethrow.
+                // Apparently, this is the only exception that can be thrown after we began the transaction.
+                transaction.rollback();
+                throw e;
             }
-            return reservations;
 
-        } catch (EventIsFullException | SegueDatabaseException | EventGroupReservationLimitException | NullPointerException e) {
-            for (EventBookingDTO reservation : reservations) {
-                try {
-                    bookingPersistenceManager.deleteBooking(event.getId(), reservation.getUserBooked().getId());
-                } catch (SegueDatabaseException f) {
-                    // Tough luck?
-                    log.error(String.format("Unable to roll back reservation (%s) on event (%s)",
-                            reservation, event), f);
-                }
-            }
-            throw e;
+            transaction.commit();
+            // If we made it past this point, we can release the lock and start sending emails.
         } finally {
-            // release lock
+            // Ensure the event is unlocked
             this.bookingPersistenceManager.releaseDistributedLock(event.getId());
         }
+
+        for (EventBookingDTO reservation : reservations) {
+            try {
+                UserSummaryDTO userSummary = reservation.getUserBooked();
+                Long userId = userSummary.getId();
+                RegisteredUserDTO user = userAccountManager.getUserDTOById(userId);
+                emailManager.sendTemplatedEmailToUser(user,
+                        emailManager.getEmailTemplateDTO("email-event-reservation-requested"),
+                        new ImmutableMap.Builder<String, Object>()
+                                .put("reservingUser", getTeacherNameFromUser(reservingUser))
+                                .put("contactUsURL", generateEventContactUsURL(event))
+                                .put("eventURL", String.format("https://%s/eventbooking/%s",
+                                        propertiesLoader.getProperty(HOST_NAME), event.getId()))
+                                .put("event.emailEventDetails",
+                                        event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
+                                .put("event", event)
+                                .build(),
+                        EmailType.SYSTEM);
+            } catch (NoUserException e) {
+                // This should never really happen, though...
+                log.error(String.format("Unable to find reserved user while sending emails for event (%s)",
+                        event.getId()), e);
+            } catch (SegueDatabaseException | ContentManagerException e) {
+                log.error(String.format("Unable to send event email (%s) to user (%s)",
+                        event.getId(), reservation.getUserBooked().getId()), e);
+            }
+        }
+
+        return reservations;
     }
 
     /**
