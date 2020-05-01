@@ -33,6 +33,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import static org.easymock.EasyMock.anyBoolean;
 import static org.easymock.EasyMock.anyLong;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.anyString;
@@ -896,7 +897,10 @@ public class EventBookingManagerTest {
 
         expect(dummyTransactionManager.getTransaction()).andReturn(mock(ITransaction.class)).once();
 
-        expect(dummyUserAccountManager.getUserDTOById(testCase.student1.getId())).andReturn(testCase.student1).once();
+        expect(dummyUserAccountManager.getUserDTOById(testCase.student1.getId(), anyBoolean())).andReturn(testCase.student1).atLeastOnce();
+        expect(dummyUserAccountManager.getUserDTOById(testCase.student1.getId())).andReturn(testCase.student1).atLeastOnce();
+        expect(dummyUserAccountManager.getUserDTOById(testCase.student2.getId(), anyBoolean())).andReturn(testCase.student2).atLeastOnce();
+        expect(dummyUserAccountManager.getUserDTOById(testCase.student2.getId())).andReturn(testCase.student2).atLeastOnce();
 
         // Run the test for a student event
         Object[] mockedObjects = {dummyEventBookingPersistenceManager, dummyEmailManager, dummyPropertiesLoader, dummyTransactionManager, dummyUserAccountManager};
