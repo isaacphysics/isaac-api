@@ -62,6 +62,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -511,7 +512,8 @@ public class EventBookingManager {
                     additionalEventInformation.put("reservationCloseDate", dateFormat.format(reservationCloseDate));
 
                     // attempt to book them on the event
-                    if (this.hasBookingWithStatus(event.getId(), user.getId(), BookingStatus.CANCELLED)) {
+                    if (this.hasBookingWithAnyOfStatuses(event.getId(), user.getId(),
+                            new HashSet<>(Arrays.asList(BookingStatus.CANCELLED, BookingStatus.WAITING_LIST)))) {
                         // if the user has previously cancelled we should let them book again.
                         reservation = this.bookingPersistenceManager.updateBookingStatus(event.getId(),
                                 user.getId(), reservingUser.getId(), BookingStatus.RESERVED,
@@ -582,7 +584,7 @@ public class EventBookingManager {
     public EventBookingDTO requestWaitingListBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user,
                                                      final Map<String, String> additionalInformation) throws
             SegueDatabaseException, EmailMustBeVerifiedException, DuplicateBookingException,
-            EventDeadlineException, EventIsNotFullException {
+            EventDeadlineException, EventIsFullException, EventIsNotFullException {
         final Date now = new Date();
 
         this.ensureValidBooking(event, user, false, BookingStatus.WAITING_LIST);
@@ -1183,7 +1185,7 @@ public class EventBookingManager {
      */
     private void ensureValidBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user, final boolean
             enforceBookingDeadline, final BookingStatus requestedBookingStatus) throws SegueDatabaseException,
-            EmailMustBeVerifiedException, DuplicateBookingException, EventDeadlineException {
+            EmailMustBeVerifiedException, DuplicateBookingException, EventDeadlineException, EventIsFullException {
         Date now = new Date();
 
         // check if if the end date has passed. Allowed to add to wait list after deadline.
@@ -1196,15 +1198,23 @@ public class EventBookingManager {
         if (enforceBookingDeadline && event.getBookingDeadline() != null && now.after(event.getBookingDeadline())) {
             throw new EventDeadlineException("The booking deadline has passed.");
         }
-        // check if already reserved
-        if (requestedBookingStatus.equals(BookingStatus.RESERVED) && (this.isUserReserved(event.getId(), user.getId()) || this.isUserInWaitingList(event.getId(), user.getId()))) {
+        // check if already reserved or in waiting list
+        if (requestedBookingStatus.equals(BookingStatus.RESERVED) && this.isUserReserved(event.getId(), user.getId())) {
             throw new DuplicateBookingException(String.format("Unable to reserve onto event (%s) as user (%s) is"
                     + " already reserved on to it.", event.getId(), user.getEmail()));
         }
         // check if already booked
-        if (requestedBookingStatus.equals(BookingStatus.CONFIRMED) && (this.isUserBooked(event.getId(), user.getId()))) { // || this.isUserInWaitingList(event.getId(), user.getId()))) {
+        if (requestedBookingStatus.equals(BookingStatus.CONFIRMED) && this.isUserBooked(event.getId(), user.getId())) {
             throw new DuplicateBookingException(String.format("Unable to book onto event (%s) as user (%s) is already"
                     + " booked on to it.", event.getId(), user.getEmail()));
+        }
+        // af599 TODO: Should we consider moving this up to ensureCapacity?
+        if (requestedBookingStatus.equals(BookingStatus.RESERVED) && this.isUserInWaitingList(event.getId(), user.getId())) {
+            Long availablePlacesConfirmed = this.getPlacesAvailable(event, true);
+            if (availablePlacesConfirmed == null || availablePlacesConfirmed < 1L) {
+                throw new EventIsFullException(String.format("Unable to reserve user (%s) onto event (%s) as "
+                        + "there are no available spaces.", user.getId(), event.getId()));
+            }
         }
 
         // must have verified email

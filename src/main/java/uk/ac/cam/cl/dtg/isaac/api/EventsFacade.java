@@ -1059,6 +1059,10 @@ public class EventsFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.CONFLICT,
                 "There are spaces on this event and the deadline has not passed. Please use the request booking endpoint to book you on to it.")
                 .toResponse();
+        } catch (EventIsFullException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                "There are no spaces in this event. No more bookings are accepted.")
+                .toResponse();
         }
     }
 
