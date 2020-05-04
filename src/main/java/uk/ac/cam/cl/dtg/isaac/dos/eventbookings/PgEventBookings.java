@@ -127,7 +127,7 @@ public class PgEventBookings implements EventBookings {
 
             String reservingUserIdClause = "";
             if (reservingUserId != null) {
-                reservingUserIdClause = ", reservedBy = ? ";
+                reservingUserIdClause = ", reserved_by = ? ";
             }
 
             if (additionalEventInformation != null) {
