@@ -108,24 +108,28 @@ public class NotificationPicker {
                 continue;
             }
 
-            if (c.getTags().iterator().next().equals(user.getRole().toString().toLowerCase())) {
-                if (null == record) {
-                    // either the use hasn't responded to the notification before...
-                    resultsToReturn.add(c);
-                } else if (record.getStatus().equals(NotificationStatus.POSTPONED)) {
-                    // or they have but they postponed it...
-                    Calendar postPoneExpiry = Calendar.getInstance();
-                    postPoneExpiry.setTime(record.getCreated());
-                    postPoneExpiry.add(Calendar.SECOND, Constants.NUMBER_SECONDS_IN_ONE_DAY);
-
-                    if (new Date().after(postPoneExpiry.getTime())) {
-                        resultsToReturn.add(c);
-                    }
-                } else {
-                    // or they have and they don't want to see it again
-                    continue;
-                }
+            if (c.getTags() != null && !c.getTags().contains(user.getRole().name().toLowerCase())) {
+                // Skip irrelevant notifications
+                continue;
             }
+
+            if (null == record) {
+                // either the use hasn't responded to the notification before...
+                resultsToReturn.add(c);
+            } else if (record.getStatus().equals(NotificationStatus.POSTPONED)) {
+                // or they have but they postponed it...
+                Calendar postPoneExpiry = Calendar.getInstance();
+                postPoneExpiry.setTime(record.getCreated());
+                postPoneExpiry.add(Calendar.SECOND, Constants.NUMBER_SECONDS_IN_ONE_DAY);
+
+                if (new Date().after(postPoneExpiry.getTime())) {
+                    resultsToReturn.add(c);
+                }
+            } else {
+                // or they have and they don't want to see it again
+                continue;
+            }
+
         }
 
         return resultsToReturn;
