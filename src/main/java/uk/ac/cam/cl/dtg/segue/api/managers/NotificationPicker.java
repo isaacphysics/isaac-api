@@ -108,7 +108,8 @@ public class NotificationPicker {
                 continue;
             }
 
-            if (c.getTags() != null && !c.getTags().contains(user.getRole().name().toLowerCase())) {
+            String roleTag = user.getRole().name().toLowerCase();
+            if (null == c.getTags() || !c.getTags().contains(roleTag)) {
                 // Skip irrelevant notifications
                 continue;
             }
