@@ -31,7 +31,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.ITransactionManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.IUserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailAttachment;
@@ -55,19 +55,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Set;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -91,7 +79,7 @@ public class EventBookingManager {
     private final UserAssociationManager userAssociationManager;
     private final PropertiesLoader propertiesLoader;
     private final GroupManager groupManager;
-    private final UserAccountManager userAccountManager;
+    private final IUserAccountManager userAccountManager;
     private final ITransactionManager transactionManager;
 
     /**
@@ -107,7 +95,7 @@ public class EventBookingManager {
                                final UserAssociationManager userAssociationManager,
                                final PropertiesLoader propertiesLoader,
                                final GroupManager groupManager,
-                               final UserAccountManager userAccountManager,
+                               final IUserAccountManager userAccountManager,
                                final ITransactionManager transactionManager) {
         this.bookingPersistenceManager = bookingPersistenceManager;
         this.emailManager = emailManager;
