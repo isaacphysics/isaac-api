@@ -38,6 +38,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.IStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.ITransactionManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.IUserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.PgTransactionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
@@ -600,11 +601,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     @Singleton
-    private UserAccountManager getUserManager(final IUserDataManager database, final QuestionManager questionManager,
-                                              final PropertiesLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
-                                              final EmailManager emailQueue, final IAnonymousUserDataManager temporaryUserCache,
-                                              final ILogManager logManager, final MapperFacade mapperFacade,
-                                              final UserAuthenticationManager userAuthenticationManager) {
+    private IUserAccountManager getUserManager(final IUserDataManager database, final QuestionManager questionManager,
+                                               final PropertiesLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
+                                               final EmailManager emailQueue, final IAnonymousUserDataManager temporaryUserCache,
+                                               final ILogManager logManager, final MapperFacade mapperFacade,
+                                               final UserAuthenticationManager userAuthenticationManager) {
 
         if (null == userManager) {
             userManager = new UserAccountManager(database, questionManager, properties, providersToRegister,
