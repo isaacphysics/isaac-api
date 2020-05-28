@@ -632,6 +632,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                 resultRow.add(dateFormat.format(booking.getUpdated()));
                 resultRow.add(resultAdditionalInformation.get("yearGroup"));
                 resultRow.add(resultAdditionalInformation.get("jobTitle"));
+                resultRow.add(resultAdditionalInformation.get("experienceLevel"));
                 resultRow.add(resultAdditionalInformation.get("medicalRequirements"));
                 resultRow.add(resultAdditionalInformation.get("accessibilityRequirements"));
                 resultRow.add(resultAdditionalInformation.get("emergencyName"));
@@ -642,7 +643,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             rows.add(totalsRow.toArray(new String[0]));
             rows.add(("Name,Role,School,Booking status,Booking date,Last updated date,Year group,Job title," +  // lgtm [java/missing-space-in-concatenation]
-                    "Medical/dietary requirements,Accessibility requirements,Emergency name,Emergency number").split(","));
+                    "Level of teaching experience,Medical/dietary requirements,Accessibility requirements,Emergency name,Emergency number").split(","));
             rows.addAll(resultRows);
             csvWriter.writeAll(rows);
             csvWriter.close();
