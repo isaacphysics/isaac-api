@@ -29,6 +29,7 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
     private Role role;
     private boolean authorisedFullAccess;
     private EmailVerificationStatus emailVerificationStatus;
+    private String examBoard;
 
     /**
      * UserSummaryDTO.
@@ -58,7 +59,7 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
 
     /**
      * Gets the givenName.
-     * 
+     *
      * @return the givenName
      */
     public String getGivenName() {
@@ -67,7 +68,7 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
 
     /**
      * Sets the givenName.
-     * 
+     *
      * @param givenName
      *            the givenName to set
      */
@@ -77,7 +78,7 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
 
     /**
      * Gets the familyName.
-     * 
+     *
      * @return the familyName
      */
     public String getFamilyName() {
@@ -86,7 +87,7 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
 
     /**
      * Sets the familyName.
-     * 
+     *
      * @param familyName
      *            the familyName to set
      */
@@ -115,7 +116,7 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
 
     /**
      * Gets the authorisedFullAccess.
-     * 
+     *
      * @return the authorisedFullAccess
      */
     public boolean isAuthorisedFullAccess() {
@@ -124,7 +125,7 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
 
     /**
      * Sets the authorisedFullAccess.
-     * 
+     *
      * @param authorisedFullAccess
      *            the authorisedFullAccess to set
      */
@@ -150,6 +151,25 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
     public void setEmailVerificationStatus(final EmailVerificationStatus emailVerificationStatus) {
         this.emailVerificationStatus = emailVerificationStatus;
     }
+
+    /**
+     * Gets the examBoard.
+     *
+     * @return the examBoard
+     */
+    public String getExamBoard() {
+        return examBoard;
+    }
+
+    /**
+     * Sets the examBoard.
+     *
+     * @param examBoard
+     *            the examBoard to set
+     */
+    public void setExamBoard(final String examBoard) {
+        this.examBoard = examBoard;
+    }
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
@@ -163,6 +183,8 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
         builder.append(emailVerificationStatus.name());
         builder.append(", authorisedFullAccess=");
         builder.append(authorisedFullAccess);
+        builder.append(", examBoard=");
+        builder.append(examBoard);
         builder.append("]");
         return builder.toString();
     }
