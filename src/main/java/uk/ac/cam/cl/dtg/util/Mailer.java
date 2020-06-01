@@ -240,6 +240,7 @@ public class Mailer {
 
         p.put("mail.smtp.starttls.enable", "true");
         p.put("mail.smtp.from", mailAddress);
+        p.put("mail.from", mailAddress); // This ought to only affect Message-ID, since Sender and From overridden below
 
         Session s = Session.getDefaultInstance(p);
         Message msg = new MimeMessage(s);
