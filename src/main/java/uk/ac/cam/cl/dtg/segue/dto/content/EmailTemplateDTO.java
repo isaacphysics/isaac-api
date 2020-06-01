@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2015 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,6 +31,7 @@ public class EmailTemplateDTO extends ContentDTO {
     private String htmlContent;
     private String overrideFromAddress;
     private String overrideFromName;
+    private String overrideEnvelopeFrom;
     private String replyToEmailAddress;
     private String replyToName;
     
@@ -156,6 +157,21 @@ public class EmailTemplateDTO extends ContentDTO {
         this.overrideFromName = overrideFromName;
     }
 
+    /**
+     * Gets the overrideEnvelopeFrom.
+     * @return the overrideEnvelopeFrom
+     */
+    public String getOverrideEnvelopeFrom() {
+        return overrideEnvelopeFrom;
+    }
+
+    /**
+     * Sets the overrideEnvelopeFrom.
+     * @param overrideEnvelopeFrom the overrideEnvelopeFrom to set
+     */
+    public void setOverrideEnvelopeFrom(final String overrideEnvelopeFrom) {
+        this.overrideEnvelopeFrom = overrideEnvelopeFrom;
+    }
     /**
      * Gets the replyToEmailAddress.
      * @return the replyToEmailAddress

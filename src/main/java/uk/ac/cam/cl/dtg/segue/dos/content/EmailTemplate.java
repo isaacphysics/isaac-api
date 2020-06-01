@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2015 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,6 +32,7 @@ public class EmailTemplate extends Content {
     private String htmlContent;
     private String overrideFromAddress;
     private String overrideFromName;
+    private String overrideEnvelopeFrom;
     private String replyToEmailAddress;
     private String replyToName;
 
@@ -156,6 +157,22 @@ public class EmailTemplate extends Content {
      */
     public void setOverrideFromName(final String overrideFromName) {
         this.overrideFromName = overrideFromName;
+    }
+
+    /**
+     * Gets the overrideEnvelopeFrom.
+     * @return the overrideEnvelopeFrom
+     */
+    public String getOverrideEnvelopeFrom() {
+        return overrideEnvelopeFrom;
+    }
+
+    /**
+     * Sets the overrideEnvelopeFrom.
+     * @param overrideEnvelopeFrom the overrideEnvelopeFrom to set
+     */
+    public void setOverrideEnvelopeFrom(final String overrideEnvelopeFrom) {
+        this.overrideEnvelopeFrom = overrideEnvelopeFrom;
     }
 
     /**

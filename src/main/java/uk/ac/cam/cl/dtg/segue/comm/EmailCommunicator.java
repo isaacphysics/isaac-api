@@ -22,15 +22,16 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.util.Mailer;
 
 import javax.mail.MessagingException;
+import javax.mail.internet.InternetAddress;
 import java.io.UnsupportedEncodingException;
 
 /**
  * @author nr378 and Alistair Stead
  */
 public class EmailCommunicator implements ICommunicator<EmailCommunicationMessage> {
-	private Mailer mailer;
-	private String defaultFromAddress;
-	private String mailName;
+	private final Mailer mailer;
+	private final String defaultFromAddress;
+	private final String mailName;
 
 	/**
 	 * Creates an instance of an email communicator that can send e-mails.
@@ -65,25 +66,34 @@ public class EmailCommunicator implements ICommunicator<EmailCommunicationMessag
      */
 	@Override
 	public void sendMessage(final EmailCommunicationMessage email) throws CommunicationException {
-	    String fromAddress = this.defaultFromAddress;
+	    String fromEmailAddress = this.defaultFromAddress;
 	    String fromName = this.mailName;
+	    String overrideEnvelopeFrom = null;
 
 	    // If override "From" details specified, use them:
 	    if (email.getOverrideFromAddress() != null && !email.getOverrideFromAddress().isEmpty()) {
-	        fromAddress = email.getOverrideFromAddress();
+	        fromEmailAddress = email.getOverrideFromAddress();
         }
 	    if (email.getOverrideFromName() != null && !email.getOverrideFromName().isEmpty()) {
 	        fromName = email.getOverrideFromName();
         }
+	    if (email.getOverrideEnvelopeFrom() != null && !email.getOverrideEnvelopeFrom().isEmpty()) {
+	        overrideEnvelopeFrom = email.getOverrideEnvelopeFrom();
+        }
 
         try {
+            InternetAddress fromAddress = new InternetAddress(fromEmailAddress, fromName);
+            InternetAddress replyTo = null;
+            if (null != email.getReplyToAddress()) {
+                replyTo = new InternetAddress(email.getReplyToAddress(), email.getReplyToName());
+            }
+
             if (email.getHTMLMessage() == null) {
-                mailer.sendPlainTextMail(new String[] { email.getRecipientAddress() }, fromAddress, fromName,
-                        email.getReplyToAddress(), email.getReplyToName(), email.getSubject(),
-                        email.getPlainTextMessage());
+                mailer.sendPlainTextMail(new String[] { email.getRecipientAddress() }, fromAddress,
+                        overrideEnvelopeFrom, replyTo, email.getSubject(), email.getPlainTextMessage());
             } else {
-                mailer.sendMultiPartMail(new String[] { email.getRecipientAddress() }, fromAddress, fromName,
-                        email.getReplyToAddress(), email.getReplyToName(), email.getSubject(),
+                mailer.sendMultiPartMail(new String[] { email.getRecipientAddress() }, fromAddress,
+                        overrideEnvelopeFrom, replyTo, email.getSubject(),
                         email.getPlainTextMessage(), email.getHTMLMessage(), email.getAttachments());
             }
         } catch (MessagingException | UnsupportedEncodingException e) {

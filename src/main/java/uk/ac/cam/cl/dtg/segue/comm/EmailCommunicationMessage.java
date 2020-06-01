@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2015 Alistair Stead
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -39,6 +39,8 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
 
     private final String overrideFromName;
 
+    private final String overrideEnvelopeFrom;
+
     private final String replyToAddress;
 
     private final String replyToName;
@@ -54,6 +56,7 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
      * @param plainTextMessage message in email
      * @param overrideFromAddress an override from address
      * @param overrideFromName an override of the from name
+     * @param overrideEnvelopeFrom an override of the envelope from address, useful for routing
      * @param htmlMessage html message in email
      * @param emailType the type of the message
      * @param replyToAddress (nullable) the preferred reply to address.
@@ -65,6 +68,7 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
                                      final String subject, final String plainTextMessage,
                                      final String htmlMessage, final EmailType emailType,
                                      @Nullable final String overrideFromAddress, @Nullable final String overrideFromName,
+                                     @Nullable final String overrideEnvelopeFrom,
                                      @Nullable final String replyToAddress, @Nullable final String replyToName,
                                      @Nullable final List<EmailAttachment> attachments) {
         this.userId = userId;
@@ -74,6 +78,7 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
         this.htmlMessage = htmlMessage;
         this.overrideFromAddress = overrideFromAddress;
         this.overrideFromName = overrideFromName;
+        this.overrideEnvelopeFrom = overrideEnvelopeFrom;
         this.replyToAddress = replyToAddress;
         this.replyToName = replyToName;
         this.emailType = emailType;
@@ -97,6 +102,7 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
         this.htmlMessage = htmlMessage;
         this.overrideFromAddress = null;
         this.overrideFromName = null;
+        this.overrideEnvelopeFrom = null;
         this.replyToAddress = null;
         this.replyToName = null;
         this.emailType = emailType;
@@ -151,6 +157,14 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
     public String getOverrideFromName() {
         return overrideFromName;
     }
+
+    /**
+     * @return overrideEnvelopeFrom if set.
+     */
+    public String getOverrideEnvelopeFrom() {
+        return overrideEnvelopeFrom;
+    }
+
     /**
      * @return replyToAddress if set.
      */
