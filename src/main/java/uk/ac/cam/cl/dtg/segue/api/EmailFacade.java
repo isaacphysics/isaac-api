@@ -404,7 +404,7 @@ public class EmailFacade extends AbstractSegueFacade {
 		
 		try {
             RegisteredUserDTO sender = this.userManager.getCurrentRegisteredUser(request);
-            if (!isUserAnAdmin(userManager, request)) {
+            if (!isUserAnAdmin(userManager, sender)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
@@ -488,7 +488,7 @@ public class EmailFacade extends AbstractSegueFacade {
 
         try {
             RegisteredUserDTO sender = this.userManager.getCurrentRegisteredUser(request);
-            if (!isUserAnAdmin(userManager, request)) {
+            if (!isUserAnAdmin(userManager, sender)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 

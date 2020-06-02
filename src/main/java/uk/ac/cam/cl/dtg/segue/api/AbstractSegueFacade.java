@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
 import java.util.Arrays;
+import java.util.Collections;
 
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
@@ -196,7 +197,7 @@ public abstract class AbstractSegueFacade {
      */
     public static boolean isUserAnAdmin(final UserAccountManager userManager, final HttpServletRequest request)
             throws NoUserLoggedInException {
-        return userManager.checkUserRole(request, Arrays.asList(Role.ADMIN));
+        return userManager.checkUserRole(request, Collections.singletonList(Role.ADMIN));
     }
 
     /**
@@ -212,7 +213,7 @@ public abstract class AbstractSegueFacade {
      */
     public static boolean isUserAnAdmin(final UserAccountManager userManager, final RegisteredUserDTO userDTO)
             throws NoUserLoggedInException {
-        return userManager.checkUserRole(userDTO, Arrays.asList(Role.ADMIN));
+        return userManager.checkUserRole(userDTO, Collections.singletonList(Role.ADMIN));
     }
     
     /**
