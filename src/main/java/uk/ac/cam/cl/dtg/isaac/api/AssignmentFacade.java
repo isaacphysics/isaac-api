@@ -603,8 +603,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
         try {
             // Fetch the currently logged in user
-            RegisteredUserDTO currentlyLoggedInUser;
-            currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
+            RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
+            boolean includeUserIDs = isUserAnAdminOrEventManager(userManager, currentlyLoggedInUser);
 
             // Fetch the requested group
             UserGroupDTO group;
@@ -612,7 +612,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             // Check the user has permission to access this group:
             if (!GroupManager.isOwnerOrAdditionalManager(group, currentlyLoggedInUser.getId())
-                    && !isUserAnAdmin(userManager, request)) {
+                    && !isUserAnAdmin(userManager, currentlyLoggedInUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
             }
@@ -700,7 +700,11 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy");
 
             ArrayList<String> headerRow = Lists.newArrayList();
-            Collections.addAll(headerRow, "Last Name,First Name,% Correct Overall".split(","));
+            if (includeUserIDs) {
+                Collections.addAll(headerRow, "Last Name,First Name, User ID,% Correct Overall".split(","));
+            } else {
+                Collections.addAll(headerRow, "Last Name,First Name,% Correct Overall".split(","));
+            }
             List<String> gameboardTitles = Lists.newArrayList();
             for (AssignmentDTO assignment : assignments) {
                 if (null != assignment.getDueDate()) {
@@ -808,6 +812,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 // The next three lines could be a little better if I were not this sleepy...
                 row.add(userSummary.getFamilyName());
                 row.add(userSummary.getGivenName());
+                if (includeUserIDs) {
+                    row.add(userSummary.getId().toString());
+                }
 
                 if (userSummary.isAuthorisedFullAccess()) {
                     row.add(String.format("%.0f", overallTotal));
