@@ -945,9 +945,10 @@ public class EventBookingManager {
         try {
             // Obtain an exclusive database lock to lock the booking
             this.bookingPersistenceManager.acquireDistributedLock(event.getId());
-            reservedById = this.bookingPersistenceManager
-                    .getBookingByEventIdAndUserId(event.getId(), user.getId()).getReservedById();
-            BookingStatus previousBookingStatus = this.getBookingStatus(event.getId(), user.getId());
+            EventBookingDTO previousBooking = this.bookingPersistenceManager
+                    .getBookingByEventIdAndUserId(event.getId(), user.getId());
+            reservedById = previousBooking.getReservedById();
+            BookingStatus previousBookingStatus = previousBooking.getBookingStatus();
             this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(),
                     BookingStatus.CANCELLED,
                     null);
