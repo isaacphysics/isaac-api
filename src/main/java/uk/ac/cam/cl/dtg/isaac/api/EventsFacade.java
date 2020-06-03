@@ -1104,9 +1104,6 @@ public class EventsFacade extends AbstractIsaacFacade {
                                         @PathParam("user_id") final Long userId) {
         try {
             IsaacEventPageDTO event = getRawEventDTOById(eventId);
-            if (null == event) {
-                return new SegueErrorResponse(Status.BAD_REQUEST, "No event found with this ID.").toResponse();
-            }
 
             RegisteredUserDTO userLoggedIn = this.userManager.getCurrentRegisteredUser(request);
             RegisteredUserDTO userOwningBooking;
