@@ -147,8 +147,8 @@ public class EventBookingManager {
      * @return event bookings
      * @throws SegueDatabaseException - if an error occurs.
      */
-    public List<EventBookingDTO> getBookingByEventId(final String eventId) throws SegueDatabaseException {
-        return this.bookingPersistenceManager.getBookingByEventId(eventId);
+    public List<EventBookingDTO> getBookingsByEventId(final String eventId) throws SegueDatabaseException {
+        return this.bookingPersistenceManager.getBookingsByEventId(eventId);
     }
 
     public EventBookingDTO getBookingByEventIdAndUserId(final String eventId, final Long userId) throws SegueDatabaseException {
@@ -166,7 +166,7 @@ public class EventBookingManager {
     public Long countNumberOfBookingsWithStatus(final String eventId, final BookingStatus status)
             throws SegueDatabaseException {
         Long v = 0L;
-        for (EventBookingDTO eb : this.bookingPersistenceManager.getBookingByEventId(eventId)) {
+        for (EventBookingDTO eb : this.bookingPersistenceManager.getBookingsByEventId(eventId)) {
             if (status.equals(eb.getBookingStatus())) {
                 v++;
             }
@@ -1142,7 +1142,7 @@ public class EventBookingManager {
             throw new NullPointerException("Reserving user must be specified.");
         }
 
-        List<EventBookingDTO> existingReservations = getBookingByEventId(event.getId()).stream()
+        List<EventBookingDTO> existingReservations = getBookingsByEventId(event.getId()).stream()
                 .filter(reservation -> {
                     Long reservedById = reservation.getReservedById();
                     return reservedById != null && reservedById.equals(reservingUser.getId());

@@ -866,7 +866,7 @@ public class EventBookingManagerTest {
         expect(dummyEventBookingPersistenceManager.isUserReserved(anyString(), anyLong())).andReturn(false).atLeastOnce();
         expect(dummyEventBookingPersistenceManager.isUserInWaitingList(anyString(), anyLong())).andReturn(false).atLeastOnce();
         // Check existing bookings
-        expect(dummyEventBookingPersistenceManager.getBookingByEventId(testCase.event.getId())).andReturn(ImmutableList.of(student2sCancelledBooking)).once();
+        expect(dummyEventBookingPersistenceManager.getBookingsByEventId(testCase.event.getId())).andReturn(ImmutableList.of(student2sCancelledBooking)).once();
 
 
         // Make Reservations
@@ -974,7 +974,7 @@ public class EventBookingManagerTest {
                 .getEventBookingStatusCounts(testCase.event.getId(), false))
                 .andReturn(previousBookingCounts).once();
         expect(dummyEventBookingPersistenceManager
-                .getBookingByEventId(testCase.event.getId()))
+                .getBookingsByEventId(testCase.event.getId()))
                 .andReturn(ImmutableList.of(existingEventBooking));
         dummyEventBookingPersistenceManager.releaseDistributedLock(testCase.event.getId());
         expectLastCall().atLeastOnce();

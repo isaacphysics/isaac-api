@@ -165,7 +165,7 @@ public class EventBookingPersistenceManager {
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    public List<EventBookingDTO> getBookingByEventId(final String eventId) throws SegueDatabaseException {
+    public List<EventBookingDTO> getBookingsByEventId(final String eventId) throws SegueDatabaseException {
         try {
             ContentDTO c = this.contentManager.getContentById(this.contentManager.getCurrentContentSHA(), eventId);
 

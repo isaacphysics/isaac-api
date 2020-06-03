@@ -380,8 +380,8 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @ApiOperation(value = "Get details about an event booking.")
-    public final Response getEventBookingById(@Context final HttpServletRequest request,
-            @PathParam("booking_id") final String bookingId) {
+    public final Response getEventBookingsById(@Context final HttpServletRequest request,
+                                               @PathParam("booking_id") final String bookingId) {
         try {
             if (!isUserAnAdminOrEventManager(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
@@ -484,7 +484,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
 
-            List<EventBookingDTO> eventBookings = bookingManager.getBookingByEventId(eventId);
+            List<EventBookingDTO> eventBookings = bookingManager.getBookingsByEventId(eventId);
 
             // Event leaders are only allowed to see the bookings of connected users
             if (Role.EVENT_LEADER.equals(currentUser.getRole())) {
@@ -535,7 +535,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                     .collect(Collectors.toList());
 
             // Filter eventBookings based on whether the booked user is a member of the given group
-            List<EventBookingDTO> eventBookings = bookingManager.getBookingByEventId(eventId)
+            List<EventBookingDTO> eventBookings = bookingManager.getBookingsByEventId(eventId)
                     .stream().filter(booking -> groupMemberIds.contains(booking.getUserBooked().getId()))
                     .collect(Collectors.toList());
 
@@ -583,7 +583,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
-            List<EventBookingDTO> eventBookings = bookingManager.getBookingByEventId(eventId);
+            List<EventBookingDTO> eventBookings = bookingManager.getBookingsByEventId(eventId);
 
             // Event leaders are only allowed to see the bookings of connected users
             if (Role.EVENT_LEADER.equals(currentUser.getRole())) {
