@@ -20,6 +20,7 @@ import biweekly.ICalendar;
 import biweekly.component.VEvent;
 import biweekly.io.TimezoneAssignment;
 import biweekly.property.Organizer;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -1100,16 +1101,7 @@ public class EventBookingManager {
      */
     private void ensureCapacity(final IsaacEventPageDTO event, final RegisteredUserDTO user) throws
             SegueDatabaseException, EventIsFullException {
-        final boolean isStudentEvent = event.getTags().contains("student");
-        Long numberOfPlaces = getPlacesAvailable(event);
-        if (numberOfPlaces != null) {
-            // teachers can book on student events and do not count towards capacity
-            if ((isStudentEvent && !Role.TEACHER.equals(user.getRole()) && numberOfPlaces <= 0)
-                    || (!isStudentEvent && numberOfPlaces <= 0)) {
-                throw new EventIsFullException(String.format("Unable to book user (%s) onto event (%s) as it is full"
-                        + ".", user.getEmail(), event.getId()));
-            }
-        }
+        this.ensureCapacity(event, ImmutableList.of(user));
     }
 
     /**
@@ -1127,10 +1119,13 @@ public class EventBookingManager {
         final boolean isStudentEvent = event.getTags().contains("student");
         Long numberOfPlaces = getPlacesAvailable(event);
         if (numberOfPlaces != null) {
-            long numberOfRequests = users.stream().filter(user -> !isStudentEvent || !Role.TEACHER.equals(user.getRole())).count();
+            long numberOfRequests = users.stream()
+                    .filter(user -> !isStudentEvent || !Role.TEACHER.equals(user.getRole()))
+                    .count();
             if (numberOfPlaces - numberOfRequests < 0) {
-                throw  new EventIsFullException(String.format("Unable to book batch (%s) onto event (%s) as there are "
-                        + "not enough places available", users, event.getId()));
+                throw  new EventIsFullException(
+                        String.format("Unable to book %s (%s) onto event (%s) as there are not enough places available",
+                                users.size() > 1 ? "batch" : "user", users, event.getId()));
             }
         }
     }
