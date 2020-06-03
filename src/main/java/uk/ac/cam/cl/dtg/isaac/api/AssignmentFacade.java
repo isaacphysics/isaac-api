@@ -559,7 +559,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             }
 
             rows.add(totalsRow.toArray(new String[0]));
-            String userInfoHeader = includeUserIDs ? "Last Name, First Name, User ID" : "Last Name,First Name";
+            String userInfoHeader = includeUserIDs ? "Last Name,First Name,User ID" : "Last Name,First Name";
             rows.add(userInfoHeader.split(","));
             rows.addAll(resultRows);
             csvWriter.writeAll(rows);
@@ -701,7 +701,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             ArrayList<String> headerRow = Lists.newArrayList();
             if (includeUserIDs) {
-                Collections.addAll(headerRow, "Last Name,First Name, User ID,% Correct Overall".split(","));
+                Collections.addAll(headerRow, "Last Name,First Name,User ID,% Correct Overall".split(","));
             } else {
                 Collections.addAll(headerRow, "Last Name,First Name,% Correct Overall".split(","));
             }
