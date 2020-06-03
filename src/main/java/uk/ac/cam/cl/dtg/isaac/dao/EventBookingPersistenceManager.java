@@ -115,7 +115,6 @@ public class EventBookingPersistenceManager {
      */
     public EventBookingDTO updateBookingStatus(final String eventId, final Long userId, final Long reservingUserId, final BookingStatus bookingStatus, final Map additionalEventInformation) throws SegueDatabaseException {
         dao.updateStatus(eventId, userId, reservingUserId, bookingStatus, additionalEventInformation);
-
         return this.getBookingByEventIdAndUserId(eventId, userId);
     }
 
@@ -130,9 +129,7 @@ public class EventBookingPersistenceManager {
      *             - if an error occurs.
      */
     public EventBookingDTO updateBookingStatus(final String eventId, final Long userId, final BookingStatus bookingStatus, final Map additionalEventInformation) throws SegueDatabaseException {
-        dao.updateStatus(eventId, userId, null, bookingStatus, additionalEventInformation);
-
-        return this.getBookingByEventIdAndUserId(eventId, userId);
+        return updateBookingStatus(eventId, userId, null, bookingStatus, additionalEventInformation);
     }
 
     /**

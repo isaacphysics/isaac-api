@@ -34,7 +34,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ImageDTO;
 import uk.ac.cam.cl.dtg.util.locations.Address;
 import uk.ac.cam.cl.dtg.util.locations.Location;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_GROUP_RESERVATION_LIMIT;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_GROUP_RESERVATION_DEFAULT_LIMIT;
 
 /**
  * DTO for isaac Event.
@@ -136,7 +136,7 @@ public class IsaacEventPageDTO extends ContentDTO {
         this.eventThumbnail = eventThumbnail;
         this.numberOfPlaces = numberOfPlaces;
         this.eventStatus = eventStatus;
-        this.groupReservationLimit = groupReservationLimit != null ? groupReservationLimit : EVENT_GROUP_RESERVATION_LIMIT;
+        this.groupReservationLimit = groupReservationLimit != null ? groupReservationLimit : EVENT_GROUP_RESERVATION_DEFAULT_LIMIT;
         this.allowGroupReservations = allowGroupReservations;
     }
 

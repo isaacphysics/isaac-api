@@ -390,7 +390,7 @@ public final class Constants {
     public static final String CONTENT_VERSION_FIELDNAME = "contentVersion";
 
     public static final Integer EVENT_RESERVATION_CLOSE_INTERVAL_DAYS = 14;
-    public static final Integer EVENT_GROUP_RESERVATION_LIMIT = 10;
+    public static final Integer EVENT_GROUP_RESERVATION_DEFAULT_LIMIT = 10;
 
     /**
      *  Enum to represent filter values for event management.

@@ -32,7 +32,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.util.locations.Address;
 import uk.ac.cam.cl.dtg.util.locations.Location;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_GROUP_RESERVATION_LIMIT;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_GROUP_RESERVATION_DEFAULT_LIMIT;
 
 /**
  * DO for isaac Event.
@@ -106,7 +106,7 @@ public class IsaacEventPage extends Content {
 		this.eventThumbnail = eventThumbnail;
 		this.numberOfPlaces = numberOfPlaces;
 		this.eventStatus = eventStatus;
-		this.groupReservationLimit = groupReservationLimit != null ? groupReservationLimit : EVENT_GROUP_RESERVATION_LIMIT;
+		this.groupReservationLimit = groupReservationLimit != null ? groupReservationLimit : EVENT_GROUP_RESERVATION_DEFAULT_LIMIT;
 		this.allowGroupReservations = allowGroupReservations != null ? allowGroupReservations : false;
 	}
 
