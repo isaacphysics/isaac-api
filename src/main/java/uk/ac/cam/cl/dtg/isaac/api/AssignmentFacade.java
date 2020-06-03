@@ -400,6 +400,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
+            boolean includeUserIDs = isUserAnAdminOrEventManager(userManager, currentlyLoggedInUser);
 
             AssignmentDTO assignment = this.assignmentManager.getAssignmentById(assignmentId);
             if (null == assignment) {
@@ -409,7 +410,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             UserGroupDTO group = this.groupManager.getGroupById(assignment.getGroupId());
 
             if (!GroupManager.isOwnerOrAdditionalManager(group, currentlyLoggedInUser.getId())
-                    && !isUserAnAdmin(userManager, request)) {
+                    && !isUserAnAdmin(userManager, currentlyLoggedInUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
             }
@@ -441,6 +442,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     currentlyLoggedInUser.getFamilyName()));
 
             List<String> headerRow = Lists.newArrayList(Arrays.asList("", ""));
+            if (includeUserIDs) {
+                headerRow.add("");
+            }
 
             DecimalFormat percentageFormat = new DecimalFormat("###");
 
@@ -464,6 +468,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             rows.add(headerRow.toArray(new String[0]));
 
             List<String> totalsRow = Lists.newArrayList();
+            if (includeUserIDs) {
+                totalsRow.add("");
+            }
             Collections.addAll(totalsRow, ",Correct %".split(","));
 
             Map<RegisteredUserDTO, Map<String, Integer>> userQuestionDataMap = new HashMap<>();
@@ -505,10 +512,13 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 UserSummaryDTO userSummary = associationManager.enforceAuthorisationPrivacy(currentlyLoggedInUser,
                         userManager.convertToUserSummaryObject(user));
 
+                resultRow.add(userSummary.getFamilyName());
+                resultRow.add(userSummary.getGivenName());
+                if (includeUserIDs) {
+                    resultRow.add(userSummary.getId().toString());
+                }
                 // can the user access the data?
                 if (userSummary.isAuthorisedFullAccess()) {
-                    resultRow.add(userSummary.getFamilyName());
-                    resultRow.add(userSummary.getGivenName());
                     int totalCorrect = 0;
                     int columnNumber = 0;
                     for (String questionId : questionIds) {
@@ -531,8 +541,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     resultRow.add(percentageFormat.format(percentageCorrect));
 
                 } else {
-                    resultRow.add(userSummary.getFamilyName());
-                    resultRow.add(userSummary.getGivenName());
                     for (@SuppressWarnings("unused") String questionId : questionIds) {
                         resultRow.add(NOT_SHARING);
                     }
@@ -551,7 +559,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             }
 
             rows.add(totalsRow.toArray(new String[0]));
-            rows.add("Last Name,First Name".split(","));
+            String userInfoHeader = includeUserIDs ? "Last Name,First Name,User ID" : "Last Name,First Name";
+            rows.add(userInfoHeader.split(","));
             rows.addAll(resultRows);
             csvWriter.writeAll(rows);
             csvWriter.close();
@@ -594,8 +603,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
         try {
             // Fetch the currently logged in user
-            RegisteredUserDTO currentlyLoggedInUser;
-            currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
+            RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
+            boolean includeUserIDs = isUserAnAdminOrEventManager(userManager, currentlyLoggedInUser);
 
             // Fetch the requested group
             UserGroupDTO group;
@@ -603,7 +612,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             // Check the user has permission to access this group:
             if (!GroupManager.isOwnerOrAdditionalManager(group, currentlyLoggedInUser.getId())
-                    && !isUserAnAdmin(userManager, request)) {
+                    && !isUserAnAdmin(userManager, currentlyLoggedInUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
             }
@@ -691,7 +700,11 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy");
 
             ArrayList<String> headerRow = Lists.newArrayList();
-            Collections.addAll(headerRow, "Last Name,First Name,% Correct Overall".split(","));
+            if (includeUserIDs) {
+                Collections.addAll(headerRow, "Last Name,First Name,User ID,% Correct Overall".split(","));
+            } else {
+                Collections.addAll(headerRow, "Last Name,First Name,% Correct Overall".split(","));
+            }
             List<String> gameboardTitles = Lists.newArrayList();
             for (AssignmentDTO assignment : assignments) {
                 if (null != assignment.getDueDate()) {
@@ -799,6 +812,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 // The next three lines could be a little better if I were not this sleepy...
                 row.add(userSummary.getFamilyName());
                 row.add(userSummary.getGivenName());
+                if (includeUserIDs) {
+                    row.add(userSummary.getId().toString());
+                }
 
                 if (userSummary.isAuthorisedFullAccess()) {
                     row.add(String.format("%.0f", overallTotal));
