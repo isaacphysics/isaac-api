@@ -976,6 +976,72 @@ public class EventBookingManagerTest {
         verify(dummyEventBookingPersistenceManager);
     }
 
+    @Test
+    public void requestReservations_cancelledReservationsDoNotCountTowardsReservationLimit_success() throws Exception {
+        EventBookingManager eventBookingManager = buildEventBookingManager();
+        ReservationTestDefaults testCase = new ReservationTestDefaults();
+
+        // 1 reservation limit, 1 previously reserved but cancelled, try to reserve another 1
+        testCase.event.setNumberOfPlaces(999); // big enough not to matter
+        testCase.event.setGroupReservationLimit(1);
+
+        List<RegisteredUserDTO> students = ImmutableList.of(testCase.student1);
+
+        // Make student two have a cancelled booking
+        EventBookingDTO student2sCancelledReservation = new EventBookingDTO() {{
+            setBookingStatus(BookingStatus.CANCELLED); setEventId(testCase.event.getId());
+            setUserBooked(new UserSummaryDTO() {{setId(testCase.student2.getId());}});
+            setReservedById(testCase.teacher.getId());
+        }};
+        Map<BookingStatus, Map<Role, Long>> previousBookingCounts = generatePlacesAvailableMap();
+        previousBookingCounts.put(BookingStatus.CANCELLED, ImmutableMap.of(Role.STUDENT, 1L));
+
+        // Define expected external calls
+        dummyEventBookingPersistenceManager.acquireDistributedLock(testCase.event.getId());
+        expectLastCall().once();
+
+        // Check existing bookings
+        expect(dummyEventBookingPersistenceManager.getBookingsByEventId(testCase.event.getId()))
+                .andReturn(ImmutableList.of(student2sCancelledReservation)).once();
+        expect(dummyEventBookingPersistenceManager
+                .getEventBookingStatusCounts(testCase.event.getId(), false))
+                .andReturn(previousBookingCounts).once();
+
+        // Make Reservations
+        expect(dummyTransactionManager.getTransaction()).andReturn(dummyTransaction).once();
+
+        expect(dummyEventBookingPersistenceManager
+                .getBookingByEventIdAndUserId(testCase.event.getId(), testCase.student1.getId()))
+                .andReturn(null).once();
+        expect(dummyEventBookingPersistenceManager
+                .createBooking(eq(testCase.event.getId()), eq(testCase.student1.getId()), eq(testCase.teacher.getId()), eq(BookingStatus.RESERVED), anyObject()))
+                .andReturn(testCase.student1Booking).once();
+
+        dummyTransaction.commit();
+        expectLastCall().once();
+
+        dummyEventBookingPersistenceManager.releaseDistributedLock(testCase.event.getId());
+        expectLastCall().once();
+
+        // Send Emails
+        expect(dummyEmailManager.getEmailTemplateDTO(("email-event-reservation-requested"))).andReturn(testCase.reservationEmail).atLeastOnce();
+
+        expect(dummyUserAccountManager.getUserDTOById(testCase.student1.getId())).andReturn(testCase.student1).once();
+        dummyEmailManager.sendTemplatedEmailToUser(eq(testCase.student1), eq(testCase.reservationEmail), anyObject(), eq(EmailType.SYSTEM));
+        expectLastCall().once();
+
+        // Run the test for a student event
+        Object[] mockedObjects = {
+                dummyEventBookingPersistenceManager, dummyEmailManager, dummyPropertiesLoader,
+                dummyUserAccountManager, dummyTransactionManager, dummyTransaction
+        };
+        replay(mockedObjects);
+        List<EventBookingDTO> actualResults = eventBookingManager.requestReservations(testCase.event, students, testCase.teacher);
+        List<EventBookingDTO> expectedResults = ImmutableList.of(testCase.student1Booking);
+        assertEquals("Student 1 should get reserved despite the existing cancelled reservation", expectedResults, actualResults);
+        verify(mockedObjects);
+    }
+
     static class ReservationTestDefaults {
         IsaacEventPageDTO event = new IsaacEventPageDTO() {{
             setId("SomeEventId");

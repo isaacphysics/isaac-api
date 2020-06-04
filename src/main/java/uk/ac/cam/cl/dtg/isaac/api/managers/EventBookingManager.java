@@ -1134,17 +1134,21 @@ public class EventBookingManager {
             throw new NullPointerException("Reserving user must be specified.");
         }
 
-        List<EventBookingDTO> existingReservations = getBookingsByEventId(event.getId()).stream()
-                .filter(reservation -> {
-                    Long reservedById = reservation.getReservedById();
-                    return reservedById != null && reservedById.equals(reservingUser.getId());
-                }).collect(Collectors.toList());
-        long numberOfExistingReservations = existingReservations.size();
+        long numberOfExistingReservations = getBookingsByEventId(event.getId()).stream()
+                // only reserving user's reservations
+                .filter(reservation -> reservingUser.getId().equals(reservation.getReservedById()))
+                // cancelled reservations do not count towards limit
+                .filter(reservation -> !BookingStatus.CANCELLED.equals(reservation.getBookingStatus()))
+                .count();
+
         final boolean isStudentEvent = event.getTags().contains("student");
         Integer groupReservationLimit = event.getGroupReservationLimit();
-        // This should never be null
-        if (groupReservationLimit != null) {
-            long numberOfRequests = users.stream().filter(user -> !isStudentEvent || !Role.TEACHER.equals(user.getRole())).count();
+        if (groupReservationLimit != null) { // This should never be null
+            long numberOfRequests = users.stream()
+                    // teachers don't count toward student event limits
+                    .filter(user -> !isStudentEvent || !Role.TEACHER.equals(user.getRole()))
+                    .count();
+
             if (groupReservationLimit - numberOfExistingReservations - numberOfRequests < 0) {
                 throw new EventGroupReservationLimitException(String.format("You can request a maximum of %d student "
                         + "reservations for event (%s)", numberOfRequests, event.getId()));
