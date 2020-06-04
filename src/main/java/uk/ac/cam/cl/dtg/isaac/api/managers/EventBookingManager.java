@@ -52,6 +52,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
+import java.awt.print.Book;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.text.DateFormat;
@@ -389,7 +390,7 @@ public class EventBookingManager {
                                           final Map<String, String> additionalEventInformation)
             throws SegueDatabaseException, EmailMustBeVerifiedException, DuplicateBookingException,
             EventIsFullException, EventDeadlineException {
-        this.ensureValidBooking(event, user, true, BookingStatus.CONFIRMED);
+        this.ensureValidEventAndUser(event, user, true);
 
         try {
             // Obtain an exclusive database lock to lock the event
@@ -398,7 +399,10 @@ public class EventBookingManager {
             // attempt to book them on the event
             BookingStatus existingBookingStatus = this.getBookingStatus(event.getId(), user.getId());
             EventBookingDTO booking;
-            if (BookingStatus.RESERVED.equals(existingBookingStatus)) {
+            if (BookingStatus.CONFIRMED.equals(existingBookingStatus)) {
+                throw new DuplicateBookingException(String.format("Unable to book onto event (%s) as user (%s) is already"
+                        + " booked on to it.", event.getId(), user.getEmail()));
+            } else if (BookingStatus.RESERVED.equals(existingBookingStatus)) {
                 // as reserved bookings already count toward capacity we DO NOT check capacity
                 booking = this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(),
                         BookingStatus.CONFIRMED, additionalEventInformation);
@@ -465,14 +469,14 @@ public class EventBookingManager {
     throws EventDeadlineException, EmailMustBeVerifiedException, DuplicateBookingException, EventIsFullException,
            EventGroupReservationLimitException, SegueDatabaseException {
 
+        for (RegisteredUserDTO user : users) {
+            this.ensureValidEventAndUser(event, user, true);
+        }
+
         List<EventBookingDTO> reservations = new ArrayList<>();
         try {
             // Obtain an exclusive database lock for the event
             this.bookingPersistenceManager.acquireDistributedLock(event.getId());
-
-            for (RegisteredUserDTO user : users) {
-                this.ensureValidBooking(event, user, true, BookingStatus.RESERVED);
-            }
 
             // is there space on the event? Teachers don't count for student events.
             // work out capacity information for the event at this moment in time.
@@ -501,8 +505,11 @@ public class EventBookingManager {
                     additionalEventInformation.put("reservationCloseDate", dateFormat.format(reservationCloseDate));
 
                     // attempt to book them on the event
-                    if (this.hasBookingWithAnyOfStatuses(event.getId(), user.getId(),
-                            new HashSet<>(Arrays.asList(BookingStatus.CANCELLED, BookingStatus.WAITING_LIST)))) {
+                    BookingStatus existingBookingStatus = this.getBookingStatus(event.getId(), user.getId());
+                    if (ImmutableList.of(BookingStatus.RESERVED, BookingStatus.CONFIRMED).contains(existingBookingStatus)) {
+                        throw new DuplicateBookingException(String.format("Unable to reserve onto event (%s) as user (%s) is"
+                                + " already reserved or booked on to it.", event.getId(), user.getEmail()));
+                    } else if (ImmutableList.of(BookingStatus.CANCELLED, BookingStatus.WAITING_LIST).contains(existingBookingStatus)) {
                         // if the user has previously cancelled we should let them book again.
                         reservation = this.bookingPersistenceManager.updateBookingStatus(event.getId(),
                                 user.getId(), reservingUser.getId(), BookingStatus.RESERVED,
@@ -575,13 +582,7 @@ public class EventBookingManager {
             SegueDatabaseException, EmailMustBeVerifiedException, DuplicateBookingException,
             EventDeadlineException, EventIsNotFullException {
         final Date now = new Date();
-
-        this.ensureValidBooking(event, user, false, BookingStatus.WAITING_LIST);
-
-        if (this.hasBookingWithStatus(event.getId(), user.getId(), BookingStatus.WAITING_LIST)) {
-            throw new DuplicateBookingException(String.format("Unable to book onto event (%s) as user (%s) is already"
-                    + " booked on to it.", event.getId(), user.getEmail()));
-        }
+        this.ensureValidEventAndUser(event, user, false);
 
         try {
             // Obtain an exclusive database lock to lock the event
@@ -599,9 +600,12 @@ public class EventBookingManager {
             }
 
             EventBookingDTO booking;
-
+            BookingStatus existingBookingStatus = this.getBookingStatus(event.getId(), user.getId());
             // attempt to book them on the waiting list of the event.
-            if (this.hasBookingWithStatus(event.getId(), user.getId(), BookingStatus.CANCELLED)) {
+            if (ImmutableList.of(BookingStatus.CONFIRMED, BookingStatus.WAITING_LIST, BookingStatus.RESERVED).contains(existingBookingStatus)) {
+                throw new DuplicateBookingException(String.format("Unable to add to event (%s) waiting list as user (%s) is"
+                        + " already on it, reserved or booked.", event.getId(), user.getEmail()));
+            } else if (BookingStatus.CANCELLED.equals(existingBookingStatus)) {
                 // if the user has previously cancelled we should let them book again.
                 booking = this.bookingPersistenceManager.updateBookingStatus(event.getId(),
                         user.getId(),
@@ -863,14 +867,6 @@ public class EventBookingManager {
      */
     public boolean isUserBooked(final String eventId, final Long userId) throws SegueDatabaseException {
         return this.bookingPersistenceManager.isUserBooked(eventId, userId);
-    }
-
-    public boolean isUserReserved(final String eventId, final Long userId) throws SegueDatabaseException {
-        return this.bookingPersistenceManager.isUserReserved(eventId, userId);
-    }
-
-    public boolean isUserInWaitingList(final String eventId, final Long userId) throws SegueDatabaseException {
-        return this.bookingPersistenceManager.isUserInWaitingList(eventId, userId);
     }
 
     /**
@@ -1157,19 +1153,17 @@ public class EventBookingManager {
     }
 
     /**
-     * Enforce business logic that is common to all event bookings / waiting list entries.
+     * Enforce common business logic on event and users for bookings.
      *
      * @param event                  of interest
      * @param user                   user to book on to the event.
      * @param enforceBookingDeadline - whether or not to enforce the booking deadline of the event
-     * @throws SegueDatabaseException       - if there is a database error
      * @throws EmailMustBeVerifiedException - if this method requires a validated e-mail address.
      * @throws DuplicateBookingException    - Duplicate booking, only unique bookings.
      * @throws EventDeadlineException       - The deadline for booking has passed.
      */
-    private void ensureValidBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user, final boolean
-            enforceBookingDeadline, final BookingStatus requestedBookingStatus) throws SegueDatabaseException,
-            EmailMustBeVerifiedException, DuplicateBookingException, EventDeadlineException {
+    private void ensureValidEventAndUser(final IsaacEventPageDTO event, final RegisteredUserDTO user, final boolean
+            enforceBookingDeadline) throws EmailMustBeVerifiedException, DuplicateBookingException, EventDeadlineException {
         Date now = new Date();
 
         // check if if the end date has passed. Allowed to add to wait list after deadline.
@@ -1181,20 +1175,6 @@ public class EventBookingManager {
         // if we are enforcing the booking deadline then enforce it.
         if (enforceBookingDeadline && event.getBookingDeadline() != null && now.after(event.getBookingDeadline())) {
             throw new EventDeadlineException("The booking deadline has passed.");
-        }
-        // check if already reserved
-        if (requestedBookingStatus.equals(BookingStatus.RESERVED) && this.isUserReserved(event.getId(), user.getId())) {
-            throw new DuplicateBookingException(String.format("Unable to reserve onto event (%s) as user (%s) is"
-                    + " already reserved on to it.", event.getId(), user.getEmail()));
-        }
-        if (requestedBookingStatus.equals(BookingStatus.WAITING_LIST) && this.isUserInWaitingList(event.getId(), user.getId())) {
-            throw new DuplicateBookingException(String.format("Unable to add to event (%s) waiting list as user (%s) is"
-                    + " already on it.", event.getId(), user.getEmail()));
-        }
-        // check if already booked
-        if (requestedBookingStatus.equals(BookingStatus.CONFIRMED) && this.isUserBooked(event.getId(), user.getId())) {
-            throw new DuplicateBookingException(String.format("Unable to book onto event (%s) as user (%s) is already"
-                    + " booked on to it.", event.getId(), user.getEmail()));
         }
 
         // must have verified email

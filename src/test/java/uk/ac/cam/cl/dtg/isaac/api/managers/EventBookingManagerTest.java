@@ -101,20 +101,24 @@ public class EventBookingManagerTest {
         someUser.setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
         someUser.setRole(Role.TEACHER);
 
+        RegisteredUserDTO someStudentUser = new RegisteredUserDTO();
+        someStudentUser.setId(1L);
+        someStudentUser.setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
+        someStudentUser.setRole(Role.STUDENT);
+
         EventBookingDTO firstBooking = new EventBookingDTO();
         UserSummaryDTO firstUser = new UserSummaryDTO();
-        firstUser.setRole(Role.TEACHER);
-        firstUser.setId(someUser.getId());
+        firstUser.setRole(Role.STUDENT);
+        firstUser.setId(someStudentUser.getId());
         firstBooking.setUserBooked(firstUser);
         firstBooking.setBookingStatus(BookingStatus.CONFIRMED);
 
         Map<BookingStatus, Map<Role, Long>> placesAvailableMap = generatePlacesAvailableMap();
-        placesAvailableMap.get(BookingStatus.CONFIRMED).put(Role.TEACHER, 1L);
+        placesAvailableMap.get(BookingStatus.CONFIRMED).put(Role.STUDENT, 1L);
         expect(dummyEventBookingPersistenceManager.getEventBookingStatusCounts(testEvent.getId(), false)).andReturn(placesAvailableMap).atLeastOnce();
 
         expect(dummyEventBookingPersistenceManager.getBookingByEventIdAndUserId(testEvent.getId(), someUser.getId()))
-				.andReturn(firstBooking);
-        expect(dummyEventBookingPersistenceManager.isUserBooked(testEvent.getId(), someUser.getId())).andReturn(false);
+				.andReturn(null).once();
 
         dummyEventBookingPersistenceManager.acquireDistributedLock(testEvent.getId());
         expectLastCall().atLeastOnce();
@@ -161,8 +165,8 @@ public class EventBookingManagerTest {
         placesAvailableMap.get(BookingStatus.CONFIRMED).put(Role.STUDENT, 1L);
         expect(dummyEventBookingPersistenceManager.getEventBookingStatusCounts(testEvent.getId(), false)).andReturn(placesAvailableMap).atLeastOnce();
 
-        expect(dummyEventBookingPersistenceManager.isUserBooked(testEvent.getId(), someUser.getId())).andReturn(false);
-        expect(dummyEventBookingPersistenceManager.getBookingByEventIdAndUserId(testEvent.getId(), someUser.getId())).andReturn(null);
+        expect(dummyEventBookingPersistenceManager.getBookingByEventIdAndUserId(testEvent.getId(), someUser.getId())).andReturn(null)
+                .once();
 
         dummyEventBookingPersistenceManager.acquireDistributedLock(testEvent.getId());
         expectLastCall().atLeastOnce();
@@ -204,8 +208,8 @@ public class EventBookingManagerTest {
         placesAvailableMap.get(BookingStatus.CONFIRMED).put(Role.TEACHER, 1L);
         expect(dummyEventBookingPersistenceManager.getEventBookingStatusCounts(testEvent.getId(), false)).andReturn(placesAvailableMap).atLeastOnce();
 
-        expect(dummyEventBookingPersistenceManager.isUserBooked(testEvent.getId(), someUser.getId())).andReturn(false);
-        expect(dummyEventBookingPersistenceManager.getBookingByEventIdAndUserId(testEvent.getId(), someUser.getId())).andReturn(null);
+        expect(dummyEventBookingPersistenceManager.getBookingByEventIdAndUserId(testEvent.getId(), someUser.getId())).andReturn(null)
+                .once();
 
         dummyEventBookingPersistenceManager.acquireDistributedLock(testEvent.getId());
         expectLastCall().atLeastOnce();
@@ -235,16 +239,12 @@ public class EventBookingManagerTest {
         someUser.setEmailVerificationStatus(EmailVerificationStatus.NOT_VERIFIED);
         someUser.setRole(Role.STUDENT);
 
-        expect(dummyEventBookingPersistenceManager.isUserBooked(testEvent.getId(), someUser.getId())).andReturn(false);
-
-        replay(dummyEventBookingPersistenceManager);
         try {
             ebm.requestBooking(testEvent, someUser, someAdditionalInformation);
             fail("Expected an EventFullException and one didn't happen.");
         } catch (EmailMustBeVerifiedException e) {
             // success !
         }
-        verify(dummyEventBookingPersistenceManager);
     }
 
     @Test
@@ -309,8 +309,8 @@ public class EventBookingManagerTest {
 
         List<EventBookingDTO> currentBookings = Arrays.asList(firstBooking, secondBooking);
 
-        expect(dummyEventBookingPersistenceManager.isUserBooked(testEvent.getId(), someUser.getId())).andReturn(false);
-        expect(dummyEventBookingPersistenceManager.getBookingByEventIdAndUserId(testEvent.getId(), someUser.getId())).andReturn(null);
+        expect(dummyEventBookingPersistenceManager.getBookingByEventIdAndUserId(testEvent.getId(), someUser.getId())).andReturn(null)
+                .once();
 
         dummyEventBookingPersistenceManager.acquireDistributedLock(testEvent.getId());
         expectLastCall().atLeastOnce();
@@ -356,9 +356,7 @@ public class EventBookingManagerTest {
         List<EventBookingDTO> currentBookings = Arrays.asList(secondBooking);
 
         expect(dummyEventBookingPersistenceManager.getBookingByEventIdAndUserId(testEvent.getId(), someUser.getId()))
-				.andReturn(null);
-
-        expect(dummyEventBookingPersistenceManager.isUserBooked(testEvent.getId(), someUser.getId())).andReturn(false);
+				.andReturn(null).once();
 
         dummyEventBookingPersistenceManager.acquireDistributedLock(testEvent.getId());
         expectLastCall().atLeastOnce();
@@ -423,9 +421,7 @@ public class EventBookingManagerTest {
         expect(dummyEventBookingPersistenceManager.getEventBookingStatusCounts(testEvent.getId(), false)).andReturn(placesAvailableMap).atLeastOnce();
 
         expect(dummyEventBookingPersistenceManager.getBookingByEventIdAndUserId(testEvent.getId(), firstUserFull
-				.getId())).andReturn(firstBooking);
-        expect(dummyEventBookingPersistenceManager.isUserBooked(testEvent.getId(), firstUserFull.getId())).andReturn
-				(false);
+				.getId())).andReturn(firstBooking).once();
 
         dummyEventBookingPersistenceManager.acquireDistributedLock(testEvent.getId());
         expectLastCall().atLeastOnce();
@@ -469,8 +465,6 @@ public class EventBookingManagerTest {
         }};
 
         // Expected external calls
-        expect(dummyEventBookingPersistenceManager.isUserBooked(testCase.event.getId(), reservedStudent.getId())).andReturn(false).once();
-
         dummyEventBookingPersistenceManager.acquireDistributedLock(testCase.event.getId());
         expectLastCall().once();
 
@@ -540,7 +534,7 @@ public class EventBookingManagerTest {
         expect(dummyEventBookingPersistenceManager.isUserBooked(testEvent.getId(), someUser.getId())).andReturn(false);
 
         expect(dummyEventBookingPersistenceManager.getBookingByEventIdAndUserId(testEvent.getId(), 6L))
-                .andReturn(firstBooking).atLeastOnce();
+                .andReturn(firstBooking).once();
 
         dummyEventBookingPersistenceManager.acquireDistributedLock(testEvent.getId());
         expectLastCall().atLeastOnce();
@@ -862,9 +856,6 @@ public class EventBookingManagerTest {
         dummyEventBookingPersistenceManager.acquireDistributedLock(testCase.event.getId());
         expectLastCall().once();
 
-        // Check if user is reserved or in a waiting list for each user being reserved
-        expect(dummyEventBookingPersistenceManager.isUserReserved(anyString(), anyLong())).andReturn(false).atLeastOnce();
-        expect(dummyEventBookingPersistenceManager.isUserInWaitingList(anyString(), anyLong())).andReturn(false).atLeastOnce();
         // Check existing bookings
         expect(dummyEventBookingPersistenceManager.getBookingsByEventId(testCase.event.getId())).andReturn(ImmutableList.of(student2sCancelledBooking)).once();
 
@@ -925,8 +916,6 @@ public class EventBookingManagerTest {
         List<RegisteredUserDTO> studentsToReserve = ImmutableList.of(testCase.student1, testCase.student2);
 
         // Define expected external calls
-        expect(dummyEventBookingPersistenceManager.isUserReserved(anyString(), anyLong())).andReturn(false).atLeastOnce();
-        expect(dummyEventBookingPersistenceManager.isUserInWaitingList(anyString(), anyLong())).andReturn(false).atLeastOnce();
         dummyEventBookingPersistenceManager.acquireDistributedLock(testCase.event.getId());
         expectLastCall().atLeastOnce();
 
@@ -966,8 +955,6 @@ public class EventBookingManagerTest {
         }};
 
         // Define expected external calls
-        expect(dummyEventBookingPersistenceManager.isUserReserved(anyString(), anyLong())).andReturn(false).atLeastOnce();
-        expect(dummyEventBookingPersistenceManager.isUserInWaitingList(anyString(), anyLong())).andReturn(false).atLeastOnce();
         dummyEventBookingPersistenceManager.acquireDistributedLock(testCase.event.getId());
         expectLastCall().atLeastOnce();
         expect(dummyEventBookingPersistenceManager

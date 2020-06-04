@@ -781,25 +781,16 @@ public class EventsFacade extends AbstractIsaacFacade {
             }
 
             bookableUsers = new HashMap<>();
-            List<Long> unbookableIds = new ArrayList<>();
             for (Long userId : userIds) {
-                // Do not add a reservation if a user is already booked or reserved.
+                // Enforce permission
                 RegisteredUserDTO u = userManager.getUserDTOById(userId);
                 if (!userAssociationManager.hasPermission(currentUser, u)) {
                     return new SegueErrorResponse(Status.FORBIDDEN,
                             "You do not have permission to book or reserve some of these users onto this event.")
                             .toResponse();
-                }
-                if (bookingManager.isUserBooked(eventId, userId) || bookingManager.isUserReserved(eventId, userId)) {
-                    unbookableIds.add(userId);
                 } else {
                     bookableUsers.put(userId, u);
                 }
-            }
-            if (unbookableIds.size() > 0) {
-                return new SegueErrorResponse(Status.BAD_REQUEST,
-                        "Some of the users you requested are already booked or reserved on this event.")
-                        .toResponse();
             }
 
             // This would be neater with streams and lambdas, but handling exceptions in lambdas is ugly.
@@ -1019,12 +1010,6 @@ public class EventsFacade extends AbstractIsaacFacade {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
             IsaacEventPageDTO event = this.getAugmentedEventDTOById(request, eventId);
-
-            // Fail if the user is already booked or reserved for this event, so there's no need to add to a waiting list.
-            if (bookingManager.isUserBooked(eventId, user.getId()) || bookingManager.isUserReserved(eventId, user.getId())) {
-                return new SegueErrorResponse(Status.BAD_REQUEST, "You are already booked or reserved on this event.")
-                    .toResponse();
-            }
 
             EventBookingDTO eventBookingDTO = bookingManager.requestWaitingListBooking(event, user, additionalInformation);
             this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
