@@ -239,24 +239,6 @@ public class EventBookingPersistenceManager {
         }
     }
 
-    public boolean isUserReserved(final String eventId, final Long userId) throws SegueDatabaseException {
-        try {
-            final EventBooking bookingByEventAndUser = dao.findBookingByEventAndUser(eventId, userId);
-            return bookingByEventAndUser.getBookingStatus().equals(BookingStatus.RESERVED);
-        } catch (ResourceNotFoundException e) {
-            return false;
-        }
-    }
-
-    public boolean isUserInWaitingList(final String eventId, final Long userId) throws SegueDatabaseException {
-        try {
-            final EventBooking bookingByEventAndUser = dao.findBookingByEventAndUser(eventId, userId);
-            return bookingByEventAndUser.getBookingStatus().equals(BookingStatus.WAITING_LIST);
-        } catch (ResourceNotFoundException e) {
-            return false;
-        }
-    }
-
     /**
      * @param eventId
      *            - event id
