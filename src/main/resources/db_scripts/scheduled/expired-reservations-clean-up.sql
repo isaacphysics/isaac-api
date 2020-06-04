@@ -1,5 +1,6 @@
 /* Clean up expired reservations */
 
-DELETE FROM event_bookings
+UPDATE event_bookings
+SET status = 'CANCELLED', updated = NOW()
 WHERE status = 'RESERVED'
   AND (additional_booking_information->>'reservationCloseDate')::timestamptz < NOW();
