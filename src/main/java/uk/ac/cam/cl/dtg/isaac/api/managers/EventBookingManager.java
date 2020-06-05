@@ -358,16 +358,7 @@ public class EventBookingManager {
             this.bookingPersistenceManager.releaseDistributedLock(event.getId());
         }
 
-        // auto add them to the group and grant the owner permission
-        if (BookingStatus.CONFIRMED.equals(status) && event.getIsaacGroupToken() != null
-                && !event.getIsaacGroupToken().isEmpty()) {
-            try {
-                this.userAssociationManager.createAssociationWithToken(event.getIsaacGroupToken(), user);
-            } catch (InvalidUserAssociationTokenException e) {
-                log.error(String.format("Unable to auto add user (%s) using token (%s) as the token is invalid.",
-                        user.getEmail(), event.getIsaacGroupToken()));
-            }
-        }
+        addUserToEventGroup(event, user);
 
         return booking;
     }
@@ -436,15 +427,7 @@ public class EventBookingManager {
                         .getEmail()), e);
             }
 
-            // auto add them to the group and grant the owner permission
-            if (event.getIsaacGroupToken() != null && !event.getIsaacGroupToken().isEmpty()) {
-                try {
-                    this.userAssociationManager.createAssociationWithToken(event.getIsaacGroupToken(), user);
-                } catch (InvalidUserAssociationTokenException e) {
-                    log.error(String.format("Unable to auto add user (%s) using token (%s) as the token is invalid.",
-                            user.getEmail(), event.getIsaacGroupToken()));
-                }
-            }
+            addUserToEventGroup(event, user);
 
             return booking;
         } finally {
@@ -619,15 +602,9 @@ public class EventBookingManager {
                         additionalInformation);
             }
 
-            // auto add them to the group and grant the owner permission - only if this event is a special wait list only event.
-            if (event.getIsaacGroupToken() != null && !event.getIsaacGroupToken().isEmpty()
-                    && EventStatus.WAITING_LIST_ONLY.equals(event.getEventStatus())) {
-                try {
-                    this.userAssociationManager.createAssociationWithToken(event.getIsaacGroupToken(), user);
-                } catch (InvalidUserAssociationTokenException e) {
-                    log.error(String.format("Unable to auto add user (%s) using token (%s) as the token is invalid.",
-                            user.getEmail(), event.getIsaacGroupToken()));
-                }
+            // Auto add user to the event group if the event is a special Waiting List Only type event
+            if (EventStatus.WAITING_LIST_ONLY.equals(event.getEventStatus())) {
+                addUserToEventGroup(event, user);
             }
 
             try {
@@ -652,7 +629,7 @@ public class EventBookingManager {
     }
 
     /**
-     * Allows an admin user to promote someone from the waiting list or cancelled booking to a confirmed booking.
+     * Allows an admin user to promote someone from a waiting list or cancellation to a confirmed booking.
      *
      * @param event                 - The event in question.
      * @param userDTO               - The user whose booking should be updated
@@ -661,8 +638,7 @@ public class EventBookingManager {
      * @throws EventIsFullException         - No space on the event
      * @throws EventBookingUpdateException  - Unable to update the event booking.
      */
-    public EventBookingDTO promoteFromWaitingListOrCancelled(final IsaacEventPageDTO event, final RegisteredUserDTO
-            userDTO)
+    public EventBookingDTO promoteToConfirmedBooking(final IsaacEventPageDTO event, final RegisteredUserDTO userDTO)
             throws SegueDatabaseException, EventBookingUpdateException, EventIsFullException {
         EventBookingDTO updatedStatus;
         try {
@@ -674,8 +650,13 @@ public class EventBookingManager {
                 throw new EventBookingUpdateException("Unable to promote a booking that doesn't exist.");
             }
 
-            if (this.isUserBooked(event.getId(), userDTO.getId())) {
+            if (BookingStatus.CONFIRMED.equals(eventBooking.getBookingStatus())) {
                 throw new EventBookingUpdateException("Unable to promote a booking that is CONFIRMED already.");
+            }
+
+            if (BookingStatus.RESERVED.equals(eventBooking.getBookingStatus())) {
+                throw new EventBookingUpdateException("Unable to promote a booking that is RESERVED as we " +
+                        "might not have all of the required user information.");
             }
 
             final Long placesAvailable = this.getPlacesAvailable(event, true);
@@ -684,7 +665,6 @@ public class EventBookingManager {
                         + "over capacity.");
             }
 
-            // probably want to send a waiting list promotion email.
             try {
                 updatedStatus = this.bookingPersistenceManager
                         .updateBookingStatus(eventBooking.getEventId(), userDTO.getId(),
@@ -715,15 +695,7 @@ public class EventBookingManager {
             this.bookingPersistenceManager.releaseDistributedLock(event.getId());
         }
 
-        // auto add them to the group and grant the owner permission
-        if (event.getIsaacGroupToken() != null && !event.getIsaacGroupToken().isEmpty()) {
-            try {
-                this.userAssociationManager.createAssociationWithToken(event.getIsaacGroupToken(), userDTO);
-            } catch (InvalidUserAssociationTokenException e) {
-                log.error(String.format("Unable to auto add user (%s) using token (%s) as the token is invalid.",
-                        userDTO.getEmail(), event.getIsaacGroupToken()));
-            }
-        }
+        addUserToEventGroup(event, userDTO);
 
         return updatedStatus;
     }
@@ -1266,13 +1238,32 @@ public class EventBookingManager {
     }
 
     /**
+     * Helper method to add the group association made when a user books on an event.
+     * @param event context
+     * @param user to add
+     * @throws SegueDatabaseException if there is a database error.
+     */
+    private void addUserToEventGroup(final IsaacEventPageDTO event, final RegisteredUserDTO user)
+            throws SegueDatabaseException {
+        // auto add them to the group and grant the owner permission
+        if (event.getIsaacGroupToken() != null && !event.getIsaacGroupToken().isEmpty()) {
+            try {
+                this.userAssociationManager.createAssociationWithToken(event.getIsaacGroupToken(), user);
+            } catch (InvalidUserAssociationTokenException e) {
+                log.error(String.format("Unable to auto add user (%s) using token (%s) as the token is invalid.",
+                        user.getEmail(), event.getIsaacGroupToken()));
+            }
+        }
+    }
+
+    /**
      * Helper method to undo the group association made when a user books on an event.
      * @param event context
      * @param user to remove
      * @throws SegueDatabaseException if there is a database error.
      */
     private void removeUserFromEventGroup(final IsaacEventPageDTO event, final RegisteredUserDTO user)
-            throws SegueDatabaseException{
+            throws SegueDatabaseException {
         try {
             // auto remove them from the group
             if (event.getIsaacGroupToken() != null && !event.getIsaacGroupToken().isEmpty()) {

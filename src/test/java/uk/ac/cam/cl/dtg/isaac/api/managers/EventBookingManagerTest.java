@@ -33,9 +33,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import static org.easymock.EasyMock.anyLong;
 import static org.easymock.EasyMock.anyObject;
-import static org.easymock.EasyMock.anyString;
 import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
@@ -531,8 +529,6 @@ public class EventBookingManagerTest {
 
         List<EventBookingDTO> currentBookings = Arrays.asList(firstBooking, secondBooking);
 
-        expect(dummyEventBookingPersistenceManager.isUserBooked(testEvent.getId(), someUser.getId())).andReturn(false);
-
         expect(dummyEventBookingPersistenceManager.getBookingByEventIdAndUserId(testEvent.getId(), 6L))
                 .andReturn(firstBooking).once();
 
@@ -554,7 +550,7 @@ public class EventBookingManagerTest {
         Object[] mockedObjects = {dummyEventBookingPersistenceManager, dummyPropertiesLoader, dummyEmailManager};
         replay(mockedObjects);
         try {
-            ebm.promoteFromWaitingListOrCancelled(testEvent, someUser);
+            ebm.promoteToConfirmedBooking(testEvent, someUser);
             // success
         } catch (EventIsFullException e) {
             fail("Expected successful booking as no waiting list bookings.");
@@ -599,8 +595,6 @@ public class EventBookingManagerTest {
         placesAvailableMap.get(BookingStatus.WAITING_LIST).put(Role.TEACHER, 1L);
         expect(dummyEventBookingPersistenceManager.getEventBookingStatusCounts(testEvent.getId(), false)).andReturn(placesAvailableMap).atLeastOnce();
 
-        expect(dummyEventBookingPersistenceManager.isUserBooked(testEvent.getId(), someUser.getId())).andReturn(false);
-
         expect(dummyEventBookingPersistenceManager.getBookingByEventIdAndUserId(testEvent.getId(), 6L)).andReturn(firstBooking);
 
         dummyEventBookingPersistenceManager.acquireDistributedLock(testEvent.getId());
@@ -610,7 +604,7 @@ public class EventBookingManagerTest {
 
         replay(dummyEventBookingPersistenceManager);
         try {
-            ebm.promoteFromWaitingListOrCancelled(testEvent, someUser);
+            ebm.promoteToConfirmedBooking(testEvent, someUser);
             fail("Expected failure booking as no space for this event.");
         } catch (EventIsFullException e) {
             // success

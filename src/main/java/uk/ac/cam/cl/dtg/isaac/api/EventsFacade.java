@@ -403,7 +403,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     }
 
     /**
-     * Allow a staff user to promote a user from the waiting list.
+     * Allow a staff user to promote a existing bookings to confirmed bookings.
      *
      * @param request
      *            - so we can determine if the user is logged in
@@ -419,11 +419,11 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Path("{event_id}/bookings/{user_id}/promote")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Move a user from an event waiting list to a confirmed booking.")
-    public final Response promoteUserFromWaitingList(@Context final HttpServletRequest request,
-                                                     @PathParam("event_id") final String eventId,
-                                                     @PathParam("user_id") final Long userId,
-                                                     final Map<String, String> additionalInformation) {
+    @ApiOperation(value = "Move a user from an event waiting list, reservation or cancellation to a confirmed booking.")
+    public final Response promoteBooking(@Context final HttpServletRequest request,
+                                         @PathParam("event_id") final String eventId,
+                                         @PathParam("user_id") final Long userId,
+                                         final Map<String, String> additionalInformation) {
         try {
             RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(request);
             RegisteredUserDTO userOfInterest = this.userManager.getUserDTOById(userId);
@@ -434,7 +434,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             }
 
             EventBookingDTO eventBookingDTO
-                    = this.bookingManager.promoteFromWaitingListOrCancelled(event, userOfInterest);
+                    = this.bookingManager.promoteToConfirmedBooking(event, userOfInterest);
 
             this.getLogManager().logEvent(currentUser, request,
                     SegueLogType.ADMIN_EVENT_WAITING_LIST_PROMOTION, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId(),
