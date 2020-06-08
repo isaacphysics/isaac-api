@@ -274,8 +274,11 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                         .getQuestionAttemptsByUser(currentlyLoggedInUser);
 
                 // we want to populate gameboard details for the assignment DTO.
+                List<String> gameboardIDs = allAssignmentsSetToGroup.stream().map(AssignmentDTO::getGameboardId).collect(Collectors.toList());
+                Map<String, GameboardDTO> gameboards = this.gameManager.getGameboards(gameboardIDs, currentlyLoggedInUser, userQuestionAttempts)
+                        .stream().collect(Collectors.toMap(GameboardDTO::getId, Function.identity()));
                 for (AssignmentDTO assignment : allAssignmentsSetToGroup) {
-                    assignment.setGameboard(this.gameManager.getGameboard(assignment.getGameboardId(), currentlyLoggedInUser, userQuestionAttempts));
+                    assignment.setGameboard(gameboards.get(assignment.getGameboardId()));
                 }
 
                 this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacLogType.VIEW_GROUPS_ASSIGNMENTS,
