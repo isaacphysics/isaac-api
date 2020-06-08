@@ -87,14 +87,15 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.DATE_FIELDNAME;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.ENDDATE_FIELDNAME;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.EVENT_TYPE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
@@ -759,7 +760,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     public final Response createReservationsForGivenUsers(@Context final HttpServletRequest request,
                                                           @PathParam("event_id") final String eventId,
                                                           final List<Long> userIds) {
-        RegisteredUserDTO currentUser;
+        RegisteredUserDTO reservingUser;
         IsaacEventPageDTO event;
         try {
             event = this.getRawEventDTOById(eventId);
@@ -773,38 +774,33 @@ public class EventsFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.FORBIDDEN, "This event does not accept group bookings.").toResponse();
         }
 
-        Map<Long, RegisteredUserDTO> bookableUsers;
+        List<RegisteredUserDTO> usersToReserve = Lists.newArrayList();;
         try {
-            currentUser = userManager.getCurrentRegisteredUser(request);
-            if (!Arrays.asList(Role.TEACHER, Role.EVENT_LEADER, Role.EVENT_MANAGER, Role.ADMIN).contains(currentUser.getRole())) {
+            reservingUser = userManager.getCurrentRegisteredUser(request);
+            if (!Arrays.asList(Role.TEACHER, Role.EVENT_LEADER, Role.EVENT_MANAGER, Role.ADMIN).contains(reservingUser.getRole())) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
-            bookableUsers = new HashMap<>();
+            // Enforce permission
             for (Long userId : userIds) {
-                // Enforce permission
-                RegisteredUserDTO u = userManager.getUserDTOById(userId);
-                if (!userAssociationManager.hasPermission(currentUser, u)) {
+                RegisteredUserDTO userToReserve = userManager.getUserDTOById(userId);
+                if (userAssociationManager.hasPermission(reservingUser, userToReserve)) {
+                    usersToReserve.add(userToReserve);
+                } else {
                     return new SegueErrorResponse(Status.FORBIDDEN,
                             "You do not have permission to book or reserve some of these users onto this event.")
                             .toResponse();
-                } else {
-                    bookableUsers.put(userId, u);
                 }
             }
 
-            // This would be neater with streams and lambdas, but handling exceptions in lambdas is ugly.
-            List<RegisteredUserDTO> usersToBook = new ArrayList<>();
-            for (Long bookableId : bookableUsers.keySet()) {
-                usersToBook.add(bookableUsers.get(bookableId));
-            }
-            List<EventBookingDTO> bookings = bookingManager.requestReservations(event, usersToBook, currentUser);
-            this.getLogManager().logEvent(currentUser, request,
+            List<EventBookingDTO> bookings = bookingManager.requestReservations(event, usersToReserve, reservingUser);
+
+            this.getLogManager().logEvent(reservingUser, request,
                     SegueLogType.EVENT_RESERVATIONS_CREATED,
                     ImmutableMap.of(
                             EVENT_ID_FKEY_FIELDNAME, event.getId(),
-                            USER_ID_FKEY_FIELDNAME, currentUser.getId(),
-                            USER_ID_LIST_FKEY_FIELDNAME, bookableUsers.keySet().toArray(),
+                            USER_ID_FKEY_FIELDNAME, reservingUser.getId(),
+                            USER_ID_LIST_FKEY_FIELDNAME, userIds.toArray(),
                             BOOKING_STATUS_FIELDNAME, BookingStatus.RESERVED.toString()
                     ));
             return Response.ok(bookings).build();
