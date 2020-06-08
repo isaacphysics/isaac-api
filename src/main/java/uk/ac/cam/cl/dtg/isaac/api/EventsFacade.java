@@ -1061,7 +1061,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     @ApiOperation(value = "Cancel the current user's booking on an event.")
     public final Response cancelBooking(@Context final HttpServletRequest request,
                                         @PathParam("event_id") final String eventId) {
-        return this.cancelBooking(request, eventId, null);
+                                    return this.cancelBooking(request, eventId, null);
     }
 
     /**

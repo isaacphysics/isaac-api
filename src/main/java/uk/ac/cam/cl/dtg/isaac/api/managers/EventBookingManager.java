@@ -941,6 +941,16 @@ public class EventBookingManager {
                                     .build(),
                             EmailType.SYSTEM);
                     // We may also want to send an email to userAccountManager.getUserDTOById(reservedById)
+                    RegisteredUserDTO reserver = userAccountManager.getUserDTOById(reservedById);
+                    emailManager.sendTemplatedEmailToUser(reserver,
+                            emailManager.getEmailTemplateDTO("email_event_reservation_cancellation_reserver_notification"),
+                            new ImmutableMap.Builder<String, Object>()
+                                    .put("contactUsURL", generateEventContactUsURL(event))
+                                    .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
+                                    .put("event", event)
+                                    .put("reservedName", user.getGivenName() + " " + user.getFamilyName())
+                                    .build(),
+                            EmailType.SYSTEM);
                 } else {
                     emailManager.sendTemplatedEmailToUser(user,
                             emailManager.getEmailTemplateDTO("email-event-booking-cancellation-confirmed"),
@@ -952,6 +962,9 @@ public class EventBookingManager {
                             EmailType.SYSTEM);
                 }
             }
+        } catch (NoUserException e) {
+            log.error("Unable to resolve reserving user (" + reservedById + ") in the database, notification of " +
+                    "student cancellation email was not sent");
         } finally {
             this.bookingPersistenceManager.releaseDistributedLock(event.getId());
         }
