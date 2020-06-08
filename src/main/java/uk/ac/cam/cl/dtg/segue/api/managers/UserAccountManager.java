@@ -340,6 +340,21 @@ public class UserAccountManager implements IUserAccountManager {
         }
     }
 
+    /**
+     * Complete the MFA login process. If the correct TOTPCode is provided we will give the user a full session cookie
+     * rather than a partial one.
+     *
+     * @param request - containing the partially logged in user.
+     * @param response - response will be updated to include fully logged in cookie if TOTPCode is successfully verified
+     * @param TOTPCode - code to verify
+     * @return RegisteredUserDTO as they are now considered logged in.
+     * @throws IncorrectCredentialsProvidedException
+     *             - if the password is incorrect
+     * @throws NoCredentialsAvailableException
+     *             - If the account exists but does not have a local password
+     * @throws SegueDatabaseException
+     *             - if there is a problem with the database.
+     */
     public RegisteredUserDTO authenticateMFA(final HttpServletRequest request, final HttpServletResponse response, final Integer TOTPCode)
             throws IncorrectCredentialsProvidedException, NoCredentialsAvailableException, SegueDatabaseException, NoUserLoggedInException {
         RegisteredUser registeredUser = this.retrievePartialLogInForMFA(request);
@@ -347,6 +362,7 @@ public class UserAccountManager implements IUserAccountManager {
         if (registeredUser == null) {
             throw new NoUserLoggedInException();
         }
+
         RegisteredUserDTO userToReturn = convertUserDOToUserDTO(registeredUser);
         this.secondFactorManager.authenticate2ndFactor(userToReturn, TOTPCode);
 
@@ -1143,8 +1159,10 @@ public class UserAccountManager implements IUserAccountManager {
 
     /**
      * Check if account has MFA configured.
+     *
      * @param user - who requested it
      * @return true if yes false if not.
+     * @throws SegueDatabaseException - If there is an internal database error.
      */
     public boolean has2FAConfigured(final RegisteredUserDTO user) throws SegueDatabaseException {
         return this.secondFactorManager.has2FAConfigured(user);
@@ -1314,8 +1332,10 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     /**
-     * generate a partially logged in session for the user based on successful password authentication.
+     * Generate a partially logged in session for the user based on successful password authentication.
+     *
      * To complete this the user must also complete MFA authentication.
+     *
      * @param request
      * @param response
      * @param user
@@ -1326,7 +1346,8 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     /**
-     * retrieve a partially logged in session for the user based on successful password authentication.
+     * Retrieve a partially logged in session for the user based on successful password authentication.
+     *
      * NOTE: You should not treat users has having logged in using this method as they haven't completed login.
      *
      * @param request
