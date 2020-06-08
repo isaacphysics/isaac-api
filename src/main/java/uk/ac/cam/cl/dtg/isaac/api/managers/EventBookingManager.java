@@ -52,13 +52,11 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import java.awt.print.Book;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_TIME_LOCALITY;
@@ -489,10 +487,10 @@ public class EventBookingManager {
 
                     // attempt to book them on the event
                     BookingStatus existingBookingStatus = this.getBookingStatus(event.getId(), user.getId());
-                    if (ImmutableList.of(BookingStatus.RESERVED, BookingStatus.CONFIRMED).contains(existingBookingStatus)) {
+                    if (ImmutableList.of(BookingStatus.RESERVED, BookingStatus.WAITING_LIST, BookingStatus.CONFIRMED).contains(existingBookingStatus)) {
                         throw new DuplicateBookingException(String.format("Unable to reserve onto event (%s) as user (%s) is"
-                                + " already reserved or booked on to it.", event.getId(), user.getEmail()));
-                    } else if (ImmutableList.of(BookingStatus.CANCELLED, BookingStatus.WAITING_LIST).contains(existingBookingStatus)) {
+                                + " already reserved, on the waiting list or booked on to it.", event.getId(), user.getEmail()));
+                    } else if (ImmutableList.of(BookingStatus.CANCELLED).contains(existingBookingStatus)) {
                         // if the user has previously cancelled we should let them book again.
                         reservation = this.bookingPersistenceManager.updateBookingStatus(event.getId(),
                                 user.getId(), reservingUser.getId(), BookingStatus.RESERVED,
