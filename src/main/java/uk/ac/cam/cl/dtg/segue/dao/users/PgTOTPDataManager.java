@@ -132,11 +132,36 @@ public class PgTOTPDataManager implements ITOTPDataManager {
     }
 
     /**
+     * Remove all trace of MFA for the user account.
+     *
+     * @param userId of the user to affect.
+     * @throws SegueDatabaseException - if we have a problem with the database connection.
+     */
+    @Override
+    public void delete2FACredentials(final Long userId) throws SegueDatabaseException {
+
+        PreparedStatement pst;
+        try (Connection conn = database.getDatabaseConnection()) {
+            pst = conn
+                    .prepareStatement(
+                            "DELETE FROM user_totp "
+                                    + "WHERE user_id = ?;");
+
+            setValueHelper(pst, 1, userId);
+
+            pst.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        }
+    }
+
+    /**
      * findOne helper method to ensure that only one result matches the search criteria.
      *
      * @param results
      *            - from a jdbc database search
-     * @return a single credential that matches the search criteria or null of no matches found.
+     * @return a single TOTPSharedSecret that matches the search criteria or null of no matches found.
      * @throws SQLException
      *             - if a db error occurs
      * @throws SegueDatabaseException
@@ -165,15 +190,14 @@ public class PgTOTPDataManager implements ITOTPDataManager {
      * Construct an appropriate POJO.
      *
      * @param results - sql results
-     * @return localUserCredential object
+     * @return totpSharedSecret object
      * @throws SQLException if we can't get a value required.
      */
     private TOTPSharedSecret buildTOTPSharedSecret(final ResultSet results) throws SQLException {
-        TOTPSharedSecret toReturn = new TOTPSharedSecret();
-        toReturn.setUserId(results.getLong("user_id"));
-        toReturn.setSharedSecret(results.getString("shared_secret"));
-        toReturn.setCreated(results.getTimestamp("created"));
-        return toReturn;
+
+        return new TOTPSharedSecret(results.getLong("user_id"),
+                results.getString("shared_secret"),
+                results.getTimestamp("created"));
     }
 
     /**
@@ -210,6 +234,4 @@ public class PgTOTPDataManager implements ITOTPDataManager {
             pst.setTimestamp(index, new Timestamp(((java.util.Date) value).getTime()));
         }
     }
-
-
 }

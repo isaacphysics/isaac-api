@@ -42,4 +42,12 @@ public interface ITOTPDataManager {
      */
     TOTPSharedSecret save2FASharedSecret(Long userId, TOTPSharedSecret secret) throws SegueDatabaseException;
 
+    /**
+     * Remove all MFA information for an account thereby making it appear as they never configured it.
+     *
+     * @param userId - userId to affect
+     * @throws SegueDatabaseException - if something goes wrong in the database.
+     */
+    void delete2FACredentials(Long userId) throws SegueDatabaseException;
+
 }

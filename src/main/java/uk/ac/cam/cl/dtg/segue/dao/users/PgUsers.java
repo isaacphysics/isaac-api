@@ -146,9 +146,10 @@ public class PgUsers implements IUserDataManager {
 
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT users.id, password IS NOT NULL AS has_segue_account, array_agg(provider) AS linked_accounts " +
+            pst = conn.prepareStatement("SELECT users.id, password IS NOT NULL AS has_segue_account, user_totp.shared_secret IS NOT NULL AS mfa_status, array_agg(provider) AS linked_accounts " +
                     "FROM (users LEFT OUTER JOIN user_credentials ON user_credentials.user_id=users.id) " +
-                    "LEFT OUTER JOIN linked_accounts ON users.id=linked_accounts.user_id WHERE users.id=? GROUP BY users.id, user_credentials.user_id;");
+                    "LEFT OUTER JOIN linked_accounts ON users.id=linked_accounts.user_id " +
+                    "LEFT OUTER JOIN user_totp ON users.id=user_totp.user_id WHERE users.id=? GROUP BY users.id, user_credentials.user_id, mfa_status;");
             pst.setLong(1, userId);
 
             ResultSet results = pst.executeQuery();
@@ -168,7 +169,7 @@ public class PgUsers implements IUserDataManager {
                 }
             }
 
-            return new UserAuthenticationSettings(userId, providersList, results.getBoolean("has_segue_account"));
+            return new UserAuthenticationSettings(userId, providersList, results.getBoolean("has_segue_account"), results.getBoolean("mfa_status"));
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }

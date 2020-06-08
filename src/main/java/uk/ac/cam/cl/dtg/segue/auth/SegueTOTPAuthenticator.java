@@ -27,6 +27,9 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 import java.util.Date;
 
+/**
+ * Implementation of a TOTP authenticator.
+ */
 public class SegueTOTPAuthenticator implements ISecondFactorAuthenticator {
     private final ITOTPDataManager dataManager;
     private final GoogleAuthenticator gAuth;
@@ -41,12 +44,7 @@ public class SegueTOTPAuthenticator implements ISecondFactorAuthenticator {
     public TOTPSharedSecret getNewSharedSecret(final RegisteredUserDTO user) {
         final GoogleAuthenticatorKey key = gAuth.createCredentials();
 
-        TOTPSharedSecret toReturn = new TOTPSharedSecret();
-        toReturn.setUserId(user.getId());
-        toReturn.setSharedSecret(key.getKey());
-        toReturn.setCreated(new Date());
-
-        return toReturn;
+        return new TOTPSharedSecret(user.getId(), key.getKey(), new Date());
     }
 
     @Override
@@ -55,11 +53,9 @@ public class SegueTOTPAuthenticator implements ISecondFactorAuthenticator {
     }
 
     @Override
-    public boolean activate2FAForUser(final RegisteredUserDTO user, final String sharedSecret, final Integer verificationCode) throws SegueDatabaseException {
-        TOTPSharedSecret toSave = new TOTPSharedSecret();
-        toSave.setUserId(user.getId());
-        toSave.setSharedSecret(sharedSecret);
-        toSave.setCreated(new Date());
+    public boolean activate2FAForUser(final RegisteredUserDTO user, final String sharedSecret, final Integer verificationCode)
+            throws SegueDatabaseException {
+        TOTPSharedSecret toSave = new TOTPSharedSecret(user.getId(), sharedSecret, new Date());
 
         if (gAuth.authorize(sharedSecret, verificationCode)) {
             this.dataManager.save2FASharedSecret(user.getId(), toSave);
@@ -82,5 +78,10 @@ public class SegueTOTPAuthenticator implements ISecondFactorAuthenticator {
         }
 
         throw new IncorrectCredentialsProvidedException("2FA code provided by the user is not correct");
+    }
+
+    @Override
+    public void deactivate2FAForUser(final RegisteredUserDTO user) throws SegueDatabaseException {
+        this.dataManager.delete2FACredentials(user.getId());
     }
 }

@@ -24,10 +24,11 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 public interface ISecondFactorAuthenticator {
 
     /**
-     * Determines whether the provided user has 2FA configured.
+     * Determines whether the provided user has 2FA configured on their account or not..
      *
      * @param user to check if 2FA flow applies
      * @return true if it should go through 2FA false if not.
+     * @throws SegueDatabaseException if there is a database error.
      */
     boolean has2FAConfigured(RegisteredUserDTO user) throws SegueDatabaseException;
 
@@ -36,14 +37,14 @@ public interface ISecondFactorAuthenticator {
      *
      * At this stage the secret is not confirmed against the user.
      *
-     * @param user
+     * @param user - so the DO can be populated with the userid
      *
-     * @return secret as a string or bas64 encoded image?
+     * @return secret as a string.
      */
     TOTPSharedSecret getNewSharedSecret(RegisteredUserDTO user);
 
     /**
-     * Verification step.
+     * Activation and Verification step.
      *
      * Make sure the user can generate a correct code.
      *
@@ -67,4 +68,15 @@ public interface ISecondFactorAuthenticator {
      * @throws NoCredentialsAvailableException - user has not configured 2FA
      */
     boolean authenticate2ndFactor(RegisteredUserDTO user, Integer codeSubmitted) throws IncorrectCredentialsProvidedException, NoCredentialsAvailableException, SegueDatabaseException;
+
+    /**
+     * Remove 2FA settings for a given user's account.
+     *
+     * This will deactivate 2FA protection
+     *
+     * @param user - user account to turn on 2FA
+     * @throws SegueDatabaseException - if we cannot activate 2FA
+     */
+    void deactivate2FAForUser(RegisteredUserDTO user) throws SegueDatabaseException;
+
 }

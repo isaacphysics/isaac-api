@@ -1174,6 +1174,15 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     /**
+     * Deactivate MFA for user's account - should only be used by admins!
+     *
+     * @throws SegueDatabaseException - unable to save secret to account.
+     */
+    public void deactivateMFAForUser(final RegisteredUserDTO user) throws SegueDatabaseException {
+        this.secondFactorManager.deactivate2FAForUser(user);
+    }
+
+    /**
      * Helper method to convert a user object into a userSummary DTO with as little detail as possible about the user.
      * 
      * @param userToConvert

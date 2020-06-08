@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -604,6 +605,50 @@ public class UsersFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
         } catch (NumberFormatException e) {
             return SegueErrorResponse.getBadRequestResponse("Verification code is not in the correct format.");
+        }
+    }
+
+    /**
+     * This endpoint is used to delete MFA from a local segue account. User must be an admin.
+     *
+     * @param request - containing current user information
+     * @param otherUserId - userId of interest
+     * @return success response or error response
+     */
+    @DELETE
+    @Path("users/{user_id}/mfa")
+    @ApiOperation(value = "Admin endpoint for disabling MFA for a user")
+    @Produces(MediaType.APPLICATION_JSON)
+    public final Response deleteMFASettingsForAccount(@Context final HttpServletRequest request, @PathParam("user_id") final String otherUserId) {
+        try {
+            final RegisteredUserDTO currentlyLoggedInUser = this.userManager.getCurrentRegisteredUser(request);
+            if (!(Role.ADMIN.equals(currentlyLoggedInUser.getRole()))) {
+                // Non-admins should not be able to disable other users' 2FA.
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
+            final RegisteredUserDTO userOfInterest = this.userManager.getUserDTOById(Long.parseLong(otherUserId));
+
+            if (currentlyLoggedInUser.getId().equals(userOfInterest.getId())) {
+                return Response.status(Status.FORBIDDEN).entity("Unable to change the MFA status of the account you are "
+                        + "currently using. Ask another Admin for help.").build();
+            }
+
+            this.userManager.deactivateMFAForUser(userOfInterest);
+            log.info(String.format("Admin userid (%s) deactivated MFA on account owned by userid (%s)", currentlyLoggedInUser.getId(), userOfInterest.getId()));
+
+            return Response.ok().build();
+
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            String errorMsg = "Internal Database error has occurred during deletion of MFA.";
+            log.error(errorMsg, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
+        } catch (NumberFormatException e) {
+            return SegueErrorResponse.getBadRequestResponse("UserId must be a number");
+        } catch (NoUserException e) {
+            return SegueErrorResponse.getResourceNotFoundResponse("Unable to complete MFA removal as user account could not be found.");
         }
     }
 
