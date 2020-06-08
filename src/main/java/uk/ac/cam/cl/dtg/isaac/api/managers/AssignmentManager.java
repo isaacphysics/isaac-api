@@ -110,7 +110,7 @@ public class AssignmentManager implements IGroupObserver {
      *             - if we cannot complete a required database operation.
      */
     public Collection<AssignmentDTO> getAssignments(final RegisteredUserDTO user) throws SegueDatabaseException {
-        List<UserGroupDTO> groups = groupManager.getGroupMembershipList(user);
+        List<UserGroupDTO> groups = groupManager.getGroupMembershipList(user, false);
 
         if (groups.size() == 0) {
             log.debug(String.format("User (%s) does not have any groups", user.getId()));

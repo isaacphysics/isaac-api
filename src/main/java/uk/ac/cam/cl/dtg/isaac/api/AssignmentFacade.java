@@ -174,21 +174,23 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     .stream().collect(Collectors.toMap(GameboardDTO::getId, Function.identity()));
 
             // we want to populate gameboard details for the assignment DTO.
+            Map<Long, UserSummaryDTO> userSummaryCache = new HashMap<>();
             for (AssignmentDTO assignment : assignments) {
                 assignment.setGameboard(gameboardsMap.get(assignment.getGameboardId()));
-
-                if (assignment.getOwnerUserId() != null) {
-                    try {
-                        RegisteredUserDTO user = userManager.getUserDTOById(assignment.getOwnerUserId());
-                        if (user == null) {
-                            throw new NoUserException("No user found with this ID.");
+                Long ownerUserId = assignment.getOwnerUserId();
+                if (ownerUserId != null) {
+                    UserSummaryDTO userSummary = userSummaryCache.get(ownerUserId);
+                    if (userSummary == null) {
+                        try {
+                            RegisteredUserDTO user = userManager.getUserDTOById(ownerUserId);
+                            userSummary = userManager.convertToUserSummaryObject(user);
+                            userSummaryCache.put(ownerUserId, userSummary);
+                        } catch (NoUserException e) {
+                            log.warn("Assignment (" + assignment.getId() + ") exists with owner user ID ("
+                                    + assignment.getOwnerUserId() + ") that does not exist!");
                         }
-                        UserSummaryDTO userSummary = userManager.convertToUserSummaryObject(user);
-                        assignment.setAssignerSummary(userSummary);
-                    } catch (NoUserException e) {
-                        log.warn("Assignment (" + assignment.getId() + ") exists with owner user ID ("
-                                + assignment.getOwnerUserId() + ") that does not exist!");
                     }
+                    assignment.setAssignerSummary(userSummary);
                 }
             }
 
