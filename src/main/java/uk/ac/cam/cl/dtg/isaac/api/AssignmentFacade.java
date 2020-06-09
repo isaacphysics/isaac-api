@@ -197,7 +197,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 List<AssignmentDTO> newList = Lists.newArrayList();
                 // we want to populate gameboard details for the assignment DTO.
                 for (AssignmentDTO assignment : assignments) {
-                    if (assignment.getGameboard() == null) {
+                    if (assignment.getGameboard() == null || assignment.getGameboard().getQuestions().size() == 0) {
+                        log.warn(String.format("Skipping broken gameboard '%s' for assignment (%s)!",
+                                assignment.getGameboardId(), assignment.getId()));
                         continue;
                     }
 
