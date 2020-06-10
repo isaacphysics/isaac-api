@@ -870,7 +870,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                     "cleanUpExpiredReservations",
                     "SQLMaintenence",
                     "SQL scheduled job that deletes expired reservations for the event booking system",
-                    "0 0 2 * * ?", "db_scripts/scheduled/expired-reservations-clean-up.sql");
+                    "0 0 7 * * ?", "db_scripts/scheduled/expired-reservations-clean-up.sql");
 
             segueJobService = new SegueJobService(Arrays.asList(PIISQLJob, cleanUpOldAnonymousUsers, cleanUpExpiredReservations));
             log.info("Created Segue Job Manager for scheduled jobs");
