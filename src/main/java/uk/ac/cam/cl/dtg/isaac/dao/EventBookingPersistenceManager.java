@@ -107,15 +107,29 @@ public class EventBookingPersistenceManager {
      *
      * @param eventId - the id of the event
      * @param userId = the user who is registered against the event
+     * @param reservingUserId - the user who is updating this booking to be a reservation
+     * @param bookingStatus - the new booking status for this booking.
+     * @return The newly updated event booking
+     * @throws SegueDatabaseException
+     *             - if an error occurs.
+     */
+    public EventBookingDTO updateBookingStatus(final String eventId, final Long userId, final Long reservingUserId, final BookingStatus bookingStatus, final Map additionalEventInformation) throws SegueDatabaseException {
+        dao.updateStatus(eventId, userId, reservingUserId, bookingStatus, additionalEventInformation);
+        return this.getBookingByEventIdAndUserId(eventId, userId);
+    }
+
+    /**
+     * Modify an existing event booking's status
+     *
+     * @param eventId - the id of the event
+     * @param userId = the user who is registered against the event
      * @param bookingStatus - the new booking status for this booking.
      * @return The newly updated event booking
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
     public EventBookingDTO updateBookingStatus(final String eventId, final Long userId, final BookingStatus bookingStatus, final Map additionalEventInformation) throws SegueDatabaseException {
-        dao.updateStatus(eventId, userId, bookingStatus, additionalEventInformation);
-
-        return this.getBookingByEventIdAndUserId(eventId, userId);
+        return updateBookingStatus(eventId, userId, null, bookingStatus, additionalEventInformation);
     }
 
     /**
@@ -151,7 +165,7 @@ public class EventBookingPersistenceManager {
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    public List<EventBookingDTO> getBookingByEventId(final String eventId) throws SegueDatabaseException {
+    public List<EventBookingDTO> getBookingsByEventId(final String eventId) throws SegueDatabaseException {
         try {
             ContentDTO c = this.contentManager.getContentById(this.contentManager.getCurrentContentSHA(), eventId);
 
@@ -169,6 +183,23 @@ public class EventBookingPersistenceManager {
             log.error("Unable to create event booking dto.");
             throw new SegueDatabaseException("Unable to create event booking dto from DO.", e);
         }
+    }
+
+    /**
+     * @param eventId
+     *            - of interest
+     * @param userId
+     *            - user to book on to the event.
+     * @param reservingId
+     *            - user making the reservation
+     * @param status
+     *            - The status of the booking to create.
+     * @return the newly created booking.
+     * @throws SegueDatabaseException
+     *             - if an error occurs.
+     */
+    public EventBookingDTO createBooking(final String eventId, final Long userId, final Long reservingId, final BookingStatus status, final Map<String,String> additionalInformation) throws SegueDatabaseException {
+        return this.convertToDTO(dao.add(eventId, userId, reservingId, status, additionalInformation));
     }
 
     /**
@@ -268,8 +299,8 @@ public class EventBookingPersistenceManager {
         try {
             // Note: This will pull back deleted users for the purpose of the events system
             UserSummaryWithEmailAddressDTO user = userManager.convertToDetailedUserSummaryObject(userManager.getUserDTOById(eb
-                    .getUserId(),true), UserSummaryWithEmailAddressDTO.class);
-
+                    .getUserId(), true), UserSummaryWithEmailAddressDTO.class);
+            result.setReservedById(eb.getReservedById());
             result.setUserBooked(user);
             result.setBookingId(eb.getId());
             result.setEventDate(eventInformation.getDate());

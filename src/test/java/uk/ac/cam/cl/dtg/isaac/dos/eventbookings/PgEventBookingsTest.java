@@ -17,6 +17,7 @@ import static org.easymock.EasyMock.anyString;
 import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.verify;
 import static org.junit.Assert.assertEquals;
 
 public class PgEventBookingsTest {
@@ -79,10 +80,12 @@ public class PgEventBookingsTest {
         }};
 
         // Run test
-        replay(dummyPostgresSqlDb, dummyConnection, dummyPreparedStatement, dummyResultSet);
+        Object[] mockedObjects = {dummyPostgresSqlDb, dummyConnection, dummyPreparedStatement, dummyResultSet};
+        replay(mockedObjects);
         PgEventBookings pgEventBookings = this.buildPgEventBookings();
         Map<BookingStatus, Map<Role, Long>> actualStatusCounts =
                 pgEventBookings.getEventBookingStatusCounts("someEventId", true);
         assertEquals("Every row should be represented in the result", expectedStatusCounts, actualStatusCounts);
+        verify(mockedObjects);
     }
 }

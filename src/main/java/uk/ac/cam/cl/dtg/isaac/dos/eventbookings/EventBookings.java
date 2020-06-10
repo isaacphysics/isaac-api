@@ -32,6 +32,24 @@ public interface EventBookings {
 
     /**
      * Add booking to the database.
+     *
+     * @param eventId
+     *            - the event id
+     * @param userId
+     *            - the user id
+     * @param reservedById
+     *            - the user id of who made the reservation (can be null)
+     * @param status
+     *            - the initial status of the booking.
+     * @param additionalInformation - additional information required for the event.
+     * @return the newly created booking
+     * @throws SegueDatabaseException
+     *             - if an error occurs.
+     */
+    EventBooking add(final String eventId, final Long userId, final Long reservedById, final BookingStatus status, final Map<String,String> additionalInformation) throws SegueDatabaseException;
+
+    /**
+     * Add booking to the database.
      * 
      * @param eventId
      *            - the event id
@@ -56,7 +74,7 @@ public interface EventBookings {
      * @return the newly updated event booking.
      * @throws SegueDatabaseException - if the database goes wrong.
      */
-    void updateStatus(final String eventId, final Long userId, final BookingStatus status, Map<String, String> additionalEventInformation) throws SegueDatabaseException;
+    void updateStatus(final String eventId, final Long userId, final Long reservingUserId, final BookingStatus status, Map<String, String> additionalEventInformation) throws SegueDatabaseException;
 
     /**
      * Remove booking from the database.
