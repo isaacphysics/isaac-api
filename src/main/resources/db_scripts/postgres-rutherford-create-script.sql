@@ -879,6 +879,12 @@ CREATE INDEX groups_owner_id ON public.groups USING btree (owner_id);
 
 
 --
+-- Name: ip_location_history_ips; Type: INDEX; Schema: public; Owner: rutherford
+--
+CREATE INDEX ip_location_history_ips ON public.ip_location_history USING btree (ip_address DESC);
+
+
+--
 -- Name: log_events_timestamp; Type: INDEX; Schema: public; Owner: rutherford
 --
 
