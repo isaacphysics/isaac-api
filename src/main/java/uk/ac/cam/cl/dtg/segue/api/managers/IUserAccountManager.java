@@ -10,4 +10,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 public interface IUserAccountManager {
 
     RegisteredUserDTO getUserDTOById(final Long id) throws NoUserException, SegueDatabaseException;
+
+    RegisteredUserDTO getUserDTOById(final Long id, final boolean includeDeleted) throws NoUserException, SegueDatabaseException;
+
 }

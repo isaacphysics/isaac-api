@@ -197,7 +197,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 List<AssignmentDTO> newList = Lists.newArrayList();
                 // we want to populate gameboard details for the assignment DTO.
                 for (AssignmentDTO assignment : assignments) {
-                    if (assignment.getGameboard() == null) {
+                    if (assignment.getGameboard() == null || assignment.getGameboard().getQuestions().size() == 0) {
+                        log.warn(String.format("Skipping broken gameboard '%s' for assignment (%s)!",
+                                assignment.getGameboardId(), assignment.getId()));
                         continue;
                     }
 
@@ -559,7 +561,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             }
 
             rows.add(totalsRow.toArray(new String[0]));
-            String userInfoHeader = includeUserIDs ? "Last Name, First Name, User ID" : "Last Name,First Name";
+            String userInfoHeader = includeUserIDs ? "Last Name,First Name,User ID" : "Last Name,First Name";
             rows.add(userInfoHeader.split(","));
             rows.addAll(resultRows);
             csvWriter.writeAll(rows);
@@ -701,7 +703,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             ArrayList<String> headerRow = Lists.newArrayList();
             if (includeUserIDs) {
-                Collections.addAll(headerRow, "Last Name,First Name, User ID,% Correct Overall".split(","));
+                Collections.addAll(headerRow, "Last Name,First Name,User ID,% Correct Overall".split(","));
             } else {
                 Collections.addAll(headerRow, "Last Name,First Name,% Correct Overall".split(","));
             }

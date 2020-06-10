@@ -38,6 +38,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.IStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.ITransactionManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.IUserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.PgTransactionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
@@ -600,11 +601,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     @Singleton
-    private UserAccountManager getUserManager(final IUserDataManager database, final QuestionManager questionManager,
-                                              final PropertiesLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
-                                              final EmailManager emailQueue, final IAnonymousUserDataManager temporaryUserCache,
-                                              final ILogManager logManager, final MapperFacade mapperFacade,
-                                              final UserAuthenticationManager userAuthenticationManager) {
+    private IUserAccountManager getUserManager(final IUserDataManager database, final QuestionManager questionManager,
+                                               final PropertiesLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
+                                               final EmailManager emailQueue, final IAnonymousUserDataManager temporaryUserCache,
+                                               final ILogManager logManager, final MapperFacade mapperFacade,
+                                               final UserAuthenticationManager userAuthenticationManager) {
 
         if (null == userManager) {
             userManager = new UserAccountManager(database, questionManager, properties, providersToRegister,
@@ -854,13 +855,25 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     private static SegueJobService getSegueJobService(final PostgresSqlDb database) {
         if (null == segueJobService) {
-            SegueScheduledJob PIISQLJob = new SegueScheduledDatabaseScriptJob("PIIDeleteScheduledJob", "SQLMaintenance",
-                    "SQL scheduled job that deletes PII", "0 0 2 * * ?", "db_scripts/scheduled/pii-delete-task.sql");
+            SegueScheduledJob PIISQLJob = new SegueScheduledDatabaseScriptJob(
+                    "PIIDeleteScheduledJob",
+                    "SQLMaintenance",
+                    "SQL scheduled job that deletes PII",
+                    "0 0 2 * * ?", "db_scripts/scheduled/pii-delete-task.sql");
 
-            SegueScheduledJob cleanUpOldAnonymousUsers = new SegueScheduledDatabaseScriptJob("cleanAnonymousUsers", "SQLMaintenance",
-                    "SQL scheduled job that deletes old AnonymousUsers", "0 30 2 * * ?", "db_scripts/scheduled/anonymous-user-clean-up.sql");
+            SegueScheduledJob cleanUpOldAnonymousUsers = new SegueScheduledDatabaseScriptJob(
+                    "cleanAnonymousUsers",
+                    "SQLMaintenance",
+                    "SQL scheduled job that deletes old AnonymousUsers",
+                    "0 30 2 * * ?", "db_scripts/scheduled/anonymous-user-clean-up.sql");
 
-            segueJobService = new SegueJobService(Arrays.asList(PIISQLJob, cleanUpOldAnonymousUsers));
+            SegueScheduledJob cleanUpExpiredReservations = new SegueScheduledDatabaseScriptJob(
+                    "cleanUpExpiredReservations",
+                    "SQLMaintenence",
+                    "SQL scheduled job that deletes expired reservations for the event booking system",
+                    "0 0 7 * * ?", "db_scripts/scheduled/expired-reservations-clean-up.sql");
+
+            segueJobService = new SegueJobService(Arrays.asList(PIISQLJob, cleanUpOldAnonymousUsers, cleanUpExpiredReservations));
             log.info("Created Segue Job Manager for scheduled jobs");
         }
 
