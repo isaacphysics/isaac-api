@@ -118,14 +118,14 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     @Path("/user_authentication_settings/{user_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @ApiOperation(value = "The current users authentication settings, e.g. linked accounts and whether they have segue or not")
-    public final Response getCurrentUserAuthorisationSettings(@Context final HttpServletRequest request, @PathParam("user_id") Long userId ) {
+    public final Response getCurrentUserAuthorisationSettings(@Context final HttpServletRequest request, @PathParam("user_id") Long userId) {
         try {
             RegisteredUserDTO currentRegisteredUser = this.userManager.getCurrentRegisteredUser(request);
             if (null == userId) {
                 userId = currentRegisteredUser.getId();
             }
 
-            if (!userId.equals(currentRegisteredUser.getId()) && !this.isUserAnAdmin(userManager, request)) {
+            if (!userId.equals(currentRegisteredUser.getId()) && !isUserAnAdmin(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin member to view this setting for another user.")
                         .toResponse();
             }
@@ -441,7 +441,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
      * @return successfully logged in user or error
      */
     @POST
-    @Path("mfa/challenge")
+    @Path("/mfa/challenge")
     @ApiOperation(value = "Continuation of login flow for users who have 2FA enabled")
     @Produces(MediaType.APPLICATION_JSON)
     public final Response challenge(@Context final HttpServletRequest request, @Context final HttpServletResponse response,

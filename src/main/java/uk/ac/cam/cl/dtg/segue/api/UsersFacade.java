@@ -550,7 +550,7 @@ public class UsersFacade extends AbstractSegueFacade {
      * Endpoint to determine whether the current user has MFA enabled or not.
      *
      * @param request - http request so we can determine the user.
-     * @return TOTPSharedSecret to allow user next step of setup process
+     * @return whether the user has MFA enabled
      */
     @GET
     @Path("users/current_user/mfa")
@@ -612,22 +612,23 @@ public class UsersFacade extends AbstractSegueFacade {
      * This endpoint is used to delete MFA from a local segue account. User must be an admin.
      *
      * @param request - containing current user information
-     * @param otherUserId - userId of interest
+     * @param userIdOfInterest - userId of interest
      * @return success response or error response
      */
     @DELETE
     @Path("users/{user_id}/mfa")
     @ApiOperation(value = "Admin endpoint for disabling MFA for a user")
     @Produces(MediaType.APPLICATION_JSON)
-    public final Response deleteMFASettingsForAccount(@Context final HttpServletRequest request, @PathParam("user_id") final String otherUserId) {
+    public final Response deleteMFASettingsForAccount(@Context final HttpServletRequest request,
+                                                      @PathParam("user_id") final Long userIdOfInterest) {
         try {
             final RegisteredUserDTO currentlyLoggedInUser = this.userManager.getCurrentRegisteredUser(request);
-            if (!(Role.ADMIN.equals(currentlyLoggedInUser.getRole()))) {
+            if (!isUserAnAdmin(userManager, currentlyLoggedInUser)) {
                 // Non-admins should not be able to disable other users' 2FA.
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
-            final RegisteredUserDTO userOfInterest = this.userManager.getUserDTOById(Long.parseLong(otherUserId));
+            final RegisteredUserDTO userOfInterest = this.userManager.getUserDTOById(userIdOfInterest);
 
             if (currentlyLoggedInUser.getId().equals(userOfInterest.getId())) {
                 return Response.status(Status.FORBIDDEN).entity("Unable to change the MFA status of the account you are "
@@ -635,7 +636,8 @@ public class UsersFacade extends AbstractSegueFacade {
             }
 
             this.userManager.deactivateMFAForUser(userOfInterest);
-            log.info(String.format("Admin userid (%s) deactivated MFA on account owned by userid (%s)", currentlyLoggedInUser.getId(), userOfInterest.getId()));
+            log.info(String.format("Admin (%s) deactivated MFA on account (%s)!",
+                    currentlyLoggedInUser.getEmail(), userOfInterest.getId()));
 
             return Response.ok().build();
 
