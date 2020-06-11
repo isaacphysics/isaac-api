@@ -19,7 +19,6 @@ import uk.ac.cam.cl.dtg.segue.quiz.ISpecifier;
 import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatorUnavailableException;
 
-import javax.xml.ws.Response;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;

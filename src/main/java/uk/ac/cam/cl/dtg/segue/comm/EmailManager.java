@@ -565,6 +565,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         // Extract from address and reply to addresses:
         String overrideFromAddress = emailContent.getOverrideFromAddress();
         String overrideFromName = emailContent.getOverrideFromName();
+        String overrideEnvelopeFrom = emailContent.getOverrideEnvelopeFrom();
         String replyToAddress = emailContent.getReplyToEmailAddress();
         String replyToName = emailContent.getReplyToName();
         if (replyToAddress == null || replyToAddress.isEmpty()) {
@@ -593,7 +594,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         return new EmailCommunicationMessage(userId, userEmail, emailContent.getSubject(),
                 plainTextMessage, htmlMessage, emailType,
-                overrideFromAddress, overrideFromName, replyToAddress, replyToName, attachments);
+                overrideFromAddress, overrideFromName, overrideEnvelopeFrom, replyToAddress, replyToName, attachments);
 
     }
 

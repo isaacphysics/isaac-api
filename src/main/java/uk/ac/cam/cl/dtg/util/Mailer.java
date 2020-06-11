@@ -31,7 +31,6 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
-import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Properties;
 
@@ -68,12 +67,10 @@ public class Mailer {
      *            - string array of recipients that the message should be sent to
      * @param fromAddress
      *            - the e-mail address that should be used as the sending address
-     * @param fromName
-     *            - the name that should be used for the sender
+     * @param overrideEnvelopeFrom
+     *            - (nullable) the e-mail address that should be used as the envelope from address, useful for routing
      * @param replyTo
      *            - (nullable) the e-mail address that should be used as the reply-to address
-	 * @param replyToName
-	 *            - (nullable) the name that should be used as the reply-to name
      * @param subject
      *            - The message subject
      * @param contents
@@ -83,11 +80,11 @@ public class Mailer {
      * @throws AddressException
      *             - if the address is not valid.
      */
-    public void sendPlainTextMail(final String[] recipient, final String fromAddress, final String fromName,
-                                  @Nullable final String replyTo, @Nullable final String replyToName,
+    public void sendPlainTextMail(final String[] recipient, final InternetAddress fromAddress,
+                                  @Nullable final String overrideEnvelopeFrom, @Nullable final InternetAddress replyTo,
                                   final String subject, final String contents)
-			throws MessagingException, UnsupportedEncodingException {
-        Message msg = this.setupMessage(recipient, fromAddress, fromName, replyTo, replyToName, subject);
+			throws MessagingException {
+        Message msg = this.setupMessage(recipient, fromAddress, overrideEnvelopeFrom, replyTo, subject);
         
         msg.setText(contents);
 
@@ -102,12 +99,10 @@ public class Mailer {
      *            - string array of recipients that the message should be sent to
      * @param fromAddress
      *            - the e-mail address that should be used as the sending address
-     * @param fromName
-     *            - the name that should be used for the sender
+     * @param overrideEnvelopeFrom
+     *            - (nullable) the e-mail address that should be used as the envelope from address, useful for routing
      * @param replyTo
      *            - (nullable) the e-mail address that should be used as the reply-to address
-	 * @param replyToName
-	 *            - (nullable) the name that should be used as the reply-to name
      * @param subject
      *            - The message subject
      * @param plainText
@@ -121,13 +116,13 @@ public class Mailer {
      * @throws AddressException
      *             - if the address is not valid.
      */
-    public void sendMultiPartMail(final String[] recipient, final String fromAddress, final String fromName,
-                                  @Nullable final String replyTo, @Nullable final String replyToName,
+    public void sendMultiPartMail(final String[] recipient, final InternetAddress fromAddress,
+                                  @Nullable final String overrideEnvelopeFrom, @Nullable final InternetAddress replyTo,
                                   final String subject, final String plainText, final String html,
                                   final List<EmailAttachment> attachments)
-			throws MessagingException, AddressException, UnsupportedEncodingException {
+			throws MessagingException, AddressException {
 
-    	Message msg = this.setupMessage(recipient, fromAddress, fromName, replyTo, replyToName, subject);
+    	Message msg = this.setupMessage(recipient, fromAddress, overrideEnvelopeFrom, replyTo, subject);
         
         // Create the text part
         MimeBodyPart textPart = new MimeBodyPart();
@@ -211,53 +206,56 @@ public class Mailer {
      *            - string array of recipients that the message should be sent to
      * @param fromAddress
      *            - the e-mail address that should be used as the sending address
-     * @param fromName
-     *            - the name that should be used as the sender
+     * @param overrideEnvelopeFrom
+     *            - (nullable) the e-mail address that should be used as the envelope from address, useful for routing
      * @param replyTo
      *            - the e-mail address that should be used as the reply-to address
-     * @param replyToName
-     *            - the name that should appear by the reply-to address
      * @param subject
      *            - The message subject
      * @return a newly created message with all of the headers populated.
      * @throws MessagingException - if there is an error in setting up the message
-     * @throws UnsupportedEncodingException - if there is an encoding error with the message
      */
-    private Message setupMessage(final String[] recipient, final String fromAddress, final String fromName,
-            @Nullable final String replyTo, @Nullable final String replyToName, final String subject)
-			throws MessagingException, UnsupportedEncodingException {
+    private Message setupMessage(final String[] recipient, final InternetAddress fromAddress,
+                                 final String overrideEnvelopeFrom, @Nullable final InternetAddress replyTo,
+                                 final String subject)
+			throws MessagingException {
         Validate.notEmpty(recipient);
         Validate.notBlank(recipient[0]);
-        Validate.notBlank(fromAddress);
-        Validate.notBlank(fromName);
+        Validate.notNull(fromAddress);
         
         Properties p = new Properties();
-        p.put("mail.smtp.host", smtpAddress);
 
+        // Configure the SMTP server settings:
+        p.put("mail.smtp.host", smtpAddress);
         if (null != smtpPort) {
             p.put("mail.smtp.port", smtpPort);
         }
-
         p.put("mail.smtp.starttls.enable", "true");
-        p.put("mail.smtp.from", mailAddress);
 
+        // Configure the email headers and routing:
+        String envelopeFrom = mailAddress;
+        if (null != overrideEnvelopeFrom) {
+            envelopeFrom = overrideEnvelopeFrom;
+        }
+        p.put("mail.smtp.from", envelopeFrom);  // Used for Return-Path
+        p.put("mail.from", fromAddress.getAddress()); // Should only affect Message-ID, since From overridden below
+
+        // Create the message and set the recipients:
         Session s = Session.getDefaultInstance(p);
         Message msg = new MimeMessage(s);
 
-        InternetAddress sentBy;
         InternetAddress[] receivers = new InternetAddress[recipient.length];
 
-        sentBy = new InternetAddress(fromAddress, fromName);
         for (int i = 0; i < recipient.length; i++) {
             receivers[i] = new InternetAddress(recipient[i]);
         }
 
-		msg.setFrom(sentBy);
+		msg.setFrom(fromAddress);
 		msg.setRecipients(RecipientType.TO, receivers);
 		msg.setSubject(subject);
 
-		if (null != replyTo && null != replyToName) {
-			msg.setReplyTo(new InternetAddress[] { new InternetAddress(replyTo, replyToName) });
+		if (null != replyTo) {
+			msg.setReplyTo(new InternetAddress[] { replyTo });
 		}
 
         return msg;

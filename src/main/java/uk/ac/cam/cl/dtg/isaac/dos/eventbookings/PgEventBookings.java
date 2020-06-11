@@ -33,6 +33,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -70,7 +71,7 @@ public class PgEventBookings implements EventBookings {
      * cl.dtg.isaac.dos.eventbookings.EventBooking)
      */
     @Override
-    public EventBooking add(final String eventId, final Long userId, final BookingStatus status, Map<String, String> additionalEventInformation) throws SegueDatabaseException {
+    public EventBooking add(final String eventId, final Long userId, final Long reserveById, final BookingStatus status, Map<String, String> additionalEventInformation) throws SegueDatabaseException {
         PreparedStatement pst;
 
         if (null == additionalEventInformation) {
@@ -80,14 +81,19 @@ public class PgEventBookings implements EventBookings {
         try (Connection conn = ds.getDatabaseConnection()) {
             Date creationDate = new Date();
             pst = conn.prepareStatement(
-                    "INSERT INTO event_bookings (id, user_id, event_id, status, created, updated, additional_booking_information) VALUES (DEFAULT, ?, ?, ?, ?, ?, ?::text::jsonb)",
+                    "INSERT INTO event_bookings (id, user_id, reserved_by, event_id, status, created, updated, additional_booking_information) VALUES (DEFAULT, ?, ?, ?, ?, ?, ?, ?::text::jsonb)",
                     Statement.RETURN_GENERATED_KEYS);
             pst.setLong(1, userId);
-            pst.setString(2, eventId);
-            pst.setString(3, status.name());
-            pst.setTimestamp(4, new java.sql.Timestamp(creationDate.getTime()));
+            if (reserveById == null) {
+                pst.setNull(2, Types.INTEGER);
+            } else {
+                pst.setLong(2, reserveById);
+            }
+            pst.setString(3, eventId);
+            pst.setString(4, status.name());
             pst.setTimestamp(5, new java.sql.Timestamp(creationDate.getTime()));
-            pst.setString(6, objectMapper.writeValueAsString(additionalEventInformation));
+            pst.setTimestamp(6, new java.sql.Timestamp(creationDate.getTime()));
+            pst.setString(7, objectMapper.writeValueAsString(additionalEventInformation));
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save event booking.");
             }
@@ -95,7 +101,7 @@ public class PgEventBookings implements EventBookings {
             try (ResultSet generatedKeys = pst.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
                     Long id = generatedKeys.getLong(1);
-                    return new PgEventBooking(ds, id, userId, eventId, status, creationDate, creationDate, additionalEventInformation);
+                    return new PgEventBooking(ds, id, userId, reserveById, eventId, status, creationDate, creationDate, additionalEventInformation);
                 } else {
                     throw new SQLException("Creating event booking failed, no ID obtained.");
                 }
@@ -109,28 +115,50 @@ public class PgEventBookings implements EventBookings {
     }
 
     @Override
-    public void updateStatus(final String eventId, final Long userId, final BookingStatus status, final Map<String, String> additionalEventInformation) throws SegueDatabaseException {
+    public EventBooking add(final String eventId, final Long userId, final BookingStatus status, Map<String, String> additionalEventInformation) throws SegueDatabaseException {
+        return add(eventId, userId, null, status, additionalEventInformation);
+    }
+
+    @Override
+    public void updateStatus(final String eventId, final Long userId, final Long reservingUserId, final BookingStatus status, final Map<String, String> additionalEventInformation) throws SegueDatabaseException {
         PreparedStatement pst;
 
         try (Connection conn = ds.getDatabaseConnection()) {
 
+            String reservingUserIdClause = "";
+            if (reservingUserId != null) {
+                reservingUserIdClause = ", reserved_by = ? ";
+            }
+
             if (additionalEventInformation != null) {
                 pst = conn.prepareStatement("UPDATE event_bookings " +
-                    "SET status = ?, updated = ?, additional_booking_information = ?::text::jsonb " +
+                    "SET status = ?, updated = ?, additional_booking_information = ?::text::jsonb " + reservingUserIdClause +
                     "WHERE event_id = ? AND user_id = ?;");
                 pst.setString(1, status.name());
                 pst.setTimestamp(2, new java.sql.Timestamp(new Date().getTime()));
                 pst.setString(3, objectMapper.writeValueAsString(additionalEventInformation));
-                pst.setString(4, eventId);
-                pst.setLong(5, userId);
+                if (reservingUserId != null) {
+                    pst.setLong(4, reservingUserId);
+                    pst.setString(5, eventId);
+                    pst.setLong(6, userId);
+                } else {
+                    pst.setString(4, eventId);
+                    pst.setLong(5, userId);
+                }
             } else {
                 pst = conn.prepareStatement("UPDATE event_bookings " +
-                    "SET status = ?, updated = ? " +
+                    "SET status = ?, updated = ? " + reservingUserIdClause +
                     "WHERE event_id = ? AND user_id = ?;");
                 pst.setString(1, status.name());
                 pst.setTimestamp(2, new java.sql.Timestamp(new Date().getTime()));
-                pst.setString(3, eventId);
-                pst.setLong(4, userId);
+                if (reservingUserId != null) {
+                    pst.setLong(3, reservingUserId);
+                    pst.setString(4, eventId);
+                    pst.setLong(5, userId);
+                } else {
+                    pst.setString(3, eventId);
+                    pst.setLong(4, userId);
+                }
             }
 
             int executeUpdate = pst.executeUpdate();
@@ -418,7 +446,15 @@ public class PgEventBookings implements EventBookings {
      *             - if an error occurs.
      */
     private PgEventBooking buildPgEventBooking(final ResultSet results) throws SQLException, SegueDatabaseException {
-        return new PgEventBooking(ds, results.getLong("id"), results.getLong("user_id"),
-                results.getString("event_id"), BookingStatus.valueOf(results.getString("status")), results.getTimestamp("created"), results.getTimestamp("updated"), results.getObject("additional_booking_information"));
+        return new PgEventBooking(ds,
+                results.getLong("id"),
+                results.getLong("user_id"),
+                results.getLong("reserved_by"),
+                results.getString("event_id"),
+                BookingStatus.valueOf(results.getString("status")),
+                results.getTimestamp("created"),
+                results.getTimestamp("updated"),
+                results.getObject("additional_booking_information")
+        );
     }
 }

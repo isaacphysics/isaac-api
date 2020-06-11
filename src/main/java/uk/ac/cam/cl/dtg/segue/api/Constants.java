@@ -339,6 +339,8 @@ public final class Constants {
         EVENT_BOOKING,
         EVENT_BOOKING_CANCELLED,
         EVENT_WAITING_LIST_BOOKING,
+        EVENT_RESERVATIONS_CREATED,
+        EVENT_RESERVATIONS_CANCELLED,
         LOG_IN,
         LOG_OUT,
         MERGE_USER,
@@ -396,6 +398,9 @@ public final class Constants {
     public static final String EVENT_DATE_FIELDNAME = "eventDate";
     public static final String EVENT_TAGS_FIELDNAME = "eventTags";
     public static final String CONTENT_VERSION_FIELDNAME = "contentVersion";
+
+    public static final Integer EVENT_RESERVATION_CLOSE_INTERVAL_DAYS = 14;
+    public static final Integer EVENT_GROUP_RESERVATION_DEFAULT_LIMIT = 10;
 
     /**
      *  Enum to represent filter values for event management.
