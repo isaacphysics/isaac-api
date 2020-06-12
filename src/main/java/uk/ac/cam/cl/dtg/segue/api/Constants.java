@@ -138,12 +138,7 @@ public final class Constants {
     /**
      * Constant representing the key for the additional date property - used in HMAC calculations.
      */
-    public static final String AUTH_COOKIE_ADDITIONAL_DATA = "AUTH_COOKIE_ADDITIONAL_DATA";
-
-    /**
-     * Constant representing the key for the additional date property - used in HMAC calculations.
-     */
-    public static final String INCOMPLETE_MFA_LOGIN = "INCOMPLETE_MFA_LOGIN";
+    public static final String PARTIAL_LOGIN_FLAG = "PARTIAL_LOGIN_FLAG";
 
     /**
      * Constant representing the key for the HMAC property - used in HMAC calculations.

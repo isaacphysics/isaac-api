@@ -67,7 +67,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -387,8 +386,8 @@ public class UserAuthenticationManager {
                                                             final boolean allowIncompleteLoginsToReturnUser) {
         if (!allowIncompleteLoginsToReturnUser) {
             // check if the session has a caveat about incomplete MFA Login
-            if (!Strings.isNullOrEmpty(currentSessionInformation.get(AUTH_COOKIE_ADDITIONAL_DATA))
-                    && currentSessionInformation.get(AUTH_COOKIE_ADDITIONAL_DATA).contains(INCOMPLETE_MFA_LOGIN)) {
+            if (!Strings.isNullOrEmpty(currentSessionInformation.get(PARTIAL_LOGIN_FLAG))
+                    && Boolean.parseBoolean(currentSessionInformation.get(PARTIAL_LOGIN_FLAG))) {
                 // login is incomplete we cannot proceed.
                 log.debug("Incomplete MFA flow - no user object to be provided");
                 return null;
@@ -425,7 +424,7 @@ public class UserAuthenticationManager {
      */
     public RegisteredUser createUserSession(final HttpServletRequest request, final HttpServletResponse response,
             final RegisteredUser user) {
-        this.createSession(request, response, user, null);
+        this.createSession(request, response, user, false);
         return user;
     }
 
@@ -439,7 +438,7 @@ public class UserAuthenticationManager {
      */
     public RegisteredUser createIncompleteLoginUserSession(final HttpServletRequest request, final HttpServletResponse response,
                                             final RegisteredUser user) {
-        this.createSession(request, response, user, Collections.singletonList(INCOMPLETE_MFA_LOGIN));
+        this.createSession(request, response, user, true);
         return user;
     }
 
@@ -824,14 +823,17 @@ public class UserAuthenticationManager {
      *            to store the session in our own segue cookie.
      * @param user
      *            account to associate the session with.
+     * @param partialLoginFlag
+     *            Boolean to indicate whether or not this cookie represents a partial login (true) or full (false)
      */
     private void createSession(final HttpServletRequest request, final HttpServletResponse response,
-            final RegisteredUser user, @Nullable final List<String> additionalCookieFlags) {
+            final RegisteredUser user, final boolean partialLoginFlag) {
         Validate.notNull(response);
         Validate.notNull(user);
         Validate.notNull(user.getId());
         SimpleDateFormat sessionDateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
         Integer sessionExpiryTimeInSeconds = Integer.parseInt(properties.getProperty(SESSION_EXPIRY_SECONDS));
+        final Integer PARTIAL_EXPIRY_TIME_IN_SECONDS = 1200; // 20 mins
 
         String userId = user.getId().toString();
         String userSessionToken = user.getSessionToken().toString();
@@ -846,14 +848,14 @@ public class UserAuthenticationManager {
             sessionInformationBuilder.put(SESSION_USER_ID, userId);
             sessionInformationBuilder.put(SESSION_TOKEN, userSessionToken);
             sessionInformationBuilder.put(DATE_EXPIRES, sessionExpiryDate);
+            sessionInformationBuilder.put(PARTIAL_LOGIN_FLAG, "" + partialLoginFlag);
 
-            String additionalFlagsAsString = null;
-            if (additionalCookieFlags != null) {
-                additionalFlagsAsString = serializationMapper.writeValueAsString(additionalCookieFlags);
-                sessionInformationBuilder.put(AUTH_COOKIE_ADDITIONAL_DATA, serializationMapper.writeValueAsString(additionalCookieFlags));
+            if (partialLoginFlag) {
+                // use shortened expiry time if partial login
+                sessionExpiryTimeInSeconds = PARTIAL_EXPIRY_TIME_IN_SECONDS;
             }
 
-            String sessionHMAC = this.calculateSessionHMAC(hmacKey, userId, sessionExpiryDate, userSessionToken, additionalFlagsAsString);
+            String sessionHMAC = this.calculateSessionHMAC(hmacKey, userId, sessionExpiryDate, userSessionToken, "" + partialLoginFlag);
             sessionInformationBuilder.put(HMAC, sessionHMAC);
 
             Map<String, String> sessionInformation = sessionInformationBuilder.build();
@@ -897,10 +899,10 @@ public class UserAuthenticationManager {
         String userId = sessionInformation.get(SESSION_USER_ID);
         String userSessionToken = sessionInformation.get(SESSION_TOKEN);
         String sessionDate = sessionInformation.get(DATE_EXPIRES);
-        String additionalInformation = sessionInformation.get(AUTH_COOKIE_ADDITIONAL_DATA);
+        String partialLoginFlag = sessionInformation.get(PARTIAL_LOGIN_FLAG);
         String sessionHMAC = sessionInformation.get(HMAC);
 
-        String ourHMAC = this.calculateSessionHMAC(hmacKey, userId, sessionDate, userSessionToken, additionalInformation);
+        String ourHMAC = this.calculateSessionHMAC(hmacKey, userId, sessionDate, userSessionToken, partialLoginFlag);
 
         // Check that there is a user ID provided:
         if (null == userId) {
@@ -946,14 +948,20 @@ public class UserAuthenticationManager {
      *            - Current date
      * @param sessionToken
      *            - a token allowing session invalidation
+     * @param partialLoginFlag
+     *            - Boolean data to encode in the cookie - true if a partial login
      * @return HMAC signature.
      */
-    private String calculateSessionHMAC(final String key, final String userId, final String currentDate, final String sessionToken, final String additionalInformation) {
+    private String calculateSessionHMAC(final String key, final String userId, final String currentDate, final String sessionToken,
+                                        @Nullable final String partialLoginFlag) {
         StringBuilder sb = new StringBuilder();
         sb.append(userId);
         sb.append("|").append(currentDate);
         sb.append("|").append(sessionToken);
-        sb.append("|").append(additionalInformation);
+
+        if (partialLoginFlag != null) {
+            sb.append("|").append(partialLoginFlag);
+        }
 
         return UserAuthenticationManager.calculateHMAC(key, sb.toString());
     }
