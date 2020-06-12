@@ -833,7 +833,7 @@ public class UserAuthenticationManager {
         Validate.notNull(user.getId());
         SimpleDateFormat sessionDateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
         Integer sessionExpiryTimeInSeconds = Integer.parseInt(properties.getProperty(SESSION_EXPIRY_SECONDS));
-        final Integer PARTIAL_EXPIRY_TIME_IN_SECONDS = 1200; // 20 mins
+        final int PARTIAL_EXPIRY_TIME_IN_SECONDS = 1200; // 20 mins
 
         String userId = user.getId().toString();
         String userSessionToken = user.getSessionToken().toString();
