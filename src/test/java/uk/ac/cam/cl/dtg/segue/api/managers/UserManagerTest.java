@@ -71,6 +71,7 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -574,9 +575,12 @@ public class UserManagerTest {
         Map<String, String> validSessionInformation = getSessionInformationAsAMap(authManager, validUserId,
                 validDateString, mappedUser.getSessionToken());
 
-        Map<String, String> tamperedSessionInformation = ImmutableMap.of(Constants.SESSION_USER_ID, validUserId,
-                Constants.DATE_SIGNED, validDateString + "1", Constants.HMAC,
-                validSessionInformation.get(Constants.HMAC));
+        Map<String, String> tamperedSessionInformation = ImmutableMap.of(
+                Constants.SESSION_USER_ID, validUserId,
+                Constants.SESSION_TOKEN, mappedUser.getSessionToken().toString(),
+                Constants.DATE_EXPIRES, validDateString + "1",
+                Constants.HMAC, validSessionInformation.get(Constants.HMAC)
+        );
 
         replay(dummySession);
         replay(request);
@@ -587,7 +591,7 @@ public class UserManagerTest {
 
         // Assert
         verify(dummyQuestionDatabase, dummySession, request);
-        assertTrue(!valid);
+        assertFalse(valid);
     }
 
     /**
