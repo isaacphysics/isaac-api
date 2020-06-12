@@ -491,7 +491,10 @@ public class AuthenticationFacade extends AbstractSegueFacade {
             log.error(errorMsg, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
         } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getBadRequestResponse("Unable to complete 2FA process as the user hasn't started the login flow.");
+            log.error("Unable to retrieve partial session information for MFA flow. "
+                    + "Maybe users' partial session expired?");
+            return SegueErrorResponse.getBadRequestResponse("Unable to complete 2FA login. "
+                    + "Your login session may have expired. Please enter your password again.");
         }
     }
 }
