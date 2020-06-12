@@ -890,27 +890,17 @@ public class UserAuthenticationManager {
         Validate.notNull(sessionInformation);
         Validate.notNull(userFromDatabase);
 
-        Integer sessionExpiryTimeInSeconds = Integer.parseInt(properties.getProperty(SESSION_EXPIRY_SECONDS));
-
         SimpleDateFormat sessionDateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
 
         String hmacKey = properties.getProperty(HMAC_SALT);
 
         String userId = sessionInformation.get(SESSION_USER_ID);
         String userSessionToken = sessionInformation.get(SESSION_TOKEN);
-        String sessionDate;
+        String sessionDate = sessionInformation.get(DATE_EXPIRES);
         String additionalInformation = sessionInformation.get(AUTH_COOKIE_ADDITIONAL_DATA);
         String sessionHMAC = sessionInformation.get(HMAC);
 
-        // FIXME: old cookies should be deprecated soon, by removing the userSessionToken is null case!
-        String ourHMAC;
-        if (null == userSessionToken) {
-            sessionDate = sessionInformation.get(DATE_SIGNED);
-            ourHMAC = this.calculateSessionHMAC(hmacKey, userId, sessionDate);
-        } else {
-            sessionDate = sessionInformation.get(DATE_EXPIRES);
-            ourHMAC = this.calculateSessionHMAC(hmacKey, userId, sessionDate, userSessionToken, additionalInformation);
-        }
+        String ourHMAC = this.calculateSessionHMAC(hmacKey, userId, sessionDate, userSessionToken, additionalInformation);
 
         // Check that there is a user ID provided:
         if (null == userId) {
@@ -922,11 +912,6 @@ public class UserAuthenticationManager {
         Calendar sessionExpiryDate = Calendar.getInstance();
         try {
             sessionExpiryDate.setTime(sessionDateFormat.parse(sessionDate));
-            // FIXME: old cookies should be deprecated soon, by removing the userSessionToken is null case!
-            if (null == userSessionToken) {
-                sessionExpiryDate.add(Calendar.SECOND, sessionExpiryTimeInSeconds);
-            }
-
             if (new Date().after(sessionExpiryDate.getTime())) {
                 log.debug("Session expired");
                 return false;
@@ -942,8 +927,7 @@ public class UserAuthenticationManager {
         }
 
         // Check that the session token is still valid:
-        // FIXME: old cookies should be deprecated soon, by removing the userSessionToken is not null bypass case!
-        if (null != userSessionToken && !userFromDatabase.getSessionToken().toString().equals(userSessionToken)) {
+        if (!userFromDatabase.getSessionToken().toString().equals(userSessionToken)) {
             log.debug("Invalid session token detected for user id " + userId);
             return false;
         }
