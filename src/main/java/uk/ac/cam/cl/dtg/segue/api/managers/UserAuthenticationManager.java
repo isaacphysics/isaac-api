@@ -967,22 +967,6 @@ public class UserAuthenticationManager {
     }
 
     /**
-     * Calculate the session HMAC value based on the properties of interest.
-     *
-     * @param key
-     *            - secret key.
-     * @param userId
-     *            - User Id
-     * @param currentDate
-     *            - Current date
-     * @return HMAC signature.
-     */
-    @Deprecated
-    private String calculateSessionHMAC(final String key, final String userId, final String currentDate) {
-        return UserAuthenticationManager.calculateHMAC(key, userId + "|" + currentDate);
-    }
-    
-    /**
      * This method will extract the segue session information from a given request.
      * 
      * @param request
