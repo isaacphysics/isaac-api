@@ -248,15 +248,29 @@ public class GroupManager {
      * 
      * @param userToLookup
      *            - the user to search for group membership details for.
+     * @param augmentGroups
+     *            - whether to add owner and manager information to a group.
      * @return the list of groups the user belongs to.
      * @throws SegueDatabaseException
      *             - if there is a database error.
      */
-    public List<UserGroupDTO> getGroupMembershipList(final RegisteredUserDTO userToLookup)
+    public List<UserGroupDTO> getGroupMembershipList(final RegisteredUserDTO userToLookup, final boolean augmentGroups)
             throws SegueDatabaseException {
         Validate.notNull(userToLookup);
 
-        return convertGroupsToDTOs(this.groupDatabase.getGroupMembershipList(userToLookup.getId()));
+        return convertGroupsToDTOs(this.groupDatabase.getGroupMembershipList(userToLookup.getId()), augmentGroups);
+    }
+    /**
+     * getGroupMembershipList. Gets the groups a user is a member of.
+     *
+     * @param userToLookup
+     *            - the user to search for group membership details for.
+     * @return the list of groups the user belongs to.
+     * @throws SegueDatabaseException
+     *             - if there is a database error.
+     */
+    public List<UserGroupDTO> getGroupMembershipList(final RegisteredUserDTO userToLookup) throws SegueDatabaseException {
+        return convertGroupsToDTOs(this.groupDatabase.getGroupMembershipList(userToLookup.getId()), true);
     }
 
     /**
@@ -430,7 +444,7 @@ public class GroupManager {
      *             - if there is a database problem.
      */
     public boolean isUserInGroup(final RegisteredUserDTO user, final UserGroupDTO group) throws SegueDatabaseException {
-        List<UserGroupDTO> groups = this.getGroupMembershipList(user);
+        List<UserGroupDTO> groups = this.getGroupMembershipList(user, false);
         return groups.contains(group);
     }
     
@@ -500,15 +514,16 @@ public class GroupManager {
     }
 
     /**
-     * Convert a collection of group DOs into DTOs
+     * Convert a collection of group DOs into DTOs.
      * 
-     * @param groups
-     *            to convert
+     * @param groups - to convert
+     * @param augmentGroups - whether owner and manager information is required for the group
      * @return groupDTOs
      * @throws SegueDatabaseException
      *      *            - if there is a database problem.
      */
-    private List<UserGroupDTO> convertGroupsToDTOs(final Iterable<UserGroup> groups) throws SegueDatabaseException {
+    private List<UserGroupDTO> convertGroupsToDTOs(final Iterable<UserGroup> groups, final boolean augmentGroups)
+            throws SegueDatabaseException {
         // FIXME - this duplicates much of the behaviour of the single-group convertGroupToDTO(...) method.
         // If refactored so additional managers uses lookup cache, then the single-group method should use this code!
         List<UserGroupDTO> result = Lists.newArrayList();
@@ -520,33 +535,45 @@ public class GroupManager {
         for (UserGroup group : groups) {
             UserGroupDTO dtoToReturn = dtoMapper.map(group, UserGroupDTO.class);
 
-            // convert the owner of the group into a DTO
-            try {
-                RegisteredUserDTO ownerUser = userLookupCache.get(group.getOwnerId());
-                if (null == ownerUser) {
-                    ownerUser = userManager.getUserDTOById(group.getOwnerId());
-                    userLookupCache.put(ownerUser.getId(), ownerUser);
+            if (augmentGroups) {
+                // convert the owner of the group into a DTO
+                try {
+                    RegisteredUserDTO ownerUser = userLookupCache.get(group.getOwnerId());
+                    if (null == ownerUser) {
+                        ownerUser = userManager.getUserDTOById(group.getOwnerId());
+                        userLookupCache.put(ownerUser.getId(), ownerUser);
+                    }
+
+                    dtoToReturn.setOwnerSummary(userManager.convertToDetailedUserSummaryObject(ownerUser, UserSummaryWithEmailAddressDTO.class));
+                } catch (NoUserException e) {
+                    // This should never happen!
+                    log.error(String.format("Group (%s) has owner ID (%s) that no longer exists!", group.getId(), group.getOwnerId()));
                 }
 
-                dtoToReturn.setOwnerSummary(userManager.convertToDetailedUserSummaryObject(ownerUser, UserSummaryWithEmailAddressDTO.class));
-            } catch (NoUserException e) {
-                // This should never happen!
-                log.error(String.format("Group (%s) has owner ID (%s) that no longer exists!", group.getId(), group.getOwnerId()));
+                // Didn't bother using the user cache above for the below as the bottleneck was the group owner db calls.
+                Set<Long> additionalManagers = this.groupDatabase.getAdditionalManagerSetByGroupId(group.getId());
+                Set<UserSummaryWithEmailAddressDTO> setOfUsers = Sets.newHashSet();
+                if (additionalManagers != null) {
+                    setOfUsers.addAll(userManager.convertToDetailedUserSummaryObjectList(userManager.findUsers(additionalManagers), UserSummaryWithEmailAddressDTO.class));
+                }
+
+                dtoToReturn.setAdditionalManagers(setOfUsers);
             }
-
-            // Didn't bother using the user cache above for the below as the bottleneck was the group owner db calls.
-            Set<Long> additionalManagers = this.groupDatabase.getAdditionalManagerSetByGroupId(group.getId());
-            Set<UserSummaryWithEmailAddressDTO> setOfUsers = Sets.newHashSet();
-            if (additionalManagers != null) {
-                setOfUsers.addAll(userManager.convertToDetailedUserSummaryObjectList(userManager.findUsers(additionalManagers), UserSummaryWithEmailAddressDTO.class));
-            }
-
-            dtoToReturn.setAdditionalManagers(setOfUsers);
-
             result.add(dtoToReturn);
         }
 
         return result;
+    }
+    /**
+     * Convert a collection of group DOs into DTOs.
+     *
+     * @param groups - to convert
+     * @return groupDTOs
+     * @throws SegueDatabaseException
+     *      *            - if there is a database problem.
+     */
+    private List<UserGroupDTO> convertGroupsToDTOs(final Iterable<UserGroup> groups) throws SegueDatabaseException {
+        return convertGroupsToDTOs(groups, true);
     }
 
     /**
