@@ -24,17 +24,20 @@ public class TOTPSharedSecret {
     private Long userId;
     private String sharedSecret;
     private Date created;
+    private Date lastUpdated;
 
     /**
      * New shared secret object.
      * @param userId - User id for traceability and can be checked by the frontend.
      * @param sharedSecret - secret string which is used by the TOTP algorithm
      * @param created - created date.
+     * @param lastUpdated - last date this value was changed (not deleted).
      */
-    public TOTPSharedSecret(final Long userId, final String sharedSecret, final Date created) {
+    public TOTPSharedSecret(final Long userId, final String sharedSecret, final Date created, final Date lastUpdated) {
         this.userId = userId;
         this.sharedSecret = sharedSecret;
         this.created = created;
+        this.lastUpdated = lastUpdated;
     }
 
     /**
@@ -56,5 +59,12 @@ public class TOTPSharedSecret {
      */
     public Date getCreated() {
         return created;
+    }
+
+    /**
+     * @return the last updated date of the secret.
+     */
+    public Date getLastUpdated() {
+        return lastUpdated;
     }
 }

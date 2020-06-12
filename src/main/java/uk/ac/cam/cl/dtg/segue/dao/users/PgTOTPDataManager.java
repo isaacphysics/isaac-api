@@ -28,6 +28,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -65,7 +66,7 @@ public class PgTOTPDataManager implements ITOTPDataManager {
     }
 
     @Override
-    public TOTPSharedSecret save2FASharedSecret(Long userId, TOTPSharedSecret credsToSave) throws SegueDatabaseException {
+    public TOTPSharedSecret save2FASharedSecret(final Long userId, final TOTPSharedSecret credsToSave) throws SegueDatabaseException {
         // determine if it is a create or update
         TOTPSharedSecret lc = this.get2FASharedSecret(userId);
 
@@ -74,27 +75,35 @@ public class PgTOTPDataManager implements ITOTPDataManager {
             lc = this.createCredentials(credsToSave);
         } else {
             // update
-            lc = this.updateCredentials(credsToSave);
+            lc = this.updateCredentials(new TOTPSharedSecret(lc.getUserId(), credsToSave.getSharedSecret(), lc.getCreated(), new Date()));
         }
 
         return lc;
     }
 
+    /**
+     * Method to create a new TOTPShared Secret entry in the database.
+     *
+     * @param credsToSave - object to persist
+     * @return the TOTPSharedSecret
+     * @throws SegueDatabaseException - if we can't save the entry for some reason
+     */
     private TOTPSharedSecret createCredentials(final TOTPSharedSecret credsToSave) throws SegueDatabaseException {
         PreparedStatement pst;
         try (Connection conn = database.getDatabaseConnection()) {
             pst = conn
                     .prepareStatement(
-                            "INSERT INTO user_totp(user_id, shared_secret, created) "
-                                    + "VALUES (?, ?, ?);",
+                            "INSERT INTO user_totp(user_id, shared_secret, created, last_updated) "
+                                    + "VALUES (?, ?, ?,?);",
                             Statement.RETURN_GENERATED_KEYS);
 
             setValueHelper(pst, 1, credsToSave.getUserId());
             setValueHelper(pst, 2, credsToSave.getSharedSecret());
             setValueHelper(pst, 3, credsToSave.getCreated());
+            setValueHelper(pst, 4, credsToSave.getLastUpdated());
 
             if (pst.executeUpdate() == 0) {
-                throw new SegueDatabaseException("Unable to save user.");
+                throw new SegueDatabaseException("Unable to save totp secret.");
             }
 
             return credsToSave;
@@ -104,6 +113,12 @@ public class PgTOTPDataManager implements ITOTPDataManager {
         }
     }
 
+    /**
+     * Modify the TOTPShared secret entry in the database.
+     * @param credsToSave - the object to update
+     * @return the TOTPSharedSecret for chaining.
+     * @throws SegueDatabaseException - if we can't save the entry for some reason
+     */
     private TOTPSharedSecret updateCredentials(final TOTPSharedSecret credsToSave) throws SegueDatabaseException {
         TOTPSharedSecret existingRecord = this.get2FASharedSecret(credsToSave.getUserId());
         if (null == existingRecord) {
@@ -114,15 +129,16 @@ public class PgTOTPDataManager implements ITOTPDataManager {
         try (Connection conn = database.getDatabaseConnection()) {
             pst = conn
                     .prepareStatement(
-                            "UPDATE user_totp SET shared_secret = ?"
+                            "UPDATE user_totp SET shared_secret = ?, last_updated = ?"
                                     + "WHERE user_id = ?;");
 
 
             setValueHelper(pst, 1, credsToSave.getSharedSecret());
-            setValueHelper(pst, 2, credsToSave.getUserId());
+            setValueHelper(pst, 2, credsToSave.getLastUpdated());
+            setValueHelper(pst, 3, credsToSave.getUserId());
 
             if (pst.executeUpdate() == 0) {
-                throw new SegueDatabaseException("Unable to save user.");
+                throw new SegueDatabaseException("Unable to save totp secret.");
             }
 
             return this.get2FASharedSecret(existingRecord.getUserId());
@@ -197,7 +213,8 @@ public class PgTOTPDataManager implements ITOTPDataManager {
 
         return new TOTPSharedSecret(results.getLong("user_id"),
                 results.getString("shared_secret"),
-                results.getTimestamp("created"));
+                results.getTimestamp("created"),
+                results.getTimestamp("last_updated"));
     }
 
     /**
@@ -206,7 +223,7 @@ public class PgTOTPDataManager implements ITOTPDataManager {
      * @param pst - prepared statement - already initialised
      * @param index - index of the value to be replaced in the pst
      * @param value - value
-     * @throws SQLException
+     * @throws SQLException - if there is a db problem.
      */
     private void setValueHelper(final PreparedStatement pst, final int index, final Object value) throws SQLException {
         if (null == value) {
