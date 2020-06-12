@@ -17,6 +17,7 @@ package uk.ac.cam.cl.dtg.segue.dao.users;
 
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
+import uk.ac.cam.cl.dtg.segue.dao.AbstractPgDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dos.users.LocalUserCredential;
@@ -27,7 +28,7 @@ import java.util.List;
 /**
  * Postgres specific implementation of a password data manager.
  */
-public class PgPasswordDataManager implements IPasswordDataManager {
+public class PgPasswordDataManager extends AbstractPgDataManager implements IPasswordDataManager {
     private final PostgresSqlDb database;
 
     /**
@@ -202,40 +203,5 @@ public class PgPasswordDataManager implements IPasswordDataManager {
         toReturn.setCreated(results.getTimestamp("created"));
         toReturn.setLastUpdated(results.getTimestamp("last_updated"));
         return toReturn;
-    }
-
-    /**
-     * Helper that picks the correct pst method based on the value provided.
-     *
-     * @param pst - prepared statement - already initialised
-     * @param index - index of the value to be replaced in the pst
-     * @param value - value
-     * @throws SQLException
-     */
-    private void setValueHelper(final PreparedStatement pst, final int index, final Object value) throws SQLException {
-        if (null == value) {
-            pst.setNull(index, java.sql.Types.NULL);
-            return;
-        }
-
-        if (value.getClass().isEnum()) {
-            pst.setString(index, ((Enum<?>) value).name());
-        }
-
-        if (value instanceof String) {
-            pst.setString(index, (String) value);
-        }
-
-        if (value instanceof Integer) {
-            pst.setInt(index, (Integer) value);
-        }
-
-        if (value instanceof Long) {
-            pst.setLong(index, (Long) value);
-        }
-
-        if (value instanceof java.util.Date) {
-            pst.setTimestamp(index, new java.sql.Timestamp(((java.util.Date) value).getTime()));
-        }
     }
 }
