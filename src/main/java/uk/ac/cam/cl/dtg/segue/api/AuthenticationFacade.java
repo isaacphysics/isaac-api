@@ -35,6 +35,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.servlet.http.HttpServletRequest;
@@ -444,14 +445,26 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     @Path("/mfa/challenge")
     @ApiOperation(value = "Continuation of login flow for users who have 2FA enabled")
     @Produces(MediaType.APPLICATION_JSON)
-    public final Response challenge(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+    public final Response mfaCompleteAuthentication(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                     final Map<String, String> mfaResponse) {
         if (Strings.isNullOrEmpty(mfaResponse.get("mfaVerificationCode"))) {
             return SegueErrorResponse.getBadRequestResponse("Response must include mfaVerificationCode");
         }
 
-        final Integer verificationCode = Integer.parseInt(mfaResponse.get("mfaVerificationCode"));
+        UserSummaryWithEmailAddressDTO partiallyLoggedInUser = null;
+        final String rateThrottleMessage = "There have been too many attempts to login to this account. Try again later.";
         try {
+            final Integer verificationCode = Integer.parseInt(mfaResponse.get("mfaVerificationCode"));
+            partiallyLoggedInUser = this.userManager.getPartiallyIdentifiedUser(request);
+
+            if (misuseMonitor.hasMisused(partiallyLoggedInUser.getEmail().toLowerCase(),
+                    SegueLoginMisuseHandler.class.toString())) {
+
+                log.error("Segue Login Blocked for (" + partiallyLoggedInUser.getEmail()
+                        + ") during 2FA step. Rate limited - too many logins.");
+                return SegueErrorResponse.getRateThrottledResponse(rateThrottleMessage);
+            }
+
             RegisteredUserDTO userToReturn = this.userManager.authenticateMFA(request, response, verificationCode);
 
             this.getLogManager().logEvent(userToReturn, request, SegueLogType.LOG_IN, Maps.newHashMap());
@@ -461,8 +474,18 @@ public class AuthenticationFacade extends AbstractSegueFacade {
         } catch (NumberFormatException e) {
             return SegueErrorResponse.getBadRequestResponse("Verification code is not in the correct format.");
         } catch (IncorrectCredentialsProvidedException | NoCredentialsAvailableException e) {
-            log.debug("Incorrect credentials in MFA" , e);
-            return new SegueErrorResponse(Status.UNAUTHORIZED, "Incorrect credentials provided.").toResponse();
+            log.info("Incorrect 2FA code received for (" + partiallyLoggedInUser.getEmail()
+                    + "). Error reason: " + e.getMessage());
+            try {
+                misuseMonitor.notifyEvent(partiallyLoggedInUser.getEmail().toLowerCase(),
+                        SegueLoginMisuseHandler.class.toString());
+
+                return new SegueErrorResponse(Status.UNAUTHORIZED, "Incorrect code provided.").toResponse();
+            } catch (SegueResourceMisuseException e1) {
+                log.error("Segue 2FA verification Blocked for (" + partiallyLoggedInUser.getEmail()
+                        + "). Rate limited - too many logins.");
+                return SegueErrorResponse.getRateThrottledResponse(rateThrottleMessage);
+            }
         } catch (SegueDatabaseException e) {
             String errorMsg = "Internal Database error has occurred during mfa challenge.";
             log.error(errorMsg, e);

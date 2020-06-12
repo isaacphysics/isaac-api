@@ -365,6 +365,8 @@ public class UserAccountManager implements IUserAccountManager {
      *             - if the password is incorrect
      * @throws NoCredentialsAvailableException
      *             - If the account exists but does not have a local password
+     * @throws NoUserLoggedInException
+     *             - If the user hasn't completed the first step of the authentication process.
      * @throws SegueDatabaseException
      *             - if there is a problem with the database.
      */
@@ -1269,6 +1271,23 @@ public class UserAccountManager implements IUserAccountManager {
             resultList.add(this.convertToDetailedUserSummaryObject(user, detailedDTO));
         }
         return resultList;
+    }
+
+    /**
+     * Get the user object from the partially completed cookie.
+     *
+     * WARNING: Do not use this method to determine if a user has successfully logged in or not as they could have omitted the 2FA step.
+     *
+     * @param request to pull back the user
+     * @return UserSummaryDTO of the partially logged in user or will throw an exception if cannot be found.
+     * @throws NoUserLoggedInException if they haven't started the flow.
+     */
+    public UserSummaryWithEmailAddressDTO getPartiallyIdentifiedUser(HttpServletRequest request) throws NoUserLoggedInException {
+        RegisteredUser registeredUser = this.retrievePartialLogInForMFA(request);
+        if (null == registeredUser) {
+            throw new NoUserLoggedInException();
+        }
+        return this.convertToDetailedUserSummaryObject(this.convertUserDOToUserDTO(registeredUser), UserSummaryWithEmailAddressDTO.class);
     }
 
     /**
