@@ -1292,6 +1292,7 @@ public class UserAccountManager implements IUserAccountManager {
 
     /**
      * Sends verification email for the user's current email address. The destination will match the userDTO's email.
+     *
      * @param userDTO - user to which the email is to be sent.
      * @param emailVerificationToken - the generated email verification token.
      * @throws ContentManagerException - if the email template does not exist.
@@ -1314,6 +1315,7 @@ public class UserAccountManager implements IUserAccountManager {
     /**
      * Sends a notice email for email change to the user's current email address and then creates a copy of the user
      * with the new email to send to the sendVerificationEmailForCurrentEmail method.
+     *
      * @param userDTO - initial user where the notice of change is to be sent.
      * @param newEmail - the new email which has been requested to change to.
      * @param newEmailToken - the generated HMAC token for the new email.
@@ -1348,12 +1350,13 @@ public class UserAccountManager implements IUserAccountManager {
      *            - for the session to be attached.
      * @param user
      *            - the user who is being logged in.
+     * @throws SegueDatabaseException - if there is a problem with the database.
      * @return the DTO version of the user.
      */
     private RegisteredUserDTO logUserIn(final HttpServletRequest request, final HttpServletResponse response,
             final RegisteredUser user) throws SegueDatabaseException {
         AnonymousUser anonymousUser = this.getAnonymousUserDO(request);
-        if (anonymousUser != null){
+        if (anonymousUser != null) {
             log.debug(String.format("Anonymous User (%s) located during login - need to merge question information", anonymousUser.getSessionId()));
         }
 
@@ -1368,9 +1371,9 @@ public class UserAccountManager implements IUserAccountManager {
      *
      * To complete this the user must also complete MFA authentication.
      *
-     * @param request
-     * @param response
-     * @param user
+     * @param request - http request containing the cookie
+     * @param response - response to update cookie information
+     * @param user - user of interest
      */
     private void partialLogInForMFA(final HttpServletRequest request, final HttpServletResponse response,
                                                  final RegisteredUser user) {
@@ -1382,10 +1385,10 @@ public class UserAccountManager implements IUserAccountManager {
      *
      * NOTE: You should not treat users has having logged in using this method as they haven't completed login.
      *
-     * @param request
+     * @param request - http request containing the cookie
      */
     private RegisteredUser retrievePartialLogInForMFA(final HttpServletRequest request) {
-        return this.userAuthenticationManager.getUserFromSession(request,true);
+        return this.userAuthenticationManager.getUserFromSession(request, true);
     }
 
     /**
@@ -1677,6 +1680,7 @@ public class UserAccountManager implements IUserAccountManager {
 
     /**
      * Method to retrieve the number of users by role from the Database.
+     *
      * @return a map of role to counter
      */
     public Map<Role, Long> getRoleCount() throws SegueDatabaseException {
@@ -1684,7 +1688,8 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     /**
-     * Count the users by role seen over the previous time interval
+     * Count the users by role seen over the previous time interval.
+     *
      * @param timeInterval time interval over which to count
      * @return map of counts for each role
      * @throws SegueDatabaseException
@@ -1695,7 +1700,8 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     /**
-     * Count users' reported genders
+     * Count users' reported genders.
+     *
      * @return map of counts for each gender.
      * @throws SegueDatabaseException
      *             - if there is a problem with the database.
@@ -1705,7 +1711,8 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     /**
-     * Count users' reported school information
+     * Count users' reported school information.
+     *
      * @return map of counts for students who have provided or not provided school information
      * @throws SegueDatabaseException
      *             - if there is a problem with the database.
@@ -1715,8 +1722,11 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     /**
-     * Count the number of anonymous users currently in our temporary user cache
+     * Count the number of anonymous users currently in our temporary user cache.
+     *
      * @return the number of anonymous users
+     * @throws SegueDatabaseException
+     *             - if there is a problem with the database.
      */
     public Long getNumberOfAnonymousUsers() throws SegueDatabaseException {
         return temporaryUserCache.getCountOfAnonymousUsers();
