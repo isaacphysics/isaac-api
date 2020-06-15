@@ -266,7 +266,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 }
 
                 if (!GroupManager.isOwnerOrAdditionalManager(group, currentlyLoggedInUser.getId())
-                        && !isUserAnAdmin(userManager, request)) {
+                        && !isUserAnAdmin(userManager, currentlyLoggedInUser)) {
                     return new SegueErrorResponse(Status.FORBIDDEN, "You are not the owner or manager of this group").toResponse();
                 }
 
@@ -333,7 +333,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             UserGroupDTO group = this.groupManager.getGroupById(assignment.getGroupId());
 
             if (!GroupManager.isOwnerOrAdditionalManager(group, currentlyLoggedInUser.getId())
-                    && !isUserAnAdmin(userManager, request)) {
+                    && !isUserAnAdmin(userManager, currentlyLoggedInUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
             }
@@ -951,7 +951,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             }
 
             if (!GroupManager.isOwnerOrAdditionalManager(assigneeGroup, currentlyLoggedInUser.getId())
-                    && !isUserAnAdmin(userManager, request)) {
+                    && !isUserAnAdmin(userManager, currentlyLoggedInUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only set assignments to groups you own or manage.").toResponse();
             }

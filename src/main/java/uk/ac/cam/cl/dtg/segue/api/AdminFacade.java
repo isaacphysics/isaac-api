@@ -179,7 +179,7 @@ public class AdminFacade extends AbstractSegueFacade {
     @GZIP
     public Response getStatistics(@Context final HttpServletRequest request) {
         try {
-            if (!isUserStaff(request)) {
+            if (!isUserStaff(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin to access this endpoint.")
                         .toResponse();
             }
@@ -207,7 +207,7 @@ public class AdminFacade extends AbstractSegueFacade {
     @GZIP
     public Response countUsersByRole(@Context final HttpServletRequest request) {
         try {
-            if (!isUserStaff(request)) {
+            if (!isUserStaff(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin to access this endpoint.")
                         .toResponse();
             }
@@ -243,7 +243,7 @@ public class AdminFacade extends AbstractSegueFacade {
             @Context final Request requestForCaching, @QueryParam("from_date") final Long fromDate,
                                      @QueryParam("to_date") final Long toDate) {
         try {
-            if (!isUserStaff(request)) {
+            if (!isUserStaff(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be a staff member to access this endpoint.")
                         .toResponse();
             }
@@ -284,7 +284,7 @@ public class AdminFacade extends AbstractSegueFacade {
     public Response getSchoolsStatistics(@Context final HttpServletRequest request,
             @Context final Request requestForCache) {
         try {
-            if (!isUserStaff(request)) {
+            if (!isUserStaff(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
                         .toResponse();
             }
@@ -329,7 +329,7 @@ public class AdminFacade extends AbstractSegueFacade {
     @GZIP
     public Response getUserLastAccessInformation(@Context final HttpServletRequest request) {
         try {
-            if (!isUserAnAdmin(request)) {
+            if (!isUserAnAdmin(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
                         .toResponse();
             }
@@ -359,13 +359,13 @@ public class AdminFacade extends AbstractSegueFacade {
     public synchronized Response modifyUsersRole(@Context final HttpServletRequest request,
             @PathParam("role") final String role, final List<Long> userIds) {
         try {
-            if (!isUserAnAdminOrEventManager(request)) {
+            RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
+            if (!isUserAnAdminOrEventManager(userManager, requestingUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be staff to access this endpoint.")
                         .toResponse();
             }
 
             Role requestedRole = Role.valueOf(role);
-            RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
             
             if (userIds.contains(requestingUser.getId())) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
@@ -450,14 +450,14 @@ public class AdminFacade extends AbstractSegueFacade {
             @PathParam("checkEmailsExistBeforeApplying") final boolean checkEmailsExistBeforeApplying,
             final List<String> emails) {
         try {
-            if (!isUserAnAdminOrEventManager(request)) {
+            RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
+            if (!isUserAnAdminOrEventManager(userManager, requestingUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be staff to access this endpoint.")
                         .toResponse();
             }
 
             EmailVerificationStatus requestedEmailVerificationStatus = EmailVerificationStatus
                     .valueOf(emailVerificationStatus);
-            RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
 
             if (emails.contains(requestingUser.getEmail())) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "Aborted - you cannot modify yourself.")
@@ -510,7 +510,7 @@ public class AdminFacade extends AbstractSegueFacade {
     @Path("/reload_properties")
     public synchronized Response reloadProperties(@Context final HttpServletRequest request) {
         try {
-            if (isUserAnAdmin(request)) {
+            if (isUserAnAdmin(userManager, request)) {
                 log.info("Triggering properties reload ...");
                 this.getProperties().triggerPropertiesRefresh();
 
@@ -556,7 +556,7 @@ public class AdminFacade extends AbstractSegueFacade {
 
         if (this.getProperties().getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(EnvironmentType.PROD.name())) {
             try {
-                if (!isUserStaff(request)) {
+                if (!isUserStaff(userManager, request)) {
                     return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin to access this endpoint.")
                             .toResponse();
                 }
@@ -695,12 +695,12 @@ public class AdminFacade extends AbstractSegueFacade {
         RegisteredUserDTO currentUser;
         try {
             currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
-            if (!isUserAnAdminOrEventManager(httpServletRequest)) {
+            if (!isUserAnAdminOrEventManager(userManager, currentUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You are not authorised to access this function.")
                         .toResponse();
             }
             
-            if (!currentUser.getRole().equals(Role.ADMIN)
+            if (!isUserAnAdmin(userManager, currentUser)
                     && (null == familyName || familyName.isEmpty())
                     && (null == schoolOther || schoolOther.isEmpty())
                     && (null == email || email.isEmpty())
@@ -890,7 +890,7 @@ public class AdminFacade extends AbstractSegueFacade {
         RegisteredUserDTO currentUser;
         try {
             currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
-            if (!isUserAnAdminOrEventManager(httpServletRequest)) {
+            if (!isUserAnAdminOrEventManager(userManager, currentUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You must be logged in as an admin to access this function.").toResponse();
             }
@@ -927,12 +927,12 @@ public class AdminFacade extends AbstractSegueFacade {
     public Response deleteUserAccount(@Context final HttpServletRequest httpServletRequest,
             @PathParam("user_id") final Long userId) {
         try {
-            if (!isUserAnAdmin(httpServletRequest)) {
+            RegisteredUserDTO currentlyLoggedInUser = this.userManager.getCurrentRegisteredUser(httpServletRequest);
+            if (!isUserAnAdmin(userManager, currentlyLoggedInUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You must be logged in as an admin to access this function.").toResponse();
             }
 
-            RegisteredUserDTO currentlyLoggedInUser = this.userManager.getCurrentRegisteredUser(httpServletRequest);
             if (currentlyLoggedInUser.getId().equals(userId)) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "You are not allowed to delete yourself.")
                         .toResponse();
@@ -977,7 +977,7 @@ public class AdminFacade extends AbstractSegueFacade {
     public Response getSchoolStatistics(@Context final HttpServletRequest request,
             @PathParam("school_id") final String schoolId) {
         try {
-            if (!isUserStaff(request)) {
+            if (!isUserStaff(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
                         .toResponse();
             }
@@ -1054,7 +1054,7 @@ public class AdminFacade extends AbstractSegueFacade {
             throw new BadRequestException("You must specify the from_date and to_date you are interested in.");
         }
 
-        if (!isUserStaff(httpServletRequest)) {
+        if (!isUserStaff(userManager, httpServletRequest)) {
             throw new ForbiddenException("You must be logged in as an admin to access this function.");
         }
 
@@ -1212,7 +1212,7 @@ public class AdminFacade extends AbstractSegueFacade {
         }
 
         try {
-            if (!isUserStaff(httpServletRequest)) {
+            if (!isUserStaff(userManager, httpServletRequest)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You must be logged in as staff to access this function.").toResponse();
             }
@@ -1244,7 +1244,7 @@ public class AdminFacade extends AbstractSegueFacade {
     public Response viewPerfLog(@Context final Request request, @Context final HttpServletRequest httpServletRequest) {
         try (BufferedReader bufferedReader = new BufferedReader(new FileReader(System.getProperty("catalina.base")
                 + File.separator + "logs" + File.separator + "perf.log"))) {
-            if (!isUserAnAdmin(httpServletRequest)) {
+            if (!isUserAnAdmin(userManager, httpServletRequest)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You must be logged in as staff to access this function.").toResponse();
             }
@@ -1287,7 +1287,7 @@ public class AdminFacade extends AbstractSegueFacade {
     @GZIP
     public Response getMetaData(@Context final Request request, @Context final HttpServletRequest httpServletRequest) {
         try {
-            if (!isUserStaff(httpServletRequest)) {
+            if (!isUserStaff(userManager, httpServletRequest)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You must be logged in as staff to access this function.").toResponse();
             }
@@ -1309,46 +1309,6 @@ public class AdminFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to read the log file requested", e)
                     .toResponse();
         }
-    }   
-    
-    /**
-     * Is the current user an admin.
-     * 
-     * @param request
-     *            - with session information
-     * @return true if user is logged in as an admin, false otherwise.
-     * @throws NoUserLoggedInException
-     *             - if we are unable to tell because they are not logged in.
-     */
-    private boolean isUserAnAdmin(final HttpServletRequest request) throws NoUserLoggedInException {
-        return isUserAnAdmin(userManager, request);
-    }
-
-    /**
-     * Is the current user an admin.
-     * 
-     * @param request
-     *            - with session information
-     * @return true if user is logged in as an admin, false otherwise.
-     * @throws NoUserLoggedInException
-     *             - if we are unable to tell because they are not logged in.
-     */
-    private boolean isUserAnAdminOrEventManager(final HttpServletRequest request) throws NoUserLoggedInException {
-        return isUserAnAdminOrEventManager(userManager, request);
-    }
-
-    
-    /**
-     * Is the current user in a staff role.
-     * 
-     * @param request
-     *            - with session information
-     * @return true if user is logged in as an admin, false otherwise.
-     * @throws NoUserLoggedInException
-     *             - if we are unable to tell because they are not logged in.
-     */
-    private boolean isUserStaff(final HttpServletRequest request) throws NoUserLoggedInException {
-        return isUserStaff(userManager, request);
     }
 
     /**
@@ -1367,14 +1327,16 @@ public class AdminFacade extends AbstractSegueFacade {
                                                    @PathParam("version") final String version) {
 
         try {
-            if (isUserAnAdmin(request)) {
+            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
+            if (isUserAnAdmin(userManager, currentUser)) {
 
                 String oldLiveVersion = contentManager.getCurrentContentSHA();
 
                 HttpClient httpClient = new DefaultHttpClient();
 
-                HttpPost httpPost = new HttpPost("http://" + getProperties().getProperty("ETL_HOSTNAME") + ":" +
-                        getProperties().getProperty("ETL_PORT") + "/isaac-api/api/etl/set_version_alias/" + this.contentIndex + "/" + version);
+                HttpPost httpPost = new HttpPost("http://" + getProperties().getProperty("ETL_HOSTNAME") + ":"
+                        + getProperties().getProperty("ETL_PORT") + "/isaac-api/api/etl/set_version_alias/"
+                        + this.contentIndex + "/" + version);
 
                 httpPost.addHeader("Content-Type", "application/json");
 
@@ -1383,7 +1345,7 @@ public class AdminFacade extends AbstractSegueFacade {
                 HttpEntity e = httpResponse.getEntity();
 
                 if (httpResponse.getStatusLine().getStatusCode() == 200) {
-                    log.info(userManager.getCurrentRegisteredUser(request).getEmail() + " changed live version from " + oldLiveVersion + " to " + version + ".");
+                    log.info(currentUser.getEmail() + " changed live version from " + oldLiveVersion + " to " + version + ".");
                     return Response.ok().build();
                 } else {
                     SegueErrorResponse r = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, IOUtils.toString(e.getContent()));
@@ -1449,7 +1411,7 @@ public class AdminFacade extends AbstractSegueFacade {
 
         try {
 
-            if (isUserAnAdmin(httpServletRequest)) {
+            if (isUserAnAdmin(userManager, httpServletRequest)) {
 
                 ObjectMapper mapper = new ObjectMapper();
                 Map<String, Object> diagnosticReport = Maps.newHashMap();

@@ -580,7 +580,7 @@ public class UsersFacade extends AbstractSegueFacade {
 
             UserSummaryDTO userOfInterestSummaryObject = userManager.convertToUserSummaryObject(userOfInterest);
 
-            if (!events.equals(SegueLogType.ANSWER_QUESTION.name()) && currentUser.getRole() != Role.ADMIN) {
+            if (!events.equals(SegueLogType.ANSWER_QUESTION.name()) && !isUserAnAdmin(userManager, currentUser)) {
                 // Non-admins should not be able to choose random log events.
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
@@ -752,8 +752,7 @@ public class UsersFacade extends AbstractSegueFacade {
             // check that the current user has permissions to change this users details.
             RegisteredUserDTO currentlyLoggedInUser = this.userManager.getCurrentRegisteredUser(request);
             if (!currentlyLoggedInUser.getId().equals(userObjectFromClient.getId())
-                    && currentlyLoggedInUser.getRole() != Role.ADMIN
-                    && currentlyLoggedInUser.getRole() != Role.EVENT_MANAGER) {
+                    && !isUserAnAdminOrEventManager(userManager, currentlyLoggedInUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You cannot change someone else's user settings.")
                         .toResponse();
             }
@@ -762,13 +761,13 @@ public class UsersFacade extends AbstractSegueFacade {
             if (newPassword != null && !newPassword.isEmpty()) {
                 // only admins and the account owner can change passwords 
                 if (!currentlyLoggedInUser.getId().equals(userObjectFromClient.getId())
-                        && currentlyLoggedInUser.getRole() != Role.ADMIN) {
+                        && !isUserAnAdmin(userManager, currentlyLoggedInUser)) {
                     return new SegueErrorResponse(Status.FORBIDDEN, "You cannot change someone else's password.")
                             .toResponse();
                 }
 
                 // Password change requires auth check unless admin is modifying non-admin user account
-                if (!(currentlyLoggedInUser.getRole() == Role.ADMIN && userObjectFromClient.getRole() != Role.ADMIN)) {
+                if (!(isUserAnAdmin(userManager, currentlyLoggedInUser) && userObjectFromClient.getRole() != Role.ADMIN)) {
                     // authenticate the user to check they are allowed to change the password
 
                     if (null == passwordCurrent) {
@@ -794,7 +793,7 @@ public class UsersFacade extends AbstractSegueFacade {
 
             // check that the user is allowed to change the role of another user
             // if that is what they are doing.
-            if ((currentlyLoggedInUser.getRole() != Role.ADMIN && currentlyLoggedInUser.getRole() != Role.EVENT_MANAGER)
+            if ((!isUserAnAdminOrEventManager(userManager, currentlyLoggedInUser))
                     && userObjectFromClient.getRole() != null
                     && !userObjectFromClient.getRole().equals(existingUserFromDb.getRole())) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to change a users role.")
