@@ -839,6 +839,7 @@ public class UserAuthenticationManager {
         String userId = user.getId().toString();
         String userSessionToken = user.getSessionToken().toString();
         String hmacKey = properties.getProperty(HMAC_SALT);
+        String partialLoginFlagString = null;
 
         try {
             Calendar calendar = Calendar.getInstance();
@@ -849,14 +850,15 @@ public class UserAuthenticationManager {
             sessionInformationBuilder.put(SESSION_USER_ID, userId);
             sessionInformationBuilder.put(SESSION_TOKEN, userSessionToken);
             sessionInformationBuilder.put(DATE_EXPIRES, sessionExpiryDate);
-            sessionInformationBuilder.put(PARTIAL_LOGIN_FLAG, "" + partialLoginFlag);
 
             if (partialLoginFlag) {
+                partialLoginFlagString = String.valueOf(true);
+                sessionInformationBuilder.put(PARTIAL_LOGIN_FLAG, partialLoginFlagString);
                 // use shortened expiry time if partial login
                 sessionExpiryTimeInSeconds = PARTIAL_EXPIRY_TIME_IN_SECONDS;
             }
 
-            String sessionHMAC = this.calculateSessionHMAC(hmacKey, userId, sessionExpiryDate, userSessionToken, "" + partialLoginFlag);
+            String sessionHMAC = calculateSessionHMAC(hmacKey, userId, sessionExpiryDate, userSessionToken, partialLoginFlagString);
             sessionInformationBuilder.put(HMAC, sessionHMAC);
 
             Map<String, String> sessionInformation = sessionInformationBuilder.build();
@@ -903,7 +905,7 @@ public class UserAuthenticationManager {
         String partialLoginFlag = sessionInformation.get(PARTIAL_LOGIN_FLAG);
         String sessionHMAC = sessionInformation.get(HMAC);
 
-        String ourHMAC = this.calculateSessionHMAC(hmacKey, userId, sessionDate, userSessionToken, partialLoginFlag);
+        String ourHMAC = calculateSessionHMAC(hmacKey, userId, sessionDate, userSessionToken, partialLoginFlag);
 
         // Check that there is a user ID provided:
         if (null == userId) {

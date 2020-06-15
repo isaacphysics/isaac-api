@@ -138,7 +138,7 @@ public final class Constants {
     /**
      * Constant representing the key for the additional date property - used in HMAC calculations.
      */
-    public static final String PARTIAL_LOGIN_FLAG = "PARTIAL_LOGIN_FLAG";
+    public static final String PARTIAL_LOGIN_FLAG = "partialLogin";
 
     /**
      * Constant representing the key for the HMAC property - used in HMAC calculations.
