@@ -881,9 +881,10 @@ public class UserAuthenticationManager {
     }
     
     /**
-     * Executes checks on the users sessions to ensure it is valid
+     * Executes checks on the users sessions to ensure it is valid.
      * 
-     * Checks include verifying the HMAC and the session creation date.
+     * Verifies the HMAC for userId, expiry date, session token and partial login status; but DOES NOT enforce
+     * partial login as invalid! I.e. this method will return true for partial logins.
      * 
      * @param sessionInformation
      *            - map containing session information retrieved from the cookie.
@@ -891,7 +892,7 @@ public class UserAuthenticationManager {
      *            - the real user we are to validate this cookie against.
      * @return true if it is still valid, false if not.
      */
-    public boolean isValidUsersSession(final Map<String, String> sessionInformation, final RegisteredUser userFromDatabase) {
+    private boolean isValidUsersSession(final Map<String, String> sessionInformation, final RegisteredUser userFromDatabase) {
         Validate.notNull(sessionInformation);
         Validate.notNull(userFromDatabase);
 
