@@ -119,7 +119,7 @@ public class UserAuthenticationManager {
 
         this.emailManager = emailQueue;
         this.serializationMapper = new ObjectMapper();
-        Boolean isProduction = properties.getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(EnvironmentType.PROD.name());
+        boolean isProduction = properties.getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(EnvironmentType.PROD.name());
         this.checkOriginHeader = isProduction;
         this.setSecureCookies = isProduction;
     }
@@ -364,6 +364,7 @@ public class UserAuthenticationManager {
             return null;
         }
 
+        // WebSocket UpgradeRequests should never use a partial login:
         return getUserFromSessionInformationMap(currentSessionInformation, false);
     }
 
@@ -832,7 +833,7 @@ public class UserAuthenticationManager {
         Validate.notNull(user);
         Validate.notNull(user.getId());
         SimpleDateFormat sessionDateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
-        Integer sessionExpiryTimeInSeconds = Integer.parseInt(properties.getProperty(SESSION_EXPIRY_SECONDS));
+        int sessionExpiryTimeInSeconds = Integer.parseInt(properties.getProperty(SESSION_EXPIRY_SECONDS));
         final int PARTIAL_EXPIRY_TIME_IN_SECONDS = 1200; // 20 mins
 
         String userId = user.getId().toString();
