@@ -174,21 +174,23 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     .stream().collect(Collectors.toMap(GameboardDTO::getId, Function.identity()));
 
             // we want to populate gameboard details for the assignment DTO.
+            Map<Long, UserSummaryDTO> userSummaryCache = new HashMap<>();
             for (AssignmentDTO assignment : assignments) {
                 assignment.setGameboard(gameboardsMap.get(assignment.getGameboardId()));
-
-                if (assignment.getOwnerUserId() != null) {
-                    try {
-                        RegisteredUserDTO user = userManager.getUserDTOById(assignment.getOwnerUserId());
-                        if (user == null) {
-                            throw new NoUserException("No user found with this ID.");
+                Long ownerUserId = assignment.getOwnerUserId();
+                if (ownerUserId != null) {
+                    UserSummaryDTO userSummary = userSummaryCache.get(ownerUserId);
+                    if (userSummary == null) {
+                        try {
+                            RegisteredUserDTO user = userManager.getUserDTOById(ownerUserId);
+                            userSummary = userManager.convertToUserSummaryObject(user);
+                            userSummaryCache.put(ownerUserId, userSummary);
+                        } catch (NoUserException e) {
+                            log.warn("Assignment (" + assignment.getId() + ") exists with owner user ID ("
+                                    + assignment.getOwnerUserId() + ") that does not exist!");
                         }
-                        UserSummaryDTO userSummary = userManager.convertToUserSummaryObject(user);
-                        assignment.setAssignerSummary(userSummary);
-                    } catch (NoUserException e) {
-                        log.warn("Assignment (" + assignment.getId() + ") exists with owner user ID ("
-                                + assignment.getOwnerUserId() + ") that does not exist!");
                     }
+                    assignment.setAssignerSummary(userSummary);
                 }
             }
 
@@ -197,7 +199,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 List<AssignmentDTO> newList = Lists.newArrayList();
                 // we want to populate gameboard details for the assignment DTO.
                 for (AssignmentDTO assignment : assignments) {
-                    if (assignment.getGameboard() == null) {
+                    if (assignment.getGameboard() == null || assignment.getGameboard().getQuestions().size() == 0) {
+                        log.warn(String.format("Skipping broken gameboard '%s' for assignment (%s)!",
+                                assignment.getGameboardId(), assignment.getId()));
                         continue;
                     }
 
@@ -269,13 +273,17 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 Collection<AssignmentDTO> allAssignmentsSetToGroup
                         = this.assignmentManager.getAssignmentsByGroup(group.getId());
 
-                // we currently need to use the currently logged in users information to as a parameter to get all the pass mark information.
-                Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts = this.questionManager
-                        .getQuestionAttemptsByUser(currentlyLoggedInUser);
+                // In order to get all the information about gameboard items, we need to use the method which augments
+                // gameboards with user attempt information. But we don't _want_ this information for real, so we won't
+                // do the costly loading of the real attempt information from the database:
+                Map<String, Map<String, List<QuestionValidationResponse>>> fakeQuestionAttemptMap = new HashMap<>();
 
                 // we want to populate gameboard details for the assignment DTO.
+                List<String> gameboardIDs = allAssignmentsSetToGroup.stream().map(AssignmentDTO::getGameboardId).collect(Collectors.toList());
+                Map<String, GameboardDTO> gameboards = this.gameManager.getGameboards(gameboardIDs, currentlyLoggedInUser, fakeQuestionAttemptMap)
+                        .stream().collect(Collectors.toMap(GameboardDTO::getId, Function.identity()));
                 for (AssignmentDTO assignment : allAssignmentsSetToGroup) {
-                    assignment.setGameboard(this.gameManager.getGameboard(assignment.getGameboardId(), currentlyLoggedInUser, userQuestionAttempts));
+                    assignment.setGameboard(gameboards.get(assignment.getGameboardId()));
                 }
 
                 this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacLogType.VIEW_GROUPS_ASSIGNMENTS,
@@ -400,6 +408,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
+            boolean includeUserIDs = isUserAnAdminOrEventManager(userManager, currentlyLoggedInUser);
 
             AssignmentDTO assignment = this.assignmentManager.getAssignmentById(assignmentId);
             if (null == assignment) {
@@ -409,7 +418,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             UserGroupDTO group = this.groupManager.getGroupById(assignment.getGroupId());
 
             if (!GroupManager.isOwnerOrAdditionalManager(group, currentlyLoggedInUser.getId())
-                    && !isUserAnAdmin(userManager, request)) {
+                    && !isUserAnAdmin(userManager, currentlyLoggedInUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
             }
@@ -441,6 +450,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     currentlyLoggedInUser.getFamilyName()));
 
             List<String> headerRow = Lists.newArrayList(Arrays.asList("", ""));
+            if (includeUserIDs) {
+                headerRow.add("");
+            }
 
             DecimalFormat percentageFormat = new DecimalFormat("###");
 
@@ -464,6 +476,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             rows.add(headerRow.toArray(new String[0]));
 
             List<String> totalsRow = Lists.newArrayList();
+            if (includeUserIDs) {
+                totalsRow.add("");
+            }
             Collections.addAll(totalsRow, ",Correct %".split(","));
 
             Map<RegisteredUserDTO, Map<String, Integer>> userQuestionDataMap = new HashMap<>();
@@ -505,10 +520,13 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 UserSummaryDTO userSummary = associationManager.enforceAuthorisationPrivacy(currentlyLoggedInUser,
                         userManager.convertToUserSummaryObject(user));
 
+                resultRow.add(userSummary.getFamilyName());
+                resultRow.add(userSummary.getGivenName());
+                if (includeUserIDs) {
+                    resultRow.add(userSummary.getId().toString());
+                }
                 // can the user access the data?
                 if (userSummary.isAuthorisedFullAccess()) {
-                    resultRow.add(userSummary.getFamilyName());
-                    resultRow.add(userSummary.getGivenName());
                     int totalCorrect = 0;
                     int columnNumber = 0;
                     for (String questionId : questionIds) {
@@ -531,8 +549,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     resultRow.add(percentageFormat.format(percentageCorrect));
 
                 } else {
-                    resultRow.add(userSummary.getFamilyName());
-                    resultRow.add(userSummary.getGivenName());
                     for (@SuppressWarnings("unused") String questionId : questionIds) {
                         resultRow.add(NOT_SHARING);
                     }
@@ -551,7 +567,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             }
 
             rows.add(totalsRow.toArray(new String[0]));
-            rows.add("Last Name,First Name".split(","));
+            String userInfoHeader = includeUserIDs ? "Last Name,First Name,User ID" : "Last Name,First Name";
+            rows.add(userInfoHeader.split(","));
             rows.addAll(resultRows);
             csvWriter.writeAll(rows);
             csvWriter.close();
@@ -594,8 +611,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
         try {
             // Fetch the currently logged in user
-            RegisteredUserDTO currentlyLoggedInUser;
-            currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
+            RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
+            boolean includeUserIDs = isUserAnAdminOrEventManager(userManager, currentlyLoggedInUser);
 
             // Fetch the requested group
             UserGroupDTO group;
@@ -603,7 +620,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             // Check the user has permission to access this group:
             if (!GroupManager.isOwnerOrAdditionalManager(group, currentlyLoggedInUser.getId())
-                    && !isUserAnAdmin(userManager, request)) {
+                    && !isUserAnAdmin(userManager, currentlyLoggedInUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
             }
@@ -691,7 +708,11 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy");
 
             ArrayList<String> headerRow = Lists.newArrayList();
-            Collections.addAll(headerRow, "Last Name,First Name,% Correct Overall".split(","));
+            if (includeUserIDs) {
+                Collections.addAll(headerRow, "Last Name,First Name,User ID,% Correct Overall".split(","));
+            } else {
+                Collections.addAll(headerRow, "Last Name,First Name,% Correct Overall".split(","));
+            }
             List<String> gameboardTitles = Lists.newArrayList();
             for (AssignmentDTO assignment : assignments) {
                 if (null != assignment.getDueDate()) {
@@ -799,6 +820,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 // The next three lines could be a little better if I were not this sleepy...
                 row.add(userSummary.getFamilyName());
                 row.add(userSummary.getGivenName());
+                if (includeUserIDs) {
+                    row.add(userSummary.getId().toString());
+                }
 
                 if (userSummary.isAuthorisedFullAccess()) {
                     row.add(String.format("%.0f", overallTotal));

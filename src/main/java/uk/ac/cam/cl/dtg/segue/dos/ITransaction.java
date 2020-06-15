@@ -9,4 +9,5 @@ public interface ITransaction {
 
     Object getConnection();
     void commit() throws SegueDatabaseException;
+    void rollback() throws SegueDatabaseException;
 }

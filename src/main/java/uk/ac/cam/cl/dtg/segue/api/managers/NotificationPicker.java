@@ -107,7 +107,12 @@ public class NotificationPicker {
                 // skip expired notifications
                 continue;
             }
-            
+
+            String roleTag = user.getRole().name().toLowerCase();
+            if (null == c.getTags() || !c.getTags().contains(roleTag)) {
+                // Skip irrelevant notifications
+                continue;
+            }
 
             if (null == record) {
                 // either the use hasn't responded to the notification before...
@@ -125,6 +130,7 @@ public class NotificationPicker {
                 // or they have and they don't want to see it again
                 continue;
             }
+
         }
 
         return resultsToReturn;

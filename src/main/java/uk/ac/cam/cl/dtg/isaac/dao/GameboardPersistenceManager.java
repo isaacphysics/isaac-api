@@ -301,36 +301,22 @@ public class GameboardPersistenceManager {
 	        
 	    // create a new user to gameboard connection.	    
         try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
+            // Use Postgres UPSERT syntax on insert conflict:
+            PreparedStatement pst = conn.prepareStatement(
+            "INSERT INTO user_gameboards(user_id, gameboard_id, created, last_visited) VALUES (?, ?, ?, ?)"
+                    + " ON CONFLICT ON CONSTRAINT user_gameboard_composite_key"
+                    + " DO UPDATE SET last_visited=EXCLUDED.last_visited;");
 
-            if (this.isBoardLinkedToUser(userId, gameboardId)) {
-                pst = conn
-                        .prepareStatement(
-                                "UPDATE user_gameboards SET last_visited = ? WHERE user_id = ? AND gameboard_id = ?;");
-                pst.setTimestamp(1, new Timestamp(new Date().getTime()));
-                pst.setLong(2, userId);
-                pst.setString(3, gameboardId);
+            pst.setLong(1, userId);
+            pst.setString(2, gameboardId);
+            pst.setTimestamp(3, new Timestamp(new Date().getTime()));
+            pst.setTimestamp(4, new Timestamp(new Date().getTime()));
 
-                int affectedRows = pst.executeUpdate();
-                if (affectedRows == 0) {
-                    throw new SQLException("Updating user link to gameboard but no rows changed");
-                }
-            } else {
-                pst = conn
-                        .prepareStatement(
-                                "INSERT INTO user_gameboards(user_id, gameboard_id, created, last_visited) VALUES (?, ?, ?, ?);");
-                
-                pst.setLong(1, userId);
-                pst.setString(2, gameboardId);
-                pst.setTimestamp(3, new Timestamp(new Date().getTime()));
-                pst.setTimestamp(4, new Timestamp(new Date().getTime()));
-                
-                log.debug("Saving gameboard to user relationship...");
-                int affectedRows = pst.executeUpdate();
-                if (affectedRows == 0) {
-                    throw new SQLException("Creating user link to gameboard failed, no rows changed");
-                }
-            }            
+            log.debug("Saving gameboard to user relationship...");
+            int affectedRows = pst.executeUpdate();
+            if (affectedRows == 0) {
+                throw new SQLException("Creating/updating user link to gameboard failed, no rows changed");
+            }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }

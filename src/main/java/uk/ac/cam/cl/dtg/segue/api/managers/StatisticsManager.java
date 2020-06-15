@@ -516,7 +516,14 @@ public class StatisticsManager implements IStatisticsManager {
             }
 
             // Level Stats:
-            String questionLevel = questionContentDTO.getLevel().toString();
+            Integer questionLevelInteger = questionContentDTO.getLevel();
+            String questionLevel;
+            if (null == questionLevelInteger) {
+                // There are questions on general pages which cannot have levels, must use a default value.
+                questionLevel = "0";
+            } else {
+                questionLevel = questionLevelInteger.toString();
+            }
             if (questionAttemptsByLevelStats.containsKey(questionLevel)) {
                 questionAttemptsByLevelStats.put(questionLevel, questionAttemptsByLevelStats.get(questionLevel) + 1);
             } else {

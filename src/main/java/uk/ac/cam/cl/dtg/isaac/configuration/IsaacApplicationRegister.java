@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,16 +15,11 @@
  */
 package uk.ac.cam.cl.dtg.isaac.configuration;
 
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import io.swagger.jaxrs.config.BeanConfig;
-
-import java.util.HashSet;
-import java.util.Set;
-
-import javax.ws.rs.core.Application;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import uk.ac.cam.cl.dtg.isaac.api.AssignmentFacade;
 import uk.ac.cam.cl.dtg.isaac.api.EventsFacade;
 import uk.ac.cam.cl.dtg.isaac.api.GameboardsFacade;
@@ -38,8 +33,9 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
+import javax.ws.rs.core.Application;
+import java.util.HashSet;
+import java.util.Set;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -139,17 +135,22 @@ public class IsaacApplicationRegister extends Application {
         
         BeanConfig beanConfig = new BeanConfig();
         beanConfig.setVersion(propertiesLoader.getProperty(SEGUE_APP_VERSION));
-        
+
+        String hostName = propertiesLoader.getProperty(HOST_NAME);
         if (!proxyPath.equals("")) {
             beanConfig.setBasePath(proxyPath + "/api");
-            beanConfig.setHost(propertiesLoader.getProperty(HOST_NAME).substring(0,
-                    propertiesLoader.getProperty(HOST_NAME).indexOf('/')));
+            beanConfig.setHost(hostName.substring(0, hostName.indexOf('/')));
         } else {
             beanConfig.setBasePath("/api");    
-            beanConfig.setHost(propertiesLoader.getProperty(HOST_NAME));
+            beanConfig.setHost(hostName);
         }
         
         beanConfig.setResourcePackage("uk.ac.cam.cl.dtg");
+        beanConfig.setTitle("Isaac API");
+        beanConfig.setDescription("API for the Isaac platform. Automated use may violate our Terms of Service.");
+        beanConfig.setTermsOfServiceUrl("https://" + hostName + "/terms");
+        beanConfig.setContact(propertiesLoader.getProperty(SERVER_ADMIN_ADDRESS));
+        beanConfig.setPrettyPrint(true);
         beanConfig.setScan(true);        
     }
 }
