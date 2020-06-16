@@ -52,7 +52,7 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.store.MemoryDataStoreFactory;
 import com.google.api.services.oauth2.Oauth2;
 import com.google.api.services.oauth2.model.Tokeninfo;
-import com.google.api.services.oauth2.model.Userinfoplus;
+import com.google.api.services.oauth2.model.Userinfo;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.inject.Inject;
@@ -230,7 +230,7 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
         
         Oauth2 userInfoService = new Oauth2.Builder(new NetHttpTransport(), new JacksonFactory(), credentials)
                 .setApplicationName(Constants.APPLICATION_NAME).build();
-        Userinfoplus userInfo = null;
+        Userinfo userInfo = null;
 
         try {
             userInfo = userInfoService.userinfo().get().execute();
