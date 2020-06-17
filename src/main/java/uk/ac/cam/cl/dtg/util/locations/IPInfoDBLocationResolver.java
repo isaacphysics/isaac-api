@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2015 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,17 +15,16 @@
  */
 package uk.ac.cam.cl.dtg.util.locations;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.Inject;
+import org.apache.commons.lang3.Validate;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.HashMap;
-
-import org.apache.commons.lang3.Validate;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.inject.Inject;
 
 /**
  * Concrete implemention of a geocoder using the third party IPInfoDB service.
@@ -63,6 +62,8 @@ public class IPInfoDBLocationResolver implements IPLocationResolver {
     private final String urlFull = "ip-city/";
     private final String urlMinimal = "ip-country/";
     private final String apiAuthKey;
+    private final int connectTimeoutMs = 5000;
+    private final int readTimeoutMs = 10000;
 
     /**
      * IPInfoDBLocationResolver.
@@ -108,6 +109,8 @@ public class IPInfoDBLocationResolver implements IPLocationResolver {
     private String resolveFromServer(final URL url) throws LocationServerException {
         try {
             URLConnection ipInfoDBService = url.openConnection();
+            ipInfoDBService.setConnectTimeout(connectTimeoutMs);
+            ipInfoDBService.setReadTimeout(readTimeoutMs);
             ipInfoDBService.setRequestProperty("User-Agent", "IsaacPhysicsAPI");
             BufferedReader in = new BufferedReader(new InputStreamReader(ipInfoDBService.getInputStream()));
             String inputLine;
