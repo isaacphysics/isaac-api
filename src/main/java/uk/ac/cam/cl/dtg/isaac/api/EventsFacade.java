@@ -54,6 +54,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
+import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
@@ -633,6 +634,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                 resultRow.add(dateFormat.format(booking.getUpdated()));
                 resultRow.add(resultAdditionalInformation.get("yearGroup"));
                 resultRow.add(resultAdditionalInformation.get("jobTitle"));
+                resultRow.add(resultUser.getExamBoard());
                 resultRow.add(resultAdditionalInformation.get("experienceLevel"));
                 resultRow.add(resultAdditionalInformation.get("medicalRequirements"));
                 resultRow.add(resultAdditionalInformation.get("accessibilityRequirements"));
@@ -641,10 +643,9 @@ public class EventsFacade extends AbstractIsaacFacade {
                 Collections.addAll(resultRows, resultRow.toArray(new String[0]));
             }
 
-
             rows.add(totalsRow.toArray(new String[0]));
             rows.add(("Name,Role,School,Booking status,Booking date,Last updated date,Year group,Job title," +  // lgtm [java/missing-space-in-concatenation]
-                    "Level of teaching experience,Medical/dietary requirements,Accessibility requirements,Emergency name,Emergency number").split(","));
+                    "Exam board,Level of teaching experience,Medical/dietary requirements,Accessibility requirements,Emergency name,Emergency number").split(","));
             rows.addAll(resultRows);
             csvWriter.writeAll(rows);
             csvWriter.close();
@@ -1208,7 +1209,8 @@ public class EventsFacade extends AbstractIsaacFacade {
                                         @PathParam("event_id") final String eventId,
                                         @PathParam("user_id") final Long userId) {
         try {
-            if (!isUserAnAdmin(userManager, request)) {
+            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
+            if (!isUserAnAdmin(userManager, currentUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an Admin user to access this endpoint.")
                         .toResponse();
             }
@@ -1223,8 +1225,8 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             bookingManager.deleteBooking(event, user);
 
-            this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
-                    SegueLogType.ADMIN_EVENT_BOOKING_DELETED, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, eventId, USER_ID_FKEY_FIELDNAME, userId));
+            this.getLogManager().logEvent(currentUser, request, SegueLogType.ADMIN_EVENT_BOOKING_DELETED,
+                    ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, eventId, USER_ID_FKEY_FIELDNAME, userId));
 
             return Response.noContent().build();
         } catch (NoUserLoggedInException e) {

@@ -174,21 +174,23 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     .stream().collect(Collectors.toMap(GameboardDTO::getId, Function.identity()));
 
             // we want to populate gameboard details for the assignment DTO.
+            Map<Long, UserSummaryDTO> userSummaryCache = new HashMap<>();
             for (AssignmentDTO assignment : assignments) {
                 assignment.setGameboard(gameboardsMap.get(assignment.getGameboardId()));
-
-                if (assignment.getOwnerUserId() != null) {
-                    try {
-                        RegisteredUserDTO user = userManager.getUserDTOById(assignment.getOwnerUserId());
-                        if (user == null) {
-                            throw new NoUserException("No user found with this ID.");
+                Long ownerUserId = assignment.getOwnerUserId();
+                if (ownerUserId != null) {
+                    UserSummaryDTO userSummary = userSummaryCache.get(ownerUserId);
+                    if (userSummary == null) {
+                        try {
+                            RegisteredUserDTO user = userManager.getUserDTOById(ownerUserId);
+                            userSummary = userManager.convertToUserSummaryObject(user);
+                            userSummaryCache.put(ownerUserId, userSummary);
+                        } catch (NoUserException e) {
+                            log.warn("Assignment (" + assignment.getId() + ") exists with owner user ID ("
+                                    + assignment.getOwnerUserId() + ") that does not exist!");
                         }
-                        UserSummaryDTO userSummary = userManager.convertToUserSummaryObject(user);
-                        assignment.setAssignerSummary(userSummary);
-                    } catch (NoUserException e) {
-                        log.warn("Assignment (" + assignment.getId() + ") exists with owner user ID ("
-                                + assignment.getOwnerUserId() + ") that does not exist!");
                     }
+                    assignment.setAssignerSummary(userSummary);
                 }
             }
 
@@ -264,20 +266,24 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 }
 
                 if (!GroupManager.isOwnerOrAdditionalManager(group, currentlyLoggedInUser.getId())
-                        && !isUserAnAdmin(userManager, request)) {
+                        && !isUserAnAdmin(userManager, currentlyLoggedInUser)) {
                     return new SegueErrorResponse(Status.FORBIDDEN, "You are not the owner or manager of this group").toResponse();
                 }
 
                 Collection<AssignmentDTO> allAssignmentsSetToGroup
                         = this.assignmentManager.getAssignmentsByGroup(group.getId());
 
-                // we currently need to use the currently logged in users information to as a parameter to get all the pass mark information.
-                Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts = this.questionManager
-                        .getQuestionAttemptsByUser(currentlyLoggedInUser);
+                // In order to get all the information about gameboard items, we need to use the method which augments
+                // gameboards with user attempt information. But we don't _want_ this information for real, so we won't
+                // do the costly loading of the real attempt information from the database:
+                Map<String, Map<String, List<QuestionValidationResponse>>> fakeQuestionAttemptMap = new HashMap<>();
 
                 // we want to populate gameboard details for the assignment DTO.
+                List<String> gameboardIDs = allAssignmentsSetToGroup.stream().map(AssignmentDTO::getGameboardId).collect(Collectors.toList());
+                Map<String, GameboardDTO> gameboards = this.gameManager.getGameboards(gameboardIDs, currentlyLoggedInUser, fakeQuestionAttemptMap)
+                        .stream().collect(Collectors.toMap(GameboardDTO::getId, Function.identity()));
                 for (AssignmentDTO assignment : allAssignmentsSetToGroup) {
-                    assignment.setGameboard(this.gameManager.getGameboard(assignment.getGameboardId(), currentlyLoggedInUser, userQuestionAttempts));
+                    assignment.setGameboard(gameboards.get(assignment.getGameboardId()));
                 }
 
                 this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacLogType.VIEW_GROUPS_ASSIGNMENTS,
@@ -327,7 +333,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             UserGroupDTO group = this.groupManager.getGroupById(assignment.getGroupId());
 
             if (!GroupManager.isOwnerOrAdditionalManager(group, currentlyLoggedInUser.getId())
-                    && !isUserAnAdmin(userManager, request)) {
+                    && !isUserAnAdmin(userManager, currentlyLoggedInUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
             }
@@ -387,6 +393,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
      *
      * @param assignmentId
      *            - the id of the assignment to be looked up.
+     * @param formatMode
+     *            - whether to format the file in a special way. Currently only "excel" is supported,
+     *            to include a UTF-8 BOM to allow Unicode student names to show correctly in Microsoft Excel.
      * @param request
      *            - so that we can identify the current user.
      * @return the assignment object.
@@ -398,7 +407,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Consumes(MediaType.WILDCARD)
     @ApiOperation(value = "Download the progress of a specific assignment.")
     public Response getAssignmentProgressDownloadCSV(@Context final HttpServletRequest request,
-                                                     @PathParam("assignment_id") final Long assignmentId) {
+                                                     @PathParam("assignment_id") final Long assignmentId,
+                                                     @QueryParam("format") final String formatMode) {
 
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
@@ -439,6 +449,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             StringWriter stringWriter = new StringWriter();
             CSVWriter csvWriter = new CSVWriter(stringWriter);
             StringBuilder headerBuilder = new StringBuilder();
+            if (null != formatMode && formatMode.toLowerCase().equals("excel")) {
+                headerBuilder.append("\uFEFF");  // UTF-8 Byte Order Marker
+            }
             headerBuilder.append(String.format("Assignment (%s) Results: Downloaded on %s \nGenerated by: %s %s \n\n",
                     assignmentId, new Date(), currentlyLoggedInUser.getGivenName(),
                     currentlyLoggedInUser.getFamilyName()));
@@ -590,18 +603,22 @@ public class AssignmentFacade extends AbstractIsaacFacade {
      *
      * @param groupId
      *            - the id of the group to be looked up.
+     * @param formatMode
+     *            - whether to format the file in a special way. Currently only "excel" is supported,
+     *            to include a UTF-8 BOM to allow Unicode student names to show correctly in Microsoft Excel.
      * @param request
      *            - so that we can identify the current user.
      * @return the assignment object.
      */
     @GET
     @Path("/assign/group/{group_id}/progress/download")
-    @Produces("text/plain")
+    @Produces("text/csv")
     @GZIP
     @Consumes(MediaType.WILDCARD)
     @ApiOperation(value = "Download the progress of a group on all assignments set.")
     public Response getGroupAssignmentsProgressDownloadCSV(@Context final HttpServletRequest request,
-                                                           @PathParam("group_id") final Long groupId) {
+                                                           @PathParam("group_id") final Long groupId,
+                                                           @QueryParam("format") final String formatMode) {
 
         try {
             // Fetch the currently logged in user
@@ -850,15 +867,20 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             csvWriter.writeAll(rows);
             csvWriter.close();
 
-            String headerBuilder = String.format("Assignments for '%s' (%s)\nDownloaded on %s\nGenerated by: %s %s\n\n",
-                    group.getGroupName(), group.getId(), new Date(), currentlyLoggedInUser.getGivenName(),
-                    currentlyLoggedInUser.getFamilyName()) + stringWriter.toString()
-                    + "\n\nN.B.\n\"The percentages are for question parts completed, not question pages.\"\n";
+            StringBuilder headerBuilder = new StringBuilder();
+            if (null != formatMode && formatMode.toLowerCase().equals("excel")) {
+                headerBuilder.append("\uFEFF");  // UTF-8 Byte Order Marker
+            }
+            headerBuilder.append(String.format("Assignments for '%s' (%s)\nDownloaded on %s\nGenerated by: %s %s\n\n",
+                        group.getGroupName(), group.getId(), new Date(), currentlyLoggedInUser.getGivenName(),
+                        currentlyLoggedInUser.getFamilyName()))
+                    .append(stringWriter.toString())
+                    .append("\n\nN.B.\n\"The percentages are for question parts completed, not question pages.\"\n");
 
             this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacLogType.DOWNLOAD_GROUP_PROGRESS_CSV,
                     ImmutableMap.of("groupId", groupId));
 
-            return Response.ok(headerBuilder)
+            return Response.ok(headerBuilder.toString())
                     .header("Content-Disposition", "attachment; filename=group_progress.csv")
                     .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
 
@@ -945,7 +967,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             }
 
             if (!GroupManager.isOwnerOrAdditionalManager(assigneeGroup, currentlyLoggedInUser.getId())
-                    && !isUserAnAdmin(userManager, request)) {
+                    && !isUserAnAdmin(userManager, currentlyLoggedInUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only set assignments to groups you own or manage.").toResponse();
             }
