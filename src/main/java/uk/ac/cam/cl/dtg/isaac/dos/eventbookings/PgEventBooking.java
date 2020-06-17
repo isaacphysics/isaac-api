@@ -182,6 +182,9 @@ public class PgEventBooking implements EventBooking {
                 this.eventId = results.getString("event_id");
                 this.userId = results.getLong("user_id");
                 this.reservedById = results.getLong("reserved_by");
+                if (results.wasNull()) {
+                    this.reservedById = null;
+                }
                 this.bookingStatus = BookingStatus.valueOf(results.getString("booking_status"));
                 this.created = results.getDate("created");
                 this.updated = results.getDate("updated");
