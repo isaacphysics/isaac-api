@@ -62,7 +62,7 @@ public class IPInfoDBLocationResolver implements IPLocationResolver {
     private final String urlFull = "ip-city/";
     private final String urlMinimal = "ip-country/";
     private final String apiAuthKey;
-    private final int connectTimeoutMs = 5000;
+    private final int connectTimeoutMs = 2000;
     private final int readTimeoutMs = 10000;
 
     /**
