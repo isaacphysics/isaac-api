@@ -376,8 +376,11 @@ public final class Constants {
     public static final String TYPE_FIELDNAME = "type";
     public static final String TAGS_FIELDNAME = "tags";
     public static final String VALUE_FIELDNAME = "value";
-    public static final String CHILDREN_FIELDNAME = "children";
     public static final String LEVEL_FIELDNAME = "level";
+    public static final String SUMMARY_FIELDNAME = "summary";
+    public static final String DATE_FIELDNAME = "date";
+    public static final String ADDRESS_PATH_FIELDNAME = "location.address";
+    public static final String[] ADDRESS_FIELDNAMES = {"addressLine1", "addressLine2", "town", "county", "postalCode"};
 
     public static final String USER_ID_FKEY_FIELDNAME = "userId";
     public static final String USER_ID_LIST_FKEY_FIELDNAME = "userIds";

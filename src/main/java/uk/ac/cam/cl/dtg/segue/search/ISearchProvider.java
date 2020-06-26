@@ -100,6 +100,12 @@ public interface ISearchProvider {
                                        @Nullable final Map<String, AbstractFilterInstruction> filterInstructions,
                                        final String... fields) throws SegueSearchException;
 
+    ResultsWrapper<String> siteWideSearch(
+            final String indexBase, final String indexType,  final Integer startIndex, final Integer limit,
+            final String searchString, @Nullable final List<String> documentTypes,
+            final Map<String, Constants.SortOrder> sortInstructions,
+            @Nullable final Map<String, AbstractFilterInstruction> filterInstructions) throws  SegueSearchException;
+
     /**
      * Executes a terms search using an array of terms on a single field.
      *

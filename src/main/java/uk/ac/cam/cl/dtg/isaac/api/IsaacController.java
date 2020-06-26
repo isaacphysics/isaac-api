@@ -189,10 +189,6 @@ public class IsaacController extends AbstractIsaacFacade {
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
             @DefaultValue(DEFAULT_SEARCH_RESULT_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
 
-        if (null == types) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "No search types were provided.").toResponse();
-        }
-
         // Calculate the ETag on current live version of the content
         // NOTE: Assumes that the latest version of the content is being used.
         EntityTag etag = new EntityTag(this.contentIndex.hashCode() + searchString.hashCode()
@@ -204,17 +200,14 @@ public class IsaacController extends AbstractIsaacFacade {
         }
 
         try {
-            ResultsWrapper<ContentDTO> searchResults;
             Map<String, List<String>> typesThatMustMatch = null;
-
             if (null != types) {
                 typesThatMustMatch = Maps.newHashMap();
                 typesThatMustMatch.put(TYPE_FIELDNAME, Arrays.asList(types.split(",")));
             }
 
-            searchResults = this.contentManager.searchForContent(this.contentIndex,
-                    searchString, typesThatMustMatch, startIndex, limit);
-
+            ResultsWrapper<ContentDTO> searchResults = this.contentManager.searchForContent(
+                    this.contentIndex, searchString, typesThatMustMatch, startIndex, limit);
 
             ImmutableMap<String, String> logMap = new ImmutableMap.Builder<String, String>()
                     .put(TYPE_FIELDNAME, types)

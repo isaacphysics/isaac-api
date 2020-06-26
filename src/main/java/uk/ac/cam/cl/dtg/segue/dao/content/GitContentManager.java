@@ -56,6 +56,8 @@ import uk.ac.cam.cl.dtg.segue.search.SimpleFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.TermsFilterInstruction;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
+
 /**
  * Implementation that specifically works with Content objects.
  * 
@@ -248,14 +250,13 @@ public class GitContentManager implements IContentManager {
     }
 
     @Override
-    public final ResultsWrapper<ContentDTO> searchForContent(final String version, final String searchString,
-            @Nullable final Map<String, List<String>> fieldsThatMustMatch, 
+    public final ResultsWrapper<ContentDTO> searchForContent(
+            final String version, final String searchString, @Nullable final Map<String, List<String>> fieldsThatMustMatch,
             final Integer startIndex, final Integer limit) throws ContentManagerException {
+        Map<String, Constants.SortOrder> sortInstructions = ImmutableMap.of("_score", Constants.SortOrder.ASC, "date", Constants.SortOrder.DESC);
 
-        ResultsWrapper<String> searchHits = searchProvider.fuzzySearch(version, CONTENT_TYPE, searchString, startIndex,
-                limit, fieldsThatMustMatch, this.getUnpublishedFilter(), Constants.ID_FIELDNAME,
-                Constants.TITLE_FIELDNAME, Constants.TAGS_FIELDNAME, Constants.VALUE_FIELDNAME,
-                Constants.CHILDREN_FIELDNAME);
+        ResultsWrapper<String> searchHits = searchProvider.siteWideSearch(
+                version, CONTENT_TYPE, startIndex, limit, searchString,null, sortInstructions, this.getUnpublishedFilter());
 
         List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
 
