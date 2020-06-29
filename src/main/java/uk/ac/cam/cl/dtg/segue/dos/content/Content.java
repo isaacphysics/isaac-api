@@ -50,6 +50,7 @@ public class Content extends ContentBase {
     protected List<String> relatedContent;
     protected Boolean published;
     protected Integer level;
+    protected String searchableContent;
 
     @JsonCreator
     public Content(@JsonProperty("id") String id, @JsonProperty("title") String title,
@@ -208,6 +209,14 @@ public class Content extends ContentBase {
 
     public void setLevel(Integer level) {
         this.level = level;
+    }
+
+    public String getSearchableContent() {
+        return this.searchableContent;
+    }
+
+    public void setSearchableContent(String searchableContent) {
+        this.searchableContent = searchableContent;
     }
 
     @Override

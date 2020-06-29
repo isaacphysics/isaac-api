@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
-import com.google.api.client.util.Maps;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
@@ -200,14 +199,9 @@ public class IsaacController extends AbstractIsaacFacade {
         }
 
         try {
-            Map<String, List<String>> typesThatMustMatch = null;
-            if (null != types) {
-                typesThatMustMatch = Maps.newHashMap();
-                typesThatMustMatch.put(TYPE_FIELDNAME, Arrays.asList(types.split(",")));
-            }
-
-            ResultsWrapper<ContentDTO> searchResults = this.contentManager.searchForContent(
-                    this.contentIndex, searchString, typesThatMustMatch, startIndex, limit);
+            List<String> documentTypes = types != null ? Arrays.asList(types.split(",")) : null;
+            ResultsWrapper<ContentDTO> searchResults = this.contentManager.siteWideSearch(
+                    this.contentIndex, searchString, documentTypes, startIndex, limit);
 
             ImmutableMap<String, String> logMap = new ImmutableMap.Builder<String, String>()
                     .put(TYPE_FIELDNAME, types)
@@ -216,9 +210,10 @@ public class IsaacController extends AbstractIsaacFacade {
 
             getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
                     IsaacLogType.GLOBAL_SITE_SEARCH, logMap);
-            return Response
-                    .ok(this.extractContentSummaryFromResultsWrapper(searchResults,
-                            this.getProperties().getProperty(PROXY_PATH))).tag(etag)
+
+            ResultsWrapper results = this.extractContentSummaryFromResultsWrapper(
+                    searchResults, this.getProperties().getProperty(PROXY_PATH));
+            return Response.ok(results).tag(etag)
                     .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
                     .build();
 

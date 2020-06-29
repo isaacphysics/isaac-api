@@ -15,21 +15,15 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.content;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-
-import javax.annotation.Nullable;
-import javax.ws.rs.NotFoundException;
-
 import com.google.common.base.Functions;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
-
+import com.google.common.collect.Maps;
+import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.elasticsearch.action.get.GetResponse;
@@ -38,10 +32,6 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.Maps;
-import com.google.inject.Inject;
-
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
@@ -51,12 +41,37 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
+import uk.ac.cam.cl.dtg.segue.search.BooleanMatchInstruction;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
+import uk.ac.cam.cl.dtg.segue.search.MustMatchInstruction;
+import uk.ac.cam.cl.dtg.segue.search.RangeMatchInstruction;
+import uk.ac.cam.cl.dtg.segue.search.ShouldMatchInstruction;
 import uk.ac.cam.cl.dtg.segue.search.SimpleFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.TermsFilterInstruction;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
+import javax.annotation.Nullable;
+import javax.ws.rs.NotFoundException;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.CONCEPT_TYPE;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.EVENT_TYPE;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.HIDE_FROM_FILTER_TAG;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.PAGE_TYPE;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_TYPE;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.SEARCHABLE_TAG;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.TOPIC_SUMMARY_PAGE_TYPE;
 
 /**
  * Implementation that specifically works with Content objects.
@@ -72,8 +87,6 @@ public class GitContentManager implements IContentManager {
     private final ISearchProvider searchProvider;
     private final PropertiesLoader globalProperties;
     private final boolean allowOnlyPublishedContent;
-
-    private final Random randomNumberGenerator = new Random();
 
     private final Cache<Object, Object> cache;
     private final Cache<String, GetResponse> contentShaCache;
@@ -253,10 +266,83 @@ public class GitContentManager implements IContentManager {
     public final ResultsWrapper<ContentDTO> searchForContent(
             final String version, final String searchString, @Nullable final Map<String, List<String>> fieldsThatMustMatch,
             final Integer startIndex, final Integer limit) throws ContentManagerException {
-        Map<String, Constants.SortOrder> sortInstructions = ImmutableMap.of("_score", Constants.SortOrder.ASC, "date", Constants.SortOrder.DESC);
+        ResultsWrapper<String> searchHits = searchProvider.fuzzySearch(
+                version, CONTENT_TYPE, searchString, startIndex, limit, fieldsThatMustMatch, this.getUnpublishedFilter(),
+                Constants.ID_FIELDNAME, Constants.TITLE_FIELDNAME, Constants.TAGS_FIELDNAME, Constants.VALUE_FIELDNAME,
+                Constants.CHILDREN_FIELDNAME);
 
-        ResultsWrapper<String> searchHits = searchProvider.siteWideSearch(
-                version, CONTENT_TYPE, startIndex, limit, searchString,null, sortInstructions, this.getUnpublishedFilter());
+        List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
+
+        return new ResultsWrapper<>(mapper.getDTOByDOList(searchResults), searchHits.getTotalResults());
+    }
+
+    @Override
+    public final ResultsWrapper<ContentDTO> siteWideSearch(
+            final String version, final String searchString, final List<String> documentTypes, final Integer startIndex, final Integer limit
+    ) throws  ContentManagerException {
+        String nestedFieldConnector = searchProvider.getNestedFieldConnector();
+
+        List<String> importantFields = ImmutableList.of(
+                Constants.TITLE_FIELDNAME, Constants.ID_FIELDNAME, Constants.SUMMARY_FIELDNAME, Constants.TAGS_FIELDNAME
+        );
+        List<String> otherFields = ImmutableList.of(Constants.SEARCHABLE_CONTENT_FIELDNAME);
+
+        BooleanMatchInstruction matchQuery = new BooleanMatchInstruction();
+        int numberOfExpectedShouldMatches = 1;
+        for (String documentType : ImmutableList.of(QUESTION_TYPE, CONCEPT_TYPE, TOPIC_SUMMARY_PAGE_TYPE, PAGE_TYPE, EVENT_TYPE)) {
+            if (documentTypes == null || documentTypes.contains(documentType)) {
+                BooleanMatchInstruction contentQuery = new BooleanMatchInstruction();
+
+                // Match document type
+                contentQuery.must(new MustMatchInstruction(Constants.TYPE_FIELDNAME, documentType));
+
+                // Generic pages must be explicitly tagged to appear in search results
+                if (documentType.equals(PAGE_TYPE)) {
+                    contentQuery.must(new MustMatchInstruction(Constants.TAGS_FIELDNAME, SEARCHABLE_TAG));
+                }
+
+                // Try to match fields
+                for (String field : importantFields) {
+                    contentQuery.should(new ShouldMatchInstruction(field, searchString, 5L, false));
+                    contentQuery.should(new ShouldMatchInstruction(field, searchString, 3L, true));
+                }
+                for (String field : otherFields) {
+                    contentQuery.should(new ShouldMatchInstruction(field, searchString, 3L, false));
+                    contentQuery.should(new ShouldMatchInstruction(field, searchString, 1L, true));
+                }
+
+                // Check location.address fields on event pages
+                if (documentType.equals(EVENT_TYPE)) {
+                    String addressPath = String.join(nestedFieldConnector, Constants.ADDRESS_PATH_FIELDNAME);
+                    for (String addressField : Constants.ADDRESS_FIELDNAMES) {
+                        String field = addressPath + nestedFieldConnector + addressField;
+                        contentQuery.should(new ShouldMatchInstruction(field, searchString, 3L, false));
+                        contentQuery.should(new ShouldMatchInstruction(field, searchString, 1L, true));
+                    }
+                }
+
+                if (documentType.equals(EVENT_TYPE)){
+                    LocalDate today = LocalDate.now();
+                    long now = today.atStartOfDay(ZoneId.systemDefault()).toEpochSecond();
+
+                    // Prefer future events
+                    contentQuery.should(new RangeMatchInstruction<Long>(Constants.DATE_FIELDNAME).greaterThanOrEqual(now).boost(3));
+                    contentQuery.should(new RangeMatchInstruction<Long>(Constants.DATE_FIELDNAME).lessThan(now).boost(1));
+
+                    // Every event will match one of these "should" queries so we increase the minimum expected matches
+                    numberOfExpectedShouldMatches += 1;
+                }
+
+                contentQuery.setMinimumShouldMatch(numberOfExpectedShouldMatches);
+                matchQuery.should(contentQuery);
+            }
+        }
+
+        // Do not include any content with a nofilter tag
+        matchQuery.mustNot(new MustMatchInstruction(Constants.TAGS_FIELDNAME, HIDE_FROM_FILTER_TAG));
+
+        ResultsWrapper<String> searchHits = searchProvider.nestedMatchSearch(
+                version, CONTENT_TYPE, startIndex, limit, searchString,matchQuery, this.getUnpublishedFilter());
 
         List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
 

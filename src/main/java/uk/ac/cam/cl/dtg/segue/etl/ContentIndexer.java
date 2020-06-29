@@ -186,6 +186,11 @@ public class ContentIndexer {
                     content = this.augmentChildContent(content, treeWalk.getPathString(), null, content.getPublished());
 
                     if (null != content) {
+                        // Walk the content for searchable content for "site wide search"
+                        StringBuilder searchableContentBuilder = new StringBuilder();
+                        this.collateSearchableContent(content, searchableContentBuilder);
+                        content.setSearchableContent(searchableContentBuilder.toString());
+
                         // add children (and parent) from flattened Set to
                         // cache if they have ids
                         for (Content flattenedContent : this.flattenContentObjects(content)) {
@@ -405,6 +410,28 @@ public class ContentIndexer {
         }
 
         return content;
+    }
+
+    private void collateSearchableContent(final Content content, final StringBuilder searchableContentBuilder) {
+        if (null != content) {
+            // Add the fields of interest to the string builder
+            if (null != content.getTitle()) {
+                searchableContentBuilder.append(content.getTitle() + "\n");
+            }
+            if (null != content.getValue()) {
+                searchableContentBuilder.append(content.getValue() + "\n");
+            }
+
+            // Repeat the process for each child
+            if (!content.getChildren().isEmpty()) {
+                for (ContentBase childContentBase : content.getChildren()) {
+                    if (childContentBase instanceof Content) {
+                        Content child = (Content) childContentBase;
+                        this.collateSearchableContent(child, searchableContentBuilder);
+                    }
+                }
+            }
+        }
     }
 
     /**

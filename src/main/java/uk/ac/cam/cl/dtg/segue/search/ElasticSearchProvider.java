@@ -22,7 +22,6 @@ import com.google.api.client.util.Sets;
 import com.google.common.base.CaseFormat;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
@@ -40,6 +39,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.index.query.MultiMatchQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -56,15 +56,12 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 
 import javax.annotation.Nullable;
+import javax.validation.constraints.NotNull;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -72,14 +69,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.collect.Maps.immutableEntry;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.CONCEPT_TYPE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.EVENT_TYPE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.HIDE_FROM_FILTER_TAG;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.PAGE_TYPE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.SEARCHABLE_TAG;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.SEARCH_MAX_WINDOW_SIZE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_TYPE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.TOPIC_SUMMARY_PAGE_TYPE;
 
 
 /**
@@ -90,7 +80,6 @@ import static uk.ac.cam.cl.dtg.isaac.api.Constants.TOPIC_SUMMARY_PAGE_TYPE;
  */
 public class ElasticSearchProvider implements ISearchProvider {
     private static final Logger log = LoggerFactory.getLogger(ElasticSearchProvider.class);
-    private static final String ES_WILDCARD = "*";
     private static final String ES_FIELD_CONNECTOR = ".";
 
     protected final Client client;
@@ -115,6 +104,11 @@ public class ElasticSearchProvider implements ISearchProvider {
     public ElasticSearchProvider(final Client searchClient) {
         this.client = searchClient;
         this.settingsCache = CacheBuilder.newBuilder().softValues().expireAfterWrite(10, TimeUnit.MINUTES).build();
+    }
+
+    @Override
+    public String getNestedFieldConnector() {
+        return ES_FIELD_CONNECTOR;
     }
 
     @Override
@@ -159,89 +153,22 @@ public class ElasticSearchProvider implements ISearchProvider {
     }
 
     @Override
-    public ResultsWrapper<String> siteWideSearch(
-            final String indexBase, final String indexType,  final Integer startIndex, final Integer limit,
-            final String searchString, @Nullable final List<String> documentTypes,
-            final Map<String, Constants.SortOrder> sortInstructions,
+    public ResultsWrapper<String> nestedMatchSearch(
+            final String indexBase, final String indexType, final Integer startIndex, final Integer limit,
+            final String searchString, @NotNull final BooleanMatchInstruction matchInstruction,
             @Nullable final Map<String, AbstractFilterInstruction> filterInstructions
     ) throws SegueSearchException {
-
         if (null == indexBase || null == indexType || null == searchString) {
             log.warn("A required field is missing. Unable to execute search.");
             throw new SegueSearchException("A required field is missing. Unable to execute search.");
         }
 
-        List<String> importantFields = ImmutableList.of(
-                Constants.TITLE_FIELDNAME, Constants.ID_FIELDNAME, Constants.SUMMARY_FIELDNAME, Constants.TAGS_FIELDNAME
-        );
-        List<String> otherFields = ImmutableList.of(
-                Constants.TYPE_FIELDNAME, ES_WILDCARD + Constants.TITLE_FIELDNAME, ES_WILDCARD + Constants.VALUE_FIELDNAME
-        );
-
-        BoolQueryBuilder masterQuery = QueryBuilders.boolQuery();
-        int numberOfExpectedShouldMatches = 1;
-        for (String documentType : ImmutableList.of(QUESTION_TYPE, CONCEPT_TYPE, TOPIC_SUMMARY_PAGE_TYPE, PAGE_TYPE, EVENT_TYPE)) {
-            if (documentTypes == null || documentTypes.contains(documentType)) {
-                BoolQueryBuilder contentQuery = QueryBuilders.boolQuery();
-
-                // Match document type
-                contentQuery.must(QueryBuilders.matchQuery(Constants.TYPE_FIELDNAME, documentType));
-
-                // Generic pages must be explicitly tagged to appear in search results
-                if (documentType.equals(PAGE_TYPE)) {
-                    contentQuery.must(QueryBuilders.matchQuery(Constants.TAGS_FIELDNAME, SEARCHABLE_TAG));
-                }
-
-                // Try to match fields
-                for (String field : importantFields) {
-                    contentQuery.should(QueryBuilders.matchQuery(field, searchString).fuzziness(Fuzziness.AUTO).boost(5));
-                }
-                for (String field : otherFields) {
-                    contentQuery.should(QueryBuilders.matchQuery(field, searchString).fuzziness(Fuzziness.AUTO).boost(1));
-                }
-
-                // Check location.address fields on event pages
-                if (documentType.equals(EVENT_TYPE)) {
-                    for (String addressField : Constants.ADDRESS_FIELDNAMES) {
-                        contentQuery.should(QueryBuilders
-                                .matchQuery(Constants.ADDRESS_PATH_FIELDNAME + ES_FIELD_CONNECTOR + addressField, searchString)
-                                .fuzziness(Fuzziness.AUTO));
-                    }
-                }
-
-                // Date based boosting for event pages
-                if (documentType.equals(EVENT_TYPE)){
-                    ZoneId zone = ZoneId.systemDefault();
-                    LocalDate today = LocalDate.now();
-                    long monthAgo = LocalDate.from(today).minusMonths(1).atStartOfDay(zone).toEpochSecond();
-                    long monthAway = LocalDate.from(today).plusMonths(1).atStartOfDay(zone).toEpochSecond();
-                    long now = today.atStartOfDay(zone).toEpochSecond();
-
-                    // Within a month of today (rather than sorting)
-                    contentQuery.should(QueryBuilders.rangeQuery(Constants.DATE_FIELDNAME).gte(monthAgo).lte(monthAway).boost(2));
-                    contentQuery.should(QueryBuilders.rangeQuery(Constants.DATE_FIELDNAME).lt(monthAgo).gt(monthAway).boost(1));
-
-                    // Prefer future events
-                    contentQuery.should(QueryBuilders.rangeQuery(Constants.DATE_FIELDNAME).gte(now).boost(3));
-                    contentQuery.should(QueryBuilders.rangeQuery(Constants.DATE_FIELDNAME).lt(now).boost(1));
-
-                    // All events should match 2 additional should queries
-                    numberOfExpectedShouldMatches += 2;
-                }
-
-                contentQuery.minimumShouldMatch(numberOfExpectedShouldMatches);
-                masterQuery.should(contentQuery);
-            }
-        }
-
-        // Do not include any content with a nofilter tag
-        masterQuery.mustNot(QueryBuilders.matchQuery(Constants.TAGS_FIELDNAME, HIDE_FROM_FILTER_TAG));
-
+        BoolQueryBuilder query = (BoolQueryBuilder) this.processMatchInstructions(matchInstruction);
         if (filterInstructions != null) {
-            masterQuery.filter(generateFilterQuery(filterInstructions));
+            query.filter(generateFilterQuery(filterInstructions));
         }
 
-        return this.executeBasicQuery(indexBase, indexType, masterQuery, startIndex, limit, sortInstructions);
+        return this.executeBasicQuery(indexBase, indexType, query, startIndex, limit);
     }
 
     @Override
@@ -281,7 +208,7 @@ public class ElasticSearchProvider implements ISearchProvider {
                         .boost(boost);
                 query.should(initialFuzzySearch);
                 QueryBuilder regexSearch =
-                        QueryBuilders.wildcardQuery(f, ES_WILDCARD + searchTerm + ES_WILDCARD).boost(boost);
+                        QueryBuilders.wildcardQuery(f, "*" + searchTerm + "*").boost(boost);
                 query.should(regexSearch);
             }
         }
@@ -430,8 +357,6 @@ public class ElasticSearchProvider implements ISearchProvider {
      */
     private QueryBuilder generateFilterQuery(final Map<String, AbstractFilterInstruction> filterInstructions) {
         BoolQueryBuilder filter = QueryBuilders.boolQuery();
-
-
         for (Entry<String, AbstractFilterInstruction> fieldToFilterInstruction : filterInstructions.entrySet()) {
             // date filter logic
             if (fieldToFilterInstruction.getValue() instanceof DateRangeFilterInstruction) {
@@ -646,6 +571,63 @@ public class ElasticSearchProvider implements ISearchProvider {
         }
 
         return result;
+    }
+
+    private QueryBuilder processMatchInstructions(final AbstractMatchInstruction matchInstruction)
+            throws SegueSearchException {
+        if (matchInstruction instanceof BooleanMatchInstruction) {
+            BooleanMatchInstruction booleanMatch = (BooleanMatchInstruction) matchInstruction;
+            BoolQueryBuilder query = QueryBuilders.boolQuery();
+            for (AbstractMatchInstruction should : booleanMatch.getShoulds()){
+                query.should(processMatchInstructions(should));
+            }
+            for (AbstractMatchInstruction must : booleanMatch.getMusts()) {
+                query.must(processMatchInstructions(must));
+            }
+            for (AbstractMatchInstruction mustNot : booleanMatch.getMustNots()) {
+                query.mustNot(processMatchInstructions(mustNot));
+            }
+            query.minimumShouldMatch(booleanMatch.getMinimumShouldMatch());
+            return query;
+        }
+
+        else if (matchInstruction instanceof ShouldMatchInstruction) {
+            ShouldMatchInstruction shouldMatch = (ShouldMatchInstruction) matchInstruction;
+            MatchQueryBuilder matchQuery = QueryBuilders
+                    .matchQuery(shouldMatch.getField(), shouldMatch.getValue()).boost(shouldMatch.getBoost());
+            if (shouldMatch.getFuzzy()) {
+                matchQuery.fuzziness(Fuzziness.AUTO);
+            }
+            return matchQuery;
+        }
+
+        else if (matchInstruction instanceof MustMatchInstruction) {
+            MustMatchInstruction mustMatch = (MustMatchInstruction) matchInstruction;
+            return QueryBuilders.matchQuery(mustMatch.getField(), mustMatch.getValue());
+        }
+
+        else if (matchInstruction instanceof RangeMatchInstruction) {
+            RangeMatchInstruction rangeMatch = (RangeMatchInstruction) matchInstruction;
+            RangeQueryBuilder rangeQuery = QueryBuilders.rangeQuery(rangeMatch.getField()).boost(rangeMatch.getBoost());
+            if (rangeMatch.getGreaterThan() != null) {
+                rangeQuery.gt(rangeMatch.getGreaterThan());
+            }
+            if (rangeMatch.getGreaterThanOrEqual() != null) {
+                rangeQuery.gte(rangeMatch.getGreaterThanOrEqual());
+            }
+            if (rangeMatch.getLessThan() != null) {
+                rangeQuery.lt(rangeMatch.getLessThan());
+            }
+            if (rangeMatch.getLessThanOrEqual() != null) {
+                rangeQuery.gt(rangeMatch.getLessThan());
+            }
+            return rangeQuery;
+        }
+
+        else {
+            throw new SegueSearchException(
+                    "Processing match instruction which is not supported: " + matchInstruction.getClass());
+        }
     }
 
     public GetResponse getById(final String indexBase, final String indexType, final String id) {
