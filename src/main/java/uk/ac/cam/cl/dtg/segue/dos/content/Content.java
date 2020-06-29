@@ -15,18 +15,17 @@
  */
 package uk.ac.cam.cl.dtg.segue.dos.content;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import uk.ac.cam.cl.dtg.segue.dao.TrimWhitespaceListDeserializer;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import uk.ac.cam.cl.dtg.segue.dao.TrimWhitespaceListDeserializer;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 /**
  * Content Class (Data Transfer Object) This class represents a majority of content types within the Content Management

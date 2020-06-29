@@ -35,7 +35,14 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -186,7 +193,7 @@ public class ContentIndexer {
                     content = this.augmentChildContent(content, treeWalk.getPathString(), null, content.getPublished());
 
                     if (null != content) {
-                        // Walk the content for searchable content for "site wide search"
+                        // Walk the content for site-wide searchable fields
                         StringBuilder searchableContentBuilder = new StringBuilder();
                         this.collateSearchableContent(content, searchableContentBuilder);
                         content.setSearchableContent(searchableContentBuilder.toString());
