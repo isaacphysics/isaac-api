@@ -362,6 +362,7 @@ public final class Constants {
      */
     public static final Integer DEFAULT_START_INDEX = 0;
     public static final String DEFAULT_START_INDEX_AS_STRING = "0";
+    public static final String DEFAULT_TYPE_FILTER = "";
 
     public static final Integer DEFAULT_RESULTS_LIMIT = 10;
     public static final String DEFAULT_RESULTS_LIMIT_AS_STRING = "10";
@@ -394,6 +395,7 @@ public final class Constants {
     public static final String EVENT_TAGS_FIELDNAME = "eventTags";
     public static final String CONTENT_VERSION_FIELDNAME = "contentVersion";
 
+    public static final int EVENT_DATE_EPOCH_MULTIPLIER = 1000;
     public static final Integer EVENT_RESERVATION_CLOSE_INTERVAL_DAYS = 14;
     public static final Integer EVENT_GROUP_RESERVATION_DEFAULT_LIMIT = 10;
 

@@ -303,11 +303,11 @@ public class GitContentManager implements IContentManager {
 
                 // Try to match fields
                 for (String field : importantFields) {
-                    contentQuery.should(new ShouldMatchInstruction(field, searchString, 5L, false));
-                    contentQuery.should(new ShouldMatchInstruction(field, searchString, 3L, true));
+                    contentQuery.should(new ShouldMatchInstruction(field, searchString, 10L, false));
+                    contentQuery.should(new ShouldMatchInstruction(field, searchString, 5L, true));
                 }
                 for (String field : otherFields) {
-                    contentQuery.should(new ShouldMatchInstruction(field, searchString, 3L, false));
+                    contentQuery.should(new ShouldMatchInstruction(field, searchString, 5L, false));
                     contentQuery.should(new ShouldMatchInstruction(field, searchString, 1L, true));
                 }
 
@@ -323,10 +323,10 @@ public class GitContentManager implements IContentManager {
 
                 if (documentType.equals(EVENT_TYPE)){
                     LocalDate today = LocalDate.now();
-                    long now = today.atStartOfDay(ZoneId.systemDefault()).toEpochSecond();
+                    long now = today.atStartOfDay(ZoneId.systemDefault()).toEpochSecond() * Constants.EVENT_DATE_EPOCH_MULTIPLIER;
 
-                    // Prefer future events
-                    contentQuery.should(new RangeMatchInstruction<Long>(Constants.DATE_FIELDNAME).greaterThanOrEqual(now).boost(3));
+                    // Strongly prefer future events
+                    contentQuery.should(new RangeMatchInstruction<Long>(Constants.DATE_FIELDNAME).greaterThanOrEqual(now).boost(20));
                     contentQuery.should(new RangeMatchInstruction<Long>(Constants.DATE_FIELDNAME).lessThan(now).boost(1));
 
                     // Every event will match one of these "should" queries so we increase the minimum expected matches

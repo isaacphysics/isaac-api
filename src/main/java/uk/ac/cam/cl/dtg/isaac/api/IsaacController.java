@@ -69,15 +69,7 @@ import java.util.concurrent.TimeUnit;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacLogType;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.PROXY_PATH;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_VERSION_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_SEARCH_RESULT_LIMIT_AS_STRING;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_START_INDEX_AS_STRING;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_MINUTE;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_HOUR;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueLogType;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_FKEY_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Isaac Controller
@@ -193,7 +185,8 @@ public class IsaacController extends AbstractIsaacFacade {
     @GZIP
     @ApiOperation(value = "Search for content objects matching the provided criteria.")
     public final Response search(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
-            @PathParam("searchString") final String searchString, @QueryParam("types") final String types,
+            @PathParam("searchString") final String searchString,
+            @DefaultValue(DEFAULT_TYPE_FILTER) @QueryParam("types") final String types,
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
             @DefaultValue(DEFAULT_SEARCH_RESULT_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
 
@@ -208,7 +201,7 @@ public class IsaacController extends AbstractIsaacFacade {
         }
 
         try {
-            List<String> documentTypes = types != null ? Arrays.asList(types.split(",")) : null;
+            List<String> documentTypes = !types.isEmpty() ? Arrays.asList(types.split(",")) : null;
             ResultsWrapper<ContentDTO> searchResults = this.contentManager.siteWideSearch(
                     this.contentIndex, searchString, documentTypes, startIndex, limit);
 
