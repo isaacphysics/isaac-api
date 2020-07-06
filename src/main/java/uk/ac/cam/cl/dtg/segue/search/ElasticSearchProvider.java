@@ -167,7 +167,7 @@ public class ElasticSearchProvider implements ISearchProvider {
         if (filterInstructions != null) {
             query.filter(generateFilterQuery(filterInstructions));
         }
-
+        query.minimumShouldMatch(1);
         return this.executeBasicQuery(indexBase, indexType, query, startIndex, limit);
     }
 
