@@ -42,7 +42,7 @@ public final class Constants {
     public static final String TOPIC_SUMMARY_PAGE_TYPE = "isaacTopicSummaryPage";
     public static final String EVENT_TYPE = "isaacEventPage";
 
-    public static final String SEARCHABLE_TAG = "searchable";
+    public static final String SEARCHABLE_TAG = "search_result";
     public static final String HIDE_FROM_FILTER_TAG = "nofilter";
     public static final String RELATED_CONTENT_FIELDNAME = "relatedContent";
 
