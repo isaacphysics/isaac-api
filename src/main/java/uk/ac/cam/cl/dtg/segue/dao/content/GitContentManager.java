@@ -278,7 +278,8 @@ public class GitContentManager implements IContentManager {
 
     @Override
     public final ResultsWrapper<ContentDTO> siteWideSearch(
-            final String version, final String searchString, final List<String> documentTypes, final Integer startIndex, final Integer limit
+            final String version, final String searchString, final List<String> documentTypes,
+            final boolean includeHiddenContent, final Integer startIndex, final Integer limit
     ) throws  ContentManagerException {
         String nestedFieldConnector = searchProvider.getNestedFieldConnector();
 
@@ -338,8 +339,10 @@ public class GitContentManager implements IContentManager {
             }
         }
 
-        // Do not include any content with a nofilter tag
-        matchQuery.mustNot(new MustMatchInstruction(Constants.TAGS_FIELDNAME, HIDE_FROM_FILTER_TAG));
+        if (!includeHiddenContent) {
+            // Do not include any content with a nofilter tag
+            matchQuery.mustNot(new MustMatchInstruction(Constants.TAGS_FIELDNAME, HIDE_FROM_FILTER_TAG));
+        }
 
         ResultsWrapper<String> searchHits = searchProvider.nestedMatchSearch(
                 version, CONTENT_TYPE, startIndex, limit, searchString,matchQuery, this.getUnpublishedFilter());

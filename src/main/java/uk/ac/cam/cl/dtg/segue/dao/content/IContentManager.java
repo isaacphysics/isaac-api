@@ -238,7 +238,8 @@ public interface IContentManager {
             throws ContentManagerException;
 
     ResultsWrapper<ContentDTO> siteWideSearch(
-            final String version, final String searchString, final List<String> documentTypes, final Integer startIndex, final Integer limit
+            final String version, final String searchString, final List<String> documentTypes,
+            final boolean includeHiddenContent, final Integer startIndex, final Integer limit
     ) throws  ContentManagerException;
 
 

@@ -43,6 +43,7 @@ import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -201,9 +202,14 @@ public class IsaacController extends AbstractIsaacFacade {
         }
 
         try {
+            AbstractSegueUserDTO currentUser = userManager.getCurrentUser(httpServletRequest);
+            boolean showHiddenContent = false;
+            if (currentUser instanceof RegisteredUserDTO) {
+                showHiddenContent = isUserStaff(userManager, (RegisteredUserDTO) currentUser);
+            }
             List<String> documentTypes = !types.isEmpty() ? Arrays.asList(types.split(",")) : null;
             ResultsWrapper<ContentDTO> searchResults = this.contentManager.siteWideSearch(
-                    this.contentIndex, searchString, documentTypes, startIndex, limit);
+                    this.contentIndex, searchString, documentTypes, showHiddenContent, startIndex, limit);
 
             ImmutableMap<String, String> logMap = new ImmutableMap.Builder<String, String>()
                     .put(TYPE_FIELDNAME, types)
@@ -227,6 +233,9 @@ public class IsaacController extends AbstractIsaacFacade {
         } catch (ContentManagerException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to retrieve content requested", e)
                     .toResponse();
+        } catch (NoUserLoggedInException e) {
+            // This should never happen as we do not pass null to isUserStaff(...)
+            return SegueErrorResponse.getNotLoggedInResponse();
         }
     }
 
