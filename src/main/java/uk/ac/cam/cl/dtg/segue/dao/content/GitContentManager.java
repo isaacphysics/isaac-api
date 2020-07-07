@@ -322,16 +322,11 @@ public class GitContentManager implements IContentManager {
                     }
                 }
 
+                // Only show future events
                 if (documentType.equals(EVENT_TYPE)){
                     LocalDate today = LocalDate.now();
                     long now = today.atStartOfDay(ZoneId.systemDefault()).toEpochSecond() * Constants.EVENT_DATE_EPOCH_MULTIPLIER;
-
-                    // Strongly prefer future events
-                    contentQuery.should(new RangeMatchInstruction<Long>(Constants.DATE_FIELDNAME).greaterThanOrEqual(now).boost(20));
-                    contentQuery.should(new RangeMatchInstruction<Long>(Constants.DATE_FIELDNAME).lessThan(now).boost(1));
-
-                    // Every event will match one of these "should" queries so we increase the minimum expected matches
-                    numberOfExpectedShouldMatches += 1;
+                    contentQuery.must(new RangeMatchInstruction<Long>(Constants.DATE_FIELDNAME).greaterThanOrEqual(now));
                 }
 
                 contentQuery.setMinimumShouldMatch(numberOfExpectedShouldMatches);
