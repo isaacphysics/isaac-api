@@ -305,7 +305,7 @@ public class GitContentManager implements IContentManager {
                 // Try to match fields
                 for (String field : importantFields) {
                     contentQuery.should(new ShouldMatchInstruction(field, searchString, 10L, false));
-                    contentQuery.should(new ShouldMatchInstruction(field, searchString, 5L, true));
+                    contentQuery.should(new ShouldMatchInstruction(field, searchString, 3L, true));
                 }
                 for (String field : otherFields) {
                     contentQuery.should(new ShouldMatchInstruction(field, searchString, 5L, false));
