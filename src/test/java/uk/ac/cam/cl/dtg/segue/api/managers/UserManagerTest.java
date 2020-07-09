@@ -17,8 +17,6 @@ package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import ma.glasnost.orika.MapperFacade;
@@ -33,6 +31,7 @@ import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
+import uk.ac.cam.cl.dtg.segue.auth.ISecondFactorAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
@@ -59,14 +58,12 @@ import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.net.URI;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.createMock;
@@ -74,6 +71,7 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -99,6 +97,7 @@ public class UserManagerTest {
     private ILogManager dummyLogManager;
     private SegueLocalAuthenticator dummyLocalAuth;
 
+    private ISecondFactorAuthenticator dummySecondFactorAuthenticator;
 
     /**
      * Initial configuration of tests.
@@ -125,6 +124,8 @@ public class UserManagerTest {
         this.dummyUserCache = createMock(IAnonymousUserDataManager.class);
 
         this.dummyLogManager = createMock(ILogManager.class);
+
+        this.dummySecondFactorAuthenticator = createMock(ISecondFactorAuthenticator.class);
 
         expect(this.dummyPropertiesLoader.getProperty(Constants.HMAC_SALT)).andReturn(dummyHMACSalt).anyTimes();
         expect(this.dummyPropertiesLoader.getProperty(Constants.HOST_NAME)).andReturn(dummyHostName).anyTimes();
@@ -574,9 +575,12 @@ public class UserManagerTest {
         Map<String, String> validSessionInformation = getSessionInformationAsAMap(authManager, validUserId,
                 validDateString, mappedUser.getSessionToken());
 
-        Map<String, String> tamperedSessionInformation = ImmutableMap.of(Constants.SESSION_USER_ID, validUserId,
-                Constants.DATE_SIGNED, validDateString + "1", Constants.HMAC,
-                validSessionInformation.get(Constants.HMAC));
+        Map<String, String> tamperedSessionInformation = ImmutableMap.of(
+                Constants.SESSION_USER_ID, validUserId,
+                Constants.SESSION_TOKEN, mappedUser.getSessionToken().toString(),
+                Constants.DATE_EXPIRES, validDateString + "1",
+                Constants.HMAC, validSessionInformation.get(Constants.HMAC)
+        );
 
         replay(dummySession);
         replay(request);
@@ -587,7 +591,7 @@ public class UserManagerTest {
 
         // Assert
         verify(dummyQuestionDatabase, dummySession, request);
-        assertTrue(!valid);
+        assertFalse(valid);
     }
 
     /**
@@ -689,7 +693,7 @@ public class UserManagerTest {
         providerMap.put(provider, authenticator);
         return new UserAccountManager(dummyDatabase, this.dummyQuestionDatabase, this.dummyPropertiesLoader,
                 providerMap, this.dummyMapper, this.dummyQueue, this.dummyUserCache, this.dummyLogManager,
-                buildTestAuthenticationManager(provider, authenticator));
+                buildTestAuthenticationManager(provider, authenticator), dummySecondFactorAuthenticator);
     }
     
     private UserAuthenticationManager buildTestAuthenticationManager() {
@@ -708,7 +712,7 @@ public class UserManagerTest {
     private Map<String, String> getSessionInformationAsAMap(UserAuthenticationManager userAuthManager, String userId, String dateExpires, Integer sessionToken)
             throws Exception {
         String validHMAC = Whitebox.<String> invokeMethod(userAuthManager, "calculateSessionHMAC", dummyHMACSalt, userId,
-                dateExpires, sessionToken.toString());
+                dateExpires, sessionToken.toString(), null);
         return ImmutableMap.of(Constants.SESSION_USER_ID, userId, Constants.DATE_EXPIRES, dateExpires, Constants.HMAC,
                 validHMAC, Constants.SESSION_TOKEN, sessionToken.toString());
     }

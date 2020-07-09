@@ -45,15 +45,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.*;
-import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
-import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
-import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
-import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
-import uk.ac.cam.cl.dtg.segue.auth.ISegueHashingAlgorithm;
-import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
-import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v1;
-import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v2;
-import uk.ac.cam.cl.dtg.segue.auth.TwitterAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.*;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
@@ -70,14 +62,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.IUserBadgePersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.PgUserBadgePersistenceManager;
-import uk.ac.cam.cl.dtg.segue.dao.users.IAnonymousUserDataManager;
-import uk.ac.cam.cl.dtg.segue.dao.users.IPasswordDataManager;
-import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
-import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupPersistenceManager;
-import uk.ac.cam.cl.dtg.segue.dao.users.PgAnonymousUsers;
-import uk.ac.cam.cl.dtg.segue.dao.users.PgPasswordDataManager;
-import uk.ac.cam.cl.dtg.segue.dao.users.PgUserGroupPersistenceManager;
-import uk.ac.cam.cl.dtg.segue.dao.users.PgUsers;
+import uk.ac.cam.cl.dtg.segue.dao.users.*;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dos.AbstractUserPreferenceManager;
@@ -285,7 +270,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         mapBinder.addBinding(AuthenticationProvider.FACEBOOK).to(FacebookAuthenticator.class);
         mapBinder.addBinding(AuthenticationProvider.TWITTER).to(TwitterAuthenticator.class);
         mapBinder.addBinding(AuthenticationProvider.SEGUE).to(SegueLocalAuthenticator.class);
-
     }
 
     /**
@@ -314,6 +298,10 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         bind(IStatisticsManager.class).to(StatisticsManager.class);
 
         bind(ITransactionManager.class).to(PgTransactionManager.class);
+
+        bind(ITOTPDataManager.class).to(PgTOTPDataManager.class);
+
+        bind(ISecondFactorAuthenticator.class).to(SegueTOTPAuthenticator.class);
     }
 
 
@@ -590,12 +578,16 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *            - list of known providers.
      * @param emailQueue
      *            - so that we can send e-mails.
+     * @param temporaryUserCache
+     *            - to manage temporary anonymous users
      * @param logManager
      *            - so that we can log interesting user based events.
      * @param mapperFacade
      *            - for DO and DTO mapping.
      * @param userAuthenticationManager
      *            - Responsible for handling the various authentication functions.
+     * @param secondFactorManager
+     *            - For managing TOTP multifactor authentication.
      * @return Content version controller with associated dependencies.
      */
     @Inject
@@ -605,11 +597,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                                                final PropertiesLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
                                                final EmailManager emailQueue, final IAnonymousUserDataManager temporaryUserCache,
                                                final ILogManager logManager, final MapperFacade mapperFacade,
-                                               final UserAuthenticationManager userAuthenticationManager) {
-
+                                               final UserAuthenticationManager userAuthenticationManager,
+                                               final ISecondFactorAuthenticator secondFactorManager) {
         if (null == userManager) {
             userManager = new UserAccountManager(database, questionManager, properties, providersToRegister,
-                    mapperFacade, emailQueue, temporaryUserCache, logManager, userAuthenticationManager);
+                    mapperFacade, emailQueue, temporaryUserCache, logManager, userAuthenticationManager, secondFactorManager);
             log.info("Creating singleton of UserManager");
         }
 

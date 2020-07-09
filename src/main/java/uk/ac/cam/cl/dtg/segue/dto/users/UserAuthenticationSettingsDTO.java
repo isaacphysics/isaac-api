@@ -30,17 +30,21 @@ public class UserAuthenticationSettingsDTO extends AbstractSegueUserDTO {
     private List<AuthenticationProvider> linkedAccounts;
     private boolean hasSegueAccount;
 
+    private boolean mfaStatus;
+
     /**
-     * Create a UserAuthenticationSettings DTO
+     * Create a UserAuthenticationSettings DTO.
      *
      * @param id - user id
      * @param linkedAccounts - The list of linked accounts the user has setup
      * @param hasSegueAccount - boolean whether or not they have a segue account
+     * @param mfaStatus - boolean whether or not they have MFA enabled on a segue account
      */
-    public UserAuthenticationSettingsDTO(Long id, List<AuthenticationProvider> linkedAccounts, boolean hasSegueAccount) {
+    public UserAuthenticationSettingsDTO(Long id, List<AuthenticationProvider> linkedAccounts, boolean hasSegueAccount, boolean mfaStatus) {
         this.id = id;
         this.linkedAccounts = linkedAccounts;
         this.hasSegueAccount = hasSegueAccount;
+        this.mfaStatus = mfaStatus;
     }
 
     /**
@@ -107,4 +111,23 @@ public class UserAuthenticationSettingsDTO extends AbstractSegueUserDTO {
     public void setHasSegueAccount(final boolean hasSegueAccount) {
         this.hasSegueAccount = hasSegueAccount;
     }
+
+    /**
+     * If true the account has MFA enabled.
+     *
+     * @return true if enabled false if not.
+     */
+    public boolean isMfaStatus() {
+        return mfaStatus;
+    }
+
+    /**
+     * Sets MFA status for the account.
+     *
+     * @param mfaStatus boolean true if on false if off.
+     */
+    public void setMfaStatus(final boolean mfaStatus) {
+        this.mfaStatus = mfaStatus;
+    }
+
 }

@@ -136,6 +136,11 @@ public final class Constants {
     public static final String DATE_EXPIRES = "DATE_EXPIRES";
 
     /**
+     * Constant representing the key for the additional date property - used in HMAC calculations.
+     */
+    public static final String PARTIAL_LOGIN_FLAG = "partialLogin";
+
+    /**
      * Constant representing the key for the HMAC property - used in HMAC calculations.
      */
     public static final String HMAC = "HMAC";

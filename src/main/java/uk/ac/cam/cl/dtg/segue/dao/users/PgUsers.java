@@ -20,6 +20,7 @@ import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
+import uk.ac.cam.cl.dtg.segue.dao.AbstractPgDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
@@ -53,7 +54,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * @author Stephen Cummins
  *
  */
-public class PgUsers implements IUserDataManager {
+public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
     //private static final Logger log = LoggerFactory.getLogger(PgUsers.class);
             
     private final PostgresSqlDb database;
@@ -146,9 +147,10 @@ public class PgUsers implements IUserDataManager {
 
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT users.id, password IS NOT NULL AS has_segue_account, array_agg(provider) AS linked_accounts " +
+            pst = conn.prepareStatement("SELECT users.id, password IS NOT NULL AS has_segue_account, user_totp.shared_secret IS NOT NULL AS mfa_status, array_agg(provider) AS linked_accounts " +
                     "FROM (users LEFT OUTER JOIN user_credentials ON user_credentials.user_id=users.id) " +
-                    "LEFT OUTER JOIN linked_accounts ON users.id=linked_accounts.user_id WHERE users.id=? GROUP BY users.id, user_credentials.user_id;");
+                    "LEFT OUTER JOIN linked_accounts ON users.id=linked_accounts.user_id " +
+                    "LEFT OUTER JOIN user_totp ON users.id=user_totp.user_id WHERE users.id=? GROUP BY users.id, user_credentials.user_id, mfa_status;");
             pst.setLong(1, userId);
 
             ResultSet results = pst.executeQuery();
@@ -168,7 +170,7 @@ public class PgUsers implements IUserDataManager {
                 }
             }
 
-            return new UserAuthenticationSettings(userId, providersList, results.getBoolean("has_segue_account"));
+            return new UserAuthenticationSettings(userId, providersList, results.getBoolean("has_segue_account"), results.getBoolean("mfa_status"));
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
@@ -841,41 +843,6 @@ public class PgUsers implements IUserDataManager {
         }
 
         return listOfResults;
-    }
-    
-    /**
-     * Helper that picks the correct pst method based on the value provided.
-     * 
-     * @param pst - prepared statement - already initialised
-     * @param index - index of the value to be replaced in the pst
-     * @param value - value
-     * @throws SQLException if there is a db error
-     */
-    private void setValueHelper(final PreparedStatement pst, final int index, final Object value) throws SQLException {
-        if (null == value) {
-            pst.setNull(index, java.sql.Types.NULL);
-            return;
-        }
-        
-        if (value.getClass().isEnum()) {
-            pst.setString(index, ((Enum<?>) value).name());
-        }
-        
-        if (value instanceof String) {
-            pst.setString(index, (String) value);
-        }
-        
-        if (value instanceof Integer) {
-            pst.setInt(index, (Integer) value);
-        }
-        
-        if (value instanceof Long) {
-            pst.setLong(index, (Long) value);
-        }
-        
-        if (value instanceof Date) {
-            pst.setTimestamp(index, new java.sql.Timestamp(((Date) value).getTime()));
-        }
     }
 
     /**
