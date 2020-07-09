@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
-import com.google.api.client.util.Maps;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
@@ -44,6 +43,7 @@ import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -68,7 +68,8 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacLogType;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.PROXY_PATH;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
@@ -185,13 +186,10 @@ public class IsaacController extends AbstractIsaacFacade {
     @GZIP
     @ApiOperation(value = "Search for content objects matching the provided criteria.")
     public final Response search(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
-            @PathParam("searchString") final String searchString, @QueryParam("types") final String types,
+            @PathParam("searchString") final String searchString,
+            @DefaultValue(DEFAULT_TYPE_FILTER) @QueryParam("types") final String types,
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
             @DefaultValue(DEFAULT_SEARCH_RESULT_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
-
-        if (null == types) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "No search types were provided.").toResponse();
-        }
 
         // Calculate the ETag on current live version of the content
         // NOTE: Assumes that the latest version of the content is being used.
@@ -204,17 +202,14 @@ public class IsaacController extends AbstractIsaacFacade {
         }
 
         try {
-            ResultsWrapper<ContentDTO> searchResults;
-            Map<String, List<String>> typesThatMustMatch = null;
-
-            if (null != types) {
-                typesThatMustMatch = Maps.newHashMap();
-                typesThatMustMatch.put(TYPE_FIELDNAME, Arrays.asList(types.split(",")));
+            AbstractSegueUserDTO currentUser = userManager.getCurrentUser(httpServletRequest);
+            boolean showHiddenContent = false;
+            if (currentUser instanceof RegisteredUserDTO) {
+                showHiddenContent = isUserStaff(userManager, (RegisteredUserDTO) currentUser);
             }
-
-            searchResults = this.contentManager.searchForContent(this.contentIndex,
-                    searchString, typesThatMustMatch, startIndex, limit);
-
+            List<String> documentTypes = !types.isEmpty() ? Arrays.asList(types.split(",")) : null;
+            ResultsWrapper<ContentDTO> searchResults = this.contentManager.siteWideSearch(
+                    this.contentIndex, searchString, documentTypes, showHiddenContent, startIndex, limit);
 
             ImmutableMap<String, String> logMap = new ImmutableMap.Builder<String, String>()
                     .put(TYPE_FIELDNAME, types)
@@ -223,9 +218,10 @@ public class IsaacController extends AbstractIsaacFacade {
 
             getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
                     IsaacLogType.GLOBAL_SITE_SEARCH, logMap);
-            return Response
-                    .ok(this.extractContentSummaryFromResultsWrapper(searchResults,
-                            this.getProperties().getProperty(PROXY_PATH))).tag(etag)
+
+            ResultsWrapper results = this.extractContentSummaryFromResultsWrapper(
+                    searchResults, this.getProperties().getProperty(PROXY_PATH));
+            return Response.ok(results).tag(etag)
                     .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
                     .build();
 
@@ -237,6 +233,9 @@ public class IsaacController extends AbstractIsaacFacade {
         } catch (ContentManagerException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to retrieve content requested", e)
                     .toResponse();
+        } catch (NoUserLoggedInException e) {
+            // This should never happen as we do not pass null to isUserStaff(...)
+            return SegueErrorResponse.getNotLoggedInResponse();
         }
     }
 

@@ -15,18 +15,17 @@
  */
 package uk.ac.cam.cl.dtg.segue.dos.content;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import uk.ac.cam.cl.dtg.segue.dao.TrimWhitespaceListDeserializer;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import uk.ac.cam.cl.dtg.segue.dao.TrimWhitespaceListDeserializer;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 /**
  * Content Class (Data Transfer Object) This class represents a majority of content types within the Content Management
@@ -50,6 +49,7 @@ public class Content extends ContentBase {
     protected List<String> relatedContent;
     protected Boolean published;
     protected Integer level;
+    protected String searchableContent;
 
     @JsonCreator
     public Content(@JsonProperty("id") String id, @JsonProperty("title") String title,
@@ -208,6 +208,14 @@ public class Content extends ContentBase {
 
     public void setLevel(Integer level) {
         this.level = level;
+    }
+
+    public String getSearchableContent() {
+        return this.searchableContent;
+    }
+
+    public void setSearchableContent(String searchableContent) {
+        this.searchableContent = searchableContent;
     }
 
     @Override

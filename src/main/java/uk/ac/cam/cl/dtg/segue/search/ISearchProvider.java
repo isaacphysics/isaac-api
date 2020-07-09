@@ -22,6 +22,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 
 import javax.annotation.Nullable;
+import javax.validation.constraints.NotNull;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,8 @@ import java.util.Map.Entry;
  * Interface describing behaviour of search providers.
  */
 public interface ISearchProvider {
+
+    public String getNestedFieldConnector();
 
     /**
      * Verifies the existence of a given index.
@@ -99,6 +102,12 @@ public interface ISearchProvider {
             final Integer startIndex, final Integer limit, final Map<String, List<String>> fieldsThatMustMatch,
                                        @Nullable final Map<String, AbstractFilterInstruction> filterInstructions,
                                        final String... fields) throws SegueSearchException;
+
+    public ResultsWrapper<String> nestedMatchSearch(
+            final String indexBase, final String indexType, final Integer startIndex, final Integer limit,
+            final String searchString, @NotNull final BooleanMatchInstruction matchInstruction,
+            @Nullable final Map<String, AbstractFilterInstruction> filterInstructions
+    ) throws SegueSearchException;
 
     /**
      * Executes a terms search using an array of terms on a single field.

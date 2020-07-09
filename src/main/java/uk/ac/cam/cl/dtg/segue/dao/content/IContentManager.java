@@ -15,17 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.content;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import javax.annotation.Nullable;
-
-import org.elasticsearch.action.search.SearchResponse;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
@@ -34,6 +23,15 @@ import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
+
+import javax.annotation.Nullable;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 /**
  * Shared interface for content managers. This is to allow them to be backed by different databases.
@@ -239,10 +237,16 @@ public interface IContentManager {
             @Nullable Map<String, List<String>> fieldsThatMustMatch, Integer startIndex, Integer limit)
             throws ContentManagerException;
 
+    ResultsWrapper<ContentDTO> siteWideSearch(
+            final String version, final String searchString, final List<String> documentTypes,
+            final boolean includeHiddenContent, final Integer startIndex, final Integer limit
+    ) throws  ContentManagerException;
+
+
     /**
      * Method allows raw output to be retrieved for given files in the git repository. This is mainly so we can retrieve
      * image files.
-     * 
+     *
      * @param version
      *            - The version of the content to retrieve
      * @param filename

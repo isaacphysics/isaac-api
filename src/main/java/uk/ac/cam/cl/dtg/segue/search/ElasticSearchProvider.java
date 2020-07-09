@@ -38,7 +38,12 @@ import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.unit.Fuzziness;
-import org.elasticsearch.index.query.*;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.MatchQueryBuilder;
+import org.elasticsearch.index.query.MultiMatchQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.index.query.functionscore.RandomScoreFunctionBuilder;
 import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
 import org.elasticsearch.search.SearchHit;
@@ -51,14 +56,21 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 
 import javax.annotation.Nullable;
+import javax.validation.constraints.NotNull;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.collect.Maps.immutableEntry;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.SEARCH_MAX_WINDOW_SIZE;
+
 
 /**
  * A class that works as an adapter for ElasticSearch.
@@ -68,6 +80,7 @@ import static uk.ac.cam.cl.dtg.isaac.api.Constants.SEARCH_MAX_WINDOW_SIZE;
  */
 public class ElasticSearchProvider implements ISearchProvider {
     private static final Logger log = LoggerFactory.getLogger(ElasticSearchProvider.class);
+    private static final String ES_FIELD_CONNECTOR = ".";
 
     protected final Client client;
 
@@ -91,6 +104,11 @@ public class ElasticSearchProvider implements ISearchProvider {
     public ElasticSearchProvider(final Client searchClient) {
         this.client = searchClient;
         this.settingsCache = CacheBuilder.newBuilder().softValues().expireAfterWrite(10, TimeUnit.MINUTES).build();
+    }
+
+    @Override
+    public String getNestedFieldConnector() {
+        return ES_FIELD_CONNECTOR;
     }
 
     @Override
@@ -135,6 +153,25 @@ public class ElasticSearchProvider implements ISearchProvider {
     }
 
     @Override
+    public ResultsWrapper<String> nestedMatchSearch(
+            final String indexBase, final String indexType, final Integer startIndex, final Integer limit,
+            final String searchString, @NotNull final BooleanMatchInstruction matchInstruction,
+            @Nullable final Map<String, AbstractFilterInstruction> filterInstructions
+    ) throws SegueSearchException {
+        if (null == indexBase || null == indexType || null == searchString) {
+            log.warn("A required field is missing. Unable to execute search.");
+            throw new SegueSearchException("A required field is missing. Unable to execute search.");
+        }
+
+        BoolQueryBuilder query = (BoolQueryBuilder) this.processMatchInstructions(matchInstruction);
+        if (filterInstructions != null) {
+            query.filter(generateFilterQuery(filterInstructions));
+        }
+        query.minimumShouldMatch(1);
+        return this.executeBasicQuery(indexBase, indexType, query, startIndex, limit);
+    }
+
+    @Override
     public ResultsWrapper<String> fuzzySearch(final String indexBase, final String indexType, final String searchString,
                                               final Integer startIndex, final Integer limit,
                                               @Nullable final Map<String, List<String>> fieldsThatMustMatch,
@@ -170,7 +207,8 @@ public class ElasticSearchProvider implements ISearchProvider {
                         .prefixLength(0)
                         .boost(boost);
                 query.should(initialFuzzySearch);
-                QueryBuilder regexSearch = QueryBuilders.wildcardQuery(f, "*" + searchTerm + "*").boost(boost);
+                QueryBuilder regexSearch =
+                        QueryBuilders.wildcardQuery(f, "*" + searchTerm + "*").boost(boost);
                 query.should(regexSearch);
             }
         }
@@ -319,8 +357,6 @@ public class ElasticSearchProvider implements ISearchProvider {
      */
     private QueryBuilder generateFilterQuery(final Map<String, AbstractFilterInstruction> filterInstructions) {
         BoolQueryBuilder filter = QueryBuilders.boolQuery();
-
-
         for (Entry<String, AbstractFilterInstruction> fieldToFilterInstruction : filterInstructions.entrySet()) {
             // date filter logic
             if (fieldToFilterInstruction.getValue() instanceof DateRangeFilterInstruction) {
@@ -535,6 +571,63 @@ public class ElasticSearchProvider implements ISearchProvider {
         }
 
         return result;
+    }
+
+    private QueryBuilder processMatchInstructions(final AbstractMatchInstruction matchInstruction)
+            throws SegueSearchException {
+        if (matchInstruction instanceof BooleanMatchInstruction) {
+            BooleanMatchInstruction booleanMatch = (BooleanMatchInstruction) matchInstruction;
+            BoolQueryBuilder query = QueryBuilders.boolQuery();
+            for (AbstractMatchInstruction should : booleanMatch.getShoulds()){
+                query.should(processMatchInstructions(should));
+            }
+            for (AbstractMatchInstruction must : booleanMatch.getMusts()) {
+                query.must(processMatchInstructions(must));
+            }
+            for (AbstractMatchInstruction mustNot : booleanMatch.getMustNots()) {
+                query.mustNot(processMatchInstructions(mustNot));
+            }
+            query.minimumShouldMatch(booleanMatch.getMinimumShouldMatch());
+            return query;
+        }
+
+        else if (matchInstruction instanceof ShouldMatchInstruction) {
+            ShouldMatchInstruction shouldMatch = (ShouldMatchInstruction) matchInstruction;
+            MatchQueryBuilder matchQuery = QueryBuilders
+                    .matchQuery(shouldMatch.getField(), shouldMatch.getValue()).boost(shouldMatch.getBoost());
+            if (shouldMatch.getFuzzy()) {
+                matchQuery.fuzziness(Fuzziness.AUTO);
+            }
+            return matchQuery;
+        }
+
+        else if (matchInstruction instanceof MustMatchInstruction) {
+            MustMatchInstruction mustMatch = (MustMatchInstruction) matchInstruction;
+            return QueryBuilders.matchQuery(mustMatch.getField(), mustMatch.getValue());
+        }
+
+        else if (matchInstruction instanceof RangeMatchInstruction) {
+            RangeMatchInstruction rangeMatch = (RangeMatchInstruction) matchInstruction;
+            RangeQueryBuilder rangeQuery = QueryBuilders.rangeQuery(rangeMatch.getField()).boost(rangeMatch.getBoost());
+            if (rangeMatch.getGreaterThan() != null) {
+                rangeQuery.gt(rangeMatch.getGreaterThan());
+            }
+            if (rangeMatch.getGreaterThanOrEqual() != null) {
+                rangeQuery.gte(rangeMatch.getGreaterThanOrEqual());
+            }
+            if (rangeMatch.getLessThan() != null) {
+                rangeQuery.lt(rangeMatch.getLessThan());
+            }
+            if (rangeMatch.getLessThanOrEqual() != null) {
+                rangeQuery.gt(rangeMatch.getLessThan());
+            }
+            return rangeQuery;
+        }
+
+        else {
+            throw new SegueSearchException(
+                    "Processing match instruction which is not supported: " + matchInstruction.getClass());
+        }
     }
 
     public GetResponse getById(final String indexBase, final String indexType, final String id) {

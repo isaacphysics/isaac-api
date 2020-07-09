@@ -72,7 +72,6 @@ public class GameManager {
     private static final float DEFAULT_QUESTION_PASS_MARK = 75;
 
     private static final int MAX_QUESTIONS_TO_SEARCH = 20;
-    private static final String HIDE_FROM_FILTER_TAG = "nofilter";
 
     private final GameboardPersistenceManager gameboardPersistenceManager;
     private final Random randomGenerator;

@@ -367,6 +367,7 @@ public final class Constants {
      */
     public static final Integer DEFAULT_START_INDEX = 0;
     public static final String DEFAULT_START_INDEX_AS_STRING = "0";
+    public static final String DEFAULT_TYPE_FILTER = "";
 
     public static final Integer DEFAULT_RESULTS_LIMIT = 10;
     public static final String DEFAULT_RESULTS_LIMIT_AS_STRING = "10";
@@ -381,8 +382,13 @@ public final class Constants {
     public static final String TYPE_FIELDNAME = "type";
     public static final String TAGS_FIELDNAME = "tags";
     public static final String VALUE_FIELDNAME = "value";
-    public static final String CHILDREN_FIELDNAME = "children";
     public static final String LEVEL_FIELDNAME = "level";
+    public static final String SUMMARY_FIELDNAME = "summary";
+    public static final String CHILDREN_FIELDNAME = "children";
+    public static final String DATE_FIELDNAME = "date";
+    public static final String[] ADDRESS_PATH_FIELDNAME = {"location", "address"};
+    public static final String[] ADDRESS_FIELDNAMES = {"addressLine1", "addressLine2", "town", "county", "postalCode"};
+    public static final String SEARCHABLE_CONTENT_FIELDNAME = "searchableContent";
 
     public static final String USER_ID_FKEY_FIELDNAME = "userId";
     public static final String USER_ID_LIST_FKEY_FIELDNAME = "userIds";
@@ -394,6 +400,7 @@ public final class Constants {
     public static final String EVENT_TAGS_FIELDNAME = "eventTags";
     public static final String CONTENT_VERSION_FIELDNAME = "contentVersion";
 
+    public static final int EVENT_DATE_EPOCH_MULTIPLIER = 1000;
     public static final Integer EVENT_RESERVATION_CLOSE_INTERVAL_DAYS = 14;
     public static final Integer EVENT_GROUP_RESERVATION_DEFAULT_LIMIT = 10;
 
