@@ -540,20 +540,15 @@ ALTER TABLE public.user_streak_targets OWNER TO rutherford;
 -- Name: user_totp; Type: TABLE; Schema: public; Owner: rutherford
 --
 
-CREATE TABLE public.user_totp
-(
+CREATE TABLE public.user_totp (
     user_id integer NOT NULL,
-    shared_secret text COLLATE pg_catalog."default" NOT NULL,
+    shared_secret text NOT NULL,
     created timestamp with time zone DEFAULT now(),
-    last_updated timestamp with time zone DEFAULT now(),
-    CONSTRAINT user_id_mfa_pk PRIMARY KEY (user_id),
-    CONSTRAINT user_id_mfa_fk FOREIGN KEY (user_id)
-        REFERENCES public.users (id) MATCH SIMPLE
-        ON UPDATE CASCADE
-        ON DELETE CASCADE
+    last_updated timestamp with time zone DEFAULT now()
 );
 
-ALTER TABLE public.user_totp OWNER to rutherford;
+
+ALTER TABLE public.user_totp OWNER TO rutherford;
 
 --
 -- Name: users; Type: TABLE; Schema: public; Owner: rutherford
@@ -836,6 +831,14 @@ ALTER TABLE ONLY public.user_credentials
 
 ALTER TABLE ONLY public.user_email_preferences
     ADD CONSTRAINT user_id_email_preference_pk PRIMARY KEY (user_id, email_preference);
+
+
+--
+-- Name: user_totp user_id_mfa_pk; Type: CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY public.user_totp
+    ADD CONSTRAINT user_id_mfa_pk PRIMARY KEY (user_id);
 
 
 --
@@ -1159,6 +1162,14 @@ ALTER TABLE ONLY public.user_email_preferences
 
 ALTER TABLE ONLY public.user_gameboards
     ADD CONSTRAINT user_id_fkey_gameboard_link FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_totp user_id_mfa_fk; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY public.user_totp
+    ADD CONSTRAINT user_id_mfa_fk FOREIGN KEY (user_id) REFERENCES public.users(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
