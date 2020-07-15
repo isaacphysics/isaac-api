@@ -513,7 +513,7 @@ public class GitContentManager implements IContentManager {
         }
         SearchResponse r =  searchProvider.getAllByType(globalProperties.getProperty(Constants.CONTENT_INDEX), unitType);
         SearchHits hits = r.getHits();
-        ArrayList<String> units = new ArrayList<>((int) hits.getTotalHits());
+        ArrayList<String> units = new ArrayList<>((int) hits.getTotalHits().value);
         for (SearchHit hit : hits) {
             units.add((String) hit.getSourceAsMap().get("unit"));
         }

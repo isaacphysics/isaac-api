@@ -540,7 +540,7 @@ public class ElasticSearchProvider implements ISearchProvider {
                 resultList.add(item.getSourceAsString());
             }
 
-            return new ResultsWrapper<>(resultList, response.getHits().getTotalHits());
+            return new ResultsWrapper<>(resultList, response.getHits().getTotalHits().value);
         } catch (ElasticsearchException e) {
             throw new SegueSearchException("Error while trying to search", e);
         }
