@@ -24,10 +24,12 @@ services:
     environment:
       - cluster.name=isaac-phy-live-search
       - "network.host=${LOCAL_PHY_ELASTICSEARCH_IP}"
-      - "discovery.zen.ping.unicast.hosts=${REMOTE_PHY_ELASTICSEARCH_IP},${LOCAL_PHY_ELASTICSEARCH_IP}"
       - "discovery.seed_hosts=${REMOTE_PHY_ELASTICSEARCH_IP},${LOCAL_PHY_ELASTICSEARCH_IP}" # master-eligible nodes
       - "ES_JAVA_OPTS=-Xms6g -Xmx6g"
       - bootstrap.memory_lock=true # part of disabling swap
+      # VV UN-COMMENT FOR BOOTSTRAP VV #
+      # - "node.name=master"
+      # - "cluster.initial_master_nodes=master"
     ulimits:
       memlock: -1 # part of disabling swap
       nproc: -1 # doc suggestion: at least 2,048 our docker default is unlimited
@@ -46,10 +48,12 @@ services:
     environment:
       - cluster.name=isaac-cs-live-search
       - "network.host=${LOCAL_CS_ELASTICSEARCH_IP}"
-      - "discovery.zen.ping.unicast.hosts=${REMOTE_CS_ELASTICSEARCH_IP},${LOCAL_CS_ELASTICSEARCH_IP}"
       - "discovery.seed_hosts=${REMOTE_CS_ELASTICSEARCH_IP},${LOCAL_CS_ELASTICSEARCH_IP}" # master-eligible nodes
       - "ES_JAVA_OPTS=-Xms6g -Xmx6g"
       - bootstrap.memory_lock=true # part of disabling swap
+      # VV UN-COMMENT FOR BOOTSTRAP VV #
+      # - "node.name=master"
+      # - "cluster.initial_master_nodes=master"
     ulimits:
       memlock: -1 # part of disabling swap
       nproc: -1 # doc suggestion: at least 2,048 our docker default is unlimited
