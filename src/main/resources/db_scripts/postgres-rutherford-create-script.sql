@@ -650,14 +650,6 @@ ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_
 
 
 --
--- Name: temporary_user_store PK; Type: CONSTRAINT; Schema: public; Owner: rutherford
---
-
-ALTER TABLE ONLY public.temporary_user_store
-    ADD CONSTRAINT "PK" PRIMARY KEY (id);
-
-
---
 -- Name: users User Id; Type: CONSTRAINT; Schema: public; Owner: rutherford
 --
 
@@ -767,6 +759,14 @@ ALTER TABLE ONLY public.linked_accounts
 
 ALTER TABLE ONLY public.question_attempts
     ADD CONSTRAINT question_attempts_id PRIMARY KEY (id);
+
+
+--
+-- Name: temporary_user_store temporary_user_store_pk; Type: CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY public.temporary_user_store
+    ADD CONSTRAINT temporary_user_store_pk PRIMARY KEY (id);
 
 
 --
@@ -903,6 +903,7 @@ CREATE INDEX groups_owner_id ON public.groups USING btree (owner_id);
 --
 -- Name: ip_location_history_ips; Type: INDEX; Schema: public; Owner: rutherford
 --
+
 CREATE INDEX ip_location_history_ips ON public.ip_location_history USING btree (ip_address DESC);
 
 
@@ -1033,8 +1034,15 @@ ALTER TABLE ONLY public.assignments
 
 ALTER TABLE ONLY public.event_bookings
     ADD CONSTRAINT event_bookings_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: event_bookings event_bookings_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
 ALTER TABLE ONLY public.event_bookings
-    ADD CONSTRAINT event_bookings_users_id_fkey FOREIGN KEY (reserved_by) REFERENCES public.users(id) ON DELETE CASCADE;
+    ADD CONSTRAINT event_bookings_users_id_fk FOREIGN KEY (reserved_by) REFERENCES public.users(id) ON DELETE CASCADE;
+
 
 --
 -- Name: group_additional_managers fk_group_id; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
