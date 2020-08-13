@@ -391,6 +391,7 @@ public final class Constants {
     public static final String SEARCHABLE_CONTENT_FIELDNAME = "searchableContent";
 
     public static final String USER_ID_FKEY_FIELDNAME = "userId";
+    public static final String OLD_USER_ID_FKEY_FIELDNAME = "oldUserId";
     public static final String USER_ID_LIST_FKEY_FIELDNAME = "userIds";
     public static final String EVENT_ID_FKEY_FIELDNAME = "eventId";
     public static final String BOOKING_STATUS_FIELDNAME = "bookingStatus";

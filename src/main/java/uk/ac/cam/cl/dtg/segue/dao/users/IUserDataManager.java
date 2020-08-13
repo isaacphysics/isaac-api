@@ -15,18 +15,18 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.users;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
-import uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
 import uk.ac.cam.cl.dtg.segue.api.Constants.SchoolInfoStatus;
+import uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.UserAuthenticationSettings;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Interface for managing and persisting user specific data in segue.
@@ -240,6 +240,18 @@ public interface IUserDataManager {
      *             if an error occurs
      */
     void deleteUserAccount(final RegisteredUser userToDelete) throws SegueDatabaseException;
+
+    /**
+     * Merge two user accounts by id.
+     *
+     * @param target
+     *            - the user to merge into.
+     * @param source
+     *            - the user to remove.
+     * @throws SegueDatabaseException
+     *             if an error occurs
+     */
+    void mergeUserAccounts(final RegisteredUser target, final RegisteredUser source) throws SegueDatabaseException;
 
     /**
      * A method that will allow us to measure how active a user's account is.

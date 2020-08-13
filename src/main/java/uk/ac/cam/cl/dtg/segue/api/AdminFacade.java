@@ -62,6 +62,7 @@ import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserIdMergeDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryForAdminUsersDTO;
 import uk.ac.cam.cl.dtg.segue.etl.GithubPushEventPayload;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
@@ -72,37 +73,15 @@ import uk.ac.cam.cl.dtg.util.locations.PostCodeRadius;
 
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.ForbiddenException;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.EntityTag;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Request;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.*;
+import javax.ws.rs.core.*;
 import javax.ws.rs.core.Response.Status;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.io.*;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacUserPreferences;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
@@ -958,6 +937,56 @@ public class AdminFacade extends AbstractSegueFacade {
         } catch (NoUserException e) {
             return new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the user with the requested id: "
                     + userId).toResponse();
+        }
+    }
+
+    /**
+     * Merge a source user into a target user. The source is deleted afterwards.
+     *
+     * @param httpServletRequest
+     *            - for checking permissions
+     * @param userIdMergeDTO
+     *            - the source and target ids to merge
+     * @return no content or a segue error response
+     */
+    @POST
+    @Path("/users/merge")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response mergeUserAccounts(@Context final HttpServletRequest httpServletRequest,
+                                      final UserIdMergeDTO userIdMergeDTO) {
+        try {
+            RegisteredUserDTO currentlyLoggedInUser = this.userManager.getCurrentRegisteredUser(httpServletRequest);
+            if (!isUserAnAdmin(userManager, currentlyLoggedInUser)) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "You must be logged in as an admin to access this function.").toResponse();
+            }
+
+            if (currentlyLoggedInUser.getId().equals(userIdMergeDTO.getSourceId())) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You are not allowed to be the merge source.")
+                        .toResponse();
+            }
+
+            RegisteredUserDTO targetUser = this.userManager.getUserDTOById(userIdMergeDTO.getTargetId());
+            RegisteredUserDTO sourceUser = this.userManager.getUserDTOById(userIdMergeDTO.getSourceId());
+
+            this.userManager.mergeUserAccounts(targetUser, sourceUser);
+            getLogManager().logEvent(currentlyLoggedInUser, httpServletRequest, SegueLogType.MERGE_USER,
+                    ImmutableMap.of(USER_ID_FKEY_FIELDNAME, targetUser.getId(), OLD_USER_ID_FKEY_FIELDNAME, sourceUser.getId()));
+
+            log.info("Admin User: " + currentlyLoggedInUser.getEmail() + " has just merged the target user account with id: " + userIdMergeDTO.getTargetId() +
+                    " with the source user account" + userIdMergeDTO.getSourceId());
+
+            return Response.noContent().build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            log.error("Unable to merge accounts", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Database error while looking up user information.").toResponse();
+        } catch (NoUserException e) {
+            return new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the users with the requested ids: "
+                    + userIdMergeDTO.getTargetId() + ", " + userIdMergeDTO.getSourceId()).toResponse();
         }
     }
 
