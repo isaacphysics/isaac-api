@@ -1011,6 +1011,46 @@ public class AdminFacade extends AbstractSegueFacade {
     }
 
     /**
+     * Get all users whose data the specified user can see.
+     *
+     * @param request
+     *            - so we can identify the current user.
+     * @param userId
+     *            -  user id who has the authorisations.
+     * @throws NoUserException
+     *            - because the user cannot be found.
+     * @return List of user associations.
+     */
+    @GET
+    @Path("/authorisations/other_users/{userId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @ApiOperation(value = "List all users the current user has been granted access by.")
+    public Response getCurrentAccessRights(@Context final HttpServletRequest request, @PathParam("userId") Long userId) throws NoUserException {
+        try {
+            if (!isUserStaff(userManager, request)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
+                        .toResponse();
+            }
+
+            RegisteredUserDTO user = userManager.getUserDTOById(userId);
+
+            List<Long> userIdsGrantingAccess = com.google.api.client.util.Lists.newArrayList();
+            for (UserAssociation a : associationManager.getAssociationsForOthers(user)) {
+                userIdsGrantingAccess.add(a.getUserIdGrantingPermission());
+            }
+
+            return Response
+                    .ok(userManager.convertToUserSummaryObjectList(userManager.findUsers(userIdsGrantingAccess)))
+                    .cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
+        }
+    }
+
+    /**
      * Get users by school id.
      * 
      * @param request
