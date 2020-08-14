@@ -142,16 +142,27 @@ public class GroupsFacade extends AbstractSegueFacade {
      *
      * @param request            - so we can identify the current user.
      * @param cacheRequest       - so that we can control caching of this endpoint
+     * @param userId             - the user we want the groups of.
      * @param archivedGroupsOnly - include archived groups in response - default is false - i.e. show only unarchived
+     * @throws NoUserException   - when the user cannot be found.
      * @return List of groups for the current user.
      */
     @GET
-    @Path("/membership")
+    @Path("/membership/{userId}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getGroupMembership(@Context final HttpServletRequest request,
-                                            @Context final Request cacheRequest, @QueryParam("archived_groups_only") final boolean archivedGroupsOnly) {
+                                       @Context final Request cacheRequest,
+                                       @PathParam("userId") Long userId,
+                                       @QueryParam("archived_groups_only") final boolean archivedGroupsOnly) throws NoUserException {
         try {
-            RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+            RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
+
+            if (!isUserStaff(userManager, request) && !userId.equals(requestingUser.getId())) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access the groups of another user.")
+                        .toResponse();
+            }
+
+            RegisteredUserDTO user = userManager.getUserDTOById(userId);
             List<UserGroupDTO> groups = groupManager.getGroupMembershipList(user);
 
             List<Map<String, Object>> results = Lists.newArrayList();

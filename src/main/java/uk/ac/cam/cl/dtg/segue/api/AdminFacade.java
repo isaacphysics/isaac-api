@@ -26,7 +26,6 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.opencsv.CSVWriter;
 import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -54,7 +53,6 @@ import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.dos.AbstractUserPreferenceManager;
-import uk.ac.cam.cl.dtg.segue.dos.UserAssociation;
 import uk.ac.cam.cl.dtg.segue.dos.UserPreference;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
@@ -66,7 +64,6 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryForAdminUsersDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.segue.etl.GithubPushEventPayload;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -76,37 +73,15 @@ import uk.ac.cam.cl.dtg.util.locations.PostCodeRadius;
 
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.ForbiddenException;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.EntityTag;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Request;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.*;
+import javax.ws.rs.core.*;
 import javax.ws.rs.core.Response.Status;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.io.*;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacUserPreferences;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
@@ -967,86 +942,6 @@ public class AdminFacade extends AbstractSegueFacade {
         } catch (NoUserException e) {
             return new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the user with the requested id: "
                     + userId).toResponse();
-        }
-    }
-
-    /**
-     * Get all users who can see the specified user's data.
-     *
-     * @param request
-     *            - so we can identify the current user.
-     * @param userId
-     *            - user id to get the authorisations of.
-     * @return List of user associations.
-     *
-     * @throws NoUserException
-     *            - because the user cannot be found.
-     */
-    @GET
-    @Path("/authorisations/{userId}")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @ApiOperation(value = "List all users granted access to the specified user's data.")
-    public Response getUsersWithAccess(@Context final HttpServletRequest request, @PathParam("userId") Long userId) throws NoUserException {
-        try {
-            if (!isUserStaff(userManager, request)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
-                        .toResponse();
-            }
-
-            RegisteredUserDTO user = userManager.getUserDTOById(userId);
-
-            List<Long> userIdsWithAccess = com.google.api.client.util.Lists.newArrayList();
-            for (UserAssociation a : associationManager.getAssociations(user)) {
-                userIdsWithAccess.add(a.getUserIdReceivingPermission());
-            }
-
-            return Response.ok(userManager.convertToDetailedUserSummaryObjectList(userManager.findUsers(userIdsWithAccess), UserSummaryWithEmailAddressDTO.class))
-                    .cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (SegueDatabaseException e) {
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
-        }
-    }
-
-    /**
-     * Get all users whose data the specified user can see.
-     *
-     * @param request
-     *            - so we can identify the current user.
-     * @param userId
-     *            -  user id who has the authorisations.
-     * @throws NoUserException
-     *            - because the user cannot be found.
-     * @return List of user associations.
-     */
-    @GET
-    @Path("/authorisations/other_users/{userId}")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @ApiOperation(value = "List all users the current user has been granted access by.")
-    public Response getCurrentAccessRights(@Context final HttpServletRequest request, @PathParam("userId") Long userId) throws NoUserException {
-        try {
-            if (!isUserStaff(userManager, request)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
-                        .toResponse();
-            }
-
-            RegisteredUserDTO user = userManager.getUserDTOById(userId);
-
-            List<Long> userIdsGrantingAccess = com.google.api.client.util.Lists.newArrayList();
-            for (UserAssociation a : associationManager.getAssociationsForOthers(user)) {
-                userIdsGrantingAccess.add(a.getUserIdGrantingPermission());
-            }
-
-            return Response
-                    .ok(userManager.convertToUserSummaryObjectList(userManager.findUsers(userIdsGrantingAccess)))
-                    .cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (SegueDatabaseException e) {
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
         }
     }
 
