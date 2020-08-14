@@ -15,69 +15,31 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacUserPreferences; // FIXME: Isaac class in Segue!
-
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Maps;
+import com.google.api.client.util.Sets;
 import com.google.common.base.Strings;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.inject.Inject;
 import io.swagger.annotations.Api;
-
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.EntityTag;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Request;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-
 import io.swagger.annotations.ApiOperation;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.Validate;
-
 import org.jboss.resteasy.annotations.GZIP;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
-import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
-import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetRequestMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.RegistrationMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
+import uk.ac.cam.cl.dtg.segue.api.monitors.*;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.FailedToHashPasswordException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.*;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
@@ -96,13 +58,22 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
-
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.api.client.util.Sets;
-import com.google.common.collect.ImmutableMap;
-import com.google.inject.Inject;
 import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.*;
+import javax.ws.rs.core.*;
+import javax.ws.rs.core.Response.Status;
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacUserPreferences;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * User facade.
@@ -224,6 +195,8 @@ public class UsersFacade extends AbstractSegueFacade {
      *            to tell the browser to store the session in our own segue cookie.
      * @param userObjectString
      *            - object containing all user account information including passwords.
+     * @param rememberMe
+     *           - Boolean to indicate whether or not this cookie expiry duration should be long or short
      * @return the updated users object.
      */
     @POST
@@ -233,7 +206,8 @@ public class UsersFacade extends AbstractSegueFacade {
     @GZIP
     @ApiOperation(value = "Create a new user or update an existing user.")
     public Response createOrUpdateUserSettings(@Context final HttpServletRequest request,
-                                               @Context final HttpServletResponse response, final String userObjectString) {
+                                               @Context final HttpServletResponse response,
+                                               final String userObjectString) {
 
         UserSettings userSettingsObjectFromClient;
         String newPassword;
@@ -276,7 +250,7 @@ public class UsersFacade extends AbstractSegueFacade {
             try {
                 misuseMonitor.notifyEvent(RequestIPExtractor.getClientIpAddr(request), RegistrationMisuseHandler.class.toString());
                 SegueMetrics.USER_REGISTRATION.inc();
-                return this.createUserObjectAndLogIn(request, response, registeredUser, newPassword, userPreferences);
+                return this.createUserObjectAndLogIn(request, response, registeredUser, newPassword, userPreferences, true);
             } catch (SegueResourceMisuseException e) {
                 log.error(String.format("Blocked a registration attempt by (%s) after misuse limit hit!", RequestIPExtractor.getClientIpAddr(request)));
                 return SegueErrorResponse.getRateThrottledResponse("Too many registration requests. Please try again later ot contact us!");
@@ -1007,14 +981,17 @@ public class UsersFacade extends AbstractSegueFacade {
      *            - the new password for the user.
      * @param userPreferenceObject
      * 			  - the new preferences for this user
+     * @param rememberMe
+     *            - Boolean to indicate whether or not this cookie expiry duration should be long or short
      * @return the updated user object.
      */
     private Response createUserObjectAndLogIn(final HttpServletRequest request, final HttpServletResponse response,
                                               final RegisteredUser userObjectFromClient, final String newPassword,
-                                              final Map<String, Map<String, Boolean>> userPreferenceObject) {
+                                              final Map<String, Map<String, Boolean>> userPreferenceObject,
+                                              final boolean rememberMe) {
         try {
             RegisteredUserDTO savedUser = userManager.createUserObjectAndSession(request, response,
-                    userObjectFromClient, newPassword);
+                    userObjectFromClient, newPassword, rememberMe);
 
             if (userPreferenceObject != null) {
                 List<UserPreference> userPreferences = userPreferenceObjectToList(userPreferenceObject, savedUser.getId());

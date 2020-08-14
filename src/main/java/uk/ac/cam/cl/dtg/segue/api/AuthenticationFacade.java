@@ -33,6 +33,8 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.*;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
+import uk.ac.cam.cl.dtg.segue.dto.LocalAuthDTO;
+import uk.ac.cam.cl.dtg.segue.dto.MFAResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithEmailAddressDTO;
@@ -282,7 +284,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
             @Context final HttpServletResponse response, @PathParam("provider") final String signinProvider) {
 
         try {
-            RegisteredUserDTO userToReturn = userManager.authenticateCallback(request, response, signinProvider);
+            RegisteredUserDTO userToReturn = userManager.authenticateCallback(request, response, signinProvider, true);
             this.getLogManager().logEvent(userToReturn, request, SegueLogType.LOG_IN, Maps.newHashMap());
             return Response.ok(userToReturn).build();
         } catch (IOException e) {
@@ -327,9 +329,9 @@ public class AuthenticationFacade extends AbstractSegueFacade {
      *            to tell the browser to store the session in our own segue cookie if successful.
      * @param signinProvider
      *            - string representing the supported auth provider so that we know who to redirect the user to.
-     * @param credentials
-     *            - optional field for local authentication only. Credentials should be specified within a user object.
-     *            e.g. email and password.
+     * @param localAuthDTO
+     *            - optional field for local authentication only. Credentials should be specified within a LocalAuthDTO object.
+     *            e.g. email, password and rememberMe.
      * @return The users DTO or a SegueErrorResponse
      */
     @POST
@@ -339,36 +341,37 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     @ApiOperation(value = "Initiate login with an email address and password.")
     public final Response authenticateWithCredentials(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response, @PathParam("provider") final String signinProvider,
-            final Map<String, String> credentials) {
+            final LocalAuthDTO localAuthDTO) {
 
         
         // in this case we expect a username and password to have been
         // sent in the json response.
-        if (null == credentials || credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME) == null
-                || credentials.get(LOCAL_AUTH_PASSWORD_FIELDNAME) == null) {
+        if (null == localAuthDTO || localAuthDTO.getEmail() == null
+                || localAuthDTO.getPassword() == null) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
                     "You must specify credentials email and password to use this authentication provider.");
             return error.toResponse();
         }
         
-        String email = credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME);
-        String password = credentials.get(LOCAL_AUTH_PASSWORD_FIELDNAME);
+        String email = localAuthDTO.getEmail();
+        String password = localAuthDTO.getPassword();
+        boolean rememberMe = localAuthDTO.getRememberMe();
         SegueMetrics.LOG_IN_ATTEMPT.inc();
 
         final String rateThrottleMessage = "There have been too many attempts to login to this account. "
                 + "Please try again after 10 minutes.";
 
         // Stop users logging in who have already locked their account.
-        if (misuseMonitor.hasMisused(credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME).toLowerCase(),
+        if (misuseMonitor.hasMisused(email.toLowerCase(),
                 SegueLoginMisuseHandler.class.toString())) {
-            log.error("Segue Login Blocked for (" + credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME)
+            log.error("Segue Login Blocked for (" + email
                     + "). Rate limited - too many logins.");
             return SegueErrorResponse.getRateThrottledResponse(rateThrottleMessage);
         }
 
         // ok we need to hand over to user manager
         try {
-            RegisteredUserDTO userToReturn = userManager.authenticateWithCredentials(request, response, signinProvider, email, password);
+            RegisteredUserDTO userToReturn = userManager.authenticateWithCredentials(request, response, signinProvider, email, password, rememberMe);
 
             this.getLogManager().logEvent(userToReturn, request, SegueLogType.LOG_IN, Maps.newHashMap());
             SegueMetrics.LOG_IN.inc();
@@ -384,14 +387,14 @@ public class AuthenticationFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST, errorMsg).toResponse();
         } catch (IncorrectCredentialsProvidedException | NoUserException | NoCredentialsAvailableException e) {
             try {
-                misuseMonitor.notifyEvent(credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME).toLowerCase(),
+                misuseMonitor.notifyEvent(email.toLowerCase(),
                         SegueLoginMisuseHandler.class.toString());
 
-                log.info("Incorrect credentials received for (" + credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME)
+                log.info("Incorrect credentials received for (" + email
                         + "). Error reason: " + e.getMessage());
                 return new SegueErrorResponse(Status.UNAUTHORIZED, "Incorrect credentials provided.").toResponse();
             } catch (SegueResourceMisuseException e1) {
-                log.error("Segue Login Blocked for (" + credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME)
+                log.error("Segue Login Blocked for (" + email
                         + "). Rate limited - too many logins.");
                 return SegueErrorResponse.getRateThrottledResponse(rateThrottleMessage);
             }
@@ -446,15 +449,15 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     @ApiOperation(value = "Continuation of login flow for users who have 2FA enabled")
     @Produces(MediaType.APPLICATION_JSON)
     public final Response mfaCompleteAuthentication(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                                    final Map<String, String> mfaResponse) {
-        if (Strings.isNullOrEmpty(mfaResponse.get("mfaVerificationCode"))) {
+                                    final MFAResponseDTO mfaResponse) {
+        if (Strings.isNullOrEmpty(mfaResponse.getMfaVerificationCode())) {
             return SegueErrorResponse.getBadRequestResponse("Response must include mfaVerificationCode");
         }
 
         UserSummaryWithEmailAddressDTO partiallyLoggedInUser = null;
         final String rateThrottleMessage = "There have been too many attempts to login to this account. Try again later.";
         try {
-            final Integer verificationCode = Integer.parseInt(mfaResponse.get("mfaVerificationCode"));
+            final Integer verificationCode = Integer.parseInt(mfaResponse.getMfaVerificationCode());
             partiallyLoggedInUser = this.userManager.getPartiallyIdentifiedUser(request);
 
             if (misuseMonitor.hasMisused(partiallyLoggedInUser.getEmail().toLowerCase(),
@@ -465,7 +468,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
                 return SegueErrorResponse.getRateThrottledResponse(rateThrottleMessage);
             }
 
-            RegisteredUserDTO userToReturn = this.userManager.authenticateMFA(request, response, verificationCode);
+            RegisteredUserDTO userToReturn = this.userManager.authenticateMFA(request, response, verificationCode, mfaResponse.getRememberMe());
 
             this.getLogManager().logEvent(userToReturn, request, SegueLogType.LOG_IN, Maps.newHashMap());
             SegueMetrics.LOG_IN.inc();
