@@ -195,8 +195,6 @@ public class UsersFacade extends AbstractSegueFacade {
      *            to tell the browser to store the session in our own segue cookie.
      * @param userObjectString
      *            - object containing all user account information including passwords.
-     * @param rememberMe
-     *           - Boolean to indicate whether or not this cookie expiry duration should be long or short
      * @return the updated users object.
      */
     @POST
