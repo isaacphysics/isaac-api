@@ -1678,6 +1678,27 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     /**
+     * Logout user from other sessions.
+     * Increment the users' session token field and create a new session.
+     *
+     * @param request
+     *            - request containing session information.
+     * @param response
+     *            - response to update cookie information.
+     * @param rememberMe
+     *            - Boolean to indicate whether or not this cookie expiry duration should be long or short
+     * @throws SegueDatabaseException
+     *             - if an error occurs with the update.
+     */
+    public void logoutElsewhere(final HttpServletRequest request, final HttpServletResponse response,
+                                final boolean rememberMe) throws SegueDatabaseException {
+        RegisteredUser user = this.getCurrentRegisteredUserDO(request);
+        this.database.incrementSessionToken(user);
+        user.setSessionToken(user.getSessionToken() + 1);
+        this.userAuthenticationManager.createUserSession(request, response, user, rememberMe);
+    }
+
+    /**
      * @param userDTO the userDTO of interest
      * @param emailVerificationToken the verifcation token
      * @return verification URL

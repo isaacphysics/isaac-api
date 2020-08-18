@@ -15,18 +15,18 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.users;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
-import uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
 import uk.ac.cam.cl.dtg.segue.api.Constants.SchoolInfoStatus;
+import uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.UserAuthenticationSettings;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Interface for managing and persisting user specific data in segue.
@@ -262,6 +262,16 @@ public interface IUserDataManager {
      *             if an error occurs
      */
     void updateUserLastSeen(final RegisteredUser user, final Date date) throws SegueDatabaseException;
+
+    /**
+     * Increment the session token of a user object in the data store.
+     *
+     * @param user
+     *            - the user object to update the session token of.
+     * @throws SegueDatabaseException
+     *             - If there is an internal database error.
+     */
+    void incrementSessionToken(RegisteredUser user) throws SegueDatabaseException;
 
     /**
      * Count all the users by role and return a map

@@ -21,7 +21,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
@@ -29,10 +28,21 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.*;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AccountAlreadyLinkedException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AdditionalAuthenticationRequiredException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationCodeException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-
 import uk.ac.cam.cl.dtg.segue.dto.LocalAuthDTO;
 import uk.ac.cam.cl.dtg.segue.dto.MFAResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
@@ -431,6 +441,37 @@ public class AuthenticationFacade extends AbstractSegueFacade {
             return Response.ok().build();
         } catch (SegueDatabaseException e) {
             String errorMsg = "Internal Database error has occurred during logout.";
+            log.error(errorMsg, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
+        }
+    }
+
+    /**
+     * End point that allows the user to logout of other sessions.
+     *
+     * @param request
+     *            so that we can replace the associated session
+     * @param response
+     *            to tell the browser to update the session for segue.
+     * @return successful response to indicate other sessions were invalidated.
+     */
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.WILDCARD)
+    @Path("/logout_elsewhere")
+    @ApiOperation(value = "Invalidate other sessions for the current user and create a new session.")
+    public final Response userLogoutElsewhere(@Context final HttpServletRequest request,
+                                     @Context final HttpServletResponse response) {
+        try {
+            this.getLogManager().logEvent(this.userManager.getCurrentUser(request), request, SegueLogType.LOG_OUT_ELSEWHERE,
+                    Maps.newHashMap());
+            SegueMetrics.LOG_OUT_ELSEWHERE.inc();
+
+            userManager.logoutElsewhere(request, response, true);
+
+            return Response.ok().build();
+        } catch (SegueDatabaseException e) {
+            String errorMsg = "Internal Database error has occurred during logout elsewhere.";
             log.error(errorMsg, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
         }
