@@ -325,7 +325,7 @@ public class UserAuthenticationManager {
                 log.warn("Authenticated request has no 'Referer' information set! Accessing: "
                         + request.getPathInfo());
             } else if (!(referrer.startsWith("https://" + properties.getProperty(HOST_NAME) + "/")
-                || referrer.startsWith("https://beta." + properties.getProperty(HOST_NAME) + "/"))) { // FIXME: Remove beta!
+                || referrer.startsWith("https://old." + properties.getProperty(HOST_NAME) + "/"))) { // FIXME: Remove old!
 
                 log.warn("Authenticated request has unexpected Referer: '" + referrer + "'. Accessing: "
                         + request.getPathInfo());
@@ -334,7 +334,7 @@ public class UserAuthenticationManager {
             // we can draw no conclusions.
             String origin = request.getHeader("Origin");
             if (null != origin && !(origin.equals("https://" + properties.getProperty(HOST_NAME))
-                || origin.equals("https://beta." + properties.getProperty(HOST_NAME)))) { // FIXME: Remove beta!
+                || origin.equals("https://old." + properties.getProperty(HOST_NAME)))) { // FIXME: Remove old!
 
                 log.warn("Authenticated request has unexpected Origin: '" + origin + "'. Accessing: "
                         + request.getMethod() + " " + request.getPathInfo());

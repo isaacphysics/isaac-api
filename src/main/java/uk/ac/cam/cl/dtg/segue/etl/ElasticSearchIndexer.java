@@ -7,20 +7,17 @@ import org.apache.commons.lang3.Validate;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequestBuilder;
 import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
-import org.elasticsearch.action.admin.indices.alias.get.GetAliasesResponse;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.cluster.metadata.AliasMetaData;
-import org.elasticsearch.cluster.metadata.IndexMetaData;
+import org.elasticsearch.cluster.metadata.AliasMetadata;
+import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentType;
@@ -152,13 +149,13 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
             String typedIndexTarget = ElasticSearchProvider.produceTypedIndexName(indexBaseTarget, indexTypeTarget);
 
             // First, find where <alias>_previous points.
-            ImmutableOpenMap<String, List<AliasMetaData>> returnedPreviousAliases =
+            ImmutableOpenMap<String, List<AliasMetadata>> returnedPreviousAliases =
                     client.admin().indices().getAliases(new GetAliasesRequest().aliases(typedAlias + "_previous")).actionGet().getAliases();
 
             Iterator<String> indexIterator = returnedPreviousAliases.keysIt();
             while (indexIterator.hasNext()) {
                 String indexName = indexIterator.next();
-                for (AliasMetaData aliasMetaData : returnedPreviousAliases.get(indexName)) {
+                for (AliasMetadata aliasMetaData : returnedPreviousAliases.get(indexName)) {
                     if (aliasMetaData.alias().equals(typedAlias + "_previous")) {
                         indexWithPrevious = indexName;
                     }
@@ -166,13 +163,13 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
             }
 
             // Now find where <alias> points
-            ImmutableOpenMap<String, List<AliasMetaData>> returnedAliases =
+            ImmutableOpenMap<String, List<AliasMetadata>> returnedAliases =
                     client.admin().indices().getAliases(new GetAliasesRequest().aliases(typedAlias)).actionGet().getAliases();
             
             indexIterator = returnedAliases.keysIt();
             while (indexIterator.hasNext()) {
                 String indexName = indexIterator.next();
-                for (AliasMetaData aliasMetadata : returnedAliases.get(indexName)) {
+                for (AliasMetadata aliasMetadata : returnedAliases.get(indexName)) {
                     if (aliasMetadata.alias().equals(typedAlias)) {
                         indexWithCurrent = indexName;
                     }
@@ -207,9 +204,9 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
     private void expungeOldIndices() {
         // This deletes any indices that don't have aliases pointing to them.
         // If you want an index kept, make sure it has an alias!
-        ImmutableOpenMap<String, IndexMetaData> indices = client.admin().cluster().prepareState().execute().actionGet().getState().getMetaData().indices();
+        ImmutableOpenMap<String, IndexMetadata> indices = client.admin().cluster().prepareState().execute().actionGet().getState().getMetadata().indices();
 
-        for(ObjectObjectCursor<String, IndexMetaData> c: indices) {
+        for(ObjectObjectCursor<String, IndexMetadata> c: indices) {
             if (c.value.getAliases().size() == 0) {
                 log.info("Index " + c.key + " has no aliases. Removing.");
                 this.expungeTypedIndexFromSearchCache(c.key);

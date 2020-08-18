@@ -328,6 +328,8 @@ public class EventsFacade extends AbstractIsaacFacade {
             IsaacEventPageDTO page = getAugmentedEventDTOById(request, eventId);
 
             return Response.ok(page).build();
+        } catch (ResourceNotFoundException e) {
+            return new SegueErrorResponse(Status.NOT_FOUND, "The event specified does not exist.").toResponse();
         } catch (ContentManagerException e) {
             log.error("Error during event request", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content you requested.")

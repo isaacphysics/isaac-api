@@ -10,7 +10,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <segue.version>2.12.1-SNAPSHOT</segue.version>
+        <segue.version>2.13.1-SNAPSHOT</segue.version>
         <log4j.version>2.13.3</log4j.version>
         <resteasy.version>4.4.0.Final</resteasy.version>
         <guice.version>4.2.2</guice.version>
@@ -336,7 +336,7 @@
         <dependency>
             <groupId>org.elasticsearch.client</groupId>
             <artifactId>transport</artifactId>
-            <version>6.4.1</version>
+            <version>7.8.0</version>
         </dependency>
         <dependency>
             <groupId>com.opencsv</groupId>
