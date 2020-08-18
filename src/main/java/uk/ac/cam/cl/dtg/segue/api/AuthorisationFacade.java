@@ -332,7 +332,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
      * @return List of user associations.
      */
     @GET
-    @Path("/other_users}")
+    @Path("/other_users")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @ApiOperation(value = "List all users the current user has been granted access by.")
