@@ -993,7 +993,7 @@ public class AdminFacade extends AbstractSegueFacade {
             RegisteredUserDTO sourceUser = this.userManager.getUserDTOById(userIdMergeDTO.getSourceId());
 
             this.userManager.mergeUserAccounts(targetUser, sourceUser);
-            getLogManager().logEvent(currentlyLoggedInUser, httpServletRequest, SegueLogType.MERGE_USER,
+            getLogManager().logEvent(currentlyLoggedInUser, httpServletRequest, SegueLogType.ADMIN_MERGE_USER,
                     ImmutableMap.of(USER_ID_FKEY_FIELDNAME, targetUser.getId(), OLD_USER_ID_FKEY_FIELDNAME, sourceUser.getId()));
 
             log.info("Admin User: " + currentlyLoggedInUser.getEmail() + " has just merged the target user account with id: " + userIdMergeDTO.getTargetId() +

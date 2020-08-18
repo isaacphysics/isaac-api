@@ -339,6 +339,7 @@ public final class Constants {
         LOG_IN,
         LOG_OUT,
         MERGE_USER,
+        ADMIN_MERGE_USER,
         PASSWORD_RESET_REQUEST_RECEIVED,
         PASSWORD_RESET_REQUEST_SUCCESSFUL,
         QUESTION_ATTEMPT_RATE_LIMITED,
