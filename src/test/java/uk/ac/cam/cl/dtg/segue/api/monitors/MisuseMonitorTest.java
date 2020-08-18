@@ -15,18 +15,10 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.monitors;
 
-import static org.easymock.EasyMock.createMock;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.expectLastCall;
-import static org.easymock.EasyMock.replay;
-import static org.easymock.EasyMock.verify;
-import static org.junit.Assert.fail;
-
 import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
-
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
@@ -35,6 +27,9 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+
+import static org.easymock.EasyMock.*;
+import static org.junit.Assert.fail;
 
 /**
  * Test class for the user manager class.
@@ -113,7 +108,7 @@ public class MisuseMonitorTest {
      */
     @Test
     public final void emailVerificationRequest_checkForMisuse_emailShouldBeSentAndExceptionShouldOccur() {
-        
+
         String event = EmailVerificationRequestMisuseHandler.class.toString();
         
         IMisuseMonitor misuseMonitor = new InMemoryMisuseMonitor();
@@ -159,5 +154,58 @@ public class MisuseMonitorTest {
         } catch (SegueResourceMisuseException e) {
             System.out.println("SegueResourceMisuseException");
         }   
+    }
+
+    /**
+     * Verifies that the user search misuse handler is working.
+     */
+    @Test
+    public final void userSearchRequest_checkForMisuse_emailShouldBeSentAndExceptionShouldOccur() {
+
+        String event = UserSearchMisuseHandler.class.toString();
+
+        IMisuseMonitor misuseMonitor = new InMemoryMisuseMonitor();
+
+        UserSearchMisuseHandler userSearchMisuseHandler
+                = new UserSearchMisuseHandler();
+
+        misuseMonitor.registerHandler(event, userSearchMisuseHandler);
+
+
+        // Create a test user
+        RegisteredUser user = new RegisteredUser();
+        user.setId(1234L);
+        user.setEmailVerificationStatus(EmailVerificationStatus.NOT_VERIFIED);
+
+        // Soft threshold
+        try {
+            //Register the misuse monitor
+            if (misuseMonitor.hasMisused(user.getId().toString(),
+                    UserSearchMisuseHandler.class.toString())) {
+                throw new SegueResourceMisuseException("Number of requests exceeded. Triggering Error Response");
+            }
+
+            for (int i = 0; i < UserSearchMisuseHandler.SOFT_THRESHOLD; i++) {
+                misuseMonitor.notifyEvent(user.getId().toString(), event);
+            }
+        } catch (SegueResourceMisuseException e) {
+            fail();
+        }
+
+        // Hard threshold
+        try {
+            //Register the misuse monitor
+            if (misuseMonitor.hasMisused(user.getId().toString(),
+                    UserSearchMisuseHandler.class.toString())) {
+                throw new SegueResourceMisuseException("Number of requests exceeded. Triggering Error Response");
+            }
+
+            for (int i = UserSearchMisuseHandler.SOFT_THRESHOLD;
+                 i < UserSearchMisuseHandler.HARD_THRESHOLD; i++) {
+                misuseMonitor.notifyEvent(user.getId().toString(), event);
+            }
+        } catch (SegueResourceMisuseException e) {
+            System.out.println("SegueResourceMisuseException");
+        }
     }
 }

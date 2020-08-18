@@ -321,6 +321,7 @@ public final class Constants {
         ADMIN_EVENT_BOOKING_CREATED,
         ADMIN_EVENT_BOOKING_DELETED,
         ADMIN_EVENT_WAITING_LIST_PROMOTION,
+        ADMIN_MERGE_USER,
         ANSWER_QUESTION,
         CHANGE_USER_ROLE,
         CHANGE_GROUP_MEMBERSHIP_STATUS,
@@ -391,6 +392,7 @@ public final class Constants {
     public static final String SEARCHABLE_CONTENT_FIELDNAME = "searchableContent";
 
     public static final String USER_ID_FKEY_FIELDNAME = "userId";
+    public static final String OLD_USER_ID_FKEY_FIELDNAME = "oldUserId";
     public static final String USER_ID_LIST_FKEY_FIELDNAME = "userIds";
     public static final String EVENT_ID_FKEY_FIELDNAME = "eventId";
     public static final String BOOKING_STATUS_FIELDNAME = "bookingStatus";

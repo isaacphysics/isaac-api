@@ -38,10 +38,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
 import uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
+import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
+import uk.ac.cam.cl.dtg.segue.api.monitors.UserSearchMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -63,6 +66,7 @@ import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserIdMergeDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryForAdminUsersDTO;
 import uk.ac.cam.cl.dtg.segue.etl.GithubPushEventPayload;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
@@ -129,8 +133,8 @@ public class AdminFacade extends AbstractSegueFacade {
 
     private final AbstractUserPreferenceManager userPreferenceManager;
     private final EventBookingManager eventBookingManager;
-
     private final UserAssociationManager associationManager;
+    private final IMisuseMonitor misuseMonitor;
 
     /**
      * Create an instance of the administrators facade.
@@ -153,13 +157,16 @@ public class AdminFacade extends AbstractSegueFacade {
      *            - for using the event booking system
      * @param associationManager
      *            - so that we can create associations.
+     * @param misuseMonitor
+     *            - misuse monitor.
      */
     @Inject
     public AdminFacade(final PropertiesLoader properties, final UserAccountManager userManager,
                        final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final ILogManager logManager,
                        final StatisticsManager statsManager, final LocationManager locationManager,
                        final SchoolListReader schoolReader, final AbstractUserPreferenceManager userPreferenceManager,
-                       final EventBookingManager eventBookingManager, final UserAssociationManager associationManager) {
+                       final EventBookingManager eventBookingManager, final UserAssociationManager associationManager,
+                       final IMisuseMonitor misuseMonitor) {
         super(properties, logManager);
         this.userManager = userManager;
         this.contentManager = contentManager;
@@ -170,6 +177,7 @@ public class AdminFacade extends AbstractSegueFacade {
         this.userPreferenceManager = userPreferenceManager;
         this.eventBookingManager = eventBookingManager;
         this.associationManager = associationManager;
+        this.misuseMonitor = misuseMonitor;
     }
 
     /**
@@ -705,6 +713,8 @@ public class AdminFacade extends AbstractSegueFacade {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You are not authorised to access this function.")
                         .toResponse();
             }
+
+            misuseMonitor.notifyEvent(currentUser.getId().toString(), UserSearchMisuseHandler.class.toString());
             
             if (!isUserAnAdmin(userManager, currentUser)
                     && (null == familyName || familyName.isEmpty())
@@ -718,6 +728,9 @@ public class AdminFacade extends AbstractSegueFacade {
             }
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueResourceMisuseException e) {
+            return SegueErrorResponse
+                    .getRateThrottledResponse("You have exceeded the number of requests allowed for this endpoint");
         }
 
         try {
@@ -964,6 +977,56 @@ public class AdminFacade extends AbstractSegueFacade {
         } catch (NoUserException e) {
             return new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the user with the requested id: "
                     + userId).toResponse();
+        }
+    }
+
+    /**
+     * Merge a source user into a target user. The source is deleted afterwards.
+     *
+     * @param httpServletRequest
+     *            - for checking permissions
+     * @param userIdMergeDTO
+     *            - the source and target ids to merge
+     * @return no content or a segue error response
+     */
+    @POST
+    @Path("/users/merge")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response mergeUserAccounts(@Context final HttpServletRequest httpServletRequest,
+                                      final UserIdMergeDTO userIdMergeDTO) {
+        try {
+            RegisteredUserDTO currentlyLoggedInUser = this.userManager.getCurrentRegisteredUser(httpServletRequest);
+            if (!isUserAnAdmin(userManager, currentlyLoggedInUser)) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "You must be logged in as an admin to access this function.").toResponse();
+            }
+
+            if (currentlyLoggedInUser.getId().equals(userIdMergeDTO.getSourceId())) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You are not allowed to be the merge source.")
+                        .toResponse();
+            }
+
+            RegisteredUserDTO targetUser = this.userManager.getUserDTOById(userIdMergeDTO.getTargetId());
+            RegisteredUserDTO sourceUser = this.userManager.getUserDTOById(userIdMergeDTO.getSourceId());
+
+            this.userManager.mergeUserAccounts(targetUser, sourceUser);
+            getLogManager().logEvent(currentlyLoggedInUser, httpServletRequest, SegueLogType.ADMIN_MERGE_USER,
+                    ImmutableMap.of(USER_ID_FKEY_FIELDNAME, targetUser.getId(), OLD_USER_ID_FKEY_FIELDNAME, sourceUser.getId()));
+
+            log.info("Admin User: " + currentlyLoggedInUser.getEmail() + " has just merged the target user account with id: " + userIdMergeDTO.getTargetId() +
+                    " with the source user account with id: " + userIdMergeDTO.getSourceId());
+
+            return Response.noContent().build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            log.error("Unable to merge accounts", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Database error while looking up user information.").toResponse();
+        } catch (NoUserException e) {
+            return new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the users with the requested ids: "
+                    + userIdMergeDTO.getTargetId() + ", " + userIdMergeDTO.getSourceId()).toResponse();
         }
     }
 
