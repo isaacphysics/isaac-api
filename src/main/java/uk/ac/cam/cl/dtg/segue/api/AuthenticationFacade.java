@@ -46,6 +46,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dto.LocalAuthDTO;
 import uk.ac.cam.cl.dtg.segue.dto.MFAResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -357,9 +358,9 @@ public class AuthenticationFacade extends AbstractSegueFacade {
         // in this case we expect a username and password to have been
         // sent in the json response.
         if (null == localAuthDTO || localAuthDTO.getEmail() == null
-                || localAuthDTO.getPassword() == null) {
+                || localAuthDTO.getPassword() == null || localAuthDTO.getRememberMe() == null) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
-                    "You must specify credentials email and password to use this authentication provider.");
+                    "You must specify credentials email, password and remember me flag to use this authentication provider.");
             return error.toResponse();
         }
         
@@ -463,11 +464,12 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     public final Response userLogoutElsewhere(@Context final HttpServletRequest request,
                                      @Context final HttpServletResponse response) {
         try {
-            this.getLogManager().logEvent(this.userManager.getCurrentUser(request), request, SegueLogType.LOG_OUT_ELSEWHERE,
+            AbstractSegueUserDTO user = this.userManager.getCurrentUser(request);
+            userManager.logoutElsewhere(request, response, true);
+
+            this.getLogManager().logEvent(user, request, SegueLogType.LOG_OUT_ELSEWHERE,
                     Maps.newHashMap());
             SegueMetrics.LOG_OUT_ELSEWHERE.inc();
-
-            userManager.logoutElsewhere(request, response, true);
 
             return Response.ok().build();
         } catch (SegueDatabaseException e) {

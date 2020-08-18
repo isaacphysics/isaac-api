@@ -24,7 +24,7 @@ public class LocalAuthDTO {
     private String randomPadding;
     private String email;
     private String password;
-    private boolean rememberMe;
+    private Boolean rememberMe;
 
     /**
      * Default constructor.

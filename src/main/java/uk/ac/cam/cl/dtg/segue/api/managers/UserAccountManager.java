@@ -1694,8 +1694,8 @@ public class UserAccountManager implements IUserAccountManager {
                                 final boolean rememberMe) throws SegueDatabaseException {
         RegisteredUser user = this.getCurrentRegisteredUserDO(request);
         this.database.incrementSessionToken(user);
-        user.setSessionToken(user.getSessionToken() + 1);
-        this.userAuthenticationManager.createUserSession(request, response, user, rememberMe);
+        RegisteredUser updatedUser = this.database.getById(user.getId());
+        this.userAuthenticationManager.createUserSession(request, response, updatedUser, rememberMe);
     }
 
     /**
