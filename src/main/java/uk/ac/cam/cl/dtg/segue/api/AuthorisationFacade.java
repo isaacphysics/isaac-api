@@ -104,7 +104,30 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     }
 
     /**
-     * Get all users who can see the specified users data.
+     * Get all users who can see the current user's data.
+     *
+     * @param request
+     *            - so we can identify the current user.
+     * @throws NoUserException
+     *            - when the target user cannot be found.
+     * @return List of user associations.
+     */
+    @GET
+    @Path("/")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @ApiOperation(value = "List all users granted access to the current user's data.")
+    public Response getUsersWithAccess(@Context final HttpServletRequest request) throws NoUserException {
+        try {
+            RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
+            return getUsersWithAccessSpecificUser(request, requestingUser.getId());
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
+    }
+
+    /**
+     * Get all users who can see the specified user's data.
      * 
      * @param request
      *            - so we can identify the current user.
@@ -119,7 +142,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @ApiOperation(value = "List all users granted access to the specified user's data.")
-    public Response getUsersWithAccess(@Context final HttpServletRequest request, @PathParam("userId") Long userId) throws NoUserException {
+    public Response getUsersWithAccessSpecificUser(@Context final HttpServletRequest request, @PathParam("userId") Long userId) throws NoUserException {
         try {
             RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
 
@@ -300,6 +323,29 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     }
 
     /**
+     * Get all users whose data the current user can see.
+     *
+     * @param request
+     *            - so we can identify the current user.
+     * @throws NoUserException
+     *            - when the target user cannot be found.
+     * @return List of user associations.
+     */
+    @GET
+    @Path("/other_users}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @ApiOperation(value = "List all users the current user has been granted access by.")
+    public Response getCurrentAccessRights(@Context final HttpServletRequest request) throws NoUserException {
+        try {
+            RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
+            return getCurrentAccessRightsSpecificUser(request, requestingUser.getId());
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
+    }
+
+    /**
      * Get all users whose data the specified user can see.
      * 
      * @param request
@@ -315,7 +361,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @ApiOperation(value = "List all users the specified user has been granted access by.")
-    public Response getCurrentAccessRights(@Context final HttpServletRequest request, @PathParam("userId") Long userId) throws NoUserException{
+    public Response getCurrentAccessRightsSpecificUser(@Context final HttpServletRequest request, @PathParam("userId") Long userId) throws NoUserException{
         try {
             RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
 
