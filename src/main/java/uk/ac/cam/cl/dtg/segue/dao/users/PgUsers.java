@@ -592,6 +592,37 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
     }
 
     @Override
+    public void mergeUserAccounts(final RegisteredUser target, final RegisteredUser source) throws SegueDatabaseException {
+        if (null == target) {
+            throw new SegueDatabaseException("Merge users target is null");
+        } else if (null == source) {
+            throw new SegueDatabaseException("Merge users source is null");
+        }
+
+        try (Connection conn = database.getDatabaseConnection()) {
+            try {
+                conn.setAutoCommit(false);
+
+                PreparedStatement mergeUsers;
+                mergeUsers = conn.prepareStatement("SELECT mergeuser(?, ?)");
+
+                mergeUsers.setLong(1, target.getId());
+                mergeUsers.setLong(2, source.getId());
+                mergeUsers.execute();
+
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
+            }
+        } catch (SQLException e1) {
+            throw new SegueDatabaseException("Postgres exception", e1);
+        }
+    }
+
+    @Override
     public void updateUserLastSeen(final RegisteredUser user) throws SegueDatabaseException {
         this.updateUserLastSeen(user, new Date());
     }
