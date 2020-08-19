@@ -37,6 +37,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidSessionException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
@@ -465,17 +466,23 @@ public class AuthenticationFacade extends AbstractSegueFacade {
                                      @Context final HttpServletResponse response) {
         try {
             AbstractSegueUserDTO user = this.userManager.getCurrentUser(request);
-            userManager.logoutElsewhere(request, response, true);
+            userManager.logoutElsewhere(request, response);
 
             this.getLogManager().logEvent(user, request, SegueLogType.LOG_OUT_ELSEWHERE,
                     Maps.newHashMap());
             SegueMetrics.LOG_OUT_ELSEWHERE.inc();
 
             return Response.ok().build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
             String errorMsg = "Internal Database error has occurred during logout elsewhere.";
             log.error(errorMsg, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
+        } catch (InvalidSessionException e) {
+            String errorMsg = "Invalid session exception occurred during logout elsewhere.";
+            log.error(errorMsg, e);
+            return SegueErrorResponse.getBadRequestResponse("Invalid session. Try log in and out again.");
         }
     }
 

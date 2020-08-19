@@ -73,6 +73,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -455,6 +456,20 @@ public class UserAuthenticationManager {
     }
 
     /**
+     * Update the signed session based on the user DO provided and the http request and response. Original expiry date is retained.
+     * @param request - for updating the session
+     * @param response - for adding the updated session
+     * @param user - the user who should be logged in.
+     * @throws InvalidSessionException when the request doesn't have an valid session.
+     * @return the request and response will be modified and the original userDO will be returned for convenience.
+     */
+    public RegisteredUser updateUserSession(final HttpServletRequest request, final HttpServletResponse response,
+                                            final RegisteredUser user) throws InvalidSessionException {
+        this.updateSessionToken(request, response, user);
+        return user;
+    }
+
+    /**
      * Destroy a session attached to the request.
      * 
      * @param request
@@ -825,10 +840,10 @@ public class UserAuthenticationManager {
             return true;
         }
     }
-    
+
     /**
      * Create a session and attach it to the request provided.
-     * 
+     *
      * @param request
      *            to enable access to anonymous user information.
      * @param response
@@ -841,12 +856,63 @@ public class UserAuthenticationManager {
      *            Boolean to indicate whether or not this cookie expiry duration should be long or short
      */
     private void createSession(final HttpServletRequest request, final HttpServletResponse response,
-            final RegisteredUser user, final boolean partialLoginFlag, final boolean rememberMe) {
+                               final RegisteredUser user, final boolean partialLoginFlag, final boolean rememberMe) {
+        int sessionExpiryTimeInSeconds = Integer.parseInt(properties.getProperty(rememberMe ? SESSION_EXPIRY_SECONDS_REMEMBERED : SESSION_EXPIRY_SECONDS_DEFAULT));
+        createSession(request, response, user, sessionExpiryTimeInSeconds, partialLoginFlag, rememberMe);
+    }
+
+    /**
+     * Update a session and attach it to the request provided. The original expiry time is kept.
+     *
+     * @param request
+     *            to enable access to anonymous user information.
+     * @param response
+     *            to store the session in our own segue cookie.
+     * @param user
+     *            account to associate the session with.
+     * @throws InvalidSessionException
+     *            when the request doesn't have an valid session.
+     */
+    private void updateSessionToken(final HttpServletRequest request, final HttpServletResponse response,
+                               final RegisteredUser user) throws InvalidSessionException {
+        try {
+            SimpleDateFormat sessionDateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
+            Map<String, String> currentSessionInformation = this.getSegueSessionFromRequest(request);
+            String dateExpires = currentSessionInformation.get(DATE_EXPIRES);
+            if (dateExpires != null) {
+                createSession(request, response, user, (int) (sessionDateFormat.parse(dateExpires).toInstant().getEpochSecond() - Instant.now().getEpochSecond()), false, false);
+            } else {
+                throw new InvalidSessionException("Missing date expires field");
+            }
+        } catch (IOException e1) {
+            throw new InvalidSessionException("IOException while parsing session");
+        } catch (ParseException e) {
+            throw new InvalidSessionException("Date expires field is invalid");
+        }
+    }
+
+    /**
+     * Create a session with a specified expiry time and attach it to the request provided.
+     * 
+     * @param request
+     *            to enable access to anonymous user information.
+     * @param response
+     *            to store the session in our own segue cookie.
+     * @param user
+     *            account to associate the session with.
+     * @param sessionExpiryTimeInSeconds
+     *            max age of the cookie if not a partial login.
+     * @param partialLoginFlag
+     *            Boolean to indicate whether or not this cookie represents a partial login (true) or full (false)
+     * @param rememberMe
+     *            Boolean to indicate whether or not this cookie expiry duration should be long or short
+     */
+    private void createSession(final HttpServletRequest request, final HttpServletResponse response,
+            final RegisteredUser user, int sessionExpiryTimeInSeconds, final boolean partialLoginFlag, final boolean rememberMe) {
         Validate.notNull(response);
         Validate.notNull(user);
         Validate.notNull(user.getId());
         SimpleDateFormat sessionDateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
-        int sessionExpiryTimeInSeconds = Integer.parseInt(properties.getProperty(rememberMe ? SESSION_EXPIRY_SECONDS_REMEMBERED : SESSION_EXPIRY_SECONDS_DEFAULT));
         final int PARTIAL_EXPIRY_TIME_IN_SECONDS = 1200; // 20 mins
 
         String userId = user.getId().toString();
