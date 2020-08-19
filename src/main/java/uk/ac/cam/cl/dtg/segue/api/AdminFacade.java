@@ -26,6 +26,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.opencsv.CSVWriter;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -70,6 +71,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryForAdminUsersDTO;
 import uk.ac.cam.cl.dtg.segue.etl.GithubPushEventPayload;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 import uk.ac.cam.cl.dtg.util.locations.Location;
 import uk.ac.cam.cl.dtg.util.locations.LocationServerException;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeRadius;
@@ -81,6 +83,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -496,6 +499,59 @@ public class AdminFacade extends AbstractSegueFacade {
             log.error("NoUserException when attempting to change users verification status.", e);
             return new SegueErrorResponse(Status.BAD_REQUEST, "One or more users could not be found")
                     .toResponse();
+        } catch (SegueDatabaseException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Could not save new email verification status to the database").toResponse();
+        }
+
+        return Response.ok().build();
+    }
+
+    /**
+     * This method allow user email verification statuses to be changed en-mass, authenticating with a token.
+     *
+     * @param request
+     *            - to provide IP address information
+     * @param providedAuthHeader
+     *            - to provide the authentication token
+     * @param emails
+     *            - a list of user emails that need to be changed
+     * @return Success shown by returning an ok response
+     */
+    @POST
+    @Path("/users/change_email_verification_status/delivery_failed")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Update a list of possible account emails as delivery failed.",
+            notes = "This endpoint requires a Bearer token in the Authorization header and not a Segue cookie.")
+    public synchronized Response setUsersEmailVerificationStatusFailed(
+            @Context final HttpServletRequest request,
+            @HeaderParam("Authorization") final String providedAuthHeader,
+            final List<String> emails) {
+        try {
+            String endpointToken = this.getProperties().getProperty(Constants.EMAIL_VERIFICATION_ENDPOINT_TOKEN);
+            if (null == endpointToken || endpointToken.isEmpty()) {
+                log.error("Request attempted to set email delivery statuses using token, but no token configured!");
+                return SegueErrorResponse.getNotImplementedResponse();
+            }
+
+            if (null == providedAuthHeader || providedAuthHeader.isEmpty()) {
+                log.warn("Request attempted to set email delivery statuses without a token!");
+                return SegueErrorResponse.getBadRequestResponse("Malformed Request");
+            }
+
+            String remoteIpAddress = RequestIPExtractor.getClientIpAddr(request);
+            String expectedHeader = "Bearer " + endpointToken;
+            if (!expectedHeader.equals(providedAuthHeader)) {
+                log.warn(String.format("Request from (%s) attempted to set email delivery statuses with invalid token!", remoteIpAddress));
+                return new SegueErrorResponse(Status.UNAUTHORIZED, "Unauthorised").toResponse();
+            }
+
+            for (String email : emails) {
+                this.userManager.updateUserEmailVerificationStatus(email, EmailVerificationStatus.DELIVERY_FAILED);
+            }
+            log.info(String.format("Request from (%s) updated the status of %s emails to DELIVERY_FAILED.", remoteIpAddress, emails.size()));
+
         } catch (SegueDatabaseException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Could not save new email verification status to the database").toResponse();
