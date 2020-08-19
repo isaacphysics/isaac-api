@@ -80,6 +80,11 @@ public final class Constants {
     public static final String EMAIL_SIGNATURE = "EMAIL_SIGNATURE";
 
     /**
+     * Constant representing the token used for automated email delivery failed updates.
+     */
+    public static final String EMAIL_VERIFICATION_ENDPOINT_TOKEN = "EMAIL_VERIFICATION_ENDPOINT_TOKEN";
+
+    /**
      * The path for the csv file containing the list of schools.
      */
     public static final String SCHOOL_CSV_LIST_PATH = "SCHOOL_CSV_LIST_PATH";
