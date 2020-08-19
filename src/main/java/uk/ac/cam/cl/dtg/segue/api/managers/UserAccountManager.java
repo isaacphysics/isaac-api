@@ -1696,7 +1696,9 @@ public class UserAccountManager implements IUserAccountManager {
     public void logoutElsewhere(final HttpServletRequest request, final HttpServletResponse response)
             throws SegueDatabaseException, NoUserLoggedInException, InvalidSessionException {
         RegisteredUser user = this.getCurrentRegisteredUserDO(request);
-        if (null == user) throw new NoUserLoggedInException();
+        if (null == user) {
+            throw new NoUserLoggedInException();
+        }
         this.database.incrementSessionToken(user);
         RegisteredUser updatedUser = this.database.getById(user.getId());
         this.userAuthenticationManager.updateUserSession(request, response, updatedUser);

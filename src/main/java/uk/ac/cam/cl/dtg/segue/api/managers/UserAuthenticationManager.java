@@ -880,7 +880,9 @@ public class UserAuthenticationManager {
             Map<String, String> currentSessionInformation = this.getSegueSessionFromRequest(request);
             String dateExpires = currentSessionInformation.get(DATE_EXPIRES);
             if (dateExpires != null) {
-                createSession(request, response, user, (int) (sessionDateFormat.parse(dateExpires).toInstant().getEpochSecond() - Instant.now().getEpochSecond()), false, false);
+                long expiresEpochSeconds = sessionDateFormat.parse(dateExpires).toInstant().getEpochSecond();
+                long sessionExpiryTimeInSeconds = expiresEpochSeconds - Instant.now().getEpochSecond();
+                createSession(request, response, user, (int) sessionExpiryTimeInSeconds, false, false);
             } else {
                 throw new InvalidSessionException("Missing date expires field");
             }
