@@ -73,7 +73,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -452,20 +451,6 @@ public class UserAuthenticationManager {
     public RegisteredUser createIncompleteLoginUserSession(final HttpServletRequest request, final HttpServletResponse response,
                                             final RegisteredUser user, final boolean rememberMe) {
         this.createSession(request, response, user, true, rememberMe);
-        return user;
-    }
-
-    /**
-     * Update the signed session based on the user DO provided and the http request and response. Original expiry date is retained.
-     * @param request - for updating the session
-     * @param response - for adding the updated session
-     * @param user - the user who should be logged in.
-     * @throws InvalidSessionException when the request doesn't have an valid session.
-     * @return the request and response will be modified and the original userDO will be returned for convenience.
-     */
-    public RegisteredUser updateUserSession(final HttpServletRequest request, final HttpServletResponse response,
-                                            final RegisteredUser user) throws InvalidSessionException {
-        this.updateSessionToken(request, response, user);
         return user;
     }
 
@@ -859,38 +844,6 @@ public class UserAuthenticationManager {
                                final RegisteredUser user, final boolean partialLoginFlag, final boolean rememberMe) {
         int sessionExpiryTimeInSeconds = Integer.parseInt(properties.getProperty(rememberMe ? SESSION_EXPIRY_SECONDS_REMEMBERED : SESSION_EXPIRY_SECONDS_DEFAULT));
         createSession(request, response, user, sessionExpiryTimeInSeconds, partialLoginFlag, rememberMe);
-    }
-
-    /**
-     * Update a session and attach it to the request provided. The original expiry time is kept.
-     *
-     * @param request
-     *            to enable access to anonymous user information.
-     * @param response
-     *            to store the session in our own segue cookie.
-     * @param user
-     *            account to associate the session with.
-     * @throws InvalidSessionException
-     *            when the request doesn't have an valid session.
-     */
-    private void updateSessionToken(final HttpServletRequest request, final HttpServletResponse response,
-                               final RegisteredUser user) throws InvalidSessionException {
-        try {
-            SimpleDateFormat sessionDateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
-            Map<String, String> currentSessionInformation = this.getSegueSessionFromRequest(request);
-            String dateExpires = currentSessionInformation.get(DATE_EXPIRES);
-            if (dateExpires != null) {
-                long expiresEpochSeconds = sessionDateFormat.parse(dateExpires).toInstant().getEpochSecond();
-                long sessionExpiryTimeInSeconds = expiresEpochSeconds - Instant.now().getEpochSecond();
-                createSession(request, response, user, (int) sessionExpiryTimeInSeconds, false, false);
-            } else {
-                throw new InvalidSessionException("Missing date expires field");
-            }
-        } catch (IOException e1) {
-            throw new InvalidSessionException("IOException while parsing session");
-        } catch (ParseException e) {
-            throw new InvalidSessionException("Date expires field is invalid");
-        }
     }
 
     /**

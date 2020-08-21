@@ -344,7 +344,7 @@ public final class Constants {
         EVENT_RESERVATIONS_CANCELLED,
         LOG_IN,
         LOG_OUT,
-        LOG_OUT_ELSEWHERE,
+        LOG_OUT_EVERYWHERE,
         MERGE_USER,
         PASSWORD_RESET_REQUEST_RECEIVED,
         PASSWORD_RESET_REQUEST_SUCCESSFUL,

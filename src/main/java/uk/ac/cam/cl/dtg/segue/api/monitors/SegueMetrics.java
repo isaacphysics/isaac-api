@@ -50,8 +50,8 @@ public final class SegueMetrics {
             .name("segue_log_in_total").help("Successful log in since process start.").register();
     public static final Counter LOG_OUT = Counter.build()
             .name("segue_log_out_total").help("Log out since process start.").register();
-    public static final Counter LOG_OUT_ELSEWHERE = Counter.build()
-            .name("segue_log_out_elsewhere_total").help("Log out elsewhere requests since process start.").register();
+    public static final Counter LOG_OUT_EVERYWHERE = Counter.build()
+            .name("segue_log_out_everywhere_total").help("Log out everywhere requests since process start.").register();
 
     public static final Counter PASSWORD_RESET = Counter.build()
             .name("segue_password_reset_total").help("Password reset requests since process start.").register();

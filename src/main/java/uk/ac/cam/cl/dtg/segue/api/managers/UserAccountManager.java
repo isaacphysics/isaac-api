@@ -40,7 +40,6 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidSessionException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
@@ -1679,29 +1678,26 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     /**
-     * Logout user from other sessions.
-     * Increment the users' session token field and create a new session.
+     * Logout user from all sessions.
+     * Increment the users' session token field to invalidate all other sessions.
      *
      * @param request
      *            - request containing session information.
      * @param response
-     *            - response to update cookie information.
+     *            to destroy the segue cookie.
      * @throws NoUserLoggedInException
      *            - when the request doesn't have an auth cookie.
-     * @throws InvalidSessionException
-     *            - when the request doesn't have an valid session.
      * @throws SegueDatabaseException
      *             - if an error occurs with the update.
      */
-    public void logoutElsewhere(final HttpServletRequest request, final HttpServletResponse response)
-            throws SegueDatabaseException, NoUserLoggedInException, InvalidSessionException {
+    public void logoutEverywhere(final HttpServletRequest request, final HttpServletResponse response)
+            throws SegueDatabaseException, NoUserLoggedInException {
         RegisteredUser user = this.getCurrentRegisteredUserDO(request);
         if (null == user) {
             throw new NoUserLoggedInException();
         }
         this.database.incrementSessionToken(user);
-        RegisteredUser updatedUser = this.database.getById(user.getId());
-        this.userAuthenticationManager.updateUserSession(request, response, updatedUser);
+        logUserOut(request, response);
     }
 
     /**

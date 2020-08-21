@@ -37,7 +37,6 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidSessionException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
@@ -449,40 +448,36 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     }
 
     /**
-     * End point that allows the user to logout of other sessions.
+     * End point that allows the user to logout of all sessions.
      *
      * @param request
-     *            so that we can replace the associated session
+     *            so that we can obtain the associated session
      * @param response
-     *            to tell the browser to update the session for segue.
-     * @return successful response to indicate other sessions were invalidated.
+     *            to tell the browser to remove the session for segue.
+     * @return successful response to indicate all sessions were invalidated.
      */
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.WILDCARD)
-    @Path("/logout_elsewhere")
-    @ApiOperation(value = "Invalidate other sessions for the current user and create a new session.")
-    public final Response userLogoutElsewhere(@Context final HttpServletRequest request,
-                                     @Context final HttpServletResponse response) {
+    @Path("/logout_everywhere")
+    @ApiOperation(value = "Invalidate all sessions for the current user.")
+    public final Response userLogoutEverywhere(@Context final HttpServletRequest request,
+                                               @Context final HttpServletResponse response) {
         try {
             AbstractSegueUserDTO user = this.userManager.getCurrentUser(request);
-            userManager.logoutElsewhere(request, response);
+            userManager.logoutEverywhere(request, response);
 
-            this.getLogManager().logEvent(user, request, SegueLogType.LOG_OUT_ELSEWHERE,
+            this.getLogManager().logEvent(user, request, SegueLogType.LOG_OUT_EVERYWHERE,
                     Maps.newHashMap());
-            SegueMetrics.LOG_OUT_ELSEWHERE.inc();
+            SegueMetrics.LOG_OUT_EVERYWHERE.inc();
 
             return Response.ok().build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
-            String errorMsg = "Internal Database error has occurred during logout elsewhere.";
+            String errorMsg = "Internal Database error has occurred during logout everywhere.";
             log.error(errorMsg, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
-        } catch (InvalidSessionException e) {
-            String errorMsg = "Invalid session exception occurred during logout elsewhere.";
-            log.error(errorMsg, e);
-            return SegueErrorResponse.getBadRequestResponse("Invalid session. Try log in and out again.");
         }
     }
 
