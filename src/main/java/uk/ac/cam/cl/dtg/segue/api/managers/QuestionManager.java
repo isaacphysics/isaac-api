@@ -29,7 +29,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.TestCase;
 import uk.ac.cam.cl.dtg.isaac.dos.TestQuestion;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacItemQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
+import uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dos.LightweightQuestionValidationResponse;
@@ -67,7 +67,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.stream.Collectors;
 
 /**
  * This class is responsible for validating correct answers using the ValidatesWith annotation when it is applied on to
@@ -385,6 +384,32 @@ public class QuestionManager {
             AnonymousUserDTO anonymousUser = (AnonymousUserDTO) user;
             // since no user is logged in assume that we want to use any anonymous attempts
             return this.questionAttemptPersistenceManager.getAnonymousQuestionAttempts(anonymousUser.getSessionId());
+        }
+    }
+
+    /**
+     * getMostRecentQuestionAttemptsByUser. This method will return the most recent of the question attempts for a given user as a map.
+     *
+     * @param user
+     *            - with the session information included.
+     * @param limit
+     *            - the maximum number of question attempts to return
+     * @return map of question attempts (QuestionPageId -> QuestionID -> [QuestionValidationResponse] or an empty map.
+     * @throws SegueDatabaseException
+     *             - if there is a database error.
+     */
+    public Map<String, Map<String, List<QuestionValidationResponse>>> getMostRecentQuestionAttemptsByUser(
+            final AbstractSegueUserDTO user, final Integer limit) throws SegueDatabaseException {
+        Validate.notNull(user);
+
+        if (user instanceof RegisteredUserDTO) {
+            RegisteredUserDTO registeredUser = (RegisteredUserDTO) user;
+
+            return this.questionAttemptPersistenceManager.getMostRecentQuestionAttempts(registeredUser.getId(), limit);
+        } else {
+            AnonymousUserDTO anonymousUser = (AnonymousUserDTO) user;
+            // since no user is logged in assume that we want to use any anonymous attempts
+            return this.questionAttemptPersistenceManager.getMostRecentAnonymousQuestionAttempts(anonymousUser.getSessionId(), limit);
         }
     }
     

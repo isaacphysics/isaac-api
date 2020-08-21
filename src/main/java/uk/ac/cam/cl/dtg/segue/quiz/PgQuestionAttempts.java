@@ -124,39 +124,71 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             pst.setString(1, anonymousId);
 
             ResultSet resultSet = pst.executeQuery();
-            // are there any results
-            if (!resultSet.isBeforeFirst()) {
-                return Maps.newHashMap();
-            }
 
-            resultSet.next();
-
-            // We need to try and generate QuestionValidationResponses in the correct object structure - Apologies for the hideousness
-            Map<String, Map<String, List<Object>>> questionAttemptsFromDB
-                    = objectMapper.readValue(resultSet.getString("question_attempts"), Map.class);
-            Map<String, Map<String, List<QuestionValidationResponse>>> result = Maps.newHashMap();
-
-            for (Map.Entry<String, Map<String, List<Object>>> questionAttemptsForPage : questionAttemptsFromDB.entrySet()){
-
-                Map<String, List<QuestionValidationResponse>> questionAttemptsForQuestion = Maps.newHashMap();
-                for (Map.Entry<String, List<Object>> submap : questionAttemptsForPage.getValue().entrySet()){
-                    List<QuestionValidationResponse> listOfuestionValidationResponses = Lists.newArrayList();
-                    questionAttemptsForQuestion.put(submap.getKey(), listOfuestionValidationResponses);
-
-                    for (Object o : submap.getValue()) {
-                        listOfuestionValidationResponses
-                                .add(objectMapper.convertValue(o, QuestionValidationResponse.class));
-                    }
-                }
-
-                result.put(questionAttemptsForPage.getKey(), questionAttemptsForQuestion);
-            }
-
-            return result;
+            return convertResultsSetToAnonymousQuestionAttempts(resultSet);
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         } catch (IOException e) {
             throw new SegueDatabaseException("Unable to process json exception", e);
+        }
+    }
+
+    /**
+     * getAnonymousQuestionAttempts.
+     * @param anonymousId
+     *            to lookup
+     * @return the question pageId --> full questionId --> list of responses. (or null if no data)
+     */
+    @Override
+    public Map<String, Map<String, List<QuestionValidationResponse>>> getMostRecentAnonymousQuestionAttempts(
+            final String anonymousId, final Integer limit) throws SegueDatabaseException {
+        PreparedStatement pst;
+        try (Connection conn = database.getDatabaseConnection()) {
+            pst = conn.prepareStatement("SELECT temporary_app_data->'questionAttempts' AS question_attempts from temporary_user_store where id = ?" +
+                            "ORDER BY \"timestamp\" DESC LIMIT ?;"
+                    , Statement.RETURN_GENERATED_KEYS);
+
+            pst.setString(1, anonymousId);
+            pst.setInt(2, limit);
+
+            ResultSet resultSet = pst.executeQuery();
+
+            return convertResultsSetToAnonymousQuestionAttempts(resultSet);
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        } catch (IOException e) {
+            throw new SegueDatabaseException("Unable to process json exception", e);
+        }
+    }
+
+    private Map<String, Map<String, List<QuestionValidationResponse>>> convertResultsSetToAnonymousQuestionAttempts(ResultSet resultSet)
+            throws SQLException, IOException {
+        // are there any results
+        if (!resultSet.isBeforeFirst()) {
+            return Maps.newHashMap();
+        }
+
+        resultSet.next();
+
+        // We need to try and generate QuestionValidationResponses in the correct object structure - Apologies for the hideousness
+        Map<String, Map<String, List<Object>>> questionAttemptsFromDB
+                = objectMapper.readValue(resultSet.getString("question_attempts"), Map.class);
+        Map<String, Map<String, List<QuestionValidationResponse>>> result = Maps.newHashMap();
+
+        for (Map.Entry<String, Map<String, List<Object>>> questionAttemptsForPage : questionAttemptsFromDB.entrySet()){
+
+            Map<String, List<QuestionValidationResponse>> questionAttemptsForQuestion = Maps.newHashMap();
+            for (Map.Entry<String, List<Object>> submap : questionAttemptsForPage.getValue().entrySet()){
+                List<QuestionValidationResponse> listOfuestionValidationResponses = Lists.newArrayList();
+                questionAttemptsForQuestion.put(submap.getKey(), listOfuestionValidationResponses);
+
+                for (Object o : submap.getValue()) {
+                    listOfuestionValidationResponses
+                            .add(objectMapper.convertValue(o, QuestionValidationResponse.class));
+                }
+            }
+
+            result.put(questionAttemptsForPage.getKey(), questionAttemptsForQuestion);
         }
     }
 
@@ -201,39 +233,63 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             pst.setLong(1, userId);
 
             ResultSet results = pst.executeQuery();
-
-            Map<String, Map<String, List<QuestionValidationResponse>>> mapOfQuestionAttemptsByPage = Maps.newHashMap();
-
-            while (results.next()) {
-                QuestionValidationResponse questionAttempt = objectMapper.readValue(
-                        results.getString("question_attempt"), QuestionValidationResponse.class);
-                String questionPageId = questionAttempt.getQuestionId().split("\\|")[0];
-                String questionId = questionAttempt.getQuestionId();
-
-                
-                Map<String, List<QuestionValidationResponse>> attemptsForThisQuestionPage = mapOfQuestionAttemptsByPage
-                        .get(questionPageId);
-                
-                if (null == attemptsForThisQuestionPage) {
-                    attemptsForThisQuestionPage = Maps.newHashMap();
-                    mapOfQuestionAttemptsByPage.put(questionPageId, attemptsForThisQuestionPage);
-                }
-                
-                List<QuestionValidationResponse> listOfResponses = attemptsForThisQuestionPage.get(questionId);
-                if (null == listOfResponses) {
-                    listOfResponses = Lists.newArrayList();
-                    attemptsForThisQuestionPage.put(questionId, listOfResponses);
-                }
-
-                listOfResponses.add(questionAttempt);
-            }
             
-            return mapOfQuestionAttemptsByPage;
+            return convertResultsSetToQuestionAttempts(results);
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         } catch (IOException e) {
             throw new SegueDatabaseException("Exception while parsing json", e);
         }
+    }
+
+    @Override
+    public Map<String, Map<String, List<QuestionValidationResponse>>> getMostRecentQuestionAttempts(final Long userId, final Integer limit)
+            throws SegueDatabaseException {
+        PreparedStatement pst;
+        try (Connection conn = database.getDatabaseConnection()) {
+            pst = conn.prepareStatement("SELECT * FROM question_attempts WHERE user_id = ? ORDER BY \"timestamp\" DESC LIMIT ?");
+            pst.setLong(1, userId);
+            pst.setInt(2, limit);
+
+            ResultSet results = pst.executeQuery();
+
+            return convertResultsSetToQuestionAttempts(results);
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        } catch (IOException e) {
+            throw new SegueDatabaseException("Exception while parsing json", e);
+        }
+    }
+
+    private Map<String, Map<String, List<QuestionValidationResponse>>> convertResultsSetToQuestionAttempts(ResultSet results)
+            throws SQLException, IOException {
+        Map<String, Map<String, List<QuestionValidationResponse>>> mapOfQuestionAttemptsByPage = Maps.newHashMap();
+
+        while (results.next()) {
+            QuestionValidationResponse questionAttempt = objectMapper.readValue(
+                    results.getString("question_attempt"), QuestionValidationResponse.class);
+            String questionPageId = questionAttempt.getQuestionId().split("\\|")[0];
+            String questionId = questionAttempt.getQuestionId();
+
+
+            Map<String, List<QuestionValidationResponse>> attemptsForThisQuestionPage = mapOfQuestionAttemptsByPage
+                    .get(questionPageId);
+
+            if (null == attemptsForThisQuestionPage) {
+                attemptsForThisQuestionPage = Maps.newHashMap();
+                mapOfQuestionAttemptsByPage.put(questionPageId, attemptsForThisQuestionPage);
+            }
+
+            List<QuestionValidationResponse> listOfResponses = attemptsForThisQuestionPage.get(questionId);
+            if (null == listOfResponses) {
+                listOfResponses = Lists.newArrayList();
+                attemptsForThisQuestionPage.put(questionId, listOfResponses);
+            }
+
+            listOfResponses.add(questionAttempt);
+        }
+
+        return mapOfQuestionAttemptsByPage;
     }
     
     @Override

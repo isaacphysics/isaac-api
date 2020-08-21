@@ -1,14 +1,14 @@
 package uk.ac.cam.cl.dtg.segue.quiz;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
-import uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
+import uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  * IQuestionAttemptManager. Objects implementing this interface are responsible for recording question attempts
@@ -44,6 +44,20 @@ public interface IQuestionAttemptManager {
      *             - If there is a database error.
      */
     Map<String, Map<String, List<QuestionValidationResponse>>> getQuestionAttempts(final Long userId)
+            throws SegueDatabaseException;
+
+    /**
+     * Get a users most recent question attempts.
+     *
+     * @param userId
+     *            - the id of the user to search for.
+     * @param limit
+     *            - the maximum number of question attempts to return
+     * @return the questionAttempts map or an empty map if the user has not yet registered any attempts.
+     * @throws SegueDatabaseException
+     *             - If there is a database error.
+     */
+    Map<String, Map<String, List<QuestionValidationResponse>>> getMostRecentQuestionAttempts(final Long userId, final Integer limit)
             throws SegueDatabaseException;
 
     /**
@@ -84,6 +98,17 @@ public interface IQuestionAttemptManager {
      * @return List of questionpage --> question id --> list of QuestionResponses.
      */
     Map<String, Map<String, List<QuestionValidationResponse>>> getAnonymousQuestionAttempts(String anonymousId) throws SegueDatabaseException;
+
+    /**
+     * @param anonymousId
+     *            - some anonymous identifier
+     * @param limit
+     *            - the maximum number of question attempts to return
+     * @return List of questionpage --> question id --> list of QuestionResponses.
+     */
+    Map<String, Map<String, List<QuestionValidationResponse>>> getMostRecentAnonymousQuestionAttempts(String anonymousId, final Integer limit)
+            throws SegueDatabaseException;
+
 
     /**
      * Convenience method to merge anonymous user question attempts with registered user records.
