@@ -242,6 +242,18 @@ public interface IUserDataManager {
     void deleteUserAccount(final RegisteredUser userToDelete) throws SegueDatabaseException;
 
     /**
+     * Merge two user accounts by id.
+     *
+     * @param target
+     *            - the user to merge into.
+     * @param source
+     *            - the user to remove.
+     * @throws SegueDatabaseException
+     *             if an error occurs
+     */
+    void mergeUserAccounts(final RegisteredUser target, final RegisteredUser source) throws SegueDatabaseException;
+
+    /**
      * A method that will allow us to measure how active a user's account is.
      * 
      * @param user

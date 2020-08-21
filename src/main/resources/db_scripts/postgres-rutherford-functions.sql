@@ -2,10 +2,10 @@
 -- Merge and Delete Users
 --
 -- Authors: Stephen Cummins, James Sharkey
--- Last Modified: 2018-06-13
+-- Last Modified: 2020-08-12
 --
 
-CREATE OR REPLACE FUNCTION mergeuser(targetuseridtokeep integer, targetuseridtodelete integer) RETURNS boolean
+CREATE OR REPLACE FUNCTION mergeuser(targetuseridtokeep bigint, targetuseridtodelete bigint) RETURNS boolean
 LANGUAGE plpgsql
 AS $$
 BEGIN
@@ -132,7 +132,7 @@ BEGIN
 END
 $$;
 
-ALTER FUNCTION mergeuser(targetuseridtokeep integer, targetuseridtodelete integer) OWNER TO rutherford;
+ALTER FUNCTION mergeuser(targetuseridtokeep bigint, targetuseridtodelete bigint) OWNER TO rutherford;
 
 
 --
