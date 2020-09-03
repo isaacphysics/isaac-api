@@ -42,6 +42,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.api.monitors.UserSearchMisuseHandler;
@@ -135,7 +136,7 @@ public class AdminFacade extends AbstractSegueFacade {
 
     private final AbstractUserPreferenceManager userPreferenceManager;
     private final EventBookingManager eventBookingManager;
-
+    private final UserAssociationManager associationManager;
     private final IMisuseMonitor misuseMonitor;
 
     /**
@@ -157,6 +158,8 @@ public class AdminFacade extends AbstractSegueFacade {
      *            - for looking up school information
      * @param eventBookingManager
      *            - for using the event booking system
+     * @param associationManager
+     *            - so that we can create associations.
      * @param misuseMonitor
      *            - misuse monitor.
      */
@@ -165,7 +168,8 @@ public class AdminFacade extends AbstractSegueFacade {
                        final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final ILogManager logManager,
                        final StatisticsManager statsManager, final LocationManager locationManager,
                        final SchoolListReader schoolReader, final AbstractUserPreferenceManager userPreferenceManager,
-                       final EventBookingManager eventBookingManager, final IMisuseMonitor misuseMonitor) {
+                       final EventBookingManager eventBookingManager, final UserAssociationManager associationManager,
+                       final IMisuseMonitor misuseMonitor) {
         super(properties, logManager);
         this.userManager = userManager;
         this.contentManager = contentManager;
@@ -175,6 +179,7 @@ public class AdminFacade extends AbstractSegueFacade {
         this.schoolReader = schoolReader;
         this.userPreferenceManager = userPreferenceManager;
         this.eventBookingManager = eventBookingManager;
+        this.associationManager = associationManager;
         this.misuseMonitor = misuseMonitor;
     }
 
