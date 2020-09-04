@@ -1000,6 +1000,31 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     /**
+     * This method facilitates the merging of two user accounts.
+     *
+     * @param target
+     *            - the user account to remove.
+     * @param source
+     *            - the user account to merge into.
+     * @throws SegueDatabaseException
+     *             if an error occurs
+     */
+    public void mergeUserAccounts(final RegisteredUserDTO target, final RegisteredUserDTO source) throws SegueDatabaseException {
+        // check the users exist
+        if (null == target) {
+            throw new SegueDatabaseException("Merge users target is null");
+        } else if (null == source) {
+            throw new SegueDatabaseException("Merge users source is null");
+        }
+
+        RegisteredUser targetUser = this.findUserById(target.getId());
+        RegisteredUser sourceUser = this.findUserById(source.getId());
+
+        // merge the users.
+        this.database.mergeUserAccounts(targetUser, sourceUser);
+    }
+
+    /**
      * This method will use an email address to check a local user exists and if so, will send an email with a unique
      * token to allow a password reset. This method does not indicate whether or not the email actually existed.
      *

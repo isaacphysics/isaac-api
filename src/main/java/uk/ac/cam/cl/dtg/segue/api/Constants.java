@@ -80,6 +80,11 @@ public final class Constants {
     public static final String EMAIL_SIGNATURE = "EMAIL_SIGNATURE";
 
     /**
+     * Constant representing the token used for automated email delivery failed updates.
+     */
+    public static final String EMAIL_VERIFICATION_ENDPOINT_TOKEN = "EMAIL_VERIFICATION_ENDPOINT_TOKEN";
+
+    /**
      * The path for the csv file containing the list of schools.
      */
     public static final String SCHOOL_CSV_LIST_PATH = "SCHOOL_CSV_LIST_PATH";
@@ -321,6 +326,7 @@ public final class Constants {
         ADMIN_EVENT_BOOKING_CREATED,
         ADMIN_EVENT_BOOKING_DELETED,
         ADMIN_EVENT_WAITING_LIST_PROMOTION,
+        ADMIN_MERGE_USER,
         ANSWER_QUESTION,
         CHANGE_USER_ROLE,
         CHANGE_GROUP_MEMBERSHIP_STATUS,
@@ -391,6 +397,7 @@ public final class Constants {
     public static final String SEARCHABLE_CONTENT_FIELDNAME = "searchableContent";
 
     public static final String USER_ID_FKEY_FIELDNAME = "userId";
+    public static final String OLD_USER_ID_FKEY_FIELDNAME = "oldUserId";
     public static final String USER_ID_LIST_FKEY_FIELDNAME = "userIds";
     public static final String EVENT_ID_FKEY_FIELDNAME = "eventId";
     public static final String BOOKING_STATUS_FIELDNAME = "bookingStatus";
