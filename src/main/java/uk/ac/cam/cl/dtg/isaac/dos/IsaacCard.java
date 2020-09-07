@@ -26,7 +26,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacCardDTO;
  * A card with optional picture and link.
  */
 @DTOMapping(IsaacCardDTO.class)
-@JsonContentType("card")
+@JsonContentType("isaacCard")
 public class IsaacCard extends Content {
     private Image image;
     private String clickUrl;
