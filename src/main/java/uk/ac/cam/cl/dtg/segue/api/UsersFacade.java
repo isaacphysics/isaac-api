@@ -279,7 +279,7 @@ public class UsersFacade extends AbstractSegueFacade {
                 return this.createUserObjectAndLogIn(request, response, registeredUser, newPassword, userPreferences);
             } catch (SegueResourceMisuseException e) {
                 log.error(String.format("Blocked a registration attempt by (%s) after misuse limit hit!", RequestIPExtractor.getClientIpAddr(request)));
-                return SegueErrorResponse.getRateThrottledResponse("Too many registration requests. Please try again later ot contact us!");
+                return SegueErrorResponse.getRateThrottledResponse("Too many registration requests. Please try again later or contact us!");
             }
         }
 
