@@ -670,6 +670,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                     parsedSortInstructions.add(immutableEntry(VISITED_DATE_FIELDNAME, s));
                 } else if (instruction.equals("title")) {
                     parsedSortInstructions.add(immutableEntry(TITLE_FIELDNAME, s));
+                } else if (instruction.equals("completion")) {
+                    parsedSortInstructions.add(immutableEntry(COMPLETION_FIELDNAME, s));
                 } else {
                     return new SegueErrorResponse(Status.BAD_REQUEST, "Sorry we do not recognise the sort instruction "
                             + instruction).toResponse();
