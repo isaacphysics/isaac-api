@@ -190,6 +190,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
 
             result.put(questionAttemptsForPage.getKey(), questionAttemptsForQuestion);
         }
+        return result;
     }
 
     @Override
@@ -243,21 +244,25 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
     }
 
     @Override
-    public Map<String, Map<String, List<QuestionValidationResponse>>> getMostRecentQuestionAttempts(final Long userId, final Integer limit)
+    public List<String> getMostRecentQuestionPageAttempts(final Long userId, final Integer limit)
             throws SegueDatabaseException {
         PreparedStatement pst;
         try (Connection conn = database.getDatabaseConnection()) {
-            pst = conn.prepareStatement("SELECT * FROM question_attempts WHERE user_id = ? ORDER BY \"timestamp\" DESC LIMIT ?");
+            pst = conn.prepareStatement("SELECT SUBSTRING(question_id, 1, STRPOS(question_id, '|') - 1) AS question_page_id, MAX(\"timestamp\") AS latest_timestamp " +
+                    "FROM question_attempts WHERE user_id = ? " +
+                    "GROUP BY question_page_id " +
+                    " ORDER BY latest_timestamp DESC LIMIT ?");
             pst.setLong(1, userId);
             pst.setInt(2, limit);
 
             ResultSet results = pst.executeQuery();
-
-            return convertResultsSetToQuestionAttempts(results);
+            List<String> questionPageIds = new ArrayList<>();
+            while (results.next()) {
+                questionPageIds.add(results.getString("question_page_id"));
+            }
+            return questionPageIds;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
-        } catch (IOException e) {
-            throw new SegueDatabaseException("Exception while parsing json", e);
         }
     }
 

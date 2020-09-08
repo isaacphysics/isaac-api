@@ -697,7 +697,8 @@ public class StatisticsManager implements IStatisticsManager {
      * @throws ContentManagerException
      *             - if something goes wrong.
      */
-    private Map<String, ContentDTO> getQuestionMap(final Collection<String> ids) throws ContentManagerException {
+    @Override
+    public Map<String, ContentDTO> getQuestionMap(final Collection<String> ids) throws ContentManagerException {
         Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
 
         fieldsToMap.put(immutableEntry(BooleanOperator.OR, ID_FIELDNAME + '.' + UNPROCESSED_SEARCH_FIELD_SUFFIX),

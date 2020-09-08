@@ -398,19 +398,10 @@ public class QuestionManager {
      * @throws SegueDatabaseException
      *             - if there is a database error.
      */
-    public Map<String, Map<String, List<QuestionValidationResponse>>> getMostRecentQuestionAttemptsByUser(
-            final AbstractSegueUserDTO user, final Integer limit) throws SegueDatabaseException {
-        Validate.notNull(user);
-
-        if (user instanceof RegisteredUserDTO) {
-            RegisteredUserDTO registeredUser = (RegisteredUserDTO) user;
-
-            return this.questionAttemptPersistenceManager.getMostRecentQuestionAttempts(registeredUser.getId(), limit);
-        } else {
-            AnonymousUserDTO anonymousUser = (AnonymousUserDTO) user;
-            // since no user is logged in assume that we want to use any anonymous attempts
-            return this.questionAttemptPersistenceManager.getMostRecentAnonymousQuestionAttempts(anonymousUser.getSessionId(), limit);
-        }
+    public List<String> getMostRecentQuestionAttemptsByUser(
+            final RegisteredUserDTO registeredUser, final Integer limit) throws SegueDatabaseException {
+        Validate.notNull(registeredUser);
+        return this.questionAttemptPersistenceManager.getMostRecentQuestionPageAttempts(registeredUser.getId(), limit);
     }
     
     /**

@@ -57,7 +57,7 @@ public interface IQuestionAttemptManager {
      * @throws SegueDatabaseException
      *             - If there is a database error.
      */
-    Map<String, Map<String, List<QuestionValidationResponse>>> getMostRecentQuestionAttempts(final Long userId, final Integer limit)
+     List<String> getMostRecentQuestionPageAttempts(final Long userId, final Integer limit)
             throws SegueDatabaseException;
 
     /**
