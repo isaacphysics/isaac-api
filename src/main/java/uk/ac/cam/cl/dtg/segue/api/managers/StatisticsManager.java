@@ -22,7 +22,6 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,14 +31,12 @@ import uk.ac.cam.cl.dtg.segue.dao.LocationManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
-import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -52,24 +49,20 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static com.google.common.collect.Maps.immutableEntry;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.FAST_TRACK_QUESTION_TYPE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacLogType;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_TYPE;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.ID_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueLogType;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval.NINETY_DAYS;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval.SEVEN_DAYS;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval.SIX_MONTHS;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval.THIRTY_DAYS;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval.*;
 
 /**
  * StatisticsManager.
@@ -79,8 +72,6 @@ public class StatisticsManager implements IStatisticsManager {
     private UserAccountManager userManager;
     private ILogManager logManager;
     private SchoolListReader schoolManager;
-    private final IContentManager contentManager;
-    private final String contentIndex;
     private GroupManager groupManager;
     private QuestionManager questionManager;
     private GameManager gameManager;
@@ -106,8 +97,6 @@ public class StatisticsManager implements IStatisticsManager {
      *            - to query Log information
      * @param schoolManager
      *            - to query School information
-     * @param contentManager
-     *            - to query live version information
      * @param locationHistoryManager
      *            - so that we can query our location database (ip addresses)
      * @param groupManager
@@ -117,17 +106,13 @@ public class StatisticsManager implements IStatisticsManager {
      */
     @Inject
     public StatisticsManager(final UserAccountManager userManager, final ILogManager logManager,
-                             final SchoolListReader schoolManager, final IContentManager contentManager,
-                             @Named(CONTENT_INDEX) final String contentIndex,
+                             final SchoolListReader schoolManager,
                              final LocationManager locationHistoryManager, final GroupManager groupManager,
                              final QuestionManager questionManager, final GameManager gameManager,
                              final IUserStreaksManager userStreaksManager) {
         this.userManager = userManager;
         this.logManager = logManager;
         this.schoolManager = schoolManager;
-
-        this.contentManager = contentManager;
-        this.contentIndex = contentIndex;
 
         this.locationHistoryManager = locationHistoryManager;
         this.groupManager = groupManager;
@@ -418,7 +403,7 @@ public class StatisticsManager implements IStatisticsManager {
                 now.isAfter(endOfAugustThisYear) ? endOfAugustThisYear : endOfAugustLastYear;
 
         Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsByUser = questionManager.getQuestionAttemptsByUser(userOfInterest);
-        Map<String, ContentDTO> questionMap = this.getQuestionMap(questionAttemptsByUser.keySet());
+        Map<String, ContentDTO> questionMap = questionManager.getQuestionMap(questionAttemptsByUser.keySet());
 
         // Loop through each Question attempted:
         for (Entry<String, Map<String, List<QuestionValidationResponse>>> question : questionAttemptsByUser.entrySet()) {
@@ -686,39 +671,5 @@ public class StatisticsManager implements IStatisticsManager {
         result.put("streakRecord", userStreakRecord);
 
         return result;
-    }
-
-    /**
-     * Utility method to get a load of question pages by id in one go.
-     * 
-     * @param ids
-     *            to search for
-     * @return map of id to content object.
-     * @throws ContentManagerException
-     *             - if something goes wrong.
-     */
-    private Map<String, ContentDTO> getQuestionMap(final Collection<String> ids) throws ContentManagerException {
-        Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
-
-        fieldsToMap.put(immutableEntry(BooleanOperator.OR, ID_FIELDNAME + '.' + UNPROCESSED_SEARCH_FIELD_SUFFIX),
-                new ArrayList<>(ids));
-
-        fieldsToMap.put(immutableEntry(BooleanOperator.OR, TYPE_FIELDNAME),
-                Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
-
-        // Search for questions that match the ids.
-        ResultsWrapper<ContentDTO> allMatchingIds =
-                this.contentManager.getContentMatchingIds(this.contentIndex, ids, 0, ids.size());
-
-        List<ContentDTO> questionsForGameboard = allMatchingIds.getResults();
-
-        Map<String, ContentDTO> questionIdToQuestionMap = Maps.newHashMap();
-        for (ContentDTO content : questionsForGameboard) {
-            if (content != null) {
-                questionIdToQuestionMap.put(content.getId(), content);
-            }
-        }
-
-        return questionIdToQuestionMap;
     }
 }

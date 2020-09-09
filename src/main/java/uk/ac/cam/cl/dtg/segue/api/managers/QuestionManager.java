@@ -19,16 +19,17 @@ import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import com.google.inject.name.Named;
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.Validate;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import uk.ac.cam.cl.dtg.isaac.configuration.IsaacApplicationRegister;
 import uk.ac.cam.cl.dtg.isaac.dos.TestCase;
 import uk.ac.cam.cl.dtg.isaac.dos.TestQuestion;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacItemQuestionDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuickQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -63,10 +64,11 @@ import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 import uk.ac.cam.cl.dtg.segue.quiz.SpecifiesWith;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatorUnavailableException;
-
+import uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -74,6 +76,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+
+import static com.google.common.collect.Maps.immutableEntry;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * This class is responsible for validating correct answers using the ValidatesWith annotation when it is applied on to
@@ -88,6 +94,8 @@ public class QuestionManager {
     private final ContentMapper mapper;
     private final IQuestionAttemptManager questionAttemptPersistenceManager;
     private final IContentManager contentManager;
+    private final String contentIndex;
+
     /**
      * Create a default Question manager object.
      * 
@@ -97,10 +105,11 @@ public class QuestionManager {
      */
     @Inject
     public QuestionManager(final ContentMapper mapper, final IQuestionAttemptManager questionPersistenceManager,
-                           final IContentManager contentManager) {
+                           final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex) {
         this.mapper = mapper;
         this.questionAttemptPersistenceManager = questionPersistenceManager;
         this.contentManager = contentManager;
+        this.contentIndex = contentIndex;
     }
 
     /**
@@ -414,32 +423,42 @@ public class QuestionManager {
 
         List<String> questionPageIds = this.questionAttemptPersistenceManager.getMostRecentQuestionPageAttempts(registeredUser.getId(), limit);
         Map<String, Map<String, List<QuestionValidationResponse>>> questionAttempts = this.getQuestionAttemptsByUser(registeredUser);
-
+        Map<String, ContentDTO> questionMap = getQuestionMap(questionPageIds);
         List<QuestionCompletionDTO> questionCompletions = new ArrayList<>();
-        for (String questionPageId : questionPageIds) {
-            List<QuestionPartState> questionStates = new ArrayList<>();
-            Map<String, List<QuestionValidationResponse>> questionPartAttempts = questionAttempts.get(questionPageId);
 
-            for (QuestionDTO questionPart : getAllMarkableQuestionPartsDFSOrder(questionPageId)) {
-                QuestionPartState state = QuestionPartState.NOT_ATTEMPTED;
-                if (questionPartAttempts.containsKey(questionPart.getId())) {
-                    List<QuestionValidationResponse> attempts = questionPartAttempts.get(questionPart.getId());
-                    state = QuestionPartState.INCORRECT;
-                    for (QuestionValidationResponse attempt : attempts) {
-                        if (attempt.isCorrect()) {
-                            state = QuestionPartState.CORRECT;
-                            break;
+        for (String questionPageId : questionPageIds) {
+            ContentDTO questionPage = questionMap.get(questionPageId);
+
+            if (questionPage instanceof IsaacQuestionPageDTO) {
+                String supersededBy = ((IsaacQuestionPageDTO) questionPage).getSupersededBy();
+
+                if (null != supersededBy && !supersededBy.equals("")) {
+                    List<QuestionPartState> questionStates = new ArrayList<>();
+                    Map<String, List<QuestionValidationResponse>> questionPartAttempts = questionAttempts.get(questionPageId);
+
+                    for (QuestionDTO questionPart : getAllMarkableQuestionPartsDFSOrder(questionPageId)) {
+                        QuestionPartState state = QuestionPartState.NOT_ATTEMPTED;
+
+                        if (questionPartAttempts.containsKey(questionPart.getId())) {
+                            List<QuestionValidationResponse> attempts = questionPartAttempts.get(questionPart.getId());
+                            state = QuestionPartState.INCORRECT;
+                            for (QuestionValidationResponse attempt : attempts) {
+                                if (attempt.isCorrect()) {
+                                    state = QuestionPartState.CORRECT;
+                                    break;
+                                }
+                            }
                         }
+                        questionStates.add(state);
+                    }
+
+                    if (!questionStates.isEmpty()) {
+                        QuestionCompletionDTO questionCompletionDTO = new QuestionCompletionDTO();
+                        questionCompletionDTO.setState(questionStates);
+                        questionCompletionDTO.setId(questionPageId);
+                        questionCompletions.add(questionCompletionDTO);
                     }
                 }
-                questionStates.add(state);
-            }
-
-            if (!questionStates.isEmpty()) {
-                QuestionCompletionDTO questionCompletionDTO = new QuestionCompletionDTO();
-                questionCompletionDTO.setState(questionStates);
-                questionCompletionDTO.setId(questionPageId);
-                questionCompletions.add(questionCompletionDTO);
             }
         }
 
@@ -463,11 +482,20 @@ public class QuestionManager {
         List<QuestionDTO> questions = new ArrayList<>();
         for (String questionId : questionIds) {
             String questionPageId = questionId.split("\\|")[0];
+            Map<String, ContentDTO> questionMap = getQuestionMap(Collections.singletonList(questionPageId));
 
-            for (QuestionDTO questionPart : getAllMarkableQuestionPartsDFSOrder(questionPageId)) {
-                if (questionPart.getId().equals(questionId) ) {
-                    questions.add(questionPart);
-                    break;
+            ContentDTO questionPage = questionMap.get(questionPageId);
+
+            if (questionPage instanceof IsaacQuestionPageDTO) {
+                String supersededBy = ((IsaacQuestionPageDTO) questionPage).getSupersededBy();
+
+                if (null != supersededBy && !supersededBy.equals("")) {
+                    for (QuestionDTO questionPart : getAllMarkableQuestionPartsDFSOrder(questionPageId)) {
+                        if (questionPart.getId().equals(questionId) ) {
+                            questions.add(questionPart);
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -650,6 +678,40 @@ public class QuestionManager {
 
         return Response.ok(
             mapper.getAutoMapper().map(results, ResultsWrapper.class)).build();
+    }
+
+    /**
+     * Utility method to get a load of question pages by id in one go.
+     *
+     * @param ids
+     *            to search for
+     * @return map of id to content object.
+     * @throws ContentManagerException
+     *             - if something goes wrong.
+     */
+    public Map<String, ContentDTO> getQuestionMap(final Collection<String> ids) throws ContentManagerException {
+        Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
+
+        fieldsToMap.put(immutableEntry(BooleanOperator.OR, ID_FIELDNAME + '.' + UNPROCESSED_SEARCH_FIELD_SUFFIX),
+                new ArrayList<>(ids));
+
+        fieldsToMap.put(immutableEntry(BooleanOperator.OR, TYPE_FIELDNAME),
+                Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
+
+        // Search for questions that match the ids.
+        ResultsWrapper<ContentDTO> allMatchingIds =
+                this.contentManager.getContentMatchingIds(this.contentIndex, ids, 0, ids.size());
+
+        List<ContentDTO> questionsForGameboard = allMatchingIds.getResults();
+
+        Map<String, ContentDTO> questionIdToQuestionMap = Maps.newHashMap();
+        for (ContentDTO content : questionsForGameboard) {
+            if (content != null) {
+                questionIdToQuestionMap.put(content.getId(), content);
+            }
+        }
+
+        return questionIdToQuestionMap;
     }
 
     /**
