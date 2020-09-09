@@ -6,7 +6,6 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 import uk.ac.cam.cl.dtg.util.locations.Location;
@@ -185,16 +184,6 @@ public interface IStatisticsManager {
      */
     Map<String, Object> getDetailedUserStatistics(final RegisteredUserDTO userOfInterest);
 
-    /**
-     * Utility method to get a load of question pages by id in one go.
-     *
-     * @param ids
-     *            to search for
-     * @return map of id to content object.
-     * @throws ContentManagerException
-     *             - if something goes wrong.
-     */
-    Map<String, ContentDTO> getQuestionMap(final Collection<String> ids) throws ContentManagerException;
 
 
 }
