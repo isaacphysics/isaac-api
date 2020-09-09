@@ -432,7 +432,7 @@ public class QuestionManager {
             if (questionPage instanceof IsaacQuestionPageDTO) {
                 String supersededBy = ((IsaacQuestionPageDTO) questionPage).getSupersededBy();
 
-                if (null != supersededBy && !supersededBy.equals("")) {
+                if (null == supersededBy || supersededBy.equals("")) {
                     List<QuestionPartState> questionStates = new ArrayList<>();
                     Map<String, List<QuestionValidationResponse>> questionPartAttempts = questionAttempts.get(questionPageId);
 
@@ -489,7 +489,7 @@ public class QuestionManager {
             if (questionPage instanceof IsaacQuestionPageDTO) {
                 String supersededBy = ((IsaacQuestionPageDTO) questionPage).getSupersededBy();
 
-                if (null != supersededBy && !supersededBy.equals("")) {
+                if (null == supersededBy || supersededBy.equals("")) {
                     for (QuestionDTO questionPart : getAllMarkableQuestionPartsDFSOrder(questionPageId)) {
                         if (questionPart.getId().equals(questionId) ) {
                             questions.add(questionPart);
