@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.segue.dto.content;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 
 import java.util.List;
@@ -24,7 +23,8 @@ import java.util.List;
  * DTO to provide information about the completion of parts of a question
  * 
  */
-public class QuestionCompletionDTO extends ContentDTO {
+public class QuestionCompletionDTO {
+    protected String id;
     protected List<QuestionPartState> questionPartStates;
 
     /**
@@ -33,10 +33,27 @@ public class QuestionCompletionDTO extends ContentDTO {
     public QuestionCompletionDTO() {}
 
     /**
+     * Gets the id
+     * @return the id
+     */
+    public String getId() {
+        return id;
+    }
+
+    /**
+     * Sets the id.
+     *
+     * @param id
+     *            the id to set
+     */
+    public void setId(final String id) {
+        this.id = id;
+    }
+
+    /**
      * Gets the list of question part states
      * @return the list of question part states
      */
-    @JsonIgnore
     public List<QuestionPartState> getState() {
         return questionPartStates;
     }

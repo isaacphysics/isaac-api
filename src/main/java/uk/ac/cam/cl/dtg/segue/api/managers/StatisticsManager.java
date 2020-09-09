@@ -430,7 +430,7 @@ public class StatisticsManager implements IStatisticsManager {
             // Loop through each Part of the Question:
             // TODO - We might be able to avoid using a GameManager here!
             // The question page content object is questionMap.get(question.getKey()) and we could search this instead!
-            for (QuestionDTO questionPart : gameManager.getAllMarkableQuestionPartsDFSOrder(question.getKey())) {
+            for (QuestionDTO questionPart : questionManager.getAllMarkableQuestionPartsDFSOrder(question.getKey())) {
 
                 boolean questionPartIsCorrect = false;  // Is this Part of the Question correct?
                 // Has the user attempted this part of the question at all?

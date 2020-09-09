@@ -133,34 +133,6 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
         }
     }
 
-    /**
-     * getAnonymousQuestionAttempts.
-     * @param anonymousId
-     *            to lookup
-     * @return the question pageId --> full questionId --> list of responses. (or null if no data)
-     */
-    @Override
-    public Map<String, Map<String, List<QuestionValidationResponse>>> getMostRecentAnonymousQuestionAttempts(
-            final String anonymousId, final Integer limit) throws SegueDatabaseException {
-        PreparedStatement pst;
-        try (Connection conn = database.getDatabaseConnection()) {
-            pst = conn.prepareStatement("SELECT temporary_app_data->'questionAttempts' AS question_attempts from temporary_user_store where id = ?" +
-                            "ORDER BY \"timestamp\" DESC LIMIT ?;"
-                    , Statement.RETURN_GENERATED_KEYS);
-
-            pst.setString(1, anonymousId);
-            pst.setInt(2, limit);
-
-            ResultSet resultSet = pst.executeQuery();
-
-            return convertResultsSetToAnonymousQuestionAttempts(resultSet);
-        } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
-        } catch (IOException e) {
-            throw new SegueDatabaseException("Unable to process json exception", e);
-        }
-    }
-
     private Map<String, Map<String, List<QuestionValidationResponse>>> convertResultsSetToAnonymousQuestionAttempts(ResultSet resultSet)
             throws SQLException, IOException {
         // are there any results
@@ -261,6 +233,27 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
                 questionPageIds.add(results.getString("question_page_id"));
             }
             return questionPageIds;
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        }
+    }
+
+    @Override
+    public List<String> getUnsolvedQuestions(final Long userId)
+            throws SegueDatabaseException {
+        PreparedStatement pst;
+        try (Connection conn = database.getDatabaseConnection()) {
+            pst = conn.prepareStatement("SELECT question_id from question_attempts WHERE user_id = ? " +
+                    "GROUP BY question_id " +
+                    "HAVING bool_or(correct) = false");
+            pst.setLong(1, userId);
+
+            ResultSet results = pst.executeQuery();
+            List<String> questionIds = new ArrayList<>();
+            while (results.next()) {
+                questionIds.add(results.getString("question_id"));
+            }
+            return questionIds;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }

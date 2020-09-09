@@ -61,6 +61,18 @@ public interface IQuestionAttemptManager {
             throws SegueDatabaseException;
 
     /**
+     * Get questions which have been attempted but not solved for a user.
+     *
+     * @param userId
+     *            - the id of the user to search for.
+     * @return the list of question ids or an empty list if the user has not yet registered any attempts.
+     * @throws SegueDatabaseException
+     *             - If there is a database error.
+     */
+    List<String> getUnsolvedQuestions(final Long userId)
+            throws SegueDatabaseException;
+
+    /**
      * A method that makes a single database request for a group of users and questions to get all of their attempt
      * information back.
      * 
@@ -98,17 +110,6 @@ public interface IQuestionAttemptManager {
      * @return List of questionpage --> question id --> list of QuestionResponses.
      */
     Map<String, Map<String, List<QuestionValidationResponse>>> getAnonymousQuestionAttempts(String anonymousId) throws SegueDatabaseException;
-
-    /**
-     * @param anonymousId
-     *            - some anonymous identifier
-     * @param limit
-     *            - the maximum number of question attempts to return
-     * @return List of questionpage --> question id --> list of QuestionResponses.
-     */
-    Map<String, Map<String, List<QuestionValidationResponse>>> getMostRecentAnonymousQuestionAttempts(String anonymousId, final Integer limit)
-            throws SegueDatabaseException;
-
 
     /**
      * Convenience method to merge anonymous user question attempts with registered user records.

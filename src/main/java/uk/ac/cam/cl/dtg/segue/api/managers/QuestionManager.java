@@ -24,14 +24,18 @@ import org.apache.commons.lang3.Validate;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import uk.ac.cam.cl.dtg.isaac.configuration.IsaacApplicationRegister;
 import uk.ac.cam.cl.dtg.isaac.dos.TestCase;
 import uk.ac.cam.cl.dtg.isaac.dos.TestQuestion;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacItemQuestionDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuickQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
@@ -47,6 +51,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.QuestionCompletionDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
@@ -62,7 +67,9 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatorUnavailableException;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -80,6 +87,7 @@ public class QuestionManager {
 
     private final ContentMapper mapper;
     private final IQuestionAttemptManager questionAttemptPersistenceManager;
+    private final IContentManager contentManager;
     /**
      * Create a default Question manager object.
      * 
@@ -88,9 +96,11 @@ public class QuestionManager {
      * @param questionPersistenceManager - for question attempt persistence.
      */
     @Inject
-    public QuestionManager(final ContentMapper mapper, final IQuestionAttemptManager questionPersistenceManager) {
+    public QuestionManager(final ContentMapper mapper, final IQuestionAttemptManager questionPersistenceManager,
+                           final IContentManager contentManager) {
         this.mapper = mapper;
         this.questionAttemptPersistenceManager = questionPersistenceManager;
+        this.contentManager = contentManager;
     }
 
     /**
@@ -388,9 +398,9 @@ public class QuestionManager {
     }
 
     /**
-     * getMostRecentQuestionAttemptsByUser. This method will return the most recent of the question attempts for a given user as a map.
+     * This method will return the most recent of the question attempts for a given user as a map.
      *
-     * @param user
+     * @param registeredUser
      *            - with the session information included.
      * @param limit
      *            - the maximum number of question attempts to return
@@ -398,10 +408,71 @@ public class QuestionManager {
      * @throws SegueDatabaseException
      *             - if there is a database error.
      */
-    public List<String> getMostRecentQuestionAttemptsByUser(
-            final RegisteredUserDTO registeredUser, final Integer limit) throws SegueDatabaseException {
+    public List<QuestionCompletionDTO> getMostRecentQuestionAttemptsByUser(
+            final RegisteredUserDTO registeredUser, final Integer limit) throws SegueDatabaseException, ContentManagerException {
         Validate.notNull(registeredUser);
-        return this.questionAttemptPersistenceManager.getMostRecentQuestionPageAttempts(registeredUser.getId(), limit);
+
+        List<String> questionPageIds = this.questionAttemptPersistenceManager.getMostRecentQuestionPageAttempts(registeredUser.getId(), limit);
+        Map<String, Map<String, List<QuestionValidationResponse>>> questionAttempts = this.getQuestionAttemptsByUser(registeredUser);
+
+        List<QuestionCompletionDTO> questionCompletions = new ArrayList<>();
+        for (String questionPageId : questionPageIds) {
+            List<QuestionPartState> questionStates = new ArrayList<>();
+            Map<String, List<QuestionValidationResponse>> questionPartAttempts = questionAttempts.get(questionPageId);
+
+            for (QuestionDTO questionPart : getAllMarkableQuestionPartsDFSOrder(questionPageId)) {
+                QuestionPartState state = QuestionPartState.NOT_ATTEMPTED;
+                if (questionPartAttempts.containsKey(questionPart.getId())) {
+                    List<QuestionValidationResponse> attempts = questionPartAttempts.get(questionPart.getId());
+                    state = QuestionPartState.INCORRECT;
+                    for (QuestionValidationResponse attempt : attempts) {
+                        if (attempt.isCorrect()) {
+                            state = QuestionPartState.CORRECT;
+                            break;
+                        }
+                    }
+                }
+                questionStates.add(state);
+            }
+
+            if (!questionStates.isEmpty()) {
+                QuestionCompletionDTO questionCompletionDTO = new QuestionCompletionDTO();
+                questionCompletionDTO.setState(questionStates);
+                questionCompletionDTO.setId(questionPageId);
+                questionCompletions.add(questionCompletionDTO);
+            }
+        }
+
+        return questionCompletions;
+    }
+
+    /**
+     * This method will return the questions which a user has attempted but never correctly answered.
+     *
+     * @param registeredUser
+     *            - with the session information included.
+     * @return map of question attempts (QuestionPageId -> QuestionID -> [QuestionValidationResponse] or an empty map.
+     * @throws SegueDatabaseException
+     *             - if there is a database error.
+     */
+    public List<QuestionDTO> getEasiestUnsolvedQuestions(
+            final RegisteredUserDTO registeredUser, final Integer limit) throws SegueDatabaseException, ContentManagerException {
+        Validate.notNull(registeredUser);
+        List<String> questionIds = this.questionAttemptPersistenceManager.getUnsolvedQuestions(registeredUser.getId());
+
+        List<QuestionDTO> questions = new ArrayList<>();
+        for (String questionId : questionIds) {
+            String questionPageId = questionId.split("\\|")[0];
+
+            for (QuestionDTO questionPart : getAllMarkableQuestionPartsDFSOrder(questionPageId)) {
+                if (questionPart.getId().equals(questionId) ) {
+                    questions.add(questionPart);
+                    break;
+                }
+            }
+        }
+        questions.sort(Comparator.nullsLast(Comparator.comparing(ContentDTO::getLevel,  Comparator.nullsLast(Comparator.naturalOrder()))));
+        return questions.subList(0, Math.min(limit, questions.size()));
     }
     
     /**
@@ -579,5 +650,72 @@ public class QuestionManager {
 
         return Response.ok(
             mapper.getAutoMapper().map(results, ResultsWrapper.class)).build();
+    }
+
+    /**
+     * Get all questions in the question page: depends on each question. This method will conduct a DFS traversal and
+     * ensure the collection is ordered as per the DFS.
+     *
+     * @param questionPageId
+     *            - results depend on each question having an id prefixed with the question page id.
+     * @return collection of markable question parts (questions).
+     * @throws ContentManagerException
+     *             if there is a problem with the content requested.
+     */
+    public Collection<QuestionDTO> getAllMarkableQuestionPartsDFSOrder(final String questionPageId)
+            throws ContentManagerException {
+        Validate.notBlank(questionPageId);
+
+        // do a depth first traversal of the question page to get the correct order of questions
+        ContentDTO questionPage = this.contentManager.getContentById(this.contentManager.getCurrentContentSHA(),
+                questionPageId);
+        List<ContentDTO> dfs = Lists.newArrayList();
+        dfs = depthFirstQuestionSearch(questionPage, dfs);
+
+        return this.filterQuestionParts(dfs);
+    }
+
+    /**
+     * We want to list the questions in the order they are seen.
+     * @param c - content to search
+     * @param result - the list of questions
+     * @return a list of questions ordered by DFS.
+     */
+    private List<ContentDTO> depthFirstQuestionSearch(final ContentDTO c, final List<ContentDTO> result) {
+        if (c == null || c.getChildren() == null || c.getChildren().size() == 0) {
+            return result;
+        }
+
+        for (ContentBaseDTO child : c.getChildren()) {
+            if (child instanceof QuestionDTO) {
+                result.add((QuestionDTO) child);
+                // assume that we can't have nested questions
+            } else {
+                depthFirstQuestionSearch((ContentDTO) child, result);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Utility method to extract a list of questionDTOs only.
+     *
+     * @param contentToFilter
+     *            list of content.
+     * @return list of question dtos.
+     */
+    private Collection<QuestionDTO> filterQuestionParts(final Collection<ContentDTO> contentToFilter) {
+        List<QuestionDTO> results = Lists.newArrayList();
+        for (ContentDTO possibleQuestion : contentToFilter) {
+
+            if (!(possibleQuestion instanceof QuestionDTO) || possibleQuestion instanceof IsaacQuickQuestionDTO) {
+                // we are not interested if this is not a question or if it is a quick question.
+                continue;
+            }
+            QuestionDTO question = (QuestionDTO) possibleQuestion;
+            results.add(question);
+        }
+
+        return results;
     }
 }

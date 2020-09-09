@@ -24,10 +24,8 @@ import io.swagger.annotations.ApiOperation;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import uk.ac.cam.cl.dtg.isaac.dos.TestCase;
 import uk.ac.cam.cl.dtg.isaac.dos.TestQuestion;
-import uk.ac.cam.cl.dtg.segue.api.managers.IStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -45,15 +43,12 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dos.IUserStreaksManager;
-import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionCompletionDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
@@ -66,6 +61,7 @@ import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -77,10 +73,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 /**
@@ -101,7 +95,6 @@ public class QuestionFacade extends AbstractSegueFacade {
     private final QuestionManager questionManager;
     private final UserBadgeManager userBadgeManager;
     private final UserAssociationManager userAssociationManager;
-    private final IStatisticsManager statisticsManager;
     private IMisuseMonitor misuseMonitor;
     private IUserStreaksManager userStreaksManager;
 
@@ -120,8 +113,6 @@ public class QuestionFacade extends AbstractSegueFacade {
      *            information.
      * @param logManager
      *            - An instance of the log manager used for recording usage of the CMS.
-     * @param statisticsManager
-     *            - Manager responsible for statistics.
 
      */
     @Inject
@@ -131,8 +122,7 @@ public class QuestionFacade extends AbstractSegueFacade {
                           final ILogManager logManager, final IMisuseMonitor misuseMonitor,
                           final UserBadgeManager userBadgeManager,
                           final IUserStreaksManager userStreaksManager,
-                          final UserAssociationManager userAssociationManager,
-                          final IStatisticsManager statisticsManager) {
+                          final UserAssociationManager userAssociationManager) {
         super(properties, logManager);
 
         this.questionManager = questionManager;
@@ -144,7 +134,6 @@ public class QuestionFacade extends AbstractSegueFacade {
         this.userStreaksManager = userStreaksManager;
         this.userBadgeManager = userBadgeManager;
         this.userAssociationManager = userAssociationManager;
-        this.statisticsManager = statisticsManager;
     }
 
     /**
@@ -460,14 +449,25 @@ public class QuestionFacade extends AbstractSegueFacade {
         }
     }
 
+    /**
+     * Return a list of recent question page completions the user has attempted.
+     *
+     * @param request
+     *            - the servlet request so we can find out if it is a known user.
+     * @param userIdOfInterest
+     *            - The user id of the user to get the attempts of.
+     * @param limit
+     *            - The limit on the number of results to return.
+     * @return Response containing a list of QuestionCompletion objects or containing a SegueErrorResponse.
+     */
     @GET
     @Path("/recent_questions/{user_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "",
-            notes = "")
+    @ApiOperation(value = "Get information about a user's most recently attempted question pages.")
     public Response getUserRecentQuestions(@Context final HttpServletRequest request,
-                                           @PathParam("user_id") final Long userIdOfInterest) {
+                                           @PathParam("user_id") final Long userIdOfInterest,
+                                           @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
         RegisteredUserDTO user;
         RegisteredUserDTO userOfInterestFull;
         UserSummaryDTO userOfInterestSummary;
@@ -476,36 +476,7 @@ public class QuestionFacade extends AbstractSegueFacade {
             userOfInterestFull = userManager.getUserDTOById(userIdOfInterest);
             userOfInterestSummary = userManager.convertToUserSummaryObject(userOfInterestFull);
             if (userAssociationManager.hasPermission(user, userOfInterestSummary)) {
-                List<String> questionPageIds = questionManager.getMostRecentQuestionAttemptsByUser(user, 10);
-                Map<String, ContentDTO> questionMap = statisticsManager.getQuestionMap(questionPageIds);
-                Map<String, Map<String, List<QuestionValidationResponse>>> questionAttempts = questionManager.getQuestionAttemptsByUser(userOfInterestFull);
-
-                List<QuestionCompletionDTO> questionCompletions = new ArrayList<>();
-                for (ContentDTO question : questionMap.values()) {
-                    if (question instanceof QuestionDTO) {
-                        List<QuestionPartState> questionStates = new ArrayList<>();
-                        Map<String, List<QuestionValidationResponse>> questionPartAttempts = questionAttempts.get(question.getId());
-
-                        for (ContentBaseDTO questionPart : question.getChildren()) {
-                            QuestionPartState state = QuestionPartState.NOT_ATTEMPTED;
-                            if (questionPartAttempts.containsKey(questionPart.getId())) {
-                                List<QuestionValidationResponse> attempts = questionPartAttempts.get(questionPart.getId());
-                                state = QuestionPartState.INCORRECT;
-                                for (QuestionValidationResponse attempt : attempts) {
-                                    if (attempt.isCorrect()) {
-                                        state = QuestionPartState.CORRECT;
-                                        break;
-                                    }
-                                }
-                            }
-                            questionStates.add(state);
-                        }
-
-                        QuestionCompletionDTO questionCompletionDTO = new QuestionCompletionDTO();
-                        questionCompletionDTO.setState(questionStates);
-                        questionCompletions.add(questionCompletionDTO);
-                    }
-                }
+                List<QuestionCompletionDTO> questionCompletions = questionManager.getMostRecentQuestionAttemptsByUser(userOfInterestFull, limit);
                 return Response.ok(questionCompletions).build();
             } else {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to view this users data.")
@@ -521,6 +492,54 @@ public class QuestionFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (ContentManagerException e) {
             String message = "Error whilst trying to access user recent questions; Content cannot be resolved";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        }
+    }
+
+    /**
+     * Return a list of easiest questions the user has attempted.
+     *
+     * @param request
+     *            - the servlet request so we can find out if it is a known user.
+     * @param userIdOfInterest
+     *            - The user id of the user to find the questions for.
+     * @param limit
+     *            - The limit on the number of results to return.
+     * @return Response containing a list of QuestionDTO objects or containing a SegueErrorResponse.
+     */
+    @GET
+    @Path("/easiest_unsolved/{user_id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @ApiOperation(value = "Gets a list of easiest questions unsolved by the user.")
+    public Response getUserEasiestUnsolvedQuestions(@Context final HttpServletRequest request,
+                                           @PathParam("user_id") final Long userIdOfInterest,
+                                           @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
+        RegisteredUserDTO user;
+        RegisteredUserDTO userOfInterestFull;
+        UserSummaryDTO userOfInterestSummary;
+        try {
+            user = userManager.getCurrentRegisteredUser(request);
+            userOfInterestFull = userManager.getUserDTOById(userIdOfInterest);
+            userOfInterestSummary = userManager.convertToUserSummaryObject(userOfInterestFull);
+            if (userAssociationManager.hasPermission(user, userOfInterestSummary)) {
+                List<QuestionDTO> questions = questionManager.getEasiestUnsolvedQuestions(userOfInterestFull, limit);
+                return Response.ok(questions).build();
+            } else {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to view this users data.")
+                        .toResponse();
+            }
+        } catch (NoUserLoggedInException e1) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (NoUserException e) {
+            return SegueErrorResponse.getResourceNotFoundResponse("No user found with this id");
+        } catch (SegueDatabaseException e) {
+            String message = "Error whilst trying to access unanswered questions.";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        } catch (ContentManagerException e) {
+            String message = "Error whilst trying to access user unanswered questions; Content cannot be resolved";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         }
