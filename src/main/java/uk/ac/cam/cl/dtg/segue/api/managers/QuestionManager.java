@@ -413,7 +413,7 @@ public class QuestionManager {
      *            - with the session information included.
      * @param limit
      *            - the maximum number of question attempts to return
-     * @return map of question attempts (QuestionPageId -> QuestionID -> [QuestionValidationResponse] or an empty map.
+     * @return list of question completion DTOs.
      * @throws SegueDatabaseException
      *             - if there is a database error.
      */
@@ -470,12 +470,14 @@ public class QuestionManager {
      *
      * @param registeredUser
      *            - with the session information included.
-     * @return map of question attempts (QuestionPageId -> QuestionID -> [QuestionValidationResponse] or an empty map.
+     * @param bookOnly
+     *            - Flag to only select questions with the book tag.
+     * @return List of questionDTOs.
      * @throws SegueDatabaseException
      *             - if there is a database error.
      */
     public List<QuestionDTO> getEasiestUnsolvedQuestions(
-            final RegisteredUserDTO registeredUser, final Integer limit) throws SegueDatabaseException, ContentManagerException {
+            final RegisteredUserDTO registeredUser, final Integer limit, final Boolean bookOnly) throws SegueDatabaseException, ContentManagerException {
         Validate.notNull(registeredUser);
         List<String> questionIds = this.questionAttemptPersistenceManager.getUnsolvedQuestions(registeredUser.getId());
 
@@ -487,8 +489,11 @@ public class QuestionManager {
             ContentDTO questionPage = questionMap.get(questionPageId);
 
             if (questionPage instanceof IsaacQuestionPageDTO) {
-                String supersededBy = ((IsaacQuestionPageDTO) questionPage).getSupersededBy();
+                if (bookOnly && !questionPage.getTags().contains("book")) {
+                    continue;
+                }
 
+                String supersededBy = ((IsaacQuestionPageDTO) questionPage).getSupersededBy();
                 if (null == supersededBy || supersededBy.equals("")) {
                     for (QuestionDTO questionPart : getAllMarkableQuestionPartsDFSOrder(questionPageId)) {
                         if (questionPart.getId().equals(questionId) ) {

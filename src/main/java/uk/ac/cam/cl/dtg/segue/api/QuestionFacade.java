@@ -506,6 +506,8 @@ public class QuestionFacade extends AbstractSegueFacade {
      *            - The user id of the user to find the questions for.
      * @param limit
      *            - The limit on the number of results to return.
+     * @param bookOnly
+     *            - Flag to only select questions with the book tag.
      * @return Response containing a list of QuestionDTO objects or containing a SegueErrorResponse.
      */
     @GET
@@ -514,8 +516,9 @@ public class QuestionFacade extends AbstractSegueFacade {
     @GZIP
     @ApiOperation(value = "Gets a list of easiest questions unsolved by the user.")
     public Response getUserEasiestUnsolvedQuestions(@Context final HttpServletRequest request,
-                                           @PathParam("user_id") final Long userIdOfInterest,
-                                           @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
+                                                    @PathParam("user_id") final Long userIdOfInterest,
+                                                    @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit,
+                                                    @DefaultValue("false") @QueryParam("bookOnly") final Boolean bookOnly) {
         RegisteredUserDTO user;
         RegisteredUserDTO userOfInterestFull;
         UserSummaryDTO userOfInterestSummary;
@@ -524,7 +527,7 @@ public class QuestionFacade extends AbstractSegueFacade {
             userOfInterestFull = userManager.getUserDTOById(userIdOfInterest);
             userOfInterestSummary = userManager.convertToUserSummaryObject(userOfInterestFull);
             if (userAssociationManager.hasPermission(user, userOfInterestSummary)) {
-                List<QuestionDTO> questions = questionManager.getEasiestUnsolvedQuestions(userOfInterestFull, limit);
+                List<QuestionDTO> questions = questionManager.getEasiestUnsolvedQuestions(userOfInterestFull, limit, bookOnly);
                 return Response.ok(questions).build();
             } else {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to view this users data.")
