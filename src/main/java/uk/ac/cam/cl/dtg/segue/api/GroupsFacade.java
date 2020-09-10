@@ -614,7 +614,7 @@ public class GroupsFacade extends AbstractSegueFacade {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
             // Check for abuse of this endpoint:
-            misuseMonitor.notifyEvent(user.getId().toString(), GroupManagerLookupMisuseHandler.class.toString());
+            misuseMonitor.notifyEvent(user.getId().toString(), GroupManagerLookupMisuseHandler.class.getSimpleName());
 
             RegisteredUserDTO userToAdd = this.userManager.getUserDTOByEmail(responseMap.get("email"));
             UserGroupDTO group = groupManager.getGroupById(groupId);

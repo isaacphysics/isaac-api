@@ -360,7 +360,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
 
         // Stop users logging in who have already locked their account.
         if (misuseMonitor.hasMisused(credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME).toLowerCase(),
-                SegueLoginMisuseHandler.class.toString())) {
+                SegueLoginMisuseHandler.class.getSimpleName())) {
             log.error("Segue Login Blocked for (" + credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME)
                     + "). Rate limited - too many logins.");
             return SegueErrorResponse.getRateThrottledResponse(rateThrottleMessage);
@@ -385,7 +385,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
         } catch (IncorrectCredentialsProvidedException | NoUserException | NoCredentialsAvailableException e) {
             try {
                 misuseMonitor.notifyEvent(credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME).toLowerCase(),
-                        SegueLoginMisuseHandler.class.toString());
+                        SegueLoginMisuseHandler.class.getSimpleName());
 
                 log.info("Incorrect credentials received for (" + credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME)
                         + "). Error reason: " + e.getMessage());
@@ -458,7 +458,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
             partiallyLoggedInUser = this.userManager.getPartiallyIdentifiedUser(request);
 
             if (misuseMonitor.hasMisused(partiallyLoggedInUser.getEmail().toLowerCase(),
-                    SegueLoginMisuseHandler.class.toString())) {
+                    SegueLoginMisuseHandler.class.getSimpleName())) {
 
                 log.error("Segue Login Blocked for (" + partiallyLoggedInUser.getEmail()
                         + ") during 2FA step. Rate limited - too many logins.");
@@ -478,7 +478,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
                     + "). Error reason: " + e.getMessage());
             try {
                 misuseMonitor.notifyEvent(partiallyLoggedInUser.getEmail().toLowerCase(),
-                        SegueLoginMisuseHandler.class.toString());
+                        SegueLoginMisuseHandler.class.getSimpleName());
 
                 return new SegueErrorResponse(Status.UNAUTHORIZED, "Incorrect code provided.").toResponse();
             } catch (SegueResourceMisuseException e1) {

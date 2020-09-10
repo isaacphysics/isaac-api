@@ -274,7 +274,7 @@ public class UsersFacade extends AbstractSegueFacade {
             }
         } else {
             try {
-                misuseMonitor.notifyEvent(RequestIPExtractor.getClientIpAddr(request), RegistrationMisuseHandler.class.toString());
+                misuseMonitor.notifyEvent(RequestIPExtractor.getClientIpAddr(request), RegistrationMisuseHandler.class.getSimpleName());
                 SegueMetrics.USER_REGISTRATION.inc();
                 return this.createUserObjectAndLogIn(request, response, registeredUser, newPassword, userPreferences);
             } catch (SegueResourceMisuseException e) {
@@ -354,7 +354,7 @@ public class UsersFacade extends AbstractSegueFacade {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
-            misuseMonitor.notifyEvent(currentUser.getEmail() + "_group_member_reset", PasswordResetRequestMisuseHandler.class.toString());
+            misuseMonitor.notifyEvent(currentUser.getEmail() + "_group_member_reset", PasswordResetRequestMisuseHandler.class.getSimpleName());
             SegueMetrics.PASSWORD_RESET.inc();
             userManager.resetPasswordRequest(userOfInterest);
 
@@ -416,7 +416,7 @@ public class UsersFacade extends AbstractSegueFacade {
         }
 
         try {
-            misuseMonitor.notifyEvent(userObject.getEmail(), PasswordResetRequestMisuseHandler.class.toString());
+            misuseMonitor.notifyEvent(userObject.getEmail(), PasswordResetRequestMisuseHandler.class.getSimpleName());
             userManager.resetPasswordRequest(userObject);
 
             this.getLogManager()
@@ -504,7 +504,7 @@ public class UsersFacade extends AbstractSegueFacade {
                     ImmutableMap.of(LOCAL_AUTH_EMAIL_FIELDNAME, userDTO.getEmail()));
 
             // we can reset the misuse monitor for incorrect logins now.
-            misuseMonitor.resetMisuseCount(userDTO.getEmail().toLowerCase(), SegueLoginMisuseHandler.class.toString());
+            misuseMonitor.resetMisuseCount(userDTO.getEmail().toLowerCase(), SegueLoginMisuseHandler.class.getSimpleName());
 
         } catch (InvalidTokenException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid password reset token.");

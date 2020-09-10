@@ -472,7 +472,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
             UserGroupDTO group = this.groupManager.getGroupById(associationToken.getGroupId());
 
             misuseMonitor.notifyEvent(currentRegisteredUser.getId().toString(),
-                    TokenOwnerLookupMisuseHandler.class.toString());
+                    TokenOwnerLookupMisuseHandler.class.getSimpleName());
 
             // add owner
             List<UserSummaryWithEmailAddressDTO> usersLinkedToToken = Lists.newArrayList();

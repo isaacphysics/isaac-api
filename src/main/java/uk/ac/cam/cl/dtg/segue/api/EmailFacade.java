@@ -295,7 +295,7 @@ public class EmailFacade extends AbstractSegueFacade {
                                                      @PathParam("token") final String token) {
 
         try {
-            misuseMonitor.notifyEvent(userId.toString(), EmailVerificationMisuseHandler.class.toString());
+            misuseMonitor.notifyEvent(userId.toString(), EmailVerificationMisuseHandler.class.getSimpleName());
             userManager.processEmailVerification(userId, token);
 
             // assume that if there are no exceptions that it worked.
@@ -339,7 +339,7 @@ public class EmailFacade extends AbstractSegueFacade {
                 throw new MissingRequiredFieldException("No email address was provided.");
             }
 
-            misuseMonitor.notifyEvent(email, EmailVerificationRequestMisuseHandler.class.toString());
+            misuseMonitor.notifyEvent(email, EmailVerificationRequestMisuseHandler.class.getSimpleName());
 
             userManager.emailVerificationRequest(request, email);
 

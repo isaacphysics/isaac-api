@@ -770,7 +770,7 @@ public class AdminFacade extends AbstractSegueFacade {
                         .toResponse();
             }
 
-            misuseMonitor.notifyEvent(currentUser.getId().toString(), UserSearchMisuseHandler.class.toString());
+            misuseMonitor.notifyEvent(currentUser.getId().toString(), UserSearchMisuseHandler.class.getSimpleName());
             
             if (!isUserAnAdmin(userManager, currentUser)
                     && (null == familyName || familyName.isEmpty())

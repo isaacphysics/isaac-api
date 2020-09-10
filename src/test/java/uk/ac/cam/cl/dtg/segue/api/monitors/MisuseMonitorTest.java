@@ -62,7 +62,7 @@ public class MisuseMonitorTest {
     @Test
     public final void misuseMonitorTokenOwnerLookup_checkForMisuse_emailShouldBeSentAndExceptionShouldOccur() {
         String userId = "289347298428";
-        String event = TokenOwnerLookupMisuseHandler.class.toString();
+        String event = TokenOwnerLookupMisuseHandler.class.getSimpleName();
 
         IMisuseMonitor misuseMonitor = new InMemoryMisuseMonitor();
         TokenOwnerLookupMisuseHandler tokenOwnerLookupMisuseHandler = new TokenOwnerLookupMisuseHandler(
@@ -109,7 +109,7 @@ public class MisuseMonitorTest {
     @Test
     public final void emailVerificationRequest_checkForMisuse_emailShouldBeSentAndExceptionShouldOccur() {
 
-        String event = EmailVerificationRequestMisuseHandler.class.toString();
+        String event = EmailVerificationRequestMisuseHandler.class.getSimpleName();
         
         IMisuseMonitor misuseMonitor = new InMemoryMisuseMonitor();
 
@@ -128,7 +128,7 @@ public class MisuseMonitorTest {
         try {
             //Register the misuse monitor
             if (misuseMonitor.hasMisused(user.getEmail(),
-                    EmailVerificationRequestMisuseHandler.class.toString())) {
+                    EmailVerificationRequestMisuseHandler.class.getSimpleName())) {
                 throw new SegueResourceMisuseException("Number of requests exceeded. Triggering Error Response");
             }
             
@@ -143,7 +143,7 @@ public class MisuseMonitorTest {
         try {
             //Register the misuse monitor
             if (misuseMonitor.hasMisused(user.getEmail(),
-                    EmailVerificationRequestMisuseHandler.class.toString())) {
+                    EmailVerificationRequestMisuseHandler.class.getSimpleName())) {
                 throw new SegueResourceMisuseException("Number of requests exceeded. Triggering Error Response");
             }
             
@@ -162,7 +162,7 @@ public class MisuseMonitorTest {
     @Test
     public final void userSearchRequest_checkForMisuse_emailShouldBeSentAndExceptionShouldOccur() {
 
-        String event = UserSearchMisuseHandler.class.toString();
+        String event = UserSearchMisuseHandler.class.getSimpleName();
 
         IMisuseMonitor misuseMonitor = new InMemoryMisuseMonitor();
 
@@ -181,7 +181,7 @@ public class MisuseMonitorTest {
         try {
             //Register the misuse monitor
             if (misuseMonitor.hasMisused(user.getId().toString(),
-                    UserSearchMisuseHandler.class.toString())) {
+                    UserSearchMisuseHandler.class.getSimpleName())) {
                 throw new SegueResourceMisuseException("Number of requests exceeded. Triggering Error Response");
             }
 
@@ -196,7 +196,7 @@ public class MisuseMonitorTest {
         try {
             //Register the misuse monitor
             if (misuseMonitor.hasMisused(user.getId().toString(),
-                    UserSearchMisuseHandler.class.toString())) {
+                    UserSearchMisuseHandler.class.getSimpleName())) {
                 throw new SegueResourceMisuseException("Number of requests exceeded. Triggering Error Response");
             }
 
