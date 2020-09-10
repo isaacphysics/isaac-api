@@ -180,12 +180,16 @@ public class GroupsFacade extends AbstractSegueFacade {
         try {
             RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
 
-            if (!isUserStaff(userManager, request) && !userId.equals(requestingUser.getId())) {
+            RegisteredUserDTO user;
+            if (userId.equals(requestingUser.getId())) {
+                user = requestingUser;
+            } else if (isUserStaff(userManager, requestingUser)) {
+                user = userManager.getUserDTOById(userId);
+            } else {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access the groups of another user.")
                         .toResponse();
             }
 
-            RegisteredUserDTO user = userManager.getUserDTOById(userId);
             List<UserGroupDTO> groups = groupManager.getGroupMembershipList(user);
 
             List<Map<String, Object>> results = Lists.newArrayList();
