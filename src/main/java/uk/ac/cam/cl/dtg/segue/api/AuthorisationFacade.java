@@ -146,12 +146,17 @@ public class AuthorisationFacade extends AbstractSegueFacade {
         try {
             RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
 
-            if (!isUserStaff(userManager, request) && !userId.equals(requestingUser.getId())) {
+            if (!isUserStaff(userManager, requestingUser) && !userId.equals(requestingUser.getId())) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access the associations of another user.")
                         .toResponse();
             }
 
-            RegisteredUserDTO user = userManager.getUserDTOById(userId);
+            RegisteredUserDTO user;
+            if (!userId.equals(requestingUser.getId())) {
+                user = userManager.getUserDTOById(userId);
+            } else {
+                user = requestingUser;
+            }
 
             List<Long> userIdsWithAccess = Lists.newArrayList();
             for (UserAssociation a : associationManager.getAssociations(user)) {
