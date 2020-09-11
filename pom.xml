@@ -10,7 +10,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <segue.version>2.13.2-SNAPSHOT</segue.version>
+        <segue.version>2.13.2</segue.version>
         <log4j.version>2.13.3</log4j.version>
         <resteasy.version>4.4.0.Final</resteasy.version>
         <guice.version>4.2.2</guice.version>
