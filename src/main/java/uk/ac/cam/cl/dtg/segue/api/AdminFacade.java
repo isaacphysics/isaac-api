@@ -1601,10 +1601,14 @@ public class AdminFacade extends AbstractSegueFacade {
             if (!isUserAnAdmin(userManager, user)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
-            misuseMonitor.resetMisuseCount(agentIdentifier, eventLabel);
-            log.info(String.format("Admin user (%s) reset misuse monitor '%s' for user (%s)!", user.getEmail(),
-                    eventLabel, agentIdentifier));
-            return Response.ok().build();
+            if (misuseMonitor.hasMisused(agentIdentifier, eventLabel)) {
+                misuseMonitor.resetMisuseCount(agentIdentifier, eventLabel);
+                log.info(String.format("Admin user (%s) reset misuse monitor '%s' for user (%s)!", user.getEmail(),
+                        eventLabel, agentIdentifier));
+                return Response.ok(ImmutableMap.of("status", "Reset successfully!")).build();
+            } else {
+                return Response.ok(ImmutableMap.of("status", "Nothing to reset.")).build();
+            }
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
