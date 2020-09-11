@@ -53,7 +53,7 @@ public interface IQuestionAttemptManager {
      *            - the id of the user to search for.
      * @param limit
      *            - the maximum number of question attempts to return
-     * @return the questionAttempts map or an empty map if the user has not yet registered any attempts.
+     * @return the list of question ids or an empty list if the user has not yet registered any attempts.
      * @throws SegueDatabaseException
      *             - If there is a database error.
      */
@@ -65,7 +65,7 @@ public interface IQuestionAttemptManager {
      *
      * @param userId
      *            - the id of the user to search for.
-     * @return the list of question ids or an empty list if the user has not yet registered any attempts.
+     * @return the list of question ids or an empty list if the user has no attempted but unsolved questions.
      * @throws SegueDatabaseException
      *             - If there is a database error.
      */

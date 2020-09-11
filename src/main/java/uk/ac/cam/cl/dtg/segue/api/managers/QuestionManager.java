@@ -29,7 +29,6 @@ import uk.ac.cam.cl.dtg.isaac.configuration.IsaacApplicationRegister;
 import uk.ac.cam.cl.dtg.isaac.dos.TestCase;
 import uk.ac.cam.cl.dtg.isaac.dos.TestQuestion;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacItemQuestionDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuickQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -52,7 +51,6 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.QuestionCompletionDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
@@ -64,14 +62,13 @@ import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 import uk.ac.cam.cl.dtg.segue.quiz.SpecifiesWith;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatorUnavailableException;
-import uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -407,109 +404,35 @@ public class QuestionManager {
     }
 
     /**
-     * This method will return the most recent of the question attempts for a given user as a map.
+     * This method will return the most recent of the question attempts for a given user.
      *
      * @param registeredUser
      *            - with the session information included.
      * @param limit
      *            - the maximum number of question attempts to return
-     * @return list of question completion DTOs.
+     * @return list of question ids.
      * @throws SegueDatabaseException
      *             - if there is a database error.
      */
-    public List<QuestionCompletionDTO> getMostRecentQuestionAttemptsByUser(
-            final RegisteredUserDTO registeredUser, final Integer limit) throws SegueDatabaseException, ContentManagerException {
+    public List<String> getMostRecentQuestionAttemptsByUser(
+            final RegisteredUserDTO registeredUser, final Integer limit) throws SegueDatabaseException {
         Validate.notNull(registeredUser);
-
-        List<String> questionPageIds = this.questionAttemptPersistenceManager.getMostRecentQuestionPageAttempts(registeredUser.getId(), limit);
-        Map<String, Map<String, List<QuestionValidationResponse>>> questionAttempts = this.getQuestionAttemptsByUser(registeredUser);
-        Map<String, ContentDTO> questionMap = getQuestionMap(questionPageIds);
-        List<QuestionCompletionDTO> questionCompletions = new ArrayList<>();
-
-        for (String questionPageId : questionPageIds) {
-            ContentDTO questionPage = questionMap.get(questionPageId);
-
-            if (questionPage instanceof IsaacQuestionPageDTO) {
-                String supersededBy = ((IsaacQuestionPageDTO) questionPage).getSupersededBy();
-
-                if (null == supersededBy || supersededBy.equals("")) {
-                    List<QuestionPartState> questionStates = new ArrayList<>();
-                    Map<String, List<QuestionValidationResponse>> questionPartAttempts = questionAttempts.get(questionPageId);
-
-                    for (QuestionDTO questionPart : getAllMarkableQuestionPartsDFSOrder(questionPageId)) {
-                        QuestionPartState state = QuestionPartState.NOT_ATTEMPTED;
-
-                        if (questionPartAttempts.containsKey(questionPart.getId())) {
-                            List<QuestionValidationResponse> attempts = questionPartAttempts.get(questionPart.getId());
-                            state = QuestionPartState.INCORRECT;
-                            for (QuestionValidationResponse attempt : attempts) {
-                                if (attempt.isCorrect()) {
-                                    state = QuestionPartState.CORRECT;
-                                    break;
-                                }
-                            }
-                        }
-                        questionStates.add(state);
-                    }
-
-                    if (!questionStates.isEmpty()) {
-                        QuestionCompletionDTO questionCompletionDTO = new QuestionCompletionDTO();
-                        questionCompletionDTO.setState(questionStates);
-                        questionCompletionDTO.setId(questionPageId);
-                        questionCompletions.add(questionCompletionDTO);
-                    }
-                }
-            }
-        }
-
-        return questionCompletions;
+        return this.questionAttemptPersistenceManager.getMostRecentQuestionPageAttempts(registeredUser.getId(), limit);
     }
 
     /**
-     * This method will return the questions which a user has attempted but never correctly answered.
+     * This method will return the question ids which a user has attempted but never correctly answered.
      *
      * @param registeredUser
      *            - with the session information included.
-     * @param bookOnly
-     *            - Flag to only select questions with the book tag.
-     * @return List of questionDTOs.
+     * @return List of question ids.
      * @throws SegueDatabaseException
      *             - if there is a database error.
      */
-    public List<QuestionDTO> getEasiestUnsolvedQuestions(
-            final RegisteredUserDTO registeredUser, final Integer limit, final Boolean bookOnly) throws SegueDatabaseException, ContentManagerException {
+    public List<String> getUnsolvedQuestions(
+            final RegisteredUserDTO registeredUser) throws SegueDatabaseException {
         Validate.notNull(registeredUser);
-        List<String> questionIds = this.questionAttemptPersistenceManager.getUnsolvedQuestions(registeredUser.getId());
-
-        List<QuestionDTO> questions = new ArrayList<>();
-        for (String questionId : questionIds) {
-            String questionPageId = questionId.split("\\|")[0];
-            Map<String, ContentDTO> questionMap = getQuestionMap(Collections.singletonList(questionPageId));
-
-            ContentDTO questionPage = questionMap.get(questionPageId);
-
-            if (questionPage instanceof IsaacQuestionPageDTO) {
-                if (bookOnly && !questionPage.getTags().contains("book")) {
-                    continue;
-                }
-
-                String supersededBy = ((IsaacQuestionPageDTO) questionPage).getSupersededBy();
-                if (null == supersededBy || supersededBy.equals("")) {
-                    for (QuestionDTO questionPart : getAllMarkableQuestionPartsDFSOrder(questionPageId)) {
-                        if (questionPart.getId().equals(questionId) ) {
-                            questionPart.setTitle(questionPage.getTitle());
-                            questionPart.setSubtitle(questionPage.getSubtitle());
-                            questionPart.setTags(questionPage.getTags());
-                            questionPart.setLevel(questionPage.getLevel());
-                            questions.add(questionPart);
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        questions.sort(Comparator.nullsLast(Comparator.comparing(ContentDTO::getLevel,  Comparator.nullsLast(Comparator.naturalOrder()))));
-        return questions.subList(0, Math.min(limit, questions.size()));
+        return this.questionAttemptPersistenceManager.getUnsolvedQuestions(registeredUser.getId());
     }
     
     /**

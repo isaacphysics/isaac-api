@@ -899,6 +899,85 @@ public class GameManager {
     }
 
     /**
+     * This method will return the most recent of the question attempts for a given user as a map.
+     *
+     * @param registeredUser
+     *            - the user to get attempts of.
+     * @param limit
+     *            - the maximum number of question attempts to return
+     * @return list of GameboardItems.
+     * @throws SegueDatabaseException
+     *             - if there is a database error.
+     */
+    public List<GameboardItem> getMostRecentQuestionAttemptsByUser(
+            final RegisteredUserDTO registeredUser, final Integer limit) throws SegueDatabaseException, ContentManagerException {
+        Validate.notNull(registeredUser);
+
+        List<String> questionPageIds = questionManager.getMostRecentQuestionAttemptsByUser(registeredUser, limit);
+        Map<String, ContentDTO> questionMap = questionManager.getQuestionMap(questionPageIds);
+        Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts = questionManager.getQuestionAttemptsByUser(registeredUser);
+        List<GameboardItem> questions = new ArrayList<>();
+
+        for (String questionPageId : questionPageIds) {
+            ContentDTO content = questionMap.get(questionPageId);
+
+            if (content instanceof IsaacQuestionPageDTO) {
+                IsaacQuestionPageDTO qp = (IsaacQuestionPageDTO) content;
+                if (qp.getSupersededBy() != null && !qp.getSupersededBy().equals("")) {
+                    // This question has been superseded. Don't include it.
+                    continue;
+                }
+                GameboardItem questionInfo = this.gameboardPersistenceManager.convertToGameboardItem(content);
+                this.augmentGameItemWithAttemptInformation(questionInfo, usersQuestionAttempts);
+                questions.add(questionInfo);
+            }
+        }
+        return questions;
+    }
+
+    /**
+     * This method will return the questions which a user has attempted but never correctly answered.
+     *
+     * @param registeredUser
+     *            - the user to get attempts of.
+     * @param bookOnly
+     *            - Flag to only select questions with the book tag.
+     * @return List of GameboardItems.
+     * @throws SegueDatabaseException
+     *             - if there is a database error.
+     */
+    public List<GameboardItem> getEasiestUnsolvedQuestions(
+            final RegisteredUserDTO registeredUser, final Integer limit, final Boolean bookOnly) throws SegueDatabaseException, ContentManagerException {
+        Validate.notNull(registeredUser);
+        List<String> questionPageIds = questionManager.getUnsolvedQuestions(registeredUser);
+        Map<String, ContentDTO> questionMap = questionManager.getQuestionMap(questionPageIds);
+        Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts = questionManager.getQuestionAttemptsByUser(registeredUser);
+
+        List<GameboardItem> questions = new ArrayList<>();
+        for (String questionPageId : questionPageIds) {
+            ContentDTO content = questionMap.get(questionPageId);
+
+            if (content instanceof IsaacQuestionPageDTO) {
+                if (bookOnly && !content.getTags().contains("book")) {
+                    // Only interested in books, this is not a book. Skip it.
+                    continue;
+                }
+
+                IsaacQuestionPageDTO qp = (IsaacQuestionPageDTO) content;
+                if (qp.getSupersededBy() != null && !qp.getSupersededBy().equals("")) {
+                    // This question has been superseded. Don't include it.
+                    continue;
+                }
+                GameboardItem questionInfo = this.gameboardPersistenceManager.convertToGameboardItem(content);
+                this.augmentGameItemWithAttemptInformation(questionInfo, usersQuestionAttempts);
+                questions.add(questionInfo);
+            }
+        }
+        questions.sort(Comparator.nullsLast(Comparator.comparing(GameboardItem::getLevel,  Comparator.nullsLast(Comparator.naturalOrder()))));
+        return questions.subList(0, Math.min(limit, questions.size()));
+    }
+
+    /**
      * AugmentGameItemWithAttemptInformation
      * 
      * This method will calculate the question state for use in gameboards based on the question.

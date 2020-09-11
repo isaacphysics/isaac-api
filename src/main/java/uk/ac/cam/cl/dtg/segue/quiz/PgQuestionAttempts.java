@@ -244,7 +244,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             pst = conn.prepareStatement("SELECT SUBSTRING(question_id, 1, STRPOS(question_id, '|') - 1) AS question_page_id, MAX(\"timestamp\") AS latest_timestamp " +
                     "FROM question_attempts WHERE user_id = ? " +
                     "GROUP BY question_page_id " +
-                    " ORDER BY latest_timestamp DESC LIMIT ?");
+                    "ORDER BY latest_timestamp DESC LIMIT ?");
             pst.setLong(1, userId);
             pst.setInt(2, limit);
 
@@ -264,17 +264,20 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             throws SegueDatabaseException {
         PreparedStatement pst;
         try (Connection conn = database.getDatabaseConnection()) {
-            pst = conn.prepareStatement("SELECT question_id from question_attempts WHERE user_id = ? " +
+            // Perform nested query to extract the page ids with at least one question which has been attempted but never solved
+            pst = conn.prepareStatement("SELECT SUBSTRING(question_id, 1, STRPOS(question_id, '|') - 1) AS question_page_id " +
+                    "FROM (SELECT question_id from question_attempts WHERE user_id = ? " +
                     "GROUP BY question_id " +
-                    "HAVING bool_or(correct) = false");
+                    "HAVING bool_or(correct) = false) AS unsolved_question_parts " +
+                    "GROUP BY question_page_id");
             pst.setLong(1, userId);
 
             ResultSet results = pst.executeQuery();
-            List<String> questionIds = new ArrayList<>();
+            List<String> questionPageIds = new ArrayList<>();
             while (results.next()) {
-                questionIds.add(results.getString("question_id"));
+                questionPageIds.add(results.getString("question_page_id"));
             }
-            return questionIds;
+            return questionPageIds;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }

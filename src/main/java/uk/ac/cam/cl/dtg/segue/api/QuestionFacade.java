@@ -49,8 +49,6 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.QuestionCompletionDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -61,7 +59,6 @@ import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -446,105 +443,6 @@ public class QuestionFacade extends AbstractSegueFacade {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Bad request - " + e.getMessage(), e);
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
-        }
-    }
-
-    /**
-     * Return a list of recent question page completions the user has attempted.
-     *
-     * @param request
-     *            - the servlet request so we can find out if it is a known user.
-     * @param userIdOfInterest
-     *            - The user id of the user to get the attempts of.
-     * @param limit
-     *            - The limit on the number of results to return.
-     * @return Response containing a list of QuestionCompletion objects or containing a SegueErrorResponse.
-     */
-    @GET
-    @Path("/recent_questions/{user_id}")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @ApiOperation(value = "Get information about a user's most recently attempted question pages.")
-    public Response getUserRecentQuestions(@Context final HttpServletRequest request,
-                                           @PathParam("user_id") final Long userIdOfInterest,
-                                           @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
-        RegisteredUserDTO user;
-        RegisteredUserDTO userOfInterestFull;
-        UserSummaryDTO userOfInterestSummary;
-        try {
-            user = userManager.getCurrentRegisteredUser(request);
-            userOfInterestFull = userManager.getUserDTOById(userIdOfInterest);
-            userOfInterestSummary = userManager.convertToUserSummaryObject(userOfInterestFull);
-            if (userAssociationManager.hasPermission(user, userOfInterestSummary)) {
-                List<QuestionCompletionDTO> questionCompletions = questionManager.getMostRecentQuestionAttemptsByUser(userOfInterestFull, limit);
-                return Response.ok(questionCompletions).build();
-            } else {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to view this users data.")
-                        .toResponse();
-            }
-        } catch (NoUserLoggedInException e1) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (NoUserException e) {
-            return SegueErrorResponse.getResourceNotFoundResponse("No user found with this id");
-        } catch (SegueDatabaseException e) {
-            String message = "Error whilst trying to access recently answered questions.";
-            log.error(message, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
-        } catch (ContentManagerException e) {
-            String message = "Error whilst trying to access user recent questions; Content cannot be resolved";
-            log.error(message, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
-        }
-    }
-
-    /**
-     * Return a list of easiest questions the user has attempted.
-     *
-     * @param request
-     *            - the servlet request so we can find out if it is a known user.
-     * @param userIdOfInterest
-     *            - The user id of the user to find the questions for.
-     * @param limit
-     *            - The limit on the number of results to return.
-     * @param bookOnly
-     *            - Flag to only select questions with the book tag.
-     * @return Response containing a list of QuestionDTO objects or containing a SegueErrorResponse.
-     */
-    @GET
-    @Path("/easiest_unsolved/{user_id}")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @ApiOperation(value = "Gets a list of easiest questions unsolved by the user.")
-    public Response getUserEasiestUnsolvedQuestions(@Context final HttpServletRequest request,
-                                                    @PathParam("user_id") final Long userIdOfInterest,
-                                                    @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit,
-                                                    @DefaultValue("false") @QueryParam("bookOnly") final Boolean bookOnly) {
-        RegisteredUserDTO user;
-        RegisteredUserDTO userOfInterestFull;
-        UserSummaryDTO userOfInterestSummary;
-        try {
-            user = userManager.getCurrentRegisteredUser(request);
-            userOfInterestFull = userManager.getUserDTOById(userIdOfInterest);
-            userOfInterestSummary = userManager.convertToUserSummaryObject(userOfInterestFull);
-            if (userAssociationManager.hasPermission(user, userOfInterestSummary)) {
-                List<QuestionDTO> questions = questionManager.getEasiestUnsolvedQuestions(userOfInterestFull, limit, bookOnly);
-                return Response.ok(questions).build();
-            } else {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to view this users data.")
-                        .toResponse();
-            }
-        } catch (NoUserLoggedInException e1) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (NoUserException e) {
-            return SegueErrorResponse.getResourceNotFoundResponse("No user found with this id");
-        } catch (SegueDatabaseException e) {
-            String message = "Error whilst trying to access unanswered questions.";
-            log.error(message, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
-        } catch (ContentManagerException e) {
-            String message = "Error whilst trying to access user unanswered questions; Content cannot be resolved";
-            log.error(message, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         }
     }
 }
