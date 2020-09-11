@@ -497,6 +497,9 @@ public class QuestionManager {
                 if (null == supersededBy || supersededBy.equals("")) {
                     for (QuestionDTO questionPart : getAllMarkableQuestionPartsDFSOrder(questionPageId)) {
                         if (questionPart.getId().equals(questionId) ) {
+                            questionPart.setTitle(questionPage.getTitle());
+                            questionPart.setSubtitle(questionPage.getSubtitle());
+                            questionPart.setTags(questionPage.getTags());
                             questionPart.setLevel(questionPage.getLevel());
                             questions.add(questionPart);
                             break;
