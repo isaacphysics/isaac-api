@@ -876,6 +876,11 @@ public class UserAuthenticationManager {
         String partialLoginFlagString = null;
 
         try {
+            if (partialLoginFlag) {
+                // use shortened expiry time if partial login
+                sessionExpiryTimeInSeconds = PARTIAL_EXPIRY_TIME_IN_SECONDS;
+            }
+
             Calendar calendar = Calendar.getInstance();
             calendar.add(Calendar.SECOND, sessionExpiryTimeInSeconds);
             String sessionExpiryDate = sessionDateFormat.format(calendar.getTime());
@@ -888,8 +893,6 @@ public class UserAuthenticationManager {
             if (partialLoginFlag) {
                 partialLoginFlagString = String.valueOf(true);
                 sessionInformationBuilder.put(PARTIAL_LOGIN_FLAG, partialLoginFlagString);
-                // use shortened expiry time if partial login
-                sessionExpiryTimeInSeconds = PARTIAL_EXPIRY_TIME_IN_SECONDS;
             }
 
             String sessionHMAC = calculateSessionHMAC(hmacKey, userId, sessionExpiryDate, userSessionToken, partialLoginFlagString);
