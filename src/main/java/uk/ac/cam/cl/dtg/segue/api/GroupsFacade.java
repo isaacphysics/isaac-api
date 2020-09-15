@@ -20,8 +20,14 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
+import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -33,6 +39,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.GroupMembershipStatus;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
@@ -57,8 +64,11 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
@@ -73,6 +83,9 @@ public class GroupsFacade extends AbstractSegueFacade {
     private final UserAccountManager userManager;
 
     private static final Logger log = LoggerFactory.getLogger(GroupsFacade.class);
+    private final AssignmentManager assignmentManager;
+    private final GameManager gameManager;
+
     private final GroupManager groupManager;
     private final UserAssociationManager associationManager;
     private final UserBadgeManager userBadgeManager;
@@ -80,21 +93,24 @@ public class GroupsFacade extends AbstractSegueFacade {
 
     /**
      * Create an instance of the authentication Facade.
-     *
-     * @param properties          - properties loader for the application
+     *  @param properties          - properties loader for the application
      * @param userManager         - user manager for the application
      * @param logManager          - so we can log interesting events.
+     * @param assignmentManager
      * @param groupManager        - so that we can manage groups.
      * @param associationsManager - so we can decide what information is allowed to be exposed.
      */
     @Inject
     public GroupsFacade(final PropertiesLoader properties, final UserAccountManager userManager,
-                        final ILogManager logManager, final GroupManager groupManager,
+                        final ILogManager logManager, AssignmentManager assignmentManager,
+                        final GameManager gameManager, final GroupManager groupManager,
                         final UserAssociationManager associationsManager,
                         final UserBadgeManager userBadgeManager,
                         final IMisuseMonitor misuseMonitor) {
         super(properties, logManager);
         this.userManager = userManager;
+        this.assignmentManager = assignmentManager;
+        this.gameManager = gameManager;
         this.groupManager = groupManager;
         this.associationManager = associationsManager;
         this.userBadgeManager = userBadgeManager;
@@ -701,6 +717,51 @@ public class GroupsFacade extends AbstractSegueFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (NoUserException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "User specified does not exist.").toResponse();
+        }
+    }
+
+    @GET
+    @Path("{group_id}/progress")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Get the progress across all the assignments of the group members.")
+    public Response getGroupProgress(@Context final HttpServletRequest request, @PathParam("group_id") final Long groupId) {
+        try {
+            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
+            UserGroupDTO group = groupManager.getGroupById(groupId);
+            if (!GroupManager.isOwnerOrAdditionalManager(group, currentUser.getId()) &&
+                !isUserAnAdmin(userManager, currentUser)) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "You can only view the results of assignments that you own.").toResponse();
+            }
+
+            Collection<AssignmentDTO> assignments = assignmentManager.getAssignmentsByGroup(group.getId());
+            if (assignments.size() == 0) {
+                return Response.noContent().build();
+            }
+            List<RegisteredUserDTO> groupMembers = groupManager.getUsersInGroup(group).stream()
+                    .filter(groupMember -> associationManager.hasPermission(currentUser, groupMember))
+                    .collect(Collectors.toList());
+            if (groupMembers.size() == 0) {
+                return Response.noContent().build();
+            }
+            List<String> gameboardsIds = assignments.stream().map(AssignmentDTO::getGameboardId)
+                    .collect(Collectors.toList());
+            List<GameboardDTO> gameboards = gameManager.getGameboards(gameboardsIds);
+            // gameboards.stream().map(gameboard -> gameManager.gatherGameProgressData(groupMembers, gameboard));
+            List<List<ImmutablePair<RegisteredUserDTO, List<GameboardItem>>>> userProgressData = new ArrayList<>();
+            for (GameboardDTO gameboard : gameboards) {
+                userProgressData.add(gameManager.gatherGameProgressData(groupMembers, gameboard));
+            }
+
+            return Response.ok(userProgressData).build();
+        } catch (SegueDatabaseException e) {
+            log.error("Database error while trying to get group progress for a group. ", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (ContentManagerException e) {
+            // TODO Better error?
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Content Manager error", e).toResponse();
         }
     }
 }
