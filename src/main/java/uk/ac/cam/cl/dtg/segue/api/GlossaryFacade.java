@@ -47,6 +47,7 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.transform.Result;
 import java.io.IOException;
 import java.util.*;
 
@@ -145,9 +146,9 @@ public class GlossaryFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Please specify a term_id.").toResponse();
         }
 
-        Content c = null;
+        ResultsWrapper<ContentDTO> c = null;
         try {
-            c = this.contentManager.getContentDOById(this.contentIndex, term_id);
+            c = this.contentManager.getByIdPrefix(this.contentIndex, term_id, 0, 10000);
             if (null == c) {
                 SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "No glossary term found with id: " + term_id);
                 log.debug(error.getErrorMessage());

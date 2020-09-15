@@ -305,7 +305,7 @@ public class QuestionFacade extends AbstractSegueFacade {
                 try {
                     // Monitor misuse on a per-question per-registered user basis, with higher limits:
                     misuseMonitor.notifyEvent(((RegisteredUserDTO) currentUser).getId().toString() + "|" + questionId,
-                            QuestionAttemptMisuseHandler.class.toString());
+                            QuestionAttemptMisuseHandler.class.getSimpleName());
                 } catch (SegueResourceMisuseException e) {
                     this.getLogManager().logEvent(currentUser, request, SegueLogType.QUESTION_ATTEMPT_RATE_LIMITED, response.getEntity());
                     String message = "You have made too many attempts at this question part. Please try again later.";
@@ -315,7 +315,7 @@ public class QuestionFacade extends AbstractSegueFacade {
                 try {
                     // Monitor misuse on a per-question per-anonymous user basis:
                     misuseMonitor.notifyEvent(((AnonymousUserDTO) currentUser).getSessionId() + "|" + questionId,
-                            AnonQuestionAttemptMisuseHandler.class.toString());
+                            AnonQuestionAttemptMisuseHandler.class.getSimpleName());
                 } catch (SegueResourceMisuseException e) {
                     this.getLogManager().logEvent(currentUser, request, SegueLogType.QUESTION_ATTEMPT_RATE_LIMITED, response.getEntity());
                     String message = "You have made too many attempts at this question part. Please log in or try again later.";
@@ -327,7 +327,7 @@ public class QuestionFacade extends AbstractSegueFacade {
                     // to save server load. Since this occurs after the anon user notify event, that will catch most
                     // misuse and this will catch misuse ignoring cookies or with repeated new anon accounts.
                     misuseMonitor.notifyEvent(RequestIPExtractor.getClientIpAddr(request),
-                            IPQuestionAttemptMisuseHandler.class.toString());
+                            IPQuestionAttemptMisuseHandler.class.getSimpleName());
                 } catch (SegueResourceMisuseException e) {
                     this.getLogManager().logEvent(currentUser, request, SegueLogType.QUESTION_ATTEMPT_RATE_LIMITED, response.getEntity());
                     String message = "Too many question attempts! Please log in or try again later.";

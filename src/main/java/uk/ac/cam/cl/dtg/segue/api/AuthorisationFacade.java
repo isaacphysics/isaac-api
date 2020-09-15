@@ -104,10 +104,12 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     }
 
     /**
-     * Get all users who can see my data.
-     * 
+     * Get all users who can see the current user's data.
+     *
      * @param request
      *            - so we can identify the current user.
+     * @throws NoUserException
+     *            - when the target user cannot be found.
      * @return List of user associations.
      */
     @GET
@@ -115,9 +117,44 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @ApiOperation(value = "List all users granted access to the current user's data.")
-    public Response getUsersWithAccess(@Context final HttpServletRequest request) {
+    public Response getUsersWithAccess(@Context final HttpServletRequest request) throws NoUserException {
         try {
-            RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+            RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
+            return getUsersWithAccessSpecificUser(request, requestingUser.getId());
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
+    }
+
+    /**
+     * Get all users who can see the specified user's data.
+     * 
+     * @param request
+     *            - so we can identify the current user.
+     * @param userId
+     *            - the user id we want the associations of.
+     * @throws NoUserException
+     *            - when the target user cannot be found.
+     * @return List of user associations.
+     */
+    @GET
+    @Path("/{userId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @ApiOperation(value = "List all users granted access to the specified user's data.")
+    public Response getUsersWithAccessSpecificUser(@Context final HttpServletRequest request, @PathParam("userId") Long userId) throws NoUserException {
+        try {
+            RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
+
+            RegisteredUserDTO user;
+            if (userId.equals(requestingUser.getId())) {
+                user = requestingUser;
+            } else if (isUserStaff(userManager, requestingUser)) {
+                user = userManager.getUserDTOById(userId);
+            } else {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access the associations of another user.")
+                        .toResponse();
+            }
 
             List<Long> userIdsWithAccess = Lists.newArrayList();
             for (UserAssociation a : associationManager.getAssociations(user)) {
@@ -289,10 +326,12 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     }
 
     /**
-     * Get all users whose data I can see.
-     * 
+     * Get all users whose data the current user can see.
+     *
      * @param request
      *            - so we can identify the current user.
+     * @throws NoUserException
+     *            - when the target user cannot be found.
      * @return List of user associations.
      */
     @GET
@@ -300,9 +339,44 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @ApiOperation(value = "List all users the current user has been granted access by.")
-    public Response getCurrentAccessRights(@Context final HttpServletRequest request) {
+    public Response getCurrentAccessRights(@Context final HttpServletRequest request) throws NoUserException {
         try {
-            RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+            RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
+            return getCurrentAccessRightsForSpecificUser(request, requestingUser.getId());
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
+    }
+
+    /**
+     * Get all users whose data the specified user can see.
+     * 
+     * @param request
+     *            - so we can identify the current user.
+     * @param userId
+     *            - the id of the user we want the access rights of.
+     * @throws NoUserException
+     *            - when the target user cannot be found.
+     * @return List of user associations.
+     */
+    @GET
+    @Path("/other_users/{userId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @ApiOperation(value = "List all users the specified user has been granted access by.")
+    public Response getCurrentAccessRightsForSpecificUser(@Context final HttpServletRequest request, @PathParam("userId") Long userId) throws NoUserException{
+        try {
+            RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
+
+            RegisteredUserDTO user;
+            if (userId.equals(requestingUser.getId())) {
+                user = requestingUser;
+            } else if (isUserStaff(userManager, requestingUser)) {
+                user = userManager.getUserDTOById(userId);
+            } else {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access the associations of another user.")
+                        .toResponse();
+            }
 
             List<Long> userIdsGrantingAccess = Lists.newArrayList();
             for (UserAssociation a : associationManager.getAssociationsForOthers(user)) {
@@ -398,7 +472,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
             UserGroupDTO group = this.groupManager.getGroupById(associationToken.getGroupId());
 
             misuseMonitor.notifyEvent(currentRegisteredUser.getId().toString(),
-                    TokenOwnerLookupMisuseHandler.class.toString());
+                    TokenOwnerLookupMisuseHandler.class.getSimpleName());
 
             // add owner
             List<UserSummaryWithEmailAddressDTO> usersLinkedToToken = Lists.newArrayList();

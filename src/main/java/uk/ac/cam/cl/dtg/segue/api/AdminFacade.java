@@ -42,6 +42,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.api.monitors.UserSearchMisuseHandler;
@@ -135,7 +136,7 @@ public class AdminFacade extends AbstractSegueFacade {
 
     private final AbstractUserPreferenceManager userPreferenceManager;
     private final EventBookingManager eventBookingManager;
-
+    private final UserAssociationManager associationManager;
     private final IMisuseMonitor misuseMonitor;
 
     /**
@@ -157,6 +158,8 @@ public class AdminFacade extends AbstractSegueFacade {
      *            - for looking up school information
      * @param eventBookingManager
      *            - for using the event booking system
+     * @param associationManager
+     *            - so that we can create associations.
      * @param misuseMonitor
      *            - misuse monitor.
      */
@@ -165,7 +168,8 @@ public class AdminFacade extends AbstractSegueFacade {
                        final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final ILogManager logManager,
                        final StatisticsManager statsManager, final LocationManager locationManager,
                        final SchoolListReader schoolReader, final AbstractUserPreferenceManager userPreferenceManager,
-                       final EventBookingManager eventBookingManager, final IMisuseMonitor misuseMonitor) {
+                       final EventBookingManager eventBookingManager, final UserAssociationManager associationManager,
+                       final IMisuseMonitor misuseMonitor) {
         super(properties, logManager);
         this.userManager = userManager;
         this.contentManager = contentManager;
@@ -175,6 +179,7 @@ public class AdminFacade extends AbstractSegueFacade {
         this.schoolReader = schoolReader;
         this.userPreferenceManager = userPreferenceManager;
         this.eventBookingManager = eventBookingManager;
+        this.associationManager = associationManager;
         this.misuseMonitor = misuseMonitor;
     }
 
@@ -765,7 +770,7 @@ public class AdminFacade extends AbstractSegueFacade {
                         .toResponse();
             }
 
-            misuseMonitor.notifyEvent(currentUser.getId().toString(), UserSearchMisuseHandler.class.toString());
+            misuseMonitor.notifyEvent(currentUser.getId().toString(), UserSearchMisuseHandler.class.getSimpleName());
             
             if (!isUserAnAdmin(userManager, currentUser)
                     && (null == familyName || familyName.isEmpty())
@@ -1570,6 +1575,42 @@ public class AdminFacade extends AbstractSegueFacade {
                     "Database error while looking up number of anonymous users.", e);
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
+        }
+    }
+
+    /**
+     * This method will reset the misuse monitor for the specified event and agent identifier.
+     *
+     * @param request
+     *            - to help determine access rights.
+     * @param eventLabel
+     *            - the misuse monitor eventLabel, i.e. what type of misuse monitor
+     * @param agentIdentifier
+     *            - the misuse monitor agentIdentifier, i.e. which user to reset the count for
+     * @return Confirmtation of success, or error message on incorrect role.
+     */
+    @POST
+    @Path("/reset_misuse_monitor/{event_label}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Reset a misuse monitor counter to zero.")
+    public Response resetMisuseMonitor(@Context final HttpServletRequest request,
+                                       @PathParam("event_label") final String eventLabel,
+                                       final String agentIdentifier) {
+        try {
+            RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+            if (!isUserAnAdmin(userManager, user)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+            if (misuseMonitor.hasMisused(agentIdentifier, eventLabel)) {
+                misuseMonitor.resetMisuseCount(agentIdentifier, eventLabel);
+                log.info(String.format("Admin user (%s) reset misuse monitor '%s' for user (%s)!", user.getEmail(),
+                        eventLabel, agentIdentifier));
+                return Response.ok(ImmutableMap.of("status", "Reset successfully!")).build();
+            } else {
+                return Response.ok(ImmutableMap.of("status", "Nothing to reset.")).build();
+            }
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
         }
     }
 }

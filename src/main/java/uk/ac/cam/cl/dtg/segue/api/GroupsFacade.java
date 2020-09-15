@@ -143,15 +143,53 @@ public class GroupsFacade extends AbstractSegueFacade {
      * @param request            - so we can identify the current user.
      * @param cacheRequest       - so that we can control caching of this endpoint
      * @param archivedGroupsOnly - include archived groups in response - default is false - i.e. show only unarchived
+     * @throws NoUserException   - when the user cannot be found.
      * @return List of groups for the current user.
      */
     @GET
     @Path("/membership")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getGroupMembership(@Context final HttpServletRequest request,
-                                            @Context final Request cacheRequest, @QueryParam("archived_groups_only") final boolean archivedGroupsOnly) {
+                                       @Context final Request cacheRequest,
+                                       @QueryParam("archived_groups_only") final boolean archivedGroupsOnly) throws NoUserException {
         try {
-            RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+            RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
+            return getGroupMembershipSpecificUser(request, cacheRequest, requestingUser.getId(), archivedGroupsOnly);
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
+    }
+
+    /**
+     * Get all groups where the user is a member.
+     *
+     * @param request            - so we can identify the current user.
+     * @param cacheRequest       - so that we can control caching of this endpoint
+     * @param userId             - the user we want the groups of.
+     * @param archivedGroupsOnly - include archived groups in response - default is false - i.e. show only unarchived
+     * @throws NoUserException   - when the user cannot be found.
+     * @return List of groups for the current user.
+     */
+    @GET
+    @Path("/membership/{userId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getGroupMembershipSpecificUser(@Context final HttpServletRequest request,
+                                                   @Context final Request cacheRequest,
+                                                   @PathParam("userId") Long userId,
+                                                   @QueryParam("archived_groups_only") final boolean archivedGroupsOnly) throws NoUserException {
+        try {
+            RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
+
+            RegisteredUserDTO user;
+            if (userId.equals(requestingUser.getId())) {
+                user = requestingUser;
+            } else if (isUserStaff(userManager, requestingUser)) {
+                user = userManager.getUserDTOById(userId);
+            } else {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access the groups of another user.")
+                        .toResponse();
+            }
+
             List<UserGroupDTO> groups = groupManager.getGroupMembershipList(user);
 
             List<Map<String, Object>> results = Lists.newArrayList();
@@ -576,7 +614,7 @@ public class GroupsFacade extends AbstractSegueFacade {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
             // Check for abuse of this endpoint:
-            misuseMonitor.notifyEvent(user.getId().toString(), GroupManagerLookupMisuseHandler.class.toString());
+            misuseMonitor.notifyEvent(user.getId().toString(), GroupManagerLookupMisuseHandler.class.getSimpleName());
 
             RegisteredUserDTO userToAdd = this.userManager.getUserDTOByEmail(responseMap.get("email"));
             UserGroupDTO group = groupManager.getGroupById(groupId);

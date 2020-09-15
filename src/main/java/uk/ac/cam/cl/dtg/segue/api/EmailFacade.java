@@ -295,7 +295,7 @@ public class EmailFacade extends AbstractSegueFacade {
                                                      @PathParam("token") final String token) {
 
         try {
-            misuseMonitor.notifyEvent(userId.toString(), EmailVerificationMisuseHandler.class.toString());
+            misuseMonitor.notifyEvent(userId.toString(), EmailVerificationMisuseHandler.class.getSimpleName());
             userManager.processEmailVerification(userId, token);
 
             // assume that if there are no exceptions that it worked.
@@ -339,7 +339,7 @@ public class EmailFacade extends AbstractSegueFacade {
                 throw new MissingRequiredFieldException("No email address was provided.");
             }
 
-            misuseMonitor.notifyEvent(email, EmailVerificationRequestMisuseHandler.class.toString());
+            misuseMonitor.notifyEvent(email, EmailVerificationRequestMisuseHandler.class.getSimpleName());
 
             userManager.emailVerificationRequest(request, email);
 
@@ -493,11 +493,17 @@ public class EmailFacade extends AbstractSegueFacade {
             }
 
             for (Long userId : userIds) {
-                RegisteredUserDTO userDTO = this.userManager.getUserDTOById(userId);
-                if (userDTO != null) {
-                    allSelectedUsers.add(userDTO);
-                } else {
-                    log.error(String.format("Skipping - User could not be found from given userId: %s", userId));
+                try {
+                    RegisteredUserDTO userDTO = this.userManager.getUserDTOById(userId);
+                    if (userDTO != null) {
+                        allSelectedUsers.add(userDTO);
+                    } else {
+                        // This should never be possible, since getUserDTOById throws rather than returning null.
+                        throw new NoUserException("No user found with this ID!");
+                    }
+                } catch (NoUserException e) {
+                    // Skip missing users rather than failing hard!
+                    log.error(String.format("Skipping email to non-existent user (%s)!", userId));
                 }
             }
 
@@ -509,11 +515,6 @@ public class EmailFacade extends AbstractSegueFacade {
             }
 
             emailManager.sendCustomEmail(sender, contentId, new ArrayList<>(allSelectedUsers), emailType);
-        } catch (NoUserException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
-                    "One or more userId(s) did not map to a valid user!.");
-            log.error(error.getErrorMessage());
-            return error.toResponse();
         } catch (SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "There was an error processing your request.");
