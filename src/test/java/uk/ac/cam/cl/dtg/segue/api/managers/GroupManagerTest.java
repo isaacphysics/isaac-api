@@ -33,6 +33,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
+import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
@@ -59,6 +60,7 @@ public class GroupManagerTest {
 	
 	private IUserGroupPersistenceManager groupDataManager;
 	private UserAccountManager userManager;
+	private GameManager gameManager;
 	
 	/**
 	 * Initial configuration of tests.
@@ -75,6 +77,7 @@ public class GroupManagerTest {
 		
 		this.groupDataManager = createMock(IUserGroupPersistenceManager.class);
 		this.userManager = createMock(UserAccountManager.class);
+		this.gameManager = createMock(GameManager.class);
 		
 		expect(this.dummyPropertiesLoader.getProperty(Constants.SESSION_EXPIRY_SECONDS)).andReturn("60")
 				.anyTimes();
@@ -101,7 +104,7 @@ public class GroupManagerTest {
 		UserGroupDTO mappedGroup = new UserGroupDTO();
 		resultFromDB.setId(2L);
 		
-		GroupManager gm = new GroupManager(this.groupDataManager, this.userManager, this.dummyMapper);
+		GroupManager gm = new GroupManager(this.groupDataManager, this.userManager, this.gameManager, this.dummyMapper);
 		try {
 			expect(this.groupDataManager.createGroup(and(capture(capturedGroup), isA(UserGroup.class))))
 					.andReturn(resultFromDB);

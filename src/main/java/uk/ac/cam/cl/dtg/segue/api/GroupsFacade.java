@@ -43,9 +43,11 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.GroupMembershipStatus;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
+import uk.ac.cam.cl.dtg.segue.dto.AssignmentGroupProgressSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserGameboardProgressSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
@@ -64,10 +66,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -724,7 +723,8 @@ public class GroupsFacade extends AbstractSegueFacade {
     @Path("{group_id}/progress")
     @Produces(MediaType.APPLICATION_JSON)
     @ApiOperation(value = "Get the progress across all the assignments of the group members.")
-    public Response getGroupProgress(@Context final HttpServletRequest request, @PathParam("group_id") final Long groupId) {
+    public Response getGroupProgress(@Context final HttpServletRequest request,
+                                     @PathParam("group_id") final Long groupId) {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
             UserGroupDTO group = groupManager.getGroupById(groupId);
@@ -738,22 +738,17 @@ public class GroupsFacade extends AbstractSegueFacade {
             if (assignments.size() == 0) {
                 return Response.noContent().build();
             }
+            // TODO Could probably use a Collection here…
             List<RegisteredUserDTO> groupMembers = groupManager.getUsersInGroup(group).stream()
                     .filter(groupMember -> associationManager.hasPermission(currentUser, groupMember))
                     .collect(Collectors.toList());
             if (groupMembers.size() == 0) {
                 return Response.noContent().build();
             }
-            List<String> gameboardsIds = assignments.stream().map(AssignmentDTO::getGameboardId)
-                    .collect(Collectors.toList());
-            List<GameboardDTO> gameboards = gameManager.getGameboards(gameboardsIds);
-            // gameboards.stream().map(gameboard -> gameManager.gatherGameProgressData(groupMembers, gameboard));
-            List<List<ImmutablePair<RegisteredUserDTO, List<GameboardItem>>>> userProgressData = new ArrayList<>();
-            for (GameboardDTO gameboard : gameboards) {
-                userProgressData.add(gameManager.gatherGameProgressData(groupMembers, gameboard));
-            }
+            List<AssignmentGroupProgressSummaryDTO> groupProgressSummaryByAssignment =
+                    groupManager.getGroupProgressSummary(groupMembers, assignments);
 
-            return Response.ok(userProgressData).build();
+            return Response.ok(groupProgressSummaryByAssignment).build();
         } catch (SegueDatabaseException e) {
             log.error("Database error while trying to get group progress for a group. ", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
