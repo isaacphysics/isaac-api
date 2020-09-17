@@ -73,7 +73,10 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueLogType;
+
 /**
  * Question Facade
  * 

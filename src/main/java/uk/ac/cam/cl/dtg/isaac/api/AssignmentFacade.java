@@ -466,7 +466,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             for (GameboardItem questionPage : gameboard.getQuestions()) {
                 int index = 0;
 
-                for (QuestionDTO question : questionManager.getAllMarkableQuestionPartsDFSOrder(questionPage.getId())) {
+                for (QuestionDTO question : gameManager.getAllMarkableQuestionPartsDFSOrder(questionPage.getId())) {
                     //int newCharIndex = 'A' + index; // decided not to try and match the front end.
                     int newCharIndex = index + 1;
                     if (question.getTitle() != null) {
@@ -750,7 +750,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 GameboardDTO gameboard = assignmentGameboards.get(assignment);
                 for (GameboardItem questionPage : gameboard.getQuestions()) {
                     int b = 1;
-                    for (QuestionDTO question : questionManager.getAllMarkableQuestionPartsDFSOrder(questionPage.getId())) {
+                    for (QuestionDTO question : gameManager.getAllMarkableQuestionPartsDFSOrder(questionPage.getId())) {
                         List<String> questionIds = gameboardQuestionIds.get(gameboard);
                         if (null == questionIds) {
                             questionIds = Lists.newArrayList();

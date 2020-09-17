@@ -37,6 +37,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuickQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
@@ -47,6 +48,7 @@ import uk.ac.cam.cl.dtg.segue.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
@@ -640,6 +642,29 @@ public class GameManager {
     }
 
     /**
+     * Get all questions in the question page: depends on each question. This method will conduct a DFS traversal and
+     * ensure the collection is ordered as per the DFS.
+     *
+     * @param questionPageId
+     *            - results depend on each question having an id prefixed with the question page id.
+     * @return collection of markable question parts (questions).
+     * @throws ContentManagerException
+     *             if there is a problem with the content requested.
+     */
+    public Collection<QuestionDTO> getAllMarkableQuestionPartsDFSOrder(final String questionPageId)
+            throws ContentManagerException {
+        Validate.notBlank(questionPageId);
+
+        // do a depth first traversal of the question page to get the correct order of questions
+        ContentDTO questionPage = this.contentManager.getContentById(this.contentManager.getCurrentContentSHA(),
+                questionPageId);
+        List<ContentDTO> dfs = Lists.newArrayList();
+        dfs = depthFirstQuestionSearch(questionPage, dfs);
+
+        return this.filterQuestionParts(dfs);
+    }
+
+    /**
      * Augments the gameboards with question attempt information AND whether or not the user has it in their boards.
      *
      * @param gameboardDTO
@@ -740,6 +765,52 @@ public class GameManager {
                     return questionItem;
                 }).collect(Collectors.toList());
     }
+
+    /**
+     * Utility method to extract a list of questionDTOs only.
+     *
+     * @param contentToFilter
+     *            list of content.
+     * @return list of question dtos.
+     */
+    private Collection<QuestionDTO> filterQuestionParts(final Collection<ContentDTO> contentToFilter) {
+        List<QuestionDTO> results = Lists.newArrayList();
+        for (ContentDTO possibleQuestion : contentToFilter) {
+
+            if (!(possibleQuestion instanceof QuestionDTO) || possibleQuestion instanceof IsaacQuickQuestionDTO) {
+                // we are not interested if this is not a question or if it is a quick question.
+                continue;
+            }
+            QuestionDTO question = (QuestionDTO) possibleQuestion;
+            results.add(question);
+        }
+
+        return results;
+    }
+
+    /**
+     * We want to list the questions in the order they are seen.
+     * @param c - content to search
+     * @param result - the list of questions
+     * @return a list of questions ordered by DFS.
+     */
+    private List<ContentDTO> depthFirstQuestionSearch(final ContentDTO c, final List<ContentDTO> result) {
+        if (c == null || c.getChildren() == null || c.getChildren().size() == 0) {
+            return result;
+        }
+
+        for (ContentBaseDTO child : c.getChildren()) {
+            if (child instanceof QuestionDTO) {
+                result.add((QuestionDTO) child);
+                // assume that we can't have nested questions
+            } else {
+                depthFirstQuestionSearch((ContentDTO) child, result);
+            }
+        }
+        return result;
+    }
+
+
 
     /**
      * Determines whether a given game board is already in a users my boards list.
@@ -1009,7 +1080,7 @@ public class GameManager {
 
         // get all question parts in the question page: depends on each question
         // having an id that starts with the question page id.
-        Collection<QuestionDTO> listOfQuestionParts = questionManager.getAllMarkableQuestionPartsDFSOrder(questionPageId);
+        Collection<QuestionDTO> listOfQuestionParts = getAllMarkableQuestionPartsDFSOrder(questionPageId);
         Map<String, ? extends List<? extends LightweightQuestionValidationResponse>> questionAttempts =
                 questionAttemptsFromUser.get(questionPageId);
         if (questionAttempts != null) {
