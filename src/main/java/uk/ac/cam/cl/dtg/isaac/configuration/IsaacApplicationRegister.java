@@ -27,6 +27,7 @@ import uk.ac.cam.cl.dtg.isaac.api.IsaacController;
 import uk.ac.cam.cl.dtg.isaac.api.PagesFacade;
 import uk.ac.cam.cl.dtg.segue.api.*;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
+import uk.ac.cam.cl.dtg.segue.api.monitors.InvalidSessionFilter;
 import uk.ac.cam.cl.dtg.segue.api.monitors.PerformanceMonitor;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
@@ -99,6 +100,7 @@ public class IsaacApplicationRegister extends Application {
             this.singletons.add(injector.getInstance(AssignmentFacade.class));
             this.singletons.add(injector.getInstance(GroupsFacade.class));
             this.singletons.add(injector.getInstance(GlossaryFacade.class));
+            this.singletons.add(injector.getInstance(InvalidSessionFilter.class));
             
             // initialise isaac specific facades
             this.singletons.add(injector.getInstance(GameboardsFacade.class));

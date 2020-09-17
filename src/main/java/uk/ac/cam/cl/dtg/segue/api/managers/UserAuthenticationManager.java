@@ -415,6 +415,39 @@ public class UserAuthenticationManager {
             return null;
         }
     }
+
+    /**
+     * Determines the Date when the session expires
+     * @param request The request to extract the session information from
+     * @return The Date the session expires
+     * @throws NoUserLoggedInException Thrown when the session information doesn't contain the expiry date
+     * @throws ParseException Thrown when the expiry date could not be parsed
+     * @throws InvalidSessionException Thrown when the session is invalid
+     * @throws IOException Thrown when failed to read the session from the request
+     */
+    public Date getTimeToSessionExpiry(final HttpServletRequest request) throws ParseException, IOException, InvalidSessionException, NoUserLoggedInException {
+        Map<String, String> currentSessionInformation = getSegueSessionFromRequest(request);
+        if (currentSessionInformation.containsKey(DATE_EXPIRES)) {
+            SimpleDateFormat sessionDateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
+            return sessionDateFormat.parse(currentSessionInformation.get(DATE_EXPIRES));
+        } else {
+            throw new NoUserLoggedInException();
+        }
+    }
+
+    /**
+     * Determines if the request has a segue auth cookie attached, valid or invalid.
+     * @param request The request to check for the cookie
+     * @return if the request has a segue auth cookie
+     */
+    public boolean hasAuthCookie(final HttpServletRequest request) {
+        try {
+            Map<String, String> currentSessionInformation = getSegueSessionFromRequest(request);
+            return currentSessionInformation != null;
+        } catch (IOException | InvalidSessionException e) {
+            return false;
+        }
+    }
     
     /**
      * Create a signed session based on the user DO provided and the http request and response.
