@@ -719,6 +719,13 @@ public class GroupsFacade extends AbstractSegueFacade {
         }
     }
 
+    /**
+     * Retrieves the assignment progress of the members of a given group to whom the requesting user has access.
+     *
+     * @param request - for authentication and access control
+     * @param groupId - group to retrieve progress for
+     * @return No Content response or error response or AssignmentGroupProgressSummaryDTO
+     */
     @GET
     @Path("{group_id}/progress")
     @Produces(MediaType.APPLICATION_JSON)
@@ -729,7 +736,7 @@ public class GroupsFacade extends AbstractSegueFacade {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
             UserGroupDTO group = groupManager.getGroupById(groupId);
             if (!GroupManager.isOwnerOrAdditionalManager(group, currentUser.getId()) &&
-                !isUserAnAdmin(userManager, currentUser)) {
+                    !isUserAnAdmin(userManager, currentUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
             }

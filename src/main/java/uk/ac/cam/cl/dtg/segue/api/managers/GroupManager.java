@@ -600,7 +600,16 @@ public class GroupManager {
         summarisedMemberInfo.addAll(result);
     }
 
-    // TODO Documentation
+    /**
+     * Returns the progress of all the members of a group for all their assignments.
+     *
+     * @param groupMembers Group members for whom to return progress
+     * @param assignments  Assignments for which to calculate progress
+     * @return Progress per group member, per assignment
+     *
+     * @throws SegueDatabaseException
+     * @throws ContentManagerException
+     */
     public List<AssignmentGroupProgressSummaryDTO> getGroupProgressSummary(List<RegisteredUserDTO> groupMembers,
                                                                            Collection<AssignmentDTO> assignments)
             throws SegueDatabaseException, ContentManagerException {
