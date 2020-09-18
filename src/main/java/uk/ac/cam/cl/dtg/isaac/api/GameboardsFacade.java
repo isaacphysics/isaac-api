@@ -46,13 +46,11 @@ import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -840,105 +838,6 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Error locating any wildcards");
             log.error(error.getErrorMessage());
             return error.toResponse();
-        }
-    }
-
-    /**
-     * Return a list of recent questions the user has attempted.
-     *
-     * @param request
-     *            - the servlet request so we can find out if it is a known user.
-     * @param userIdOfInterest
-     *            - The user id of the user to get the attempts of.
-     * @param limit
-     *            - The limit on the number of results to return.
-     * @return Response containing a list of GameboardItem objects.
-     */
-    @GET
-    @Path("gameboards/recent_questions/{user_id}")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @ApiOperation(value = "Get information about a user's most recently attempted question pages.")
-    public Response getUserRecentQuestions(@Context final HttpServletRequest request,
-                                           @PathParam("user_id") final Long userIdOfInterest,
-                                           @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
-        RegisteredUserDTO user;
-        RegisteredUserDTO userOfInterestFull;
-        UserSummaryDTO userOfInterestSummary;
-        try {
-            user = userManager.getCurrentRegisteredUser(request);
-            userOfInterestFull = userManager.getUserDTOById(userIdOfInterest);
-            userOfInterestSummary = userManager.convertToUserSummaryObject(userOfInterestFull);
-            if (associationManager.hasPermission(user, userOfInterestSummary)) {
-                List<GameboardItem> questionCompletions = gameManager.getMostRecentQuestionAttemptsByUser(userOfInterestFull, limit);
-                return Response.ok(questionCompletions).build();
-            } else {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to view this users data.")
-                        .toResponse();
-            }
-        } catch (NoUserLoggedInException e1) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (NoUserException e) {
-            return SegueErrorResponse.getResourceNotFoundResponse("No user found with this id");
-        } catch (SegueDatabaseException e) {
-            String message = "Error whilst trying to access recently answered questions.";
-            log.error(message, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
-        } catch (ContentManagerException e) {
-            String message = "Error whilst trying to access user recent questions; Content cannot be resolved";
-            log.error(message, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
-        }
-    }
-
-    /**
-     * Return a list of easiest questions the user has attempted.
-     *
-     * @param request
-     *            - the servlet request so we can find out if it is a known user.
-     * @param userIdOfInterest
-     *            - The user id of the user to find the questions for.
-     * @param limit
-     *            - The limit on the number of results to return.
-     * @param bookOnly
-     *            - Flag to only select questions with the book tag.
-     * @return Response containing a list of Gameboard Items.
-     */
-    @GET
-    @Path("gameboards/easiest_unsolved/{user_id}")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @ApiOperation(value = "Gets a list of easiest questions unsolved by the user.")
-    public Response getUserEasiestUnsolvedQuestions(@Context final HttpServletRequest request,
-                                                    @PathParam("user_id") final Long userIdOfInterest,
-                                                    @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit,
-                                                    @DefaultValue("false") @QueryParam("bookOnly") final Boolean bookOnly) {
-        RegisteredUserDTO user;
-        RegisteredUserDTO userOfInterestFull;
-        UserSummaryDTO userOfInterestSummary;
-        try {
-            user = userManager.getCurrentRegisteredUser(request);
-            userOfInterestFull = userManager.getUserDTOById(userIdOfInterest);
-            userOfInterestSummary = userManager.convertToUserSummaryObject(userOfInterestFull);
-            if (associationManager.hasPermission(user, userOfInterestSummary)) {
-                List<GameboardItem> questions = gameManager.getEasiestUnsolvedQuestions(userOfInterestFull, limit, bookOnly);
-                return Response.ok(questions).build();
-            } else {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to view this users data.")
-                        .toResponse();
-            }
-        } catch (NoUserLoggedInException e1) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (NoUserException e) {
-            return SegueErrorResponse.getResourceNotFoundResponse("No user found with this id");
-        } catch (SegueDatabaseException e) {
-            String message = "Error whilst trying to access unanswered questions.";
-            log.error(message, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
-        } catch (ContentManagerException e) {
-            String message = "Error whilst trying to access user unanswered questions; Content cannot be resolved";
-            log.error(message, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         }
     }
 }

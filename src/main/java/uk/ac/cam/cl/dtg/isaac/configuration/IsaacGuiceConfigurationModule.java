@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.ProgressManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.IAssignmentPersistenceManager;
@@ -32,6 +33,7 @@ import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicLogicValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicValidator;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
@@ -213,5 +215,19 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
             log.info("Creating singleton of SchoolListReader");
         }
         return schoolListReader;
+    }
+
+    /**
+     * Gets an instance of the ProgressManager.
+     *
+     * @return ProgressManager.
+     */
+    @Provides
+    @Singleton
+    @Inject
+    private static ProgressManager getProgressManager(final GameManager gameManager, final QuestionManager questionManager,
+                                                           final GameboardPersistenceManager gameboardPersistenceManager) {
+
+        return new ProgressManager(gameManager, questionManager, gameboardPersistenceManager);
     }
 }

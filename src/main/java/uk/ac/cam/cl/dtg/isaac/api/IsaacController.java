@@ -26,7 +26,9 @@ import ma.glasnost.orika.MapperFacade;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.api.managers.ProgressManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.IStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -68,8 +70,7 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacLogType;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.PROXY_PATH;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
@@ -96,6 +97,7 @@ public class IsaacController extends AbstractIsaacFacade {
     private final IContentManager contentManager;
     private final UserBadgeManager userBadgeManager;
     private final IUserStreaksManager userStreaksManager;
+    private final ProgressManager progressManager;
 
     private static long lastQuestionCount = 0L;
 
@@ -149,7 +151,8 @@ public class IsaacController extends AbstractIsaacFacade {
                            final UserAssociationManager associationManager, final URIManager uriManager,
                            @Named(CONTENT_INDEX) final String contentIndex,
                            final IUserStreaksManager userStreaksManager,
-                           final UserBadgeManager userBadgeManager) {
+                           final UserBadgeManager userBadgeManager,
+                           final ProgressManager progressManager) {
         super(propertiesLoader, logManager);
         this.api = api;
         this.mapper = mapper;
@@ -161,6 +164,7 @@ public class IsaacController extends AbstractIsaacFacade {
         this.contentManager = contentManager;
         this.userBadgeManager = userBadgeManager;
         this.userStreaksManager = userStreaksManager;
+        this.progressManager = progressManager;
     }
 
     /**
@@ -348,6 +352,105 @@ public class IsaacController extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (ContentManagerException e) {
             String message = "Error whilst trying to access user statistics; Content cannot be resolved";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        }
+    }
+
+    /**
+     * Return a list of recent questions the user has attempted.
+     *
+     * @param request
+     *            - the servlet request so we can find out if it is a known user.
+     * @param userIdOfInterest
+     *            - The user id of the user to get the attempts of.
+     * @param limit
+     *            - The limit on the number of results to return.
+     * @return Response containing a list of GameboardItem objects.
+     */
+    @GET
+    @Path("users/{user_id}/recent_questions")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @ApiOperation(value = "Get information about a user's most recently attempted question pages.")
+    public Response getUserRecentQuestions(@Context final HttpServletRequest request,
+                                           @PathParam("user_id") final Long userIdOfInterest,
+                                           @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
+        RegisteredUserDTO user;
+        RegisteredUserDTO userOfInterestFull;
+        UserSummaryDTO userOfInterestSummary;
+        try {
+            user = userManager.getCurrentRegisteredUser(request);
+            userOfInterestFull = userManager.getUserDTOById(userIdOfInterest);
+            userOfInterestSummary = userManager.convertToUserSummaryObject(userOfInterestFull);
+            if (associationManager.hasPermission(user, userOfInterestSummary)) {
+                List<GameboardItem> questionCompletions = progressManager.getMostRecentQuestionAttemptsByUser(userOfInterestFull, limit);
+                return Response.ok(questionCompletions).build();
+            } else {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to view this users data.")
+                        .toResponse();
+            }
+        } catch (NoUserLoggedInException e1) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (NoUserException e) {
+            return SegueErrorResponse.getResourceNotFoundResponse("No user found with this id");
+        } catch (SegueDatabaseException e) {
+            String message = "Error whilst trying to access recently answered questions.";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        } catch (ContentManagerException e) {
+            String message = "Error whilst trying to access user recent questions; Content cannot be resolved";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        }
+    }
+
+    /**
+     * Return a list of easiest questions the user has attempted.
+     *
+     * @param request
+     *            - the servlet request so we can find out if it is a known user.
+     * @param userIdOfInterest
+     *            - The user id of the user to find the questions for.
+     * @param limit
+     *            - The limit on the number of results to return.
+     * @param bookOnly
+     *            - Flag to only select questions with the book tag.
+     * @return Response containing a list of Gameboard Items.
+     */
+    @GET
+    @Path("users/{user_id}/easiest_unsolved")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @ApiOperation(value = "Gets a list of easiest questions unsolved by the user.")
+    public Response getUserEasiestUnsolvedQuestions(@Context final HttpServletRequest request,
+                                                    @PathParam("user_id") final Long userIdOfInterest,
+                                                    @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit,
+                                                    @DefaultValue("false") @QueryParam("bookOnly") final Boolean bookOnly) {
+        RegisteredUserDTO user;
+        RegisteredUserDTO userOfInterestFull;
+        UserSummaryDTO userOfInterestSummary;
+        try {
+            user = userManager.getCurrentRegisteredUser(request);
+            userOfInterestFull = userManager.getUserDTOById(userIdOfInterest);
+            userOfInterestSummary = userManager.convertToUserSummaryObject(userOfInterestFull);
+            if (associationManager.hasPermission(user, userOfInterestSummary)) {
+                List<GameboardItem> questions = progressManager.getEasiestUnsolvedQuestions(userOfInterestFull, limit, bookOnly);
+                return Response.ok(questions).build();
+            } else {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to view this users data.")
+                        .toResponse();
+            }
+        } catch (NoUserLoggedInException e1) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (NoUserException e) {
+            return SegueErrorResponse.getResourceNotFoundResponse("No user found with this id");
+        } catch (SegueDatabaseException e) {
+            String message = "Error whilst trying to access unanswered questions.";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        } catch (ContentManagerException e) {
+            String message = "Error whilst trying to access user unanswered questions; Content cannot be resolved";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         }
