@@ -15,7 +15,14 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.monitors;
 
-import static com.google.common.collect.Maps.immutableEntry;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.Maps;
+import com.google.inject.Inject;
+import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -23,16 +30,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.collect.Maps;
-import org.apache.commons.lang3.Validate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.inject.Inject;
-
-import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
+import static com.google.common.collect.Maps.immutableEntry;
 
 /**
  * InMemoryMisuseMonitor.
@@ -131,6 +129,11 @@ public class InMemoryMisuseMonitor implements IMisuseMonitor {
     
     @Override
     public boolean hasMisused(final String agentIdentifier, final String eventToCheck) {
+        return willHaveMisused(agentIdentifier, eventToCheck, 0);
+    }
+
+    @Override
+    public boolean willHaveMisused(String agentIdentifier, String eventToCheck, Integer adjustmentValue) {
         Map<String, Entry<Date, Integer>> existingHistory = nonPersistentDatabase.getIfPresent(agentIdentifier);
 
         if (null == existingHistory || existingHistory.get(eventToCheck) == null) {
@@ -140,12 +143,8 @@ public class InMemoryMisuseMonitor implements IMisuseMonitor {
         Entry<Date, Integer> entry = existingHistory.get(eventToCheck);
         IMisuseHandler handler = handlerMap.get(eventToCheck);
 
-        if (isCountStillFresh(entry.getKey(), handler.getAccountingIntervalInSeconds())
-                && entry.getValue() >= handler.getHardThreshold()) {
-            return true;
-        }
-
-        return false;
+        return isCountStillFresh(entry.getKey(), handler.getAccountingIntervalInSeconds())
+                && entry.getValue() + adjustmentValue >= handler.getHardThreshold();
     }
 
     @Override
