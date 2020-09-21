@@ -29,6 +29,8 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardProgressSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.UserGameboardProgressSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -38,11 +40,22 @@ import uk.ac.cam.cl.dtg.segue.dos.GroupMembership;
 import uk.ac.cam.cl.dtg.segue.dos.GroupMembershipStatus;
 import uk.ac.cam.cl.dtg.segue.dos.GroupStatus;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
-import uk.ac.cam.cl.dtg.segue.dto.AssignmentGroupProgressSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.*;
+import uk.ac.cam.cl.dtg.segue.dto.users.GroupMembershipDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithEmailAddressDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithGroupMembershipDTO;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Comparator;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -610,28 +623,32 @@ public class GroupManager {
      * @throws SegueDatabaseException
      * @throws ContentManagerException
      */
-    public List<AssignmentGroupProgressSummaryDTO> getGroupProgressSummary(List<RegisteredUserDTO> groupMembers,
-                                                                           Collection<AssignmentDTO> assignments)
+    public List<UserGameboardProgressSummaryDTO> getGroupProgressSummary(List<RegisteredUserDTO> groupMembers,
+                                                                         Collection<AssignmentDTO> assignments)
             throws SegueDatabaseException, ContentManagerException {
 
-        List<AssignmentGroupProgressSummaryDTO> groupProgressSummaryByAssignment = new ArrayList<>();
+        List<UserGameboardProgressSummaryDTO> groupProgressSummary = new ArrayList<>();
+        Map<RegisteredUserDTO, List<GameboardProgressSummaryDTO>> userProgressMap = new HashMap<>();
+        for (RegisteredUserDTO user : groupMembers) {
+            userProgressMap.put(user, new ArrayList<>());
+        }
 
         List<String> gameboardsIds = assignments.stream().map(AssignmentDTO::getGameboardId)
                 .collect(Collectors.toList());
         List<GameboardDTO> gameboards = gameManager.getGameboards(gameboardsIds);
         for (GameboardDTO gameboard : gameboards) {
-            List<ImmutablePair<RegisteredUserDTO, List<GameboardItem>>> userProgressData =
-                    gameManager.gatherGameProgressData(groupMembers, gameboard);
-            List<UserGameboardProgressSummaryDTO> userProgressSummaryData = new ArrayList<>();
+            List<ImmutablePair<RegisteredUserDTO, List<GameboardItem>>> userProgressData = gameManager.gatherGameProgressData(groupMembers, gameboard);
+
             for (ImmutablePair<RegisteredUserDTO, List<GameboardItem>> userProgress : userProgressData) {
                 RegisteredUserDTO user = userProgress.getKey();
                 List<GameboardItem> progress = userProgress.getValue();
+
                 int questionPartsCorrect = 0,
                         questionPartsIncorrect = 0,
                         questionPartsNotAttempted = 0,
                         questionPartsTotal = 0;
                 float passMark = 0.0f;
-                UserGameboardProgressSummaryDTO progressSummary = new UserGameboardProgressSummaryDTO();
+
                 for (GameboardItem gameboardItem : progress) {
                     questionPartsCorrect += gameboardItem.getQuestionPartsCorrect();
                     questionPartsIncorrect += gameboardItem.getQuestionPartsIncorrect();
@@ -639,21 +656,26 @@ public class GroupManager {
                     questionPartsTotal += gameboardItem.getQuestionPartsTotal();
                     passMark += gameboardItem.getPassMark();
                 }
-                progressSummary.setUserSummary(userManager.convertToUserSummaryObject(user));
-                progressSummary.setQuestionPartsCorrect(questionPartsCorrect);
-                progressSummary.setQuestionPartsIncorrect(questionPartsIncorrect);
-                progressSummary.setQuestionPartsNotAttempted(questionPartsNotAttempted);
-                progressSummary.setQuestionPartsTotal(questionPartsTotal);
-                progressSummary.setPassMark(passMark);
 
-                userProgressSummaryData.add(progressSummary);
+                GameboardProgressSummaryDTO summary = new GameboardProgressSummaryDTO();
+                summary.setGameboardId(gameboard.getId());
+                summary.setGameboardTitle(gameboard.getTitle());
+                summary.setQuestionPartsCorrect(questionPartsCorrect);
+                summary.setQuestionPartsIncorrect(questionPartsIncorrect);
+                summary.setQuestionPartsNotAttempted(questionPartsNotAttempted);
+                summary.setQuestionPartsTotal(questionPartsTotal);
+                // TODO PassMark maybe
+                userProgressMap.get(user).add(summary);
             }
-            AssignmentGroupProgressSummaryDTO progress = new AssignmentGroupProgressSummaryDTO();
-            progress.setGameboardId(gameboard.getId());
-            progress.setGameboardTitle(gameboard.getTitle());
-            progress.setGroupMembersProgress(userProgressSummaryData);
-            groupProgressSummaryByAssignment.add(progress);
         }
-        return groupProgressSummaryByAssignment;
+
+        userProgressMap.forEach((user, progress) -> {
+            UserGameboardProgressSummaryDTO summary = new UserGameboardProgressSummaryDTO();
+            summary.setUserSummary(userManager.convertToUserSummaryObject(user));
+            summary.setProgress(progress);
+            groupProgressSummary.add(summary);
+        });
+
+        return groupProgressSummary;
     }
 }

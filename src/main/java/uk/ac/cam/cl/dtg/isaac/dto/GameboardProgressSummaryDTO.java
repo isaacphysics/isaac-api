@@ -1,28 +1,27 @@
-package uk.ac.cam.cl.dtg.segue.dto.users;
+package uk.ac.cam.cl.dtg.isaac.dto;
 
-public class UserGameboardProgressSummaryDTO {
-    private UserSummaryDTO userSummary;
+public class GameboardProgressSummaryDTO {
+    private String gameboardId;
+    private String gameboardTitle;
     private Integer questionPartsCorrect;
     private Integer questionPartsIncorrect;
     private Integer questionPartsNotAttempted;
     private Integer questionPartsTotal;
-    private Float passMark;
 
-    public UserGameboardProgressSummaryDTO() {
-        this.userSummary = null;
-        this.questionPartsCorrect = 0;
-        this.questionPartsIncorrect = 0;
-        this.questionPartsNotAttempted = 0;
-        this.questionPartsTotal = 0;
-        this.passMark = 0.0f;
+    public String getGameboardId() {
+        return gameboardId;
     }
 
-    public UserSummaryDTO getUserSummary() {
-        return userSummary;
+    public void setGameboardId(String gameboardId) {
+        this.gameboardId = gameboardId;
     }
 
-    public void setUserSummary(UserSummaryDTO userSummary) {
-        this.userSummary = userSummary;
+    public String getGameboardTitle() {
+        return gameboardTitle;
+    }
+
+    public void setGameboardTitle(String gameboardTitle) {
+        this.gameboardTitle = gameboardTitle;
     }
 
     public Integer getQuestionPartsCorrect() {
@@ -55,13 +54,5 @@ public class UserGameboardProgressSummaryDTO {
 
     public void setQuestionPartsTotal(Integer questionPartsTotal) {
         this.questionPartsTotal = questionPartsTotal;
-    }
-
-    public Float getPassMark() {
-        return passMark;
-    }
-
-    public void setPassMark(Float passMark) {
-        this.passMark = passMark;
     }
 }

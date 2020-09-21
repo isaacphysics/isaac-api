@@ -20,14 +20,12 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
+import uk.ac.cam.cl.dtg.isaac.dto.UserGameboardProgressSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -43,11 +41,9 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.GroupMembershipStatus;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
-import uk.ac.cam.cl.dtg.segue.dto.AssignmentGroupProgressSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.UserGameboardProgressSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
@@ -752,10 +748,10 @@ public class GroupsFacade extends AbstractSegueFacade {
             if (groupMembers.size() == 0) {
                 return Response.noContent().build();
             }
-            List<AssignmentGroupProgressSummaryDTO> groupProgressSummaryByAssignment =
+            List<UserGameboardProgressSummaryDTO> groupProgressSummary =
                     groupManager.getGroupProgressSummary(groupMembers, assignments);
 
-            return Response.ok(groupProgressSummaryByAssignment).build();
+            return Response.ok(groupProgressSummary).build();
         } catch (SegueDatabaseException e) {
             log.error("Database error while trying to get group progress for a group. ", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
