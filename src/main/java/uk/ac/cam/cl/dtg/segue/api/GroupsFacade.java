@@ -739,18 +739,18 @@ public class GroupsFacade extends AbstractSegueFacade {
 
             Collection<AssignmentDTO> assignments = assignmentManager.getAssignmentsByGroup(group.getId());
             if (assignments.size() == 0) {
-                return Response.noContent().build();
+                return Response.ok(new ArrayList<>()).build();
             }
             // TODO Could probably use a Collection here…
             List<RegisteredUserDTO> groupMembers = groupManager.getUsersInGroup(group).stream()
                     .filter(groupMember -> associationManager.hasPermission(currentUser, groupMember))
                     .collect(Collectors.toList());
-            if (groupMembers.size() == 0) {
-                return Response.noContent().build();
-            }
-            List<UserGameboardProgressSummaryDTO> groupProgressSummary =
-                    groupManager.getGroupProgressSummary(groupMembers, assignments);
 
+            if (groupMembers.size() == 0) {
+                return Response.ok(new ArrayList<>()).build();
+            }
+
+            List<UserGameboardProgressSummaryDTO> groupProgressSummary = groupManager.getGroupProgressSummary(groupMembers, assignments);
             return Response.ok(groupProgressSummary).build();
         } catch (SegueDatabaseException e) {
             log.error("Database error while trying to get group progress for a group. ", e);
