@@ -144,7 +144,7 @@ public class InMemoryMisuseMonitor implements IMisuseMonitor {
         IMisuseHandler handler = handlerMap.get(eventToCheck);
 
         return isCountStillFresh(entry.getKey(), handler.getAccountingIntervalInSeconds())
-                && entry.getValue() + adjustmentValue > handler.getHardThreshold();
+                && entry.getValue() + adjustmentValue >= handler.getHardThreshold();
     }
 
     @Override
