@@ -5,19 +5,19 @@ import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import java.util.List;
 
 public class UserGameboardProgressSummaryDTO {
-    private UserSummaryDTO userSummary;
+    private UserSummaryDTO user;
     private List<GameboardProgressSummaryDTO> progress;
 
     public UserGameboardProgressSummaryDTO() {
-        this.userSummary = null;
+        this.user = null;
     }
 
-    public UserSummaryDTO getUserSummary() {
-        return userSummary;
+    public UserSummaryDTO getUser() {
+        return user;
     }
 
-    public void setUserSummary(UserSummaryDTO userSummary) {
-        this.userSummary = userSummary;
+    public void setUser(UserSummaryDTO user) {
+        this.user = user;
     }
 
     public List<GameboardProgressSummaryDTO> getProgress() {
@@ -27,4 +27,5 @@ public class UserGameboardProgressSummaryDTO {
     public void setProgress(List<GameboardProgressSummaryDTO> progress) {
         this.progress = progress;
     }
+
 }

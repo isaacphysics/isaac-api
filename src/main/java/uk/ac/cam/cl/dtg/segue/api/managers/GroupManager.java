@@ -671,7 +671,7 @@ public class GroupManager {
 
         userProgressMap.forEach((user, progress) -> {
             UserGameboardProgressSummaryDTO summary = new UserGameboardProgressSummaryDTO();
-            summary.setUserSummary(userManager.convertToUserSummaryObject(user));
+            summary.setUser(userManager.convertToUserSummaryObject(user));
             summary.setProgress(progress);
             groupProgressSummary.add(summary);
         });
