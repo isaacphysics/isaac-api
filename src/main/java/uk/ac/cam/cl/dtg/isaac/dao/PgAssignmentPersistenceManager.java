@@ -86,7 +86,7 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
                 throw new SegueDatabaseException("Unable to save assignment.");
             }
 
-            Long assignmentId;
+            long assignmentId;
             try (ResultSet generatedKeys = pst.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
                     assignmentId = generatedKeys.getLong(1);

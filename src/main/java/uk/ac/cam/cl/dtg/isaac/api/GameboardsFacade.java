@@ -388,7 +388,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                 return 0;
             });
 
-            Integer sharedBoards = 0;
+            int sharedBoards = 0;
 
             for (Map<String, Object> e : resultList) {
                 if ((Integer) e.get(connections) > 1) {

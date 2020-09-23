@@ -165,7 +165,7 @@ public class EventBookingManager {
      */
     public Long countNumberOfBookingsWithStatus(final String eventId, final BookingStatus status)
             throws SegueDatabaseException {
-        Long v = 0L;
+        long v = 0L;
         for (EventBookingDTO eb : this.bookingPersistenceManager.getBookingsByEventId(eventId)) {
             if (status.equals(eb.getBookingStatus())) {
                 v++;
@@ -782,7 +782,7 @@ public class EventBookingManager {
 
         Map<BookingStatus, Map<Role, Long>> eventBookingStatusCounts = this.bookingPersistenceManager.getEventBookingStatusCounts(event.getId(), includeDeletedUsersInCounts);
 
-        Long totalBooked = 0L;
+        long totalBooked = 0L;
         Long studentCount = 0L;
 
         if (eventBookingStatusCounts.get(BookingStatus.CONFIRMED) != null) {
