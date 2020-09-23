@@ -144,7 +144,7 @@ public class SegueErrorResponse implements Serializable {
 
         String[] stackTraceByLine = stackTrace.split(System.getProperty("line.separator"));
 
-        if (stackTraceByLine.length >= 0) {
+        if (stackTraceByLine.length > 0) {
             return stackTraceByLine[0];
         } else {
             return null;

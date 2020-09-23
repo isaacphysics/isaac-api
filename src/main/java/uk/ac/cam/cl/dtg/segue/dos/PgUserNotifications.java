@@ -88,7 +88,7 @@ public class PgUserNotifications implements IUserNotifications {
     }
 
     /**
-     * @param notification
+     * @param notificationId The id of the notification to insert
      * @throws SegueDatabaseException
      */
     @Override

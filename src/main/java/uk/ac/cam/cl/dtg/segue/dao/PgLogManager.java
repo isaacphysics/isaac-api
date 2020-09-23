@@ -220,12 +220,13 @@ public class PgLogManager implements ILogManager {
             }
 
             for (Entry<Date, Long> le : rs.entrySet()) {
+                LocalDate localisedDate = new LocalDate(le.getKey());
 
-                if (result.get(typeOfInterest).containsKey(le.getKey())) {
-                    result.get(typeOfInterest).put(new LocalDate(le.getKey()),
-                            result.get(typeOfInterest).get(le.getKey()) + le.getValue());
+                if (result.get(typeOfInterest).containsKey(localisedDate)) {
+                    result.get(typeOfInterest).put(localisedDate,
+                            result.get(typeOfInterest).get(localisedDate) + le.getValue());
                 } else {
-                    result.get(typeOfInterest).put(new LocalDate(le.getKey()), le.getValue());
+                    result.get(typeOfInterest).put(localisedDate, le.getValue());
                 }
             }
         }

@@ -214,7 +214,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(EVENT_TYPE));
 
         Map<String, AbstractFilterInstruction> filterInstructions = null;
-        if (null == showActiveOnly || showActiveOnly) {
+        if (null != showActiveOnly && showActiveOnly) {
             filterInstructions = Maps.newHashMap();
             DateRangeFilterInstruction anyEventsFromNow = new DateRangeFilterInstruction(new Date(), null);
             filterInstructions.put(ENDDATE_FIELDNAME, anyEventsFromNow);
@@ -222,7 +222,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         }
 
         if (null != showInactiveOnly && showInactiveOnly) {
-            if (showActiveOnly) {
+            if (null != showActiveOnly && showActiveOnly) {
                 return new SegueErrorResponse(Status.BAD_REQUEST,
                         "You cannot request both show active and inactive only.").toResponse();
             }
@@ -777,7 +777,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.FORBIDDEN, "This event does not accept group bookings.").toResponse();
         }
 
-        List<RegisteredUserDTO> usersToReserve = Lists.newArrayList();;
+        List<RegisteredUserDTO> usersToReserve = Lists.newArrayList();
         try {
             reservingUser = userManager.getCurrentRegisteredUser(request);
             if (!Arrays.asList(Role.TEACHER, Role.EVENT_LEADER, Role.EVENT_MANAGER, Role.ADMIN).contains(reservingUser.getRole())) {
