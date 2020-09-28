@@ -104,6 +104,7 @@ public class IsaacFreeTextValidator implements IValidator {
         if (rule.getAllowsMisspelling()) { result.append("m"); }
         if (rule.getAllowsAnyOrder()) { result.append("o"); }
         if (rule.getAllowsExtraWords()) { result.append("w"); }
+        if (rule.getWordProximity() != null) { result.append("p").append(rule.getWordProximity()); }
         return result.toString();
     }
 
@@ -120,8 +121,8 @@ public class IsaacFreeTextValidator implements IValidator {
                 String answerString = extractAnswerValue(answer, freeTextRule.isCaseInsensitive());
                 answerString = removeNonAlphanumericChars(answerString, freeTextRule.getValue());
                 PMatch questionAnswerMatcher = new PMatch(answerString);
-                String matchingParamaters = evaluateMatchingOptions(freeTextRule);
-                if (questionAnswerMatcher.match(matchingParamaters, extractRuleValue(freeTextRule))) {
+                String matchingParameters = evaluateMatchingOptions(freeTextRule);
+                if (questionAnswerMatcher.match(matchingParameters, extractRuleValue(freeTextRule))) {
                     isCorrectResponse = rule.isCorrect();
                     feedback = (Content) rule.getExplanation();
                     break; // on first matching rule
