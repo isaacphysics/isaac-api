@@ -751,6 +751,9 @@ public class GroupsFacade extends AbstractSegueFacade {
             }
 
             List<UserGameboardProgressSummaryDTO> groupProgressSummary = groupManager.getGroupProgressSummary(groupMembers, assignments);
+            for (UserGameboardProgressSummaryDTO s : groupProgressSummary) {
+                s.setUser(associationManager.enforceAuthorisationPrivacy(currentUser, s.getUser()));
+            }
             return Response.ok(groupProgressSummary).build();
         } catch (SegueDatabaseException e) {
             log.error("Database error while trying to get group progress for a group. ", e);
