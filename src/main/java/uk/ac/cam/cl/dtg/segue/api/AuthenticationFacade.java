@@ -295,6 +295,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
             @Context final HttpServletResponse response, @PathParam("provider") final String signinProvider) {
 
         try {
+            // TODO - review if rememberMe should default to true for SSO logins:
             RegisteredUserDTO userToReturn = userManager.authenticateCallback(request, response, signinProvider, true);
             this.getLogManager().logEvent(userToReturn, request, SegueLogType.LOG_IN, Maps.newHashMap());
             return Response.ok(userToReturn).build();
@@ -373,8 +374,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
                 + "Please try again after 10 minutes.";
 
         // Stop users logging in who have already locked their account.
-        if (misuseMonitor.hasMisused(email.toLowerCase(),
-                SegueLoginMisuseHandler.class.getSimpleName())) {
+        if (misuseMonitor.hasMisused(email.toLowerCase(), SegueLoginMisuseHandler.class.getSimpleName())) {
             log.error(String.format("Segue Login Blocked for (%s). Rate limited - too many logins.", email));
             return SegueErrorResponse.getRateThrottledResponse(rateThrottleMessage);
         }
@@ -389,7 +389,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
             return Response.ok(userToReturn).build();
         } catch (AdditionalAuthenticationRequiredException e) {
             // in this case the users account has been configured to require a second factor
-            // The password challange has completed successfully but they must complete the second step of the flow
+            // The password challenge has completed successfully but they must complete the second step of the flow
             return Response.accepted(ImmutableMap.of("2FA_REQUIRED", true)).build();
         } catch (AuthenticationProviderMappingException e) {
             String errorMsg = "Unable to locate the provider specified";
@@ -398,13 +398,10 @@ public class AuthenticationFacade extends AbstractSegueFacade {
         } catch (IncorrectCredentialsProvidedException | NoUserException | NoCredentialsAvailableException e) {
             try {
                 misuseMonitor.notifyEvent(email.toLowerCase(), SegueLoginMisuseHandler.class.getSimpleName());
-
-                log.info("Incorrect credentials received for (" + email
-                        + "). Error reason: " + e.getMessage());
+                log.info(String.format("Incorrect credentials received for (%s). Error: %s", email, e.getMessage()));
                 return new SegueErrorResponse(Status.UNAUTHORIZED, "Incorrect credentials provided.").toResponse();
             } catch (SegueResourceMisuseException e1) {
-                log.error("Segue Login Blocked for (" + email
-                        + "). Rate limited - too many logins.");
+                log.error(String.format("Segue Login Blocked for (%s). Rate limited - too many logins.", email));
                 return SegueErrorResponse.getRateThrottledResponse(rateThrottleMessage);
             }
         } catch (SegueDatabaseException e) {
@@ -465,8 +462,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
             AbstractSegueUserDTO user = this.userManager.getCurrentUser(request);
             userManager.logoutEverywhere(request, response);
 
-            this.getLogManager().logEvent(user, request, SegueLogType.LOG_OUT_EVERYWHERE,
-                    Maps.newHashMap());
+            this.getLogManager().logEvent(user, request, SegueLogType.LOG_OUT_EVERYWHERE, Maps.newHashMap());
             SegueMetrics.LOG_OUT_EVERYWHERE.inc();
 
             return Response.ok().build();
