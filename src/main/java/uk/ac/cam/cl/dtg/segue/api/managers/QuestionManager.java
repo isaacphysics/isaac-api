@@ -446,11 +446,12 @@ public class QuestionManager {
         // Convert the normal java dates into useful joda dates and create a new map.
         Map<LocalDate, Long> result = Maps.newHashMap();
         for (Map.Entry<Date, Long> le : questionAttemptCountPerDateByUser.entrySet()) {
+            LocalDate localisedDate = new LocalDate(le.getKey());
 
-            if (result.containsKey(le.getKey())) {
-                result.put(new LocalDate(le.getKey()), result.get(le.getKey()) + le.getValue());
+            if (result.containsKey(localisedDate)) {
+                result.put(localisedDate, result.get(localisedDate) + le.getValue());
             } else {
-                result.put(new LocalDate(le.getKey()), le.getValue());
+                result.put(localisedDate, le.getValue());
             }
         }
         return result;
