@@ -354,7 +354,8 @@ public final class Constants {
         SEND_MASS_EMAIL,
         SENT_EMAIL,
         USER_REGISTRATION,
-        USER_SCHOOL_CHANGE
+        USER_SCHOOL_CHANGE,
+        CLIENT_SIDE_ERROR
     }
 
     public static final Set<String> SEGUE_LOG_TYPES = Arrays.stream(SegueLogType.values()).map(SegueLogType::name).collect(Collectors.toSet());
