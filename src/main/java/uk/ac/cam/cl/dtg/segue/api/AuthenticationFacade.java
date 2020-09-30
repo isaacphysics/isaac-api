@@ -457,7 +457,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.WILDCARD)
-    @Path("/logout_everywhere")
+    @Path("/logout/everywhere")
     @ApiOperation(value = "Invalidate all sessions for the current user.")
     public final Response userLogoutEverywhere(@Context final HttpServletRequest request,
                                                @Context final HttpServletResponse response) {
