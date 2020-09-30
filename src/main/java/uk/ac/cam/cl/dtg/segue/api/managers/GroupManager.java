@@ -656,6 +656,7 @@ public class GroupManager {
                     questionPartsTotal += gameboardItem.getQuestionPartsTotal();
                     passMark += gameboardItem.getPassMark();
                 }
+                passMark = passMark / (progress.size() * 100.0f);
 
                 GameboardProgressSummaryDTO summary = new GameboardProgressSummaryDTO();
                 summary.setGameboardId(gameboard.getId());
@@ -664,7 +665,7 @@ public class GroupManager {
                 summary.setQuestionPartsIncorrect(questionPartsIncorrect);
                 summary.setQuestionPartsNotAttempted(questionPartsNotAttempted);
                 summary.setQuestionPartsTotal(questionPartsTotal);
-                // TODO PassMark maybe
+                summary.setPassMark(passMark);
                 userProgressMap.get(user).add(summary);
             }
         }

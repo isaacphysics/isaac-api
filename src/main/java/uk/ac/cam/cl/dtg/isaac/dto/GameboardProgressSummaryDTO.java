@@ -7,6 +7,7 @@ public class GameboardProgressSummaryDTO {
     private Integer questionPartsIncorrect;
     private Integer questionPartsNotAttempted;
     private Integer questionPartsTotal;
+    private Float passMark;
 
     public String getGameboardId() {
         return gameboardId;
@@ -54,5 +55,13 @@ public class GameboardProgressSummaryDTO {
 
     public void setQuestionPartsTotal(Integer questionPartsTotal) {
         this.questionPartsTotal = questionPartsTotal;
+    }
+
+    public Float getPassMark() {
+        return passMark;
+    }
+
+    public void setPassMark(Float passMark) {
+        this.passMark = passMark;
     }
 }
