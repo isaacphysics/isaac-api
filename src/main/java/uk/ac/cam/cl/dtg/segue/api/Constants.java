@@ -280,8 +280,6 @@ public final class Constants {
 
     // Local authentication specific stuff
     public static final String LOCAL_AUTH_EMAIL_FIELDNAME = "email";
-    public static final String LOCAL_AUTH_PASSWORD_FIELDNAME = "password";
-    public static final String LOCAL_AUTH_REMEMBER_ME_FIELDNAME = "rememberMe";
     public static final String LOCAL_AUTH_EMAIL_VERIFICATION_TOKEN_FIELDNAME = "emailVerificationToken";
     public static final String LOCAL_AUTH_GROUP_MANAGER_INITIATED_FIELDNAME = "groupManagerInitiated";
     public static final String LOCAL_AUTH_GROUP_MANAGER_EMAIL_FIELDNAME = "groupManagerEmail";
