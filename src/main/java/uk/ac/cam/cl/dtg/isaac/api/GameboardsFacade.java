@@ -72,10 +72,7 @@ import java.util.Map.Entry;
 
 import static com.google.common.collect.Maps.immutableEntry;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_TEN_MINUTES;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TITLE_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Games boards Facade.
@@ -93,7 +90,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
     private final FastTrackManger fastTrackManger;
 
-    private static String validIdRegex = "^[a-z0-9_-]+$";
+    private static final String VALID_GAMEBOARD_ID_REGEX = "^[a-z0-9_-]+$";
 
     /**
      * GamesFacade. For management of gameboards etc.
@@ -446,7 +443,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You cannot provide a gameboard wildcard, ID or tags.").toResponse();
             }
             
-            if (newGameboardObject.getId() != null && !newGameboardObject.getId().matches(validIdRegex)) {
+            if (newGameboardObject.getId() != null && !newGameboardObject.getId().matches(VALID_GAMEBOARD_ID_REGEX)) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid gameboard ID provided").toResponse();
             }
         } catch (NoUserLoggedInException e1) {
