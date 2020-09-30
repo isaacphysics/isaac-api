@@ -276,6 +276,16 @@ public interface IUserDataManager {
     void updateUserLastSeen(final RegisteredUser user, final Date date) throws SegueDatabaseException;
 
     /**
+     * Increment the session token of a user object in the data store.
+     *
+     * @param user
+     *            - the user object to update the session token of.
+     * @throws SegueDatabaseException
+     *             - If there is an internal database error.
+     */
+    void incrementSessionToken(RegisteredUser user) throws SegueDatabaseException;
+
+    /**
      * Count all the users by role and return a map
      * @return map of user role to integers
      * @throws SegueDatabaseException
