@@ -93,7 +93,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
     private final FastTrackManger fastTrackManger;
 
-    private static String validId = "^[a-z0-9_-]+$";
+    private static String validIdRegex = "^[a-z0-9_-]+$";
 
     /**
      * GamesFacade. For management of gameboards etc.
@@ -446,7 +446,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You cannot provide a gameboard wildcard, ID or tags.").toResponse();
             }
             
-            if (newGameboardObject.getId() != null && !newGameboardObject.getId().matches(validId)) {
+            if (newGameboardObject.getId() != null && !newGameboardObject.getId().matches(validIdRegex)) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid gameboard ID provided").toResponse();
             }
         } catch (NoUserLoggedInException e1) {
