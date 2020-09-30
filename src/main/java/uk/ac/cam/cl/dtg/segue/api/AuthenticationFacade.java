@@ -341,32 +341,32 @@ public class AuthenticationFacade extends AbstractSegueFacade {
      * @param signinProvider
      *            - string representing the supported auth provider so that we know who to redirect the user to.
      * @param localAuthDTO
-     *            - optional field for local authentication only. Credentials should be specified within a LocalAuthDTO object.
-     *            e.g. email, password and rememberMe.
+     *            - for local authentication only, credentials should be specified within a LocalAuthDTO object.
+     *            e.g. email, password and optionally a rememberMe flag.
      * @return The users DTO or a SegueErrorResponse
      */
     @POST
     @Path("/{provider}/authenticate")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Initiate login with an email address and password.")
+    @ApiOperation(value = "Initiate login with an email address and password.",
+                  notes = "Optionally, a rememberMe flag can be provided for a longer session duration.")
     public final Response authenticateWithCredentials(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response, @PathParam("provider") final String signinProvider,
             final LocalAuthDTO localAuthDTO) {
 
         
-        // in this case we expect a username and password to have been
-        // sent in the json response.
-        if (null == localAuthDTO || localAuthDTO.getEmail() == null
-                || localAuthDTO.getPassword() == null || localAuthDTO.getRememberMe() == null) {
+        // In this case we expect a username and password in the JSON request body:
+        if (null == localAuthDTO || null == localAuthDTO.getEmail() || localAuthDTO.getEmail().isEmpty()
+                || null == localAuthDTO.getPassword() || localAuthDTO.getPassword().isEmpty()) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
-                    "You must specify credentials email, password and remember me flag to use this authentication provider.");
+                    "You must specify an email and password when logging in.");
             return error.toResponse();
         }
         
         String email = localAuthDTO.getEmail();
         String password = localAuthDTO.getPassword();
-        boolean rememberMe = localAuthDTO.getRememberMe();
+        boolean rememberMe = localAuthDTO.getRememberMe() != null && localAuthDTO.getRememberMe();
         SegueMetrics.LOG_IN_ATTEMPT.inc();
 
         final String rateThrottleMessage = "There have been too many attempts to login to this account. "
