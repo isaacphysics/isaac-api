@@ -51,6 +51,7 @@ import java.util.Map;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.logEventTrackers;
 
 /**
  * LogEventFacade. This facade is responsible for allowing the front end to log arbitrary information in the log
@@ -112,6 +113,10 @@ public class LogEventFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.FORBIDDEN, "Unable to record log message, restricted '"
                     + TYPE_FIELDNAME + "' value.").toResponse();
         }
+
+        // Increment log type counter for metrics
+        logEventTrackers.get(eventType).inc();
+
         try {
             // implement arbitrary log size limit.
             AbstractSegueUserDTO currentUser = userManager.getCurrentUser(httpRequest);

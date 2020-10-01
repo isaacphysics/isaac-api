@@ -15,9 +15,17 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.monitors;
 
+import com.google.common.collect.Maps;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.guava.cache.CacheMetricsCollector;
+
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.ISAAC_LOG_TYPES;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_LOG_TYPES;
 
 /**
  * Created by mlt47 on 09/03/2018.
@@ -49,7 +57,7 @@ public final class SegueMetrics {
     public static final Counter LOG_IN = Counter.build()
             .name("segue_log_in_total").help("Successful log in since process start.").register();
     public static final Counter LOG_OUT = Counter.build()
-            .name("segue_log_out_total").help("Log out since preocess start.").register();
+            .name("segue_log_out_total").help("Log out since process start.").register();
 
     public static final Counter PASSWORD_RESET = Counter.build()
             .name("segue_password_reset_total").help("Password reset requests since process start.").register();
@@ -57,6 +65,13 @@ public final class SegueMetrics {
     // Email Metrics
     public static final Counter QUEUED_EMAIL = Counter.build()
             .name("segue_queued_email_total").help("All emails queued since process start").labelNames("type").register();
+
+    // Tracked Log Metrics
+    public static final Map<String, Counter> logEventTrackers = Maps.asMap(
+            Stream.concat(SEGUE_LOG_TYPES.stream(), ISAAC_LOG_TYPES.stream()).collect(Collectors.toSet()),
+            logType -> Counter.build()
+                    .name(String.format("segue_log_event_%s", logType.toLowerCase()))
+                    .help(String.format("%s log event occurrence counter.", logType)).register());
 
     /**
      *  Private constructor as it does not make sense to instantiate this class.
