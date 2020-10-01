@@ -21,12 +21,10 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.Validate;
 import org.eclipse.jetty.websocket.api.UpgradeRequest;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
@@ -37,9 +35,19 @@ import uk.ac.cam.cl.dtg.segue.auth.IOAuth1Authenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuthAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IPasswordAuthenticator;
-
 import uk.ac.cam.cl.dtg.segue.auth.OAuth1Token;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.*;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationCodeException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidSessionException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
@@ -108,7 +116,8 @@ public class UserAuthenticationManager {
                                      final PropertiesLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
                                      final MapperFacade dtoMapper, final EmailManager emailQueue) {
         Validate.notNull(properties.getProperty(HMAC_SALT));
-        Validate.notNull(Integer.parseInt(properties.getProperty(SESSION_EXPIRY_SECONDS)));
+        Validate.notNull(properties.getProperty(SESSION_EXPIRY_SECONDS_DEFAULT));
+        Validate.notNull(properties.getProperty(SESSION_EXPIRY_SECONDS_REMEMBERED));
         Validate.notNull(properties.getProperty(HOST_NAME));
 
         this.database = database;
@@ -421,11 +430,12 @@ public class UserAuthenticationManager {
      * @param request - for creating the session
      * @param response - for creating the session
      * @param user - the user who should be logged in.
+     * @param rememberMe - Boolean to indicate whether or not this cookie expiry duration should be long or short
      * @return the request and response will be modified and the original userDO will be returned for convenience.
      */
     public RegisteredUser createUserSession(final HttpServletRequest request, final HttpServletResponse response,
-            final RegisteredUser user) {
-        this.createSession(request, response, user, false);
+            final RegisteredUser user, final boolean rememberMe) {
+        this.createSession(request, response, user, false, rememberMe);
         return user;
     }
 
@@ -435,11 +445,12 @@ public class UserAuthenticationManager {
      * @param request - for creating the session
      * @param response - for creating the session
      * @param user - the user who should be logged in.
+     * @param rememberMe - Boolean to indicate whether or not this cookie expiry duration should be long or short
      * @return the request and response will be modified and the original userDO will be returned for convenience.
      */
     public RegisteredUser createIncompleteLoginUserSession(final HttpServletRequest request, final HttpServletResponse response,
-                                            final RegisteredUser user) {
-        this.createSession(request, response, user, true);
+                                            final RegisteredUser user, final boolean rememberMe) {
+        this.createSession(request, response, user, true, rememberMe);
         return user;
     }
 
@@ -814,10 +825,10 @@ public class UserAuthenticationManager {
             return true;
         }
     }
-    
+
     /**
      * Create a session and attach it to the request provided.
-     * 
+     *
      * @param request
      *            to enable access to anonymous user information.
      * @param response
@@ -826,14 +837,37 @@ public class UserAuthenticationManager {
      *            account to associate the session with.
      * @param partialLoginFlag
      *            Boolean to indicate whether or not this cookie represents a partial login (true) or full (false)
+     * @param rememberMe
+     *            Boolean to indicate whether or not this cookie expiry duration should be long or short
      */
     private void createSession(final HttpServletRequest request, final HttpServletResponse response,
-            final RegisteredUser user, final boolean partialLoginFlag) {
+                               final RegisteredUser user, final boolean partialLoginFlag, final boolean rememberMe) {
+        int sessionExpiryTimeInSeconds = Integer.parseInt(properties.getProperty(rememberMe ? SESSION_EXPIRY_SECONDS_REMEMBERED : SESSION_EXPIRY_SECONDS_DEFAULT));
+        createSession(request, response, user, sessionExpiryTimeInSeconds, partialLoginFlag, rememberMe);
+    }
+
+    /**
+     * Create a session with a specified expiry time and attach it to the request provided.
+     * 
+     * @param request
+     *            to enable access to anonymous user information.
+     * @param response
+     *            to store the session in our own segue cookie.
+     * @param user
+     *            account to associate the session with.
+     * @param sessionExpiryTimeInSeconds
+     *            max age of the cookie if not a partial login.
+     * @param partialLoginFlag
+     *            Boolean to indicate whether or not this cookie represents a partial login (true) or full (false)
+     * @param rememberMe
+     *            Boolean to indicate whether or not this cookie expiry duration should be long or short
+     */
+    private void createSession(final HttpServletRequest request, final HttpServletResponse response,
+            final RegisteredUser user, int sessionExpiryTimeInSeconds, final boolean partialLoginFlag, final boolean rememberMe) {
         Validate.notNull(response);
         Validate.notNull(user);
         Validate.notNull(user.getId());
         SimpleDateFormat sessionDateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
-        int sessionExpiryTimeInSeconds = Integer.parseInt(properties.getProperty(SESSION_EXPIRY_SECONDS));
         final int PARTIAL_EXPIRY_TIME_IN_SECONDS = 1200; // 20 mins
 
         String userId = user.getId().toString();
@@ -842,6 +876,11 @@ public class UserAuthenticationManager {
         String partialLoginFlagString = null;
 
         try {
+            if (partialLoginFlag) {
+                // use shortened expiry time if partial login
+                sessionExpiryTimeInSeconds = PARTIAL_EXPIRY_TIME_IN_SECONDS;
+            }
+
             Calendar calendar = Calendar.getInstance();
             calendar.add(Calendar.SECOND, sessionExpiryTimeInSeconds);
             String sessionExpiryDate = sessionDateFormat.format(calendar.getTime());
@@ -854,8 +893,6 @@ public class UserAuthenticationManager {
             if (partialLoginFlag) {
                 partialLoginFlagString = String.valueOf(true);
                 sessionInformationBuilder.put(PARTIAL_LOGIN_FLAG, partialLoginFlagString);
-                // use shortened expiry time if partial login
-                sessionExpiryTimeInSeconds = PARTIAL_EXPIRY_TIME_IN_SECONDS;
             }
 
             String sessionHMAC = calculateSessionHMAC(hmacKey, userId, sessionExpiryDate, userSessionToken, partialLoginFlagString);

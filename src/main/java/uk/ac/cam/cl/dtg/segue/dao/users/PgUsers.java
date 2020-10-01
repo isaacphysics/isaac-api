@@ -641,7 +641,21 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             throw new SegueDatabaseException("Postgres exception", e);
         }
     }
-    
+
+    @Override
+    public void incrementSessionToken(RegisteredUser user) throws SegueDatabaseException {
+        Validate.notNull(user);
+
+        try (Connection conn = database.getDatabaseConnection()) {
+            PreparedStatement pst;
+            pst = conn.prepareStatement("UPDATE users SET session_token = session_token + 1 WHERE id = ?");
+            pst.setLong(1, user.getId());
+            pst.execute();
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        }
+    }
+
     /**
      * createUser.
      * @param userToCreate - a user object to persist

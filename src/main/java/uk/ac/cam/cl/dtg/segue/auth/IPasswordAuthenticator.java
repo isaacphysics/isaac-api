@@ -141,8 +141,6 @@ public interface IPasswordAuthenticator extends IAuthenticator {
      * This method tests whether the verification token is valid.
      * @param user
      *            - user
-     * @param email
-     *            - email the user wants to verify
      * @param token
      *            - verification token send to the user
 

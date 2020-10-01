@@ -155,7 +155,7 @@ public abstract class AbstractSegueFacade {
         // Create cache control header
         CacheControl cc = new CacheControl();
         
-        Integer maxCacheAge;
+        int maxCacheAge;
         if (null == maxAge) {
             // set max age to server default.
             maxCacheAge = Integer.parseInt(this.properties.getProperty(Constants.MAX_CONTENT_CACHE_TIME));
