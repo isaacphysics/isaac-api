@@ -633,10 +633,10 @@ public class GroupManager {
             userProgressMap.put(user, new ArrayList<>());
         }
 
-        List<String> gameboardsIds = assignments.stream().map(AssignmentDTO::getGameboardId)
-                .collect(Collectors.toList());
-        List<GameboardDTO> gameboards = gameManager.getGameboards(gameboardsIds);
-        for (GameboardDTO gameboard : gameboards) {
+        for (AssignmentDTO assignment : assignments) {
+            // Not sure why I have to do this but AssignmentDTO::getGameboard returns null
+            GameboardDTO gameboard = gameManager.getGameboard(assignment.getGameboardId());
+
             List<ImmutablePair<RegisteredUserDTO, List<GameboardItem>>> userProgressData = gameManager.gatherGameProgressData(groupMembers, gameboard);
 
             for (ImmutablePair<RegisteredUserDTO, List<GameboardItem>> userProgress : userProgressData) {
@@ -659,8 +659,8 @@ public class GroupManager {
                 passMark = passMark / (progress.size() * 100.0f);
 
                 GameboardProgressSummaryDTO summary = new GameboardProgressSummaryDTO();
-                summary.setGameboardId(gameboard.getId());
                 summary.setGameboardTitle(gameboard.getTitle());
+                summary.setAssignmentId(assignment.getId());
                 summary.setQuestionPartsCorrect(questionPartsCorrect);
                 summary.setQuestionPartsIncorrect(questionPartsIncorrect);
                 summary.setQuestionPartsNotAttempted(questionPartsNotAttempted);

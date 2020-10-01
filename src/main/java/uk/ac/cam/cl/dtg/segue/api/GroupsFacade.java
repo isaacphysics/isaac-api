@@ -738,7 +738,7 @@ public class GroupsFacade extends AbstractSegueFacade {
             }
 
             Collection<AssignmentDTO> assignments = assignmentManager.getAssignmentsByGroup(group.getId());
-            if (assignments.size() == 0) {
+            if (assignments == null || assignments.size() == 0) {
                 return Response.ok(new ArrayList<>()).build();
             }
             // TODO Could probably use a Collection here…

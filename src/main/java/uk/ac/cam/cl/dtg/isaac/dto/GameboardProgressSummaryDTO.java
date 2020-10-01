@@ -1,7 +1,7 @@
 package uk.ac.cam.cl.dtg.isaac.dto;
 
 public class GameboardProgressSummaryDTO {
-    private String gameboardId;
+    private Long assignmentId;
     private String gameboardTitle;
     private Integer questionPartsCorrect;
     private Integer questionPartsIncorrect;
@@ -9,12 +9,12 @@ public class GameboardProgressSummaryDTO {
     private Integer questionPartsTotal;
     private Float passMark;
 
-    public String getGameboardId() {
-        return gameboardId;
+    public Long getAssignmentId() {
+        return assignmentId;
     }
 
-    public void setGameboardId(String gameboardId) {
-        this.gameboardId = gameboardId;
+    public void setAssignmentId(Long assignmentId) {
+        this.assignmentId = assignmentId;
     }
 
     public String getGameboardTitle() {
