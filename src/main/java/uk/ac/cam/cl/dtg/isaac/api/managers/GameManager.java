@@ -365,9 +365,9 @@ public class GameManager {
 
         List<GameboardDTO> resultToReturn = Lists.newArrayList();
 
-        Long totalCompleted = 0L;
-        Long totalInProgress = 0L;
-        Long totalNotStarted = 0L;
+        long totalCompleted = 0L;
+        long totalInProgress = 0L;
+        long totalNotStarted = 0L;
 
         // filter gameboards based on selection.
         for (GameboardDTO gameboard : usersGameboards) {
@@ -410,7 +410,7 @@ public class GameManager {
             // we have to use a more complex sorting Comparator.
 
             for (Map.Entry<String, SortOrder> sortInstruction : sortInstructions) {
-                Boolean reverseOrder = false;
+                boolean reverseOrder = false;
                 if (sortInstruction.getValue().equals(SortOrder.DESC)) {
                     reverseOrder = true;
                 }
@@ -1039,10 +1039,10 @@ public class GameManager {
         gameItem.setQuestionPartsIncorrect(questionPartsIncorrect);
         gameItem.setQuestionPartsNotAttempted(questionPartsNotAttempted);
         gameItem.setQuestionPartStates(questionPartStates);
-        Integer questionPartsTotal = questionPartsCorrect + questionPartsIncorrect + questionPartsNotAttempted;
+        int questionPartsTotal = questionPartsCorrect + questionPartsIncorrect + questionPartsNotAttempted;
         gameItem.setQuestionPartsTotal(questionPartsTotal);
-        Float percentCorrect = 100f * questionPartsCorrect / questionPartsTotal;
-        Float percentIncorrect = 100f * questionPartsIncorrect / questionPartsTotal;
+        float percentCorrect = 100f * questionPartsCorrect / questionPartsTotal;
+        float percentIncorrect = 100f * questionPartsIncorrect / questionPartsTotal;
 
         GameboardItemState state;
         if (questionPartsCorrect == questionPartsTotal) {

@@ -24,6 +24,7 @@ public class FreeTextRule extends Choice {
     private boolean allowsAnyOrder;
     private boolean allowsExtraWords;
     private boolean allowsMisspelling;
+    private Integer proximityDistance;
 
     public FreeTextRule() {}
 
@@ -50,5 +51,11 @@ public class FreeTextRule extends Choice {
     }
     public boolean getAllowsMisspelling() {
         return this.allowsMisspelling;
+    }
+    public void setWordProximity(Integer proximityDistance) {
+        this.proximityDistance = proximityDistance;
+    }
+    public Integer getWordProximity() {
+        return this.proximityDistance;
     }
 }

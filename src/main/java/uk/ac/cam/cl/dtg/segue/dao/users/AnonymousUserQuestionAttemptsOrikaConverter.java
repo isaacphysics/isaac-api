@@ -54,10 +54,6 @@ public class AnonymousUserQuestionAttemptsOrikaConverter
             return null;
         }
 
-        if (!(source instanceof Map)) {
-            return null;
-        }
-
         // now map the hard question attempts stuff.
         Map<String, Map<String, List<QuestionValidationResponseDTO>>> newMap = Maps.newHashMap();
         for (Map.Entry<String, Map<String, List<QuestionValidationResponse>>> page : source.entrySet()) {

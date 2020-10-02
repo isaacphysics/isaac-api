@@ -15,24 +15,13 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
-import static org.easymock.EasyMock.*;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
-
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Sets;
 import ma.glasnost.orika.MapperFacade;
-
 import org.easymock.Capture;
 import org.junit.Before;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
-
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
@@ -41,9 +30,18 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
+
+import static org.easymock.EasyMock.*;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test class for the user manager class.
@@ -79,7 +77,9 @@ public class GroupManagerTest {
 		this.userManager = createMock(UserAccountManager.class);
 		this.gameManager = createMock(GameManager.class);
 		
-		expect(this.dummyPropertiesLoader.getProperty(Constants.SESSION_EXPIRY_SECONDS)).andReturn("60")
+		expect(this.dummyPropertiesLoader.getProperty(Constants.SESSION_EXPIRY_SECONDS_DEFAULT)).andReturn("60")
+				.anyTimes();
+		expect(this.dummyPropertiesLoader.getProperty(Constants.SESSION_EXPIRY_SECONDS_REMEMBERED)).andReturn("360")
 				.anyTimes();
 		replay(this.dummyPropertiesLoader);
 	}

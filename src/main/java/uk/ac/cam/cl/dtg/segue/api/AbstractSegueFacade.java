@@ -15,8 +15,14 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
-import java.util.Arrays;
-import java.util.Collections;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
+import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dos.users.Role;
+import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
@@ -24,16 +30,8 @@ import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
-import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dos.users.Role;
-import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import java.util.Arrays;
+import java.util.Collections;
 
 /**
  * An abstract representation of a Segue CMS facade.
@@ -157,7 +155,7 @@ public abstract class AbstractSegueFacade {
         // Create cache control header
         CacheControl cc = new CacheControl();
         
-        Integer maxCacheAge;
+        int maxCacheAge;
         if (null == maxAge) {
             // set max age to server default.
             maxCacheAge = Integer.parseInt(this.properties.getProperty(Constants.MAX_CONTENT_CACHE_TIME));
@@ -215,6 +213,38 @@ public abstract class AbstractSegueFacade {
             throws NoUserLoggedInException {
         return userManager.checkUserRole(userDTO, Collections.singletonList(Role.ADMIN));
     }
+
+    /**
+     * Is the current user in an event manager role.
+     *
+     * @param userManager
+     *            - Instance of User Manager
+     * @param request
+     *            - with session information
+     * @return true if user is logged in as an event manager, false otherwise.
+     * @throws NoUserLoggedInException
+     *             - if we are unable to tell because they are not logged in.
+     */
+    public static boolean isUserAnEventManager(final UserAccountManager userManager,
+                                                      final HttpServletRequest request) throws NoUserLoggedInException {
+        return userManager.checkUserRole(request, Collections.singletonList(Role.EVENT_MANAGER));
+    }
+
+    /**
+     * Is the current user in an event manager role.
+     *
+     * @param userManager
+     *            - Instance of User Manager
+     * @param userDTO
+     *            - for the user of interest
+     * @return true if user is logged in as an event manager, false otherwise.
+     * @throws NoUserLoggedInException
+     *             - if we are unable to tell because they are not logged in.
+     */
+    public static boolean isUserAnEventManager(final UserAccountManager userManager,
+                                                      final RegisteredUserDTO userDTO) throws NoUserLoggedInException {
+        return userManager.checkUserRole(userDTO, Collections.singletonList(Role.EVENT_MANAGER));
+    }
     
     /**
      * Is the current user in an admin or event manager role.
@@ -223,7 +253,7 @@ public abstract class AbstractSegueFacade {
      *            - Instance of User Manager
      * @param request
      *            - with session information
-     * @return true if user is logged in as an admin, false otherwise.
+     * @return true if user is logged in as an admin or event manager, false otherwise.
      * @throws NoUserLoggedInException
      *             - if we are unable to tell because they are not logged in.
      */
@@ -239,7 +269,7 @@ public abstract class AbstractSegueFacade {
      *            - Instance of User Manager
      * @param userDTO
      *            - for the user of interest
-     * @return true if user is logged in as an admin, false otherwise.
+     * @return true if user is logged in as an admin or event manager, false otherwise.
      * @throws NoUserLoggedInException
      *             - if we are unable to tell because they are not logged in.
      */

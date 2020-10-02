@@ -32,6 +32,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationRequestMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
+import uk.ac.cam.cl.dtg.segue.api.monitors.SendEmailMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
@@ -305,7 +306,7 @@ public class EmailFacade extends AbstractSegueFacade {
                     .getRateThrottledResponse("You have exceeded the number of requests allowed for this endpoint");
         } catch (InvalidTokenException | NoUserException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Token invalid or expired.");
-            log.error("Invalid email verification token received", e.toString());
+            log.error(String.format("Invalid email verification token received (%s)", e.toString()));
             return error.toResponse();
         } catch (SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
@@ -488,8 +489,23 @@ public class EmailFacade extends AbstractSegueFacade {
 
         try {
             RegisteredUserDTO sender = this.userManager.getCurrentRegisteredUser(request);
-            if (!isUserAnAdmin(userManager, sender)) {
+            if (!isUserAnAdminOrEventManager(userManager, sender)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
+            if (isUserAnEventManager(userManager, sender)) {
+                if (!emailType.equals(EmailType.EVENTS)) {
+                    return new SegueErrorResponse(Status.FORBIDDEN,
+                            "Event managers can only send event emails.").toResponse();
+                }
+                if (misuseMonitor.willHaveMisused(sender.getId().toString(),
+                        SendEmailMisuseHandler.class.getSimpleName(), userIds.size())) {
+                    return SegueErrorResponse
+                            .getRateThrottledResponse("You would have exceeded the number of emails you are allowed to send per day." +
+                                    " No emails have been sent.");
+                }
+                misuseMonitor.notifyEvent(sender.getId().toString(),
+                        SendEmailMisuseHandler.class.getSimpleName(), userIds.size());
             }
 
             for (Long userId : userIds) {
@@ -530,6 +546,9 @@ public class EmailFacade extends AbstractSegueFacade {
             log.debug(error.getErrorMessage());
         } catch (NoUserLoggedInException e2) {
             return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueResourceMisuseException e) {
+            return SegueErrorResponse
+                    .getRateThrottledResponse("You have exceeded the number of emails you are allowed to send per day.");
         }
 
         return Response.ok().build();

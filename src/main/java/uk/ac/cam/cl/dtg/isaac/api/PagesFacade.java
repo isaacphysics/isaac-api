@@ -242,9 +242,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(CONCEPT_TYPE));
 
         // options
-        if (null != conceptId) {
-            fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(conceptId));
-        }
+        fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(conceptId));
 
         Response result = this.findSingleResult(fieldsToMatch);
         try {
@@ -405,10 +403,12 @@ public class PagesFacade extends AbstractIsaacFacade {
         Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
         fieldsToMatch.put("type", Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
 
-        // options
-        if (null != questionId) {
-            fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(questionId));
+        if (null == questionId || questionId.isEmpty()) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid question id.").toResponse();
         }
+
+        // options
+        fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(questionId));
 
         try {
             AbstractSegueUserDTO user = userManager.getCurrentUser(httpServletRequest);
@@ -569,6 +569,10 @@ public class PagesFacade extends AbstractIsaacFacade {
     public final Response getPage(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
             @PathParam("page") final String pageId) {
 
+        if (null == pageId || pageId.isEmpty()) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid page id.").toResponse();
+        }
+
         // Calculate the ETag on current live version of the content
         // NOTE: Assumes that the latest version of the content is being used.
         EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + pageId.hashCode() + "");
@@ -582,9 +586,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(PAGE_TYPE, QUESTIONS_PAGE_TYPE));
 
         // options
-        if (null != pageId) {
-            fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(pageId));
-        }
+        fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(pageId));
 
         try {
             Response result = this.findSingleResult(fieldsToMatch);

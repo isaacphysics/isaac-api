@@ -138,7 +138,8 @@ public class UserAccountManager implements IUserAccountManager {
                               final MapperFacade dtoMapper, final EmailManager emailQueue, final IAnonymousUserDataManager temporaryUserCache, final ILogManager logManager,
                               final UserAuthenticationManager userAuthenticationManager, final ISecondFactorAuthenticator secondFactorManager) {
         Validate.notNull(properties.getProperty(HMAC_SALT));
-        Validate.notNull(properties.getProperty(SESSION_EXPIRY_SECONDS));
+        Validate.notNull(properties.getProperty(SESSION_EXPIRY_SECONDS_DEFAULT));
+        Validate.notNull(properties.getProperty(SESSION_EXPIRY_SECONDS_REMEMBERED));
         Validate.notNull(properties.getProperty(HOST_NAME));
 
         this.properties = properties;
@@ -217,6 +218,8 @@ public class UserAccountManager implements IUserAccountManager {
      *            to store the session in our own segue cookie.
      * @param provider
      *            - the provider who has just authenticated the user.
+     * @param rememberMe
+     *            - Boolean to indicate whether or not this cookie expiry duration should be long or short
      * @return Response containing the user object. Alternatively a SegueErrorResponse could be returned.
      * @throws AuthenticationProviderMappingException
      *             - if we cannot locate an appropriate authenticator.
@@ -236,7 +239,8 @@ public class UserAccountManager implements IUserAccountManager {
      *             - as per exception description.
      */
     public RegisteredUserDTO authenticateCallback(final HttpServletRequest request,
-            final HttpServletResponse response, final String provider) throws AuthenticationProviderMappingException,
+            final HttpServletResponse response, final String provider, final boolean rememberMe)
+            throws AuthenticationProviderMappingException,
             AuthenticatorSecurityException, NoUserException, IOException, SegueDatabaseException,
             AuthenticationCodeException, CodeExchangeException, CrossSiteRequestForgeryException {
         IAuthenticator authenticator = this.userAuthenticationManager.mapToProvider(provider);
@@ -248,7 +252,7 @@ public class UserAccountManager implements IUserAccountManager {
         RegisteredUser userFromLinkedAccount = this.userAuthenticationManager.getSegueUserFromLinkedAccount(
                 authenticator.getAuthenticationProvider(), providerUserDO.getProviderUserId());
         if (userFromLinkedAccount != null) {
-            return this.logUserIn(request, response, userFromLinkedAccount);
+            return this.logUserIn(request, response, userFromLinkedAccount, rememberMe);
         }
 
         RegisteredUser currentUser = getCurrentRegisteredUserDO(request);
@@ -280,7 +284,7 @@ public class UserAccountManager implements IUserAccountManager {
             // this must be a registration request
             RegisteredUser segueUserDO = this.registerUserWithFederatedProvider(
                     authenticator.getAuthenticationProvider(), providerUserDO);
-            RegisteredUserDTO segueUserDTO = this.logUserIn(request, response, segueUserDO);
+            RegisteredUserDTO segueUserDTO = this.logUserIn(request, response, segueUserDO, rememberMe);
             segueUserDTO.setFirstLogin(true);
             
             try {
@@ -313,6 +317,8 @@ public class UserAccountManager implements IUserAccountManager {
      *            - the email address of the account holder.
      * @param password
      *            - the plain text password.
+     * @param rememberMe
+     *            - Boolean to indicate whether or not this cookie expiry duration should be long or short
      * @return A response containing the UserDTO object or a SegueErrorResponse.
      * @throws AuthenticationProviderMappingException
      *             - if we cannot find an authenticator
@@ -326,7 +332,7 @@ public class UserAccountManager implements IUserAccountManager {
      *             - if there is a problem with the database.
      */
     public final RegisteredUserDTO authenticateWithCredentials(final HttpServletRequest request,
-            final HttpServletResponse response, final String provider, final String email, final String password)
+            final HttpServletResponse response, final String provider, final String email, final String password, final boolean rememberMe)
             throws AuthenticationProviderMappingException, IncorrectCredentialsProvidedException, NoUserException,
             NoCredentialsAvailableException, SegueDatabaseException, AdditionalAuthenticationRequiredException {
         Validate.notBlank(email);
@@ -346,10 +352,10 @@ public class UserAccountManager implements IUserAccountManager {
         // check if user has MFA enabled, if so we can't just log them in - also they won't have the correct cookie
         if (secondFactorManager.has2FAConfigured(convertUserDOToUserDTO(user))) {
             // we can't just log them in we have to set a caveat cookie
-            this.partialLogInForMFA(request, response, user);
+            this.partialLogInForMFA(request, response, user, rememberMe);
             throw new AdditionalAuthenticationRequiredException();
         } else {
-            return this.logUserIn(request, response, user);
+            return this.logUserIn(request, response, user, rememberMe);
         }
     }
 
@@ -360,6 +366,7 @@ public class UserAccountManager implements IUserAccountManager {
      * @param request - containing the partially logged in user.
      * @param response - response will be updated to include fully logged in cookie if TOTPCode is successfully verified
      * @param TOTPCode - code to verify
+     * @param rememberMe - Boolean to indicate whether or not this cookie expiry duration should be long or short
      * @return RegisteredUserDTO as they are now considered logged in.
      * @throws IncorrectCredentialsProvidedException
      *             - if the password is incorrect
@@ -370,7 +377,8 @@ public class UserAccountManager implements IUserAccountManager {
      * @throws SegueDatabaseException
      *             - if there is a problem with the database.
      */
-    public RegisteredUserDTO authenticateMFA(final HttpServletRequest request, final HttpServletResponse response, final Integer TOTPCode)
+    public RegisteredUserDTO authenticateMFA(final HttpServletRequest request, final HttpServletResponse response,
+                                             final Integer TOTPCode, final boolean rememberMe)
             throws IncorrectCredentialsProvidedException, NoCredentialsAvailableException, SegueDatabaseException, NoUserLoggedInException {
         RegisteredUser registeredUser = this.retrievePartialLogInForMFA(request);
 
@@ -382,7 +390,7 @@ public class UserAccountManager implements IUserAccountManager {
         this.secondFactorManager.authenticate2ndFactor(userToReturn, TOTPCode);
 
         // replace cookie to no longer have caveat
-        return this.logUserIn(request, response, registeredUser);
+        return this.logUserIn(request, response, registeredUser, rememberMe);
     }
 
     /**
@@ -692,6 +700,8 @@ public class UserAccountManager implements IUserAccountManager {
      *            - the user DO to use for updates - must not contain a user id.
      * @param newPassword
      *            - new password for the account being created.
+     * @param rememberMe
+     *            - Boolean to indicate whether or not this cookie expiry duration should be long or short
      * @throws InvalidPasswordException
      *             - the password provided does not meet our requirements.
      * @throws MissingRequiredFieldException
@@ -707,7 +717,8 @@ public class UserAccountManager implements IUserAccountManager {
      *             (i.e. an @isaacphysics.org or @isaacchemistry.org address).
      */
     public RegisteredUserDTO createUserObjectAndSession(final HttpServletRequest request,
-            final HttpServletResponse response, final RegisteredUser user, final String newPassword) throws InvalidPasswordException,
+            final HttpServletResponse response, final RegisteredUser user, final String newPassword,
+                                                        final boolean rememberMe) throws InvalidPasswordException,
             MissingRequiredFieldException, SegueDatabaseException, AuthenticationProviderMappingException,
             EmailMustBeVerifiedException {
         Validate.isTrue(user.getId() == null,
@@ -788,7 +799,7 @@ public class UserAccountManager implements IUserAccountManager {
                 ImmutableMap.builder().put("provider", AuthenticationProvider.SEGUE.name()).build());
 
         // return it to the caller.
-        return this.logUserIn(request, response, userToReturn);
+        return this.logUserIn(request, response, userToReturn, rememberMe);
     }
 
     /**
@@ -1375,11 +1386,13 @@ public class UserAccountManager implements IUserAccountManager {
      *            - for the session to be attached.
      * @param user
      *            - the user who is being logged in.
+     * @param rememberMe
+     *            Boolean to indicate whether or not this cookie expiry duration should be long or short
      * @throws SegueDatabaseException - if there is a problem with the database.
      * @return the DTO version of the user.
      */
     private RegisteredUserDTO logUserIn(final HttpServletRequest request, final HttpServletResponse response,
-            final RegisteredUser user) throws SegueDatabaseException {
+            final RegisteredUser user, final boolean rememberMe) throws SegueDatabaseException {
         AnonymousUser anonymousUser = this.getAnonymousUserDO(request);
         if (anonymousUser != null) {
             log.debug(String.format("Anonymous User (%s) located during login - need to merge question information", anonymousUser.getSessionId()));
@@ -1388,7 +1401,7 @@ public class UserAccountManager implements IUserAccountManager {
         // now we want to clean up any data generated by the user while they weren't logged in.
         mergeAnonymousUserWithRegisteredUser(anonymousUser, user);
 
-        return this.convertUserDOToUserDTO(this.userAuthenticationManager.createUserSession(request, response, user));
+        return this.convertUserDOToUserDTO(this.userAuthenticationManager.createUserSession(request, response, user, rememberMe));
     }
 
     /**
@@ -1399,10 +1412,11 @@ public class UserAccountManager implements IUserAccountManager {
      * @param request - http request containing the cookie
      * @param response - response to update cookie information
      * @param user - user of interest
+     * @param rememberMe - Boolean to indicate whether or not this cookie expiry duration should be long or short
      */
     private void partialLogInForMFA(final HttpServletRequest request, final HttpServletResponse response,
-                                                 final RegisteredUser user) {
-        this.userAuthenticationManager.createIncompleteLoginUserSession(request, response, user);
+                                                 final RegisteredUser user, final boolean rememberMe) {
+        this.userAuthenticationManager.createIncompleteLoginUserSession(request, response, user, rememberMe);
     }
 
     /**
@@ -1686,6 +1700,29 @@ public class UserAccountManager implements IUserAccountManager {
                 this.database.updateUserLastSeen(user);
             }
         }
+    }
+
+    /**
+     * Logout user from all sessions.
+     * Increment the users' session token field to invalidate all other sessions.
+     *
+     * @param request
+     *            - request containing session information.
+     * @param response
+     *            to destroy the segue cookie.
+     * @throws NoUserLoggedInException
+     *            - when the request doesn't have an auth cookie.
+     * @throws SegueDatabaseException
+     *             - if an error occurs with the update.
+     */
+    public void logoutEverywhere(final HttpServletRequest request, final HttpServletResponse response)
+            throws SegueDatabaseException, NoUserLoggedInException {
+        RegisteredUser user = this.getCurrentRegisteredUserDO(request);
+        if (null == user) {
+            throw new NoUserLoggedInException();
+        }
+        this.database.incrementSessionToken(user);
+        logUserOut(request, response);
     }
 
     /**

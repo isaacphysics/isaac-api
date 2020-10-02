@@ -129,7 +129,10 @@ public class UserManagerTest {
 
         expect(this.dummyPropertiesLoader.getProperty(Constants.HMAC_SALT)).andReturn(dummyHMACSalt).anyTimes();
         expect(this.dummyPropertiesLoader.getProperty(Constants.HOST_NAME)).andReturn(dummyHostName).anyTimes();
-        expect(this.dummyPropertiesLoader.getProperty(Constants.SESSION_EXPIRY_SECONDS)).andReturn("60").anyTimes();
+        expect(this.dummyPropertiesLoader.getProperty(Constants.SESSION_EXPIRY_SECONDS_DEFAULT)).andReturn("60")
+                .anyTimes();
+        expect(this.dummyPropertiesLoader.getProperty(Constants.SESSION_EXPIRY_SECONDS_REMEMBERED)).andReturn("360")
+                .anyTimes();
         expect(this.dummyPropertiesLoader.getProperty(Constants.SEGUE_APP_ENVIRONMENT)).andReturn("DEV").anyTimes();
         replay(this.dummyPropertiesLoader);
     }
@@ -417,7 +420,7 @@ public class UserManagerTest {
         replay(dummySession, request, dummyAuth, dummyQuestionDatabase, dummyMapper, dummyDatabase, dummyLocalAuth, dummyQueue, dummyUserCache);
 
         // Act
-        RegisteredUserDTO u = userManager.authenticateCallback(request, response, validOAuthProvider);
+        RegisteredUserDTO u = userManager.authenticateCallback(request, response, validOAuthProvider, false);
 
         // Assert
         verify(dummySession, request, dummyAuth, dummyQuestionDatabase);
@@ -456,7 +459,7 @@ public class UserManagerTest {
 
         // Act
         try {
-            userManager.authenticateCallback(request, response, validOAuthProvider);
+            userManager.authenticateCallback(request, response, validOAuthProvider, false);
             fail("Exception should have been thrown");
         } catch (CrossSiteRequestForgeryException e) {
             // success
@@ -499,7 +502,7 @@ public class UserManagerTest {
 
         // Act
         try {
-            userManager.authenticateCallback(request, response, validOAuthProvider);
+            userManager.authenticateCallback(request, response, validOAuthProvider, false);
             fail("Exception should have been thrown");
         } catch (CrossSiteRequestForgeryException e) {
             // pass

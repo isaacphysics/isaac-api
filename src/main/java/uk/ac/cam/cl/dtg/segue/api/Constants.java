@@ -151,9 +151,14 @@ public final class Constants {
     public static final String HMAC = "HMAC";
 
     /**
-     * Constant representing the property name for the session expiry in seconds - used in HMAC calculations.
+     * Constant representing the property name for the session expiry in seconds when remember me is not set - used in HMAC calculations.
      */
-    public static final String SESSION_EXPIRY_SECONDS = "SESSION_EXPIRY_SECONDS";
+    public static final String SESSION_EXPIRY_SECONDS_DEFAULT = "SESSION_EXPIRY_SECONDS_DEFAULT";
+
+    /**
+     * Constant representing the property name for the session expiry in seconds when remember me is set - used in HMAC calculations.
+     */
+    public static final String SESSION_EXPIRY_SECONDS_REMEMBERED = "SESSION_EXPIRY_SECONDS_REMEMBERED";
 
     /**
      * Constant representing the key for the SESSION USER ID - used in HMAC calculations.
@@ -275,7 +280,6 @@ public final class Constants {
 
     // Local authentication specific stuff
     public static final String LOCAL_AUTH_EMAIL_FIELDNAME = "email";
-    public static final String LOCAL_AUTH_PASSWORD_FIELDNAME = "password";
     public static final String LOCAL_AUTH_EMAIL_VERIFICATION_TOKEN_FIELDNAME = "emailVerificationToken";
     public static final String LOCAL_AUTH_GROUP_MANAGER_INITIATED_FIELDNAME = "groupManagerInitiated";
     public static final String LOCAL_AUTH_GROUP_MANAGER_EMAIL_FIELDNAME = "groupManagerEmail";
@@ -344,6 +348,7 @@ public final class Constants {
         EVENT_RESERVATIONS_CANCELLED,
         LOG_IN,
         LOG_OUT,
+        LOG_OUT_EVERYWHERE,
         MERGE_USER,
         PASSWORD_RESET_REQUEST_RECEIVED,
         PASSWORD_RESET_REQUEST_SUCCESSFUL,
