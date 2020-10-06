@@ -534,6 +534,18 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     /**
+     * Extract the session expiry time from a request.
+     *
+     * Does not check session validity.
+     *
+     * @param request The request to extract the session information from
+     * @return The session expiry as a Date
+     */
+    public Date getSessionExpiry(final HttpServletRequest request) {
+        return userAuthenticationManager.getSessionExpiry(request);
+    }
+
+    /**
      * Get the authentication settings of particular user
      *
      * @param user
