@@ -108,10 +108,18 @@ public class LogEventFacade extends AbstractSegueFacade {
 
         String eventType = (String) eventJSON.get(TYPE_FIELDNAME);
 
+        // To maintain data integrity - don't allow the client to report events reserved for the server
         if (SEGUE_SERVER_LOG_TYPES.contains(eventType) || ISAAC_SERVER_LOG_TYPES.contains(eventType)) {
             return new SegueErrorResponse(Status.FORBIDDEN, "Unable to record log message, restricted '"
                     + TYPE_FIELDNAME + "' value.").toResponse();
         }
+
+        // Temporarily log log event types which are not included in our accepted list of client log types.
+        // After a few weeks we should fail on the case where it is an unknown type.
+        if (!ISAAC_CLIENT_LOG_TYPES.contains(eventType)) {
+            log.error(String.format("Warning: Log Event '%s' is not included in ISAAC_CLIENT_LOG_TYPES", eventType));
+        }
+        
         try {
             // implement arbitrary log size limit.
             AbstractSegueUserDTO currentUser = userManager.getCurrentUser(httpRequest);
