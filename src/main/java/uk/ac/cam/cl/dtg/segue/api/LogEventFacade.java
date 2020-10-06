@@ -108,7 +108,7 @@ public class LogEventFacade extends AbstractSegueFacade {
 
         String eventType = (String) eventJSON.get(TYPE_FIELDNAME);
 
-        if (SEGUE_LOG_TYPES.contains(eventType) || ISAAC_LOG_TYPES.contains(eventType)) {
+        if (SEGUE_SERVER_LOG_TYPES.contains(eventType) || ISAAC_SERVER_LOG_TYPES.contains(eventType)) {
             return new SegueErrorResponse(Status.FORBIDDEN, "Unable to record log message, restricted '"
                     + TYPE_FIELDNAME + "' value.").toResponse();
         }

@@ -114,7 +114,7 @@ public final class Constants {
     /**
      * Class to represent Isaac log types.
      */
-    public enum IsaacLogType implements LogType {
+    public enum IsaacServerLogType implements LogType {
         ADD_BOARD_TO_PROFILE,
         CREATE_GAMEBOARD,
         DELETE_ASSIGNMENT,
@@ -133,7 +133,7 @@ public final class Constants {
         VIEW_TOPIC_SUMMARY_PAGE,
         VIEW_USER_PROGRESS
     }
-    public static final Set<String> ISAAC_LOG_TYPES = Arrays.stream(IsaacLogType.values()).map(IsaacLogType::name).collect(Collectors.toSet());
+    public static final Set<String> ISAAC_SERVER_LOG_TYPES = Arrays.stream(IsaacServerLogType.values()).map(IsaacServerLogType::name).collect(Collectors.toSet());
 
     public enum IsaacUserPreferences {
         SUBJECT_INTEREST, BETA_FEATURE, EXAM_BOARD

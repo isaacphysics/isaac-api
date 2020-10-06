@@ -263,7 +263,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                 .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA())
                 .put("numberFiltered", numberOfFilteredUsers).build();
 
-        this.logManager.logInternalEvent(sendingUser, SegueLogType.SEND_MASS_EMAIL, eventDetails);
+        this.logManager.logInternalEvent(sendingUser, SegueServerLogType.SEND_MASS_EMAIL, eventDetails);
         log.info(String.format("Admin user (%s) added %d emails to the queue. %d were filtered.", sendingUser.getEmail(),
                 allSelectedUsers.size() - numberOfFilteredUsers, numberOfFilteredUsers));
     }
@@ -305,7 +305,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         // if this is an email type that cannot have a preference, send it and log as appropriate
         if (!email.getEmailType().isValidEmailPreference()) {
             log.info(String.format("Added %s email to the queue with subject: %s", email.getEmailType().toString().toLowerCase(), email.getSubject()));
-            logManager.logInternalEvent(userDTO, SegueLogType.SENT_EMAIL, eventDetails);
+            logManager.logInternalEvent(userDTO, SegueServerLogType.SENT_EMAIL, eventDetails);
             addToQueue(email);
             return true;
         }
@@ -314,7 +314,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             UserPreference preference = userPreferenceManager.getUserPreference(SegueUserPreferences.EMAIL_PREFERENCE.name(), email.getEmailType().name(), userDTO.getId());
             // If no preference is present, send the email. This is consistent with sendCustomEmail(...) above.
             if (preference == null || preference.getPreferenceValue()) {
-                logManager.logInternalEvent(userDTO, SegueLogType.SENT_EMAIL, eventDetails);
+                logManager.logInternalEvent(userDTO, SegueServerLogType.SENT_EMAIL, eventDetails);
                 addToQueue(email);
                 return true;
             }

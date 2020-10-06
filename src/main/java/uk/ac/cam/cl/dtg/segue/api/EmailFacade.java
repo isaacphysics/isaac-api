@@ -345,7 +345,7 @@ public class EmailFacade extends AbstractSegueFacade {
             userManager.emailVerificationRequest(request, email);
 
             this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
-                    SegueLogType.EMAIL_VERIFICATION_REQUEST_RECEIVED,
+                    SegueServerLogType.EMAIL_VERIFICATION_REQUEST_RECEIVED,
                     ImmutableMap.of(Constants.LOCAL_AUTH_EMAIL_VERIFICATION_TOKEN_FIELDNAME, email));
 
             return Response.ok().build();

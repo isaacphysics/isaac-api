@@ -297,7 +297,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
         try {
             // TODO - review if rememberMe should default to true for SSO logins:
             RegisteredUserDTO userToReturn = userManager.authenticateCallback(request, response, signinProvider, true);
-            this.getLogManager().logEvent(userToReturn, request, SegueLogType.LOG_IN, Maps.newHashMap());
+            this.getLogManager().logEvent(userToReturn, request, SegueServerLogType.LOG_IN, Maps.newHashMap());
             return Response.ok(userToReturn).build();
         } catch (IOException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
@@ -383,7 +383,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
         try {
             RegisteredUserDTO userToReturn = userManager.authenticateWithCredentials(request, response, signinProvider, email, password, rememberMe);
 
-            this.getLogManager().logEvent(userToReturn, request, SegueLogType.LOG_IN, Maps.newHashMap());
+            this.getLogManager().logEvent(userToReturn, request, SegueServerLogType.LOG_IN, Maps.newHashMap());
             SegueMetrics.LOG_IN.inc();
 
             return Response.ok(userToReturn).build();
@@ -428,7 +428,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     public final Response userLogout(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response) {
         try {
-            this.getLogManager().logEvent(this.userManager.getCurrentUser(request), request, SegueLogType.LOG_OUT,
+            this.getLogManager().logEvent(this.userManager.getCurrentUser(request), request, SegueServerLogType.LOG_OUT,
                     Maps.newHashMap());
             SegueMetrics.LOG_OUT.inc();
 
@@ -462,7 +462,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
             AbstractSegueUserDTO user = this.userManager.getCurrentUser(request);
             userManager.logoutEverywhere(request, response);
 
-            this.getLogManager().logEvent(user, request, SegueLogType.LOG_OUT_EVERYWHERE, Maps.newHashMap());
+            this.getLogManager().logEvent(user, request, SegueServerLogType.LOG_OUT_EVERYWHERE, Maps.newHashMap());
             SegueMetrics.LOG_OUT_EVERYWHERE.inc();
 
             return Response.ok().build();
@@ -509,7 +509,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
 
             RegisteredUserDTO userToReturn = this.userManager.authenticateMFA(request, response, verificationCode, mfaResponse.getRememberMe());
 
-            this.getLogManager().logEvent(userToReturn, request, SegueLogType.LOG_IN, Maps.newHashMap());
+            this.getLogManager().logEvent(userToReturn, request, SegueServerLogType.LOG_IN, Maps.newHashMap());
             SegueMetrics.LOG_IN.inc();
 
             return Response.ok(userToReturn).build();
