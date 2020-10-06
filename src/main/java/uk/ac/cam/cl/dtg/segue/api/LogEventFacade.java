@@ -123,7 +123,7 @@ public class LogEventFacade extends AbstractSegueFacade {
             }
 
             try {
-                misuseMonitor.notifyEvent(uid, LogEventMisuseHandler.class.toString(), httpRequest.getContentLength());
+                misuseMonitor.notifyEvent(uid, LogEventMisuseHandler.class.getSimpleName(), httpRequest.getContentLength());
             } catch (SegueResourceMisuseException e) {
                 log.error(String.format("Logging Event Failed - log event requested (%s bytes) "
                         + "and would exceed daily limit size limit (%s bytes) ", httpRequest.getContentLength(),

@@ -677,41 +677,47 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
             // TODO: We should automatically register all handlers that implement this interface using reflection?
             // register handlers segue specific handlers
-            misuseMonitor.registerHandler(TokenOwnerLookupMisuseHandler.class.toString(),
+            misuseMonitor.registerHandler(TokenOwnerLookupMisuseHandler.class.getSimpleName(),
                     new TokenOwnerLookupMisuseHandler(emailManager, properties));
 
-            misuseMonitor.registerHandler(GroupManagerLookupMisuseHandler.class.toString(),
+            misuseMonitor.registerHandler(GroupManagerLookupMisuseHandler.class.getSimpleName(),
                     new GroupManagerLookupMisuseHandler(emailManager, properties));
 
-            misuseMonitor.registerHandler(EmailVerificationMisuseHandler.class.toString(),
+            misuseMonitor.registerHandler(EmailVerificationMisuseHandler.class.getSimpleName(),
                     new EmailVerificationMisuseHandler());
 
-            misuseMonitor.registerHandler(EmailVerificationRequestMisuseHandler.class.toString(),
+            misuseMonitor.registerHandler(EmailVerificationRequestMisuseHandler.class.getSimpleName(),
                     new EmailVerificationRequestMisuseHandler());
 
-            misuseMonitor.registerHandler(PasswordResetRequestMisuseHandler.class.toString(),
+            misuseMonitor.registerHandler(PasswordResetRequestMisuseHandler.class.getSimpleName(),
                     new PasswordResetRequestMisuseHandler());
 
-            misuseMonitor.registerHandler(RegistrationMisuseHandler.class.toString(),
+            misuseMonitor.registerHandler(TeacherPasswordResetMisuseHandler.class.getSimpleName(),
+                    new TeacherPasswordResetMisuseHandler());
+
+            misuseMonitor.registerHandler(RegistrationMisuseHandler.class.getSimpleName(),
                     new RegistrationMisuseHandler(emailManager, properties));
 
-            misuseMonitor.registerHandler(SegueLoginMisuseHandler.class.toString(),
+            misuseMonitor.registerHandler(SegueLoginMisuseHandler.class.getSimpleName(),
                     new SegueLoginMisuseHandler(emailManager, properties));
 
-            misuseMonitor.registerHandler(LogEventMisuseHandler.class.toString(),
+            misuseMonitor.registerHandler(LogEventMisuseHandler.class.getSimpleName(),
                     new LogEventMisuseHandler(emailManager, properties));
 
-            misuseMonitor.registerHandler(QuestionAttemptMisuseHandler.class.toString(),
+            misuseMonitor.registerHandler(QuestionAttemptMisuseHandler.class.getSimpleName(),
                     new QuestionAttemptMisuseHandler(emailManager, properties));
 
-            misuseMonitor.registerHandler(AnonQuestionAttemptMisuseHandler.class.toString(),
+            misuseMonitor.registerHandler(AnonQuestionAttemptMisuseHandler.class.getSimpleName(),
                     new AnonQuestionAttemptMisuseHandler());
 
-            misuseMonitor.registerHandler(IPQuestionAttemptMisuseHandler.class.toString(),
+            misuseMonitor.registerHandler(IPQuestionAttemptMisuseHandler.class.getSimpleName(),
                     new IPQuestionAttemptMisuseHandler(emailManager, properties));
 
-            misuseMonitor.registerHandler(UserSearchMisuseHandler.class.toString(),
+            misuseMonitor.registerHandler(UserSearchMisuseHandler.class.getSimpleName(),
                     new UserSearchMisuseHandler());
+
+            misuseMonitor.registerHandler(SendEmailMisuseHandler.class.getSimpleName(),
+                    new SendEmailMisuseHandler());
         }
 
         return misuseMonitor;

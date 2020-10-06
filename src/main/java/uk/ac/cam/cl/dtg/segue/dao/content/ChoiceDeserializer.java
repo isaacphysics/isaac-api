@@ -41,7 +41,7 @@ import java.io.IOException;
  * Choice deserializer
  * 
  * This class requires the primary content base deserializer as a constructor
- * arguement.
+ * argument.
  * 
  * It is to allow subclasses of the choices object to be detected correctly.
  */

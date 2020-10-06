@@ -146,12 +146,15 @@ public class AuthorisationFacade extends AbstractSegueFacade {
         try {
             RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
 
-            if (!isUserStaff(userManager, request) && !userId.equals(requestingUser.getId())) {
+            RegisteredUserDTO user;
+            if (userId.equals(requestingUser.getId())) {
+                user = requestingUser;
+            } else if (isUserStaff(userManager, requestingUser)) {
+                user = userManager.getUserDTOById(userId);
+            } else {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access the associations of another user.")
                         .toResponse();
             }
-
-            RegisteredUserDTO user = userManager.getUserDTOById(userId);
 
             List<Long> userIdsWithAccess = Lists.newArrayList();
             for (UserAssociation a : associationManager.getAssociations(user)) {
@@ -365,12 +368,15 @@ public class AuthorisationFacade extends AbstractSegueFacade {
         try {
             RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
 
-            if (!isUserStaff(userManager, request) && !userId.equals(requestingUser.getId())) {
+            RegisteredUserDTO user;
+            if (userId.equals(requestingUser.getId())) {
+                user = requestingUser;
+            } else if (isUserStaff(userManager, requestingUser)) {
+                user = userManager.getUserDTOById(userId);
+            } else {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access the associations of another user.")
                         .toResponse();
             }
-
-            RegisteredUserDTO user = userManager.getUserDTOById(userId);
 
             List<Long> userIdsGrantingAccess = Lists.newArrayList();
             for (UserAssociation a : associationManager.getAssociationsForOthers(user)) {
@@ -466,7 +472,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
             UserGroupDTO group = this.groupManager.getGroupById(associationToken.getGroupId());
 
             misuseMonitor.notifyEvent(currentRegisteredUser.getId().toString(),
-                    TokenOwnerLookupMisuseHandler.class.toString());
+                    TokenOwnerLookupMisuseHandler.class.getSimpleName());
 
             // add owner
             List<UserSummaryWithEmailAddressDTO> usersLinkedToToken = Lists.newArrayList();

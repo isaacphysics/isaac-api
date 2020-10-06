@@ -32,6 +32,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationRequestMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
+import uk.ac.cam.cl.dtg.segue.api.monitors.SendEmailMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
@@ -295,7 +296,7 @@ public class EmailFacade extends AbstractSegueFacade {
                                                      @PathParam("token") final String token) {
 
         try {
-            misuseMonitor.notifyEvent(userId.toString(), EmailVerificationMisuseHandler.class.toString());
+            misuseMonitor.notifyEvent(userId.toString(), EmailVerificationMisuseHandler.class.getSimpleName());
             userManager.processEmailVerification(userId, token);
 
             // assume that if there are no exceptions that it worked.
@@ -305,7 +306,7 @@ public class EmailFacade extends AbstractSegueFacade {
                     .getRateThrottledResponse("You have exceeded the number of requests allowed for this endpoint");
         } catch (InvalidTokenException | NoUserException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Token invalid or expired.");
-            log.error("Invalid email verification token received", e.toString());
+            log.error(String.format("Invalid email verification token received (%s)", e.toString()));
             return error.toResponse();
         } catch (SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
@@ -339,7 +340,7 @@ public class EmailFacade extends AbstractSegueFacade {
                 throw new MissingRequiredFieldException("No email address was provided.");
             }
 
-            misuseMonitor.notifyEvent(email, EmailVerificationRequestMisuseHandler.class.toString());
+            misuseMonitor.notifyEvent(email, EmailVerificationRequestMisuseHandler.class.getSimpleName());
 
             userManager.emailVerificationRequest(request, email);
 
@@ -488,16 +489,37 @@ public class EmailFacade extends AbstractSegueFacade {
 
         try {
             RegisteredUserDTO sender = this.userManager.getCurrentRegisteredUser(request);
-            if (!isUserAnAdmin(userManager, sender)) {
+            if (!isUserAnAdminOrEventManager(userManager, sender)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
+            if (isUserAnEventManager(userManager, sender)) {
+                if (!emailType.equals(EmailType.EVENTS)) {
+                    return new SegueErrorResponse(Status.FORBIDDEN,
+                            "Event managers can only send event emails.").toResponse();
+                }
+                if (misuseMonitor.willHaveMisused(sender.getId().toString(),
+                        SendEmailMisuseHandler.class.getSimpleName(), userIds.size())) {
+                    return SegueErrorResponse
+                            .getRateThrottledResponse("You would have exceeded the number of emails you are allowed to send per day." +
+                                    " No emails have been sent.");
+                }
+                misuseMonitor.notifyEvent(sender.getId().toString(),
+                        SendEmailMisuseHandler.class.getSimpleName(), userIds.size());
+            }
+
             for (Long userId : userIds) {
-                RegisteredUserDTO userDTO = this.userManager.getUserDTOById(userId);
-                if (userDTO != null) {
-                    allSelectedUsers.add(userDTO);
-                } else {
-                    log.error(String.format("Skipping - User could not be found from given userId: %s", userId));
+                try {
+                    RegisteredUserDTO userDTO = this.userManager.getUserDTOById(userId);
+                    if (userDTO != null) {
+                        allSelectedUsers.add(userDTO);
+                    } else {
+                        // This should never be possible, since getUserDTOById throws rather than returning null.
+                        throw new NoUserException("No user found with this ID!");
+                    }
+                } catch (NoUserException e) {
+                    // Skip missing users rather than failing hard!
+                    log.error(String.format("Skipping email to non-existent user (%s)!", userId));
                 }
             }
 
@@ -509,11 +531,6 @@ public class EmailFacade extends AbstractSegueFacade {
             }
 
             emailManager.sendCustomEmail(sender, contentId, new ArrayList<>(allSelectedUsers), emailType);
-        } catch (NoUserException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
-                    "One or more userId(s) did not map to a valid user!.");
-            log.error(error.getErrorMessage());
-            return error.toResponse();
         } catch (SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "There was an error processing your request.");
@@ -529,6 +546,9 @@ public class EmailFacade extends AbstractSegueFacade {
             log.debug(error.getErrorMessage());
         } catch (NoUserLoggedInException e2) {
             return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueResourceMisuseException e) {
+            return SegueErrorResponse
+                    .getRateThrottledResponse("You have exceeded the number of emails you are allowed to send per day.");
         }
 
         return Response.ok().build();

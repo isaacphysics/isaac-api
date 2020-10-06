@@ -201,7 +201,7 @@ public class NotificationPicker {
         ContentDTO notification = this.contentManager.getContentById(
                 this.contentManager.getCurrentContentSHA(), notificationId);
 
-        if (notification instanceof NotificationDTO && notification != null) {
+        if (notification instanceof NotificationDTO) {
             return notification;
         } else {
             throw new ResourceNotFoundException(String.format(
