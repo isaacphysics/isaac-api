@@ -18,8 +18,11 @@ package uk.ac.cam.cl.dtg.isaac.api;
 import uk.ac.cam.cl.dtg.segue.api.Constants.LogType;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_SERVER_LOG_TYPES;
 
 /**
  * Utility class to provide common isaac-specific constants.
@@ -157,6 +160,12 @@ public final class Constants {
         CLIENT_SIDE_ERROR,
     }
     public static final Set<String> ISAAC_CLIENT_LOG_TYPES = Arrays.stream(IsaacClientLogType.values()).map(IsaacClientLogType::name).collect(Collectors.toSet());
+
+    public static final Set<String> ALL_ACCEPTED_LOG_TYPES = new HashSet<String>() {{
+        addAll(SEGUE_SERVER_LOG_TYPES);
+        addAll(ISAAC_SERVER_LOG_TYPES);
+        addAll(ISAAC_CLIENT_LOG_TYPES);
+    }};
 
     public enum IsaacUserPreferences {
         SUBJECT_INTEREST, BETA_FEATURE, EXAM_BOARD
