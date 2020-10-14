@@ -8,6 +8,8 @@ public class GameboardProgressSummaryDTO {
     private Integer questionPartsNotAttempted;
     private Integer questionPartsTotal;
     private Float passMark;
+    private Integer questionPagesPerfect;
+    private Integer questionPagesTotal;
 
     public Long getAssignmentId() {
         return assignmentId;
@@ -63,5 +65,21 @@ public class GameboardProgressSummaryDTO {
 
     public void setPassMark(Float passMark) {
         this.passMark = passMark;
+    }
+
+    public Integer getQuestionPagesPerfect() {
+        return questionPagesPerfect;
+    }
+
+    public void setQuestionPagesPerfect(Integer questionPagesPerfect) {
+        this.questionPagesPerfect = questionPagesPerfect;
+    }
+
+    public Integer getQuestionPagesTotal() {
+        return questionPagesTotal;
+    }
+
+    public void setQuestionPagesTotal(Integer questionPagesTotal) {
+        this.questionPagesTotal = questionPagesTotal;
     }
 }

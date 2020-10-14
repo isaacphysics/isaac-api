@@ -25,6 +25,7 @@ import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
@@ -56,7 +57,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Comparator;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * GroupManager. Responsible for managing group related logic.
@@ -644,9 +644,10 @@ public class GroupManager {
                 List<GameboardItem> progress = userProgress.getValue();
 
                 int questionPartsCorrect = 0,
-                        questionPartsIncorrect = 0,
-                        questionPartsNotAttempted = 0,
-                        questionPartsTotal = 0;
+                    questionPartsIncorrect = 0,
+                    questionPartsNotAttempted = 0,
+                    questionPartsTotal = 0,
+                    questionPagesPerfect = 0;
                 float passMark = 0.0f;
 
                 for (GameboardItem gameboardItem : progress) {
@@ -655,6 +656,10 @@ public class GroupManager {
                     questionPartsNotAttempted += gameboardItem.getQuestionPartsNotAttempted();
                     questionPartsTotal += gameboardItem.getQuestionPartsTotal();
                     passMark += gameboardItem.getPassMark();
+                    Constants.GameboardItemState state = gameboardItem.getState();
+                    if (state == Constants.GameboardItemState.PERFECT) {
+                        questionPagesPerfect += 1;
+                    }
                 }
                 passMark = passMark / (progress.size() * 100.0f);
 
@@ -666,6 +671,8 @@ public class GroupManager {
                 summary.setQuestionPartsNotAttempted(questionPartsNotAttempted);
                 summary.setQuestionPartsTotal(questionPartsTotal);
                 summary.setPassMark(passMark);
+                summary.setQuestionPagesPerfect(questionPagesPerfect);
+                summary.setQuestionPagesTotal(progress.size());
                 userProgressMap.get(user).add(summary);
             }
         }
