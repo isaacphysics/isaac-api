@@ -615,7 +615,13 @@ public class EventsFacade extends AbstractIsaacFacade {
             for (EventBookingDTO booking : eventBookings) {
                 ArrayList<String> resultRow = Lists.newArrayList();
                 UserSummaryDTO resultUser = booking.getUserBooked();
-                RegisteredUserDTO resultRegisteredUser = this.userAccountManager.getUserDTOById(resultUser.getId());
+                RegisteredUserDTO resultRegisteredUser;
+                try {
+                    resultRegisteredUser = this.userAccountManager.getUserDTOById(resultUser.getId());
+                } catch (NoUserException e) {
+                    log.error(String.format("User with ID \"%d\" could not be retrieved. Continuing...", resultUser.getId()));
+                    continue;
+                }
                 String schoolId = resultRegisteredUser.getSchoolId();
                 Map<String, String> resultAdditionalInformation = booking.getAdditionalInformation();
                 BookingStatus resultBookingStatus = booking.getBookingStatus();
@@ -659,8 +665,6 @@ public class EventsFacade extends AbstractIsaacFacade {
 
         } catch (IOException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while building the CSV file.").toResponse();
-        } catch (NoUserException e) {
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "No user found with this ID!").toResponse();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
