@@ -445,6 +445,19 @@ public class GameManager {
                         }
                         return o1.getTitle().compareTo(o2.getTitle());
                     }, reverseOrder);
+                } else if (sortInstruction.getKey().equals(COMPLETION_FIELDNAME)) {
+                    comparatorForSorting.addComparator((o1, o2) -> {
+                        if (o1.getPercentageCompleted() == null && o2.getPercentageCompleted() == null) {
+                            return 0;
+                        }
+                        if (o1.getPercentageCompleted() == null) {
+                            return 1;
+                        }
+                        if (o2.getPercentageCompleted() == null) {
+                            return -1;
+                        }
+                        return o1.getPercentageCompleted().compareTo(o2.getPercentageCompleted());
+                    }, reverseOrder);
                 }
             }
         }
