@@ -322,7 +322,7 @@ public final class Constants {
     /**
      *  Class to represent Segue Log Types.
      */
-    public enum SegueLogType implements LogType {
+    public enum SegueServerLogType implements LogType {
         ADD_ADDITIONAL_GROUP_MANAGER,
         ADMIN_CHANGE_USER_SCHOOL,
         ADMIN_EVENT_ATTENDANCE_RECORDED,
@@ -362,7 +362,7 @@ public final class Constants {
         USER_SCHOOL_CHANGE
     }
 
-    public static final Set<String> SEGUE_LOG_TYPES = Arrays.stream(SegueLogType.values()).map(SegueLogType::name).collect(Collectors.toSet());
+    public static final Set<String> SEGUE_SERVER_LOG_TYPES = Arrays.stream(SegueServerLogType.values()).map(SegueServerLogType::name).collect(Collectors.toSet());
 
     // Websocket Component
     public static final String MAX_CONCURRENT_WEB_SOCKETS_PER_USER = "MAX_CONCURRENT_WEB_SOCKETS_PER_USER";

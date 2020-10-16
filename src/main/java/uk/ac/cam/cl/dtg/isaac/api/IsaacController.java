@@ -68,7 +68,7 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacLogType;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacServerLogType;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.PROXY_PATH;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
@@ -108,7 +108,7 @@ public class IsaacController extends AbstractIsaacFacade {
                 public void run() {
                     try {
                         log.info("Triggering question answer count query.");
-                        lastQuestionCount = statsManager.getLogCount(SegueLogType.ANSWER_QUESTION.name());
+                        lastQuestionCount = statsManager.getLogCount(SegueServerLogType.ANSWER_QUESTION.name());
                         log.info("Question answer count query complete.");
                     } catch (SegueDatabaseException e) {
                         lastQuestionCount = 0L;
@@ -217,7 +217,7 @@ public class IsaacController extends AbstractIsaacFacade {
                     .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
 
             getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
-                    IsaacLogType.GLOBAL_SITE_SEARCH, logMap);
+                    IsaacServerLogType.GLOBAL_SITE_SEARCH, logMap);
 
             ResultsWrapper results = this.extractContentSummaryFromResultsWrapper(
                     searchResults, this.getProperties().getProperty(PROXY_PATH));
@@ -330,7 +330,7 @@ public class IsaacController extends AbstractIsaacFacade {
 
                 userProgressInformation.put("userSnapshot", userSnapshot);
 
-                this.getLogManager().logEvent(user, request, IsaacLogType.VIEW_USER_PROGRESS,
+                this.getLogManager().logEvent(user, request, IsaacServerLogType.VIEW_USER_PROGRESS,
                         ImmutableMap.of(USER_ID_FKEY_FIELDNAME, userOfInterestFull.getId()));
 
                 return Response.ok(userProgressInformation).build();

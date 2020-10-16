@@ -18,8 +18,11 @@ package uk.ac.cam.cl.dtg.isaac.api;
 import uk.ac.cam.cl.dtg.segue.api.Constants.LogType;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_SERVER_LOG_TYPES;
 
 /**
  * Utility class to provide common isaac-specific constants.
@@ -116,7 +119,7 @@ public final class Constants {
     /**
      * Class to represent Isaac log types.
      */
-    public enum IsaacLogType implements LogType {
+    public enum IsaacServerLogType implements LogType {
         ADD_BOARD_TO_PROFILE,
         CREATE_GAMEBOARD,
         DELETE_ASSIGNMENT,
@@ -135,7 +138,36 @@ public final class Constants {
         VIEW_TOPIC_SUMMARY_PAGE,
         VIEW_USER_PROGRESS
     }
-    public static final Set<String> ISAAC_LOG_TYPES = Arrays.stream(IsaacLogType.values()).map(IsaacLogType::name).collect(Collectors.toSet());
+    public static final Set<String> ISAAC_SERVER_LOG_TYPES = Arrays.stream(IsaacServerLogType.values()).map(IsaacServerLogType::name).collect(Collectors.toSet());
+
+    public enum IsaacClientLogType implements LogType {
+        QUESTION_PART_OPEN,
+        CONCEPT_SECTION_OPEN,
+        ACCORDION_SECTION_OPEN,
+        VIDEO_PLAY,
+        VIDEO_PAUSE,
+        VIDEO_ENDED,
+        VIEW_SUPERSEDED_BY_QUESTION,
+        CLONE_GAMEBOARD,
+        VIEW_HINT,
+        QUICK_QUESTION_SHOW_ANSWER,
+        VIEW_RELATED_CONCEPT,
+        VIEW_RELATED_QUESTION,
+        VIEW_RELATED_PAGE,
+        VIEW_MY_ASSIGNMENTS,
+        VIEW_GAMEBOARD_BY_ID,
+        ACCEPT_COOKIES,
+        LEAVE_GAMEBOARD_BUILDER,
+        SAVE_GAMEBOARD,
+        CLIENT_SIDE_ERROR,
+    }
+    public static final Set<String> ISAAC_CLIENT_LOG_TYPES = Arrays.stream(IsaacClientLogType.values()).map(IsaacClientLogType::name).collect(Collectors.toSet());
+
+    public static final Set<String> ALL_ACCEPTED_LOG_TYPES = new HashSet<String>() {{
+        addAll(SEGUE_SERVER_LOG_TYPES);
+        addAll(ISAAC_SERVER_LOG_TYPES);
+        addAll(ISAAC_CLIENT_LOG_TYPES);
+    }};
 
     public enum IsaacUserPreferences {
         SUBJECT_INTEREST, BETA_FEATURE, EXAM_BOARD

@@ -58,12 +58,12 @@ import java.util.concurrent.TimeUnit;
 
 import static com.google.common.collect.Maps.immutableEntry;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.FAST_TRACK_QUESTION_TYPE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacLogType;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacServerLogType;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_TYPE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ID_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueLogType;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueServerLogType;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval.NINETY_DAYS;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval.SEVEN_DAYS;
@@ -156,8 +156,8 @@ public class StatisticsManager implements IStatisticsManager {
         result.put("userSchoolInfo", userManager.getSchoolInfoStats());
         result.put("groupCount", this.groupManager.getGroupCount());
 
-        result.put("viewQuestionEvents", logManager.getLogCountByType(IsaacLogType.VIEW_QUESTION.name()));
-        result.put("answeredQuestionEvents", logManager.getLogCountByType(SegueLogType.ANSWER_QUESTION.name()));
+        result.put("viewQuestionEvents", logManager.getLogCountByType(IsaacServerLogType.VIEW_QUESTION.name()));
+        result.put("answeredQuestionEvents", logManager.getLogCountByType(SegueServerLogType.ANSWER_QUESTION.name()));
 
         Map<String, Map<Role, Long>> rangedActiveUserStats = Maps.newHashMap();
         rangedActiveUserStats.put("sevenDays", userManager.getActiveRolesOverPrevious(SEVEN_DAYS));
