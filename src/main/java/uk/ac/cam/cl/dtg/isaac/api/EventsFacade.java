@@ -619,7 +619,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                 try {
                     resultRegisteredUser = this.userAccountManager.getUserDTOById(resultUser.getId());
                 } catch (NoUserException e) {
-                    log.error(String.format("User with ID \"%d\" could not be retrieved. Continuing...", resultUser.getId()));
+                    // Possibly a deleted user, silently skipping.
                     continue;
                 }
                 String schoolId = resultRegisteredUser.getSchoolId();
