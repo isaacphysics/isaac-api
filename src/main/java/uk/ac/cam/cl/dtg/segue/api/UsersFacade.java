@@ -190,6 +190,8 @@ public class UsersFacade extends AbstractSegueFacade {
      *            - request information used for caching.
      * @param httpServletRequest
      *            - the request which may contain session information.
+     * @param response
+     *            - the response to set session expiry information headers on.
      * @return Returns the current user DTO if we can get it or null response if we can't. It will be a 204 No Content
      */
     @GET
@@ -198,12 +200,20 @@ public class UsersFacade extends AbstractSegueFacade {
     @GZIP
     @ApiOperation(value = "Get information about the current user.")
     public Response getCurrentUserEndpoint(@Context final Request request,
-                                           @Context final HttpServletRequest httpServletRequest) {
+                                           @Context final HttpServletRequest httpServletRequest,
+                                           @Context final HttpServletResponse response) {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
 
-            // Calculate the ETag based on User we just retrieved from the DB
-            EntityTag etag = new EntityTag("currentUser".hashCode() + currentUser.toString().hashCode() + "");
+            Date sessionExpiry = userManager.getSessionExpiry(httpServletRequest);
+            int sessionExpiryHashCode = 0;
+            if (null != sessionExpiry) {
+                sessionExpiryHashCode = sessionExpiry.hashCode();
+                response.setDateHeader("X-Session-Expires", sessionExpiry.getTime());
+            }
+
+            // Calculate the ETag based on the user we just retrieved and the session expiry:
+            EntityTag etag = new EntityTag(currentUser.toString().hashCode() + sessionExpiryHashCode + "");
             Response cachedResponse = generateCachedResponse(request, etag, Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK);
             if (cachedResponse != null) {
                 return cachedResponse;
