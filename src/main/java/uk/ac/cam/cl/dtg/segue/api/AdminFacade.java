@@ -27,6 +27,7 @@ import com.google.inject.name.Named;
 import com.opencsv.CSVWriter;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -78,6 +79,8 @@ import uk.ac.cam.cl.dtg.util.locations.LocationServerException;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeRadius;
 
 import javax.annotation.Nullable;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
@@ -101,6 +104,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -446,7 +451,7 @@ public class AdminFacade extends AbstractSegueFacade {
 
     /**
      * This method will allow users' email verification status to be changed en-mass.
-     * 
+     *
      * @param request
      *            - to help determine access rights.
      * @param emailVerificationStatus
@@ -565,6 +570,44 @@ public class AdminFacade extends AbstractSegueFacade {
         return Response.ok().build();
     }
 
+
+     /* This method will allow users' email verification status to be changed en-mass.
+     *
+     * @param request
+     *            - to help determine access rights.
+     * @param webhookPayload
+     *            - a list of user webhookPayload that need to be changed
+     * @return Success shown by returning an ok response
+     */
+    @POST
+    @Path("/users/delivery_failed_notification")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response notifySingleDeliveryFailure(@Context final HttpServletRequest request,
+            final Map<String, Object> webhookPayload) {
+        try {
+            final String hmacAlgorithm = "HmacSHA256";
+            Map<String, String> signatureJson = (Map<String, String>) webhookPayload.get("signature");
+            String dataToSign = signatureJson.get("timestamp").concat(signatureJson.get("token"));
+            SecretKeySpec signingKey = new SecretKeySpec(getProperties().getProperty(MAILGUN_SECRET_KEY).getBytes(), hmacAlgorithm);
+            Mac mac = Mac.getInstance(hmacAlgorithm);
+            mac.init(signingKey);
+            byte[] rawHmac = mac.doFinal(dataToSign.getBytes());
+            String result = Hex.encodeHexString(rawHmac);
+            if (!result.equals(signatureJson.get("signature"))) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "Validation failed.").toResponse();
+            }
+            Map <String, Object> eventDetails = (Map<String, Object>) webhookPayload.get("event-data");
+
+            String recipientEmail = (String) eventDetails.get("recipient");
+
+            this.userManager.updateUserEmailVerificationStatus(recipientEmail, EmailVerificationStatus.DELIVERY_FAILED);
+
+            return Response.ok().build();
+        } catch (NoSuchAlgorithmException | InvalidKeyException | SegueDatabaseException | ClassCastException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to process request.", e).toResponse();
+        }
+    }
 
 
     /**

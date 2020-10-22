@@ -373,6 +373,9 @@ public final class Constants {
     // IP Geocoding stuff
     public static final String IP_INFO_DB_API_KEY = "IP_INFO_DB_API_KEY";
 
+    // MailGun Key
+    public static final String MAILGUN_SECRET_KEY = "MAILGUN_SECRET_KEY";
+
     /*
      * Default values.
      */
