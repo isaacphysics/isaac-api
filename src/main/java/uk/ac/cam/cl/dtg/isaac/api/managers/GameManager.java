@@ -1235,14 +1235,15 @@ public class GameManager {
             fieldsToMatchOutput.put(newEntry, gameFilter.getConcepts());
         }
 
+        List<String> tagsToExclude = Lists.newArrayList();
         // add no filter constraint
-        fieldsToMatchOutput.put(
-                immutableEntry(BooleanOperator.NOT, TAGS_FIELDNAME), Collections.singletonList(HIDE_FROM_FILTER_TAG));
+        tagsToExclude.add(HIDE_FROM_FILTER_TAG);
 
         // Temporarily ignore book and quick_quiz question types.
         // Strings hardcoded until question types are passed in as part of the query.
-        fieldsToMatchOutput.put(
-                immutableEntry(BooleanOperator.NOT, TAGS_FIELDNAME), ImmutableList.of("quick_quiz", "book"));
+        tagsToExclude.addAll(ImmutableList.of("quick_quiz", "book"));
+
+        fieldsToMatchOutput.put(immutableEntry(BooleanOperator.NOT, TAGS_FIELDNAME), tagsToExclude);
 
         return fieldsToMatchOutput;
     }
