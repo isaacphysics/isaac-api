@@ -60,6 +60,10 @@ public final class SegueMetrics {
     public static final Counter QUEUED_EMAIL = Counter.build()
             .name("segue_queued_email_total").help("All emails queued since process start").labelNames("type").register();
 
+    // Log Event Metrics
+    public static final Counter LOG_EVENT = Counter.build()
+            .name("isaac_log_event").help("Counter for Log Events by type").labelNames("type").register();
+
     /**
      *  Private constructor as it does not make sense to instantiate this class.
      */

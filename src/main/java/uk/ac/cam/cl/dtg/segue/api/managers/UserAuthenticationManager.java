@@ -378,6 +378,30 @@ public class UserAuthenticationManager {
     }
 
     /**
+     * Extract the session expiry time from a request.
+     *
+     * Does not check session validity.
+     *
+     * @param request The request to extract the session information from
+     * @return The session expiry as a Date
+     */
+    public Date getSessionExpiry(final HttpServletRequest request) {
+        try {
+            Map<String, String> currentSessionInformation = getSegueSessionFromRequest(request);
+            if (currentSessionInformation.containsKey(DATE_EXPIRES)) {
+                SimpleDateFormat sessionDateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
+                return sessionDateFormat.parse(currentSessionInformation.get(DATE_EXPIRES));
+            } else {
+                return null;
+            }
+        } catch (InvalidSessionException | ParseException | IOException e) {
+            log.debug("Error extracting session expiry from session information.", e);
+            return null;
+        }
+    }
+
+
+    /**
      * This method tries to address some of the duplication when extracting a user from a request.
      *
      * Note: This method has an important security enforcing function. Users who haven't completed MFA will have a cookie

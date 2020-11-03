@@ -286,7 +286,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     assignment.setGameboard(gameboards.get(assignment.getGameboardId()));
                 }
 
-                this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacLogType.VIEW_GROUPS_ASSIGNMENTS,
+                this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacServerLogType.VIEW_GROUPS_ASSIGNMENTS,
                         ImmutableMap.of("groupId", group.getId()));
 
                 return Response.ok(allAssignmentsSetToGroup)
@@ -371,7 +371,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 }
             }
 
-            this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacLogType.VIEW_ASSIGNMENT_PROGRESS,
+            this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacServerLogType.VIEW_ASSIGNMENT_PROGRESS,
                     ImmutableMap.of(ASSIGNMENT_FK, assignment.getId()));
 
             // get game manager completion information for this assignment.
@@ -563,7 +563,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 Collections.addAll(resultRows, resultRow.toArray(new String[0]));
             }
 
-            this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacLogType.DOWNLOAD_ASSIGNMENT_PROGRESS_CSV,
+            this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacServerLogType.DOWNLOAD_ASSIGNMENT_PROGRESS_CSV,
                     ImmutableMap.of("assignmentId", assignmentId));
 
             // ignore name columns
@@ -877,7 +877,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     .append(stringWriter.toString())
                     .append("\n\nN.B.\n\"The percentages are for question parts completed, not question pages.\"\n");
 
-            this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacLogType.DOWNLOAD_GROUP_PROGRESS_CSV,
+            this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacServerLogType.DOWNLOAD_GROUP_PROGRESS_CSV,
                     ImmutableMap.of("groupId", groupId));
 
             return Response.ok(headerBuilder.toString())
@@ -990,7 +990,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             eventDetails.put(GROUP_FK, assignmentWithID.getGroupId());
             eventDetails.put(ASSIGNMENT_FK, assignmentWithID.getId());
             eventDetails.put(ASSIGNMENT_DUEDATE_FK, assignmentWithID.getDueDate());
-            this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacLogType.SET_NEW_ASSIGNMENT, eventDetails);
+            this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacServerLogType.SET_NEW_ASSIGNMENT, eventDetails);
 
             this.userBadgeManager.updateBadge(currentlyLoggedInUser,
                     UserBadgeManager.Badge.TEACHER_ASSIGNMENTS_SET, assignmentWithID.getId().toString());
@@ -1065,7 +1065,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             this.assignmentManager.deleteAssignment(assignmentToDelete);
 
-            this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacLogType.DELETE_ASSIGNMENT,
+            this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacServerLogType.DELETE_ASSIGNMENT,
                     ImmutableMap.of(ASSIGNMENT_FK, assignmentToDelete.getId()));
 
             return Response.noContent().build();

@@ -423,7 +423,7 @@ public class AdminFacade extends AbstractSegueFacade {
                 RegisteredUserDTO user = this.userManager.getUserDTOById(userid);
                 Role oldRole = user.getRole();
                 this.userManager.updateUserRole(userid, requestedRole);
-                this.getLogManager().logEvent(requestingUser, request, SegueLogType.CHANGE_USER_ROLE,
+                this.getLogManager().logEvent(requestingUser, request, SegueServerLogType.CHANGE_USER_ROLE,
                         ImmutableMap.of(USER_ID_FKEY_FIELDNAME, user.getId(),
                                         "oldRole", oldRole,
                                         "newRole", requestedRole));
@@ -1017,7 +1017,7 @@ public class AdminFacade extends AbstractSegueFacade {
             
             this.userManager.deleteUserAccount(userToDelete);
             this.eventBookingManager.deleteUsersAdditionalInformationBooking(userToDelete);
-            getLogManager().logEvent(currentlyLoggedInUser, httpServletRequest, SegueLogType.DELETE_USER_ACCOUNT,
+            getLogManager().logEvent(currentlyLoggedInUser, httpServletRequest, SegueServerLogType.DELETE_USER_ACCOUNT,
                     ImmutableMap.of(USER_ID_FKEY_FIELDNAME, userToDelete.getId()));
             
             log.info("Admin User: " + currentlyLoggedInUser.getEmail() + " has just deleted the user account with id: "
@@ -1067,7 +1067,7 @@ public class AdminFacade extends AbstractSegueFacade {
             RegisteredUserDTO sourceUser = this.userManager.getUserDTOById(userIdMergeDTO.getSourceId());
 
             this.userManager.mergeUserAccounts(targetUser, sourceUser);
-            getLogManager().logEvent(currentlyLoggedInUser, httpServletRequest, SegueLogType.ADMIN_MERGE_USER,
+            getLogManager().logEvent(currentlyLoggedInUser, httpServletRequest, SegueServerLogType.ADMIN_MERGE_USER,
                     ImmutableMap.of(USER_ID_FKEY_FIELDNAME, targetUser.getId(), OLD_USER_ID_FKEY_FIELDNAME, sourceUser.getId()));
 
             log.info("Admin User: " + currentlyLoggedInUser.getEmail() + " has just merged the target user account with id: " + userIdMergeDTO.getTargetId() +

@@ -894,6 +894,12 @@ CREATE INDEX gameboards_tags_gin_index ON public.gameboards USING gin (tags);
 
 
 --
+-- Name: group_additional_managers_group_id; Type: INDEX; Schema: public; Owner: rutherford
+--
+
+CREATE INDEX group_additional_managers_group_id ON public.group_additional_managers USING btree (group_id);
+
+--
 -- Name: groups_owner_id; Type: INDEX; Schema: public; Owner: rutherford
 --
 

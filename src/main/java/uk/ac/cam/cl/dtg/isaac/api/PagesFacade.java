@@ -253,7 +253,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
                 // the request log
                 getLogManager().logEvent(userManager.getCurrentUser(servletRequest), servletRequest,
-                        IsaacLogType.VIEW_CONCEPT, logEntry);
+                        IsaacServerLogType.VIEW_CONCEPT, logEntry);
             }
             Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())
                     .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
@@ -442,7 +442,7 @@ public class PagesFacade extends AbstractIsaacFacade {
                         userQuestionAttempts);
 
                 // the request log
-                getLogManager().logEvent(user, httpServletRequest, IsaacLogType.VIEW_QUESTION, logEntry);
+                getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.VIEW_QUESTION, logEntry);
 
                 // return augmented content.
                 return Response.ok(content)
@@ -536,7 +536,7 @@ public class PagesFacade extends AbstractIsaacFacade {
             ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
                     .put(PAGE_ID_LOG_FIELDNAME, summaryPageId)
                     .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
-            getLogManager().logEvent(user, httpServletRequest, IsaacLogType.VIEW_TOPIC_SUMMARY_PAGE, logEntry);
+            getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.VIEW_TOPIC_SUMMARY_PAGE, logEntry);
 
             return Response.status(Status.OK).entity(topicSummaryDTO)
                     .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
@@ -600,7 +600,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
                 // the request log
                 getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
-                        IsaacLogType.VIEW_PAGE, logEntry);
+                        IsaacServerLogType.VIEW_PAGE, logEntry);
             }
 
             Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())
@@ -648,7 +648,7 @@ public class PagesFacade extends AbstractIsaacFacade {
             Response result = this.findSingleResult(fieldsToMatch);
 
             getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
-                    IsaacLogType.VIEW_PAGE_FRAGMENT, ImmutableMap.of(
+                    IsaacServerLogType.VIEW_PAGE_FRAGMENT, ImmutableMap.of(
                             FRAGMENT_ID_LOG_FIELDNAME, fragmentId,
                             CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()
                     ));

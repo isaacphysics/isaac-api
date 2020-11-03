@@ -75,7 +75,7 @@ import java.util.List;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueLogType;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueServerLogType;
 
 /**
  * Question Facade
@@ -307,7 +307,7 @@ public class QuestionFacade extends AbstractSegueFacade {
                     misuseMonitor.notifyEvent(((RegisteredUserDTO) currentUser).getId().toString() + "|" + questionId,
                             QuestionAttemptMisuseHandler.class.getSimpleName());
                 } catch (SegueResourceMisuseException e) {
-                    this.getLogManager().logEvent(currentUser, request, SegueLogType.QUESTION_ATTEMPT_RATE_LIMITED, response.getEntity());
+                    this.getLogManager().logEvent(currentUser, request, SegueServerLogType.QUESTION_ATTEMPT_RATE_LIMITED, response.getEntity());
                     String message = "You have made too many attempts at this question part. Please try again later.";
                     return SegueErrorResponse.getRateThrottledResponse(message);
                 }
@@ -317,7 +317,7 @@ public class QuestionFacade extends AbstractSegueFacade {
                     misuseMonitor.notifyEvent(((AnonymousUserDTO) currentUser).getSessionId() + "|" + questionId,
                             AnonQuestionAttemptMisuseHandler.class.getSimpleName());
                 } catch (SegueResourceMisuseException e) {
-                    this.getLogManager().logEvent(currentUser, request, SegueLogType.QUESTION_ATTEMPT_RATE_LIMITED, response.getEntity());
+                    this.getLogManager().logEvent(currentUser, request, SegueServerLogType.QUESTION_ATTEMPT_RATE_LIMITED, response.getEntity());
                     String message = "You have made too many attempts at this question part. Please log in or try again later.";
                     return SegueErrorResponse.getRateThrottledResponse(message);
                 }
@@ -329,7 +329,7 @@ public class QuestionFacade extends AbstractSegueFacade {
                     misuseMonitor.notifyEvent(RequestIPExtractor.getClientIpAddr(request),
                             IPQuestionAttemptMisuseHandler.class.getSimpleName());
                 } catch (SegueResourceMisuseException e) {
-                    this.getLogManager().logEvent(currentUser, request, SegueLogType.QUESTION_ATTEMPT_RATE_LIMITED, response.getEntity());
+                    this.getLogManager().logEvent(currentUser, request, SegueServerLogType.QUESTION_ATTEMPT_RATE_LIMITED, response.getEntity());
                     String message = "Too many question attempts! Please log in or try again later.";
                     return SegueErrorResponse.getRateThrottledResponse(message);
                 }
@@ -341,7 +341,7 @@ public class QuestionFacade extends AbstractSegueFacade {
                         (QuestionValidationResponseDTO) response.getEntity());
             }
 
-            this.getLogManager().logEvent(currentUser, request, SegueLogType.ANSWER_QUESTION, response.getEntity());
+            this.getLogManager().logEvent(currentUser, request, SegueServerLogType.ANSWER_QUESTION, response.getEntity());
 
             // Update the user in case their streak has changed:
             if (currentUser instanceof RegisteredUserDTO) {

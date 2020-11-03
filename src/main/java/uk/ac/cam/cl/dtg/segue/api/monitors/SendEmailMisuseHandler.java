@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2020 Connor Holloway
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,7 +34,7 @@ public class SendEmailMisuseHandler implements IMisuseHandler {
     private static final Logger log = LoggerFactory.getLogger(SendEmailMisuseHandler.class);
 
     private static final Integer SOFT_THRESHOLD = 101;
-    private static final Integer HARD_THRESHOLD = 101;
+    private static final Integer HARD_THRESHOLD = 201;
     private static final Integer ACCOUNTING_INTERVAL = NUMBER_SECONDS_IN_ONE_DAY;
 
     @Inject

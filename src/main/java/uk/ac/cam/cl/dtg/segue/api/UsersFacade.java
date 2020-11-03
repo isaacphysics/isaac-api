@@ -190,6 +190,8 @@ public class UsersFacade extends AbstractSegueFacade {
      *            - request information used for caching.
      * @param httpServletRequest
      *            - the request which may contain session information.
+     * @param response
+     *            - the response to set session expiry information headers on.
      * @return Returns the current user DTO if we can get it or null response if we can't. It will be a 204 No Content
      */
     @GET
@@ -198,12 +200,20 @@ public class UsersFacade extends AbstractSegueFacade {
     @GZIP
     @ApiOperation(value = "Get information about the current user.")
     public Response getCurrentUserEndpoint(@Context final Request request,
-                                           @Context final HttpServletRequest httpServletRequest) {
+                                           @Context final HttpServletRequest httpServletRequest,
+                                           @Context final HttpServletResponse response) {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
 
-            // Calculate the ETag based on User we just retrieved from the DB
-            EntityTag etag = new EntityTag("currentUser".hashCode() + currentUser.toString().hashCode() + "");
+            Date sessionExpiry = userManager.getSessionExpiry(httpServletRequest);
+            int sessionExpiryHashCode = 0;
+            if (null != sessionExpiry) {
+                sessionExpiryHashCode = sessionExpiry.hashCode();
+                response.setDateHeader("X-Session-Expires", sessionExpiry.getTime());
+            }
+
+            // Calculate the ETag based on the user we just retrieved and the session expiry:
+            EntityTag etag = new EntityTag(currentUser.toString().hashCode() + sessionExpiryHashCode + "");
             Response cachedResponse = generateCachedResponse(request, etag, Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK);
             if (cachedResponse != null) {
                 return cachedResponse;
@@ -364,7 +374,7 @@ public class UsersFacade extends AbstractSegueFacade {
             userManager.resetPasswordRequest(userOfInterest);
 
             this.getLogManager()
-                    .logEvent(currentUser, httpServletRequest, SegueLogType.PASSWORD_RESET_REQUEST_RECEIVED,
+                    .logEvent(currentUser, httpServletRequest, SegueServerLogType.PASSWORD_RESET_REQUEST_RECEIVED,
                             ImmutableMap.of(
                                     LOCAL_AUTH_EMAIL_FIELDNAME, userOfInterest.getEmail(),
                                     LOCAL_AUTH_GROUP_MANAGER_EMAIL_FIELDNAME, currentUser.getEmail(),
@@ -425,7 +435,7 @@ public class UsersFacade extends AbstractSegueFacade {
             userManager.resetPasswordRequest(userObject);
 
             this.getLogManager()
-                    .logEvent(userManager.getCurrentUser(request), request, SegueLogType.PASSWORD_RESET_REQUEST_RECEIVED,
+                    .logEvent(userManager.getCurrentUser(request), request, SegueServerLogType.PASSWORD_RESET_REQUEST_RECEIVED,
                             ImmutableMap.of(LOCAL_AUTH_EMAIL_FIELDNAME, userObject.getEmail()));
 
             return Response.ok().build();
@@ -505,7 +515,7 @@ public class UsersFacade extends AbstractSegueFacade {
             String newPassword = clientResponse.get("password");
             RegisteredUserDTO userDTO = userManager.resetPassword(token, newPassword);
 
-            this.getLogManager().logEvent(userDTO, request, SegueLogType.PASSWORD_RESET_REQUEST_SUCCESSFUL,
+            this.getLogManager().logEvent(userDTO, request, SegueServerLogType.PASSWORD_RESET_REQUEST_SUCCESSFUL,
                     ImmutableMap.of(LOCAL_AUTH_EMAIL_FIELDNAME, userDTO.getEmail()));
 
             // we can reset the misuse monitor for incorrect logins now.
@@ -719,7 +729,7 @@ public class UsersFacade extends AbstractSegueFacade {
 
             UserSummaryDTO userOfInterestSummaryObject = userManager.convertToUserSummaryObject(userOfInterest);
 
-            if (!events.equals(SegueLogType.ANSWER_QUESTION.name()) && !isUserAnAdmin(userManager, currentUser)) {
+            if (!events.equals(SegueServerLogType.ANSWER_QUESTION.name()) && !isUserAnAdmin(userManager, currentUser)) {
                 // Non-admins should not be able to choose random log events.
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
@@ -946,7 +956,7 @@ public class UsersFacade extends AbstractSegueFacade {
                 log.info("ADMIN user " + currentlyLoggedInUser.getEmail() + " has modified the role of "
                         + updatedUser.getEmail() + "[" + updatedUser.getId() + "]" + " to "
                         + updatedUser.getRole());
-                this.getLogManager().logEvent(currentlyLoggedInUser, request, SegueLogType.CHANGE_USER_ROLE,
+                this.getLogManager().logEvent(currentlyLoggedInUser, request, SegueServerLogType.CHANGE_USER_ROLE,
                         ImmutableMap.of(USER_ID_FKEY_FIELDNAME, updatedUser.getId(),
                                         "oldRole", existingUserFromDb.getRole(),
                                         "newRole", updatedUser.getRole()));
@@ -964,10 +974,10 @@ public class UsersFacade extends AbstractSegueFacade {
                 if (!Objects.equals(currentlyLoggedInUser.getId(), updatedUser.getId())) {
                     // This is an ADMIN user changing another user's school:
                     eventDetails.put(USER_ID_FKEY_FIELDNAME, updatedUser.getId());
-                    this.getLogManager().logEvent(currentlyLoggedInUser, request, SegueLogType.ADMIN_CHANGE_USER_SCHOOL,
+                    this.getLogManager().logEvent(currentlyLoggedInUser, request, SegueServerLogType.ADMIN_CHANGE_USER_SCHOOL,
                             eventDetails);
                 } else {
-                    this.getLogManager().logEvent(currentlyLoggedInUser, request, SegueLogType.USER_SCHOOL_CHANGE,
+                    this.getLogManager().logEvent(currentlyLoggedInUser, request, SegueServerLogType.USER_SCHOOL_CHANGE,
                             eventDetails);
                 }
             }

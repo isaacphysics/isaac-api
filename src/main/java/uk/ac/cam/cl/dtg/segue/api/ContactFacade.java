@@ -124,7 +124,7 @@ public class ContactFacade extends AbstractSegueFacade {
                             .put("replyToName", String.format("%s %s", form.get("firstName"), form.get("lastName")))
                             .build());
 
-            getLogManager().logEvent(userManager.getCurrentUser(request), request, SegueLogType.CONTACT_US_FORM_USED,
+            getLogManager().logEvent(userManager.getCurrentUser(request), request, SegueServerLogType.CONTACT_US_FORM_USED,
                     ImmutableMap.of("message", String.format("%s %s (%s) - %s", form.get("firstName"), form.get("lastName"),
                             form.get("emailAddress"), form.get("message"))));
 

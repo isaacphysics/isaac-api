@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.google.inject.name.Named;
 import ma.glasnost.orika.MapperFacade;
@@ -443,6 +444,19 @@ public class GameManager {
                             return -1;
                         }
                         return o1.getTitle().compareTo(o2.getTitle());
+                    }, reverseOrder);
+                } else if (sortInstruction.getKey().equals(COMPLETION_FIELDNAME)) {
+                    comparatorForSorting.addComparator((o1, o2) -> {
+                        if (o1.getPercentageCompleted() == null && o2.getPercentageCompleted() == null) {
+                            return 0;
+                        }
+                        if (o1.getPercentageCompleted() == null) {
+                            return 1;
+                        }
+                        if (o2.getPercentageCompleted() == null) {
+                            return -1;
+                        }
+                        return o1.getPercentageCompleted().compareTo(o2.getPercentageCompleted());
                     }, reverseOrder);
                 }
             }
@@ -1221,9 +1235,15 @@ public class GameManager {
             fieldsToMatchOutput.put(newEntry, gameFilter.getConcepts());
         }
 
+        List<String> tagsToExclude = Lists.newArrayList();
         // add no filter constraint
-        fieldsToMatchOutput.put(
-                immutableEntry(BooleanOperator.NOT, TAGS_FIELDNAME), Collections.singletonList(HIDE_FROM_FILTER_TAG));
+        tagsToExclude.add(HIDE_FROM_FILTER_TAG);
+
+        // Temporarily ignore book and quick_quiz question types.
+        // Strings hardcoded until question types are passed in as part of the query.
+        tagsToExclude.addAll(ImmutableList.of("quick_quiz", "book"));
+
+        fieldsToMatchOutput.put(immutableEntry(BooleanOperator.NOT, TAGS_FIELDNAME), tagsToExclude);
 
         return fieldsToMatchOutput;
     }

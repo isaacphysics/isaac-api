@@ -254,7 +254,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 
             this.groupManager.setMembershipStatus(groupBasedOnId, currentRegisteredUser, newStatusEnum);
 
-            this.getLogManager().logEvent(currentRegisteredUser, request, SegueLogType.CHANGE_GROUP_MEMBERSHIP_STATUS,
+            this.getLogManager().logEvent(currentRegisteredUser, request, SegueServerLogType.CHANGE_GROUP_MEMBERSHIP_STATUS,
                     ImmutableMap.of(Constants.GROUP_FK, groupBasedOnId.getId(),
                             USER_ID_FKEY_FIELDNAME, currentRegisteredUser.getId(),
                             "newStatus", newStatusEnum.name()));
@@ -337,7 +337,7 @@ public class GroupsFacade extends AbstractSegueFacade {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
             UserGroupDTO group = groupManager.createUserGroup(groupDTO.getGroupName(), user);
 
-            this.getLogManager().logEvent(user, request, SegueLogType.CREATE_USER_GROUP,
+            this.getLogManager().logEvent(user, request, SegueServerLogType.CREATE_USER_GROUP,
                     ImmutableMap.of(Constants.GROUP_FK, group.getId()));
 
             this.userBadgeManager.updateBadge(user, UserBadgeManager.Badge.TEACHER_GROUPS_CREATED,
@@ -536,7 +536,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 
             groupManager.removeUserFromGroup(groupBasedOnId, userToRemove);
 
-            this.getLogManager().logEvent(currentRegisteredUser, request, SegueLogType.REMOVE_USER_FROM_GROUP,
+            this.getLogManager().logEvent(currentRegisteredUser, request, SegueServerLogType.REMOVE_USER_FROM_GROUP,
                     ImmutableMap.of(Constants.GROUP_FK, groupBasedOnId.getId(),
                             USER_ID_FKEY_FIELDNAME, userToRemove.getId()));
 
@@ -583,7 +583,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 
             groupManager.deleteGroup(groupBasedOnId);
 
-            this.getLogManager().logEvent(currentUser, request, SegueLogType.DELETE_USER_GROUP,
+            this.getLogManager().logEvent(currentUser, request, SegueServerLogType.DELETE_USER_GROUP,
                     ImmutableMap.of(Constants.GROUP_FK, groupBasedOnId.getId()));
 
         } catch (SegueDatabaseException e) {
@@ -647,7 +647,7 @@ public class GroupsFacade extends AbstractSegueFacade {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "This user is already an additional manager").toResponse();
             }
 
-            this.getLogManager().logEvent(user, request, SegueLogType.ADD_ADDITIONAL_GROUP_MANAGER,
+            this.getLogManager().logEvent(user, request, SegueServerLogType.ADD_ADDITIONAL_GROUP_MANAGER,
                     ImmutableMap.of(GROUP_FK, group.getId(), USER_ID_FKEY_FIELDNAME, userToAdd.getId()));
 
             return Response.ok(this.groupManager.addUserToManagerList(group, userToAdd)).build();
@@ -701,7 +701,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 
             RegisteredUserDTO userToRemove = this.userManager.getUserDTOById(userId);
 
-            this.getLogManager().logEvent(user, request, SegueLogType.DELETE_ADDITIONAL_GROUP_MANAGER,
+            this.getLogManager().logEvent(user, request, SegueServerLogType.DELETE_ADDITIONAL_GROUP_MANAGER,
                     ImmutableMap.of(GROUP_FK, group.getId(), USER_ID_FKEY_FIELDNAME, userId));
 
             return Response.ok(this.groupManager.removeUserFromManagerList(group, userToRemove)).build();

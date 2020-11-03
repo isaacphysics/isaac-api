@@ -10,7 +10,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <segue.version>2.13.4-SNAPSHOT</segue.version>
+        <segue.version>2.14.3-SNAPSHOT</segue.version>
         <log4j.version>2.13.3</log4j.version>
         <resteasy.version>4.4.0.Final</resteasy.version>
         <guice.version>4.2.2</guice.version>
@@ -203,7 +203,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.12</version>
+            <version>4.13.1</version>
             <scope>test</scope>
         </dependency>
 
@@ -569,5 +569,43 @@
                 </plugins>
             </build>
         </profile>
+
+        <profile>
+            <id>generate-types</id>
+            <properties>
+                <build.profile.id>generate-types</build.profile.id>
+                <web.xml>override-api-web.xml</web.xml>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>cz.habarta.typescript-generator</groupId>
+                        <artifactId>typescript-generator-maven-plugin</artifactId>
+                        <version>2.12.476</version>
+                        <executions>
+                            <execution>
+                                <id>generate</id>
+                                <goals>
+                                    <goal>generate</goal>
+                                </goals>
+                                <phase>process-classes</phase>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <jsonLibrary>jackson2</jsonLibrary>
+                            <classPatterns>
+                                <classPattern>uk.ac.cam.cl.dtg.isaac.dto.**DTO</classPattern>
+                                <classPattern>uk.ac.cam.cl.dtg.segue.dto.**DTO</classPattern>
+                            </classPatterns>
+                            <outputKind>module</outputKind>
+                            <outputFileType>declarationFile</outputFileType>
+                            <outputFile>isaac-api-types.d.ts</outputFile>
+                            <optionalProperties>all</optionalProperties>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
     </profiles>
 </project>

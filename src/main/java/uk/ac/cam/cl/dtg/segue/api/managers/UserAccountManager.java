@@ -534,6 +534,18 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     /**
+     * Extract the session expiry time from a request.
+     *
+     * Does not check session validity.
+     *
+     * @param request The request to extract the session information from
+     * @return The session expiry as a Date
+     */
+    public Date getSessionExpiry(final HttpServletRequest request) {
+        return userAuthenticationManager.getSessionExpiry(request);
+    }
+
+    /**
      * Get the authentication settings of particular user
      *
      * @param user
@@ -795,7 +807,7 @@ public class UserAccountManager implements IUserAccountManager {
         //TODO: do we need this?
         userToReturn = this.database.createOrUpdateUser(userToReturn);
 
-        logManager.logEvent(this.convertUserDOToUserDTO(userToReturn), request, SegueLogType.USER_REGISTRATION,
+        logManager.logEvent(this.convertUserDOToUserDTO(userToReturn), request, SegueServerLogType.USER_REGISTRATION,
                 ImmutableMap.builder().put("provider", AuthenticationProvider.SEGUE.name()).build());
 
         // return it to the caller.
@@ -1456,7 +1468,7 @@ public class UserAccountManager implements IUserAccountManager {
                         logManager.transferLogEventsToRegisteredUser(anonymousUser.getSessionId(), user.getId()
                                 .toString());
 
-                        logManager.logInternalEvent(userDTO, SegueLogType.MERGE_USER,
+                        logManager.logInternalEvent(userDTO, SegueServerLogType.MERGE_USER,
                                 ImmutableMap.of("oldAnonymousUserId", anonymousUser.getSessionId()));
 
                         // delete the session attribute as merge has completed.
@@ -1561,7 +1573,7 @@ public class UserAccountManager implements IUserAccountManager {
                    EmailVerificationStatus.DELIVERY_FAILED);
         }
 
-        logManager.logInternalEvent(this.convertUserDOToUserDTO(localUserInformation), SegueLogType.USER_REGISTRATION,
+        logManager.logInternalEvent(this.convertUserDOToUserDTO(localUserInformation), SegueServerLogType.USER_REGISTRATION,
                 ImmutableMap.builder().put("provider", federatedAuthenticator.name())
                         .build());
 
