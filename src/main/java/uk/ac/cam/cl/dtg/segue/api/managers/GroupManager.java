@@ -664,8 +664,10 @@ public class GroupManager {
                 passMark = passMark / (progress.size() * 100.0f);
 
                 GameboardProgressSummaryDTO summary = new GameboardProgressSummaryDTO();
-                summary.setGameboardTitle(gameboard.getTitle());
                 summary.setAssignmentId(assignment.getId());
+                summary.setGameboardId(assignment.getGameboardId());
+                summary.setGameboardTitle(gameboard.getTitle());
+                summary.setDueDate(assignment.getDueDate());
                 summary.setQuestionPartsCorrect(questionPartsCorrect);
                 summary.setQuestionPartsIncorrect(questionPartsIncorrect);
                 summary.setQuestionPartsNotAttempted(questionPartsNotAttempted);

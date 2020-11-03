@@ -1,8 +1,12 @@
 package uk.ac.cam.cl.dtg.isaac.dto;
 
+import java.util.Date;
+
 public class GameboardProgressSummaryDTO {
     private Long assignmentId;
+    private String gameboardId;
     private String gameboardTitle;
+    private Date dueDate;
     private Integer questionPartsCorrect;
     private Integer questionPartsIncorrect;
     private Integer questionPartsNotAttempted;
@@ -17,6 +21,22 @@ public class GameboardProgressSummaryDTO {
 
     public void setAssignmentId(Long assignmentId) {
         this.assignmentId = assignmentId;
+    }
+
+    public String getGameboardId() {
+        return gameboardId;
+    }
+
+    public void setGameboardId(String gameboardId) {
+        this.gameboardId = gameboardId;
+    }
+
+    public Date getDueDate() {
+        return dueDate;
+    }
+
+    public void setDueDate(Date dueDate) {
+        this.dueDate = dueDate;
     }
 
     public String getGameboardTitle() {
