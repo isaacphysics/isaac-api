@@ -325,8 +325,8 @@ public class EventsFacade extends AbstractIsaacFacade {
             @PathParam("event_id") final String eventId) {
         try {
             IsaacEventPageDTO page = getAugmentedEventDTOById(request, eventId);
-
-            return Response.ok(page).build();
+            return Response.ok(page)
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (ResourceNotFoundException e) {
             return new SegueErrorResponse(Status.NOT_FOUND, "The event specified does not exist.").toResponse();
         } catch (ContentManagerException e) {
