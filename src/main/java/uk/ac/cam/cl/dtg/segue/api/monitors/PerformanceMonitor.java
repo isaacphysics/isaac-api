@@ -96,19 +96,19 @@ public class PerformanceMonitor implements ContainerRequestFilter, ContainerResp
 
     private String pathWithoutPathParamValues(UriInfo uri) {
         List<String> matchingUris = uri.getMatchedURIs(); // Ordered so that current resource URI is first
-        if (!matchingUris.isEmpty()) {
-            String mostSpecificMatchingUri = matchingUris.get(0);
-            // Replace any path param values with its curly-braced, path param identifier
-            for (Map.Entry<String, List<String>> pathParams : uri.getPathParameters().entrySet()) {
-                for (String paramValue : pathParams.getValue()) {
-                    mostSpecificMatchingUri =
-                            mostSpecificMatchingUri.replace(paramValue, "{" + pathParams.getKey() + "}");
-                }
-            }
-            return mostSpecificMatchingUri;
-        } else {
+
+        if (matchingUris.isEmpty()) {
             return NO_MATCHING_ENDPOINT;
         }
 
+        String mostSpecificMatchingUri = matchingUris.get(0);
+        // Replace any path param values with its curly-braced, path param identifier
+        for (Map.Entry<String, List<String>> pathParams : uri.getPathParameters().entrySet()) {
+            for (String paramValue : pathParams.getValue()) {
+                mostSpecificMatchingUri =
+                        mostSpecificMatchingUri.replace(paramValue, "{" + pathParams.getKey() + "}");
+            }
+        }
+        return mostSpecificMatchingUri;
     }
 }
