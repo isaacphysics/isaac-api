@@ -19,6 +19,7 @@ import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import io.prometheus.client.Histogram;
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.Validate;
 import org.joda.time.LocalDate;
@@ -67,7 +68,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.stream.Collectors;
+
+import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.VALIDATOR_LATENCY_HISTOGRAM;
 
 /**
  * This class is responsible for validating correct answers using the ValidatesWith annotation when it is applied on to
@@ -115,11 +117,15 @@ public class QuestionManager {
 
         Choice answerFromUser = mapper.getAutoMapper().map(submittedAnswer, Choice.class);
         QuestionValidationResponse validateQuestionResponse;
+        Histogram.Timer validatorTimer =
+                VALIDATOR_LATENCY_HISTOGRAM.labels(validator.getClass().getSimpleName()).startTimer();
         try {
             validateQuestionResponse = validator.validateQuestionResponse(question, answerFromUser);
         } catch (ValidatorUnavailableException e) {
             return SegueErrorResponse.getServiceUnavailableResponse(e.getClass().getSimpleName() + ": "
                     + e.getMessage());
+        } finally {
+            validatorTimer.observeDuration();
         }
 
         return Response.ok(
