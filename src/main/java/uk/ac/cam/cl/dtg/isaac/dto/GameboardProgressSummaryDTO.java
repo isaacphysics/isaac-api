@@ -7,6 +7,7 @@ public class GameboardProgressSummaryDTO {
     private String gameboardId;
     private String gameboardTitle;
     private Date dueDate;
+    private Date creationDate;
     private Integer questionPartsCorrect;
     private Integer questionPartsIncorrect;
     private Integer questionPartsNotAttempted;
@@ -37,6 +38,14 @@ public class GameboardProgressSummaryDTO {
 
     public void setDueDate(Date dueDate) {
         this.dueDate = dueDate;
+    }
+
+    public Date getCreationDate() {
+        return creationDate;
+    }
+
+    public void setCreationDate(Date creationDate) {
+        this.creationDate = creationDate;
     }
 
     public String getGameboardTitle() {

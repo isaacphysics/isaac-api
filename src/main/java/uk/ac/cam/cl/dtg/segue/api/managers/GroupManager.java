@@ -668,6 +668,7 @@ public class GroupManager {
                 summary.setGameboardId(assignment.getGameboardId());
                 summary.setGameboardTitle(gameboard.getTitle());
                 summary.setDueDate(assignment.getDueDate());
+                summary.setCreationDate(assignment.getCreationDate());
                 summary.setQuestionPartsCorrect(questionPartsCorrect);
                 summary.setQuestionPartsIncorrect(questionPartsIncorrect);
                 summary.setQuestionPartsNotAttempted(questionPartsNotAttempted);
