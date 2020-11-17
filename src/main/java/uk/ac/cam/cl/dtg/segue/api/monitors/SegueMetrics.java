@@ -33,6 +33,12 @@ public final class SegueMetrics {
             .labelNames("method", "path")
             .help("Request latency in seconds.").register();
 
+    // Validator Time Metrics
+    public static final Histogram VALIDATOR_LATENCY_HISTOGRAM = Histogram.build()
+            .name("isaac_question_validation")
+            .labelNames("validator")
+            .help("Validator latency in seconds.").register();
+
     // Cache Metrics
     public static final CacheMetricsCollector CACHE_METRICS_COLLECTOR = new CacheMetricsCollector().register();
 
