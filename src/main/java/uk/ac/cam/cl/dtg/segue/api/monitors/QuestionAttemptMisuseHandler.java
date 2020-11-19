@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2016 James Sharkey
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,21 +33,15 @@ public class QuestionAttemptMisuseHandler implements IMisuseHandler {
     private static final Integer HARD_THRESHOLD = 15;
     private static final Integer ACCOUNTING_INTERVAL = Constants.NUMBER_SECONDS_IN_FIFTEEN_MINUTES;
 
-    private PropertiesLoader properties;
-    private EmailManager emailManager;
     private Integer overrideHardThreshold;
 
 
     /**
-     * @param emailManager
-     *            - so we can send e-mails if the threshold limits have been reached.
      * @param properties
      *            - so that we can look up properties set.
      */
     @Inject
-    public QuestionAttemptMisuseHandler(final EmailManager emailManager, final PropertiesLoader properties) {
-        this.properties = properties;
-        this.emailManager = emailManager;
+    public QuestionAttemptMisuseHandler(final PropertiesLoader properties) {
         String overrideThresholdString = properties.getProperty(Constants.QUESTION_MISUSE_THRESHOLD_OVERRIDE);
         if (null != overrideThresholdString) {
             this.overrideHardThreshold = Integer.parseInt(overrideThresholdString);
