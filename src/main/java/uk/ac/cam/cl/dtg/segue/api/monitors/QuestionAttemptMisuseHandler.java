@@ -35,6 +35,7 @@ public class QuestionAttemptMisuseHandler implements IMisuseHandler {
 
     private PropertiesLoader properties;
     private EmailManager emailManager;
+    private Integer overrideHardThreshold;
 
 
     /**
@@ -47,6 +48,10 @@ public class QuestionAttemptMisuseHandler implements IMisuseHandler {
     public QuestionAttemptMisuseHandler(final EmailManager emailManager, final PropertiesLoader properties) {
         this.properties = properties;
         this.emailManager = emailManager;
+        String overrideThresholdString = properties.getProperty(Constants.QUESTION_MISUSE_THRESHOLD_OVERRIDE);
+        if (null != overrideThresholdString) {
+            this.overrideHardThreshold = Integer.parseInt(overrideThresholdString);
+        }
     }
 
     @Override
@@ -56,6 +61,9 @@ public class QuestionAttemptMisuseHandler implements IMisuseHandler {
 
     @Override
     public Integer getHardThreshold() {
+        if (null != overrideHardThreshold) {
+            return overrideHardThreshold;
+        }
         return HARD_THRESHOLD;
     }
 

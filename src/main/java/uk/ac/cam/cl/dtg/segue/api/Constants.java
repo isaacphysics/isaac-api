@@ -502,6 +502,8 @@ public final class Constants {
     public static final String CHEMISTRY_CHECKER_HOST = "CHEMISTRY_CHECKER_HOST";
     public static final String CHEMISTRY_CHECKER_PORT = "CHEMISTRY_CHECKER_PORT";
 
+    public static final String QUESTION_MISUSE_THRESHOLD_OVERRIDE = "QUESTION_MISUSE_THRESHOLD_OVERRIDE";
+
     // User Preferences:
     public enum SegueUserPreferences {
         EMAIL_PREFERENCE
