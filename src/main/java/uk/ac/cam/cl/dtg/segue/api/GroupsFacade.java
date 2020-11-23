@@ -64,6 +64,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
@@ -737,11 +738,14 @@ public class GroupsFacade extends AbstractSegueFacade {
                         "You can only view the results of assignments that you own.").toResponse();
             }
 
-            Collection<AssignmentDTO> assignments = assignmentManager.getAssignmentsByGroup(group.getId());
-            if (assignments == null || assignments.size() == 0) {
+            List<AssignmentDTO> assignments = new ArrayList<>(assignmentManager.getAssignmentsByGroup(group.getId()));
+            if (assignments.size() == 0) {
                 return Response.ok(new ArrayList<>()).build();
             }
-            // TODO Could probably use a Collection here…
+            List<AssignmentDTO> withDueDate = assignments.stream().filter(a -> a.getDueDate() != null).sorted(Comparator.comparing(AssignmentDTO::getDueDate)).collect(Collectors.toList());
+            List<AssignmentDTO> withoutDueDate = assignments.stream().filter(a -> a.getDueDate() == null).sorted(Comparator.comparing(AssignmentDTO::getCreationDate)).collect(Collectors.toList());
+            List<AssignmentDTO> sortedAssignments = Stream.concat(withDueDate.stream(), withoutDueDate.stream()).collect(Collectors.toList());
+
             List<RegisteredUserDTO> groupMembers = groupManager.getUsersInGroup(group).stream()
                     .filter(groupMember -> associationManager.hasPermission(currentUser, groupMember))
                     .collect(Collectors.toList());
@@ -750,10 +754,11 @@ public class GroupsFacade extends AbstractSegueFacade {
                 return Response.ok(new ArrayList<>()).build();
             }
 
-            List<UserGameboardProgressSummaryDTO> groupProgressSummary = groupManager.getGroupProgressSummary(groupMembers, assignments);
+            List<UserGameboardProgressSummaryDTO> groupProgressSummary = groupManager.getGroupProgressSummary(groupMembers, sortedAssignments);
             for (UserGameboardProgressSummaryDTO s : groupProgressSummary) {
                 s.setUser(associationManager.enforceAuthorisationPrivacy(currentUser, s.getUser()));
             }
+
             return Response.ok(groupProgressSummary).build();
         } catch (SegueDatabaseException e) {
             log.error("Database error while trying to get group progress for a group. ", e);
