@@ -793,6 +793,14 @@ public class EventsFacade extends AbstractIsaacFacade {
                 if (userAssociationManager.hasPermission(reservingUser, userToReserve)) {
                     usersToReserve.add(userToReserve);
                 } else {
+                    // TODO: Turn this into a "failed to booked these students" email maybe? Must include:
+                    // - group name (may need to pass this along with the request as students can belong to multiple groups)
+                    // - event name with link to event page
+                    // Trello card: Group Booking (1)
+                    //
+                    // Group Booking (2) Could this also include unverified users? Or is it something that we handle at
+                    // the front-end? Probably better to handle this both ways. If we still have unverified accounts in
+                    // the request even though we made them not selectable in the front-end, we can silently ignore them.
                     return new SegueErrorResponse(Status.FORBIDDEN,
                             "You do not have permission to book or reserve some of these users onto this event.")
                             .toResponse();
@@ -1609,7 +1617,6 @@ public class EventsFacade extends AbstractIsaacFacade {
                 RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
                 page.setUserBooked(this.bookingManager.isUserBooked(page.getId(), user.getId()));
                 page.setUserOnWaitList(this.bookingManager.hasBookingWithStatus(page.getId(), user.getId(), BookingStatus.WAITING_LIST));
-                // TODO: Are either of the above attributes necessary with this new booking status attribute?
                 page.setUserBookingStatus(this.bookingManager.getBookingStatus(page.getId(), user.getId()));
             } catch (NoUserLoggedInException e) {
                 // no action as we don't require the user to be logged in.
