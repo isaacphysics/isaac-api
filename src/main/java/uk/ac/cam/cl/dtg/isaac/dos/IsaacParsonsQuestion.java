@@ -31,13 +31,13 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 @ValidatesWith(IsaacParsonsValidator.class)
 public class IsaacParsonsQuestion extends IsaacItemQuestion {
 
-    private Boolean requiresIndentation;
+    private Boolean disableIndentation;
 
-    public Boolean getRequiresIndentation() {
-        return requiresIndentation;
+    public Boolean getDisableIndentation() {
+        return disableIndentation;
     }
 
-    public void setRequiresIndentation(final Boolean requiresIndentation) {
-        this.requiresIndentation = requiresIndentation;
+    public void setDisableIndentation(final Boolean disableIndentation) {
+        this.disableIndentation = disableIndentation;
     }
 }

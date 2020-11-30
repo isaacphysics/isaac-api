@@ -706,7 +706,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                     new LogEventMisuseHandler(emailManager, properties));
 
             misuseMonitor.registerHandler(QuestionAttemptMisuseHandler.class.getSimpleName(),
-                    new QuestionAttemptMisuseHandler(emailManager, properties));
+                    new QuestionAttemptMisuseHandler(properties));
 
             misuseMonitor.registerHandler(AnonQuestionAttemptMisuseHandler.class.getSimpleName(),
                     new AnonQuestionAttemptMisuseHandler());

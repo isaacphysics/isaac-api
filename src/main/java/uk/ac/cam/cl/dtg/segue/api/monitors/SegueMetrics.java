@@ -17,6 +17,7 @@ package uk.ac.cam.cl.dtg.segue.api.monitors;
 
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
+import io.prometheus.client.Histogram;
 import io.prometheus.client.guava.cache.CacheMetricsCollector;
 
 /**
@@ -25,6 +26,20 @@ import io.prometheus.client.guava.cache.CacheMetricsCollector;
  * Metric and label naming conventions can be found here: https://prometheus.io/docs/practices/naming/
  */
 public final class SegueMetrics {
+
+    // Request Response Time Metrics
+    public static final Histogram REQUEST_LATENCY_HISTOGRAM = Histogram.build()
+            .name("isaac_api_requests")
+            .labelNames("method", "path")
+            .help("Request latency in seconds.").register();
+
+    // Validator Time Metrics
+    public static final Histogram VALIDATOR_LATENCY_HISTOGRAM = Histogram.build()
+            .name("isaac_question_validation")
+            .labelNames("validator")
+            .help("Validator latency in seconds.").register();
+
+    // Cache Metrics
     public static final CacheMetricsCollector CACHE_METRICS_COLLECTOR = new CacheMetricsCollector().register();
 
     // Websocket Metrics
