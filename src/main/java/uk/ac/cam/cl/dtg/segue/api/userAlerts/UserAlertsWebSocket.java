@@ -315,41 +315,4 @@ public class UserAlertsWebSocket implements IAlertListener {
                     objectMapper.writeValueAsString(ImmutableMap.of("notifications", persistedAlerts)));
         }
     }
-
-    /**
-     * Extracts the segue session information from the given session.
-     *
-     * @param session
-     *            - possibly containing a segue cookie.
-     * @return The segue session information (unchecked or validated)
-     * @throws IOException
-     *             - problem parsing session information.
-     * @throws InvalidSessionException
-     *             - if there is no session set or if it is not valid.
-     */
-    private Map<String, String> getSessionInformation(final Session session) throws IOException, InvalidSessionException {
-
-        HttpCookie segueAuthCookie = null;
-        if (session.getUpgradeRequest().getCookies() == null) {
-            throw new InvalidSessionException("There are no cookies set.");
-        }
-
-        List<HttpCookie> cookies = session.getUpgradeRequest().getCookies();
-        for (HttpCookie c : cookies) {
-            if (c.getName().equals(SEGUE_AUTH_COOKIE)) {
-                segueAuthCookie = c;
-            }
-        }
-
-        if (segueAuthCookie == null) {
-            throw new InvalidSessionException("There is no Segue authorisation cookie set.");
-        }
-
-        @SuppressWarnings("unchecked")
-        Map<String, String> sessionInformation = objectMapper.readValue(segueAuthCookie.getValue(), HashMap.class);
-
-        return sessionInformation;
-
-    }
-
 }
