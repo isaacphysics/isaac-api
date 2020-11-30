@@ -33,6 +33,12 @@ public final class SegueMetrics {
             .labelNames("method", "path")
             .help("Request latency in seconds.").register();
 
+    // WebSocket Response Time Metrics
+    public static final Histogram WEBSOCKET_LATENCY_HISTOGRAM = Histogram.build()
+            .name("isaac_api_websocket_requests")
+            .labelNames("message")
+            .help("Websocket request response latency in seconds.").register();
+
     // Validator Time Metrics
     public static final Histogram VALIDATOR_LATENCY_HISTOGRAM = Histogram.build()
             .name("isaac_question_validation")
