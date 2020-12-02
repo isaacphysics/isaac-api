@@ -22,28 +22,40 @@ import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.api.Constants;
+import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
+import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardProgressSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.UserGameboardProgressSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dos.GroupMembership;
 import uk.ac.cam.cl.dtg.segue.dos.GroupMembershipStatus;
 import uk.ac.cam.cl.dtg.segue.dos.GroupStatus;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.GroupMembershipDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithGroupMembershipDTO;
 
-import java.util.Comparator;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Comparator;
 import java.util.Set;
 
 /**
@@ -56,6 +68,7 @@ public class GroupManager {
 
     private final IUserGroupPersistenceManager groupDatabase;
     private final UserAccountManager userManager;
+    private final GameManager gameManager;
     private final MapperFacade dtoMapper;
     private List<IGroupObserver> groupsObservers;
 
@@ -71,12 +84,14 @@ public class GroupManager {
      */
     @Inject
     public GroupManager(final IUserGroupPersistenceManager groupDatabase, final UserAccountManager userManager,
-            final MapperFacade dtoMapper) {
+                        final GameManager gameManager, final MapperFacade dtoMapper) {
         Validate.notNull(groupDatabase);
         Validate.notNull(userManager);
+        Validate.notNull(gameManager);
 
         this.groupDatabase = groupDatabase;
         this.userManager = userManager;
+        this.gameManager = gameManager;
         this.dtoMapper = dtoMapper;
 
         groupsObservers = new LinkedList<>();
@@ -596,5 +611,82 @@ public class GroupManager {
 
         summarisedMemberInfo.clear();
         summarisedMemberInfo.addAll(result);
+    }
+
+    /**
+     * Returns the progress of all the members of a group for all their assignments.
+     *
+     * @param groupMembers Group members for whom to return progress
+     * @param assignments  Assignments for which to calculate progress
+     * @return Progress per group member, per assignment
+     *
+     * @throws SegueDatabaseException
+     * @throws ContentManagerException
+     */
+    public List<UserGameboardProgressSummaryDTO> getGroupProgressSummary(List<RegisteredUserDTO> groupMembers,
+                                                                         Collection<AssignmentDTO> assignments)
+            throws SegueDatabaseException, ContentManagerException {
+
+        List<UserGameboardProgressSummaryDTO> groupProgressSummary = new ArrayList<>();
+        Map<RegisteredUserDTO, List<GameboardProgressSummaryDTO>> userProgressMap = new HashMap<>();
+        for (RegisteredUserDTO user : groupMembers) {
+            userProgressMap.put(user, new ArrayList<>());
+        }
+
+        for (AssignmentDTO assignment : assignments) {
+            // Not sure why I have to do this but AssignmentDTO::getGameboard returns null
+            GameboardDTO gameboard = gameManager.getGameboard(assignment.getGameboardId());
+
+            List<ImmutablePair<RegisteredUserDTO, List<GameboardItem>>> userProgressData = gameManager.gatherGameProgressData(groupMembers, gameboard);
+
+            for (ImmutablePair<RegisteredUserDTO, List<GameboardItem>> userProgress : userProgressData) {
+                RegisteredUserDTO user = userProgress.getKey();
+                List<GameboardItem> progress = userProgress.getValue();
+
+                int questionPartsCorrect = 0,
+                    questionPartsIncorrect = 0,
+                    questionPartsNotAttempted = 0,
+                    questionPartsTotal = 0,
+                    questionPagesPerfect = 0;
+                float passMark = 0.0f;
+
+                for (GameboardItem gameboardItem : progress) {
+                    questionPartsCorrect += gameboardItem.getQuestionPartsCorrect();
+                    questionPartsIncorrect += gameboardItem.getQuestionPartsIncorrect();
+                    questionPartsNotAttempted += gameboardItem.getQuestionPartsNotAttempted();
+                    questionPartsTotal += gameboardItem.getQuestionPartsTotal();
+                    passMark += gameboardItem.getPassMark();
+                    Constants.GameboardItemState state = gameboardItem.getState();
+                    if (state == Constants.GameboardItemState.PERFECT) {
+                        questionPagesPerfect += 1;
+                    }
+                }
+                passMark = passMark / (progress.size() * 100.0f);
+
+                GameboardProgressSummaryDTO summary = new GameboardProgressSummaryDTO();
+                summary.setAssignmentId(assignment.getId());
+                summary.setGameboardId(assignment.getGameboardId());
+                summary.setGameboardTitle(gameboard.getTitle());
+                summary.setDueDate(assignment.getDueDate());
+                summary.setCreationDate(assignment.getCreationDate());
+                summary.setQuestionPartsCorrect(questionPartsCorrect);
+                summary.setQuestionPartsIncorrect(questionPartsIncorrect);
+                summary.setQuestionPartsNotAttempted(questionPartsNotAttempted);
+                summary.setQuestionPartsTotal(questionPartsTotal);
+                summary.setPassMark(passMark);
+                summary.setQuestionPagesPerfect(questionPagesPerfect);
+                summary.setQuestionPagesTotal(progress.size());
+                userProgressMap.get(user).add(summary);
+            }
+        }
+
+        userProgressMap.forEach((user, progress) -> {
+            UserGameboardProgressSummaryDTO summary = new UserGameboardProgressSummaryDTO();
+            summary.setUser(userManager.convertToUserSummaryObject(user));
+            summary.setProgress(progress);
+            groupProgressSummary.add(summary);
+        });
+
+        return groupProgressSummary;
     }
 }
