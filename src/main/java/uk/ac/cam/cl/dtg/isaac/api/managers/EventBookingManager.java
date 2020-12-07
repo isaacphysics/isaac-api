@@ -533,6 +533,7 @@ public class EventBookingManager {
             this.bookingPersistenceManager.releaseDistributedLock(event.getId());
         }
 
+        // Send email to individual reserved users
         for (EventBookingDTO reservation : reservations) {
             try {
                 UserSummaryDTO userSummary = reservation.getUserBooked();
@@ -558,6 +559,36 @@ public class EventBookingManager {
                 log.error(String.format("Unable to send event email (%s) to user (%s)",
                         event.getId(), reservation.getUserBooked().getId()), e);
             }
+        }
+
+        // Send recap email to reserving user
+        try {
+            StringBuilder htmlSB = new StringBuilder("<ul>");
+            StringBuilder plainTextSB = new StringBuilder();
+            for (EventBookingDTO reservation : reservations) {
+                RegisteredUserDTO user = userAccountManager.getUserDTOById(reservation.getUserBooked().getId());
+                String userFullName = String.format("%s %s", user.getGivenName(), user.getFamilyName());
+                htmlSB.append(String.format("<li>%s</li>", userFullName));
+                plainTextSB.append(String.format("- %s\n", userFullName));
+            }
+            htmlSB.append("</ul>");
+            emailManager.sendTemplatedEmailToUser(reservingUser,
+                    emailManager.getEmailTemplateDTO("email-event-reservation-recap"),
+                    ImmutableMap.of(
+                            "contactUsURL", generateEventContactUsURL(event),
+                            "eventURL", String.format("https://%s/events/%s",
+                                    propertiesLoader.getProperty(HOST_NAME), event.getId()),
+                            "event", event,
+                            "studentsList", plainTextSB.toString(),
+                            "studentsList_HTML", htmlSB.toString()
+                    ), EmailType.EVENTS);
+        } catch (NoUserException e) {
+            // This should never really happen, though...
+            log.error(String.format("Unable to find reserved user while sending recap email for event (%s) to reserving user (%s)",
+                    event.getId()), reservingUser.getId(), e);
+        } catch (SegueDatabaseException | ContentManagerException e) {
+            log.error(String.format("Unable to send event reservation recap email (%s) to user (%s)",
+                    event.getId(), reservingUser.getId()), e);
         }
 
         // If the frontend prevents selection of unreservable users, then this email should never go out.
