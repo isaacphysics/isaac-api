@@ -56,7 +56,18 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.TimeZone;
 import java.util.stream.Stream;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_TIME_LOCALITY;
@@ -449,11 +460,16 @@ public class EventBookingManager {
      */
     public List<EventBookingDTO> requestReservations(final IsaacEventPageDTO event, final List<RegisteredUserDTO> users,
                                                      final RegisteredUserDTO reservingUser)
-    throws EventDeadlineException, EmailMustBeVerifiedException, DuplicateBookingException, EventIsFullException,
-           EventGroupReservationLimitException, SegueDatabaseException {
+    throws EventDeadlineException, DuplicateBookingException, EventIsFullException, EventGroupReservationLimitException,
+           SegueDatabaseException {
 
+        List<RegisteredUserDTO> unreservableUsers = new ArrayList<>();
         for (RegisteredUserDTO user : users) {
-            this.ensureValidEventAndUser(event, user, true);
+            try {
+                this.ensureValidEventAndUser(event, user, true);
+            } catch (EmailMustBeVerifiedException e) {
+                unreservableUsers.add(user);
+            }
         }
 
         List<EventBookingDTO> reservations = new ArrayList<>();
@@ -542,6 +558,12 @@ public class EventBookingManager {
                 log.error(String.format("Unable to send event email (%s) to user (%s)",
                         event.getId(), reservation.getUserBooked().getId()), e);
             }
+        }
+
+        // If the frontend prevents selection of unreservable users, then this email should never go out.
+        if (unreservableUsers.size() > 0) {
+            // Log that the reserving user tried to reserve invalid users.
+            log.error(String.format("User (%s) tried to request a reservation for invalid users on an event (%s). Users requested: %s", reservingUser.getId()), event.getId(), unreservableUsers);
         }
 
         return reservations;
