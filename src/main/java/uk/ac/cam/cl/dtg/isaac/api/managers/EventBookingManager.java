@@ -421,7 +421,6 @@ public class EventBookingManager {
             addUserToEventGroup(event, user);
 
             try {
-                // TODO: Find out why Trello card Group Booking (3) says there is no email when a student confirms a reservation.
                 // This should send a confirmation email in any case.
                 emailManager.sendTemplatedEmailToUser(user,
                         emailManager.getEmailTemplateDTO("email-event-booking-confirmed"),
