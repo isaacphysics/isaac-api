@@ -581,7 +581,7 @@ public class EventBookingManager {
                             "event", event,
                             "studentsList", plainTextSB.toString(),
                             "studentsList_HTML", htmlSB.toString()
-                    ), EmailType.EVENTS);
+                    ), EmailType.SYSTEM);
         } catch (NoUserException e) {
             // This should never really happen, though...
             log.error(String.format("Unable to find reserved user while sending recap email for event (%s) to reserving user (%s)",

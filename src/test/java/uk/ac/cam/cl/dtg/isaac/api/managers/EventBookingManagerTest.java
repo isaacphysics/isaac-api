@@ -890,7 +890,7 @@ public class EventBookingManagerTest {
         dummyEmailManager.sendTemplatedEmailToUser(eq(testCase.student2), eq(testCase.reservationEmail), anyObject(), eq(EmailType.SYSTEM));
         expectLastCall().once();
 
-        dummyEmailManager.sendTemplatedEmailToUser(eq(testCase.teacher), eq(testCase.reservationEmail), anyObject(), eq(EmailType.EVENTS));
+        dummyEmailManager.sendTemplatedEmailToUser(eq(testCase.teacher), eq(testCase.reservationEmail), anyObject(), eq(EmailType.SYSTEM));
         expectLastCall().once();
 
         // Run the test for a student event
@@ -1028,7 +1028,7 @@ public class EventBookingManagerTest {
         expect(dummyUserAccountManager.getUserDTOById(testCase.student1.getId())).andReturn(testCase.student1).atLeastOnce();
         dummyEmailManager.sendTemplatedEmailToUser(eq(testCase.student1), eq(testCase.reservationEmail), anyObject(), eq(EmailType.SYSTEM));
         expectLastCall().once();
-        dummyEmailManager.sendTemplatedEmailToUser(eq(testCase.teacher), eq(testCase.reservationEmail), anyObject(), eq(EmailType.EVENTS));
+        dummyEmailManager.sendTemplatedEmailToUser(eq(testCase.teacher), eq(testCase.reservationEmail), anyObject(), eq(EmailType.SYSTEM));
         expectLastCall().atLeastOnce();
 
         // Run the test for a student event
