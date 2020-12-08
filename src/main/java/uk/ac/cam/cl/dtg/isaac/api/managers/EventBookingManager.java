@@ -584,7 +584,7 @@ public class EventBookingManager {
         } catch (NoUserException e) {
             // This should never really happen, though...
             log.error(String.format("Unable to find reserved user while sending recap email for event (%s) to reserving user (%s)",
-                    event.getId()), reservingUser.getId(), e);
+                    event.getId(), reservingUser.getId()), e);
         } catch (SegueDatabaseException | ContentManagerException e) {
             log.error(String.format("Unable to send event reservation recap email (%s) to user (%s)",
                     event.getId(), reservingUser.getId()), e);
@@ -593,7 +593,7 @@ public class EventBookingManager {
         // If the frontend prevents selection of unreservable users, then this email should never go out.
         if (unreservableUsers.size() > 0) {
             // Log that the reserving user tried to reserve invalid users.
-            log.error(String.format("User (%s) tried to request a reservation for invalid users on an event (%s). Users requested: %s", reservingUser.getId()), event.getId(), unreservableUsers);
+            log.error(String.format("User (%s) tried to request a reservation for invalid users on an event (%s). Users requested: %s", reservingUser.getId(), event.getId(), unreservableUsers));
         }
 
         return reservations;
