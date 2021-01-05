@@ -849,6 +849,9 @@ public class AdminFacade extends AbstractSegueFacade {
                             School school = this.schoolReader.findSchoolById(userDTO.getSchoolId());
                             if (school != null) {
                                 String schoolPostCode = school.getPostcode();
+                                if (null == schoolPostCode || schoolPostCode.isEmpty()) {
+                                    continue;
+                                }
                                 List<Long> ids;
                                 if (postCodeAndUserIds.containsKey(schoolPostCode)) {
                                     ids = postCodeAndUserIds.get(schoolPostCode);
