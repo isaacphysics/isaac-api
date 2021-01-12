@@ -562,8 +562,9 @@ public class EventBookingManager {
 
         // Send recap email to reserving user
         try {
-            StringBuilder htmlSB = new StringBuilder("<ul>");
+            StringBuilder htmlSB = new StringBuilder();
             StringBuilder plainTextSB = new StringBuilder();
+            htmlSB.append("<ul>");
             for (EventBookingDTO reservation : reservations) {
                 RegisteredUserDTO user = userAccountManager.getUserDTOById(reservation.getUserBooked().getId());
                 String userFullName = String.format("%s %s", user.getGivenName(), user.getFamilyName());
@@ -573,14 +574,14 @@ public class EventBookingManager {
             htmlSB.append("</ul>");
             emailManager.sendTemplatedEmailToUser(reservingUser,
                     emailManager.getEmailTemplateDTO("email-event-reservation-recap"),
-                    ImmutableMap.of(
-                            "contactUsURL", generateEventContactUsURL(event),
-                            "eventURL", String.format("https://%s/events/%s",
-                                    propertiesLoader.getProperty(HOST_NAME), event.getId()),
-                            "event", event,
-                            "studentsList", plainTextSB.toString(),
-                            "studentsList_HTML", htmlSB.toString()
-                    ), EmailType.SYSTEM);
+                    new ImmutableMap.Builder<String, Object>()
+                            .put("contactUsURL", generateEventContactUsURL(event))
+                            .put("eventURL", String.format("https://%s/events/%s", propertiesLoader.getProperty(HOST_NAME), event.getId()))
+                            .put("event", event)
+                            .put("studentsList", plainTextSB.toString())
+                            .put("studentsList_HTML", htmlSB.toString())
+                            .build(),
+                    EmailType.SYSTEM);
         } catch (NoUserException e) {
             // This should never really happen, though...
             log.error(String.format("Unable to find reserved user while sending recap email for event (%s) to reserving user (%s)",

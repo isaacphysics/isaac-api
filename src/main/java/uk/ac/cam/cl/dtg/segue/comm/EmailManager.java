@@ -119,7 +119,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     public static void sanitizeEmailParameters(final Map<Object, Object> emailParameters) {
         for (Map.Entry<Object, Object> entry : emailParameters.entrySet()) {
             String key = entry.getKey().toString();
-            if (!(key.startsWith("event.") || key.startsWith("assignmentsInfo"))) {
+            if (!(key.startsWith("event.") || key.startsWith("assignmentsInfo") || key.startsWith("studentsList"))) {
                 emailParameters.put(entry.getKey(), StringEscapeUtils.escapeHtml4(entry.getValue().toString()));
             }
         }
