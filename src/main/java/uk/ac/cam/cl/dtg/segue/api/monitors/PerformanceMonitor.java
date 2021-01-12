@@ -44,8 +44,8 @@ public class PerformanceMonitor implements ContainerRequestFilter, ContainerResp
     @Context
     private HttpRequest request;
 
-    public static final long WARNING_THRESHOLD = 5000;
-    public static final long ERROR_THRESHOLD = 20000;
+    public static final long WARNING_THRESHOLD = 3000;
+    public static final long ERROR_THRESHOLD = 10000;
     private static final long NUMBER_OF_MILLISECONDS_IN_A_SECOND = 1000;
     private static final String NO_MATCHING_ENDPOINT = "NO_MATCHING_ENDPOINT";
 
