@@ -306,7 +306,6 @@ public class EmailFacade extends AbstractSegueFacade {
                     .getRateThrottledResponse("You have exceeded the number of requests allowed for this endpoint");
         } catch (InvalidTokenException | NoUserException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Token invalid or expired.");
-            log.error(String.format("Invalid email verification token received (%s)", e.toString()));
             return error.toResponse();
         } catch (SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
