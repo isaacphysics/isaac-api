@@ -316,8 +316,6 @@ public class GroupManager {
             // otherwise it is a noop.
             // although we should force the user membership status to be active for the group.
             this.setMembershipStatus(group, userToAdd, GroupMembershipStatus.ACTIVE);
-            log.info(String.format("User (%s) is already a member of the group with id %s. Skipping.",
-                    userToAdd.getId(), group.getId()));
         }
     }
 
