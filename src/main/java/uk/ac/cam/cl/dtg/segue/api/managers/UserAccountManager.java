@@ -1165,12 +1165,12 @@ public class UserAccountManager implements IUserAccountManager {
         RegisteredUser user = this.findUserById(userId);
 
         if (null == user) {
-            log.warn(String.format("Recieved an invalid email token request for (%s)", userId));
+            log.warn(String.format("Received an invalid email token request for (%s)", userId));
             throw new NoUserException("No user found with this userId!");
         }
 
         if (!userId.equals(user.getId())) {
-            log.warn(String.format("Recieved an invalid email token request by (%s) - provided bad userid",
+            log.warn(String.format("Received an invalid email token request by (%s) - provided bad userid",
                     user.getId()));
             throw new InvalidTokenException();
         }
@@ -1178,7 +1178,7 @@ public class UserAccountManager implements IUserAccountManager {
         EmailVerificationStatus evStatus = user.getEmailVerificationStatus();
         if (evStatus != null && evStatus == EmailVerificationStatus.VERIFIED
                 && user.getEmail().equals(user.getEmailToVerify())) {
-            log.warn(String.format("Recieved a duplicate email verification request for (%s) - already verified",
+            log.warn(String.format("Received a duplicate email verification request for (%s) - already verified",
                     user.getEmail()));
             return this.convertUserDOToUserDTO(user);
         }
@@ -1195,7 +1195,7 @@ public class UserAccountManager implements IUserAccountManager {
                     createOrUpdateUser.getId()));
             return this.convertUserDOToUserDTO(createOrUpdateUser);
         } else {
-            log.warn(String.format("Recieved an invalid email verification token for (%s) - invalid token", userId));
+            log.warn(String.format("Received an invalid email verification token for (%s) - invalid token", userId));
             throw new InvalidTokenException();
         }
     }
