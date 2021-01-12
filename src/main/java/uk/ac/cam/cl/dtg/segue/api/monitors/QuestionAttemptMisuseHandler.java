@@ -66,10 +66,8 @@ public class QuestionAttemptMisuseHandler implements IMisuseHandler {
         return ACCOUNTING_INTERVAL;
     }
 
-    @Override
-    public void executeSoftThresholdAction(final String message) {
-        log.warn("Soft threshold limit: " + message);
-    }
+    @Overridei
+    public void executeSoftThresholdAction(final String message) {}
 
     @Override
     public void executeHardThresholdAction(final String message) {
