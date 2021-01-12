@@ -66,7 +66,7 @@ public class QuestionAttemptMisuseHandler implements IMisuseHandler {
         return ACCOUNTING_INTERVAL;
     }
 
-    @Overridei
+    @Override
     public void executeSoftThresholdAction(final String message) {}
 
     @Override
