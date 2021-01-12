@@ -56,7 +56,18 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.TimeZone;
 import java.util.stream.Stream;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_TIME_LOCALITY;
@@ -407,7 +418,10 @@ public class EventBookingManager {
                         BookingStatus.CONFIRMED, additionalEventInformation);
             }
 
+            addUserToEventGroup(event, user);
+
             try {
+                // This should send a confirmation email in any case.
                 emailManager.sendTemplatedEmailToUser(user,
                         emailManager.getEmailTemplateDTO("email-event-booking-confirmed"),
                         new ImmutableMap.Builder<String, Object>()
@@ -424,8 +438,6 @@ public class EventBookingManager {
                 log.error(String.format("Unable to send event email (%s) to user (%s)", event.getId(), user
                         .getEmail()), e);
             }
-
-            addUserToEventGroup(event, user);
 
             return booking;
         } finally {
@@ -447,11 +459,16 @@ public class EventBookingManager {
      */
     public List<EventBookingDTO> requestReservations(final IsaacEventPageDTO event, final List<RegisteredUserDTO> users,
                                                      final RegisteredUserDTO reservingUser)
-    throws EventDeadlineException, EmailMustBeVerifiedException, DuplicateBookingException, EventIsFullException,
-           EventGroupReservationLimitException, SegueDatabaseException {
+    throws EventDeadlineException, DuplicateBookingException, EventIsFullException, EventGroupReservationLimitException,
+           SegueDatabaseException {
 
+        List<RegisteredUserDTO> unreservableUsers = new ArrayList<>();
         for (RegisteredUserDTO user : users) {
-            this.ensureValidEventAndUser(event, user, true);
+            try {
+                this.ensureValidEventAndUser(event, user, true);
+            } catch (EmailMustBeVerifiedException e) {
+                unreservableUsers.add(user);
+            }
         }
 
         List<EventBookingDTO> reservations = new ArrayList<>();
@@ -515,6 +532,7 @@ public class EventBookingManager {
             this.bookingPersistenceManager.releaseDistributedLock(event.getId());
         }
 
+        // Send email to individual reserved users
         for (EventBookingDTO reservation : reservations) {
             try {
                 UserSummaryDTO userSummary = reservation.getUserBooked();
@@ -540,6 +558,42 @@ public class EventBookingManager {
                 log.error(String.format("Unable to send event email (%s) to user (%s)",
                         event.getId(), reservation.getUserBooked().getId()), e);
             }
+        }
+
+        // Send recap email to reserving user
+        try {
+            StringBuilder htmlSB = new StringBuilder("<ul>");
+            StringBuilder plainTextSB = new StringBuilder();
+            for (EventBookingDTO reservation : reservations) {
+                RegisteredUserDTO user = userAccountManager.getUserDTOById(reservation.getUserBooked().getId());
+                String userFullName = String.format("%s %s", user.getGivenName(), user.getFamilyName());
+                htmlSB.append(String.format("<li>%s</li>", userFullName));
+                plainTextSB.append(String.format("- %s\n", userFullName));
+            }
+            htmlSB.append("</ul>");
+            emailManager.sendTemplatedEmailToUser(reservingUser,
+                    emailManager.getEmailTemplateDTO("email-event-reservation-recap"),
+                    ImmutableMap.of(
+                            "contactUsURL", generateEventContactUsURL(event),
+                            "eventURL", String.format("https://%s/events/%s",
+                                    propertiesLoader.getProperty(HOST_NAME), event.getId()),
+                            "event", event,
+                            "studentsList", plainTextSB.toString(),
+                            "studentsList_HTML", htmlSB.toString()
+                    ), EmailType.SYSTEM);
+        } catch (NoUserException e) {
+            // This should never really happen, though...
+            log.error(String.format("Unable to find reserved user while sending recap email for event (%s) to reserving user (%s)",
+                    event.getId(), reservingUser.getId()), e);
+        } catch (SegueDatabaseException | ContentManagerException e) {
+            log.error(String.format("Unable to send event reservation recap email (%s) to user (%s)",
+                    event.getId(), reservingUser.getId()), e);
+        }
+
+        // If the frontend prevents selection of unreservable users, then this email should never go out.
+        if (unreservableUsers.size() > 0) {
+            // Log that the reserving user tried to reserve invalid users.
+            log.error(String.format("User (%s) tried to request a reservation for invalid users on an event (%s). Users requested: %s", reservingUser.getId(), event.getId(), unreservableUsers));
         }
 
         return reservations;

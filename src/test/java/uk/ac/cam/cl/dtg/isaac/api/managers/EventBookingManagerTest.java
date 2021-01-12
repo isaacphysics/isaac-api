@@ -880,13 +880,17 @@ public class EventBookingManagerTest {
 
         // Send Emails
         expect(dummyEmailManager.getEmailTemplateDTO(("email-event-reservation-requested"))).andReturn(testCase.reservationEmail).atLeastOnce();
+        expect(dummyEmailManager.getEmailTemplateDTO(("email-event-reservation-recap"))).andReturn(testCase.reservationEmail).atLeastOnce();
 
-        expect(dummyUserAccountManager.getUserDTOById(testCase.student1.getId())).andReturn(testCase.student1).once();
+        expect(dummyUserAccountManager.getUserDTOById(testCase.student1.getId())).andReturn(testCase.student1).times(2);
         dummyEmailManager.sendTemplatedEmailToUser(eq(testCase.student1), eq(testCase.reservationEmail), anyObject(), eq(EmailType.SYSTEM));
         expectLastCall().once();
 
-        expect(dummyUserAccountManager.getUserDTOById(testCase.student2.getId())).andReturn(testCase.student2).once();
+        expect(dummyUserAccountManager.getUserDTOById(testCase.student2.getId())).andReturn(testCase.student2).times(2);
         dummyEmailManager.sendTemplatedEmailToUser(eq(testCase.student2), eq(testCase.reservationEmail), anyObject(), eq(EmailType.SYSTEM));
+        expectLastCall().once();
+
+        dummyEmailManager.sendTemplatedEmailToUser(eq(testCase.teacher), eq(testCase.reservationEmail), anyObject(), eq(EmailType.SYSTEM));
         expectLastCall().once();
 
         // Run the test for a student event
@@ -1019,10 +1023,13 @@ public class EventBookingManagerTest {
 
         // Send Emails
         expect(dummyEmailManager.getEmailTemplateDTO(("email-event-reservation-requested"))).andReturn(testCase.reservationEmail).atLeastOnce();
+        expect(dummyEmailManager.getEmailTemplateDTO(("email-event-reservation-recap"))).andReturn(testCase.reservationEmail).atLeastOnce();
 
-        expect(dummyUserAccountManager.getUserDTOById(testCase.student1.getId())).andReturn(testCase.student1).once();
+        expect(dummyUserAccountManager.getUserDTOById(testCase.student1.getId())).andReturn(testCase.student1).atLeastOnce();
         dummyEmailManager.sendTemplatedEmailToUser(eq(testCase.student1), eq(testCase.reservationEmail), anyObject(), eq(EmailType.SYSTEM));
         expectLastCall().once();
+        dummyEmailManager.sendTemplatedEmailToUser(eq(testCase.teacher), eq(testCase.reservationEmail), anyObject(), eq(EmailType.SYSTEM));
+        expectLastCall().atLeastOnce();
 
         // Run the test for a student event
         Object[] mockedObjects = {
