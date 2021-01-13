@@ -15,15 +15,9 @@
  */
 package uk.ac.cam.cl.dtg.segue.auth;
 
-import static org.easymock.EasyMock.*;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import com.google.common.collect.ImmutableMap;
-import org.apache.commons.codec.binary.Base64;
 import org.junit.Before;
 import org.junit.Test;
-
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
@@ -37,6 +31,13 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.util.Map;
 
+import static org.easymock.EasyMock.anyLong;
+import static org.easymock.EasyMock.anyObject;
+import static org.easymock.EasyMock.createMock;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
+import static org.junit.Assert.fail;
+
 /**
  * Test class for the SegueLocalAuthenticator class.
  * 
@@ -47,12 +48,15 @@ public class SegueLocalAuthenticatorTest {
 	private IPasswordDataManager passwordDataManager;
 	private PropertiesLoader propertiesLoader;
 
-	private ISegueHashingAlgorithm preferredAlgorithm = new SeguePBKDF2v2();
-	private ISegueHashingAlgorithm oldAlgorithm = new SeguePBKDF2v1();
+	private ISegueHashingAlgorithm preferredAlgorithm = new SeguePBKDF2v3();
+	private ISegueHashingAlgorithm oldAlgorithm1 = new SeguePBKDF2v1();
+    private ISegueHashingAlgorithm oldAlgorithm2 = new SeguePBKDF2v2();
 
-	private Map<String, ISegueHashingAlgorithm> possibleAlgorithms
-			= ImmutableMap.of(preferredAlgorithm.hashingAlgorithmName(), preferredAlgorithm,
-                              oldAlgorithm.hashingAlgorithmName(), oldAlgorithm);
+    Map<String, ISegueHashingAlgorithm> possibleAlgorithms = ImmutableMap.of(
+            preferredAlgorithm.hashingAlgorithmName(), preferredAlgorithm,
+            oldAlgorithm1.hashingAlgorithmName(), oldAlgorithm1,
+            oldAlgorithm2.hashingAlgorithmName(), oldAlgorithm2
+    );
 
 	/**
 	 * Initial configuration of tests.
@@ -258,5 +262,5 @@ public class SegueLocalAuthenticatorTest {
 		} catch (NoUserException e) {
 			fail("We expect a user to be returned");
 		} 
-	}	
+	}
 }
