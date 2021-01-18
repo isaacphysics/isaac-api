@@ -469,12 +469,15 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     private static SegueLocalAuthenticator getSegueLocalAuthenticator(final IUserDataManager database, final IPasswordDataManager passwordDataManager,
                                                                       final PropertiesLoader properties) {
-        ISegueHashingAlgorithm preferredAlgorithm = new SeguePBKDF2v2();
-        ISegueHashingAlgorithm oldAlgorithm = new SeguePBKDF2v1();
+        ISegueHashingAlgorithm preferredAlgorithm = new SeguePBKDF2v3();
+        ISegueHashingAlgorithm oldAlgorithm1 = new SeguePBKDF2v1();
+        ISegueHashingAlgorithm oldAlgorithm2 = new SeguePBKDF2v2();
 
-        Map<String, ISegueHashingAlgorithm> possibleAlgorithms
-                = ImmutableMap.of(preferredAlgorithm.hashingAlgorithmName(), preferredAlgorithm,
-                oldAlgorithm.hashingAlgorithmName(), oldAlgorithm);
+        Map<String, ISegueHashingAlgorithm> possibleAlgorithms = ImmutableMap.of(
+                        preferredAlgorithm.hashingAlgorithmName(), preferredAlgorithm,
+                        oldAlgorithm1.hashingAlgorithmName(), oldAlgorithm1,
+                        oldAlgorithm2.hashingAlgorithmName(), oldAlgorithm2
+        );
 
         return new SegueLocalAuthenticator(database, passwordDataManager, properties, possibleAlgorithms, preferredAlgorithm);
     }
