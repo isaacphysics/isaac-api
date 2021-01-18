@@ -7,6 +7,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Striped;
 import com.google.inject.Inject;
+import io.prometheus.client.Histogram;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.StatusCode;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
@@ -20,7 +21,6 @@ import uk.ac.cam.cl.dtg.segue.api.managers.IStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidSessionException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -31,14 +31,12 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.io.IOException;
-import java.net.HttpCookie;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.WEBSOCKET_LATENCY_HISTOGRAM;
 
 /**
  * Websocket class for 2-way communication channel between front-end client and API
@@ -48,6 +46,14 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  */
 @WebSocket
 public class UserAlertsWebSocket implements IAlertListener {
+    private static class Protocol {
+        static final String HEARTBEAT = "heartbeat";
+        static final String USER_SNAPSHOT_NUDGE = "user-snapshot-nudge";
+        static final String NOTIFICATIONS = "notifications";
+        static final String USER_SNAPSHOT = "userSnapshot";
+
+        static final Set<String> ACCEPTED_MESSAGES = Sets.newHashSet(HEARTBEAT, USER_SNAPSHOT_NUDGE);
+    }
 
     private UserAccountManager userManager;
     private UserAuthenticationManager userAuthenticationManager;
@@ -124,11 +130,17 @@ public class UserAlertsWebSocket implements IAlertListener {
      */
     @OnWebSocketMessage
     public void onText(final Session session, final String message) {
+        Histogram.Timer latencyTimer = null;
+        if (Protocol.ACCEPTED_MESSAGES.contains(message)) {
+            latencyTimer = WEBSOCKET_LATENCY_HISTOGRAM.labels(message).startTimer();
+        }
+
         try {
-            if (message.equals("heartbeat")) {
-                session.getRemote().sendString(objectMapper.writeValueAsString(
-                        ImmutableMap.of("heartbeat", System.currentTimeMillis())));
-            } else if (message.equals("user-snapshot-nudge")) {
+            if (message.equals(Protocol.HEARTBEAT)) {
+                session.getRemote().sendString(objectMapper.writeValueAsString(ImmutableMap.of(
+                        Protocol.HEARTBEAT, System.currentTimeMillis()
+                )));
+            } else if (message.equals(Protocol.USER_SNAPSHOT_NUDGE)) {
                 sendUserSnapshotData();
             } else {
                 session.close(StatusCode.POLICY_VIOLATION, "Invalid message!");
@@ -136,6 +148,10 @@ public class UserAlertsWebSocket implements IAlertListener {
         } catch (IOException e) {
             log.warn("WebSocket connection failed! " + e.getClass().getSimpleName() + ": " + e.getMessage());
             session.close(StatusCode.SERVER_ERROR, "onText IOException");
+        } finally {
+            if (latencyTimer != null) {
+                latencyTimer.observeDuration();
+            }
         }
     }
 
@@ -198,11 +214,15 @@ public class UserAlertsWebSocket implements IAlertListener {
                     return;
                 }
 
-                // For now, we hijack this websocket class to deliver user streak information
-                sendUserSnapshotData();
-                // Send initial data
-                sendInitialNotifications(connectedUserId);
-
+                Histogram.Timer latencyTimer = WEBSOCKET_LATENCY_HISTOGRAM.labels("initial_data").startTimer();
+                try {
+                    // For now, we hijack this websocket class to deliver user streak information
+                    sendUserSnapshotData();
+                    // Send initial data
+                    sendInitialNotifications(connectedUserId);
+                } finally {
+                    latencyTimer.observeDuration();
+                }
             } else {
                 log.debug("WebSocket connection failed! Expired or invalid session.");
                 session.close(StatusCode.POLICY_VIOLATION, "Expired or invalid session!");
@@ -218,8 +238,6 @@ public class UserAlertsWebSocket implements IAlertListener {
             log.warn("WebSocket connection failed! " + e.getClass().getSimpleName() + ": " + e.getMessage());
             session.close(StatusCode.SERVER_ERROR, "onConnect Database Error");
         }
-
-
     }
 
 
@@ -274,11 +292,10 @@ public class UserAlertsWebSocket implements IAlertListener {
      */
     private void sendAlert(final IUserAlert alert) {
         try {
-            this.session.getRemote().sendString(objectMapper.writeValueAsString(
-                    ImmutableMap.of(
-                            "notifications", ImmutableList.of(alert),
-                            "heartbeat", System.currentTimeMillis()
-                    )));
+            this.session.getRemote().sendString(objectMapper.writeValueAsString(ImmutableMap.of(
+                    Protocol.NOTIFICATIONS, ImmutableList.of(alert),
+                    Protocol.HEARTBEAT, System.currentTimeMillis()
+            )));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -293,12 +310,10 @@ public class UserAlertsWebSocket implements IAlertListener {
      *             - if the WebSocket is unexpectedly closed or in an invalid state
      */
     private void sendUserSnapshotData() throws IOException {
-
-        session.getRemote().sendString(objectMapper.writeValueAsString(
-                ImmutableMap.of(
-                        "userSnapshot", statisticsManager.getDetailedUserStatistics(connectedUser),
-                        "heartbeat", System.currentTimeMillis()
-                )));
+        session.getRemote().sendString(objectMapper.writeValueAsString(ImmutableMap.of(
+                Protocol.USER_SNAPSHOT, statisticsManager.getDetailedUserStatistics(connectedUser),
+                Protocol.HEARTBEAT, System.currentTimeMillis()
+        )));
     }
 
     /**
@@ -308,48 +323,11 @@ public class UserAlertsWebSocket implements IAlertListener {
      * @throws IOException can be thrown when sending the notifications down the connection.
      */
     private void sendInitialNotifications(final long userId) throws SegueDatabaseException, IOException {
-        // TODO: Send initial set of notifications.
         List<IUserAlert> persistedAlerts = userAlerts.getUserAlerts(userId);
         if (!persistedAlerts.isEmpty()) {
-            session.getRemote().sendString(
-                    objectMapper.writeValueAsString(ImmutableMap.of("notifications", persistedAlerts)));
+            session.getRemote().sendString(objectMapper.writeValueAsString(ImmutableMap.of(
+                    Protocol.NOTIFICATIONS, persistedAlerts
+            )));
         }
     }
-
-    /**
-     * Extracts the segue session information from the given session.
-     *
-     * @param session
-     *            - possibly containing a segue cookie.
-     * @return The segue session information (unchecked or validated)
-     * @throws IOException
-     *             - problem parsing session information.
-     * @throws InvalidSessionException
-     *             - if there is no session set or if it is not valid.
-     */
-    private Map<String, String> getSessionInformation(final Session session) throws IOException, InvalidSessionException {
-
-        HttpCookie segueAuthCookie = null;
-        if (session.getUpgradeRequest().getCookies() == null) {
-            throw new InvalidSessionException("There are no cookies set.");
-        }
-
-        List<HttpCookie> cookies = session.getUpgradeRequest().getCookies();
-        for (HttpCookie c : cookies) {
-            if (c.getName().equals(SEGUE_AUTH_COOKIE)) {
-                segueAuthCookie = c;
-            }
-        }
-
-        if (segueAuthCookie == null) {
-            throw new InvalidSessionException("There is no Segue authorisation cookie set.");
-        }
-
-        @SuppressWarnings("unchecked")
-        Map<String, String> sessionInformation = objectMapper.readValue(segueAuthCookie.getValue(), HashMap.class);
-
-        return sessionInformation;
-
-    }
-
 }
