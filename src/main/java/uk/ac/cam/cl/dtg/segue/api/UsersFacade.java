@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1051,6 +1051,7 @@ public class UsersFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST, "You are missing a required field. "
                     + "Please make sure you have specified all mandatory fields in your response.").toResponse();
         } catch (DuplicateAccountException e) {
+            log.warn(String.format("Duplicated account registration attempt with email '%s'. ", userObjectFromClient.getEmail()));
             return new SegueErrorResponse(Status.BAD_REQUEST,
                     "An account already exists with the e-mail address specified.").toResponse();
         } catch (SegueDatabaseException e) {
