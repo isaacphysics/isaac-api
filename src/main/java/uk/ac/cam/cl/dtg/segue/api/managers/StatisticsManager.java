@@ -686,7 +686,7 @@ public class StatisticsManager implements IStatisticsManager {
         userWeeklyStreakRecord.put("largestWeeklyStreak", userStreaksManager.getLongestWeeklyStreak(userOfInterest));
 
         Map<String, Object> result = Maps.newHashMap();
-        result.put("streakRecord", userStreakRecord);
+        result.put("dailyStreakRecord", userStreakRecord);
         result.put("weeklyStreakRecord", userWeeklyStreakRecord);
 
         return result;
