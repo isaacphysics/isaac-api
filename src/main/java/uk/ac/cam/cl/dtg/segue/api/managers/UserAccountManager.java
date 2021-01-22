@@ -31,20 +31,7 @@ import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IPasswordAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISecondFactorAuthenticator;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AdditionalAuthenticationRequiredException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationCodeException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.*;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
@@ -328,13 +315,17 @@ public class UserAccountManager implements IUserAccountManager {
      *             - if the user does not exist
      * @throws NoCredentialsAvailableException
      *             - If the account exists but does not have a local password
+     * @throws AdditionalAuthenticationRequiredException
+     *             - If the account has 2FA enabled and we need to initiate that flow
+     * @throws MFARequiredButNotConfiguredException
+     *             - If the account type requires 2FA to be configured but none is enabled for the account
      * @throws SegueDatabaseException
      *             - if there is a problem with the database.
      */
     public final RegisteredUserDTO authenticateWithCredentials(final HttpServletRequest request,
             final HttpServletResponse response, final String provider, final String email, final String password, final boolean rememberMe)
             throws AuthenticationProviderMappingException, IncorrectCredentialsProvidedException, NoUserException,
-            NoCredentialsAvailableException, SegueDatabaseException, AdditionalAuthenticationRequiredException {
+            NoCredentialsAvailableException, SegueDatabaseException, AdditionalAuthenticationRequiredException, MFARequiredButNotConfiguredException {
         Validate.notBlank(email);
         Validate.notBlank(password);
 
@@ -354,6 +345,11 @@ public class UserAccountManager implements IUserAccountManager {
             // we can't just log them in we have to set a caveat cookie
             this.partialLogInForMFA(request, response, user, rememberMe);
             throw new AdditionalAuthenticationRequiredException();
+        } else if (Role.ADMIN.equals(user.getRole())) {
+            // Admins MUST have 2FA enabled to use password login, so if we reached this point login cannot proceed.
+            String message = "Your account type requires 2FA, but none has been configured! " +
+                    "Please ask an admin to demote your account to regain access.";
+            throw new MFARequiredButNotConfiguredException(message);
         } else {
             return this.logUserIn(request, response, user, rememberMe);
         }
