@@ -39,6 +39,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.MFARequiredButNotConfiguredException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -404,6 +405,9 @@ public class AuthenticationFacade extends AbstractSegueFacade {
                 log.error(String.format("Segue Login Blocked for (%s). Rate limited - too many logins.", email));
                 return SegueErrorResponse.getRateThrottledResponse(rateThrottleMessage);
             }
+        } catch (MFARequiredButNotConfiguredException e) {
+            log.warn(String.format("Login blocked for ADMIN account (%s) which does not have 2FA configured.", email));
+            return new SegueErrorResponse(Status.UNAUTHORIZED, e.getMessage()).toResponse();
         } catch (SegueDatabaseException e) {
             String errorMsg = "Internal Database error has occurred during authentication.";
             log.error(errorMsg, e);
