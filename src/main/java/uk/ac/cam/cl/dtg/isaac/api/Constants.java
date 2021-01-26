@@ -44,6 +44,7 @@ public final class Constants {
     public static final String QUESTIONS_PAGE_TYPE = "questionsPage";
     public static final String TOPIC_SUMMARY_PAGE_TYPE = "isaacTopicSummaryPage";
     public static final String EVENT_TYPE = "isaacEventPage";
+    public static final String QUIZ_TYPE = "isaacQuiz";
 
     public static final String SEARCHABLE_TAG = "search_result";
     public static final String HIDE_FROM_FILTER_TAG = "nofilter";

@@ -22,6 +22,7 @@ import java.net.URLEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ImageDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -59,16 +60,19 @@ public class URIManager {
     public String generateApiUrl(final ContentDTO content) {
         String resourceUrl = null;
         try {
-            // TODO fix this stuff to be less horrid
-            if (content instanceof ImageDTO) {
-                resourceUrl = proxyPath + "/api/images/" + URLEncoder.encode(content.getId(), "UTF-8");
+            String base;
+            if (content instanceof IsaacQuizDTO) {
+                base = "quiz";
+            } else if (content instanceof ImageDTO) {
+                base = "images";
             } else if (content.getType().toLowerCase().contains("question")) {
-                resourceUrl = proxyPath + "/api/pages/questions/" + URLEncoder.encode(content.getId(), "UTF-8");
+                base = "pages/questions";
             } else if (content.getType().toLowerCase().contains("concept")) {
-                resourceUrl = proxyPath + "/api/pages/concepts/" + URLEncoder.encode(content.getId(), "UTF-8");
+                base = "pages/concepts";
             } else {
-                resourceUrl = proxyPath + "/api/pages/" + URLEncoder.encode(content.getId(), "UTF-8");
+                base = "pages";
             }
+            resourceUrl = proxyPath + "/api/" + base + "/" + URLEncoder.encode(content.getId(), "UTF-8");
         } catch (UnsupportedEncodingException e) {
             log.error("Url generation for resource id " + content.getId() + " failed. ", e);
         }
