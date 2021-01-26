@@ -27,6 +27,7 @@ import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
+import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
 import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.IStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -87,15 +88,14 @@ public class IsaacController extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(IsaacController.class);
 
     private final SegueContentFacade api;
-    private final MapperFacade mapper;
     private final IStatisticsManager statsManager;
     private final UserAccountManager userManager;
     private final UserAssociationManager associationManager;
-    private final URIManager uriManager;
     private final String contentIndex;
     private final IContentManager contentManager;
     private final UserBadgeManager userBadgeManager;
     private final IUserStreaksManager userStreaksManager;
+    private final ContentSummarizerService contentSummarizerService;
 
     private static long lastQuestionCount = 0L;
 
@@ -129,8 +129,6 @@ public class IsaacController extends AbstractIsaacFacade {
      *            - Instance of properties Loader
      * @param logManager
      *            - Instance of Log Manager
-     * @param mapper
-     *            - Instance of Mapper facade.
      * @param statsManager
      *            - Instance of the Statistics Manager.
      * @param contentManager
@@ -139,28 +137,28 @@ public class IsaacController extends AbstractIsaacFacade {
      *            - So we can interrogate the user Manager.
      * @param associationManager
      *            - So we can check user permissions.
-     * @param uriManager
-     *            - URI manager so we can augment uris
+     * @param contentSummarizerService
+     *            - So we can summarize search results
      */
     @Inject
     public IsaacController(final SegueContentFacade api, final PropertiesLoader propertiesLoader,
-                           final ILogManager logManager, final MapperFacade mapper, final IStatisticsManager statsManager,
+                           final ILogManager logManager, final IStatisticsManager statsManager,
                            final UserAccountManager userManager, final IContentManager contentManager,
-                           final UserAssociationManager associationManager, final URIManager uriManager,
+                           final UserAssociationManager associationManager,
                            @Named(CONTENT_INDEX) final String contentIndex,
                            final IUserStreaksManager userStreaksManager,
-                           final UserBadgeManager userBadgeManager) {
+                           final UserBadgeManager userBadgeManager,
+                           final ContentSummarizerService contentSummarizerService) {
         super(propertiesLoader, logManager);
         this.api = api;
-        this.mapper = mapper;
         this.statsManager = statsManager;
         this.userManager = userManager;
         this.associationManager = associationManager;
-        this.uriManager = uriManager;
         this.contentIndex = contentIndex;
         this.contentManager = contentManager;
         this.userBadgeManager = userBadgeManager;
         this.userStreaksManager = userStreaksManager;
+        this.contentSummarizerService = contentSummarizerService;
     }
 
     /**
@@ -219,8 +217,7 @@ public class IsaacController extends AbstractIsaacFacade {
             getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
                     IsaacServerLogType.GLOBAL_SITE_SEARCH, logMap);
 
-            ResultsWrapper results = this.extractContentSummaryFromResultsWrapper(
-                    searchResults, this.getProperties().getProperty(PROXY_PATH));
+            ResultsWrapper results = this.contentSummarizerService.extractContentSummaryFromResultsWrapper(searchResults);
             return Response.ok(results).tag(etag)
                     .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
                     .build();
@@ -374,51 +371,5 @@ public class IsaacController extends AbstractIsaacFacade {
         return Response.ok(ImmutableMap.of("answeredQuestionCount", lastQuestionCount))
                 .cacheControl(getCacheControl(NUMBER_SECONDS_IN_MINUTE, false)).build();
     }
-    
-    /**
-     * This method will extract basic information from a content object so the lighter ContentInfo object can be sent to
-     * the client instead.
-     * 
-     * @param content
-     *            - the content object to summarise
-     * @return ContentSummaryDTO.
-     */
-    private ContentSummaryDTO extractContentSummary(final ContentDTO content) {
-        if (null == content) {
-            return null;
-        }
 
-        // try auto-mapping
-        ContentSummaryDTO contentInfo = mapper.map(content, ContentSummaryDTO.class);
-        contentInfo.setUrl(uriManager.generateApiUrl(content));
-
-        return contentInfo;
-    }
-
-    /**
-     * Utility method to convert a ResultsWrapper of content objects into one with ContentSummaryDTO objects.
-     * 
-     * @param contentList
-     *            - the list of content to summarise.
-     * @param proxyPath
-     *            - the path used for augmentation of urls.
-     * @return list of shorter ContentSummaryDTO objects.
-     */
-    private ResultsWrapper<ContentSummaryDTO> extractContentSummaryFromResultsWrapper(
-            final ResultsWrapper<ContentDTO> contentList, final String proxyPath) {
-        if (null == contentList) {
-            return null;
-        }
-
-        ResultsWrapper<ContentSummaryDTO> contentSummaryResults = new ResultsWrapper<ContentSummaryDTO>(
-                new ArrayList<ContentSummaryDTO>(), contentList.getTotalResults());
-
-        for (ContentDTO content : contentList.getResults()) {
-            ContentSummaryDTO contentInfo = extractContentSummary(content);
-            if (null != contentInfo) {
-                contentSummaryResults.getResults().add(contentInfo);
-            }
-        }
-        return contentSummaryResults;
-    }
 }

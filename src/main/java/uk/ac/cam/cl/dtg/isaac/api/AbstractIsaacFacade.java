@@ -23,7 +23,6 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
  * Class that all IsaacFacades can inherit from.
  */
 public class AbstractIsaacFacade extends AbstractSegueFacade {
-
     /**
      * AbstractIsaacFacade.
      * 
