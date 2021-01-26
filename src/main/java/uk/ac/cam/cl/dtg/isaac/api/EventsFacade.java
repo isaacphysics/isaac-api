@@ -90,6 +90,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -489,7 +490,7 @@ public class EventsFacade extends AbstractIsaacFacade {
      * @param request
      *            - so we can determine if the user is logged in
      * @param eventId
-     *            - the event of interest.
+     *
      * @return list of bookings.
      */
     @GET
@@ -574,6 +575,34 @@ public class EventsFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Content Database error occurred while trying to retrieve event information.")
                     .toResponse();
+        }
+    }
+
+    /** gets a list of event bookings for all groups owned.
+     *
+     */
+    @GET
+    @Path("{event_id}/groups_bookings")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @ApiOperation(value = "List event bookings for a specific event and group.")
+    public final Response getEventBookingForAllGroups(@Context final HttpServletRequest request,
+                                                       @PathParam("event_id") final String eventId) {
+        try {
+            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
+            List<UserGroupDTO> groups = groupManager.getAllGroupsOwnedAndManagedByUser(currentUser, false);
+
+            List<Response> responses = groups.stream().map(group -> getEventBookingForGivenGroup(request, eventId, group.getId().toString())).collect(Collectors.toList());
+            List<ArrayList> eventBookings = responses.stream().map(booking -> booking.readEntity(ArrayList.class)).collect(Collectors.toList());
+            return Response.ok(eventBookings).build();
+        } catch (SegueDatabaseException e) {
+            String errorMsg = String.format(
+                    "Database error occurred while trying retrieve bookings for event (%s).",
+                    eventId);
+            log.error(errorMsg, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
         }
     }
 
