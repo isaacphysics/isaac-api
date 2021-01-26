@@ -585,24 +585,26 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Path("{event_id}/groups_bookings")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "List event bookings for a specific event and group.")
+    @ApiOperation(value = "List event bookings for a specific event")
     public final Response getEventBookingForAllGroups(@Context final HttpServletRequest request,
                                                        @PathParam("event_id") final String eventId) {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
-            List<UserGroupDTO> groups = groupManager.getAllGroupsOwnedAndManagedByUser(currentUser, false);
+            List<EventBookingDTO> eventBookings = bookingManager.getBookingsByEventId(eventId);
 
-            List<Response> responses = groups.stream().map(group -> getEventBookingForGivenGroup(request, eventId, group.getId().toString())).collect(Collectors.toList());
-            List<ArrayList> eventBookings = responses.stream().map(booking -> booking.readEntity(ArrayList.class)).collect(Collectors.toList());
+            // Only allowed to see the bookings of connected users
+            eventBookings = userAssociationManager.filterUnassociatedRecords(
+                        currentUser, eventBookings, booking -> booking.getUserBooked().getId());
+
             return Response.ok(eventBookings).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
             String errorMsg = String.format(
                     "Database error occurred while trying retrieve bookings for event (%s).",
                     eventId);
             log.error(errorMsg, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
         }
     }
 
