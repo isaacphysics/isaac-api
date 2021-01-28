@@ -313,8 +313,8 @@ ALTER FUNCTION user_streaks_current_progress(useridofinterest BIGINT, defaultque
 -- Last Modified: 2019-12-06
 --
 
-CREATE OR REPLACE FUNCTION user_streaks_weekly(useridofinterest bigint, defaultquestionsperweek integer DEFAULT 10)
-    RETURNS TABLE(streaklength bigint, startdate date, enddate date, totalweeks bigint)
+CREATE OR REPLACE FUNCTION user_streaks_weekly(useridofinterest BIGINT, defaultquestionsperweek integer DEFAULT 10)
+    RETURNS TABLE(streaklength BIGINT, startdate date, enddate date, totalweeks BIGINT)
     LANGUAGE plpgsql
 AS
 $$
@@ -413,8 +413,8 @@ ALTER FUNCTION user_streaks_weekly(BIGINT, INTEGER) OWNER TO rutherford;
 -- Last Modified: 2019-12-06
 --
 
-CREATE OR REPLACE FUNCTION user_streaks_weekly_current_progress(useridofinterest bigint, defaultquestionsperweek integer DEFAULT 10)
-    RETURNS TABLE(currentweek date, currentprogress bigint, targetprogress bigint)
+CREATE OR REPLACE FUNCTION user_streaks_weekly_current_progress(useridofinterest BIGINT, defaultquestionsperweek integer DEFAULT 10)
+    RETURNS TABLE(currentweek date, currentprogress BIGINT, targetprogress BIGINT)
     LANGUAGE plpgsql
 AS
 $$

@@ -961,6 +961,11 @@ public class AssignmentFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
             UserGroupDTO assigneeGroup = groupManager.getGroupById(assignmentDTOFromClient.getGroupId());
+
+            if (!isUserTeacherOrAbove(userManager, currentlyLoggedInUser)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You need a teacher account to create groups and set assignments!").toResponse();
+            }
+
             if (null == assigneeGroup) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "The group id specified does not exist.")
                         .toResponse();

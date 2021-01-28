@@ -682,8 +682,12 @@ public class StatisticsManager implements IStatisticsManager {
         Map<String, Object> userStreakRecord = userStreaksManager.getCurrentStreakRecord(userOfInterest);
         userStreakRecord.put("largestStreak", userStreaksManager.getLongestStreak(userOfInterest));
 
+        Map<String, Object> userWeeklyStreakRecord = userStreaksManager.getCurrentWeeklyStreakRecord(userOfInterest);
+        userWeeklyStreakRecord.put("largestWeeklyStreak", userStreaksManager.getLongestWeeklyStreak(userOfInterest));
+
         Map<String, Object> result = Maps.newHashMap();
-        result.put("streakRecord", userStreakRecord);
+        result.put("dailyStreakRecord", userStreakRecord);
+        result.put("weeklyStreakRecord", userWeeklyStreakRecord);
 
         return result;
     }
