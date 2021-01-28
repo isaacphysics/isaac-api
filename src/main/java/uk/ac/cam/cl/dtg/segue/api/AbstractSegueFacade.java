@@ -311,4 +311,20 @@ public abstract class AbstractSegueFacade {
         return userManager.checkUserRole(userDTO,
                 Arrays.asList(Role.ADMIN, Role.EVENT_MANAGER, Role.CONTENT_EDITOR));
     }
+
+    /**
+     * Is the current user anything other than a student (i.e. a teacher or staff account).
+     *
+     * @param userManager
+     *            - Instance of User Manager
+     * @param userDTO
+     *            - for the user of interest
+     * @return true if user is logged in as a teacher or above, false otherwise.
+     * @throws NoUserLoggedInException
+     *             - if we are unable to tell because they are not logged in.
+     */
+    public static boolean isUserTeacherOrAbove(final UserAccountManager userManager, final RegisteredUserDTO userDTO)
+            throws NoUserLoggedInException {
+        return !userManager.checkUserRole(userDTO, Collections.singletonList(Role.STUDENT));
+    }
 }

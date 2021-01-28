@@ -62,7 +62,10 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -336,6 +339,11 @@ public class GroupsFacade extends AbstractSegueFacade {
 
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+
+            if (!isUserTeacherOrAbove(userManager, user)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You need a teacher account to create groups and set assignments!").toResponse();
+            }
+
             UserGroupDTO group = groupManager.createUserGroup(groupDTO.getGroupName(), user);
 
             this.getLogManager().logEvent(user, request, SegueServerLogType.CREATE_USER_GROUP,
