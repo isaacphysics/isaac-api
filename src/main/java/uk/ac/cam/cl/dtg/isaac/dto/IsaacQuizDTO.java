@@ -19,8 +19,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
 
 import java.util.List;
 import java.util.Set;
@@ -30,7 +30,7 @@ import java.util.Set;
  *
  */
 @JsonContentType("isaacQuiz")
-public class IsaacQuizDTO extends ContentDTO {
+public class IsaacQuizDTO extends SeguePageDTO {
 	private boolean visibleToStudents;
 
 	@JsonCreator

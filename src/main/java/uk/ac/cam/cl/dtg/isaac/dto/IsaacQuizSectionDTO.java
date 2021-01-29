@@ -29,19 +29,19 @@ import java.util.Set;
  * IsaacQuiz Page DTO.
  *
  */
-@JsonContentType("isaacQuizPage")
-public class IsaacQuizPageDTO extends SeguePageDTO {
+@JsonContentType("isaacQuizSection")
+public class IsaacQuizSectionDTO extends SeguePageDTO {
 
     @JsonCreator
-    public IsaacQuizPageDTO(@JsonProperty("id") String id,
-                            @JsonProperty("title") String title, @JsonProperty("subtitle") String subtitle,
-                            @JsonProperty("type") String type, @JsonProperty("author") String author,
-                            @JsonProperty("encoding") String encoding, @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
-                            @JsonProperty("layout") String layout, @JsonProperty("children") List<ContentBaseDTO> children,
-                            @JsonProperty("value") String value, @JsonProperty("attribution") String attribution,
-                            @JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
-                            @JsonProperty("published") Boolean published, @JsonProperty("tags") Set<String> tags,
-                            @JsonProperty("level") Integer level) {
+    public IsaacQuizSectionDTO(@JsonProperty("id") String id,
+                               @JsonProperty("title") String title, @JsonProperty("subtitle") String subtitle,
+                               @JsonProperty("type") String type, @JsonProperty("author") String author,
+                               @JsonProperty("encoding") String encoding, @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
+                               @JsonProperty("layout") String layout, @JsonProperty("children") List<ContentBaseDTO> children,
+                               @JsonProperty("value") String value, @JsonProperty("attribution") String attribution,
+                               @JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
+                               @JsonProperty("published") Boolean published, @JsonProperty("tags") Set<String> tags,
+                               @JsonProperty("level") Integer level) {
 
         super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
                 attribution, relatedContent, published, tags, level);
@@ -50,7 +50,7 @@ public class IsaacQuizPageDTO extends SeguePageDTO {
     /**
      * Default constructor required for Jackson
      */
-    public IsaacQuizPageDTO() {
+    public IsaacQuizSectionDTO() {
 
     }
 }

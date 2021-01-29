@@ -16,17 +16,17 @@
 package uk.ac.cam.cl.dtg.isaac.dos;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacPodDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
-import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
-import uk.ac.cam.cl.dtg.segue.dos.content.Image;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
+import uk.ac.cam.cl.dtg.segue.dos.content.SeguePage;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * DO for isaac quiz.
@@ -34,7 +34,7 @@ import java.util.Set;
  */
 @DTOMapping(IsaacQuizDTO.class)
 @JsonContentType("isaacQuiz")
-public class IsaacQuiz extends Content {
+public class IsaacQuiz extends SeguePage {
 
 	private boolean visibleToStudents;
 
@@ -76,4 +76,9 @@ public class IsaacQuiz extends Content {
 	public void setVisibleToStudents(boolean visibleToStudents) {
 		this.visibleToStudents = visibleToStudents;
 	}
+
+	@JsonIgnore
+	public List<IsaacQuizSection> getSections() {
+	    return children.stream().filter(content -> content instanceof IsaacQuizSection).map(c -> (IsaacQuizSection) c).collect(Collectors.toList());
+    }
 }
