@@ -100,7 +100,7 @@ public class PgUserStreakManager implements IUserStreaksManager {
             PreparedStatement pst;
             pst = conn.prepareStatement("SELECT * FROM"
                     + " user_streaks_weekly_current_progress(?) LEFT JOIN user_streaks_weekly(?)"
-                    + " ON user_streaks_weekly_current_progress.currentweek - user_streaks_weekly.enddate <= 1"
+                    + " ON user_streaks_weekly_current_progress.currentweek - user_streaks_weekly.enddate <= 7"
                     + " AND user_streaks_weekly.startdate <= user_streaks_weekly_current_progress.currentweek");
 
             pst.setLong(1, user.getId());
