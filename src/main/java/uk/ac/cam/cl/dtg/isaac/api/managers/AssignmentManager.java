@@ -17,7 +17,6 @@ package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
@@ -28,9 +27,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dos.GroupMembershipStatus;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.GroupMembershipDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
@@ -38,7 +35,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -96,7 +92,7 @@ public class AssignmentManager {
         }
 
         List<Long> groupIds = groups.stream().map(UserGroupDTO::getId).collect(Collectors.toList());
-        List<AssignmentDTO> assignments = this.filterAssignmentsBasedOnGroupMembershipContext(
+        List<AssignmentDTO> assignments = this.groupManager.filterItemsBasedOnMembershipContext(
                 this.assignmentPersistenceManager.getAssignmentsByGroupList(groupIds), user.getId());
 
         return assignments;
@@ -261,25 +257,5 @@ public class AssignmentManager {
         }
 
         return groups;
-    }
-    private List<AssignmentDTO> filterAssignmentsBasedOnGroupMembershipContext(List<AssignmentDTO> assignments, Long userId) throws SegueDatabaseException {
-        Map<Long, Map<Long, GroupMembershipDTO>> groupIdToUserMembershipInfoMap = Maps.newHashMap();
-        List<AssignmentDTO> results = Lists.newArrayList();
-
-        for (AssignmentDTO assignment : assignments) {
-            if (!groupIdToUserMembershipInfoMap.containsKey(assignment.getGroupId())) {
-                groupIdToUserMembershipInfoMap.put(assignment.getGroupId(), this.groupManager.getUserMembershipMapForGroup(assignment.getGroupId()));
-            }
-
-            GroupMembershipDTO membershipRecord = groupIdToUserMembershipInfoMap.get(assignment.getGroupId()).get(userId);
-            // if they are inactive and they became inactive before the assignment was sent we want to skip the assignment.
-            if (GroupMembershipStatus.INACTIVE.equals(membershipRecord.getStatus())
-                    && membershipRecord.getUpdated().before(assignment.getCreationDate()) ) {
-                continue;
-            }
-
-            results.add(assignment);
-        }
-        return results;
     }
 }

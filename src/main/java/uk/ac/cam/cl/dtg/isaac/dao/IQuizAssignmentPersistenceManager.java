@@ -51,4 +51,14 @@ public interface IQuizAssignmentPersistenceManager {
     List<QuizAssignmentDTO> getAssignmentsByQuizIdAndGroup(final String quizId, final Long groupId)
         throws SegueDatabaseException;
 
+    /**
+     * Get a list of QuizAssignmentDTO objects for these groups.
+     *
+     * @param groupIds
+     *            - the group ids of interest.
+     * @return the assignments to those groups.
+     * @throws SegueDatabaseException
+     *             - if there is an error when accessing the database.
+     */
+    List<QuizAssignmentDTO> getAssignmentsByGroupList(List<Long> groupIds) throws SegueDatabaseException;
 }

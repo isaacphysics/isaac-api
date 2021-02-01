@@ -17,7 +17,6 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 
 import java.util.Date;
 
-import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -25,7 +24,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * This class is the Data Transfer Object used to store Assignments in the isaac CMS.
  */
-public class AssignmentDTO implements EmailService.AssignmentLike {
+public class AssignmentDTO implements IAssignmentLike {
     private Long id;
     private String gameboardId;
     private GameboardDTO gameboard;

@@ -15,20 +15,20 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto;
 
-import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 
 import javax.annotation.Nullable;
 import java.util.Date;
 
 /**
- * This class is the Data Transfer Object used to store quiz assignments in the isaac CMS.
+ * This class is the Data Transfer Object used to refer to quiz assignments.
  */
-public class QuizAssignmentDTO implements EmailService.AssignmentLike {
+public class QuizAssignmentDTO implements IAssignmentLike {
     private Long id;
     private String quizId;
-    private IsaacQuizDTO quiz;
+    private ContentSummaryDTO quiz; // We only need the title really.
     private Long groupId;
     private Long ownerUserId;
     private UserSummaryDTO assignerSummary;
@@ -115,18 +115,18 @@ public class QuizAssignmentDTO implements EmailService.AssignmentLike {
      *
      * @return the quizDTO
      */
-    public IsaacQuizDTO getQuiz() {
+    public ContentSummaryDTO getQuiz() {
         return quiz;
     }
 
     /**
-     * Sets the quizDTO.
+     * Sets the contentSummaryDTO.
      *
-     * @param quizDTO
-     *            the quizDTO to set
+     * @param contentSummaryDTO
+     *            the contentSummaryDTO to set
      */
-    public void setQuiz(final IsaacQuizDTO quizDTO) {
-        this.quiz = quizDTO;
+    public void setQuiz(final ContentSummaryDTO contentSummaryDTO) {
+        this.quiz = contentSummaryDTO;
     }
 
     /**

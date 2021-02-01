@@ -31,6 +31,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardProgressSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IAssignmentLike;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGameboardProgressSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
@@ -686,5 +687,26 @@ public class GroupManager {
         });
 
         return groupProgressSummary;
+    }
+
+    public <T extends IAssignmentLike> List<T> filterItemsBasedOnMembershipContext(List<T> assignments, Long userId) throws SegueDatabaseException {
+        Map<Long, Map<Long, GroupMembershipDTO>> groupIdToUserMembershipInfoMap = Maps.newHashMap();
+        List<T> results = Lists.newArrayList();
+
+        for (T assignment : assignments) {
+            if (!groupIdToUserMembershipInfoMap.containsKey(assignment.getGroupId())) {
+                groupIdToUserMembershipInfoMap.put(assignment.getGroupId(), this.getUserMembershipMapForGroup(assignment.getGroupId()));
+            }
+
+            GroupMembershipDTO membershipRecord = groupIdToUserMembershipInfoMap.get(assignment.getGroupId()).get(userId);
+            // if they are inactive and they became inactive before the assignment was sent we want to skip the assignment.
+            if (GroupMembershipStatus.INACTIVE.equals(membershipRecord.getStatus())
+                && membershipRecord.getUpdated().before(assignment.getCreationDate()) ) {
+                continue;
+            }
+
+            results.add(assignment);
+        }
+        return results;
     }
 }

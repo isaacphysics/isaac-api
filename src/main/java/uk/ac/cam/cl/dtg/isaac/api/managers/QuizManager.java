@@ -17,6 +17,7 @@ package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
@@ -24,21 +25,20 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 
 import javax.annotation.Nullable;
-import javax.ws.rs.NotFoundException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import static com.google.common.collect.Maps.immutableEntry;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUIZ_TYPE;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.ID_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.VISIBLE_TO_STUDENTS_FIELDNAME;
 
 /**
@@ -49,20 +49,24 @@ public class QuizManager {
     private static final Logger log = LoggerFactory.getLogger(QuizManager.class);
 
     private final ContentService contentService;
+    private final IContentManager contentManager;
     private final ContentSummarizerService contentSummarizerService;
+    private final String contentIndex;
 
     /**
      * Creates a quiz manager.
-     *  @param contentService
+     * @param contentService
      *            - so we can look up content
      *  @param contentSummarizerService
      *            - so we can summarize content with links
      */
     @Inject
-    public QuizManager(final ContentService contentService,
-                       final ContentSummarizerService contentSummarizerService) {
-        this.contentSummarizerService = contentSummarizerService;
+    public QuizManager(final ContentService contentService, final IContentManager contentManager,
+                       final ContentSummarizerService contentSummarizerService, @Named(CONTENT_INDEX) final String contentIndex) {
         this.contentService = contentService;
+        this.contentManager = contentManager;
+        this.contentSummarizerService = contentSummarizerService;
+        this.contentIndex = contentIndex;
     }
 
     public ResultsWrapper<ContentSummaryDTO> getAvailableQuizzes(boolean onlyVisibleToStudents, @Nullable Integer startIndex, @Nullable Integer limit) throws ContentManagerException {
@@ -87,29 +91,12 @@ public class QuizManager {
      * @return The quiz.
      */
     public IsaacQuizDTO findQuiz(final String quizId) throws ContentManagerException {
-        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-        fieldsToMatch.put(TYPE_FIELDNAME, Collections.singletonList(QUIZ_TYPE));
+        ContentDTO contentDTO = contentManager.getContentById(contentIndex, quizId);
 
-        // options
-        fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singletonList(quizId));
-
-        ResultsWrapper<ContentDTO> resultList = this.contentService.findMatchingContent(null,
-            ContentService.generateDefaultFieldToMatch(fieldsToMatch), null, null);
-        ContentDTO c;
-        if (resultList.getResults().size() > 1) {
-            throw new ContentManagerException("Multiple results ("
-                + resultList.getResults().size() + ") returned error. For search query: " + fieldsToMatch.values());
-        } else if (resultList.getResults().isEmpty()) {
-            throw new NotFoundException("No content found that matches the query with parameters: "
-                + fieldsToMatch.values());
-        } else {
-            c = resultList.getResults().get(0);
+        if (contentDTO instanceof IsaacQuizDTO) {
+            return (IsaacQuizDTO) contentDTO;
         }
 
-        if (c instanceof IsaacQuizDTO) {
-            return (IsaacQuizDTO) c;
-        }
-
-        throw new ContentManagerException("Expected an IsaacQuizDTO, got a " + c.getType());
+        throw new ContentManagerException("Expected an IsaacQuizDTO, got a " + contentDTO.getType());
     }
 }
