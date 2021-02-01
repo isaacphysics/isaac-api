@@ -15,6 +15,7 @@ import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.*;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.DetailedEventBookingDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
@@ -25,6 +26,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithEmailAddressDTO;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
@@ -73,7 +75,7 @@ public class EventBookingPersistenceManager {
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    public List<EventBookingDTO> getEventsByUserId(final Long userId) throws SegueDatabaseException {
+    public List<DetailedEventBookingDTO> getEventsByUserId(final Long userId) throws SegueDatabaseException {
         return convertToDTO(Lists.newArrayList(dao.findAllByUserId(userId)));
     }
 
@@ -98,7 +100,7 @@ public class EventBookingPersistenceManager {
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    public EventBookingDTO getBookingByEventIdAndUserId(final String eventId, final Long userId) throws SegueDatabaseException {
+    public DetailedEventBookingDTO getBookingByEventIdAndUserId(final String eventId, final Long userId) throws SegueDatabaseException {
         return this.convertToDTO(dao.findBookingByEventAndUser(eventId, userId));
     }
 
@@ -113,7 +115,7 @@ public class EventBookingPersistenceManager {
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    public EventBookingDTO updateBookingStatus(final String eventId, final Long userId, final Long reservingUserId, final BookingStatus bookingStatus, final Map additionalEventInformation) throws SegueDatabaseException {
+    public DetailedEventBookingDTO updateBookingStatus(final String eventId, final Long userId, final Long reservingUserId, final BookingStatus bookingStatus, final Map additionalEventInformation) throws SegueDatabaseException {
         dao.updateStatus(eventId, userId, reservingUserId, bookingStatus, additionalEventInformation);
         return this.getBookingByEventIdAndUserId(eventId, userId);
     }
@@ -128,7 +130,7 @@ public class EventBookingPersistenceManager {
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    public EventBookingDTO updateBookingStatus(final String eventId, final Long userId, final BookingStatus bookingStatus, final Map additionalEventInformation) throws SegueDatabaseException {
+    public DetailedEventBookingDTO updateBookingStatus(final String eventId, final Long userId, final BookingStatus bookingStatus, final Map additionalEventInformation) throws SegueDatabaseException {
         return updateBookingStatus(eventId, userId, null, bookingStatus, additionalEventInformation);
     }
 
@@ -158,6 +160,7 @@ public class EventBookingPersistenceManager {
     /**
      * Get event bookings by an event id.
      * TODO - if an event disappears (either by being unpublished or being deleted, then this method will not pull back the event.
+     * WARNING: This pulls PII such as medical info, email, and other stuff that should not (always) make it to end users.
      *
      * @param eventId
      *            - of interest
@@ -165,7 +168,7 @@ public class EventBookingPersistenceManager {
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    public List<EventBookingDTO> getBookingsByEventId(final String eventId) throws SegueDatabaseException {
+    public List<DetailedEventBookingDTO> adminGetBookingsByEventId(final String eventId) throws SegueDatabaseException {
         try {
             ContentDTO c = this.contentManager.getContentById(this.contentManager.getCurrentContentSHA(), eventId);
 
@@ -183,6 +186,25 @@ public class EventBookingPersistenceManager {
             log.error("Unable to create event booking dto.");
             throw new SegueDatabaseException("Unable to create event booking dto from DO.", e);
         }
+    }
+
+    /**
+     * Get event bookings by an event id.
+     * TODO - if an event disappears (either by being unpublished or being deleted, then this method will not pull back the event.
+     * TODO: This is a patch to stop leaking PII (see adminGetBookingsByEventId). The problem may need a better solution.
+     *
+     * @param eventId
+     *            - of interest
+     * @return event bookings
+     * @throws SegueDatabaseException
+     *             - if an error occurs.
+     */
+    public List<DetailedEventBookingDTO> getBookingsByEventId(final String eventId) throws SegueDatabaseException {
+        List<DetailedEventBookingDTO> bookings = adminGetBookingsByEventId(eventId);
+        for (DetailedEventBookingDTO booking: bookings) {
+            booking.setAdditionalInformation(null);
+        }
+        return bookings;
     }
 
     /**
@@ -292,12 +314,14 @@ public class EventBookingPersistenceManager {
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    private EventBookingDTO convertToDTO(final EventBooking eb, final IsaacEventPageDTO eventInformation)
+    private DetailedEventBookingDTO convertToDTO(final EventBooking eb, final IsaacEventPageDTO eventInformation)
             throws SegueDatabaseException {
-        EventBookingDTO result = new EventBookingDTO();
+        DetailedEventBookingDTO result = new DetailedEventBookingDTO();
 
         try {
             // Note: This will pull back deleted users for the purpose of the events system
+            // Note: This will also pull in PII that should be of no interest to anyone
+            // DANGER: The User DTO gets silently upgraded to one containing the email address here
             UserSummaryWithEmailAddressDTO user = userManager.convertToDetailedUserSummaryObject(userManager.getUserDTOById(eb
                     .getUserId(), true), UserSummaryWithEmailAddressDTO.class);
             result.setReservedById(eb.getReservedById());
@@ -325,7 +349,7 @@ public class EventBookingPersistenceManager {
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    private EventBookingDTO convertToDTO(final EventBooking eb) throws SegueDatabaseException {
+    private DetailedEventBookingDTO convertToDTO(final EventBooking eb) throws SegueDatabaseException {
         try {
             ContentDTO c = this.contentManager.getContentById(this.contentManager.getCurrentContentSHA(),
                     eb.getEventId(), true);
@@ -355,11 +379,11 @@ public class EventBookingPersistenceManager {
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    private List<EventBookingDTO> convertToDTO(final List<EventBooking> toConvert) throws SegueDatabaseException {
-        List<EventBookingDTO> result = Lists.newArrayList();
+    private List<DetailedEventBookingDTO> convertToDTO(final List<EventBooking> toConvert) throws SegueDatabaseException {
+        List<DetailedEventBookingDTO> result = Lists.newArrayList();
 
         for (EventBooking e : toConvert) {
-            EventBookingDTO augmentedBooking = convertToDTO(e);
+            DetailedEventBookingDTO augmentedBooking = convertToDTO(e);
 
             if (augmentedBooking != null) {
                 result.add(augmentedBooking);
@@ -380,9 +404,9 @@ public class EventBookingPersistenceManager {
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    private List<EventBookingDTO> convertToDTO(final List<EventBooking> toConvert, final IsaacEventPageDTO eventDetails)
+    private List<DetailedEventBookingDTO> convertToDTO(final List<EventBooking> toConvert, final IsaacEventPageDTO eventDetails)
             throws SegueDatabaseException {
-        List<EventBookingDTO> result = Lists.newArrayList();
+        List<DetailedEventBookingDTO> result = Lists.newArrayList();
 
         for (EventBooking e : toConvert) {
             result.add(convertToDTO(e, eventDetails));
