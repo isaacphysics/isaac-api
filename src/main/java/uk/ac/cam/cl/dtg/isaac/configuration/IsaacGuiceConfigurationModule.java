@@ -25,6 +25,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
+import uk.ac.cam.cl.dtg.isaac.api.services.GroupChangedService;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.IAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizAssignmentPersistenceManager;
@@ -35,9 +36,6 @@ import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicLogicValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicValidator;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
-import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
@@ -83,6 +81,8 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
         
         bind(IAssignmentPersistenceManager.class).to(PgAssignmentPersistenceManager.class);
         bind(IQuizAssignmentPersistenceManager.class).to(PgQuizAssignmentPersistenceManager.class);
+
+        bind(GroupChangedService.class).asEagerSingleton(); // Nothing actual uses GroupChangedService; it listens to changes from GroupManager
     }
 
     /**
@@ -127,10 +127,8 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
      *            - to save assignments
      * @param groupManager
      *            - to allow communication with the group manager.
-     * @param emailManager
-     *            - email manager
-     * @param userManager
-     *            - the user manager object
+     * @param emailService
+     *            - email service
      * @param gameManager
      *            - the game manager object
      * @param properties
@@ -142,11 +140,9 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
     @Singleton
     private static AssignmentManager getAssignmentManager(
         final IAssignmentPersistenceManager assignmentPersistenceManager, final GroupManager groupManager,
-        final EmailManager emailManager, final EmailService emailService, final UserAccountManager userManager,
-        final GameManager gameManager, final PropertiesLoader properties) {
+        final EmailService emailService, final GameManager gameManager, final PropertiesLoader properties) {
         if (null == assignmentManager) {
-            assignmentManager =  new AssignmentManager(assignmentPersistenceManager, groupManager, emailManager,
-                emailService, userManager, gameManager, properties);
+            assignmentManager =  new AssignmentManager(assignmentPersistenceManager, groupManager, emailService, gameManager, properties);
             log.info("Creating Singleton AssignmentManager");
         }
         return assignmentManager;
