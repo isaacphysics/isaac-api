@@ -15,49 +15,32 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
-import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
-import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.IGroupObserver;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
-import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
-import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dos.GroupMembershipStatus;
-import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.GroupMembershipDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
-import static uk.ac.cam.cl.dtg.util.NameFormatter.getFilteredGroupNameFromGroup;
-import static uk.ac.cam.cl.dtg.util.NameFormatter.getTeacherNameFromUser;
 
 /**
  * Manage quiz assignments
  */
-public class QuizAssignmentManager implements IGroupObserver {
+public class QuizAssignmentManager {
     private static final Logger log = LoggerFactory.getLogger(QuizAssignmentManager.class);
 
     private final IQuizAssignmentPersistenceManager quizAssignmentPersistenceManager;
-    private final GroupManager groupManager;
-    private final EmailManager emailManager;
-    private final UserAccountManager userManager;
+    private final EmailService emailService;
 	private final QuizManager quizManager;
     private final PropertiesLoader properties;
 
@@ -65,27 +48,19 @@ public class QuizAssignmentManager implements IGroupObserver {
      * AssignmentManager.
      * @param quizAssignmentPersistenceManager
      *            - to save quiz assignments
-     * @param groupManager
-     *            - to allow communication with the group manager.
-     * @param emailManager
-     *            - email manager
-     * @param userManager
-     *            - the user manager object
+     * @param emailService
+     *            - service for sending group emails.
      * @param quizManager
      *            - the quiz manager.
      */
     @Inject
     public QuizAssignmentManager(final IQuizAssignmentPersistenceManager quizAssignmentPersistenceManager,
-                                 final GroupManager groupManager, final EmailManager emailManager,
-                                 final UserAccountManager userManager, final QuizManager quizManager,
+                                 final EmailService emailService, final QuizManager quizManager,
                                  final PropertiesLoader properties) {
         this.quizAssignmentPersistenceManager = quizAssignmentPersistenceManager;
         this.quizManager = quizManager;
-        this.groupManager = groupManager;
-        this.emailManager = emailManager;
-        this.userManager = userManager;
+        this.emailService = emailService;
         this.properties = properties;
-        groupManager.registerInterestInGroups(this);
     }
 
     /**
@@ -126,72 +101,12 @@ public class QuizAssignmentManager implements IGroupObserver {
         newAssignment.setCreationDate(now);
         newAssignment.setId(this.quizAssignmentPersistenceManager.saveAssignment(newAssignment));
 
-        UserGroupDTO userGroupDTO = groupManager.getGroupById(newAssignment.getGroupId());
-        List<RegisteredUserDTO> usersToEmail = Lists.newArrayList();
-        Map<Long, GroupMembershipDTO> userMembershipMapforGroup = this.groupManager.getUserMembershipMapForGroup(userGroupDTO.getId());
+        final String quizURL = String.format("https://%s/quiz/%s/assignment/%d", properties.getProperty(HOST_NAME),
+            quiz.getId(), newAssignment.getId());
 
-        // filter users so those who are inactive in the group aren't emailed
-        for (RegisteredUserDTO user : groupManager.getUsersInGroup(userGroupDTO)) {
-            if (GroupMembershipStatus.ACTIVE.equals(userMembershipMapforGroup.get(user.getId()).getStatus())) {
-                usersToEmail.add(user);
-            }
-        }
-
-		// inform all members of the group that there is now an assignment for them.
-        // FIXME: This is super-repetitive of assignment
-        try {
-            final DateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yy");
-            final String quizURL = String.format("https://%s/quiz/%s/assignment/%d", properties.getProperty(HOST_NAME),
-                    quiz.getId(), newAssignment.getId());
-
-            String dueDate = "";
-            if (newAssignment.getDueDate() != null) {
-                dueDate = String.format(" (due on %s)", DATE_FORMAT.format(newAssignment.getDueDate()));
-            }
-
-            String quizName = quiz.getId();
-            if (quiz.getTitle() != null) {
-                quizName = quiz.getTitle();
-            }
-
-            RegisteredUserDTO assignmentOwnerDTO = this.userManager.getUserDTOById(newAssignment.getOwnerUserId());
-
-            String groupName = getFilteredGroupNameFromGroup(userGroupDTO);
-            String assignmentOwner = getTeacherNameFromUser(assignmentOwnerDTO);
-
-            for (RegisteredUserDTO userDTO : usersToEmail) {
-                emailManager.sendTemplatedEmailToUser(userDTO,
-                        emailManager.getEmailTemplateDTO("email-template-group-quiz-assignment"),
-                        ImmutableMap.of(
-                                "guizURL", quizURL,
-                                "guizName", quizName,
-                                "assignmentDueDate", dueDate,
-                                "groupName", groupName,
-                                "assignmentOwner", assignmentOwner
-                        ), EmailType.ASSIGNMENTS);
-            }
-
-        } catch (ContentManagerException e) {
-            log.error("Could not send group assignment emails due to content issue", e);
-        } catch (NoUserException e) {
-            log.error("Could not send group assignment emails because owner did not exist.", e);
-        }
+        emailService.sendAssignmentEmailToGroup(newAssignment, quiz, ImmutableMap.of("quizURL", quizURL) ,
+            "email-template-group-quiz-assignment");
 
         return newAssignment;
-    }
-
-    @Override
-    public void onGroupMembershipRemoved(UserGroupDTO group, RegisteredUserDTO user) {
-        // TODO
-    }
-
-    @Override
-    public void onMemberAddedToGroup(UserGroupDTO group, RegisteredUserDTO user) {
-        // TODO
-    }
-
-    @Override
-    public void onAdditionalManagerAddedToGroup(UserGroupDTO group, RegisteredUserDTO additionalManagerUser) {
-        // TODO
     }
 }

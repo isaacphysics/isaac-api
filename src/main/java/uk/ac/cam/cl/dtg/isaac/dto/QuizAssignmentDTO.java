@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto;
 
+import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 
@@ -24,7 +25,7 @@ import java.util.Date;
 /**
  * This class is the Data Transfer Object used to store quiz assignments in the isaac CMS.
  */
-public class QuizAssignmentDTO {
+public class QuizAssignmentDTO implements EmailService.AssignmentLike {
     private Long id;
     private String quizId;
     private IsaacQuizDTO quiz;

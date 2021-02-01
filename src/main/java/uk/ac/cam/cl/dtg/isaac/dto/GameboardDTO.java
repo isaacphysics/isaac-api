@@ -21,6 +21,7 @@ import java.util.Set;
 
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Sets;
+import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
@@ -29,7 +30,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
  * DTO representation of a gameboard.
  * 
  */
-public class GameboardDTO {
+public class GameboardDTO implements EmailService.HasTitleOrId {
     private String id;
     private String title;
     private List<GameboardItem> questions;

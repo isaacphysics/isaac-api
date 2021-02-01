@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
+import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.IAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizAssignmentPersistenceManager;
@@ -132,8 +133,6 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
      *            - the user manager object
      * @param gameManager
      *            - the game manager object
-     * @param userAssociationManager
-     *            - the userAssociationManager manager object
      * @param properties
      *            - properties loader for the service's hostname
      * @return Assignment manager object.
@@ -142,12 +141,12 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
     @Provides
     @Singleton
     private static AssignmentManager getAssignmentManager(
-                final IAssignmentPersistenceManager assignmentPersistenceManager, final GroupManager groupManager,
-                final EmailManager emailManager, final UserAccountManager userManager, final GameManager gameManager,
-                final UserAssociationManager userAssociationManager, final PropertiesLoader properties) {
+        final IAssignmentPersistenceManager assignmentPersistenceManager, final GroupManager groupManager,
+        final EmailManager emailManager, final EmailService emailService, final UserAccountManager userManager,
+        final GameManager gameManager, final PropertiesLoader properties) {
         if (null == assignmentManager) {
             assignmentManager =  new AssignmentManager(assignmentPersistenceManager, groupManager, emailManager,
-                    userManager, gameManager, userAssociationManager, properties);
+                emailService, userManager, gameManager, properties);
             log.info("Creating Singleton AssignmentManager");
         }
         return assignmentManager;
