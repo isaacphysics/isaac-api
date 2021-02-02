@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizManager;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -102,13 +103,9 @@ public class QuizFacade extends AbstractIsaacFacade {
     @ApiOperation(value = "Get quizzes visible to this user.")
     public final Response getAvailableQuizzes(@Context final HttpServletRequest request) {
         try {
-            AbstractSegueUserDTO user = this.userManager.getCurrentUser(request);
+            RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(request);
 
-            if (!isUserRegistered(user)) {
-                throw new ForbiddenException("Only registered users can see quizzes.");
-            }
-
-            boolean isStudent = !isUserTeacherOrAbove(user);
+            boolean isStudent = !isUserTeacherOrAbove(userManager, user);
 
             EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + "");
 
@@ -117,14 +114,12 @@ public class QuizFacade extends AbstractIsaacFacade {
             return Response.ok(summary).tag(etag)
                 .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, isStudent))
                 .build();
-        } catch (SegueDatabaseException e) {
-            String message = "SegueDatabaseException whilst getting available quizzes";
-            log.error(message, e);
-            return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (ContentManagerException e) {
             String message = "ContentManagerException whilst getting available quizzes";
             log.error(message, e);
             return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
         }
     }
 
@@ -147,18 +142,16 @@ public class QuizFacade extends AbstractIsaacFacade {
     public final Response previewQuiz(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
                                       @PathParam("quizId") final String quizId) {
         try {
-            AbstractSegueUserDTO user = this.userManager.getCurrentUser(httpServletRequest);
+            RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
-            if (!(isUserTeacherOrAbove(user))) {
-                throw new ForbiddenException("Students cannot preview quizzes.");
+            if (!(isUserTeacherOrAbove(userManager, user))) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
             if (null == quizId || quizId.isEmpty()) {
                 return new SegueErrorResponse(Response.Status.BAD_REQUEST, "You must provide a valid quiz id.").toResponse();
             }
 
-            // Calculate the ETag on current live version of the content
-            // NOTE: Assumes that the latest version of the content is being used.
             EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + quizId.hashCode() + "");
 
             Response cachedResponse = generateCachedResponse(request, etag);
@@ -168,25 +161,14 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             IsaacQuizDTO quiz = this.quizManager.findQuiz(quizId);
 
-            Response cachableResult = Response.ok(quiz)
+            return Response.ok(quiz)
                 .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, false)).tag(etag).build();
-            return cachableResult;
-        } catch (SegueDatabaseException e) {
-            String message = "SegueDatabaseException whilst previewing a quiz";
-            log.error(message, e);
-            return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (ContentManagerException e) {
             String message = "ContentManagerException whilst previewing a quiz";
             log.error(message, e);
             return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
         }
-    }
-
-    private static boolean isUserRegistered(AbstractSegueUserDTO user) {
-        return user instanceof RegisteredUserDTO;
-    }
-
-    private static boolean isUserTeacherOrAbove(AbstractSegueUserDTO user) {
-        return user instanceof RegisteredUserDTO && !(Role.STUDENT.equals(((RegisteredUserDTO) user).getRole()));
     }
 }
