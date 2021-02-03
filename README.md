@@ -1,5 +1,6 @@
 # isaac-api
 
+![Java CI with Maven](https://github.com/isaacphysics/isaac-api/workflows/Java%20CI%20with%20Maven/badge.svg?branch=master)
 [![Build Status](https://travis-ci.com/isaacphysics/isaac-api.svg?branch=master)](https://travis-ci.com/isaacphysics/isaac-api)
 [![codecov](https://codecov.io/gh/isaacphysics/isaac-api/branch/master/graph/badge.svg)](https://codecov.io/gh/isaacphysics/isaac-api)
 
