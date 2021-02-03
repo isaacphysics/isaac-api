@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dao;
 
-import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
@@ -61,4 +60,6 @@ public interface IQuizAssignmentPersistenceManager {
      *             - if there is an error when accessing the database.
      */
     List<QuizAssignmentDTO> getAssignmentsByGroupList(List<Long> groupIds) throws SegueDatabaseException;
+
+    QuizAssignmentDTO getAssignmentById(Long quizAssignmentId) throws SegueDatabaseException;
 }

@@ -74,13 +74,13 @@ public class PgQuizAssignmentPersistenceManager implements IQuizAssignmentPersis
             pst.setLong(2, assignmentToSave.getGroupId());
             pst.setLong(3, assignmentToSave.getOwnerUserId());
 
-            if (assignment.getCreationDate() != null) {
+            if (assignmentToSave.getCreationDate() != null) {
                 pst.setTimestamp(4, new java.sql.Timestamp(assignmentToSave.getCreationDate().getTime()));
             } else {
                 pst.setTimestamp(4, new java.sql.Timestamp(new Date().getTime()));
             }
 
-            if (assignment.getDueDate() != null) {
+            if (assignmentToSave.getDueDate() != null) {
                 pst.setTimestamp(5, new java.sql.Timestamp(assignmentToSave.getDueDate().getTime()));
             } else {
                 pst.setNull(5, Types.TIMESTAMP);
@@ -163,6 +163,23 @@ public class PgQuizAssignmentPersistenceManager implements IQuizAssignmentPersis
 
         } catch (SQLException e) {
             throw new SegueDatabaseException("Unable to find assignment by group list", e);
+        }
+    }
+
+    @Override
+    public QuizAssignmentDTO getAssignmentById(Long quizAssignmentId) throws SegueDatabaseException {
+        try (Connection conn = database.getDatabaseConnection()) {
+            PreparedStatement pst;
+            pst = conn.prepareStatement("SELECT * FROM quiz_assignments WHERE id = ?");
+            pst.setLong(1, quizAssignmentId);
+
+            ResultSet results = pst.executeQuery();
+            if (results.next()) {
+                return this.convertToQuizAssignmentDTO(this.convertFromSQLToQuizAssignmentDO(results));
+            }
+            throw new SQLException("QuizAssignment result set empty.");
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Unable to find quiz assignment by id", e);
         }
     }
 

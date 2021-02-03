@@ -29,8 +29,10 @@ import uk.ac.cam.cl.dtg.isaac.api.services.GroupChangedService;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.IAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizAssignmentPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.IQuizAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgQuizAssignmentPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.PgQuizAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicChemistryValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicLogicValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicValidator;
@@ -81,6 +83,7 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
         
         bind(IAssignmentPersistenceManager.class).to(PgAssignmentPersistenceManager.class);
         bind(IQuizAssignmentPersistenceManager.class).to(PgQuizAssignmentPersistenceManager.class);
+        bind(IQuizAttemptPersistenceManager.class).to(PgQuizAttemptPersistenceManager.class);
 
         bind(GroupChangedService.class).asEagerSingleton(); // Nothing actual uses GroupChangedService; it listens to changes from GroupManager
     }

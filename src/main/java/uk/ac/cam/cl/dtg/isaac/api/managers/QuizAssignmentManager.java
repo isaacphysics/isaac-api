@@ -29,10 +29,12 @@ import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
+import javax.ws.rs.core.Response;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -132,5 +134,9 @@ public class QuizAssignmentManager {
         List<Long> groupIds = groups.stream().map(UserGroupDTO::getId).collect(Collectors.toList());
         return this.groupManager.filterItemsBasedOnMembershipContext(
             this.quizAssignmentPersistenceManager.getAssignmentsByGroupList(groupIds), user.getId());
+    }
+
+    public QuizAssignmentDTO getQuizAssignment(Long quizAssignmentId) throws SegueDatabaseException {
+        return this.quizAssignmentPersistenceManager.getAssignmentById(quizAssignmentId);
     }
 }
