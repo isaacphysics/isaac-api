@@ -18,6 +18,8 @@ package uk.ac.cam.cl.dtg.isaac.dao;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
+import java.util.List;
+
 public interface IQuizAttemptPersistenceManager {
     /**
      * Get the quiz attempt for a particular user in a particular assignment.
@@ -38,4 +40,13 @@ public interface IQuizAttemptPersistenceManager {
      *             - if there is a problem saving the attempt in the database.
      */
     Long saveAttempt(QuizAttemptDTO attempt) throws SegueDatabaseException;
+
+    /**
+     * Get all quiz attempts for a particular user at a particular quiz.
+     *
+     * @param quizId The id of the quiz.
+     * @param userId The id of the user.
+     * @return The attempts.
+     */
+    List<QuizAttemptDTO> getByQuizIdAndUserId(String quizId, Long userId) throws SegueDatabaseException;
 }

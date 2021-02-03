@@ -19,12 +19,15 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizAttemptPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * Manage quiz attempts.
@@ -59,6 +62,32 @@ public class QuizAttemptManager {
         newQuizAttempt.setUserId(user.getId());
         newQuizAttempt.setQuizAssignmentId(quizAssignment.getId());
         newQuizAttempt.setQuizId(quizAssignment.getQuizId());
+        newQuizAttempt.setStartDate(new Date());
+
+        newQuizAttempt.setId(quizAttemptPersistenceManager.saveAttempt(newQuizAttempt));
+
+        return newQuizAttempt;
+    }
+
+    public QuizAttemptDTO fetchOrCreateFreeQuiz(IsaacQuizDTO quiz, RegisteredUserDTO user) throws SegueDatabaseException {
+        // Check if an attempt exists
+        List<QuizAttemptDTO> existingAttempts = quizAttemptPersistenceManager.getByQuizIdAndUserId(quiz.getId(), user.getId());
+
+        if (!existingAttempts.isEmpty()) {
+            // Find any incomplete free attempts
+            Optional<QuizAttemptDTO> incompleteAttempt = existingAttempts.stream()
+                .filter(attempt -> attempt.getCompletedDate() == null && attempt.getQuizAssignmentId() == null).findFirst();
+            if (incompleteAttempt.isPresent()) {
+                // Continue with existing attempt until it is completed or abandoned.
+                return incompleteAttempt.get();
+            }
+        }
+
+        // Make a new attempt
+        QuizAttemptDTO newQuizAttempt = new QuizAttemptDTO();
+        newQuizAttempt.setUserId(user.getId());
+        newQuizAttempt.setQuizAssignmentId(null);
+        newQuizAttempt.setQuizId(quiz.getId());
         newQuizAttempt.setStartDate(new Date());
 
         newQuizAttempt.setId(quizAttemptPersistenceManager.saveAttempt(newQuizAttempt));

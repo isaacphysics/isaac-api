@@ -304,7 +304,68 @@ public class QuizFacade extends AbstractIsaacFacade {
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (AttemptCompletedException e) {
-            return new SegueErrorResponse(Status.FORBIDDEN, "You have already completed your attempt at this assignment.").toResponse();
+            return new SegueErrorResponse(Status.FORBIDDEN, "You have already completed your attempt at this quiz.").toResponse();
+        }
+    }
+
+    /**
+     * Start a quiz attempt for a free quiz (one that is visibleToStudents).
+     *
+     * This checks that quiz has not already been assigned. (When a quiz has been set to a student,
+     * they are locked out of all previous feedback for that quiz and prevented from starting the
+     * quiz freely in order to prevent some ways of cheating.)
+     *
+     * @param httpServletRequest
+     *            - so that we can extract user information.
+     * @param quizId
+     *            - the ID of the quiz the user wishes to attempt.
+     * @return a QuizAttemptDTO
+     */
+    @POST
+    @Path("/startFreeQuizAttempt")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @ApiOperation(value = "Start a free quiz attempt.")
+    public final Response startFreeQuizAttempt(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
+                                           @FormParam("quizId") final String quizId) {
+        try {
+            RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
+
+            if (null == quizId || quizId.isEmpty()) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid quiz assignment id.").toResponse();
+            }
+
+            // Get the quiz
+            IsaacQuizDTO quiz = quizManager.findQuiz(quizId);
+
+            // Check it is visibleToStudents
+            if (!quiz.getVisibleToStudents()) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "This quiz is not available for students to attempt freely.").toResponse();
+            }
+
+            // Check if there is an active assignment of this quiz
+            List<QuizAssignmentDTO> activeQuizAssignments = this.quizAssignmentManager.getActiveQuizAssignments(quiz, user);
+
+            if (!activeQuizAssignments.isEmpty()) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You are currently set this quiz so you cannot attempt it freely.").toResponse();
+            }
+
+            // Create a quiz attempt
+            QuizAttemptDTO quizAttempt = this.quizAttemptManager.fetchOrCreateFreeQuiz(quiz, user);
+
+            // TODO: Might as well augment the result to avoid a round-trip
+
+            return Response.ok(quizAttempt).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            String message = "SegueDatabaseException whilst starting a free quiz attempt";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        } catch (ContentManagerException e) {
+            String message = "ContentManagerException whilst starting a free quiz attempt";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         }
     }
 

@@ -23,18 +23,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizAssignmentPersistenceManager;
-import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import javax.ws.rs.core.Response;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -123,6 +120,12 @@ public class QuizAssignmentManager {
     }
 
     public List<QuizAssignmentDTO> getAssignedQuizzes(RegisteredUserDTO user) throws SegueDatabaseException {
+        List<QuizAssignmentDTO> assignments = getAllAssignments(user);
+
+        return this.groupManager.filterItemsBasedOnMembershipContext(assignments, user.getId());
+    }
+
+    private List<QuizAssignmentDTO> getAllAssignments(RegisteredUserDTO user) throws SegueDatabaseException {
         // Find the groups the user is in
         List<UserGroupDTO> groups = groupManager.getGroupMembershipList(user, false);
 
@@ -132,11 +135,21 @@ public class QuizAssignmentManager {
         }
 
         List<Long> groupIds = groups.stream().map(UserGroupDTO::getId).collect(Collectors.toList());
-        return this.groupManager.filterItemsBasedOnMembershipContext(
-            this.quizAssignmentPersistenceManager.getAssignmentsByGroupList(groupIds), user.getId());
+        return this.quizAssignmentPersistenceManager.getAssignmentsByGroupList(groupIds);
     }
 
     public QuizAssignmentDTO getQuizAssignment(Long quizAssignmentId) throws SegueDatabaseException {
         return this.quizAssignmentPersistenceManager.getAssignmentById(quizAssignmentId);
+    }
+
+    public List<QuizAssignmentDTO> getActiveQuizAssignments(IsaacQuizDTO quiz, RegisteredUserDTO user) throws SegueDatabaseException {
+        List<QuizAssignmentDTO> allAssignedAndDueQuizzes = getAllActiveAssignments(user);
+        return allAssignedAndDueQuizzes.stream().filter(qa -> qa.getQuizId().equals(quiz.getId())).collect(Collectors.toList());
+    }
+
+    private List<QuizAssignmentDTO> getAllActiveAssignments(RegisteredUserDTO user) throws SegueDatabaseException {
+        List<QuizAssignmentDTO> allAssignedQuizzes = getAllAssignments(user);
+        Date now = new Date();
+        return allAssignedQuizzes.stream().filter(qa -> qa.getDueDate() == null || qa.getDueDate().after(now)).collect(Collectors.toList());
     }
 }

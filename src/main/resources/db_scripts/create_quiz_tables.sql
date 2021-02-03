@@ -57,3 +57,6 @@ ALTER TABLE ONLY public.quiz_attempts ALTER COLUMN id SET DEFAULT nextval('publi
 CREATE UNIQUE INDEX only_one_attempt_per_assignment_per_user ON
     public.quiz_attempts (quiz_assignment_id, user_id)
     WHERE quiz_assignment_id IS NOT NULL;
+
+CREATE INDEX quiz_attempts_index_by_quiz_id_and_user_id ON
+    public.quiz_attempts (quiz_id, user_id);

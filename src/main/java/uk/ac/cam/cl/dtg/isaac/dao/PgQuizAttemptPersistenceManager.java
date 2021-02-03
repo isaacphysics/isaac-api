@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dao;
 
+import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 import ma.glasnost.orika.MapperFacade;
 import org.slf4j.Logger;
@@ -30,7 +31,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 /**
  * This class is responsible for managing and persisting quiz attempts.
@@ -118,6 +121,27 @@ public class PgQuizAttemptPersistenceManager implements IQuizAttemptPersistenceM
 
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
+        }
+    }
+
+    @Override
+    public List<QuizAttemptDTO> getByQuizIdAndUserId(String quizId, Long userId) throws SegueDatabaseException {
+        try (Connection conn = database.getDatabaseConnection()) {
+            PreparedStatement pst;
+            pst = conn.prepareStatement("SELECT * FROM quiz_attempts WHERE quiz_id = ? AND user_id = ?");
+            pst.setString(1, quizId);
+            pst.setLong(2, userId);
+
+            ResultSet results = pst.executeQuery();
+
+            List<QuizAttemptDTO> listOfResults = Lists.newArrayList();
+            while (results.next()) {
+                listOfResults.add(this.convertToQuizAttemptDTO(this.convertFromSQLToQuizAttemptDO(results)));
+            }
+
+            return listOfResults;
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Unable to find quiz attempts by quiz id and user id", e);
         }
     }
 
