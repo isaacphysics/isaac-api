@@ -22,6 +22,7 @@ import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
 import uk.ac.cam.cl.dtg.isaac.dao.IAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
@@ -66,37 +67,37 @@ public class AssignmentManager implements IGroupObserver {
     private final IAssignmentPersistenceManager assignmentPersistenceManager;
     private final GroupManager groupManager;
     private final EmailManager emailManager;
+    private final EmailService emailService;
     private final UserAccountManager userManager;
 	private final GameManager gameManager;
-    private final UserAssociationManager userAssociationManager;
     private final PropertiesLoader properties;
 
     /**
      * AssignmentManager.
-     * 
-     * @param assignmentPersistenceManager
+     *  @param assignmentPersistenceManager
      *            - to save assignments
      * @param groupManager
      *            - to allow communication with the group manager.
      * @param emailManager
      *            - email manager
+     * @param emailService
+     *            - service for sending specific emails.
      * @param userManager
      *            - the user manager object
      * @param gameManager
-     *            - the game manager object
-     * @param userAssociationManager
-     *            - the userAssociationManager manager object
+ *            - the game manager object
      */
     @Inject
     public AssignmentManager(final IAssignmentPersistenceManager assignmentPersistenceManager,
-            final GroupManager groupManager, final EmailManager emailManager, final UserAccountManager userManager,
-            final GameManager gameManager, final UserAssociationManager userAssociationManager, final PropertiesLoader properties) {
+                             final GroupManager groupManager, final EmailManager emailManager,
+                             final EmailService emailService, final UserAccountManager userManager,
+                             final GameManager gameManager, final PropertiesLoader properties) {
         this.assignmentPersistenceManager = assignmentPersistenceManager;
         this.groupManager = groupManager;
         this.emailManager = emailManager;
+        this.emailService = emailService;
         this.userManager = userManager; 
 		this.gameManager = gameManager;
-        this.userAssociationManager = userAssociationManager;
         this.properties = properties;
         groupManager.registerInterestInGroups(this);
     }
@@ -173,56 +174,13 @@ public class AssignmentManager implements IGroupObserver {
         newAssignment.setCreationDate(new Date());
         newAssignment.setId(this.assignmentPersistenceManager.saveAssignment(newAssignment));
 
-        UserGroupDTO userGroupDTO = groupManager.getGroupById(newAssignment.getGroupId());
-        List<RegisteredUserDTO> usersToEmail = Lists.newArrayList();
-        Map<Long, GroupMembershipDTO> userMembershipMapforGroup = this.groupManager.getUserMembershipMapForGroup(userGroupDTO.getId());
         GameboardDTO gameboard = gameManager.getGameboard(newAssignment.getGameboardId());
-        
-        // filter users so those who are inactive in the group aren't emailed
-        for (RegisteredUserDTO user : groupManager.getUsersInGroup(userGroupDTO)) {
-            if (GroupMembershipStatus.ACTIVE.equals(userMembershipMapforGroup.get(user.getId()).getStatus())) {
-                usersToEmail.add(user);
-            }
-        }
 
-		// inform all members of the group that there is now an assignment for them.
-        try {
-            final DateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yy");
-            final String gameboardURL = String.format("https://%s/assignment/%s", properties.getProperty(HOST_NAME),
-                    gameboard.getId());
+        final String gameboardURL = String.format("https://%s/assignment/%s", properties.getProperty(HOST_NAME),
+            gameboard.getId());
 
-            String dueDate = "";
-            if (newAssignment.getDueDate() != null) {
-                dueDate = String.format(" (due on %s)", DATE_FORMAT.format(newAssignment.getDueDate()));
-            }
-
-            String gameboardName = gameboard.getId();
-            if (gameboard.getTitle() != null) {
-                gameboardName = gameboard.getTitle();
-            }
-
-            RegisteredUserDTO assignmentOwnerDTO = this.userManager.getUserDTOById(newAssignment.getOwnerUserId());
-
-            String groupName = getFilteredGroupNameFromGroup(userGroupDTO);
-            String assignmentOwner = getTeacherNameFromUser(assignmentOwnerDTO);
-
-            for (RegisteredUserDTO userDTO : usersToEmail) {
-                emailManager.sendTemplatedEmailToUser(userDTO,
-                        emailManager.getEmailTemplateDTO("email-template-group-assignment"),
-                        ImmutableMap.of(
-                                "gameboardURL", gameboardURL,
-                                "gameboardName", gameboardName,
-                                "assignmentDueDate", dueDate,
-                                "groupName", groupName,
-                                "assignmentOwner", assignmentOwner
-                        ), EmailType.ASSIGNMENTS);
-            }
-
-        } catch (ContentManagerException e) {
-            log.error("Could not send group assignment emails due to content issue", e);
-        } catch (NoUserException e) {
-            log.error("Could not send group assignment emails because owner did not exist.", e);
-        }
+        emailService.sendAssignmentEmailToGroup(newAssignment, gameboard, ImmutableMap.of("gameboardURL", gameboardURL) ,
+            "email-template-group-assignment");
 
         return newAssignment;
     }
@@ -355,6 +313,7 @@ public class AssignmentManager implements IGroupObserver {
         }
     }
 
+    // TODO: This is not the right place for this.
     @Override
     public void onAdditionalManagerAddedToGroup(final UserGroupDTO group, final RegisteredUserDTO additionalManagerUser) {
         Validate.notNull(group);
