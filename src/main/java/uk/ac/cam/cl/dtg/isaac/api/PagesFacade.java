@@ -31,9 +31,9 @@ import uk.ac.cam.cl.dtg.isaac.dos.IsaacTopicSummaryPage;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacTopicSummaryPageDTO;
-import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -83,7 +83,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class PagesFacade extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(PagesFacade.class);
 
-    private final SegueContentFacade api;
+    private final ContentService api;
     private final MapperFacade mapper;
     private final UserAccountManager userManager;
     private final URIManager uriManager;
@@ -97,7 +97,7 @@ public class PagesFacade extends AbstractIsaacFacade {
      * Creates an instance of the pages controller which provides the REST endpoints for accessing page content.
      * 
      * @param api
-     *            - Instance of segue Api
+     *            - Instance of ContentService
      * @param propertiesLoader
      *            - Instance of properties Loader
      * @param logManager
@@ -118,7 +118,7 @@ public class PagesFacade extends AbstractIsaacFacade {
      *            - Index for the content to serve
      */
     @Inject
-    public PagesFacade(final SegueContentFacade api, final PropertiesLoader propertiesLoader,
+    public PagesFacade(final ContentService api, final PropertiesLoader propertiesLoader,
                        final ILogManager logManager, final MapperFacade mapper, final IContentManager contentManager,
                        final UserAccountManager userManager, final URIManager uriManager, final QuestionManager questionManager,
                        final GameManager gameManager, @Named(CONTENT_INDEX) final String contentIndex) {
@@ -691,7 +691,7 @@ public class PagesFacade extends AbstractIsaacFacade {
             fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(subject));
 
             ResultsWrapper<ContentDTO> pods = api.findMatchingContent(this.contentIndex,
-                    SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch), 0, MAX_PODS_TO_RETURN);
+                    ContentService.generateDefaultFieldToMatch(fieldsToMatch), 0, MAX_PODS_TO_RETURN);
 
             return Response.ok(pods).cacheControl(getCacheControl(NUMBER_SECONDS_IN_TEN_MINUTES, true))
                     .tag(etag)
@@ -848,7 +848,7 @@ public class PagesFacade extends AbstractIsaacFacade {
                                       @Nullable final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
         try {
             ResultsWrapper<ContentDTO> resultList = api.findMatchingContent(this.contentIndex,
-                    SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch), null, null); // includes
+                    ContentService.generateDefaultFieldToMatch(fieldsToMatch), null, null); // includes
             // type
             // checking.
             ContentDTO c = null;
@@ -890,7 +890,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         ResultsWrapper<ContentDTO> c;
 
         c = api.findMatchingContent(this.contentIndex,
-                SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch), startIndex, limit);
+                ContentService.generateDefaultFieldToMatch(fieldsToMatch), startIndex, limit);
 
         ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
                 this.extractContentSummaryFromList(c.getResults()),

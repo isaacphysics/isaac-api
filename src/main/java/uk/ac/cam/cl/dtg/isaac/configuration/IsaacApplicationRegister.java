@@ -25,6 +25,7 @@ import uk.ac.cam.cl.dtg.isaac.api.EventsFacade;
 import uk.ac.cam.cl.dtg.isaac.api.GameboardsFacade;
 import uk.ac.cam.cl.dtg.isaac.api.IsaacController;
 import uk.ac.cam.cl.dtg.isaac.api.PagesFacade;
+import uk.ac.cam.cl.dtg.isaac.api.QuizFacade;
 import uk.ac.cam.cl.dtg.segue.api.*;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.PerformanceMonitor;
@@ -108,6 +109,7 @@ public class IsaacApplicationRegister extends Application {
             this.singletons.add(injector.getInstance(NotificationFacade.class));
             this.singletons.add(injector.getInstance(EmailFacade.class));
             this.singletons.add(injector.getInstance(UserBadgeManager.class));
+            this.singletons.add(injector.getInstance(QuizFacade.class));
         }
 
         return this.singletons;
