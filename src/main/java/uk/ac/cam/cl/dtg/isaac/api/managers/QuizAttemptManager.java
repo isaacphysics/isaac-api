@@ -94,4 +94,12 @@ public class QuizAttemptManager {
 
         return newQuizAttempt;
     }
+
+    public QuizAttemptDTO getById(Long quizAttemptId) throws SegueDatabaseException {
+        return quizAttemptPersistenceManager.getById(quizAttemptId);
+    }
+
+    public void deleteAttempt(QuizAttemptDTO quizAttempt) throws SegueDatabaseException {
+        quizAttemptPersistenceManager.deleteAttempt(quizAttempt);
+    }
 }

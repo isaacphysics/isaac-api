@@ -74,7 +74,7 @@ public class PgQuizAttemptPersistenceManager implements IQuizAttemptPersistenceM
                 return null;
             }
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Unable to find quiz attempt by id", e);
+            throw new SegueDatabaseException("Unable to find quiz attempt by assignment and user", e);
         }
     }
 
@@ -142,6 +142,38 @@ public class PgQuizAttemptPersistenceManager implements IQuizAttemptPersistenceM
             return listOfResults;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Unable to find quiz attempts by quiz id and user id", e);
+        }
+    }
+
+    @Override
+    public QuizAttemptDTO getById(Long quizAttemptId) throws SegueDatabaseException {
+        try (Connection conn = database.getDatabaseConnection()) {
+            PreparedStatement pst;
+            pst = conn.prepareStatement("SELECT * FROM quiz_attempts WHERE id = ?");
+            pst.setLong(1, quizAttemptId);
+
+            ResultSet results = pst.executeQuery();
+            if (results.next()) {
+                return this.convertToQuizAttemptDTO(this.convertFromSQLToQuizAttemptDO(results));
+            } else {
+                throw new SQLException("No results");
+            }
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Unable to find quiz attempt by id", e);
+        }
+    }
+
+    @Override
+    public void deleteAttempt(QuizAttemptDTO quizAttempt) throws SegueDatabaseException {
+        PreparedStatement pst;
+        try (Connection conn = database.getDatabaseConnection()) {
+            pst = conn.prepareStatement("DELETE FROM quiz_attempts WHERE id = ?");
+
+            pst.setLong( 1, quizAttempt.getId());
+
+            pst.executeUpdate();
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Unable to delete quiz attempt", e);
         }
     }
 

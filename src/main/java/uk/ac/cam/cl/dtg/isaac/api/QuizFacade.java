@@ -374,6 +374,55 @@ public class QuizFacade extends AbstractIsaacFacade {
     }
 
     /**
+     * Abandon a started free quiz attempt.
+     *
+     * This can only be done on free quiz attempts, as we don't want any startDate shenanigans on assigned quizzes.
+     *
+     * @param httpServletRequest
+     *            - so that we can extract user information.
+     * @param quizAttemptId
+     *            - the ID of the quiz the user wishes to attempt.
+     * @return Confirmation or an error.
+     */
+    @DELETE
+    @Path("/attempt/{quizAttemptId}")
+    @ApiOperation(value = "Abandon a started free quiz attempt.")
+    public final Response abandonQuizAttempt(@Context final HttpServletRequest httpServletRequest,
+                                             @PathParam("quizAttemptId") final Long quizAttemptId) {
+        try {
+            RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
+
+            if (null == quizAttemptId) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid quiz attempt id.").toResponse();
+            }
+
+            QuizAttemptDTO quizAttempt = this.quizAttemptManager.getById(quizAttemptId);
+
+            if (!quizAttempt.getUserId().equals(user.getId())) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "This is not your quiz attempt to cancel.").toResponse();
+            }
+
+            if (quizAttempt.getQuizAssignmentId() != null) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You can only cancel attempts on quizzes you chose to take.").toResponse();
+            }
+
+            if (quizAttempt.getCompletedDate() != null) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You cannot cancel completed quiz attempts.").toResponse();
+            }
+
+            this.quizAttemptManager.deleteAttempt(quizAttempt);
+
+            return Response.noContent().build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            String message = "SegueDatabaseException whilst deleting a free quiz attempt";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        }
+    }
+
+    /**
      * Allows a teacher to set a quiz to a group.
      *
      * Sends emails to the members of the group informing them of the quiz.
