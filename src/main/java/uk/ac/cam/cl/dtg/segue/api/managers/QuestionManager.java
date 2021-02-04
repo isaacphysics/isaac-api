@@ -15,6 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
@@ -31,6 +33,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.TestQuestion;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacItemQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
+import uk.ac.cam.cl.dtg.segue.api.ResponseWrapper;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dos.LightweightQuestionValidationResponse;
@@ -62,6 +65,7 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatorUnavailableException;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -313,22 +317,19 @@ public class QuestionManager {
         QuestionValidationResponse questionResponseDO = this.mapper.getAutoMapper().map(questionResponse,
                 QuestionValidationResponse.class);
 
-        // We are operating with the convention that the first component of
-        // an id is the question page
-        // and that the id separator is |
-        String[] questionPageId = questionResponse.getQuestionId().split(Constants.ESCAPED_ID_SEPARATOR);
+        String questionPageId = extractPageIdFromQuestionId(questionResponse.getQuestionId());
         if (user instanceof RegisteredUserDTO) {
             RegisteredUserDTO registeredUser = (RegisteredUserDTO) user;
 
             this.questionAttemptPersistenceManager.registerQuestionAttempt(registeredUser.getId(),
-                    questionPageId[0], questionResponse.getQuestionId(), questionResponseDO);
+                questionPageId, questionResponse.getQuestionId(), questionResponseDO);
             log.debug("Question information recorded for user: " + registeredUser.getId());
 
         } else if (user instanceof AnonymousUserDTO) {
             AnonymousUserDTO anonymousUserDTO = (AnonymousUserDTO) user;
 
             this.questionAttemptPersistenceManager.registerAnonymousQuestionAttempt(anonymousUserDTO.getSessionId(),
-                    questionPageId[0], questionResponse.getQuestionId(), questionResponseDO);
+                questionPageId, questionResponse.getQuestionId(), questionResponseDO);
         } else {
             log.error("Unexpected user type. Unable to record question response");
         }
@@ -573,6 +574,27 @@ public class QuestionManager {
     }
 
     public static String extractPageIdFromQuestionId(String questionId) {
-        return questionId.split("\\|")[0];
+        return questionId.split(Constants.ESCAPED_ID_SEPARATOR)[0];
+    }
+
+    public ChoiceDTO convertJsonAnswerToChoice(String jsonAnswer) throws ResponseWrapper {
+        ChoiceDTO answerFromClientDTO;
+        try {
+            // convert submitted JSON into a Choice:
+            Choice answerFromClient = mapper.getSharedContentObjectMapper().readValue(jsonAnswer, Choice.class);
+            // convert to a DTO so that it strips out any untrusted data.
+            answerFromClientDTO = mapper.getAutoMapper().map(answerFromClient, ChoiceDTO.class);
+        } catch (JsonMappingException | JsonParseException e) {
+            log.info("Failed to map to any expected input...", e);
+            SegueErrorResponse error = new SegueErrorResponse(Response.Status.NOT_FOUND, "Unable to map response to a "
+                    + "Choice object so failing with an error", e);
+            throw new ResponseWrapper(error);
+        } catch (IOException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Response.Status.NOT_FOUND, "Unable to map response to a "
+                    + "Choice object so failing with an error", e);
+            log.error(error.getErrorMessage(), e);
+            throw new ResponseWrapper(error);
+        }
+        return answerFromClientDTO;
     }
 }

@@ -76,7 +76,6 @@ import java.util.List;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_APP_ENVIRONMENT;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueServerLogType;
 import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdFromQuestionId;
 
@@ -294,29 +293,12 @@ public class QuestionFacade extends AbstractSegueFacade {
             }
         }
 
-        ChoiceDTO answerFromClientDTO;
         try {
-            // convert submitted JSON into a Choice:
-            Choice answerFromClient = mapper.getSharedContentObjectMapper().readValue(jsonAnswer, Choice.class);
-            // convert to a DTO so that it strips out any untrusted data.
-            answerFromClientDTO = mapper.getAutoMapper().map(answerFromClient, ChoiceDTO.class);
-        } catch (JsonMappingException | JsonParseException e) {
-            log.info("Failed to map to any expected input...", e);
-            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to map response to a "
-                    + "Choice object so failing with an error", e);
-            return error.toResponse();
-        } catch (IOException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to map response to a "
-                    + "Choice object so failing with an error", e);
-            log.error(error.getErrorMessage(), e);
-            return error.toResponse();
-        }
+            ChoiceDTO answerFromClientDTO = questionManager.convertJsonAnswerToChoice(jsonAnswer);
 
-        // validate the answer.
-        Response response;
-        try {
             AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(request);
-            response = this.questionManager.validateAnswer(question, answerFromClientDTO);
+
+            Response response = this.questionManager.validateAnswer(question, answerFromClientDTO);
 
             // After validating the answer, work out whether this is abuse of the endpoint. If so, record the attempt in
             // the log, but don't save it for the user. Also, return an error.
@@ -379,6 +361,8 @@ public class QuestionFacade extends AbstractSegueFacade {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to save question attempt. Try again later!");
             log.error("Unable to to record question attempt.", e);
             return error.toResponse();
+        } catch (ResponseWrapper responseWrapper) {
+            return responseWrapper.toResponse();
         }
     }
 
@@ -442,31 +426,16 @@ public class QuestionFacade extends AbstractSegueFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
 
-        ChoiceDTO answerFromClientDTO;
         try {
-            Choice answerFromClient = mapper.getSharedContentObjectMapper().readValue(jsonAnswer, Choice.class);
-            // convert to a DTO so that it strips out any untrusted data.
-            answerFromClientDTO = mapper.getAutoMapper().map(answerFromClient, ChoiceDTO.class);
-        } catch (JsonMappingException | JsonParseException e) {
-            log.info("Failed to map to any expected input...", e);
-            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to map response to a "
-                + "Choice object so failing with an error", e);
-            return error.toResponse();
-        } catch (IOException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to map response to a "
-                + "Choice object so failing with an error", e);
-            log.error(error.getErrorMessage(), e);
-            return error.toResponse();
-        }
+            ChoiceDTO answerFromClientDTO = questionManager.convertJsonAnswerToChoice(jsonAnswer);
 
-        Response response;
-        try {
-            response = this.questionManager.generateSpecification(answerFromClientDTO);
-            return response;
+            return questionManager.generateSpecification(answerFromClientDTO);
         } catch (IllegalArgumentException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Bad request - " + e.getMessage(), e);
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
+        } catch (ResponseWrapper responseWrapper) {
+            return responseWrapper.toResponse();
         }
     }
 }
