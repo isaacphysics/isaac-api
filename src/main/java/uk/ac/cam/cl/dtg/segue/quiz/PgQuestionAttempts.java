@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdFromQuestionId;
 
 /**
  * @author sac92
@@ -207,7 +208,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             while (results.next()) {
                 QuestionValidationResponse questionAttempt = objectMapper.readValue(
                         results.getString("question_attempt"), QuestionValidationResponse.class);
-                String questionPageId = questionAttempt.getQuestionId().split("\\|")[0];
+                String questionPageId = extractPageIdFromQuestionId(questionAttempt.getQuestionId());
                 String questionId = questionAttempt.getQuestionId();
 
                 
@@ -300,7 +301,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
                 partialQuestionAttempt.setQuestionId(results.getString("question_id"));
                 partialQuestionAttempt.setDateAttempted(results.getTimestamp("timestamp"));
 
-                String questionPageId = partialQuestionAttempt.getQuestionId().split("\\|")[0];
+                String questionPageId = extractPageIdFromQuestionId(partialQuestionAttempt.getQuestionId());
                 String questionId = partialQuestionAttempt.getQuestionId();
                 
                 Map<String, Map<String, List<LightweightQuestionValidationResponse>>> mapOfQuestionAttemptsByPage

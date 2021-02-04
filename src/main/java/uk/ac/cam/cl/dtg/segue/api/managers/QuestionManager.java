@@ -571,4 +571,8 @@ public class QuestionManager {
         return Response.ok(
             mapper.getAutoMapper().map(results, ResultsWrapper.class)).build();
     }
+
+    public static String extractPageIdFromQuestionId(String questionId) {
+        return questionId.split("\\|")[0];
+    }
 }
