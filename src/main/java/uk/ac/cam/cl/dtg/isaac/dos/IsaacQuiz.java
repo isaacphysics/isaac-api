@@ -76,9 +76,4 @@ public class IsaacQuiz extends SeguePage {
 	public void setVisibleToStudents(boolean visibleToStudents) {
 		this.visibleToStudents = visibleToStudents;
 	}
-
-	@JsonIgnore
-	public List<IsaacQuizSection> getSections() {
-	    return children.stream().filter(content -> content instanceof IsaacQuizSection).map(c -> (IsaacQuizSection) c).collect(Collectors.toList());
-    }
 }
