@@ -103,13 +103,17 @@ public class QuizQuestionManager {
      *            - which user to augment the questions for.
      * @param includeCorrect
      *            - include whether the answers are correct.
+     *
+     * @return The quiz object augmented (generally a modified parameter).
      */
-    public void augmentQuestionsForUser(IsaacQuizDTO quiz, QuizAttemptDTO quizAttempt, RegisteredUserDTO user, boolean includeCorrect) throws SegueDatabaseException {
+    public IsaacQuizDTO augmentQuestionsForUser(IsaacQuizDTO quiz, QuizAttemptDTO quizAttempt, RegisteredUserDTO user, boolean includeCorrect) throws SegueDatabaseException {
         List<QuestionDTO> questionsToAugment = QuestionManager.extractQuestionObjects(quiz);
 
         this.augmentQuestionObjectWithAttemptInformation(quizAttempt, questionsToAugment, includeCorrect);
 
         questionManager.shuffleChoiceQuestionsChoices(user.getId().toString(), questionsToAugment);
+
+        return quiz;
     }
 
     /**

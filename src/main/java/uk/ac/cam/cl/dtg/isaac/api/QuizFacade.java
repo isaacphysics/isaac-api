@@ -75,6 +75,7 @@ import java.util.List;
 import java.util.Map;
 
 import static javax.ws.rs.core.Response.*;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUIZ_ID_FKEY;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ASSIGNMENT_DUEDATE_FK;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.GROUP_FK;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
@@ -413,7 +414,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             IsaacQuizDTO quiz = quizManager.findQuiz(quizAttempt.getQuizId());
 
-            quizQuestionManager.augmentQuestionsForUser(quiz, quizAttempt, user, false);
+            quiz = quizQuestionManager.augmentQuestionsForUser(quiz, quizAttempt, user, false);
 
             return Response.ok(quiz)
                 .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
@@ -591,23 +592,10 @@ public class QuizFacade extends AbstractIsaacFacade {
                 return error.toResponse();
             }
 
-            String questionPageId = extractPageIdFromQuestionId(questionId);
-            IsaacQuiz questionQuiz;
-            try {
-                Content pageContent = this.contentManager.getContentDOById(this.contentManager.getCurrentContentSHA(), questionPageId);
-                if (pageContent instanceof IsaacQuiz) {
-                    questionQuiz = (IsaacQuiz) pageContent;
-                } else {
-                    return new SegueErrorResponse(Status.BAD_REQUEST, "This question is not part of a quiz.").toResponse();
-                }
-            } catch (ContentManagerException e) {
-                SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Question without page found", e);
-                log.error(error.getErrorMessage(), e);
-                return error.toResponse();
-            }
+            String quizId = extractPageIdFromQuestionId(questionId);
 
             // Check the quiz this question is from is valid for this attempt.
-            if (!questionQuiz.getId().equals(quizAttempt.getQuizId())) {
+            if (!quizId.equals(quizAttempt.getQuizId())) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "This question is part of another quiz.").toResponse();
             }
 
@@ -732,7 +720,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             QuizAssignmentDTO assignmentWithID = this.quizAssignmentManager.createAssignment(clientQuizAssignment);
 
             Map<String, Object> eventDetails = ImmutableMap.of(
-                Constants.QUIZ_ID_FKEY, assignmentWithID.getQuizId(),
+                QUIZ_ID_FKEY, assignmentWithID.getQuizId(),
                 GROUP_FK, assignmentWithID.getGroupId(),
                 QUIZ_ASSIGNMENT_FK, assignmentWithID.getId(),
                 ASSIGNMENT_DUEDATE_FK, assignmentWithID.getDueDate() == null ? "NO_DUE_DATE" : assignmentWithID.getDueDate()
@@ -758,9 +746,6 @@ public class QuizFacade extends AbstractIsaacFacade {
 
     /**
      * Allows a teacher to set a quiz to a group.
-     *
-     * Sends emails to the members of the group informing them of the quiz.
-     * Takes a quiz id, a group id, an optional end datetime for completion, and the feedbackMode.
      *
      * @param httpServletRequest so that we can extract user information.
      * @param quizAssignmentId the id of the assignment to cancel.

@@ -92,7 +92,7 @@ public class QuizAssignmentManager {
         Date now = new Date();
 
         if (newAssignment.getDueDate() != null && newAssignment.getDueDate().before(now)) {
-            throw new DueBeforeNowException("You cannot set a quiz with a due date in the past.");
+            throw new DueBeforeNowException();
         }
 
         List<QuizAssignmentDTO> existingQuizAssignments = quizAssignmentPersistenceManager.getAssignmentsByQuizIdAndGroup(newAssignment.getQuizId(),

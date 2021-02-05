@@ -27,11 +27,8 @@ public class DueBeforeNowException extends SegueDatabaseException {
 
     /**
      * DueBeforeNowException. If due date has already passed.
-     *
-     * @param message
-     *            - to provide for the exception
      */
-    public DueBeforeNowException(final String message) {
-        super(message);
+    public DueBeforeNowException() {
+        super("You cannot set a quiz with a due date in the past.");
     }
 }
