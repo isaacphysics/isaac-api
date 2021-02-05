@@ -100,6 +100,10 @@ public class QuizAttemptManager {
     }
 
     public void deleteAttempt(QuizAttemptDTO quizAttempt) throws SegueDatabaseException {
-        quizAttemptPersistenceManager.deleteAttempt(quizAttempt);
+        quizAttemptPersistenceManager.deleteAttempt(quizAttempt.getId());
+    }
+
+    public void markComplete(QuizAttemptDTO quizAttempt, boolean markComplete) throws SegueDatabaseException {
+        quizAttemptPersistenceManager.markComplete(quizAttempt.getId(), markComplete);
     }
 }

@@ -437,6 +437,72 @@ public class QuizFacade extends AbstractIsaacFacade {
     }
 
     /**
+     * Mark a QuizAttempt as complete (or incomplete).
+     *
+     * Only owner and group managers for the quiz assignment can mark it incomplete.
+     * If it is a self-taken quiz, you cannot mark it incomplete, as that would make it easier to tweak individual
+     * questions to find the right answers.
+     *
+     * @param httpServletRequest
+     *            - so that we can extract user information.
+     * @param quizAttemptId
+     *            - the ID of the quiz the user wishes to attempt.
+     * @param markIncomplete
+     *            - optional boolean for group manager to mark incomplete.
+     * @return Confirmation or an error.
+     */
+    @POST
+    @Path("/attempt/{quizAttemptId}/complete")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @ApiOperation(value = "Mark a QuizAttempt as complete (or incomplete).")
+    public final Response completeQuizAttempt(@Context final HttpServletRequest httpServletRequest,
+                                              @PathParam("quizAttemptId") final Long quizAttemptId,
+                                              @FormParam("markIncomplete") final Boolean markIncomplete) {
+        try {
+            RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
+
+            QuizAttemptDTO quizAttempt = getQuizAttempt(quizAttemptId);
+
+            QuizAssignmentDTO assignment = getQuizAssignment(quizAttempt);
+
+            boolean requestedMarkComplete = markIncomplete == null || markIncomplete == false;
+
+            Boolean markComplete;
+
+            if (assignment != null && canManageAssignment(assignment, user) && requestedMarkComplete == false) {
+                markComplete = false;
+            } else if (quizAttempt.getUserId().equals(user.getId()) && requestedMarkComplete == true) {
+                markComplete = true;
+            } else {
+                // Heuristic for most helpful error message.
+                return new SegueErrorResponse(Status.FORBIDDEN, isUserTeacherOrAbove(userManager, user)
+                    ? "You can only mark assignments incomplete for groups you own or manage."
+                    : "You cannot complete someone else's quiz.").toResponse();
+            }
+
+            if ((quizAttempt.getCompletedDate() != null) == markComplete) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "That quiz is already " + (markComplete ? "" : "in") + "complete.").toResponse();
+            }
+
+            quizAttemptManager.markComplete(quizAttempt, markComplete);
+
+            return Response.noContent().build();
+
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            String message = "SegueDatabaseException whilst marking quiz attempt complete";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        } catch (AssignmentCancelledException e) {
+            return new SegueErrorResponse(Status.FORBIDDEN, "This quiz assignment has been cancelled.").toResponse();
+        } catch (ErrorResponseWrapper responseWrapper) {
+            return responseWrapper.toResponse();
+        }
+    }
+
+    /**
      * Record that a user has answered a question.
      *
      * @param request
@@ -615,17 +681,9 @@ public class QuizFacade extends AbstractIsaacFacade {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
-            UserGroupDTO assigneeGroup = groupManager.getGroupById(clientQuizAssignment.getGroupId());
-            if (null == assigneeGroup) {
-                return new SegueErrorResponse(Status.BAD_REQUEST, "The group id specified does not exist.")
-                    .toResponse();
-            }
-
-            if (!GroupManager.isOwnerOrAdditionalManager(assigneeGroup, currentlyLoggedInUser.getId())
-                && !isUserAnAdmin(userManager, currentlyLoggedInUser)) {
+            if (!canManageAssignment(clientQuizAssignment, currentlyLoggedInUser))
                 return new SegueErrorResponse(Status.FORBIDDEN,
                     "You can only set assignments to groups you own or manage.").toResponse();
-            }
 
             IsaacQuizDTO quiz = this.quizManager.findQuiz(clientQuizAssignment.getQuizId());
             if (null == quiz) {
@@ -695,13 +753,8 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             QuizAssignmentDTO assignment = quizAssignmentManager.getById(quizAssignmentId);
 
-            UserGroupDTO assigneeGroup = groupManager.getGroupById(assignment.getGroupId());
-
-            if (!GroupManager.isOwnerOrAdditionalManager(assigneeGroup, user.getId())
-                && !isUserAnAdmin(userManager, user)) {
-                return new SegueErrorResponse(Status.FORBIDDEN,
-                    "You can only cancel assignments to groups you own or manage.").toResponse();
-            }
+            if (!canManageAssignment(assignment, user)) return new SegueErrorResponse(Status.FORBIDDEN,
+                "You can only cancel assignments to groups you own or manage.").toResponse();
 
             quizAssignmentManager.cancelAssignment(assignment);
 
@@ -719,7 +772,11 @@ public class QuizFacade extends AbstractIsaacFacade {
 
     private void checkQuizAssignmentNotCancelledOrOverdue(QuizAttemptDTO quizAttempt) throws SegueDatabaseException, AssignmentCancelledException, ErrorResponseWrapper {
         // Relying on the side-effects of getting the assignment.
-        getQuizAssignment(quizAttempt);
+        QuizAssignmentDTO quizAssignment = getQuizAssignment(quizAttempt);
+
+        if (quizAssignment != null && quizAssignment.getDueDate() != null && quizAssignment.getDueDate().before(new Date())) {
+            throw new ErrorResponseWrapper(new SegueErrorResponse(Status.FORBIDDEN, "The due date for this quiz has passed."));
+        }
     }
 
     @Nullable
@@ -735,12 +792,8 @@ public class QuizFacade extends AbstractIsaacFacade {
         return null;
     }
 
-    private QuizAttemptDTO getQuizAttemptForUser(@PathParam("quizAttemptId") Long quizAttemptId, RegisteredUserDTO user) throws SegueDatabaseException, ErrorResponseWrapper {
-        if (null == quizAttemptId) {
-            throw new ErrorResponseWrapper(new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid quiz attempt id."));
-        }
-
-        QuizAttemptDTO quizAttempt = this.quizAttemptManager.getById(quizAttemptId);
+    private QuizAttemptDTO getQuizAttemptForUser(Long quizAttemptId, RegisteredUserDTO user) throws SegueDatabaseException, ErrorResponseWrapper {
+        QuizAttemptDTO quizAttempt = this.getQuizAttempt(quizAttemptId);
 
         if (!quizAttempt.getUserId().equals(user.getId())) {
             throw new ErrorResponseWrapper(new SegueErrorResponse(Status.FORBIDDEN, "This is not your quiz attempt."));
@@ -750,5 +803,20 @@ public class QuizFacade extends AbstractIsaacFacade {
             throw new ErrorResponseWrapper(new SegueErrorResponse(Status.FORBIDDEN, "You have completed this quiz."));
         }
         return quizAttempt;
+    }
+
+    private QuizAttemptDTO getQuizAttempt(Long quizAttemptId) throws ErrorResponseWrapper, SegueDatabaseException {
+        if (null == quizAttemptId) {
+            throw new ErrorResponseWrapper(new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid quiz attempt id."));
+        }
+
+        return this.quizAttemptManager.getById(quizAttemptId);
+    }
+
+    private boolean canManageAssignment(QuizAssignmentDTO clientQuizAssignment, RegisteredUserDTO currentlyLoggedInUser) throws SegueDatabaseException, NoUserLoggedInException {
+        UserGroupDTO assigneeGroup = groupManager.getGroupById(clientQuizAssignment.getGroupId());
+
+        return GroupManager.isOwnerOrAdditionalManager(assigneeGroup, currentlyLoggedInUser.getId())
+            || isUserAnAdmin(userManager, currentlyLoggedInUser);
     }
 }

@@ -29,6 +29,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLType;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
@@ -164,12 +165,31 @@ public class PgQuizAttemptPersistenceManager implements IQuizAttemptPersistenceM
     }
 
     @Override
-    public void deleteAttempt(QuizAttemptDTO quizAttempt) throws SegueDatabaseException {
+    public void markComplete(Long quizAttemptId, boolean markComplete) throws SegueDatabaseException {
+        PreparedStatement pst;
+        try (Connection conn = database.getDatabaseConnection()) {
+            pst = conn.prepareStatement("UPDATE quiz_attempts SET completed_date = ? WHERE id = ?");
+
+            if (markComplete) {
+                pst.setTimestamp(1, new java.sql.Timestamp(new Date().getTime()));
+            } else {
+                pst.setNull(1, Types.TIMESTAMP);
+            }
+            pst.setLong(2, quizAttemptId);
+
+            pst.executeUpdate();
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Unable to mark quiz attempt complete", e);
+        }
+    }
+
+    @Override
+    public void deleteAttempt(Long quizAttemptId) throws SegueDatabaseException {
         PreparedStatement pst;
         try (Connection conn = database.getDatabaseConnection()) {
             pst = conn.prepareStatement("DELETE FROM quiz_attempts WHERE id = ?");
 
-            pst.setLong( 1, quizAttempt.getId());
+            pst.setLong(1, quizAttemptId);
 
             pst.executeUpdate();
         } catch (SQLException e) {
