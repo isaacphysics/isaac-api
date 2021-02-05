@@ -19,6 +19,7 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizQuestionAttemptPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
@@ -29,9 +30,13 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import java.util.List;
+import java.util.Map;
 
 public class QuizQuestionManager {
     private final QuestionManager questionManager;
@@ -79,5 +84,57 @@ public class QuizQuestionManager {
         QuestionValidationResponse questionResponseDO = this.mapper.getAutoMapper().map(questionResponse, QuestionValidationResponse.class);
 
         this.quizQuestionAttemptManager.registerQuestionAttempt(quizAttempt.getId(), questionResponseDO);
+    }
+
+    /**
+     * This method will ensure any user question attempt information available is used to augment this question object.
+     *
+     * It will also ensure that any personalisation of questions is affected (e.g. randomised multichoice elements).
+     *
+     * Note: It will not do anything to related content
+     *  @param quiz
+     *            - to augment - this object may be mutated as a result of this method. i.e BestAttempt field set on
+     *            question DTOs.
+     * @param quizAttempt
+     *            - which attempt at the quiz to get attempts for.
+     * @param user
+     *            - which user to augment the questions for.
+     * @param includeCorrect
+     *            - include whether the answers are correct.
+     */
+    public void augmentQuestionsForUser(IsaacQuizDTO quiz, QuizAttemptDTO quizAttempt, RegisteredUserDTO user, boolean includeCorrect) throws SegueDatabaseException {
+        List<QuestionDTO> questionsToAugment = QuestionManager.extractQuestionObjects(quiz);
+
+        this.augmentQuestionObjectWithAttemptInformation(quizAttempt, questionsToAugment, includeCorrect);
+
+        questionManager.shuffleChoiceQuestionsChoices(user.getId().toString(), questionsToAugment);
+    }
+
+    /**
+     * Modify the questions in a quiz such that it contains bestAttempt information if we can provide it.
+     *
+     * When we say bestAttempt, we actually mean latest attempt.
+     *  @param quizAttempt
+     *            - which attempt at the quiz to get attempts for.
+     * @param questionsToAugment
+     *            - list of question objects to modify.
+     * @param includeCorrect
+     *            - include whether the answers are correct.
+     */
+    private void augmentQuestionObjectWithAttemptInformation(QuizAttemptDTO quizAttempt, List<QuestionDTO> questionsToAugment, boolean includeCorrect) throws SegueDatabaseException {
+        Map<String, List<QuestionValidationResponse>> answers = quizQuestionAttemptManager.getAnswers(quizAttempt.getId());
+
+        for (QuestionDTO question : questionsToAugment) {
+            List<QuestionValidationResponse> questionAttempts = answers.get(question.getId());
+
+            // The latest answer is the only answer we consider.
+            if (questionAttempts.size() > 0) {
+                QuestionValidationResponseDTO lastAttempt = questionManager.convertQuestionValidationResponseToDTO(questionAttempts.get(questionAttempts.size() - 1));
+                if (!includeCorrect) {
+                    lastAttempt.setCorrect(null);
+                }
+                question.setBestAttempt(lastAttempt);
+            }
+        }
     }
 }

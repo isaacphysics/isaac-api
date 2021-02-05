@@ -221,8 +221,7 @@ public class QuestionManager {
     public SeguePageDTO augmentQuestionObjects(final SeguePageDTO page, final String userId,
             final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
 
-        List<QuestionDTO> questionsToAugment = QuestionManager.extractQuestionObjectsRecursively(page,
-                new ArrayList<>());
+        List<QuestionDTO> questionsToAugment = extractQuestionObjects(page);
 
         this.augmentQuestionObjectWithAttemptInformation(page, questionsToAugment, usersQuestionAttempts);
 
@@ -465,6 +464,18 @@ public class QuestionManager {
     }
 
     /**
+     * Extract all of the question objects, recursively, from some content.
+     *
+     * @param content
+     *            - The contentDTO which may have question objects as children.
+     * @return A list of QuestionDTO found in the content.
+     */
+    public static List<QuestionDTO> extractQuestionObjects(ContentDTO content) {
+        return QuestionManager.extractQuestionObjectsRecursively(content,
+            new ArrayList<>());
+    }
+
+    /**
      * Extract all of the questionObjectsRecursively.
      * 
      * @param toExtract
@@ -506,7 +517,7 @@ public class QuestionManager {
      * @param questions
      *            - questions which may have choices to shuffle.
      */
-    private void shuffleChoiceQuestionsChoices(final String seed, final List<QuestionDTO> questions) {
+    public void shuffleChoiceQuestionsChoices(final String seed, final List<QuestionDTO> questions) {
         if (null == questions) {
             return;
         }

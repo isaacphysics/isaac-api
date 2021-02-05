@@ -17,7 +17,10 @@ package uk.ac.cam.cl.dtg.isaac.dao;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.util.Lists;
+import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
+import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
@@ -25,9 +28,12 @@ import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
+import java.util.List;
+import java.util.Map;
 
 public class PgQuizQuestionAttemptPersistenceManager implements IQuizQuestionAttemptPersistenceManager {
     private final ObjectMapper objectMapper;
@@ -69,6 +75,37 @@ public class PgQuizQuestionAttemptPersistenceManager implements IQuizQuestionAtt
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save quiz question attempt.");
             }
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        } catch (JsonProcessingException e) {
+            throw new SegueDatabaseException("Unable to process json exception", e);
+        }
+    }
+
+    @Override
+    public Map<String, List<QuestionValidationResponse>> getAnswers(Long quizAttemptId) throws SegueDatabaseException {
+        PreparedStatement pst;
+        try (Connection conn = database.getDatabaseConnection()) {
+            pst = conn.prepareStatement("SELECT question_id, question_attempt FROM quiz_question_attempts" +
+                " WHERE quiz_attempt_id = ? ORDER BY timestamp");
+
+            pst.setLong(1, quizAttemptId);
+
+            ResultSet results = pst.executeQuery();
+
+            Map<String, List<QuestionValidationResponse>> resultsMap = Maps.newHashMap();
+            while (results.next()) {
+                String questionId = results.getString("question_id");
+
+                List<QuestionValidationResponse> questionAttempts = resultsMap.computeIfAbsent(questionId, (ignore) -> Lists.newArrayList());
+
+                QuestionValidationResponse questionAttempt = objectMapper.readValue(
+                    results.getString("question_attempt"), QuestionValidationResponse.class);
+
+                questionAttempts.add(questionAttempt);
+            }
+
+            return resultsMap;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         } catch (JsonProcessingException e) {

@@ -413,7 +413,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             IsaacQuizDTO quiz = quizManager.findQuiz(quizAttempt.getQuizId());
 
-            // TODO: Augment quiz with answers to quiz questions
+            quizQuestionManager.augmentQuestionsForUser(quiz, quizAttempt, user, false);
 
             return Response.ok(quiz)
                 .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
