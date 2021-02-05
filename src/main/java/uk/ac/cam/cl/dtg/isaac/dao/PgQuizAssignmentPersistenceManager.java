@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizAssignmentDO;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
+import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
@@ -128,7 +129,40 @@ public class PgQuizAssignmentPersistenceManager implements IQuizAssignmentPersis
 
             return listOfResults;
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Unable to find assignment by group", e);
+            throw new SegueDatabaseException("Unable to find quiz assignment by group", e);
+        }
+    }
+
+    @Override
+    public List<QuizAssignmentDTO> getAssignmentsByGroupList(List<Long> groupIds) throws SegueDatabaseException {
+        try (Connection conn = database.getDatabaseConnection()) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("SELECT * FROM quiz_assignments WHERE group_id IN (");
+
+            for (int i = 0; i < groupIds.size(); i++) {
+                sb.append("?").append(i < groupIds.size() - 1 ? ", " : "");
+            }
+            sb.append(") ORDER BY creation_date");
+
+            PreparedStatement pst;
+            pst = conn.prepareStatement(sb.toString());
+            int i = 1;
+            for (Long id : groupIds) {
+                pst.setLong(i, id);
+                i++;
+            }
+
+            ResultSet results = pst.executeQuery();
+            List<QuizAssignmentDTO> listOfResults = Lists.newArrayList();
+
+            while (results.next()) {
+                listOfResults.add(this.convertToQuizAssignmentDTO(this.convertFromSQLToQuizAssignmentDO(results)));
+            }
+
+            return listOfResults;
+
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Unable to find assignment by group list", e);
         }
     }
 

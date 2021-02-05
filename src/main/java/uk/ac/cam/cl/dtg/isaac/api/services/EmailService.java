@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dto.IAssignmentLike;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
@@ -29,31 +30,19 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.GroupMembershipStatus;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.GroupMembershipDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 import javax.annotation.Nullable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 import static uk.ac.cam.cl.dtg.util.NameFormatter.getFilteredGroupNameFromGroup;
 import static uk.ac.cam.cl.dtg.util.NameFormatter.getTeacherNameFromUser;
 
 public class EmailService {
-
-    public interface AssignmentLike {
-        Long getGroupId();
-
-        Long getOwnerUserId();
-
-        @Nullable
-        Date getDueDate();
-    }
 
     public interface HasTitleOrId {
         String getId();
@@ -74,7 +63,7 @@ public class EmailService {
     }
 
     private static final DateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yy");
-    public void sendAssignmentEmailToGroup(final AssignmentLike assignment, final HasTitleOrId on, final Map<String, Object> tokenToValueMapping, final String templateName) throws SegueDatabaseException {
+    public void sendAssignmentEmailToGroup(final IAssignmentLike assignment, final HasTitleOrId on, final Map<String, Object> tokenToValueMapping, final String templateName) throws SegueDatabaseException {
         UserGroupDTO userGroupDTO = groupManager.getGroupById(assignment.getGroupId());
 
         String dueDate = "";

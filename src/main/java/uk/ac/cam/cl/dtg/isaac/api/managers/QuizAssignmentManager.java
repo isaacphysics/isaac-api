@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
+import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
@@ -22,14 +23,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizAssignmentPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
+import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
@@ -42,6 +48,7 @@ public class QuizAssignmentManager {
     private final IQuizAssignmentPersistenceManager quizAssignmentPersistenceManager;
     private final EmailService emailService;
 	private final QuizManager quizManager;
+	private final GroupManager groupManager;
     private final PropertiesLoader properties;
 
     /**
@@ -51,15 +58,18 @@ public class QuizAssignmentManager {
      * @param emailService
      *            - service for sending group emails.
      * @param quizManager
-     *            - the quiz manager.
+     *            - for information about quizzes.
+     * @param groupManager
+     *            - for group membership info.
      */
     @Inject
     public QuizAssignmentManager(final IQuizAssignmentPersistenceManager quizAssignmentPersistenceManager,
                                  final EmailService emailService, final QuizManager quizManager,
-                                 final PropertiesLoader properties) {
+                                 final GroupManager groupManager, final PropertiesLoader properties) {
         this.quizAssignmentPersistenceManager = quizAssignmentPersistenceManager;
         this.quizManager = quizManager;
         this.emailService = emailService;
+        this.groupManager = groupManager;
         this.properties = properties;
     }
 
@@ -108,5 +118,19 @@ public class QuizAssignmentManager {
             "email-template-group-quiz-assignment");
 
         return newAssignment;
+    }
+
+    public List<QuizAssignmentDTO> getAssignedQuizzes(RegisteredUserDTO user) throws SegueDatabaseException {
+        // Find the groups the user is in
+        List<UserGroupDTO> groups = groupManager.getGroupMembershipList(user, false);
+
+        // Find quizzes for those groups
+        if (groups.size() == 0) {
+            return Lists.newArrayList();
+        }
+
+        List<Long> groupIds = groups.stream().map(UserGroupDTO::getId).collect(Collectors.toList());
+        return this.groupManager.filterItemsBasedOnMembershipContext(
+            this.quizAssignmentPersistenceManager.getAssignmentsByGroupList(groupIds), user.getId());
     }
 }

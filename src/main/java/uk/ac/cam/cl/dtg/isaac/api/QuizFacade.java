@@ -26,6 +26,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.DueBeforeNowException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateAssignmentException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizManager;
+import uk.ac.cam.cl.dtg.isaac.api.services.AssignmentService;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
@@ -53,11 +54,13 @@ import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
+import java.util.List;
 import java.util.Map;
 
 import static javax.ws.rs.core.Response.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ASSIGNMENT_DUEDATE_FK;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.GROUP_FK;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_HOUR;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.QUIZ_ASSIGNMENT_FK;
 
@@ -72,6 +75,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     private final UserAccountManager userManager;
     private final GroupManager groupManager;
     private final QuizAssignmentManager quizAssignmentManager;
+    private final AssignmentService assignmentService;
 
     private static final Logger log = LoggerFactory.getLogger(QuizFacade.class);
 
@@ -90,13 +94,15 @@ public class QuizFacade extends AbstractIsaacFacade {
      * @param groupManager
      *            - for group information.
      * @param quizAssignmentManager
-     *            - for managing quiz assignments.
+     *            - for managing the assignment of quizzes.
+     * @param assignmentService
+     *            - for assignment-related tasks.
      */
     @Inject
     public QuizFacade(final PropertiesLoader properties, final ILogManager logManager,
                       final IContentManager contentManager, final QuizManager quizManager,
                       final UserAccountManager userManager, final GroupManager groupManager,
-                      final QuizAssignmentManager quizAssignmentManager) {
+                      final QuizAssignmentManager quizAssignmentManager, final AssignmentService assignmentService) {
         super(properties, logManager);
         this.contentManager = contentManager;
 
@@ -104,6 +110,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         this.userManager = userManager;
         this.groupManager = groupManager;
         this.quizAssignmentManager = quizAssignmentManager;
+        this.assignmentService = assignmentService;
     }
 
     /**
@@ -137,6 +144,46 @@ public class QuizFacade extends AbstractIsaacFacade {
             String message = "ContentManagerException whilst getting available quizzes";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
+    }
+
+
+    /**
+     * Get quizzes assigned to this user.
+     *
+     * Shows a content summary, so we can track when a user actually attempts a quiz.
+     *
+     * @return a Response containing a list of QuizAssignmentDTO for the assigned quizzes.
+     */
+    @GET
+    @Path("assignments")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @ApiOperation(value = "Get quizzes assigned to this user.")
+    public final Response getAssignedQuizzes(@Context final HttpServletRequest request) {
+        try {
+            RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(request);
+
+            List<QuizAssignmentDTO> quizzes = this.quizAssignmentManager.getAssignedQuizzes(user);
+
+            this.assignmentService.augmentAssignerSummaries(quizzes);
+
+            for (QuizAssignmentDTO quiz: quizzes) {
+                quiz.setQuiz(this.contentManager.extractContentSummary(this.quizManager.findQuiz(quiz.getQuizId())));
+            }
+
+            return Response.ok(quizzes)
+                .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
+        } catch (SegueDatabaseException e) {
+            String message = "SegueDatabaseException whilst getting available quizzes";
+            log.error(message, e);
+            return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        } catch (ContentManagerException e) {
+            String message = "ContentManagerException whilst getting available quizzes";
+            log.error(message, e);
+            return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
