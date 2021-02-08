@@ -51,7 +51,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({UserAccountManager.class})
 @PowerMockIgnore({ "javax.ws.*", "javax.management.*", "javax.script.*" })
-public class QuizAssignmentManagerTest extends IsaacTest {
+public class QuizAssignmentManagerTest extends AbstractManagerTest {
 
     private QuizAssignmentManager quizAssignmentManager;
 
@@ -152,16 +152,5 @@ public class QuizAssignmentManagerTest extends IsaacTest {
         List<QuizAssignmentDTO> activeQuizAssignments = quizAssignmentManager.getActiveQuizAssignments(studentQuiz, student);
 
         assertEquals(Collections.singletonList(studentAssignment), activeQuizAssignments);
-    }
-
-    private <T, E extends Exception> void with(T mock, AbstractFacadeTest.SickConsumer<T, E> setup) {
-        reset(mock);
-        try {
-            setup.accept(mock);
-        } catch (Exception e) {
-            // This shouldn't happen.
-            throw new RuntimeException("Error in mock setup", e);
-        }
-        replay(mock);
     }
 }
