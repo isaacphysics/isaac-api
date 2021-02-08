@@ -75,11 +75,13 @@ import java.util.Map;
 
 import static javax.ws.rs.core.Response.*;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUIZ_ID_FKEY;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUIZ_SECTION;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ASSIGNMENT_DUEDATE_FK;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.GROUP_FK;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_HOUR;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.QUIZ_ASSIGNMENT_FK;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.QUIZ_ATTEMPT_FK;
 import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdFromQuestionId;
 
 /**
@@ -535,6 +537,59 @@ public class QuizFacade extends AbstractIsaacFacade {
         }
     }
 
+    /*
+     * Log that a student viewed a particular section of a quiz.
+     *
+     * @param httpServletRequest
+     *            - so that we can extract user information.
+     * @param quizAttemptId
+     *            - the ID of the quiz the user wishes to attempt.
+     * @param sectionNumber
+     *            - the number of the section being viewed.
+     * @return Confirmation or an error.
+     */
+    @POST
+    @Path("/attempt/{quizAttemptId}/log")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @ApiOperation(value = "Get the QuizDTO for a quiz attempt.")
+    public Response logQuizSectionView(@Context final HttpServletRequest httpServletRequest,
+                                       @PathParam("quizAttemptId") final Long quizAttemptId,
+                                       @FormParam("sectionNumber") Integer sectionNumber) {
+        try {
+            if (sectionNumber == null) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "Missing sectionNumber.").toResponse();
+            }
+            RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
+
+            QuizAttemptDTO quizAttempt = getQuizAttemptForUser(quizAttemptId, user);
+
+            QuizAssignmentDTO assignment = checkQuizAssignmentNotCancelledOrOverdue(quizAttempt);
+
+            Map<String, Object> eventDetails = ImmutableMap.of(
+                QUIZ_ID_FKEY, quizAttempt.getQuizId(),
+                QUIZ_ATTEMPT_FK, quizAttempt.getId(),
+                QUIZ_ASSIGNMENT_FK, assignment != null ? assignment.getId().toString() : "FREE_ATTEMPT",
+                ASSIGNMENT_DUEDATE_FK, assignment == null || assignment.getDueDate() == null ? "NO_DUE_DATE" : assignment.getDueDate(),
+                QUIZ_SECTION, sectionNumber
+            );
+
+            getLogManager().logEvent(user, httpServletRequest, Constants.IsaacServerLogType.VIEW_QUIZ_SECTION, eventDetails);
+
+            return Response.noContent().build();
+        } catch (ErrorResponseWrapper responseWrapper) {
+            return responseWrapper.toResponse();
+        } catch (AssignmentCancelledException e) {
+            return new SegueErrorResponse(Status.FORBIDDEN, "This quiz assignment has been cancelled.").toResponse();
+        } catch (SegueDatabaseException e) {
+            String message = "SegueDatabaseException whilst logging quiz section view";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
+    }
+
     /**
      * Record that a user has answered a question.
      *
@@ -787,13 +842,15 @@ public class QuizFacade extends AbstractIsaacFacade {
         }
     }
 
-    private void checkQuizAssignmentNotCancelledOrOverdue(QuizAttemptDTO quizAttempt) throws SegueDatabaseException, AssignmentCancelledException, ErrorResponseWrapper {
+    private QuizAssignmentDTO checkQuizAssignmentNotCancelledOrOverdue(QuizAttemptDTO quizAttempt) throws SegueDatabaseException, AssignmentCancelledException, ErrorResponseWrapper {
         // Relying on the side-effects of getting the assignment.
         QuizAssignmentDTO quizAssignment = getQuizAssignment(quizAttempt);
 
         if (quizAssignment != null && quizAssignment.getDueDate() != null && quizAssignment.getDueDate().before(new Date())) {
             throw new ErrorResponseWrapper(new SegueErrorResponse(Status.FORBIDDEN, "The due date for this quiz has passed."));
         }
+
+        return quizAssignment;
     }
 
     @Nullable

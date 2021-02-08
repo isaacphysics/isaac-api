@@ -46,9 +46,11 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.easymock.EasyMock.anyLong;
 import static org.easymock.EasyMock.anyObject;
+import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.getCurrentArguments;
 import static org.junit.Assert.assertEquals;
@@ -56,6 +58,7 @@ import static org.powermock.api.easymock.PowerMock.createMock;
 import static org.powermock.api.easymock.PowerMock.createNiceMock;
 import static org.powermock.api.easymock.PowerMock.expectLastCall;
 import static org.powermock.api.easymock.PowerMock.replay;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUIZ_SECTION;
 
 public class QuizFacadeTest extends AbstractFacadeTest {
 
@@ -67,6 +70,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
     private QuizAttemptManager quizAttemptManager;
     private QuizQuestionManager quizQuestionManager;
     private QuizAssignmentManager quizAssignmentManager;
+    private ILogManager logManager;
 
     @Before
     public void setUp() throws ContentManagerException {
@@ -76,7 +80,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
         expect(requestForCaching.evaluatePreconditions((EntityTag) anyObject())).andStubReturn(null);
 
         PropertiesLoader properties = createMock(PropertiesLoader.class);
-        ILogManager logManager = createNiceMock(ILogManager.class); // We don't care about logging.
+        logManager = createNiceMock(ILogManager.class); // Nice mock because we're not generally bothered about logging.
         IContentManager contentManager = createMock(IContentManager.class);
         quizAssignmentManager = createMock(QuizAssignmentManager.class);
         quizAttemptManager = createMock(QuizAttemptManager.class);
@@ -403,6 +407,27 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                     failsWith(Status.FORBIDDEN)
                 )
             )
+        );
+    }
+
+    @Test
+    public void logQuizSectionView() {
+        int sectionNumber = 3;
+        forEndpoint(() -> quizFacade.logQuizSectionView(request, studentAttempt.getId(), sectionNumber),
+            requiresLogin(),
+            as(student,
+                prepare(logManager, m -> {
+                    m.logEvent(eq(student), eq(request), eq(Constants.IsaacServerLogType.VIEW_QUIZ_SECTION), anyObject());
+                    expectLastCall().andAnswer(() -> {
+                        Object[] arguments = getCurrentArguments();
+                        Map<String, Object> event = (Map<String, Object>) arguments[3];
+                        assertEquals(sectionNumber, event.get(QUIZ_SECTION));
+                        return null;
+                    });
+                }),
+                succeeds()
+            ),
+            forbiddenForEveryoneElse()
         );
     }
 
