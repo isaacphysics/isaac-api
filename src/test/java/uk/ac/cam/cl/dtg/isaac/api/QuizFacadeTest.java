@@ -26,14 +26,12 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.DueBeforeNowException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateAssignmentException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAttemptManager;
-import uk.ac.cam.cl.dtg.isaac.api.managers.QuizManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizQuestionManager;
 import uk.ac.cam.cl.dtg.isaac.api.services.AssignmentService;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
-import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -51,7 +49,6 @@ import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -89,20 +86,12 @@ public class QuizFacadeTest extends AbstractFacadeTest {
         PropertiesLoader properties = createMock(PropertiesLoader.class);
         ILogManager logManager = createNiceMock(ILogManager.class); // We don't care about logging.
         IContentManager contentManager = createMock(IContentManager.class);
-        QuizManager quizManager = createMock(QuizManager.class);
-        GroupManager groupManager = createMock(GroupManager.class);
         quizAssignmentManager = createMock(QuizAssignmentManager.class);
         quizAttemptManager = createMock(QuizAttemptManager.class);
         quizQuestionManager = createMock(QuizQuestionManager.class);
 
         quizFacade = new QuizFacade(properties, logManager, contentManager, quizManager, userManager,
             groupManager, quizAssignmentManager, assignmentService, quizAttemptManager, quizQuestionManager);
-
-        expect(quizManager.getAvailableQuizzes(true, null, null)).andStubReturn(wrap(studentQuizSummary));
-        expect(quizManager.getAvailableQuizzes(false, null, null)).andStubReturn(wrap(studentQuizSummary, teacherQuizSummary));
-        expect(quizManager.findQuiz(studentQuiz.getId())).andStubReturn(studentQuiz);
-        expect(quizManager.findQuiz(teacherQuiz.getId())).andStubReturn(teacherQuiz);
-        expect(quizManager.findQuiz(otherQuiz.getId())).andStubReturn(otherQuiz);
 
         registerDefaultsFor(quizAssignmentManager, m -> {
             expect(m.getAssignedQuizzes(anyObject(RegisteredUserDTO.class))).andStubAnswer(() -> {
@@ -127,24 +116,6 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                 if (arguments[1] != student) return Collections.emptyList();
                 return Collections.singletonList(studentAssignment);
             });
-        });
-
-        expect(groupManager.getGroupById(anyLong())).andStubAnswer(() -> {
-            Object[] arguments = getCurrentArguments();
-            if (arguments[0] == studentGroup.getId()) {
-                return studentGroup;
-            } else {
-                throw new SegueDatabaseException("No such group.");
-            }
-        });
-
-        expect(groupManager.isUserInGroup(anyObject(), anyObject())).andStubAnswer(() -> {
-            Object[] arguments = getCurrentArguments();
-            if (arguments[0] == student && arguments[1] == studentGroup) {
-                return true;
-            } else {
-                return false;
-            }
         });
 
         registerDefaultsFor(quizAttemptManager, m -> {
@@ -447,11 +418,6 @@ public class QuizFacadeTest extends AbstractFacadeTest {
         return everyoneElse(
             failsWith(Status.FORBIDDEN)
         );
-    }
-
-    @SafeVarargs
-    final private <T> ResultsWrapper<T> wrap(T... items) {
-        return new ResultsWrapper<>(Arrays.asList(items), (long) items.length);
     }
 
     private List<ContentSummaryDTO> extractResults(Response availableQuizzes) {

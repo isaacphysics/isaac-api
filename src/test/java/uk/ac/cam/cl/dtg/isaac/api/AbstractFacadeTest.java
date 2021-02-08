@@ -15,8 +15,10 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
+import com.google.common.collect.ImmutableList;
 import org.junit.Before;
 import uk.ac.cam.cl.dtg.isaac.IsaacTest;
+import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
@@ -74,6 +76,7 @@ import static org.powermock.api.easymock.PowerMock.verifyAll;
 public class AbstractFacadeTest extends IsaacTest {
     protected HttpServletRequest request;
     protected UserAccountManager userManager;
+    protected ImmutableList<QuizAssignmentDTO> allStudentAssignments;
 
     private Map<Object, Consumer> defaultsMap = new HashMap<>();
     private RegisteredUserDTO specialEveryoneElse = new RegisteredUserDTO();
