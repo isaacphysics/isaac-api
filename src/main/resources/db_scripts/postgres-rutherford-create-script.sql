@@ -42,6 +42,7 @@ CREATE TABLE public.assignments (
     gameboard_id character varying(255) NOT NULL,
     group_id integer NOT NULL,
     owner_user_id integer,
+    notes text,
     creation_date timestamp without time zone,
     due_date timestamp with time zone
 );

@@ -296,7 +296,7 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
         }
 
         return new AssignmentDO(sqlResults.getLong("id"), sqlResults.getString("gameboard_id"),
-                sqlResults.getLong("owner_user_id"), sqlResults.getLong("group_id"), preciseDate,
+                sqlResults.getLong("owner_user_id"), sqlResults.getLong("group_id"), sqlResults.getString("notes"), preciseDate,
                 preciseDueDate);
     }
 }

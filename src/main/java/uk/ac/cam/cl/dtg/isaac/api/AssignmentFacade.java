@@ -956,6 +956,10 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You need a teacher account to create groups and set assignments!").toResponse();
             }
 
+            if (!isUserStaff(userManager, currentlyLoggedInUser) && !assignmentDTOFromClient.getNotes().isEmpty()) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You cannot provide assignment notes.").toResponse();
+            }
+
             if (null == assigneeGroup) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "The group id specified does not exist.")
                         .toResponse();

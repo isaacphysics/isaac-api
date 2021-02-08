@@ -17,8 +17,6 @@ package uk.ac.cam.cl.dtg.isaac.dos;
 
 import java.util.Date;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 /**
  * This class is the Domain Object used to store Assignments in the isaac CMS.
  */
@@ -27,31 +25,32 @@ public class AssignmentDO {
 	private String gameboardId;
 	private Long groupId;
 	private Long ownerUserId;
+	private String notes;
 	private Date creationDate;
 	private Date dueDate;
 
 	/**
 	 * Complete AssignmentDO constructor with all dependencies.
-	 * 
-	 * @param id
+	 *  @param id
 	 *            - unique id for the gameboard
 	 * @param gameboardId
 	 *            - The gameboard to assign as homework.
 	 * @param ownerUserId
-	 *            - User id of the owner of the gameboard.
+ *            - User id of the owner of the gameboard.
 	 * @param groupId
-	 *            - Group id who should be assigned the game board.
+*            - Group id who should be assigned the game board.
+	 * @param notes
 	 * @param creationDate
 	 *            - the date the assignment was created.
 	 * @param dueDate
-	 *            - the date the assignment should be completed by.
 	 */
     public AssignmentDO(final Long id, final String gameboardId, final Long ownerUserId, final Long groupId,
-            final Date creationDate, final Date dueDate) {
+						String notes, final Date creationDate, final Date dueDate) {
 		this.id = id;
 		this.gameboardId = gameboardId;
 		this.ownerUserId = ownerUserId;
 		this.groupId = groupId;
+		this.notes = notes;
 		this.creationDate = creationDate;
 		this.dueDate = dueDate;
 	}
@@ -125,6 +124,22 @@ public class AssignmentDO {
 	 */
 	public void setOwnerUserId(final Long ownerUserId) {
 		this.ownerUserId = ownerUserId;
+	}
+
+	/**
+	 * get notes to an assignment.
+	 * @return notes - the notes
+	 */
+	public String getNotes() {
+		return notes;
+	}
+
+	/**
+	 * set notes to an assignment.
+	 * @param notes - the notes
+	 */
+	public void setNotes(String notes) {
+		this.notes = notes;
 	}
 
 	/**
