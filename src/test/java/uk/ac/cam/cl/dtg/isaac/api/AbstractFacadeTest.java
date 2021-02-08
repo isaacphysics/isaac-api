@@ -125,10 +125,12 @@ public class AbstractFacadeTest extends IsaacTest {
         Set<RegisteredUserDTO> users = new HashSet<>(everyone);
         for (Check<E> check: checks) {
             try {
-                if (check.users.get(0) == specialEveryoneElse) {
+                if (check.users != null && check.users.size() == 1 && check.users.get(0) == specialEveryoneElse) {
                     check = new Check<E>(new ArrayList<>(users), check.steps.toArray(new Step[]{}));
                 } else {
-                    users.removeAll(check.users);
+                    if (check.users != null) {
+                        users.removeAll(check.users);
+                    }
                 }
                 check.runOn(endpoint);
             } catch (Exception e) {
@@ -161,6 +163,14 @@ public class AbstractFacadeTest extends IsaacTest {
     @SafeVarargs
     protected final <E extends Exception> Check<E> as(List<RegisteredUserDTO> users, Step<E>... steps) {
         return new Check<>(users, steps);
+    }
+
+    /**
+     * Specify steps to run without any call to getCurrentRegisteredUser being made.
+     */
+    @SafeVarargs
+    protected final <E extends Exception> Check<E> beforeUserCheck(Step<E>... steps) {
+        return new Check<>(steps);
     }
 
     /**
@@ -299,6 +309,11 @@ public class AbstractFacadeTest extends IsaacTest {
         private final List<RegisteredUserDTO> users;
         private final List<Step<E>> steps;
 
+        Check(Step[] steps) {
+            this.users = null;
+            this.steps = Arrays.asList(steps);
+        }
+
         Check(RegisteredUserDTO user, Step[] steps) {
             this.users = Collections.singletonList(user);
             this.steps = Arrays.asList(steps);
@@ -310,27 +325,35 @@ public class AbstractFacadeTest extends IsaacTest {
         }
 
         private void runOn(Supplier<Response> endpoint) throws E {
-            for (RegisteredUserDTO user: users) {
-                runTaskAs(user, () -> {
-                    Response response = null;
-                    for (Step step : steps) {
-                        if (step instanceof CheckStep) {
-                            if (response == null) {
-                                response = endpoint.get();
-                            }
-                            ((CheckStep<E>) step).checker.accept(response);
-                        } else if (step instanceof PrepareStep) {
-                            PrepareStep<E, ?> prepareStep = (PrepareStep) step;
-                            reset(prepareStep.mock);
-                            if (defaultsMap.containsKey(prepareStep.mock)) {
-                                defaultsMap.get(prepareStep.mock).accept(prepareStep.mock);
-                            }
-                            prepareStep.run();
-                            replay(prepareStep.mock);
-                        }
-                    }
-                });
+            if (users == null) {
+                performSteps(endpoint).run();
+            } else {
+                for (RegisteredUserDTO user : users) {
+                    runTaskAs(user, performSteps(endpoint));
+                }
             }
+        }
+
+        private Task<E> performSteps(Supplier<Response> endpoint) {
+            return () -> {
+                Response response = null;
+                for (Step step : steps) {
+                    if (step instanceof CheckStep) {
+                        if (response == null) {
+                            response = endpoint.get();
+                        }
+                        ((CheckStep<E>) step).checker.accept(response);
+                    } else if (step instanceof PrepareStep) {
+                        PrepareStep<E, ?> prepareStep = (PrepareStep) step;
+                        reset(prepareStep.mock);
+                        if (defaultsMap.containsKey(prepareStep.mock)) {
+                            defaultsMap.get(prepareStep.mock).accept(prepareStep.mock);
+                        }
+                        prepareStep.run();
+                        replay(prepareStep.mock);
+                    }
+                }
+            };
         }
     }
 
