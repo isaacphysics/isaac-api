@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -127,7 +128,8 @@ public class QuizQuestionManager {
      * @param includeCorrect
      *            - include whether the answers are correct.
      */
-    private void augmentQuestionObjectWithAttemptInformation(QuizAttemptDTO quizAttempt, List<QuestionDTO> questionsToAugment, boolean includeCorrect) throws SegueDatabaseException {
+    @VisibleForTesting
+    public void augmentQuestionObjectWithAttemptInformation(QuizAttemptDTO quizAttempt, List<QuestionDTO> questionsToAugment, boolean includeCorrect) throws SegueDatabaseException {
         Map<String, List<QuestionValidationResponse>> answers = quizQuestionAttemptManager.getAllAnswersForQuizAttempt(quizAttempt.getId());
 
         for (QuestionDTO question : questionsToAugment) {
