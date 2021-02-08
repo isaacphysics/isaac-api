@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
-import com.google.common.collect.ImmutableList;
 import org.junit.Before;
 import org.junit.Test;
 import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
@@ -47,7 +46,6 @@ public class QuizAssignmentManagerTest extends AbstractManagerTest {
     private IQuizAssignmentPersistenceManager quizAssignmentPersistenceManager;
     private EmailService emailService;
 
-    private ImmutableList<QuizAssignmentDTO> allStudentAssignments;
     private QuizAssignmentDTO newAssignment;
 
     @Before
@@ -70,8 +68,6 @@ public class QuizAssignmentManagerTest extends AbstractManagerTest {
             teacher.getId(), studentGroup.getId(),
             somePastDate, someFutureDate,
             QuizFeedbackMode.OVERALL_MARK);
-
-        allStudentAssignments = ImmutableList.<QuizAssignmentDTO>builder().addAll(studentAssignments).add(studentInactiveIgnoredAssignment).build();
     }
 
     @Test
@@ -125,7 +121,7 @@ public class QuizAssignmentManagerTest extends AbstractManagerTest {
     @Test
     public void getAssignedQuizzes() throws SegueDatabaseException {
         with(quizAssignmentPersistenceManager, m -> {
-            expect(m.getAssignmentsByGroupList(studentGroups)).andReturn(allStudentAssignments);
+            expect(m.getAssignmentsByGroupList(studentGroups)).andReturn(teacherAssignmentsToTheirGroups);
         });
         List<QuizAssignmentDTO> assignedQuizzes = quizAssignmentManager.getAssignedQuizzes(student);
 
@@ -135,7 +131,7 @@ public class QuizAssignmentManagerTest extends AbstractManagerTest {
     @Test
     public void getActiveQuizAssignments() throws SegueDatabaseException {
         with(quizAssignmentPersistenceManager, m -> {
-            expect(m.getAssignmentsByGroupList(studentGroups)).andReturn(allStudentAssignments);
+            expect(m.getAssignmentsByGroupList(studentGroups)).andReturn(teacherAssignmentsToTheirGroups);
         });
 
         List<QuizAssignmentDTO> activeQuizAssignments = quizAssignmentManager.getActiveQuizAssignments(studentQuiz, student);

@@ -30,6 +30,8 @@ import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.GroupMembershipStatus;
+import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
+import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
@@ -77,6 +79,7 @@ public class IsaacTest {
     protected QuizAssignmentDTO studentAssignment;
     protected QuizAssignmentDTO overdueAssignment;
     protected ImmutableList<Long> studentGroups;
+    protected List<QuizAssignmentDTO> teacherAssignmentsToTheirGroups;
     private QuizAssignmentDTO otherAssignment;
     protected QuizAssignmentDTO studentInactiveIgnoredAssignment;
     protected QuizAssignmentDTO studentInactiveAssignment;
@@ -131,29 +134,29 @@ public class IsaacTest {
         // A bit scrappy, but hopefully sufficient.
         studentQuizDO = new IsaacQuiz("studentQuiz", null, null, null, null, null, null, null, null, null, null, null, false, null, null, true);
 
-        student = new RegisteredUserDTO();
+        student = new RegisteredUserDTO("Some", "Student", "test-student@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, "");
         student.setRole(Role.STUDENT);
         student.setId(++id);
 
-        teacher = new RegisteredUserDTO();
+        teacher = new RegisteredUserDTO("Some", "Teacher", "test-teacher@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.FEMALE, somePastDate, "");
         teacher.setRole(Role.TEACHER);
         teacher.setId(++id);
 
-        secondTeacher = new RegisteredUserDTO();
+        secondTeacher = new RegisteredUserDTO("Second", "Teacher", "second-teacher@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.PREFER_NOT_TO_SAY, somePastDate, "");
         secondTeacher.setRole(Role.TEACHER);
         secondTeacher.setId(++id);
 
-        otherTeacher = new RegisteredUserDTO();
+        otherTeacher = new RegisteredUserDTO("Other", "Teacher", "other-teacher@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.OTHER, somePastDate, "");
         otherTeacher.setRole(Role.TEACHER);
         otherTeacher.setId(++id);
 
         noone = null;
 
-        otherStudent = new RegisteredUserDTO();
+        otherStudent = new RegisteredUserDTO("Other", "Student", "other-student@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.FEMALE, somePastDate, "");
         otherStudent.setRole(Role.STUDENT);
         otherStudent.setId(++id);
 
-        adminUser = new RegisteredUserDTO();
+        adminUser = new RegisteredUserDTO("Test", "Admin", "test-admin@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.UNKNOWN, somePastDate, "");
         adminUser.setRole(Role.ADMIN);
         adminUser.setId(++id);
 
@@ -164,6 +167,12 @@ public class IsaacTest {
         studentGroup.setOwnerId(teacher.getId());
         UserSummaryWithEmailAddressDTO secondTeacherSummary = new UserSummaryWithEmailAddressDTO();
         secondTeacherSummary.setId(secondTeacher.getId());
+        secondTeacherSummary.setEmail(secondTeacher.getEmail());
+        secondTeacherSummary.setEmailVerificationStatus(secondTeacher.getEmailVerificationStatus());
+        secondTeacherSummary.setRole(secondTeacher.getRole());
+        secondTeacherSummary.setFamilyName(secondTeacher.getFamilyName());
+        secondTeacherSummary.setGivenName(secondTeacher.getGivenName());
+
         studentGroup.setAdditionalManagers(Collections.singleton(secondTeacherSummary));
 
         studentInactiveGroup = new UserGroupDTO(++id, "studentInactiveGroup", teacher.getId(), somePastDate, somePastDate, false);
@@ -178,6 +187,8 @@ public class IsaacTest {
         studentInactiveAssignment = new QuizAssignmentDTO(++id, teacherQuiz.getId(), teacher.getId(), studentInactiveGroup.getId(), someFurtherPastDate, someFutureDate, QuizFeedbackMode.OVERALL_MARK);
 
         studentAssignments = ImmutableList.of(studentAssignment, overdueAssignment, otherAssignment, studentInactiveAssignment);
+
+        teacherAssignmentsToTheirGroups = ImmutableList.<QuizAssignmentDTO>builder().addAll(studentAssignments).add(studentInactiveIgnoredAssignment).build();
 
         studentAttempt = new QuizAttemptDTO(++id, student.getId(), studentQuiz.getId(), studentAssignment.getId(), somePastDate, null);
         overdueAttempt = new QuizAttemptDTO(++id, student.getId(), studentQuiz.getId(), overdueAssignment.getId(), somePastDate, null);

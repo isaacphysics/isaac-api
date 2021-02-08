@@ -35,6 +35,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -428,6 +429,50 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                 succeeds()
             ),
             forbiddenForEveryoneElse()
+        );
+    }
+
+    @Test
+    public void getAllQuizAssignments() {
+        List<UserGroupDTO> studentGroups = ImmutableList.of(studentGroup, studentInactiveGroup);
+        forEndpoint((Long groupIdOfInterest) -> () -> quizFacade.getQuizAssignments(request, groupIdOfInterest),
+            with(null,
+                requiresLogin(),
+                as(anyOf(teacher, secondTeacher),
+                    prepare(groupManager, m -> expect(m.getAllGroupsOwnedAndManagedByUser(currentUser(), false))
+                        .andReturn(studentGroups)),
+                    prepare(quizAssignmentManager, m -> expect(m.getAssignmentsForGroups(studentGroups))
+                        .andReturn(teacherAssignmentsToTheirGroups)),
+                    respondsWith(teacherAssignmentsToTheirGroups)
+                ),
+                as(otherTeacher,
+                    prepare(groupManager, m -> expect(m.getAllGroupsOwnedAndManagedByUser(currentUser(), false))
+                        .andReturn(Collections.emptyList())),
+                    prepare(quizAssignmentManager, m -> expect(m.getAssignmentsForGroups(Collections.emptyList()))
+                        .andReturn(Collections.emptyList())),
+                    respondsWith(Collections.emptyList())),
+                as(anyOf(student, otherStudent),
+                    failsWith(SegueErrorResponse.getIncorrectRoleResponse())
+                )
+            ),
+            with(studentInactiveGroup.getId(),
+                requiresLogin(),
+                as(anyOf(teacher, adminUser),
+                    prepare(groupManager, m -> expect(m.getGroupById(studentInactiveGroup.getId()))
+                        .andReturn(studentInactiveGroup)),
+                    prepare(quizAssignmentManager, m -> expect(m.getAssignmentsForGroups(Collections.singletonList(studentInactiveGroup)))
+                        .andReturn(ImmutableList.of(studentInactiveAssignment, studentInactiveIgnoredAssignment))),
+                    respondsWith(ImmutableList.of(studentInactiveAssignment, studentInactiveIgnoredAssignment))
+                ),
+                as(anyOf(student, otherStudent),
+                    failsWith(SegueErrorResponse.getIncorrectRoleResponse())
+                ),
+                everyoneElse(
+                    prepare(groupManager, m -> expect(m.getGroupById(studentInactiveGroup.getId()))
+                        .andReturn(studentInactiveGroup)),
+                    failsWith(Status.FORBIDDEN)
+                )
+            )
         );
     }
 

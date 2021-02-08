@@ -135,6 +135,14 @@ public class QuizAssignmentManager {
         return allAssignedAndDueQuizzes.stream().filter(qa -> qa.getQuizId().equals(quiz.getId())).collect(Collectors.toList());
     }
 
+    public List<QuizAssignmentDTO> getAssignmentsForGroups(List<UserGroupDTO> groups) throws SegueDatabaseException {
+        List<Long> groupIds = groups.stream().map(UserGroupDTO::getId).collect(Collectors.toList());
+        if (groups.size() == 0) {
+            return Lists.newArrayList();
+        }
+        return this.quizAssignmentPersistenceManager.getAssignmentsByGroupList(groupIds);
+    }
+
     public void cancelAssignment(QuizAssignmentDTO assignment) throws SegueDatabaseException {
         this.quizAssignmentPersistenceManager.cancelAssignment(assignment);
     }
@@ -143,13 +151,7 @@ public class QuizAssignmentManager {
         // Find the groups the user is in
         List<UserGroupDTO> groups = groupManager.getGroupMembershipList(user, false);
 
-        // Find quizzes for those groups
-        if (groups.size() == 0) {
-            return Lists.newArrayList();
-        }
-
-        List<Long> groupIds = groups.stream().map(UserGroupDTO::getId).collect(Collectors.toList());
-        return this.quizAssignmentPersistenceManager.getAssignmentsByGroupList(groupIds);
+        return getAssignmentsForGroups(groups);
     }
 
     private List<QuizAssignmentDTO> getAllActiveAssignments(RegisteredUserDTO user) throws SegueDatabaseException {

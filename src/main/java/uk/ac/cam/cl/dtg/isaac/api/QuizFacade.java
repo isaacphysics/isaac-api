@@ -64,16 +64,21 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static javax.ws.rs.core.Response.*;
+import static javax.ws.rs.core.Response.Status;
+import static javax.ws.rs.core.Response.ok;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUIZ_ID_FKEY;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUIZ_SECTION;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ASSIGNMENT_DUEDATE_FK;
@@ -799,6 +804,72 @@ public class QuizFacade extends AbstractIsaacFacade {
     }
 
     /**
+     * Get quizzes assigned by this user.
+     *
+     * Optionally filtered by a particular group.
+     *
+     * @param groupIdOfInterest An optional ID of a group to look up.
+     * @return a Response containing a list of QuizAssignmentDTO for the quizzes they have assigned.
+     */
+    @GET
+    @Path("assigned")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @ApiOperation(value = "Get quizzes assigned by this user.")
+    public Response getQuizAssignments(@Context HttpServletRequest request,
+                                       @QueryParam("groupId") Long groupIdOfInterest) {
+        try {
+            RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+
+            if (!(isUserTeacherOrAbove(userManager, user))) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
+            List<UserGroupDTO> groups;
+            if (groupIdOfInterest != null) {
+                UserGroupDTO group = this.groupManager.getGroupById(groupIdOfInterest);
+
+                if (null == group) {
+                    return new SegueErrorResponse(Status.NOT_FOUND, "The group specified cannot be located.")
+                        .toResponse();
+                }
+
+                if (!canManageGroup(user, group)) {
+                    return new SegueErrorResponse(Status.FORBIDDEN, "You are not the owner or manager of that group").toResponse();
+                }
+
+                groups = Collections.singletonList(group);
+            } else {
+                groups = this.groupManager.getAllGroupsOwnedAndManagedByUser(user, false);
+            }
+            Collection<QuizAssignmentDTO> assignments = this.quizAssignmentManager.getAssignmentsForGroups(groups);
+
+            Map<String, ContentSummaryDTO> quizCache = new HashMap<>();
+            for (QuizAssignmentDTO assignment: assignments) {
+                String quizId = assignment.getQuizId();
+                ContentSummaryDTO quiz = quizCache.get(quizId);
+                if (quiz == null) {
+                    quizCache.put(quizId, quiz = this.contentManager.extractContentSummary(this.quizManager.findQuiz(quizId)));
+                }
+                assignment.setQuiz(quiz);
+            }
+
+            return Response.ok(assignments)
+                .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            String message = "Database error whilst getting assigned quizzes";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        } catch (ContentManagerException e) {
+            String message = "Content error whilst getting assigned quizzes";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        }
+    }
+
+    /**
      * Allows a teacher to set a quiz to a group.
      *
      * @param httpServletRequest so that we can extract user information.
@@ -890,6 +961,10 @@ public class QuizFacade extends AbstractIsaacFacade {
     private boolean canManageAssignment(QuizAssignmentDTO clientQuizAssignment, RegisteredUserDTO currentlyLoggedInUser) throws SegueDatabaseException, NoUserLoggedInException {
         UserGroupDTO assigneeGroup = groupManager.getGroupById(clientQuizAssignment.getGroupId());
 
+        return canManageGroup(currentlyLoggedInUser, assigneeGroup);
+    }
+
+    private boolean canManageGroup(RegisteredUserDTO currentlyLoggedInUser, UserGroupDTO assigneeGroup) throws NoUserLoggedInException {
         return GroupManager.isOwnerOrAdditionalManager(assigneeGroup, currentlyLoggedInUser.getId())
             || isUserAnAdmin(userManager, currentlyLoggedInUser);
     }
