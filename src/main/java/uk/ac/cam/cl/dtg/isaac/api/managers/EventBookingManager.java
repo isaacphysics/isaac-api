@@ -168,6 +168,15 @@ public class EventBookingManager {
     }
 
     /**
+     * @param eventId - of interest
+     * @return event bookings
+     * @throws SegueDatabaseException - if an error occurs.
+     */
+    public List<DetailedEventBookingDTO> adminGetBookingsByEventId(final String eventId) throws SegueDatabaseException {
+        return this.bookingPersistenceManager.adminGetBookingsByEventId(eventId);
+    }
+
+    /**
      * Utility method to provide a count of the number of bookings on a given event with a given status.
      *
      * @param eventId the event id to look up

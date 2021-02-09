@@ -488,7 +488,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     }
 
     /**
-     * gets a list of event bookings based on a given event id.
+     * gets an admin and selected staff only list of event bookings based on a given event id.
      * 
      * @param request
      *            - so we can determine if the user is logged in
@@ -501,15 +501,19 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @ApiOperation(value = "List event bookings for a specific event.")
-    public final Response getEventBookingByEventId(@Context final HttpServletRequest request,
+    public final Response adminGetEventBookingByEventId(@Context final HttpServletRequest request,
             @PathParam("event_id") final String eventId) {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
 
-            List<EventBookingDTO> eventBookings = this.mapper.mapAsList(bookingManager.getBookingsByEventId(eventId), EventBookingDTO.class);
+            List<EventBookingDTO> eventBookings = this.mapper.mapAsList(bookingManager.adminGetBookingsByEventId(eventId), EventBookingDTO.class);
+            IsaacEventPageDTO event = this.getRawEventDTOById(eventId);
 
-            // Event leaders are only allowed to see the bookings of connected users
-            if (Arrays.asList(Role.TEACHER, Role.EVENT_LEADER, Role.CONTENT_EDITOR).contains(currentUser.getRole())) {
+            if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
+            if (Arrays.asList(Role.EVENT_LEADER).contains(currentUser.getRole())) {
                 eventBookings = userAssociationManager.filterUnassociatedRecords(currentUser, eventBookings, booking -> booking.getUserBooked().getId());
             }
 
@@ -521,6 +525,10 @@ public class EventsFacade extends AbstractIsaacFacade {
             String message = "Database error occurred while trying to retrieve all event booking information.";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        } catch (ContentManagerException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Content Database error occurred while trying to retrieve event booking information.")
+                    .toResponse();
         }
     }
 
@@ -593,6 +601,10 @@ public class EventsFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
             List<EventBookingDTO> eventBookings = this.mapper.mapAsList(bookingManager.getBookingsByEventId(eventId), EventBookingDTO.class);
+
+            if (!isUserTeacherOrAbove(userManager, currentUser)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to use this endpoint.").toResponse();
+            }
 
             // Only allowed to see the bookings of connected users
             eventBookings = userAssociationManager.filterUnassociatedRecords(
