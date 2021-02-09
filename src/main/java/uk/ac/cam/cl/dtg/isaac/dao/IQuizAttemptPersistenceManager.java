@@ -49,4 +49,19 @@ public interface IQuizAttemptPersistenceManager {
      * @return The attempts.
      */
     List<QuizAttemptDTO> getByQuizIdAndUserId(String quizId, Long userId) throws SegueDatabaseException;
+
+    /**
+     * Get a quiz attempt by id.
+     *
+     * @param quizAttemptId The id of the attempt.
+     * @return The attempt or an error if it doesn't exist.
+     */
+    QuizAttemptDTO getById(Long quizAttemptId) throws SegueDatabaseException;
+
+    /**
+     * Delete a quiz attempt from the database.
+     *
+     * @param quizAttempt The attempt to delete.
+     */
+    void deleteAttempt(QuizAttemptDTO quizAttempt) throws SegueDatabaseException;
 }

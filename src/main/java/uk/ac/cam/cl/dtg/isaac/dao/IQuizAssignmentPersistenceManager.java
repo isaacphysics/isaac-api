@@ -17,6 +17,7 @@ package uk.ac.cam.cl.dtg.isaac.dao;
 
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentCancelledException;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
 import java.util.List;
