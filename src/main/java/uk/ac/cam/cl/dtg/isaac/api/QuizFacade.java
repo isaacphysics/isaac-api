@@ -22,6 +22,7 @@ import io.swagger.annotations.ApiOperation;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentCancelledException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AttemptCompletedException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.DueBeforeNowException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateAssignmentException;
@@ -47,6 +48,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -278,7 +280,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             }
 
             // Get the quiz assignment
-            QuizAssignmentDTO quizAssignment = this.quizAssignmentManager.getQuizAssignment(quizAssignmentId);
+            QuizAssignmentDTO quizAssignment = this.quizAssignmentManager.getById(quizAssignmentId);
 
             // Check the user is an active member of the relevant group
             UserGroupDTO group = groupManager.getGroupById(quizAssignment.getGroupId());
@@ -305,6 +307,8 @@ public class QuizFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (AttemptCompletedException e) {
             return new SegueErrorResponse(Status.FORBIDDEN, "You have already completed your attempt at this quiz.").toResponse();
+        } catch (AssignmentCancelledException e) {
+            return new SegueErrorResponse(Status.GONE, "This quiz assignment has been cancelled.").toResponse();
         }
     }
 
@@ -332,7 +336,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
             if (null == quizId || quizId.isEmpty()) {
-                return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid quiz assignment id.").toResponse();
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid quiz id.").toResponse();
             }
 
             // Get the quiz
@@ -446,6 +450,58 @@ public class QuizFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (ContentManagerException e) {
             String message = "Content error whilst setting quiz";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        }
+    }
+
+    /**
+     * Allows a teacher to set a quiz to a group.
+     *
+     * Sends emails to the members of the group informing them of the quiz.
+     * Takes a quiz id, a group id, an optional end datetime for completion, and the feedbackMode.
+     *
+     * @param httpServletRequest so that we can extract user information.
+     * @param quizAssignmentId the id of the assignment to cancel.
+     *
+     * @return Confirmation or error.
+     */
+    @DELETE
+    @Path("/quizAssignment/{quizAssignmentId}")
+    @ApiOperation(value = "Cancel a quiz assignment.")
+    public final Response cancelQuizAssignment(@Context final HttpServletRequest httpServletRequest,
+                                               @PathParam("quizAssignmentId") Long quizAssignmentId) {
+
+        if (null == quizAssignmentId) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid quiz assignment id.").toResponse();
+        }
+
+        try {
+            RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
+
+            if (!(isUserTeacherOrAbove(userManager, user))) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
+            QuizAssignmentDTO assignment = quizAssignmentManager.getById(quizAssignmentId);
+
+            UserGroupDTO assigneeGroup = groupManager.getGroupById(assignment.getGroupId());
+
+            if (!GroupManager.isOwnerOrAdditionalManager(assigneeGroup, user.getId())
+                && !isUserAnAdmin(userManager, user)) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                    "You can only cancel assignments to groups you own or manage.").toResponse();
+            }
+
+            quizAssignmentManager.cancelAssignment(assignment);
+
+            return Response.noContent().build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (AssignmentCancelledException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "This assignment is already cancelled.").toResponse();
+        } catch (SegueDatabaseException e) {
+            String message = "Database error whilst cancelling quiz assignment";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         }

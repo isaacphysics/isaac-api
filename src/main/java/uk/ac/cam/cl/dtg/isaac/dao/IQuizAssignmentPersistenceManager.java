@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dao;
 
+import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentCancelledException;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
@@ -61,5 +62,12 @@ public interface IQuizAssignmentPersistenceManager {
      */
     List<QuizAssignmentDTO> getAssignmentsByGroupList(List<Long> groupIds) throws SegueDatabaseException;
 
-    QuizAssignmentDTO getAssignmentById(Long quizAssignmentId) throws SegueDatabaseException;
+    QuizAssignmentDTO getAssignmentById(Long quizAssignmentId) throws SegueDatabaseException, AssignmentCancelledException;
+
+    /**
+     * Cancel (delete) a quiz assignment.
+     *
+     * @param assignment The quiz assignment to cancel.
+     */
+    void cancelAssignment(QuizAssignmentDTO assignment) throws SegueDatabaseException;
 }

@@ -20,9 +20,9 @@ import com.google.inject.Inject;
 import ma.glasnost.orika.MapperFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentCancelledException;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizAssignmentDO;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
-import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
@@ -114,7 +114,7 @@ public class PgQuizAssignmentPersistenceManager implements IQuizAssignmentPersis
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
             pst = conn.prepareStatement(
-                "SELECT * FROM quiz_assignments WHERE quiz_id = ? AND group_id = ?");
+                "SELECT * FROM quiz_assignments WHERE quiz_id = ? AND group_id = ? AND NOT deleted");
 
             pst.setString(1, quizId);
             pst.setLong(2, groupId);
@@ -142,7 +142,7 @@ public class PgQuizAssignmentPersistenceManager implements IQuizAssignmentPersis
             for (int i = 0; i < groupIds.size(); i++) {
                 sb.append("?").append(i < groupIds.size() - 1 ? ", " : "");
             }
-            sb.append(") ORDER BY creation_date");
+            sb.append(") AND NOT deleted ORDER BY creation_date");
 
             PreparedStatement pst;
             pst = conn.prepareStatement(sb.toString());
@@ -167,7 +167,7 @@ public class PgQuizAssignmentPersistenceManager implements IQuizAssignmentPersis
     }
 
     @Override
-    public QuizAssignmentDTO getAssignmentById(Long quizAssignmentId) throws SegueDatabaseException {
+    public QuizAssignmentDTO getAssignmentById(Long quizAssignmentId) throws SegueDatabaseException, AssignmentCancelledException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
             pst = conn.prepareStatement("SELECT * FROM quiz_assignments WHERE id = ?");
@@ -175,11 +175,28 @@ public class PgQuizAssignmentPersistenceManager implements IQuizAssignmentPersis
 
             ResultSet results = pst.executeQuery();
             if (results.next()) {
+                if (results.getBoolean("deleted")) {
+                    throw new AssignmentCancelledException();
+                }
                 return this.convertToQuizAssignmentDTO(this.convertFromSQLToQuizAssignmentDO(results));
             }
             throw new SQLException("QuizAssignment result set empty.");
         } catch (SQLException e) {
             throw new SegueDatabaseException("Unable to find quiz assignment by id", e);
+        }
+    }
+
+    @Override
+    public void cancelAssignment(QuizAssignmentDTO assignment) throws SegueDatabaseException {
+        try (Connection conn = database.getDatabaseConnection()) {
+            PreparedStatement pst;
+            pst = conn.prepareStatement("UPDATE quiz_assignments SET deleted = true WHERE id = ?");
+
+            pst.setLong(1, assignment.getId());
+
+            pst.execute();
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception while deleting quiz assignment", e);
         }
     }
 
