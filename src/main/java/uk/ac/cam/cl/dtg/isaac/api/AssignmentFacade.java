@@ -45,6 +45,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
@@ -180,6 +181,13 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             // we want to populate gameboard details for the assignment DTO.
             for (AssignmentDTO assignment : assignments) {
                 assignment.setGameboard(gameboardsMap.get(assignment.getGameboardId()));
+
+                // Augment with group name if allowed
+                // TODO: Do we want staff and/or admins here?
+                UserGroupDTO group = groupManager.getGroupById(assignment.getGroupId());
+                if (GroupManager.isOwnerOrAdditionalManager(group, currentlyLoggedInUser.getId())) {
+                    assignment.setGroupName(group.getGroupName());
+                }
             }
 
             this.assignmentService.augmentAssignerSummaries(assignments);
