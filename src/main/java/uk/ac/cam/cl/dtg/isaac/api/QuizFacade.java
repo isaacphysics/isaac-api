@@ -374,6 +374,72 @@ public class QuizFacade extends AbstractIsaacFacade {
     }
 
     /**
+     * Get the QuizDTO for a quiz attempt.
+     *
+     * @param httpServletRequest
+     *            - so that we can extract user information.
+     * @param quizAttemptId
+     *            - the ID of the quiz the user wishes to attempt.
+     * @return The QuizDTO augmented with the user answers so far.
+     */
+    @GET
+    @Path("/attempt/{quizAttemptId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @ApiOperation(value = "Get the QuizDTO for a quiz attempt.")
+    public final Response getQuizAttempt(@Context final HttpServletRequest httpServletRequest,
+                                             @PathParam("quizAttemptId") final Long quizAttemptId) {
+        try {
+            RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
+
+            if (null == quizAttemptId) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid quiz attempt id.").toResponse();
+            }
+
+            QuizAttemptDTO quizAttempt = this.quizAttemptManager.getById(quizAttemptId);
+
+            if (!quizAttempt.getUserId().equals(user.getId())) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "This is not your quiz attempt.").toResponse();
+            }
+
+            if (quizAttempt.getCompletedDate() != null) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You have completed this quiz.").toResponse();
+            }
+
+            // Get the quiz assignment
+            QuizAssignmentDTO quizAssignment;
+            if (quizAttempt.getQuizAssignmentId() != null) {
+                quizAssignment = quizAssignmentManager.getById(quizAttempt.getQuizAssignmentId());
+
+                if (quizAssignment.getDueDate() != null && quizAssignment.getDueDate().before(new Date())) {
+                    return new SegueErrorResponse(Status.FORBIDDEN, "The due date for this quiz has passed.").toResponse();
+                }
+            }
+
+            IsaacQuizDTO quiz = quizManager.findQuiz(quizAttempt.getQuizId());
+
+            // TODO: Augment quiz with answers to quiz questions
+
+            return Response.ok(quiz)
+                .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
+                .build();
+
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            String message = "SegueDatabaseException whilst getting quiz attempt";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        } catch (AssignmentCancelledException e) {
+            return new SegueErrorResponse(Status.FORBIDDEN, "This quiz assignment has been cancelled.").toResponse();
+        } catch (ContentManagerException e) {
+            String message = "ContentManagerException whilst getting quiz attempt";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        }
+    }
+
+    /**
      * Abandon a started free quiz attempt.
      *
      * This can only be done on free quiz attempts, as we don't want any startDate shenanigans on assigned quizzes.
