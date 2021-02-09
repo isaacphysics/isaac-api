@@ -22,13 +22,16 @@ import io.swagger.annotations.ApiOperation;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.api.managers.AttemptCompletedException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.DueBeforeNowException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateAssignmentException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAssignmentManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAttemptManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizManager;
 import uk.ac.cam.cl.dtg.isaac.api.services.AssignmentService;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
@@ -44,6 +47,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -54,6 +58,7 @@ import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -76,6 +81,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     private final GroupManager groupManager;
     private final QuizAssignmentManager quizAssignmentManager;
     private final AssignmentService assignmentService;
+    private final QuizAttemptManager quizAttemptManager;
 
     private static final Logger log = LoggerFactory.getLogger(QuizFacade.class);
 
@@ -96,21 +102,25 @@ public class QuizFacade extends AbstractIsaacFacade {
      * @param quizAssignmentManager
      *            - for managing the assignment of quizzes.
      * @param assignmentService
-     *            - for assignment-related tasks.
+     *            - for general assignment-related services.
+     * @param quizAttemptManager
+     *            - for managing attempts at quizzes.
      */
     @Inject
     public QuizFacade(final PropertiesLoader properties, final ILogManager logManager,
                       final IContentManager contentManager, final QuizManager quizManager,
                       final UserAccountManager userManager, final GroupManager groupManager,
-                      final QuizAssignmentManager quizAssignmentManager, final AssignmentService assignmentService) {
+                      final QuizAssignmentManager quizAssignmentManager, final AssignmentService assignmentService,
+                      final QuizAttemptManager quizAttemptManager) {
         super(properties, logManager);
-        this.contentManager = contentManager;
 
+        this.contentManager = contentManager;
         this.quizManager = quizManager;
         this.userManager = userManager;
         this.groupManager = groupManager;
         this.quizAssignmentManager = quizAssignmentManager;
         this.assignmentService = assignmentService;
+        this.quizAttemptManager = quizAttemptManager;
     }
 
     /**
@@ -235,6 +245,127 @@ public class QuizFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
+        }
+    }
+
+    /**
+     * Start a quiz attempt for a particular quiz assignment.
+     *
+     * For a student, indicates the quiz is being attempted and creates a QuizAttemptDO in the DB
+     * if they are a member of the group for the assignment.
+     * If an attempt has already begun, return the already begun attempt.
+     *
+     * TODO: @see startFreeQuizAttempt An endpoint to allow a quiz that is visibleToStudents to be taken by students.
+     *
+     * @param httpServletRequest
+     *            - so that we can extract user information.
+     * @param quizAssignmentId
+     *            - the ID of the quiz assignment for this user.
+     * @return a QuizAttemptDTO
+     */
+    @POST
+    @Path("/startQuizAttempt")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @ApiOperation(value = "Start a quiz attempt.")
+    public final Response startQuizAttempt(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
+                                      @FormParam("quizAssignmentId") final Long quizAssignmentId) {
+        try {
+            RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
+
+            if (null == quizAssignmentId) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid quiz assignment id.").toResponse();
+            }
+
+            // Get the quiz assignment
+            QuizAssignmentDTO quizAssignment = this.quizAssignmentManager.getQuizAssignment(quizAssignmentId);
+
+            // Check the user is an active member of the relevant group
+            UserGroupDTO group = groupManager.getGroupById(quizAssignment.getGroupId());
+            if (!groupManager.isUserInGroup(user, group)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You are not a member of a group assigned this quiz.").toResponse();
+            }
+
+            // Check the due date hasn't passed
+            if (quizAssignment.getDueDate() != null && new Date().after(quizAssignment.getDueDate())) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "The due date for this quiz has passed.").toResponse();
+            }
+
+            // Create a quiz attempt
+            QuizAttemptDTO quizAttempt = this.quizAttemptManager.fetchOrCreate(quizAssignment, user);
+
+            // TODO: Might as well augment the result to avoid a round-trip
+
+            return Response.ok(quizAttempt).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            String message = "SegueDatabaseException whilst starting a quiz attempt";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        } catch (AttemptCompletedException e) {
+            return new SegueErrorResponse(Status.FORBIDDEN, "You have already completed your attempt at this quiz.").toResponse();
+        }
+    }
+
+    /**
+     * Start a quiz attempt for a free quiz (one that is visibleToStudents).
+     *
+     * This checks that quiz has not already been assigned. (When a quiz has been set to a student,
+     * they are locked out of all previous feedback for that quiz and prevented from starting the
+     * quiz freely in order to prevent some ways of cheating.)
+     *
+     * @param httpServletRequest
+     *            - so that we can extract user information.
+     * @param quizId
+     *            - the ID of the quiz the user wishes to attempt.
+     * @return a QuizAttemptDTO
+     */
+    @POST
+    @Path("/startFreeQuizAttempt")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @ApiOperation(value = "Start a free quiz attempt.")
+    public final Response startFreeQuizAttempt(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
+                                           @FormParam("quizId") final String quizId) {
+        try {
+            RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
+
+            if (null == quizId || quizId.isEmpty()) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid quiz assignment id.").toResponse();
+            }
+
+            // Get the quiz
+            IsaacQuizDTO quiz = quizManager.findQuiz(quizId);
+
+            // Check it is visibleToStudents
+            if (!quiz.getVisibleToStudents()) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "This quiz is not available for students to attempt freely.").toResponse();
+            }
+
+            // Check if there is an active assignment of this quiz
+            List<QuizAssignmentDTO> activeQuizAssignments = this.quizAssignmentManager.getActiveQuizAssignments(quiz, user);
+
+            if (!activeQuizAssignments.isEmpty()) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You are currently set this quiz so you cannot attempt it freely.").toResponse();
+            }
+
+            // Create a quiz attempt
+            QuizAttemptDTO quizAttempt = this.quizAttemptManager.fetchOrCreateFreeQuiz(quiz, user);
+
+            // TODO: Might as well augment the result to avoid a round-trip
+
+            return Response.ok(quizAttempt).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            String message = "SegueDatabaseException whilst starting a free quiz attempt";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        } catch (ContentManagerException e) {
+            String message = "ContentManagerException whilst starting a free quiz attempt";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         }
     }
 
