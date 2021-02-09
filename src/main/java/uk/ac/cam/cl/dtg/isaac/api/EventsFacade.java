@@ -509,7 +509,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             List<EventBookingDTO> eventBookings = this.mapper.mapAsList(bookingManager.getBookingsByEventId(eventId), EventBookingDTO.class);
 
             // Event leaders are only allowed to see the bookings of connected users
-            if (Arrays.asList(Role.STUDENT, Role.TEACHER, Role.EVENT_LEADER, Role.CONTENT_EDITOR).contains(currentUser.getRole())) {
+            if (Arrays.asList(Role.TEACHER, Role.EVENT_LEADER, Role.CONTENT_EDITOR).contains(currentUser.getRole())) {
                 eventBookings = userAssociationManager.filterUnassociatedRecords(currentUser, eventBookings, booking -> booking.getUserBooked().getId());
             }
 
