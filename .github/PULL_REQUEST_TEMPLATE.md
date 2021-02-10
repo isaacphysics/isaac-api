@@ -6,6 +6,7 @@
 - [ ] Added enough Logging to monitor expected behaviour change
 - [ ] Security - Injection - everything run by an interpreter (SQL, OS...) is either validated or escaped
 - [ ] Security - Data Exposure - PII is not stored or sent unencrypted
+- [ ] Security - Data Exposure - Test any altered or created endpoints using [swagger](http://localhost:8080/isaac-api/api-docs/)
 - [ ] Security - Access Control - Check authorisation on every new endpoint
 - [ ] Security - New dependency - configured sensibly not relying on defaults
 - [ ] Security - New dependency - Searched for any know vulnerabilities

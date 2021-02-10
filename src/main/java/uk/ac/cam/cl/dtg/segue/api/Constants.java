@@ -400,6 +400,7 @@ public final class Constants {
     public static final String[] ADDRESS_PATH_FIELDNAME = {"location", "address"};
     public static final String[] ADDRESS_FIELDNAMES = {"addressLine1", "addressLine2", "town", "county", "postalCode"};
     public static final String SEARCHABLE_CONTENT_FIELDNAME = "searchableContent";
+    public static final String VISIBLE_TO_STUDENTS_FIELDNAME = "visibleToStudents";
 
     public static final String USER_ID_FKEY_FIELDNAME = "userId";
     public static final String OLD_USER_ID_FKEY_FIELDNAME = "oldUserId";
@@ -495,6 +496,7 @@ public final class Constants {
     public static final String GROUP_FK = "groupId";
     public static final String ASSIGNMENT_FK = "assignmentId";
     public static final String ASSIGNMENT_DUEDATE_FK = "dueDate";
+    public static final String QUIZ_ASSIGNMENT_FK = "quizAssignmentId";
 
     public static final String EQUALITY_CHECKER_HOST = "EQUALITY_CHECKER_HOST";
     public static final String EQUALITY_CHECKER_PORT = "EQUALITY_CHECKER_PORT";

@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Stephen Cummins
+ * Copyright 2021 Raspberry Pi Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,68 +15,61 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto;
 
-import java.util.Date;
-
+import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import javax.annotation.Nullable;
+import java.util.Date;
 
 /**
- * This class is the Data Transfer Object used to store Assignments in the isaac CMS.
+ * This class is the Data Transfer Object used to refer to quiz assignments.
  */
-public class AssignmentDTO implements IAssignmentLike {
+public class QuizAssignmentDTO implements IAssignmentLike {
     private Long id;
-    private String gameboardId;
-    private GameboardDTO gameboard;
+    private String quizId;
+    private ContentSummaryDTO quiz; // We only need the title really.
     private Long groupId;
     private Long ownerUserId;
     private UserSummaryDTO assignerSummary;
     private Date creationDate;
     private Date dueDate;
+    private QuizFeedbackMode quizFeedbackMode;
 
     /**
      * Complete AssignmentDTO constructor with all dependencies.
-     * 
+     *
      * @param id
-     *            - unique id for the gameboard
-     * @param gameboardId
-     *            - The gameboard to assign as homework.
+     *            - unique id for the quiz
+     * @param quizId
+     *            - The quiz to assign as homework.
      * @param ownerUserId
-     *            - User id of the owner of the gameboard.
+     *            - User id of the owner of the quiz.
      * @param groupId
      *            - Group id who should be assigned the game board.
      * @param creationDate
      *            - the date the assignment was created.
      * @param dueDate
-     *            - the date the assignment should be completed by
+     *            - the optional date the assignment should be completed by.
+     * @param quizFeedbackMode
+     *            - what level of feedback to give to students.
      */
-    public AssignmentDTO(final Long id, final String gameboardId, final Long ownerUserId, final Long groupId,
-            final Date creationDate, final Date dueDate) {
+    public QuizAssignmentDTO(final Long id, final String quizId, final Long ownerUserId, final Long groupId,
+                             final Date creationDate, final Date dueDate, final QuizFeedbackMode quizFeedbackMode) {
         this.id = id;
-        this.gameboardId = gameboardId;
+        this.quizId = quizId;
         this.ownerUserId = ownerUserId;
         this.groupId = groupId;
         this.creationDate = creationDate;
         this.dueDate = dueDate;
+        this.quizFeedbackMode = quizFeedbackMode;
     }
 
     /**
      * Default constructor required for AutoMapping.
      */
-    public AssignmentDTO() {
+    public QuizAssignmentDTO() {
 
-    }
-
-    /**
-     * Gets the id.
-     * 
-     * @return the id
-     * @deprecated use getId  - TODO need to remove _id from frontend
-     */
-    @JsonProperty("_id")
-    @Deprecated
-    public Long getLegacyId() {
-        return getId();
     }
 
     /**
@@ -90,19 +83,6 @@ public class AssignmentDTO implements IAssignmentLike {
 
     /**
      * Sets the id.
-     * 
-     * @param id
-     *            the id to set.
-     * @deprecated use setId  - TODO need to remove _id from frontend
-     */
-    @JsonProperty("_id")
-    @Deprecated
-    public void setLegacyId(final Long id) {
-        this.setId(id);
-    }
-
-    /**
-     * Sets the id.
      *
      * @param id
      *            the id to set
@@ -112,46 +92,46 @@ public class AssignmentDTO implements IAssignmentLike {
     }
 
     /**
-     * Gets the gameboardId.
-     * 
-     * @return the gameboardId
+     * Gets the quizId.
+     *
+     * @return the quizId
      */
-    public String getGameboardId() {
-        return gameboardId;
+    public String getQuizId() {
+        return quizId;
     }
 
     /**
-     * Sets the gameboardId.
-     * 
-     * @param gameboardId
-     *            the gameboardId to set
+     * Sets the quizId.
+     *
+     * @param quizId
+     *            the quizId to set
      */
-    public void setGameboardId(final String gameboardId) {
-        this.gameboardId = gameboardId;
+    public void setQuizId(final String quizId) {
+        this.quizId = quizId;
     }
 
     /**
-     * Gets the gameboardDTO.
-     * 
-     * @return the gameboardDTO
+     * Gets the quizDTO.
+     *
+     * @return the quizDTO
      */
-    public GameboardDTO getGameboard() {
-        return gameboard;
+    public ContentSummaryDTO getQuiz() {
+        return quiz;
     }
 
     /**
-     * Sets the gameboardDTO.
-     * 
-     * @param gameboardDTO
-     *            the gameboardDTO to set
+     * Sets the contentSummaryDTO.
+     *
+     * @param contentSummaryDTO
+     *            the contentSummaryDTO to set
      */
-    public void setGameboard(final GameboardDTO gameboardDTO) {
-        this.gameboard = gameboardDTO;
+    public void setQuiz(final ContentSummaryDTO contentSummaryDTO) {
+        this.quiz = contentSummaryDTO;
     }
 
     /**
      * Gets the groupId.
-     * 
+     *
      * @return the groupId
      */
     public Long getGroupId() {
@@ -160,7 +140,7 @@ public class AssignmentDTO implements IAssignmentLike {
 
     /**
      * Sets the groupId.
-     * 
+     *
      * @param groupId
      *            the groupId to set
      */
@@ -170,7 +150,7 @@ public class AssignmentDTO implements IAssignmentLike {
 
     /**
      * Gets the ownerUserId.
-     * 
+     *
      * @return the ownerUserId
      */
     public Long getOwnerUserId() {
@@ -179,7 +159,7 @@ public class AssignmentDTO implements IAssignmentLike {
 
     /**
      * Sets the ownerUserId.
-     * 
+     *
      * @param ownerUserId
      *            the ownerUserId to set
      */
@@ -205,7 +185,7 @@ public class AssignmentDTO implements IAssignmentLike {
 
     /**
      * Gets the creationDate.
-     * 
+     *
      * @return the creationDate
      */
     public Date getCreationDate() {
@@ -214,7 +194,7 @@ public class AssignmentDTO implements IAssignmentLike {
 
     /**
      * Sets the creationDate.
-     * 
+     *
      * @param creationDate
      *            the creationDate to set
      */
@@ -226,7 +206,7 @@ public class AssignmentDTO implements IAssignmentLike {
      * get the due date of the assignment.
      * @return dueDate
      */
-    public Date getDueDate() {
+    @Nullable public Date getDueDate() {
         return dueDate;
     }
 
@@ -234,7 +214,23 @@ public class AssignmentDTO implements IAssignmentLike {
      * set the due date of an assignment.
      * @param dueDate - date due
      */
-    public void setDueDate(Date dueDate) {
+    public void setDueDate(@Nullable Date dueDate) {
         this.dueDate = dueDate;
+    }
+
+    /**
+     * Gets the QuizFeedbackMode.
+     * @return the quizFeedbackMode
+     */
+    public QuizFeedbackMode getQuizFeedbackMode() {
+        return quizFeedbackMode;
+    }
+
+    /**
+     * Sets the quizFeedbackMode.
+     * @param quizFeedbackMode the QuizFeedbackMode to set
+     */
+    public void setQuizFeedbackMode(final QuizFeedbackMode quizFeedbackMode) {
+        this.quizFeedbackMode = quizFeedbackMode;
     }
 }

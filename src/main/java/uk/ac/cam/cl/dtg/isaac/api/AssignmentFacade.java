@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateAssignmentException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
+import uk.ac.cam.cl.dtg.isaac.api.services.AssignmentService;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
@@ -38,7 +39,6 @@ import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -100,11 +100,11 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     private final UserAccountManager userManager;
     private final GroupManager groupManager;
     private final GameManager gameManager;
-
     private final UserAssociationManager associationManager;
-
     private final QuestionManager questionManager;
     private final UserBadgeManager userBadgeManager;
+    private final AssignmentService assignmentService;
+
     private final List<String> bookTags = ImmutableList.of("phys_book_gcse", "physics_skills_14", "chemistry_16");
 
     private final String NOT_SHARING = "NOT_SHARING";
@@ -130,12 +130,15 @@ public class AssignmentFacade extends AbstractIsaacFacade {
      *            - So that we can determine what information is allowed to be seen by other users.
      * @param userBadgeManager
      *            - So that badges can be awarded to do with assignments
+     * @param assignmentService
+     *            - for augmenting assignments with assigner information
      */
     @Inject
     public AssignmentFacade(final AssignmentManager assignmentManager, final QuestionManager questionManager,
                             final UserAccountManager userManager, final GroupManager groupManager,
                             final PropertiesLoader propertiesLoader, final GameManager gameManager, final ILogManager logManager,
-                            final UserAssociationManager associationManager, final UserBadgeManager userBadgeManager) {
+                            final UserAssociationManager associationManager, final UserBadgeManager userBadgeManager,
+                            final AssignmentService assignmentService) {
         super(propertiesLoader, logManager);
         this.questionManager = questionManager;
         this.userManager = userManager;
@@ -144,6 +147,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
         this.assignmentManager = assignmentManager;
         this.associationManager = associationManager;
         this.userBadgeManager = userBadgeManager;
+        this.assignmentService = assignmentService;
     }
 
     /**
@@ -174,25 +178,11 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     .stream().collect(Collectors.toMap(GameboardDTO::getId, Function.identity()));
 
             // we want to populate gameboard details for the assignment DTO.
-            Map<Long, UserSummaryDTO> userSummaryCache = new HashMap<>();
             for (AssignmentDTO assignment : assignments) {
                 assignment.setGameboard(gameboardsMap.get(assignment.getGameboardId()));
-                Long ownerUserId = assignment.getOwnerUserId();
-                if (ownerUserId != null) {
-                    UserSummaryDTO userSummary = userSummaryCache.get(ownerUserId);
-                    if (userSummary == null) {
-                        try {
-                            RegisteredUserDTO user = userManager.getUserDTOById(ownerUserId);
-                            userSummary = userManager.convertToUserSummaryObject(user);
-                            userSummaryCache.put(ownerUserId, userSummary);
-                        } catch (NoUserException e) {
-                            log.warn("Assignment (" + assignment.getId() + ") exists with owner user ID ("
-                                    + assignment.getOwnerUserId() + ") that does not exist!");
-                        }
-                    }
-                    assignment.setAssignerSummary(userSummary);
-                }
             }
+
+            this.assignmentService.augmentAssignerSummaries(assignments);
 
             // if they have filtered the list we should only send out the things they wanted.
             if (assignmentStatus != null) {
