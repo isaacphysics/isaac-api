@@ -505,11 +505,6 @@ public class EventsFacade extends AbstractIsaacFacade {
             @PathParam("event_id") final String eventId) {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
-            IsaacEventPageDTO event = getRawEventDTOById(eventId);
-
-            if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
-                return SegueErrorResponse.getIncorrectRoleResponse();
-            }
 
             List<EventBookingDTO> eventBookings = this.mapper.mapAsList(bookingManager.adminGetBookingsByEventId(eventId), EventBookingDTO.class);
             IsaacEventPageDTO event = this.getAugmentedEventDTOById(request, eventId);
@@ -530,10 +525,6 @@ public class EventsFacade extends AbstractIsaacFacade {
             String message = "Database error occurred while trying to retrieve all event booking information.";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
-        } catch (ContentManagerException e) {
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Content Database error occurred while trying to retrieve event information.")
-                    .toResponse();
         }
     }
 
