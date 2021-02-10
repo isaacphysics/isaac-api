@@ -505,13 +505,13 @@ public class EventsFacade extends AbstractIsaacFacade {
             @PathParam("event_id") final String eventId) {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
-
-            List<EventBookingDTO> eventBookings = this.mapper.mapAsList(bookingManager.adminGetBookingsByEventId(eventId), EventBookingDTO.class);
-            IsaacEventPageDTO event = this.getAugmentedEventDTOById(request, eventId);
+            IsaacEventPageDTO event = getRawEventDTOById(eventId);
 
             if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
+
+            List<EventBookingDTO> eventBookings = this.mapper.mapAsList(bookingManager.adminGetBookingsByEventId(eventId), EventBookingDTO.class);
 
             if (Arrays.asList(Role.EVENT_LEADER).contains(currentUser.getRole())) {
                 eventBookings = userAssociationManager.filterUnassociatedRecords(currentUser, eventBookings, booking -> booking.getUserBooked().getId());
