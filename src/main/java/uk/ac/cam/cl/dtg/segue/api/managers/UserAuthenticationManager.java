@@ -320,6 +320,14 @@ public class UserAuthenticationManager {
             }
         }
 
+        // Fallback to use JSESSIONID
+        if (null == userIdentifier) {
+            try {
+                userIdentifier = this.getJSessionIdFromRequest(request);
+            } catch (InvalidSessionException ex) {
+                errors.add("no jsessionid found");
+            }
+        }
 
         // No identifier found
         if (null == userIdentifier) {
@@ -1099,6 +1107,25 @@ public class UserAuthenticationManager {
                 HashMap.class);
 
         return sessionInformation;
+    }
+
+    private String getJSessionIdFromRequest(final HttpServletRequest request) throws InvalidSessionException {
+        Cookie jSessionCookie = null;
+        if (request.getCookies() == null) {
+            throw new InvalidSessionException("There are no cookies set.");
+        }
+
+        for (Cookie c : request.getCookies()) {
+            if (c.getName().equals(JSESSION_COOOKIE)) {
+                jSessionCookie = c;
+            }
+        }
+
+        if (null == jSessionCookie) {
+            throw new InvalidSessionException("There are no cookies set.");
+        }
+
+        return jSessionCookie.getValue();
     }
 
     /**
