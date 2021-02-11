@@ -19,7 +19,6 @@ import org.easymock.EasyMock;
 import org.easymock.IArgumentMatcher;
 import org.junit.Before;
 import org.junit.Test;
-import uk.ac.cam.cl.dtg.isaac.api.AbstractFacadeTest;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -103,15 +102,15 @@ public class QuizAttemptManagerTest extends AbstractManagerTest {
         assertEquals(TEST_ID, attempt.getId());
     }
 
-    private AbstractFacadeTest.SickConsumer<IQuizAttemptPersistenceManager, SegueDatabaseException> forStudentAssignmentReturn(QuizAttemptDTO attempt) {
+    private MockConfigurer<IQuizAttemptPersistenceManager> forStudentAssignmentReturn(QuizAttemptDTO attempt) {
         return m -> expect(m.getByQuizAssignmentIdAndUserId(studentAssignment.getId(), student.getId())).andReturn(attempt);
     }
 
-    private AbstractFacadeTest.SickConsumer<IQuizAttemptPersistenceManager, SegueDatabaseException> forStudentQuizReturn(List<QuizAttemptDTO> attempts) {
+    private MockConfigurer<IQuizAttemptPersistenceManager> forStudentQuizReturn(List<QuizAttemptDTO> attempts) {
         return m -> expect(m.getByQuizIdAndUserId(studentQuiz.getId(), student.getId())).andReturn(attempts);
     }
 
-    private AbstractFacadeTest.SickConsumer<IQuizAttemptPersistenceManager, SegueDatabaseException> returnTestIdForSaveAttempt() {
+    private MockConfigurer<IQuizAttemptPersistenceManager> returnTestIdForSaveAttempt() {
         return m -> expect(m.saveAttempt(attemptMatcher(student.getId(), null, studentQuiz.getId())))
             .andReturn(TEST_ID);
     }

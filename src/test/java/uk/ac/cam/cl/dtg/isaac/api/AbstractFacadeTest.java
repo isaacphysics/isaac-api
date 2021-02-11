@@ -15,14 +15,12 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
-import com.google.common.collect.ImmutableList;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import uk.ac.cam.cl.dtg.isaac.IsaacTest;
-import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
@@ -34,10 +32,8 @@ import javax.ws.rs.core.Response.Status;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -45,7 +41,6 @@ import java.util.function.Supplier;
 
 import static org.easymock.EasyMock.expect;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 import static org.powermock.api.easymock.PowerMock.createMock;
 import static org.powermock.api.easymock.PowerMock.createPartialMock;
 import static org.powermock.api.easymock.PowerMock.replay;
@@ -57,7 +52,7 @@ import static org.powermock.api.easymock.PowerMock.verifyAll;
  *
  * A typical test case using this class can look like:
  *
- * ```
+ * <pre>{@code
  *     public void startQuizAttempt() {
  *         QuizAttemptDTO attempt = new QuizAttemptDTO();
  *
@@ -75,7 +70,7 @@ import static org.powermock.api.easymock.PowerMock.verifyAll;
  *             )
  *         );
  *     }
- * ```
+ * }</pre>
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({UserAccountManager.class})
@@ -83,33 +78,16 @@ import static org.powermock.api.easymock.PowerMock.verifyAll;
 abstract public class AbstractFacadeTest extends IsaacTest {
     protected HttpServletRequest request;
     protected UserAccountManager userManager;
-    protected ImmutableList<QuizAssignmentDTO> allStudentAssignments;
 
-    private Map<Object, Consumer> defaultsMap = new HashMap<>();
     private RegisteredUserDTO specialEveryoneElse = new RegisteredUserDTO();
     private RegisteredUserDTO currentUser = null;
 
     @Before
-    public void facadeTestSetup() {
+    public void abstractFacadeTestSetup() {
         request = createMock(HttpServletRequest.class);
         replay(request);
 
         userManager = createPartialMock(UserAccountManager.class, "getCurrentRegisteredUser");
-    }
-
-    /**
-     * If a mock needs to have some expectations as well as stub returns, put the stub return setup in a call to this function.
-     */
-    protected <T, E extends Exception> void registerDefaultsFor(T mock, SickConsumer<T, E> defaults) {
-        Consumer<T> safeConsumer = (t) -> {
-            try {
-                defaults.accept(t);
-            } catch (Exception e) {
-                fail("Got unexpected exception: " + e.toString());
-            }
-        };
-        defaultsMap.put(mock, safeConsumer);
-        safeConsumer.accept(mock);
     }
 
     /**
@@ -118,30 +96,29 @@ abstract public class AbstractFacadeTest extends IsaacTest {
      * Only supports varying one parameter to the endpoint. Use multiple calls to vary multiple parameters.
      */
     @SafeVarargs
-    protected final <E extends Exception, T> void forEndpoint(Function<T, Supplier<Response>> endpoint, WithParam<E, T>... withs) {
-        for (WithParam<E, T> with: withs) {
-            forEndpoint(endpoint.apply(with.with), with.checks.toArray(new Check[]{}));
+    protected final <T> void forEndpoint(Function<T, Supplier<Response>> endpoint, WithParam<T>... withs) {
+        for (WithParam<T> with: withs) {
+            forEndpoint(endpoint.apply(with.with), with.testcases.toArray(new Testcase[]{}));
         }
     }
 
     /**
      * Run tests on an endpoint.
      */
-    @SafeVarargs
-    protected final <E extends Exception> void forEndpoint(Supplier<Response> endpoint, Check<E>... checks) {
+    protected void forEndpoint(Supplier<Response> endpoint, Testcase... testcases) {
         Set<RegisteredUserDTO> users = new HashSet<>(everyone);
-        for (Check<E> check: checks) {
+        for (Testcase testcase : testcases) {
             try {
-                if (check.users != null && check.users.size() == 1 && check.users.get(0) == specialEveryoneElse) {
-                    check = new Check<E>(new ArrayList<>(users), check.steps.toArray(new Step[]{}));
+                if (testcase.users != null && testcase.users.size() == 1 && testcase.users.get(0) == specialEveryoneElse) {
+                    testcase = new Testcase(new ArrayList<>(users), testcase.steps.toArray(new Step[]{}));
                 } else {
-                    if (check.users != null) {
-                        users.removeAll(check.users);
+                    if (testcase.users != null) {
+                        users.removeAll(testcase.users);
                     }
                 }
-                check.runOn(endpoint);
+                testcase.runOn(endpoint);
             } catch (Exception e) {
-                fail("Got unexpected exception: " + e.toString());
+                throw new RuntimeException(e);
             }
         }
     }
@@ -151,39 +128,35 @@ abstract public class AbstractFacadeTest extends IsaacTest {
      *
      * @see AbstractFacadeTest#forEndpoint(Function, WithParam[])
      */
-    @SafeVarargs
-    protected final <E extends Exception, T> WithParam<E, T> with(T value, Check<E>... checks) {
-        return new WithParam<>(value, Arrays.asList(checks));
+    protected <T> WithParam<T> with(T value, Testcase... testcases) {
+        return new WithParam<>(value, Arrays.asList(testcases));
     }
 
     /**
      * Specify the user to call the endpoint as.
      */
-    @SafeVarargs
-    protected final <E extends Exception> Check<E> as(RegisteredUserDTO user, Step<E>... steps) {
-        return new Check<>(user, steps);
+    protected Testcase as(RegisteredUserDTO user, Step... steps) {
+        return new Testcase(user, steps);
     }
 
     /**
      * Specify a list of users to call the endpoint as.
      */
-    @SafeVarargs
-    protected final <E extends Exception> Check<E> as(List<RegisteredUserDTO> users, Step<E>... steps) {
-        return new Check<>(users, steps);
+    protected Testcase as(List<RegisteredUserDTO> users, Step... steps) {
+        return new Testcase(users, steps);
     }
 
     /**
      * Specify steps to run without any call to getCurrentRegisteredUser being made.
      */
-    @SafeVarargs
-    protected final <E extends Exception> Check<E> beforeUserCheck(Step<E>... steps) {
-        return new Check<>(steps);
+    protected Testcase beforeUserCheck(Step... steps) {
+        return new Testcase(steps);
     }
 
     /**
      * Simple check that login is required.
      */
-    protected Check requiresLogin() {
+    protected Testcase requiresLogin() {
         return as(noone, failsWith(SegueErrorResponse.getNotLoggedInResponse()));
     }
 
@@ -192,53 +165,52 @@ abstract public class AbstractFacadeTest extends IsaacTest {
      *
      * Use `everyoneElse(...)` instead of `as(anyOf(thatOtherUser, andTheOtherOne, andTheLastOne), ...)`
      */
-    @SafeVarargs
-    protected final <E extends Exception> Check<E> everyoneElse(Step<E>... steps) {
-        return new Check<>(specialEveryoneElse, steps);
+    protected Testcase everyoneElse(Step... steps) {
+        return new Testcase(specialEveryoneElse, steps);
     }
 
     /**
      * Add one or more expectations to a mock. The mock is passed in as an argument to the consumer.
      *
-     * e.g. `prepare(someManager, m -> expect(m.someMethodCall(someArgs)).andReturn(someResult))`
+     * e.g. <code>prepare(someManager, m -> expect(m.someMethodCall(someArgs)).andReturn(someResult))</code>
      */
-    protected <E extends Exception, T> PrepareStep<E, T> prepare(T mock, SickConsumer<T, E> preparation) {
+    protected <T> PrepareStep<T> prepare(T mock, MockConfigurer<T> preparation) {
         return new PrepareStep<>(mock, preparation);
     }
 
     /**
      * Get the response from making the call and perform an assertion.
      */
-    protected <E extends Exception> CheckStep<E> check(Consumer<Response> checker) {
-        return new CheckStep<>(checker);
+    protected CheckStep check(Consumer<Response> checker) {
+        return new CheckStep(checker);
     }
 
     /**
      * Assert the response code matches the specified response, and if a SegueErrorResponse is provided, check the messages match.
      */
-    protected <E extends Exception> CheckStep<E> failsWith(Response expected) {
-        return new CheckStep<>((response) -> assertErrorResponse(expected, response));
+    protected CheckStep failsWith(Response expected) {
+        return new CheckStep((response) -> assertErrorResponse(expected, response));
     }
 
     /**
      * Assert the response fails with the specified status.
      */
-    protected <E extends Exception> CheckStep<E> failsWith(Status status) {
-        return new CheckStep<>((response) -> assertErrorResponse(status, response));
+    protected CheckStep failsWith(Status status) {
+        return new CheckStep((response) -> assertErrorResponse(status, response));
     }
 
     /**
      * Assert the response is of the expected value.
      */
-    protected <E extends Exception> CheckStep<E> respondsWith(Object expected) {
-        return new CheckStep<>((response) -> assertEquals(expected, response.getEntity()));
+    protected CheckStep respondsWith(Object expected) {
+        return new CheckStep((response) -> assertEquals(expected, response.getEntity()));
     }
 
     /**
      * Asserts the response has a successful (2XX) status code.
      */
-    protected <E extends Exception> CheckStep<E> succeeds() {
-        return new CheckStep<>((response) -> assertEquals(Status.Family.SUCCESSFUL, response.getStatusInfo().getFamily()));
+    protected CheckStep succeeds() {
+        return new CheckStep((response) -> assertEquals(Status.Family.SUCCESSFUL, response.getStatusInfo().getFamily()));
     }
 
     /**
@@ -264,123 +236,106 @@ abstract public class AbstractFacadeTest extends IsaacTest {
         }
     }
 
-    interface Step<E extends Exception> {}
+    interface Step {}
 
-    /**
-     * SickConsumer, because it is a Consumer that can throw.
-     *
-     * @param <T> What it consumes.
-     * @param <E> What exception type it can throw.
-     */
-    @FunctionalInterface
-    public interface SickConsumer<T, E extends Exception> {
-        void accept(T t) throws E;
-    }
-
-    interface Task<E extends Exception> {
-        void run() throws E;
-    }
-
-    class CheckStep<E extends Exception> implements Step<E> {
+    class CheckStep implements Step {
         private final Consumer<Response> checker;
         CheckStep(Consumer<Response> checker) {
             this.checker = checker;
         }
     }
 
-    class PrepareStep<E extends Exception, T> implements Step<E> {
+    class PrepareStep<T> implements Step {
         private final T mock;
-        private final SickConsumer<T, E> preparation;
+        private final MockConfigurer<T> preparation;
 
-        PrepareStep(T mock, SickConsumer<T, E> preparation) {
+        PrepareStep(T mock, MockConfigurer<T> preparation) {
             this.mock = mock;
             this.preparation = preparation;
         }
 
-        public void run() throws E {
-            preparation.accept(mock);
+        public void run() {
+            preparation.configure(mock);
         }
     }
 
-    class WithParam<E extends Exception, T> {
+    class WithParam<T> {
         final T with;
-        final List<QuizFacadeTest.Check<E>> checks;
+        final List<Testcase> testcases;
 
-        WithParam(T with, List<QuizFacadeTest.Check<E>> checks) {
+        WithParam(T with, List<Testcase> testcases) {
             this.with = with;
-            this.checks = checks;
+            this.testcases = testcases;
         }
     }
 
-    class Check<E extends Exception> {
+    class Testcase {
         private final List<RegisteredUserDTO> users;
-        private final List<Step<E>> steps;
+        private final List<Step> steps;
 
-        Check(Step[] steps) {
+        Testcase(Step[] steps) {
             this.users = null;
             this.steps = Arrays.asList(steps);
         }
 
-        Check(RegisteredUserDTO user, Step[] steps) {
+        Testcase(RegisteredUserDTO user, Step[] steps) {
             this.users = Collections.singletonList(user);
             this.steps = Arrays.asList(steps);
         }
 
-        Check(List<RegisteredUserDTO> users, Step[] steps) {
+        Testcase(List<RegisteredUserDTO> users, Step[] steps) {
             this.users = users;
             this.steps = Arrays.asList(steps);
         }
 
-        private void runOn(Supplier<Response> endpoint) throws E {
+        private void runOn(Supplier<Response> endpoint) {
             if (users == null) {
-                performSteps(endpoint).run();
+                runSteps(endpoint);
             } else {
                 for (RegisteredUserDTO user : users) {
-                    runTaskAs(user, performSteps(endpoint));
+                    runStepsAs(user, endpoint);
                 }
             }
         }
 
-        private Task<E> performSteps(Supplier<Response> endpoint) {
-            return () -> {
-                Response response = null;
-                for (Step step : steps) {
-                    if (step instanceof CheckStep) {
-                        if (response == null) {
-                            response = endpoint.get();
-                        }
-                        ((CheckStep<E>) step).checker.accept(response);
-                    } else if (step instanceof PrepareStep) {
-                        PrepareStep<E, ?> prepareStep = (PrepareStep) step;
-                        reset(prepareStep.mock);
-                        if (defaultsMap.containsKey(prepareStep.mock)) {
-                            defaultsMap.get(prepareStep.mock).accept(prepareStep.mock);
-                        }
-                        prepareStep.run();
-                        replay(prepareStep.mock);
+        private void runSteps(Supplier<Response> endpoint) {
+            Response response = null;
+            for (Step step : steps) {
+                if (step instanceof CheckStep) {
+                    if (response == null) {
+                        response = endpoint.get();
                     }
+                    ((CheckStep) step).checker.accept(response);
+                } else if (step instanceof PrepareStep) {
+                    PrepareStep<?> prepareStep = (PrepareStep) step;
+                    reset(prepareStep.mock);
+                    if (defaultsMap.containsKey(prepareStep.mock)) {
+                        defaultsMap.get(prepareStep.mock).configure(prepareStep.mock);
+                    }
+                    prepareStep.run();
+                    replay(prepareStep.mock);
                 }
-            };
-        }
-    }
-
-    private <E extends Exception> void runTaskAs(RegisteredUserDTO user, Task<E> task) throws E {
-        try {
-            reset(userManager);
-            if (user == null) {
-                expect(userManager.getCurrentRegisteredUser(request)).andThrow(new NoUserLoggedInException());
-            } else {
-                expect(userManager.getCurrentRegisteredUser(request)).andReturn(user);
             }
-            replay(userManager);
-            currentUser = user;
+        }
 
-            task.run();
+        private void runStepsAs(RegisteredUserDTO user, Supplier<Response> endpoint) {
+            try {
+                reset(userManager);
+                if (user == null) {
+                    expect(userManager.getCurrentRegisteredUser(request)).andThrow(new NoUserLoggedInException());
+                } else {
+                    expect(userManager.getCurrentRegisteredUser(request)).andReturn(user);
+                }
+                replay(userManager);
+                currentUser = user;
 
-            verifyAll();
-        } catch (NoUserLoggedInException e) {
-            // Can't happen
-            throw new RuntimeException(e);
+                runSteps(endpoint);
+
+                verifyAll();
+            } catch (NoUserLoggedInException e) {
+                // Can't happen
+                throw new RuntimeException(e);
+            }
         }
     }
 }

@@ -41,7 +41,9 @@ import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithEmailAddressDTO;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.easymock.EasyMock.anyLong;
 import static org.easymock.EasyMock.anyObject;
@@ -93,6 +95,8 @@ public class IsaacTest {
 
     protected GroupManager groupManager;
     protected QuizManager quizManager;
+
+    protected Map<Object, MockConfigurer> defaultsMap = new HashMap<>();
 
     @Before
     public final void initializeIsaacTest() throws SegueDatabaseException, ContentManagerException {
@@ -235,5 +239,33 @@ public class IsaacTest {
     @SafeVarargs
     protected final <T> ResultsWrapper<T> wrap(T... items) {
         return new ResultsWrapper<>(Arrays.asList(items), (long) items.length);
+    }
+
+    /**
+     * If a mock needs to have some expectations as well as stub returns, put the stub return setup in a call to this function.
+     */
+    protected <T> void registerDefaultsFor(T mock, MockConfigurer<T> defaults) {
+        defaultsMap.put(mock, defaults);
+        defaults.configure(mock);
+    }
+
+    /**
+     * MockConfigurer
+     *
+     * Basically a Consumer that can throw.
+     *
+     * @param <M> What it configures.
+     */
+    @FunctionalInterface
+    public interface MockConfigurer<M> {
+        void accept(M mock) throws Exception;
+
+        default void configure(M mock) {
+            try {
+                accept(mock);
+            } catch (Exception e) {
+                throw new RuntimeException("Error configuring defaults for mock: " + mock.toString(), e);
+            }
+        }
     }
 }

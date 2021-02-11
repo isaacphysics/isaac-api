@@ -406,7 +406,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
         );
     }
 
-    public <E extends Exception> Check<E> forbiddenForEveryoneElse() {
+    public Testcase forbiddenForEveryoneElse() {
         return everyoneElse(
             failsWith(Status.FORBIDDEN)
         );
