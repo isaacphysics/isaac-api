@@ -521,6 +521,10 @@ public class QuizFacade extends AbstractIsaacFacade {
                     "You can only mark assignments incomplete for groups you own or manage.").toResponse();
             }
 
+            if (assignment.getDueDate() != null && assignment.getDueDate().before(new Date())) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You cannot mark a quiz incomplete when it is already due.").toResponse();
+            }
+
             if (quizAttempt.getCompletedDate() == null) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "That quiz is already incomplete.").toResponse();
             }
@@ -927,12 +931,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Nullable
     private QuizAssignmentDTO getQuizAssignment(QuizAttemptDTO quizAttempt) throws SegueDatabaseException, AssignmentCancelledException, ErrorResponseWrapper {
         if (quizAttempt.getQuizAssignmentId() != null) {
-            QuizAssignmentDTO quizAssignment = quizAssignmentManager.getById(quizAttempt.getQuizAssignmentId());
-
-            if (quizAssignment.getDueDate() != null && quizAssignment.getDueDate().before(new Date())) {
-                throw new ErrorResponseWrapper(new SegueErrorResponse(Status.FORBIDDEN, "The due date for this quiz has passed."));
-            }
-            return quizAssignment;
+            return quizAssignmentManager.getById(quizAttempt.getQuizAssignmentId());
         }
         return null;
     }

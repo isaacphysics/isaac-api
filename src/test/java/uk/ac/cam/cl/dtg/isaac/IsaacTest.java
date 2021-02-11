@@ -87,6 +87,7 @@ public class IsaacTest {
     protected QuizAttemptDTO studentAttempt;
     protected QuizAttemptDTO overdueAttempt;
     protected QuizAttemptDTO completedAttempt;
+    protected QuizAttemptDTO overdueCompletedAttempt;
     protected QuizAttemptDTO otherAttempt;
     protected QuizAttemptDTO ownAttempt;
     protected QuizAttemptDTO ownCompletedAttempt;
@@ -100,6 +101,7 @@ public class IsaacTest {
     protected QuizManager quizManager;
 
     protected Map<Object, MockConfigurer> defaultsMap = new HashMap<>();
+    private QuizAssignmentDTO completedAssignment;
 
     @Before
     public final void initializeIsaacTest() throws SegueDatabaseException, ContentManagerException {
@@ -179,26 +181,28 @@ public class IsaacTest {
 
         studentGroups = ImmutableList.of(studentGroup.getId(), studentInactiveGroup.getId());
 
+        completedAssignment = new QuizAssignmentDTO(++id, studentQuiz.getId(), teacher.getId(), studentGroup.getId(), someFurtherPastDate, somePastDate, QuizFeedbackMode.OVERALL_MARK);
         studentAssignment = new QuizAssignmentDTO(++id, studentQuiz.getId(), teacher.getId(), studentGroup.getId(), somePastDate, someFutureDate, QuizFeedbackMode.OVERALL_MARK);
-        overdueAssignment = new QuizAssignmentDTO(++id, studentQuiz.getId(), teacher.getId(), studentGroup.getId(), somePastDate, somePastDate, QuizFeedbackMode.OVERALL_MARK);
+        overdueAssignment = new QuizAssignmentDTO(++id, studentQuiz.getId(), teacher.getId(), studentGroup.getId(), someFurtherPastDate, somePastDate, QuizFeedbackMode.OVERALL_MARK);
         otherAssignment = new QuizAssignmentDTO(++id, teacherQuiz.getId(), teacher.getId(), studentGroup.getId(), somePastDate, someFutureDate, QuizFeedbackMode.OVERALL_MARK);
 
         studentInactiveIgnoredAssignment = new QuizAssignmentDTO(++id, teacherQuiz.getId(), teacher.getId(), studentInactiveGroup.getId(), somePastDate, someFutureDate, QuizFeedbackMode.OVERALL_MARK);
         studentInactiveAssignment = new QuizAssignmentDTO(++id, teacherQuiz.getId(), teacher.getId(), studentInactiveGroup.getId(), someFurtherPastDate, someFutureDate, QuizFeedbackMode.OVERALL_MARK);
 
-        studentAssignments = ImmutableList.of(studentAssignment, overdueAssignment, otherAssignment, studentInactiveAssignment);
+        studentAssignments = ImmutableList.of(completedAssignment, studentAssignment, overdueAssignment, otherAssignment, studentInactiveAssignment);
 
         teacherAssignmentsToTheirGroups = ImmutableList.<QuizAssignmentDTO>builder().addAll(studentAssignments).add(studentInactiveIgnoredAssignment).build();
 
         studentAttempt = new QuizAttemptDTO(++id, student.getId(), studentQuiz.getId(), studentAssignment.getId(), somePastDate, null);
         overdueAttempt = new QuizAttemptDTO(++id, student.getId(), studentQuiz.getId(), overdueAssignment.getId(), somePastDate, null);
         completedAttempt = new QuizAttemptDTO(++id, student.getId(), studentQuiz.getId(), studentAssignment.getId(), somePastDate, new Date());
+        overdueCompletedAttempt = new QuizAttemptDTO(++id, student.getId(), studentQuiz.getId(), overdueAssignment.getId(), somePastDate, new Date());
         otherAttempt = new QuizAttemptDTO(++id, student.getId(), teacherQuiz.getId(), otherAssignment.getId(), somePastDate, null);
 
         ownCompletedAttempt = new QuizAttemptDTO(++id, student.getId(), otherQuiz.getId(), null, somePastDate, somePastDate);
         ownAttempt = new QuizAttemptDTO(++id, student.getId(), otherQuiz.getId(), null, somePastDate, null);
 
-        studentAttempts = ImmutableList.of(studentAttempt, overdueAttempt, completedAttempt, otherAttempt, ownAttempt, ownCompletedAttempt);
+        studentAttempts = ImmutableList.of(studentAttempt, overdueAttempt, completedAttempt, overdueCompletedAttempt, otherAttempt, ownAttempt, ownCompletedAttempt);
     }
 
     protected void initializeMocks() throws ContentManagerException, SegueDatabaseException {

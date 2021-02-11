@@ -328,6 +328,14 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                 everyoneElse(
                     failsWith(Status.FORBIDDEN)
                 )
+            ),
+            with(overdueCompletedAttempt,
+                as(studentsTeachersOrAdmin(),
+                    failsWith(Status.BAD_REQUEST)
+                ),
+                everyoneElse(
+                    failsWith(Status.FORBIDDEN)
+                )
             )
         );
     }
