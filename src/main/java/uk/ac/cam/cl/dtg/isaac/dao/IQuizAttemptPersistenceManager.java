@@ -61,7 +61,14 @@ public interface IQuizAttemptPersistenceManager {
     /**
      * Delete a quiz attempt from the database.
      *
-     * @param quizAttempt The attempt to delete.
+     * @param quizAttemptId The id of the attempt to delete.
      */
-    void deleteAttempt(QuizAttemptDTO quizAttempt) throws SegueDatabaseException;
+    void deleteAttempt(Long quizAttemptId) throws SegueDatabaseException;
+
+    /**
+     * Mark a quiz complete (or incomplete) in the database.
+     *
+     * @param quizAttemptId The id of the attempt to delete.
+     */
+    void updateAttemptCompletionStatus(Long quizAttemptId, boolean newCompletionStatus) throws SegueDatabaseException;
 }

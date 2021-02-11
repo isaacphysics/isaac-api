@@ -16,8 +16,6 @@
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 import com.google.inject.Inject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
@@ -100,6 +98,10 @@ public class QuizAttemptManager {
     }
 
     public void deleteAttempt(QuizAttemptDTO quizAttempt) throws SegueDatabaseException {
-        quizAttemptPersistenceManager.deleteAttempt(quizAttempt);
+        quizAttemptPersistenceManager.deleteAttempt(quizAttempt.getId());
+    }
+
+    public void updateAttemptCompletionStatus(QuizAttemptDTO quizAttempt, boolean newCompletionStatus) throws SegueDatabaseException {
+        quizAttemptPersistenceManager.updateAttemptCompletionStatus(quizAttempt.getId(), newCompletionStatus);
     }
 }

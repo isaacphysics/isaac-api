@@ -92,7 +92,7 @@ public class QuizAssignmentManager {
         Date now = new Date();
 
         if (newAssignment.getDueDate() != null && newAssignment.getDueDate().before(now)) {
-            throw new DueBeforeNowException("You cannot set a quiz with a due date in the past.");
+            throw new DueBeforeNowException();
         }
 
         List<QuizAssignmentDTO> existingQuizAssignments = quizAssignmentPersistenceManager.getAssignmentsByQuizIdAndGroup(newAssignment.getQuizId(),
@@ -126,19 +126,6 @@ public class QuizAssignmentManager {
         return this.groupManager.filterItemsBasedOnMembershipContext(assignments, user.getId());
     }
 
-    private List<QuizAssignmentDTO> getAllAssignments(RegisteredUserDTO user) throws SegueDatabaseException {
-        // Find the groups the user is in
-        List<UserGroupDTO> groups = groupManager.getGroupMembershipList(user, false);
-
-        // Find quizzes for those groups
-        if (groups.size() == 0) {
-            return Lists.newArrayList();
-        }
-
-        List<Long> groupIds = groups.stream().map(UserGroupDTO::getId).collect(Collectors.toList());
-        return this.quizAssignmentPersistenceManager.getAssignmentsByGroupList(groupIds);
-    }
-
     public QuizAssignmentDTO getById(Long quizAssignmentId) throws SegueDatabaseException, AssignmentCancelledException {
         return this.quizAssignmentPersistenceManager.getAssignmentById(quizAssignmentId);
     }
@@ -148,13 +135,28 @@ public class QuizAssignmentManager {
         return allAssignedAndDueQuizzes.stream().filter(qa -> qa.getQuizId().equals(quiz.getId())).collect(Collectors.toList());
     }
 
-    private List<QuizAssignmentDTO> getAllActiveAssignments(RegisteredUserDTO user) throws SegueDatabaseException {
-        List<QuizAssignmentDTO> allAssignedQuizzes = getAllAssignments(user);
-        Date now = new Date();
-        return allAssignedQuizzes.stream().filter(qa -> qa.getDueDate() == null || qa.getDueDate().after(now)).collect(Collectors.toList());
+    public List<QuizAssignmentDTO> getAssignmentsForGroups(List<UserGroupDTO> groups) throws SegueDatabaseException {
+        List<Long> groupIds = groups.stream().map(UserGroupDTO::getId).collect(Collectors.toList());
+        if (groups.size() == 0) {
+            return Lists.newArrayList();
+        }
+        return this.quizAssignmentPersistenceManager.getAssignmentsByGroupList(groupIds);
     }
 
     public void cancelAssignment(QuizAssignmentDTO assignment) throws SegueDatabaseException {
         this.quizAssignmentPersistenceManager.cancelAssignment(assignment);
+    }
+
+    private List<QuizAssignmentDTO> getAllAssignments(RegisteredUserDTO user) throws SegueDatabaseException {
+        // Find the groups the user is in
+        List<UserGroupDTO> groups = groupManager.getGroupMembershipList(user, false);
+
+        return getAssignmentsForGroups(groups);
+    }
+
+    private List<QuizAssignmentDTO> getAllActiveAssignments(RegisteredUserDTO user) throws SegueDatabaseException {
+        List<QuizAssignmentDTO> allAssignedQuizzes = getAllAssignments(user);
+        Date now = new Date();
+        return allAssignedQuizzes.stream().filter(qa -> qa.getDueDate() == null || qa.getDueDate().after(now)).collect(Collectors.toList());
     }
 }

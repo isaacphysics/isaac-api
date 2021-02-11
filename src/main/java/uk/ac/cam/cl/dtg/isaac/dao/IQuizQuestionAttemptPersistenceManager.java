@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2021 Raspberry Pi Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,22 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.isaac.api.managers;
+package uk.ac.cam.cl.dtg.isaac.dao;
 
+import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 
-/**
- * An exception to show a quiz assignment has been set with a due date before now.
- *
- * As this would give students no time to answer the quiz, it is considered illegal.
- */
-public class DueBeforeNowException extends SegueDatabaseException {
-    private static final long serialVersionUID = -2110572766294320630L;
+import java.util.List;
+import java.util.Map;
 
-    /**
-     * DueBeforeNowException. If due date has already passed.
-     */
-    public DueBeforeNowException() {
-        super("You cannot set a quiz with a due date in the past.");
-    }
+public interface IQuizQuestionAttemptPersistenceManager {
+    void registerQuestionAttempt(Long quizAttemptId, QuestionValidationResponse questionResponseDO) throws SegueDatabaseException;
+
+    Map<String,List<QuestionValidationResponse>> getAllAnswersForQuizAttempt(Long quizAttemptId) throws SegueDatabaseException;
 }
