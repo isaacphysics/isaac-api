@@ -17,15 +17,10 @@ package uk.ac.cam.cl.dtg.isaac.api;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentCancelledException;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.QuestionFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
@@ -47,9 +42,6 @@ import static org.powermock.api.easymock.PowerMock.createMock;
 import static org.powermock.api.easymock.PowerMock.createNiceMock;
 import static org.powermock.api.easymock.PowerMock.replayAll;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({UserAccountManager.class})
-@PowerMockIgnore({ "javax.ws.*", "javax.management.*", "javax.script.*" })
 public class QuestionFacadeTest extends AbstractFacadeTest {
 
     private QuestionFacade questionFacade;

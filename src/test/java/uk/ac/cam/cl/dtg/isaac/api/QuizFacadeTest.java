@@ -18,10 +18,6 @@ package uk.ac.cam.cl.dtg.isaac.api;
 import com.google.common.collect.ImmutableList;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 import uk.ac.cam.cl.dtg.isaac.api.managers.DueBeforeNowException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateAssignmentException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAssignmentManager;
@@ -32,7 +28,6 @@ import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -62,9 +57,6 @@ import static org.powermock.api.easymock.PowerMock.createNiceMock;
 import static org.powermock.api.easymock.PowerMock.expectLastCall;
 import static org.powermock.api.easymock.PowerMock.replay;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({UserAccountManager.class})
-@PowerMockIgnore({ "javax.ws.*", "javax.management.*", "javax.script.*" })
 public class QuizFacadeTest extends AbstractFacadeTest {
 
     private QuizFacade quizFacade;
@@ -77,7 +69,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
     private QuizAssignmentManager quizAssignmentManager;
 
     @Before
-    public void setUp() throws ContentManagerException, SegueDatabaseException {
+    public void setUp() throws ContentManagerException {
         assignmentService = createMock(AssignmentService.class);
 
         requestForCaching = createMock(Request.class);

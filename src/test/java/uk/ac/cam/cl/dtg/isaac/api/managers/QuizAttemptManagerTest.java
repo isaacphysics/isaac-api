@@ -19,14 +19,9 @@ import org.easymock.EasyMock;
 import org.easymock.IArgumentMatcher;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 import uk.ac.cam.cl.dtg.isaac.api.AbstractFacadeTest;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
 import java.util.Collections;
@@ -39,9 +34,6 @@ import static org.junit.Assert.assertEquals;
 import static org.powermock.api.easymock.PowerMock.createMock;
 import static org.powermock.api.easymock.PowerMock.replay;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({UserAccountManager.class})
-@PowerMockIgnore({ "javax.ws.*", "javax.management.*", "javax.script.*" })
 public class QuizAttemptManagerTest extends AbstractManagerTest {
     private static final Long TEST_ID = 0xC0000000000L;
     private QuizAttemptManager quizAttemptManager;
