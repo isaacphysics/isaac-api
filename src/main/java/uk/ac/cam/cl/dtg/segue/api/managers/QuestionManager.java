@@ -33,7 +33,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.TestQuestion;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacItemQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
-import uk.ac.cam.cl.dtg.segue.api.ResponseWrapper;
+import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dos.LightweightQuestionValidationResponse;
@@ -577,7 +577,7 @@ public class QuestionManager {
         return questionId.split(Constants.ESCAPED_ID_SEPARATOR)[0];
     }
 
-    public ChoiceDTO convertJsonAnswerToChoice(String jsonAnswer) throws ResponseWrapper {
+    public ChoiceDTO convertJsonAnswerToChoice(String jsonAnswer) throws ErrorResponseWrapper {
         ChoiceDTO answerFromClientDTO;
         try {
             // convert submitted JSON into a Choice:
@@ -588,12 +588,12 @@ public class QuestionManager {
             log.info("Failed to map to any expected input...", e);
             SegueErrorResponse error = new SegueErrorResponse(Response.Status.NOT_FOUND, "Unable to map response to a "
                     + "Choice object so failing with an error", e);
-            throw new ResponseWrapper(error);
+            throw new ErrorResponseWrapper(error);
         } catch (IOException e) {
             SegueErrorResponse error = new SegueErrorResponse(Response.Status.NOT_FOUND, "Unable to map response to a "
                     + "Choice object so failing with an error", e);
             log.error(error.getErrorMessage(), e);
-            throw new ResponseWrapper(error);
+            throw new ErrorResponseWrapper(error);
         }
         return answerFromClientDTO;
     }

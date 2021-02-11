@@ -19,11 +19,11 @@ import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 
 import javax.ws.rs.core.Response;
 
-public class ResponseWrapper extends Exception {
+public class ErrorResponseWrapper extends Exception {
     private static final long serialVersionUID = 776713551334466191L;
     private final SegueErrorResponse response;
 
-    public ResponseWrapper(SegueErrorResponse response) {
+    public ErrorResponseWrapper(SegueErrorResponse response) {
         this.response = response;
     }
 

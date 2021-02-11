@@ -20,7 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizQuestionAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
-import uk.ac.cam.cl.dtg.segue.api.ResponseWrapper;
+import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
@@ -29,7 +29,6 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -61,18 +60,18 @@ public class QuizQuestionManager {
         this.quizQuestionAttemptManager = quizQuestionAttemptManager;
     }
 
-    public ChoiceDTO convertJsonAnswerToChoice(String jsonAnswer) throws ResponseWrapper {
+    public ChoiceDTO convertJsonAnswerToChoice(String jsonAnswer) throws ErrorResponseWrapper {
         return questionManager.convertJsonAnswerToChoice(jsonAnswer);
     }
 
-    public QuestionValidationResponseDTO validateAnswer(Question question, ChoiceDTO answerFromClientDTO) throws ResponseWrapper {
+    public QuestionValidationResponseDTO validateAnswer(Question question, ChoiceDTO answerFromClientDTO) throws ErrorResponseWrapper {
         Response response = questionManager.validateAnswer(question, answerFromClientDTO);
         if (response.getEntity() instanceof QuestionValidationResponseDTO) {
             return (QuestionValidationResponseDTO) response.getEntity();
         } else if (response.getEntity() instanceof SegueErrorResponse) {
-            throw new ResponseWrapper((SegueErrorResponse) response.getEntity());
+            throw new ErrorResponseWrapper((SegueErrorResponse) response.getEntity());
         } else {
-            throw new ResponseWrapper(new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, response.getEntity().toString()));
+            throw new ErrorResponseWrapper(new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, response.getEntity().toString()));
         }
     }
 

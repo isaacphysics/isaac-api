@@ -15,8 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
@@ -44,7 +42,6 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dos.IUserStreaksManager;
-import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
@@ -361,7 +358,7 @@ public class QuestionFacade extends AbstractSegueFacade {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to save question attempt. Try again later!");
             log.error("Unable to to record question attempt.", e);
             return error.toResponse();
-        } catch (ResponseWrapper responseWrapper) {
+        } catch (ErrorResponseWrapper responseWrapper) {
             return responseWrapper.toResponse();
         }
     }
@@ -434,7 +431,7 @@ public class QuestionFacade extends AbstractSegueFacade {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Bad request - " + e.getMessage(), e);
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
-        } catch (ResponseWrapper responseWrapper) {
+        } catch (ErrorResponseWrapper responseWrapper) {
             return responseWrapper.toResponse();
         }
     }

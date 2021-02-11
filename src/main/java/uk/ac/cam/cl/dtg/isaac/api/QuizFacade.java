@@ -36,7 +36,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants.SegueServerLogType;
-import uk.ac.cam.cl.dtg.segue.api.ResponseWrapper;
+import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
@@ -431,7 +431,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             String message = "ContentManagerException whilst getting quiz attempt";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
-        } catch (ResponseWrapper responseWrapper) {
+        } catch (ErrorResponseWrapper responseWrapper) {
             return responseWrapper.toResponse();
         }
     }
@@ -529,7 +529,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (AssignmentCancelledException e) {
             return new SegueErrorResponse(Status.FORBIDDEN, "This quiz assignment has been cancelled.").toResponse();
-        } catch (ResponseWrapper responseWrapper) {
+        } catch (ErrorResponseWrapper responseWrapper) {
             return responseWrapper.toResponse();
         }
     }
@@ -717,37 +717,37 @@ public class QuizFacade extends AbstractIsaacFacade {
         }
     }
 
-    private void checkQuizAssignmentNotCancelledOrOverdue(QuizAttemptDTO quizAttempt) throws SegueDatabaseException, AssignmentCancelledException, ResponseWrapper {
+    private void checkQuizAssignmentNotCancelledOrOverdue(QuizAttemptDTO quizAttempt) throws SegueDatabaseException, AssignmentCancelledException, ErrorResponseWrapper {
         // Relying on the side-effects of getting the assignment.
         getQuizAssignment(quizAttempt);
     }
 
     @Nullable
-    private QuizAssignmentDTO getQuizAssignment(QuizAttemptDTO quizAttempt) throws SegueDatabaseException, AssignmentCancelledException, ResponseWrapper {
+    private QuizAssignmentDTO getQuizAssignment(QuizAttemptDTO quizAttempt) throws SegueDatabaseException, AssignmentCancelledException, ErrorResponseWrapper {
         if (quizAttempt.getQuizAssignmentId() != null) {
             QuizAssignmentDTO quizAssignment = quizAssignmentManager.getById(quizAttempt.getQuizAssignmentId());
 
             if (quizAssignment.getDueDate() != null && quizAssignment.getDueDate().before(new Date())) {
-                throw new ResponseWrapper(new SegueErrorResponse(Status.FORBIDDEN, "The due date for this quiz has passed."));
+                throw new ErrorResponseWrapper(new SegueErrorResponse(Status.FORBIDDEN, "The due date for this quiz has passed."));
             }
             return quizAssignment;
         }
         return null;
     }
 
-    private QuizAttemptDTO getQuizAttemptForUser(@PathParam("quizAttemptId") Long quizAttemptId, RegisteredUserDTO user) throws SegueDatabaseException, ResponseWrapper {
+    private QuizAttemptDTO getQuizAttemptForUser(@PathParam("quizAttemptId") Long quizAttemptId, RegisteredUserDTO user) throws SegueDatabaseException, ErrorResponseWrapper {
         if (null == quizAttemptId) {
-            throw new ResponseWrapper(new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid quiz attempt id."));
+            throw new ErrorResponseWrapper(new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid quiz attempt id."));
         }
 
         QuizAttemptDTO quizAttempt = this.quizAttemptManager.getById(quizAttemptId);
 
         if (!quizAttempt.getUserId().equals(user.getId())) {
-            throw new ResponseWrapper(new SegueErrorResponse(Status.FORBIDDEN, "This is not your quiz attempt."));
+            throw new ErrorResponseWrapper(new SegueErrorResponse(Status.FORBIDDEN, "This is not your quiz attempt."));
         }
 
         if (quizAttempt.getCompletedDate() != null) {
-            throw new ResponseWrapper(new SegueErrorResponse(Status.FORBIDDEN, "You have completed this quiz."));
+            throw new ErrorResponseWrapper(new SegueErrorResponse(Status.FORBIDDEN, "You have completed this quiz."));
         }
         return quizAttempt;
     }
