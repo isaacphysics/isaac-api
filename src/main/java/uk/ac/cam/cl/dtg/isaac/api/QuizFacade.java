@@ -437,7 +437,53 @@ public class QuizFacade extends AbstractIsaacFacade {
     }
 
     /**
-     * Mark a QuizAttempt as complete (or incomplete).
+     * Mark a QuizAttempt as complete.
+     *
+     * Only the user taking the quiz can mark it complete.
+     *
+     * @param httpServletRequest
+     *            - so that we can extract user information.
+     * @param quizAttemptId
+     *            - the ID of the quiz the user wishes to attempt.
+     * @return Confirmation or an error.
+     */
+    @POST
+    @Path("/attempt/{quizAttemptId}/complete")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @ApiOperation(value = "Mark a QuizAttempt as complete (or incomplete).")
+    public final Response completeQuizAttempt(@Context final HttpServletRequest httpServletRequest,
+                                              @PathParam("quizAttemptId") final Long quizAttemptId) {
+        try {
+            RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
+
+            QuizAttemptDTO quizAttempt = getQuizAttempt(quizAttemptId);
+
+            if (!quizAttempt.getUserId().equals(user.getId())) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You cannot complete someone else's quiz.").toResponse();
+            }
+
+            if ((quizAttempt.getCompletedDate() != null)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "That quiz is already complete.").toResponse();
+            }
+
+            quizAttemptManager.updateAttemptCompletionStatus(quizAttempt, true);
+
+            return Response.noContent().build();
+
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            String message = "SegueDatabaseException whilst marking quiz attempt complete";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        } catch (ErrorResponseWrapper responseWrapper) {
+            return responseWrapper.toResponse();
+        }
+    }
+
+    /**
+     * Mark a QuizAttempt as incomplete.
      *
      * Only owner and group managers for the quiz assignment can mark it incomplete.
      * If it is a self-taken quiz, you cannot mark it incomplete, as that would make it easier to tweak individual
@@ -447,18 +493,15 @@ public class QuizFacade extends AbstractIsaacFacade {
      *            - so that we can extract user information.
      * @param quizAttemptId
      *            - the ID of the quiz the user wishes to attempt.
-     * @param markIncomplete
-     *            - optional boolean for group manager to mark incomplete.
      * @return Confirmation or an error.
      */
     @POST
-    @Path("/attempt/{quizAttemptId}/complete")
+    @Path("/attempt/{quizAttemptId}/incomplete")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @ApiOperation(value = "Mark a QuizAttempt as complete (or incomplete).")
-    public final Response completeQuizAttempt(@Context final HttpServletRequest httpServletRequest,
-                                              @PathParam("quizAttemptId") final Long quizAttemptId,
-                                              @FormParam("markIncomplete") final Boolean markIncomplete) {
+    public final Response markIncompleteQuizAttempt(@Context final HttpServletRequest httpServletRequest,
+                                                    @PathParam("quizAttemptId") final Long quizAttemptId) {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
@@ -466,26 +509,16 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             QuizAssignmentDTO assignment = getQuizAssignment(quizAttempt);
 
-            boolean requestedMarkComplete = markIncomplete == null || markIncomplete == false;
-
-            Boolean markComplete;
-
-            if (assignment != null && canManageAssignment(assignment, user) && requestedMarkComplete == false) {
-                markComplete = false;
-            } else if (quizAttempt.getUserId().equals(user.getId()) && requestedMarkComplete == true) {
-                markComplete = true;
-            } else {
-                // Heuristic for most helpful error message.
-                return new SegueErrorResponse(Status.FORBIDDEN, isUserTeacherOrAbove(userManager, user)
-                    ? "You can only mark assignments incomplete for groups you own or manage."
-                    : "You cannot complete someone else's quiz.").toResponse();
+            if (assignment == null || !canManageAssignment(assignment, user)) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                    "You can only mark assignments incomplete for groups you own or manage.").toResponse();
             }
 
-            if ((quizAttempt.getCompletedDate() != null) == markComplete) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "That quiz is already " + (markComplete ? "" : "in") + "complete.").toResponse();
+            if (quizAttempt.getCompletedDate() == null) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "That quiz is already incomplete.").toResponse();
             }
 
-            quizAttemptManager.markComplete(quizAttempt, markComplete);
+            quizAttemptManager.updateAttemptCompletionStatus(quizAttempt, false);
 
             return Response.noContent().build();
 

@@ -165,12 +165,12 @@ public class PgQuizAttemptPersistenceManager implements IQuizAttemptPersistenceM
     }
 
     @Override
-    public void markComplete(Long quizAttemptId, boolean markComplete) throws SegueDatabaseException {
+    public void updateAttemptCompletionStatus(Long quizAttemptId, boolean newCompletionStatus) throws SegueDatabaseException {
         PreparedStatement pst;
         try (Connection conn = database.getDatabaseConnection()) {
             pst = conn.prepareStatement("UPDATE quiz_attempts SET completed_date = ? WHERE id = ?");
 
-            if (markComplete) {
+            if (newCompletionStatus) {
                 pst.setTimestamp(1, new java.sql.Timestamp(new Date().getTime()));
             } else {
                 pst.setNull(1, Types.TIMESTAMP);

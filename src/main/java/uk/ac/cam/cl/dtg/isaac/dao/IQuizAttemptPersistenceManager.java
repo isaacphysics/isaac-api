@@ -70,5 +70,5 @@ public interface IQuizAttemptPersistenceManager {
      *
      * @param quizAttemptId The id of the attempt to delete.
      */
-    void markComplete(Long quizAttemptId, boolean markComplete) throws SegueDatabaseException;
+    void updateAttemptCompletionStatus(Long quizAttemptId, boolean newCompletionStatus) throws SegueDatabaseException;
 }
