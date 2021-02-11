@@ -83,7 +83,7 @@ public class PgQuizQuestionAttemptPersistenceManager implements IQuizQuestionAtt
     }
 
     @Override
-    public Map<String, List<QuestionValidationResponse>> getAnswers(Long quizAttemptId) throws SegueDatabaseException {
+    public Map<String, List<QuestionValidationResponse>> getAllAnswersForQuizAttempt(Long quizAttemptId) throws SegueDatabaseException {
         PreparedStatement pst;
         try (Connection conn = database.getDatabaseConnection()) {
             pst = conn.prepareStatement("SELECT question_id, question_attempt FROM quiz_question_attempts" +

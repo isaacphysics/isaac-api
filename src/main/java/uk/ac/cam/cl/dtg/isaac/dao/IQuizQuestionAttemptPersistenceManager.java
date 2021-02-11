@@ -25,5 +25,5 @@ import java.util.Map;
 public interface IQuizQuestionAttemptPersistenceManager {
     void registerQuestionAttempt(Long quizAttemptId, QuestionValidationResponse questionResponseDO) throws SegueDatabaseException;
 
-    Map<String,List<QuestionValidationResponse>> getAnswers(Long quizAttemptId) throws SegueDatabaseException;
+    Map<String,List<QuestionValidationResponse>> getAllAnswersForQuizAttempt(Long quizAttemptId) throws SegueDatabaseException;
 }

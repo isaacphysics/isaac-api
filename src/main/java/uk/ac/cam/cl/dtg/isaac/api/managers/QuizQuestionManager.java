@@ -26,6 +26,8 @@ import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
+import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
@@ -122,16 +124,28 @@ public class QuizQuestionManager {
      *            - include whether the answers are correct.
      */
     private void augmentQuestionObjectWithAttemptInformation(QuizAttemptDTO quizAttempt, List<QuestionDTO> questionsToAugment, boolean includeCorrect) throws SegueDatabaseException {
-        Map<String, List<QuestionValidationResponse>> answers = quizQuestionAttemptManager.getAnswers(quizAttempt.getId());
+        Map<String, List<QuestionValidationResponse>> answers = quizQuestionAttemptManager.getAllAnswersForQuizAttempt(quizAttempt.getId());
 
         for (QuestionDTO question : questionsToAugment) {
             List<QuestionValidationResponse> questionAttempts = answers.get(question.getId());
 
-            // The latest answer is the only answer we consider.
             if (questionAttempts.size() > 0) {
-                QuestionValidationResponseDTO lastAttempt = questionManager.convertQuestionValidationResponseToDTO(questionAttempts.get(questionAttempts.size() - 1));
-                if (!includeCorrect) {
-                    lastAttempt.setCorrect(null);
+                // The latest answer is the only answer we consider.
+                QuestionValidationResponse lastResponse = questionAttempts.get(questionAttempts.size() - 1);
+
+                QuestionValidationResponseDTO lastAttempt;
+                if (includeCorrect) {
+                    // Include full validation details.
+                    lastAttempt = questionManager.convertQuestionValidationResponseToDTO(lastResponse);
+                } else {
+                    // Manual extract only the safe details (questionId, answer, date attempted).
+                    Choice answer = lastResponse.getAnswer();
+                    lastAttempt = new QuestionValidationResponseDTO();
+                    DTOMapping dtoMapping = answer.getClass().getAnnotation(DTOMapping.class);
+                    lastAttempt.setAnswer(mapper.getAutoMapper().map(lastResponse.getAnswer(),
+                        (Class<? extends ChoiceDTO>) dtoMapping.value()));
+                    lastAttempt.setQuestionId(lastResponse.getQuestionId());
+                    lastAttempt.setDateAttempted(lastResponse.getDateAttempted());
                 }
                 question.setBestAttempt(lastAttempt);
             }
