@@ -959,15 +959,9 @@ public class UserAuthenticationManager {
 
         SimpleDateFormat sessionDateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
 
-        String hmacKey = properties.getProperty(HMAC_SALT);
-
         String userId = sessionInformation.get(SESSION_USER_ID);
         String userSessionToken = sessionInformation.get(SESSION_TOKEN);
         String sessionDate = sessionInformation.get(DATE_EXPIRES);
-        String partialLoginFlag = sessionInformation.get(PARTIAL_LOGIN_FLAG);
-        String sessionHMAC = sessionInformation.get(HMAC);
-
-        String ourHMAC = calculateSessionHMAC(hmacKey, userId, sessionDate, userSessionToken, partialLoginFlag);
 
         // Check that there is a user ID provided:
         if (null == userId) {
@@ -988,7 +982,7 @@ public class UserAuthenticationManager {
         }
 
         // Check no one has tampered with the cookie:
-        if (!ourHMAC.equals(sessionHMAC)) {
+        if (!isHmacCorrect(sessionInformation)) {
             log.debug("Invalid HMAC detected for user id " + userId);
             return false;
         }
@@ -1000,6 +994,18 @@ public class UserAuthenticationManager {
         }
 
         return true;
+    }
+
+    private boolean isHmacCorrect(final Map<String, String> segueSession) {
+        String hmacKey = properties.getProperty(HMAC_SALT);
+        String supposedUserId = segueSession.get(SESSION_USER_ID);
+        String userSessionToken = segueSession.get(SESSION_TOKEN);
+        String sessionDate = segueSession.get(DATE_EXPIRES);
+        String partialLoginFlag = segueSession.get(PARTIAL_LOGIN_FLAG);
+        String sessionHMAC = segueSession.get(HMAC);
+
+        String ourHMAC = calculateSessionHMAC(hmacKey, supposedUserId, sessionDate, userSessionToken, partialLoginFlag);
+        return ourHMAC.equals(sessionHMAC);
     }
 
     /**
