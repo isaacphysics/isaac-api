@@ -17,6 +17,7 @@ package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.util.Lists;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
@@ -36,18 +37,7 @@ import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuthAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IPasswordAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.OAuth1Token;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationCodeException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidSessionException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.*;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
@@ -303,6 +293,44 @@ public class UserAuthenticationManager {
                 .get(AuthenticationProvider.SEGUE);
 
         return passwordAuthenticator.hasPasswordRegistered(user);
+    }
+
+    public String getPlausibleUserIdentifierFromCookie(final HttpServletRequest request) {
+        String userIdentifier = null;
+        ArrayList<String> errors = Lists.newArrayList();
+
+        if (request == null) {
+            userIdentifier = "?";
+            errors.add("request was null");
+        }
+
+        // Try to read segue ID (only validating hmac)
+        if (null == userIdentifier) {
+            try {
+                Map<String, String> sessionInformation = this.getSegueSessionFromRequest(request);
+                if (isHmacCorrect(sessionInformation)) {
+                    userIdentifier = sessionInformation.get(SESSION_USER_ID);
+                } else {
+                    errors.add("invalid hmac");
+                }
+            } catch (InvalidSessionException e) {
+                errors.add("no segue session found");
+            } catch (IOException e) {
+                errors.add("invalid segue session");
+            }
+        }
+
+
+        // No identifier found
+        if (null == userIdentifier) {
+            userIdentifier = "?";
+        }
+
+        if (errors.size() > 0) {
+            return String.format("%s - %s", userIdentifier, String.join(", ", errors));
+        } else {
+            return userIdentifier;
+        }
     }
     
     /**
