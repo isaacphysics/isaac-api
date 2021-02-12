@@ -19,6 +19,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
 import java.util.List;
+import java.util.Set;
 
 public interface IQuizAttemptPersistenceManager {
     /**
@@ -71,4 +72,12 @@ public interface IQuizAttemptPersistenceManager {
      * @param quizAttemptId The id of the attempt to delete.
      */
     void updateAttemptCompletionStatus(Long quizAttemptId, boolean newCompletionStatus) throws SegueDatabaseException;
+
+    /**
+     * Get the set of user IDs that have attempted and completed a given assignment.
+     *
+     * @param assignmentId The assignment.
+     * @return A set of user IDs with completed attempts.
+     */
+    Set<Long> getCompletedUserIds(Long assignmentId) throws SegueDatabaseException;
 }

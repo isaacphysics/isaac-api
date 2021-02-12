@@ -26,6 +26,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Manage quiz attempts.
@@ -103,5 +104,9 @@ public class QuizAttemptManager {
 
     public void updateAttemptCompletionStatus(QuizAttemptDTO quizAttempt, boolean newCompletionStatus) throws SegueDatabaseException {
         quizAttemptPersistenceManager.updateAttemptCompletionStatus(quizAttempt.getId(), newCompletionStatus);
+    }
+
+    public Set<Long> getCompletedUserIds(QuizAssignmentDTO assignment) throws SegueDatabaseException {
+        return quizAttemptPersistenceManager.getCompletedUserIds(assignment.getId());
     }
 }

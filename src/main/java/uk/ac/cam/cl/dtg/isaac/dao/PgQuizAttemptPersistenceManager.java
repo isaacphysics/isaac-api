@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.isaac.dao;
 
 import com.google.api.client.util.Lists;
+import com.google.api.client.util.Sets;
 import com.google.inject.Inject;
 import ma.glasnost.orika.MapperFacade;
 import org.slf4j.Logger;
@@ -29,12 +30,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.SQLType;
 import java.sql.Statement;
 import java.sql.Types;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 /**
  * This class is responsible for managing and persisting quiz attempts.
@@ -180,6 +180,26 @@ public class PgQuizAttemptPersistenceManager implements IQuizAttemptPersistenceM
             pst.executeUpdate();
         } catch (SQLException e) {
             throw new SegueDatabaseException("Unable to mark quiz attempt complete", e);
+        }
+    }
+
+    @Override
+    public Set<Long> getCompletedUserIds(Long assignmentId) throws SegueDatabaseException {
+        try (Connection conn = database.getDatabaseConnection()) {
+            PreparedStatement pst;
+            pst = conn.prepareStatement("SELECT user_id FROM quiz_attempts WHERE quiz_assignment_id = ? AND completed_date IS NOT NULL");
+            pst.setLong(1, assignmentId);
+
+            ResultSet results = pst.executeQuery();
+
+            Set<Long> setOfResults = Sets.newHashSet();
+            while (results.next()) {
+                setOfResults.add(results.getLong("user_id"));
+            }
+
+            return setOfResults;
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Unable to get completed user ids for assignment: " + assignmentId, e);
         }
     }
 

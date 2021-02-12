@@ -74,12 +74,12 @@ public class QuizAssignmentManagerTest extends AbstractManagerTest {
     public void createAssignment() throws SegueDatabaseException, ContentManagerException {
         Long returnedId = 0xF00L;
 
-        with(quizAssignmentPersistenceManager, m -> {
+        withMock(quizAssignmentPersistenceManager, m -> {
             expect(m.getAssignmentsByQuizIdAndGroup(
                 studentQuiz.getId(), studentGroup.getId())).andReturn(Collections.emptyList());
             expect(m.saveAssignment(newAssignment)).andReturn(returnedId);
         });
-        with(emailService, m -> m.sendAssignmentEmailToGroup(eq(newAssignment), eq(studentQuiz), anyObject(), eq("email-template-group-quiz-assignment")));
+        withMock(emailService, m -> m.sendAssignmentEmailToGroup(eq(newAssignment), eq(studentQuiz), anyObject(), eq("email-template-group-quiz-assignment")));
 
         QuizAssignmentDTO createdAssignment = quizAssignmentManager.createAssignment(newAssignment);
 
@@ -90,7 +90,7 @@ public class QuizAssignmentManagerTest extends AbstractManagerTest {
     @Test
     public void createAnotherAssignmentAfterFirstIsDueSucceeds() throws SegueDatabaseException, ContentManagerException {
 
-        with(quizAssignmentPersistenceManager, m -> {
+        withMock(quizAssignmentPersistenceManager, m -> {
             expect(m.getAssignmentsByQuizIdAndGroup(
                 studentQuiz.getId(), studentGroup.getId())).andReturn(Collections.singletonList(overdueAssignment));
             expect(m.saveAssignment(newAssignment)).andReturn(0L);
@@ -110,7 +110,7 @@ public class QuizAssignmentManagerTest extends AbstractManagerTest {
     @Test(expected = DuplicateAssignmentException.class)
     public void createDuplicateAssignmentFails() throws SegueDatabaseException, ContentManagerException {
 
-        with(quizAssignmentPersistenceManager, m -> {
+        withMock(quizAssignmentPersistenceManager, m -> {
             expect(m.getAssignmentsByQuizIdAndGroup(
                 studentQuiz.getId(), studentGroup.getId())).andReturn(Collections.singletonList(studentAssignment));
         });
@@ -120,7 +120,7 @@ public class QuizAssignmentManagerTest extends AbstractManagerTest {
 
     @Test
     public void getAssignedQuizzes() throws SegueDatabaseException {
-        with(quizAssignmentPersistenceManager, m -> {
+        withMock(quizAssignmentPersistenceManager, m -> {
             expect(m.getAssignmentsByGroupList(studentGroups)).andReturn(teacherAssignmentsToTheirGroups);
         });
         List<QuizAssignmentDTO> assignedQuizzes = quizAssignmentManager.getAssignedQuizzes(student);
@@ -130,7 +130,7 @@ public class QuizAssignmentManagerTest extends AbstractManagerTest {
 
     @Test
     public void getActiveQuizAssignments() throws SegueDatabaseException {
-        with(quizAssignmentPersistenceManager, m -> {
+        withMock(quizAssignmentPersistenceManager, m -> {
             expect(m.getAssignmentsByGroupList(studentGroups)).andReturn(teacherAssignmentsToTheirGroups);
         });
 

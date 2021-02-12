@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
+import com.google.api.client.util.Maps;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -23,6 +24,7 @@ import uk.ac.cam.cl.dtg.isaac.dao.IQuizQuestionAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizSectionDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizFeedbackDTO;
 import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
@@ -46,6 +48,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ESCAPED_ID_SEPARATOR;
@@ -56,6 +59,7 @@ public class QuizQuestionManager {
     private final ContentMapper mapper;
     private final IQuizQuestionAttemptPersistenceManager quizQuestionAttemptManager;
     private final QuizManager quizManager;
+    private final QuizAttemptManager quizAttemptManager;
 
     private static final Logger log = LoggerFactory.getLogger(QuizQuestionManager.class);
 
@@ -73,13 +77,18 @@ public class QuizQuestionManager {
      *            - for quiz question attempt persistence.
      * @param quizManager
      *            - for quiz sections.
+     * @param quizAttemptManager
+     *            - for attempts, particularly checking attempts are completed before revealing feedback.
      */
     @Inject
-    public QuizQuestionManager(final QuestionManager questionManager, final ContentMapper mapper, final IQuizQuestionAttemptPersistenceManager quizQuestionAttemptManager, QuizManager quizManager) {
+    public QuizQuestionManager(final QuestionManager questionManager, final ContentMapper mapper,
+                               final IQuizQuestionAttemptPersistenceManager quizQuestionAttemptManager,
+                               final QuizManager quizManager, final QuizAttemptManager quizAttemptManager) {
         this.questionManager = questionManager;
         this.mapper = mapper;
         this.quizQuestionAttemptManager = quizQuestionAttemptManager;
         this.quizManager = quizManager;
+        this.quizAttemptManager = quizAttemptManager;
     }
 
     public ChoiceDTO convertJsonAnswerToChoice(String jsonAnswer) throws ErrorResponseWrapper {
@@ -136,7 +145,7 @@ public class QuizQuestionManager {
     /**
      * Modify the quiz to contain feedback for the specified mode, and possibly the users answers and the correct answers.
      *
-     *  @param quiz
+     * @param quiz
      *            - to augment - this object may be mutated as a result of this method. i.e BestAttempt field set on
      *            question DTOs.
      * @param quizAttempt
@@ -152,6 +161,10 @@ public class QuizQuestionManager {
 
         // Go get the answers
         Collection<QuestionDTO> questionsToAugment = GameManager.getAllMarkableQuestionPartsDFSOrder(quiz);
+        List<IsaacQuizSectionDTO> sections = quizManager.extractSectionObjects(quiz);
+
+        augmentQuizTotals(quiz, questionsToAugment);
+
         Map<QuestionDTO, QuestionValidationResponse> answerMap = getAnswerMap(quizAttempt, questionsToAugment);
 
         // Augment the feedback with answers if they should be available.
@@ -159,11 +172,45 @@ public class QuizQuestionManager {
             augmentQuestionObjectWithAttemptInformation(answerMap, true);
         }
 
-        QuizFeedbackDTO feedback = getIndividualQuizFeedback(quiz, feedbackMode, questionsToAugment, answerMap);
+        QuizFeedbackDTO feedback = getIndividualQuizFeedback(sections, feedbackMode, questionsToAugment, answerMap);
 
         quiz.setIndividualFeedback(feedback);
 
         return quiz;
+    }
+
+    /**
+     * Return a map of users to their individual feedback for an assignment. Also augments the quiz with totals.
+     *
+     * Sets total and sectionTotals on the quiz object.
+     *
+     * @param quiz
+     *            - to augment - this object will be mutated as a result of this method. i.e total and sectionsTotals will be set.
+     * @param assignment
+     *            - the quiz assignment to get feedback for.
+     * @param users
+     *            - the users to get feedback for.
+     */
+    public Map<RegisteredUserDTO, QuizFeedbackDTO> getAssignmentFeedback(IsaacQuizDTO quiz, QuizAssignmentDTO assignment, List<RegisteredUserDTO> users) throws ContentManagerException, SegueDatabaseException {
+        Collection<QuestionDTO> questionsToAugment = GameManager.getAllMarkableQuestionPartsDFSOrder(quiz);
+        List<IsaacQuizSectionDTO> sections = quizManager.extractSectionObjects(quiz);
+        augmentQuizTotals(quiz, questionsToAugment);
+
+        Set<Long> completedUserIds = quizAttemptManager.getCompletedUserIds(assignment);
+
+        Map<Long, Map<String, List<QuestionValidationResponse>>> answers = quizQuestionAttemptManager.getAllAnswersForQuizAssignment(assignment.getId());
+
+        return users.stream().collect(Collectors.toMap(user -> user, user -> {
+            // Not completed.
+            if (!completedUserIds.contains(user.getId())) return new QuizFeedbackDTO();
+
+            // No questions attempted.
+            if (!answers.containsKey(user.getId())) return new QuizFeedbackDTO(null, null);
+
+            // Calculate the scores.
+            Map<QuestionDTO, QuestionValidationResponse> answerMap = extractAnswers(questionsToAugment, answers.get(user.getId()));
+            return getIndividualQuizFeedback(sections, QuizFeedbackMode.SECTION_MARKS, questionsToAugment, answerMap);
+        }));
     }
 
     /**
@@ -173,6 +220,7 @@ public class QuizQuestionManager {
      *            - which attempt at the quiz to get attempts for.
      * @param questionsToAugment
      *            - list of question objects to extract the latest attempt for.
+     * @return a map of question DTO to latest {@link QuestionValidationResponse}
      */
     @VisibleForTesting
     Map<QuestionDTO, QuestionValidationResponse> getAnswerMap(QuizAttemptDTO quizAttempt,
@@ -180,6 +228,19 @@ public class QuizQuestionManager {
         throws SegueDatabaseException {
         Map<String, List<QuestionValidationResponse>> answers = quizQuestionAttemptManager.getAllAnswersForQuizAttempt(quizAttempt.getId());
 
+        return extractAnswers(questionsToAugment, answers);
+    }
+
+    /**
+     * From a map of all answers, extract the latest.
+     *
+     * @param questionsToAugment
+     *            - list of question objects to extract the latest attempt for.
+     * @param answers
+     *            - map of all question ids to a list of answers in timestamp order.
+     * @return a map of question DTO to latest {@link QuestionValidationResponse}
+     */
+    private Map<QuestionDTO, QuestionValidationResponse> extractAnswers(Collection<QuestionDTO> questionsToAugment, Map<String, List<QuestionValidationResponse>> answers) {
         Map<QuestionDTO, QuestionValidationResponse> results = new HashMap<>();
 
         for (QuestionDTO question : questionsToAugment) {
@@ -242,37 +303,48 @@ public class QuizQuestionManager {
      */
     @VisibleForTesting
     QuizFeedbackDTO getIndividualQuizFeedback(IsaacQuizDTO quiz, QuizFeedbackMode feedbackMode, Collection<QuestionDTO> questionsToAugment, Map<QuestionDTO, QuestionValidationResponse> answerMap) throws ContentManagerException {
+        List<IsaacQuizSectionDTO> sections = quizManager.extractSectionObjects(quiz);
+        return getIndividualQuizFeedback(sections, feedbackMode, questionsToAugment, answerMap);
+    }
+
+    /**
+     * Get the feedback (marks) for an individual's answers to a quiz.
+     *
+     * @param sections The sections of the quiz.
+     * @param feedbackMode What level of feedback to provide.
+     * @param questionsToAugment The questions from the quiz.
+     * @param answerMap The individual's answers.
+     * @return The quiz feedback.
+     */
+    private QuizFeedbackDTO getIndividualQuizFeedback(List<IsaacQuizSectionDTO> sections, QuizFeedbackMode feedbackMode, Collection<QuestionDTO> questionsToAugment, Map<QuestionDTO, QuestionValidationResponse> answerMap) {
         if (feedbackMode == QuizFeedbackMode.NONE) {
             return null;
         }
 
-        List<IsaacQuizSectionDTO> sections = quizManager.extractSectionObjects(quiz);
-
         // Make a score table
-        Map<String, QuizFeedbackDTO.Mark> scoreTable = sections.stream().collect(Collectors.toMap(s -> s.getId(), s -> new QuizFeedbackDTO.Mark()));
+        Map<String, QuizFeedbackDTO.Mark> sectionMarks = sections.stream().collect(Collectors.toMap(s -> s.getId(), s -> new QuizFeedbackDTO.Mark()));
 
         // Calculate the scores
         for (QuestionDTO question: questionsToAugment) {
             String sectionId = extractSectionIdFromQuizQuestionId(question.getId());
-            QuizFeedbackDTO.Mark mark = scoreTable.get(sectionId);
+            QuizFeedbackDTO.Mark mark = sectionMarks.get(sectionId);
             if (mark == null) {
                 log.error("Missing quiz section id: " + sectionId + " in question " + question + " but not in section map " + sections);
                 continue;
             }
-            mark.questionPartsTotal++;
             QuestionValidationResponse response = answerMap.get(question);
             if (response != null) {
                 if (response.isCorrect()) {
-                    mark.questionPartsCorrect++;
+                    mark.correct++;
                 } else {
-                    mark.questionPartsIncorrect++;
+                    mark.incorrect++;
                 }
             } else {
-                mark.questionPartsNotAttempted++;
+                mark.notAttempted++;
             }
         }
 
-        QuizFeedbackDTO.Mark overall = consolidateMarks(scoreTable);
+        QuizFeedbackDTO.Mark overall = consolidateMarks(sectionMarks);
 
         QuizFeedbackDTO feedback;
         switch (feedbackMode) {
@@ -281,10 +353,11 @@ public class QuizQuestionManager {
                 break;
             case SECTION_MARKS:
             case DETAILED_FEEDBACK:
-                feedback = new QuizFeedbackDTO(overall, sections.stream().map(s -> new QuizFeedbackDTO.SectionMark(s.getId(), s.getTitle(), scoreTable.get(s.getId()))).collect(Collectors.toList()));
+                feedback = new QuizFeedbackDTO(overall, sectionMarks);
                 break;
             default:
-                throw new RuntimeException("Non-exhaustive switch on feedbackMode");
+                log.error("Non-exhaustive switch on feedbackMode");
+                feedback = null;
         }
         return feedback;
     }
@@ -292,12 +365,24 @@ public class QuizQuestionManager {
     private QuizFeedbackDTO.Mark consolidateMarks(Map<String, QuizFeedbackDTO.Mark> scoreTable) {
         QuizFeedbackDTO.Mark result = new QuizFeedbackDTO.Mark();
         scoreTable.values().forEach(mark -> {
-            result.questionPartsTotal += mark.questionPartsTotal;
-            result.questionPartsCorrect += mark.questionPartsCorrect;
-            result.questionPartsIncorrect += mark.questionPartsIncorrect;
-            result.questionPartsNotAttempted += mark.questionPartsNotAttempted;
+            result.correct += mark.correct;
+            result.incorrect += mark.incorrect;
+            result.notAttempted += mark.notAttempted;
         });
         return result;
+    }
+
+    private void augmentQuizTotals(IsaacQuizDTO quiz, Collection<QuestionDTO> questions) {
+        int total = 0;
+        Map<String, Integer> sectionTotals = Maps.newHashMap();
+        for (QuestionDTO question : questions) {
+            String sectionId = extractSectionIdFromQuizQuestionId(question.getId());
+            total++;
+            sectionTotals.merge(sectionId, 1, Integer::sum);
+        }
+
+        quiz.setTotal(total);
+        quiz.setSectionTotals(sectionTotals);
     }
 
     /**

@@ -25,7 +25,6 @@ import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -128,6 +127,10 @@ public class QuizAssignmentManager {
 
     public QuizAssignmentDTO getById(Long quizAssignmentId) throws SegueDatabaseException, AssignmentCancelledException {
         return this.quizAssignmentPersistenceManager.getAssignmentById(quizAssignmentId);
+    }
+
+    public UserGroupDTO getGroupForAssignment(QuizAssignmentDTO assignment) throws SegueDatabaseException {
+        return groupManager.getGroupById(assignment.getGroupId());
     }
 
     public List<QuizAssignmentDTO> getActiveQuizAssignments(IsaacQuizDTO quiz, RegisteredUserDTO user) throws SegueDatabaseException {

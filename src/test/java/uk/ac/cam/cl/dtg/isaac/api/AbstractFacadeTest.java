@@ -15,6 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
+import com.google.api.client.util.Maps;
+import com.google.common.base.Joiner;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
@@ -25,6 +27,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
@@ -34,17 +37,20 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
+import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.getCurrentArguments;
 import static org.junit.Assert.assertEquals;
 import static org.powermock.api.easymock.PowerMock.createMock;
 import static org.powermock.api.easymock.PowerMock.createPartialMock;
 import static org.powermock.api.easymock.PowerMock.replay;
-import static org.powermock.api.easymock.PowerMock.reset;
 import static org.powermock.api.easymock.PowerMock.verifyAll;
 
 /**
@@ -82,12 +88,37 @@ abstract public class AbstractFacadeTest extends IsaacTest {
     private RegisteredUserDTO specialEveryoneElse = new RegisteredUserDTO();
     private RegisteredUserDTO currentUser = null;
 
+    private Map<RegisteredUserDTO, UserSummaryDTO> userSummaries = Maps.newHashMap();
+
+
     @Before
     public void abstractFacadeTestSetup() {
         request = createMock(HttpServletRequest.class);
         replay(request);
 
-        userManager = createPartialMock(UserAccountManager.class, "getCurrentRegisteredUser");
+        userManager = createPartialMock(UserAccountManager.class, "getCurrentRegisteredUser", "convertToUserSummaryObject");
+
+        registerDefaultsFor(userManager, m -> {
+            expect(m.convertToUserSummaryObject(anyObject(RegisteredUserDTO.class))).andStubAnswer(() -> {
+                Object[] arguments = getCurrentArguments();
+                RegisteredUserDTO user = (RegisteredUserDTO) arguments[0];
+                return getUserSummaryFor(user);
+            });
+        });
+
+        replay(userManager);
+    }
+
+    protected UserSummaryDTO getUserSummaryFor(RegisteredUserDTO user) {
+        return userSummaries.computeIfAbsent(user, u -> {
+            UserSummaryDTO result = new UserSummaryDTO();
+            result.setId(u.getId());
+            result.setRole(u.getRole());
+            result.setEmailVerificationStatus(u.getEmailVerificationStatus());
+            result.setGivenName(u.getGivenName());
+            result.setFamilyName(u.getFamilyName());
+            return result;
+        });
     }
 
     /**
@@ -263,7 +294,7 @@ abstract public class AbstractFacadeTest extends IsaacTest {
         }
 
         public void run() {
-            preparation.configure(mock);
+            withMock(mock, preparation);
         }
     }
 
@@ -283,17 +314,32 @@ abstract public class AbstractFacadeTest extends IsaacTest {
 
         Testcase(Step[] steps) {
             this.users = null;
-            this.steps = Arrays.asList(steps);
+            this.steps = checkSteps(steps);
         }
 
         Testcase(RegisteredUserDTO user, Step[] steps) {
             this.users = Collections.singletonList(user);
-            this.steps = Arrays.asList(steps);
+            this.steps = checkSteps(steps);
         }
 
         Testcase(List<RegisteredUserDTO> users, Step[] steps) {
             this.users = users;
-            this.steps = Arrays.asList(steps);
+            this.steps = checkSteps(steps);
+        }
+
+        private List<Step> checkSteps(Step[] steps) {
+            List<Step> stepList = Arrays.asList(steps);
+            Map<Object, Integer> mocksPrepared = Maps.newHashMap();
+            stepList.forEach(step -> {
+                if (step instanceof PrepareStep) {
+                    mocksPrepared.merge(((PrepareStep) step).mock, 1, Integer::sum);
+                }
+            });
+            List<Object> brokenMocks = mocksPrepared.entrySet().stream().filter(entry -> entry.getValue() > 1).map(entry -> entry.getKey()).collect(Collectors.toList());
+            if (!brokenMocks.isEmpty()) {
+                throw new IllegalArgumentException("Test prepartion steps are broken. The following mocks are prepared multiple times:\r\n" + Joiner.on("\r\n").join(brokenMocks) + "\r\n(consolidate prepare steps for a single mock)");
+            }
+            return stepList;
         }
 
         private void runOn(Supplier<Response> endpoint) {
@@ -315,35 +361,24 @@ abstract public class AbstractFacadeTest extends IsaacTest {
                     }
                     ((CheckStep) step).checker.accept(response);
                 } else if (step instanceof PrepareStep) {
-                    PrepareStep<?> prepareStep = (PrepareStep) step;
-                    reset(prepareStep.mock);
-                    if (defaultsMap.containsKey(prepareStep.mock)) {
-                        defaultsMap.get(prepareStep.mock).configure(prepareStep.mock);
-                    }
-                    prepareStep.run();
-                    replay(prepareStep.mock);
+                    ((PrepareStep) step).run();
                 }
             }
         }
 
         private void runStepsAs(RegisteredUserDTO user, Supplier<Response> endpoint) {
-            try {
-                reset(userManager);
+            withMock(userManager, m -> {
                 if (user == null) {
-                    expect(userManager.getCurrentRegisteredUser(request)).andThrow(new NoUserLoggedInException());
+                    expect(m.getCurrentRegisteredUser(request)).andThrow(new NoUserLoggedInException());
                 } else {
-                    expect(userManager.getCurrentRegisteredUser(request)).andReturn(user);
+                    expect(m.getCurrentRegisteredUser(request)).andReturn(user);
                 }
-                replay(userManager);
-                currentUser = user;
+            });
+            currentUser = user;
 
-                runSteps(endpoint);
+            runSteps(endpoint);
 
-                verifyAll();
-            } catch (NoUserLoggedInException e) {
-                // Can't happen
-                throw new RuntimeException(e);
-            }
+            verifyAll();
         }
     }
 }

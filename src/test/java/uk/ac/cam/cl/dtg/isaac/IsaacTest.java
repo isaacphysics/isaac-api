@@ -54,6 +54,8 @@ import static org.easymock.EasyMock.getCurrentArguments;
 import static org.powermock.api.easymock.PowerMock.createMock;
 import static org.powermock.api.easymock.PowerMock.createPartialMockForAllMethodsExcept;
 import static org.powermock.api.easymock.PowerMock.replay;
+import static org.powermock.api.easymock.PowerMock.reset;
+import static org.powermock.api.easymock.PowerMock.verify;
 
 public class IsaacTest {
     protected static Date somePastDate = new Date(System.currentTimeMillis() - 7*24*60*60*1000);
@@ -256,6 +258,7 @@ public class IsaacTest {
         expect(groupManager.getUserMembershipMapForGroup(studentInactiveGroup.getId())).andStubReturn(
             Collections.singletonMap(student.getId(), new GroupMembershipDTO(studentGroup.getId(), student.getId(), GroupMembershipStatus.INACTIVE, null, beforeSomePastDate))
         );
+        expect(groupManager.getUsersInGroup(studentGroup)).andStubReturn(ImmutableList.of(student, otherStudent));
 
         replay(quizManager, groupManager);
     }
@@ -280,6 +283,19 @@ public class IsaacTest {
     protected <T> void registerDefaultsFor(T mock, MockConfigurer<T> defaults) {
         defaultsMap.put(mock, defaults);
         defaults.configure(mock);
+    }
+
+    @SafeVarargs
+    protected final <T> void withMock(T mock, MockConfigurer<T>... setups) {
+        verify(mock);
+        reset(mock);
+        if (defaultsMap.containsKey(mock)) {
+            ((MockConfigurer<T>) defaultsMap.get(mock)).configure(mock);
+        }
+        for (MockConfigurer<T> setup: setups) {
+            setup.configure(mock);
+        }
+        replay(mock);
     }
 
     /**

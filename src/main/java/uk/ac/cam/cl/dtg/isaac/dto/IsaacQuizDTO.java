@@ -26,6 +26,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -37,9 +38,13 @@ public class IsaacQuizDTO extends SeguePageDTO implements EmailService.HasTitleO
 	private boolean visibleToStudents;
 	private QuizFeedbackMode defaultFeedbackMode;
 
-	private QuizFeedbackDTO individualFeedback;
+    // Properties for sending feedback
+    private Integer total;
+    private Map<String, Integer> sectionTotals;
+    private QuizFeedbackDTO individualFeedback;
+    private List<QuizUserFeedbackDTO> userFeedback;
 
-	@JsonCreator
+    @JsonCreator
 	public IsaacQuizDTO(
 			@JsonProperty("id") String id,
             @JsonProperty("title") String title,
@@ -91,11 +96,39 @@ public class IsaacQuizDTO extends SeguePageDTO implements EmailService.HasTitleO
 	}
 
 	@Nullable
+    public Integer getTotal() {
+        return total;
+    }
+
+    public void setTotal(Integer total) {
+        this.total = total;
+    }
+
+    @Nullable
+    public Map<String, Integer> getSectionTotals() {
+        return sectionTotals;
+    }
+
+    public void setSectionTotals(Map<String, Integer> sectionTotals) {
+        this.sectionTotals = sectionTotals;
+    }
+
+
+    @Nullable
     public QuizFeedbackDTO getIndividualFeedback() {
         return individualFeedback;
     }
 
     public void setIndividualFeedback(QuizFeedbackDTO individualFeedback) {
         this.individualFeedback = individualFeedback;
+    }
+
+    @Nullable
+    public List<QuizUserFeedbackDTO> getUserFeedback() {
+        return userFeedback;
+    }
+
+    public void setUserFeedback(List<QuizUserFeedbackDTO> userFeedback) {
+        this.userFeedback = userFeedback;
     }
 }

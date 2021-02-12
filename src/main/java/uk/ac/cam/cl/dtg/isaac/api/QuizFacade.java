@@ -36,10 +36,13 @@ import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.QuizFeedbackDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.QuizUserFeedbackDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants.SegueServerLogType;
 import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -54,6 +57,7 @@ import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.annotation.Nullable;
@@ -72,6 +76,7 @@ import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -100,6 +105,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     private final IContentManager contentManager;
     private final QuizManager quizManager;
     private final UserAccountManager userManager;
+    private final UserAssociationManager associationManager;
     private final GroupManager groupManager;
     private final QuizAssignmentManager quizAssignmentManager;
     private final AssignmentService assignmentService;
@@ -120,6 +126,8 @@ public class QuizFacade extends AbstractIsaacFacade {
      *            - for quiz interaction.
      * @param userManager
      *            - for user information.
+     * @param associationManager
+     *            - So that we can determine what information is allowed to be seen by other users.
      * @param groupManager
      *            - for group information.
      * @param quizAssignmentManager
@@ -134,14 +142,16 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Inject
     public QuizFacade(final PropertiesLoader properties, final ILogManager logManager,
                       final IContentManager contentManager, final QuizManager quizManager,
-                      final UserAccountManager userManager, final GroupManager groupManager,
-                      final QuizAssignmentManager quizAssignmentManager, final AssignmentService assignmentService,
-                      final QuizAttemptManager quizAttemptManager, final QuizQuestionManager quizQuestionManager) {
+                      final UserAccountManager userManager, final UserAssociationManager associationManager,
+                      final GroupManager groupManager, final QuizAssignmentManager quizAssignmentManager,
+                      final AssignmentService assignmentService, final QuizAttemptManager quizAttemptManager,
+                      final QuizQuestionManager quizQuestionManager) {
         super(properties, logManager);
 
         this.contentManager = contentManager;
         this.quizManager = quizManager;
         this.userManager = userManager;
+        this.associationManager = associationManager;
         this.groupManager = groupManager;
         this.quizAssignmentManager = quizAssignmentManager;
         this.assignmentService = assignmentService;
@@ -307,7 +317,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             QuizAssignmentDTO quizAssignment = this.quizAssignmentManager.getById(quizAssignmentId);
 
             // Check the user is an active member of the relevant group
-            UserGroupDTO group = groupManager.getGroupById(quizAssignment.getGroupId());
+            UserGroupDTO group = quizAssignmentManager.getGroupForAssignment(quizAssignment);
             if (!groupManager.isUserInGroup(user, group)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You are not a member of a group assigned this quiz.").toResponse();
             }
@@ -937,6 +947,75 @@ public class QuizFacade extends AbstractIsaacFacade {
     }
 
     /**
+     * Allows a teacher to see results of an assignment
+     *
+     * @param httpServletRequest so that we can extract user information.
+     * @param quizAssignmentId the id of the assignment to cancel.
+     *
+     * @return Details about the assignment.
+     */
+    @GET
+    @Path("/quizAssignment/{quizAssignmentId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @ApiOperation(value = "View a quiz assignment.")
+    public final Response getQuizAssignment(@Context final HttpServletRequest httpServletRequest,
+                                            @PathParam("quizAssignmentId") Long quizAssignmentId) {
+
+        if (null == quizAssignmentId) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid quiz assignment id.").toResponse();
+        }
+
+        try {
+            RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
+
+            if (!(isUserTeacherOrAbove(userManager, user))) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
+            QuizAssignmentDTO assignment = quizAssignmentManager.getById(quizAssignmentId);
+
+            UserGroupDTO group = quizAssignmentManager.getGroupForAssignment(assignment);
+
+            if (!canManageGroup(user, group)) return new SegueErrorResponse(Status.FORBIDDEN,
+                "You can only cancel assignments to groups you own or manage.").toResponse();
+
+            IsaacQuizDTO quiz = quizManager.findQuiz(assignment.getQuizId());
+
+            List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group);
+
+            Map<RegisteredUserDTO, QuizFeedbackDTO> feedbackMap = quizQuestionManager.getAssignmentFeedback(quiz, assignment, groupMembers);
+
+            List<QuizUserFeedbackDTO> userFeedback = new ArrayList<>();
+
+            for (Map.Entry<RegisteredUserDTO, QuizFeedbackDTO> feedback : feedbackMap.entrySet()) {
+                UserSummaryDTO userSummary = associationManager.enforceAuthorisationPrivacy(user,
+                    userManager.convertToUserSummaryObject(feedback.getKey()));
+
+                userFeedback.add(new QuizUserFeedbackDTO(userSummary,
+                    userSummary.isAuthorisedFullAccess() ? feedback.getValue() : null));
+            }
+
+            quiz.setUserFeedback(userFeedback);
+
+            return Response.ok(quiz)
+                .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (AssignmentCancelledException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "This assignment has been cancelled.").toResponse();
+        } catch (SegueDatabaseException e) {
+            String message = "Database error whilst viewing quiz assignment";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        } catch (ContentManagerException e) {
+            String message = "Content error whilst viewing quiz assignment";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        }
+    }
+
+    /**
      * Allows a teacher to set a quiz to a group.
      *
      * @param httpServletRequest so that we can extract user information.
@@ -1039,7 +1118,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     }
 
     private boolean canManageAssignment(QuizAssignmentDTO clientQuizAssignment, RegisteredUserDTO currentlyLoggedInUser) throws SegueDatabaseException, NoUserLoggedInException {
-        UserGroupDTO assigneeGroup = groupManager.getGroupById(clientQuizAssignment.getGroupId());
+        UserGroupDTO assigneeGroup = quizAssignmentManager.getGroupForAssignment(clientQuizAssignment);
 
         return canManageGroup(currentlyLoggedInUser, assigneeGroup);
     }
@@ -1048,4 +1127,5 @@ public class QuizFacade extends AbstractIsaacFacade {
         return GroupManager.isOwnerOrAdditionalManager(assigneeGroup, currentlyLoggedInUser.getId())
             || isUserAnAdmin(userManager, currentlyLoggedInUser);
     }
+
 }

@@ -16,6 +16,8 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import org.easymock.IAnswer;
 import org.junit.Before;
 import org.junit.Test;
 import uk.ac.cam.cl.dtg.isaac.api.managers.DueBeforeNowException;
@@ -28,6 +30,8 @@ import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.QuizFeedbackDTO;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -39,6 +43,7 @@ import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.ws.rs.core.EntityTag;
@@ -48,6 +53,7 @@ import javax.ws.rs.core.Response.Status;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.easymock.EasyMock.anyLong;
 import static org.easymock.EasyMock.anyObject;
@@ -55,6 +61,7 @@ import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.getCurrentArguments;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.powermock.api.easymock.PowerMock.createMock;
 import static org.powermock.api.easymock.PowerMock.createNiceMock;
 import static org.powermock.api.easymock.PowerMock.expectLastCall;
@@ -72,6 +79,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
     private QuizQuestionManager quizQuestionManager;
     private QuizAssignmentManager quizAssignmentManager;
     private ILogManager logManager;
+    private UserAssociationManager associationManager;
 
     @Before
     public void setUp() throws ContentManagerException {
@@ -86,9 +94,10 @@ public class QuizFacadeTest extends AbstractFacadeTest {
         quizAssignmentManager = createMock(QuizAssignmentManager.class);
         quizAttemptManager = createMock(QuizAttemptManager.class);
         quizQuestionManager = createMock(QuizQuestionManager.class);
+        associationManager = createMock(UserAssociationManager.class);
 
         quizFacade = new QuizFacade(properties, logManager, contentManager, quizManager, userManager,
-            groupManager, quizAssignmentManager, assignmentService, quizAttemptManager, quizQuestionManager);
+            associationManager, groupManager, quizAssignmentManager, assignmentService, quizAttemptManager, quizQuestionManager);
 
         registerDefaultsFor(quizAssignmentManager, m -> {
             expect(m.getAssignedQuizzes(anyObject(RegisteredUserDTO.class))).andStubAnswer(() -> {
@@ -113,6 +122,13 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                 if (arguments[1] != student) return Collections.emptyList();
                 return Collections.singletonList(studentAssignment);
             });
+
+            expect(m.getGroupForAssignment(anyObject(QuizAssignmentDTO.class))).andStubAnswer(() -> {
+                Object[] arguments = getCurrentArguments();
+                if (Objects.equals(((QuizAssignmentDTO) arguments[0]).getGroupId(), studentGroup.getId())) return studentGroup;
+                if (Objects.equals(((QuizAssignmentDTO) arguments[0]).getGroupId(), studentInactiveGroup.getId())) return studentInactiveGroup;
+                return null;
+            });
         });
 
         registerDefaultsFor(quizAttemptManager, m -> {
@@ -133,7 +149,8 @@ public class QuizFacadeTest extends AbstractFacadeTest {
         expect(contentManager.getContentDOById(currentSHA, studentQuizDO.getId())).andStubReturn(studentQuizDO);
         expect(contentManager.getContentDOById(currentSHA, questionPageQuestionDO.getId())).andStubReturn(questionPageQuestionDO);
 
-        replay(requestForCaching, properties, logManager, contentManager, quizManager, groupManager, quizAssignmentManager, assignmentService, quizAttemptManager, quizQuestionManager);
+        replay(requestForCaching, properties, logManager, contentManager, quizManager, groupManager, quizAssignmentManager,
+            assignmentService, quizAttemptManager, quizQuestionManager, associationManager);
     }
 
     @Test
@@ -168,6 +185,54 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                 }),
                 respondsWith(Collections.emptyList())
             ));
+    }
+
+    @Test
+    public void getQuizAssignment() {
+        QuizFeedbackDTO studentFeedback = new QuizFeedbackDTO();
+        QuizFeedbackDTO otherStudentFeedback = new QuizFeedbackDTO();
+        forEndpoint(() -> quizFacade.getQuizAssignment(request, studentAssignment.getId()),
+            requiresLogin(),
+            as(studentsTeachersOrAdmin(),
+                prepare(quizAssignmentManager, m -> expect(m.getGroupForAssignment(studentAssignment)).andReturn(studentGroup)),
+                prepare(quizQuestionManager, m -> expect(m.getAssignmentFeedback(studentQuiz, studentAssignment, ImmutableList.of(student, otherStudent)))
+                    .andReturn(ImmutableMap.of(student, studentFeedback, otherStudent, otherStudentFeedback))),
+                prepare(associationManager, m -> {
+                    expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(student))).andAnswer(grantAccess(true));
+                    expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(otherStudent))).andAnswer(grantAccess(true));
+                }),
+                check(response -> {
+                    assertEquals(studentFeedback, getFeedbackFor(student));
+                    assertEquals(otherStudentFeedback, getFeedbackFor(otherStudent));
+                })
+            ),
+            forbiddenForEveryoneElse(),
+            as(studentsTeachersOrAdmin(),
+                prepare(quizAssignmentManager, m -> expect(m.getGroupForAssignment(studentAssignment)).andReturn(studentGroup)),
+                prepare(quizQuestionManager, m -> expect(m.getAssignmentFeedback(studentQuiz, studentAssignment, ImmutableList.of(student, otherStudent)))
+                    .andReturn(ImmutableMap.of(student, studentFeedback, otherStudent, otherStudentFeedback))),
+                prepare(associationManager, m -> {
+                    expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(student))).andAnswer(grantAccess(true));
+                    expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(otherStudent))).andAnswer(grantAccess(false));
+                }),
+                check(response -> {
+                    assertEquals(studentFeedback, getFeedbackFor(student));
+                    assertNull(getFeedbackFor(otherStudent));
+                })
+            )
+        );
+    }
+
+    private IAnswer<UserSummaryDTO> grantAccess(boolean access) {
+        return () -> {
+            Object[] arguments = getCurrentArguments();
+            ((UserSummaryDTO) arguments[1]).setAuthorisedFullAccess(access);
+            return ((UserSummaryDTO) arguments[1]);
+        };
+    }
+
+    private QuizFeedbackDTO getFeedbackFor(RegisteredUserDTO student) {
+        return studentQuiz.getUserFeedback().stream().filter(f -> f.getUser().getId().equals(student.getId())).findFirst().get().getFeedback();
     }
 
     @Test
@@ -525,7 +590,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
         );
     }
 
-    public Testcase forbiddenForEveryoneElse() {
+    private Testcase forbiddenForEveryoneElse() {
         return everyoneElse(
             failsWith(Status.FORBIDDEN)
         );
