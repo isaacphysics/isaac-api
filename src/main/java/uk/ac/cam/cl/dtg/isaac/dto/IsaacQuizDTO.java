@@ -18,11 +18,13 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
+import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
 
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Set;
 
@@ -33,6 +35,9 @@ import java.util.Set;
 @JsonContentType("isaacQuiz")
 public class IsaacQuizDTO extends SeguePageDTO implements EmailService.HasTitleOrId {
 	private boolean visibleToStudents;
+	private QuizFeedbackMode defaultFeedbackMode;
+
+	private QuizFeedbackDTO individualFeedback;
 
 	@JsonCreator
 	public IsaacQuizDTO(
@@ -51,12 +56,14 @@ public class IsaacQuizDTO extends SeguePageDTO implements EmailService.HasTitleO
 			@JsonProperty("version") boolean published,
 			@JsonProperty("tags") Set<String> tags,
 			@JsonProperty("level") Integer level,
-			@JsonProperty("visibleToStudents") boolean visibleToStudents) {
+			@JsonProperty("visibleToStudents") boolean visibleToStudents,
+			@JsonProperty("defaultFeedbackMode") QuizFeedbackMode defaultFeedbackMode) {
 		super(id, title, subtitle, type, author, encoding,
 				canonicalSourceFile, layout, children, value, attribution,
 				relatedContent, published, tags, level);
 
 		this.visibleToStudents = visibleToStudents;
+		this.defaultFeedbackMode = defaultFeedbackMode;
 	}
 
 	/**
@@ -73,4 +80,22 @@ public class IsaacQuizDTO extends SeguePageDTO implements EmailService.HasTitleO
 	public void setVisibleToStudents(boolean visibleToStudents) {
 		this.visibleToStudents = visibleToStudents;
 	}
+
+	@Nullable
+	public QuizFeedbackMode getDefaultFeedbackMode() {
+		return defaultFeedbackMode;
+	}
+
+	public void setDefaultFeedbackMode(QuizFeedbackMode defaultFeedbackMode) {
+		this.defaultFeedbackMode = defaultFeedbackMode;
+	}
+
+	@Nullable
+    public QuizFeedbackDTO getIndividualFeedback() {
+        return individualFeedback;
+    }
+
+    public void setIndividualFeedback(QuizFeedbackDTO individualFeedback) {
+        this.individualFeedback = individualFeedback;
+    }
 }

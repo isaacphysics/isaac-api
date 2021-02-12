@@ -170,6 +170,7 @@ public class PgQuizAssignmentPersistenceManager implements IQuizAssignmentPersis
     public QuizAssignmentDTO getAssignmentById(Long quizAssignmentId) throws SegueDatabaseException, AssignmentCancelledException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
+            // Deleted quiz assignments are filtered below with a specific error
             pst = conn.prepareStatement("SELECT * FROM quiz_assignments WHERE id = ?");
             pst.setLong(1, quizAssignmentId);
 

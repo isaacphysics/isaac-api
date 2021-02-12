@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.errorprone.annotations.DoNotCall;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -31,6 +32,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAttemptManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizQuestionManager;
 import uk.ac.cam.cl.dtg.isaac.api.services.AssignmentService;
+import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
@@ -414,13 +416,74 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
-            QuizAttemptDTO quizAttempt = getQuizAttemptForUser(quizAttemptId, user);
+            QuizAttemptDTO quizAttempt = getIncompleteQuizAttemptForUser(quizAttemptId, user);
 
             checkQuizAssignmentNotCancelledOrOverdue(quizAttempt);
 
             IsaacQuizDTO quiz = quizManager.findQuiz(quizAttempt.getQuizId());
 
             quiz = quizQuestionManager.augmentQuestionsForUser(quiz, quizAttempt, user, false);
+
+            return Response.ok(quiz)
+                .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
+                .build();
+
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            String message = "SegueDatabaseException whilst getting quiz attempt";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        } catch (AssignmentCancelledException e) {
+            return new SegueErrorResponse(Status.FORBIDDEN, "This quiz assignment has been cancelled.").toResponse();
+        } catch (ContentManagerException e) {
+            String message = "ContentManagerException whilst getting quiz attempt";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        } catch (ErrorResponseWrapper responseWrapper) {
+            return responseWrapper.toResponse();
+        }
+    }
+
+    /**
+     * Get the feedback for a quiz attempt.
+     *
+     * The attempt must be completed.
+     *
+     * @param httpServletRequest
+     *            - so that we can extract user information.
+     * @param quizAttemptId
+     *            - the ID of the quiz the user wishes to see feedback for.
+     * @return The feedback if this user is allowed to see it.
+     */
+    @GET
+    @Path("/attempt/{quizAttemptId}/feedback")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @ApiOperation(value = "Get the feedback for a quiz attempt.")
+    public final Response getQuizAttemptFeedback(@Context final HttpServletRequest httpServletRequest,
+                                         @PathParam("quizAttemptId") final Long quizAttemptId) {
+        try {
+            RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
+
+            QuizAttemptDTO quizAttempt = getCompleteQuizAttemptForUser(quizAttemptId, user);
+
+            QuizAssignmentDTO quizAssignment = getQuizAssignment(quizAttempt);
+
+            IsaacQuizDTO quiz = quizManager.findQuiz(quizAttempt.getQuizId());
+
+            QuizFeedbackMode feedbackMode;
+
+            if (quizAssignment != null) {
+                feedbackMode = quizAssignment.getQuizFeedbackMode();
+            } else {
+                feedbackMode = quiz.getDefaultFeedbackMode();
+                if (feedbackMode == null) {
+                    feedbackMode = QuizFeedbackMode.DETAILED_FEEDBACK;
+                }
+            }
+
+            quiz = quizQuestionManager.augmentFeedbackFor(quiz, quizAttempt, feedbackMode);
 
             return Response.ok(quiz)
                 .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
@@ -571,7 +634,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             }
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
-            QuizAttemptDTO quizAttempt = getQuizAttemptForUser(quizAttemptId, user);
+            QuizAttemptDTO quizAttempt = getIncompleteQuizAttemptForUser(quizAttemptId, user);
 
             QuizAssignmentDTO assignment = checkQuizAssignmentNotCancelledOrOverdue(quizAttempt);
 
@@ -631,7 +694,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(request);
 
-            QuizAttemptDTO quizAttempt = getQuizAttemptForUser(quizAttemptId, user);
+            QuizAttemptDTO quizAttempt = getIncompleteQuizAttemptForUser(quizAttemptId, user);
 
             checkQuizAssignmentNotCancelledOrOverdue(quizAttempt);
 
@@ -936,15 +999,33 @@ public class QuizFacade extends AbstractIsaacFacade {
         return null;
     }
 
-    private QuizAttemptDTO getQuizAttemptForUser(Long quizAttemptId, RegisteredUserDTO user) throws SegueDatabaseException, ErrorResponseWrapper {
+    @SuppressWarnings( "deprecation" )
+    private QuizAttemptDTO getIncompleteQuizAttemptForUser(Long quizAttemptId, RegisteredUserDTO user) throws SegueDatabaseException, ErrorResponseWrapper {
+        QuizAttemptDTO quizAttempt = getQuizAttemptForUser(quizAttemptId, user);
+
+        if (quizAttempt.getCompletedDate() != null) {
+            throw new ErrorResponseWrapper(new SegueErrorResponse(Status.FORBIDDEN, "You have completed this quiz."));
+        }
+        return quizAttempt;
+    }
+
+    @SuppressWarnings( "deprecation" )
+    private QuizAttemptDTO getCompleteQuizAttemptForUser(Long quizAttemptId, RegisteredUserDTO user) throws SegueDatabaseException, ErrorResponseWrapper {
+        QuizAttemptDTO quizAttempt = getQuizAttemptForUser(quizAttemptId, user);
+
+        if (quizAttempt.getCompletedDate() == null) {
+            throw new ErrorResponseWrapper(new SegueErrorResponse(Status.FORBIDDEN, "You have not completed this quiz."));
+        }
+        return quizAttempt;
+    }
+
+    @DoNotCall
+    @Deprecated
+    private QuizAttemptDTO getQuizAttemptForUser(Long quizAttemptId, RegisteredUserDTO user) throws ErrorResponseWrapper, SegueDatabaseException {
         QuizAttemptDTO quizAttempt = this.getQuizAttempt(quizAttemptId);
 
         if (!quizAttempt.getUserId().equals(user.getId())) {
             throw new ErrorResponseWrapper(new SegueErrorResponse(Status.FORBIDDEN, "This is not your quiz attempt."));
-        }
-
-        if (quizAttempt.getCompletedDate() != null) {
-            throw new ErrorResponseWrapper(new SegueErrorResponse(Status.FORBIDDEN, "You have completed this quiz."));
         }
         return quizAttempt;
     }

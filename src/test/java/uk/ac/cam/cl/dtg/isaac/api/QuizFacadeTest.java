@@ -291,6 +291,47 @@ public class QuizFacadeTest extends AbstractFacadeTest {
     }
 
     @Test
+    public void getQuizAttemptFeedback() {
+        IsaacQuizDTO augmentedQuiz = new IsaacQuizDTO();
+        forEndpoint((attempt) -> () -> quizFacade.getQuizAttemptFeedback(request, attempt.getId()),
+            with(studentAttempt,
+                requiresLogin(),
+                forbiddenForEveryoneElse()
+            ),
+            with(overdueAttempt,
+                as(student,
+                    failsWith(Status.FORBIDDEN)
+                )
+            ),
+            with(completedAttempt,
+                as(student,
+                    prepare(quizQuestionManager, m -> expect(m.augmentFeedbackFor(studentQuiz, completedAttempt, QuizFeedbackMode.OVERALL_MARK)).andReturn(augmentedQuiz)),
+                    respondsWith(augmentedQuiz)
+                ),
+                forbiddenForEveryoneElse()
+            ),
+            with(overdueCompletedAttempt,
+                as(student,
+                    prepare(quizQuestionManager, m -> expect(m.augmentFeedbackFor(studentQuiz, overdueCompletedAttempt, QuizFeedbackMode.SECTION_MARKS)).andReturn(augmentedQuiz)),
+                    respondsWith(augmentedQuiz)
+                )
+            ),
+            with(ownCompletedAttempt,
+                as(student,
+                    prepare(quizQuestionManager, m -> expect(m.augmentFeedbackFor(otherQuiz, ownCompletedAttempt, QuizFeedbackMode.DETAILED_FEEDBACK)).andReturn(augmentedQuiz)),
+                    respondsWith(augmentedQuiz)
+                )
+            ),
+            with(attemptOnNullFeedbackModeQuiz,
+                as(student,
+                    prepare(quizQuestionManager, m -> expect(m.augmentFeedbackFor(teacherQuiz, attemptOnNullFeedbackModeQuiz, QuizFeedbackMode.DETAILED_FEEDBACK)).andReturn(augmentedQuiz)),
+                    respondsWith(augmentedQuiz)
+                )
+            )
+        );
+    }
+
+    @Test
     public void completeQuizAttempt() {
         forEndpoint((attempt) -> () -> quizFacade.completeQuizAttempt(request, attempt.getId()),
             with(studentAttempt,

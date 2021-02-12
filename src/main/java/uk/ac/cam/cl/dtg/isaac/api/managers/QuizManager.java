@@ -22,18 +22,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizSectionDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.google.common.collect.Maps.immutableEntry;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUIZ_TYPE;
@@ -52,17 +57,28 @@ public class QuizManager {
     private final IContentManager contentManager;
     private final ContentSummarizerService contentSummarizerService;
     private final String contentIndex;
+    private final PropertiesLoader properties;
 
     /**
      * Creates a quiz manager.
+     *
+     * @param properties
+     *            - global properties map
      * @param contentService
      *            - so we can look up content
-     *  @param contentSummarizerService
+     * @param contentManager
+     *            - so we can fetch specific content.
+     * @param contentSummarizerService
      *            - so we can summarize content with links
+     * @param contentIndex
+     *            - the current version of content to use.
      */
     @Inject
-    public QuizManager(final ContentService contentService, final IContentManager contentManager,
-                       final ContentSummarizerService contentSummarizerService, @Named(CONTENT_INDEX) final String contentIndex) {
+    public QuizManager(final PropertiesLoader properties, final ContentService contentService,
+                       final IContentManager contentManager,
+                       final ContentSummarizerService contentSummarizerService,
+                       @Named(CONTENT_INDEX) final String contentIndex) {
+        this.properties = properties;
         this.contentService = contentService;
         this.contentManager = contentManager;
         this.contentSummarizerService = contentSummarizerService;
@@ -98,5 +114,34 @@ public class QuizManager {
         }
 
         throw new ContentManagerException("Expected an IsaacQuizDTO, got a " + contentDTO.getType());
+    }
+
+    /**
+     * Get all of the sections in a quiz.
+     *
+     * In DEV mode, this throws exceptions on top-level non-sections. In PROD, it throws them away with a warning.
+     *
+     * @param quiz The quiz to extract sections from.
+     * @return A list of sections.
+     * @throws ContentManagerException when a non-section is found at the top-level, but only in DEV.
+     */
+    public List<IsaacQuizSectionDTO> extractSectionObjects(IsaacQuizDTO quiz) throws ContentManagerException {
+        if (properties.getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(Constants.EnvironmentType.DEV.name())) {
+            for (ContentBaseDTO content : quiz.getChildren()) {
+                if (!(content instanceof IsaacQuizSectionDTO)) {
+                    throw new ContentManagerException("Quiz id " + quiz.getId() + " contains top-level non-section: " + content);
+                }
+            }
+            return quiz.getChildren().stream().map(c -> ((IsaacQuizSectionDTO) c)).collect(Collectors.toList());
+        } else {
+            return quiz.getChildren().stream().flatMap(c -> {
+                if (c instanceof IsaacQuizSectionDTO) {
+                    return Stream.of((IsaacQuizSectionDTO) c);
+                } else {
+                    log.warn("Quiz id " + quiz.getId() + " contains top-level non-section with id " + c.getId());
+                    return Stream.empty();
+                }
+            }).collect(Collectors.toList());
+        }
     }
 }
