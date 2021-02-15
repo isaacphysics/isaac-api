@@ -374,6 +374,10 @@ public final class Constants {
     // IP Geocoding stuff
     public static final String IP_INFO_DB_API_KEY = "IP_INFO_DB_API_KEY";
 
+    // MailJet WebHook Token
+    public static final String MAILJET_SECRET_KEY = "MAILJET_SECRET_KEY";
+
+
     /*
      * Default values.
      */
