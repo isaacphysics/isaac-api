@@ -147,7 +147,7 @@ public class QuizAssignmentManager {
     }
 
     public void cancelAssignment(QuizAssignmentDTO assignment) throws SegueDatabaseException {
-        this.quizAssignmentPersistenceManager.cancelAssignment(assignment);
+        this.quizAssignmentPersistenceManager.cancelAssignment(assignment.getId());
     }
 
     private List<QuizAssignmentDTO> getAllAssignments(RegisteredUserDTO user) throws SegueDatabaseException {
@@ -161,5 +161,9 @@ public class QuizAssignmentManager {
         List<QuizAssignmentDTO> allAssignedQuizzes = getAllAssignments(user);
         Date now = new Date();
         return allAssignedQuizzes.stream().filter(qa -> qa.getDueDate() == null || qa.getDueDate().after(now)).collect(Collectors.toList());
+    }
+
+    public void updateAssignment(QuizAssignmentDTO assignment, QuizAssignmentDTO updates) throws SegueDatabaseException {
+        this.quizAssignmentPersistenceManager.updateAssignment(assignment.getId(), updates);
     }
 }

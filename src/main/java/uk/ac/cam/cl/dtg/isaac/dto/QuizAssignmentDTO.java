@@ -233,4 +233,17 @@ public class QuizAssignmentDTO implements IAssignmentLike {
     public void setQuizFeedbackMode(final QuizFeedbackMode quizFeedbackMode) {
         this.quizFeedbackMode = quizFeedbackMode;
     }
+
+    @Override
+    public String toString() {
+        return "QuizAssignmentDTO [" +
+            "id=" + id +
+            ", quizId='" + quizId + '\'' +
+            ", groupId=" + groupId +
+            ", ownerUserId=" + ownerUserId +
+            ", creationDate=" + creationDate +
+            ", dueDate=" + dueDate +
+            ", quizFeedbackMode=" + quizFeedbackMode +
+            ']';
+    }
 }

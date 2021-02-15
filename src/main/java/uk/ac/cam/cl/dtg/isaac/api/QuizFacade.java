@@ -1016,7 +1016,66 @@ public class QuizFacade extends AbstractIsaacFacade {
     }
 
     /**
-     * Allows a teacher to set a quiz to a group.
+     * Allows a teacher to update a quiz assignment.
+     *
+     * Only changes to the feedbackMode field are accepted. A bad request error will be thrown if any other fields are set.
+     *
+     * @param httpServletRequest so that we can extract user information.
+     * @param quizAssignmentId the id of the assignment to update.
+     * @param clientQuizAssignment a partial object with new values for the quiz assignment (only feedbackMode may be set.)
+     *
+     * @return Confirmation or error.
+     */
+    @POST
+    @Path("/quizAssignment/{quizAssignmentId}")
+    @ApiOperation(value = "Update a quiz assignment (only feedbackMode may be updated).")
+    public final Response updateQuizAssignment(@Context final HttpServletRequest httpServletRequest,
+                                               @PathParam("quizAssignmentId") Long quizAssignmentId,
+                                               final QuizAssignmentDTO clientQuizAssignment) {
+
+        if (null == quizAssignmentId) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid quiz assignment id.").toResponse();
+        }
+
+        if (   clientQuizAssignment.getId() != null
+            || clientQuizAssignment.getQuizId() != null
+            || clientQuizAssignment.getGroupId() != null
+            || clientQuizAssignment.getOwnerUserId() != null
+            || clientQuizAssignment.getCreationDate() != null
+            || clientQuizAssignment.getDueDate() != null)
+        {
+            log.warn("Attempt to change fields for quiz assignment id {} that aren't feedbackMode: {}", quizAssignmentId, clientQuizAssignment);
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Those fields are not editable.").toResponse();
+        }
+
+        try {
+            RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
+
+            if (!(isUserTeacherOrAbove(userManager, user))) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
+            QuizAssignmentDTO assignment = quizAssignmentManager.getById(quizAssignmentId);
+
+            if (!canManageAssignment(assignment, user)) return new SegueErrorResponse(Status.FORBIDDEN,
+                "You can only updates assignments to groups you own or manage.").toResponse();
+
+            quizAssignmentManager.updateAssignment(assignment, clientQuizAssignment);
+
+            return Response.noContent().build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (AssignmentCancelledException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "This assignment is already cancelled.").toResponse();
+        } catch (SegueDatabaseException e) {
+            String message = "Database error whilst updating quiz assignment";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        }
+    }
+
+    /**
+     * Allows a teacher to cancel a quiz they have set.
      *
      * @param httpServletRequest so that we can extract user information.
      * @param quizAssignmentId the id of the assignment to cancel.

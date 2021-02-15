@@ -51,6 +51,7 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -273,6 +274,29 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                 succeeds()
             ),
             forbiddenForEveryoneElse()
+        );
+    }
+
+    @Test
+    public void updateQuizAssignment() {
+        QuizAssignmentDTO legalUpdate = new QuizAssignmentDTO();
+        legalUpdate.setQuizFeedbackMode(QuizFeedbackMode.SECTION_MARKS);
+        QuizAssignmentDTO illegalUpdate = new QuizAssignmentDTO();
+        illegalUpdate.setDueDate(new Date());
+        forEndpoint((updates) -> () -> quizFacade.updateQuizAssignment(request, studentAssignment.getId(), updates),
+            with(legalUpdate,
+                requiresLogin(),
+                as(studentsTeachersOrAdmin(),
+                    prepare(quizAssignmentManager, m -> m.updateAssignment(studentAssignment, legalUpdate)),
+                    succeeds()
+                ),
+                forbiddenForEveryoneElse()
+            ),
+            with(illegalUpdate,
+                beforeUserCheck(
+                    failsWith(Status.BAD_REQUEST)
+                )
+            )
         );
     }
 
