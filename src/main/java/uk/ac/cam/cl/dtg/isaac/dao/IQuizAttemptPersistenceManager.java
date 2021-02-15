@@ -19,6 +19,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public interface IQuizAttemptPersistenceManager {
@@ -80,4 +81,13 @@ public interface IQuizAttemptPersistenceManager {
      * @return A set of user IDs with completed attempts.
      */
     Set<Long> getCompletedUserIds(Long assignmentId) throws SegueDatabaseException;
+
+    /**
+     * Get the attempts for a list of assignments for a particular user.
+     *
+     * @param quizAssignmentIds The IDs of the assignments.
+     * @param userId The ID of the user.
+     * @return A map of assignment ID to quiz attempts.
+     */
+    Map<Long, QuizAttemptDTO> getByQuizAssignmentIdsAndUserId(List<Long> quizAssignmentIds, Long userId) throws SegueDatabaseException;
 }

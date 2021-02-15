@@ -171,20 +171,19 @@ public class QuizFacadeTest extends AbstractFacadeTest {
 
     @Test
     public void getAssignedQuizzes() {
+        List<QuizAssignmentDTO> noAssignments = Collections.emptyList();
         forEndpoint(() -> quizFacade.getAssignedQuizzes(request),
             requiresLogin(),
             as(student,
-                prepare(assignmentService, (s) -> {
-                    s.augmentAssignerSummaries(studentAssignments);
-                    expectLastCall().once();
-                }),
+                prepare(assignmentService, m -> m.augmentAssignerSummaries(studentAssignments)),
+                prepare(quizManager, m -> m.augmentQuizzes(studentAssignments)),
+                prepare(quizAttemptManager, m -> m.augmentAssignmentsFor(student, studentAssignments)),
                 respondsWith(studentAssignments)),
             as(anyOf(teacher, otherStudent),
-                prepare(assignmentService, (s) -> {
-                    s.augmentAssignerSummaries(Collections.emptyList());
-                    expectLastCall().once();
-                }),
-                respondsWith(Collections.emptyList())
+                prepare(assignmentService, m -> m.augmentAssignerSummaries(noAssignments)),
+                prepare(quizManager, m -> m.augmentQuizzes(noAssignments)),
+                prepare(quizAttemptManager, m -> m.augmentAssignmentsFor(currentUser(), noAssignments)),
+                respondsWith(noAssignments)
             ));
     }
 
@@ -573,6 +572,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
     @Test
     public void getAllQuizAssignments() {
         List<UserGroupDTO> studentGroups = ImmutableList.of(studentGroup, studentInactiveGroup);
+        ImmutableList<QuizAssignmentDTO> inactiveGroupAssignments = ImmutableList.of(studentInactiveAssignment, studentInactiveIgnoredAssignment);
         forEndpoint((Long groupIdOfInterest) -> () -> quizFacade.getQuizAssignments(request, groupIdOfInterest),
             with(null,
                 requiresLogin(),
@@ -581,6 +581,9 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                         .andReturn(studentGroups)),
                     prepare(quizAssignmentManager, m -> expect(m.getAssignmentsForGroups(studentGroups))
                         .andReturn(teacherAssignmentsToTheirGroups)),
+                    prepare(quizManager, m -> {
+                        m.augmentQuizzes(teacherAssignmentsToTheirGroups);
+                    }),
                     respondsWith(teacherAssignmentsToTheirGroups)
                 ),
                 as(otherTeacher,
@@ -588,6 +591,9 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                         .andReturn(Collections.emptyList())),
                     prepare(quizAssignmentManager, m -> expect(m.getAssignmentsForGroups(Collections.emptyList()))
                         .andReturn(Collections.emptyList())),
+                    prepare(quizManager, m -> {
+                        m.augmentQuizzes(Collections.emptyList());
+                    }),
                     respondsWith(Collections.emptyList())),
                 as(anyOf(student, otherStudent),
                     failsWith(SegueErrorResponse.getIncorrectRoleResponse())
@@ -599,8 +605,9 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                     prepare(groupManager, m -> expect(m.getGroupById(studentInactiveGroup.getId()))
                         .andReturn(studentInactiveGroup)),
                     prepare(quizAssignmentManager, m -> expect(m.getAssignmentsForGroups(Collections.singletonList(studentInactiveGroup)))
-                        .andReturn(ImmutableList.of(studentInactiveAssignment, studentInactiveIgnoredAssignment))),
-                    respondsWith(ImmutableList.of(studentInactiveAssignment, studentInactiveIgnoredAssignment))
+                        .andReturn(inactiveGroupAssignments)),
+                    prepare(quizManager, m -> m.augmentQuizzes(inactiveGroupAssignments)),
+                    respondsWith(inactiveGroupAssignments)
                 ),
                 as(anyOf(student, otherStudent),
                     failsWith(SegueErrorResponse.getIncorrectRoleResponse())

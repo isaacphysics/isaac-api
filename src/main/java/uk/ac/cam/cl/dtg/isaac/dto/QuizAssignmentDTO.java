@@ -36,6 +36,8 @@ public class QuizAssignmentDTO implements IAssignmentLike {
     private Date dueDate;
     private QuizFeedbackMode quizFeedbackMode;
 
+    private QuizAttemptDTO attempt; // For augmenting a user's attempt when fetching assignments.
+
     /**
      * Complete AssignmentDTO constructor with all dependencies.
      *
@@ -232,6 +234,15 @@ public class QuizAssignmentDTO implements IAssignmentLike {
      */
     public void setQuizFeedbackMode(final QuizFeedbackMode quizFeedbackMode) {
         this.quizFeedbackMode = quizFeedbackMode;
+    }
+
+    @Nullable
+    public QuizAttemptDTO getAttempt() {
+        return attempt;
+    }
+
+    public void setAttempt(@Nullable QuizAttemptDTO attempt) {
+        this.attempt = attempt;
     }
 
     @Override

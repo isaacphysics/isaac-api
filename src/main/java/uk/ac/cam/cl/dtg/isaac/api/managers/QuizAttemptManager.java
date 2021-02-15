@@ -25,8 +25,10 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Manage quiz attempts.
@@ -108,5 +110,10 @@ public class QuizAttemptManager {
 
     public Set<Long> getCompletedUserIds(QuizAssignmentDTO assignment) throws SegueDatabaseException {
         return quizAttemptPersistenceManager.getCompletedUserIds(assignment.getId());
+    }
+
+    public void augmentAssignmentsFor(RegisteredUserDTO user, List<QuizAssignmentDTO> assignments) throws SegueDatabaseException {
+        Map<Long, QuizAttemptDTO> attempts = quizAttemptPersistenceManager.getByQuizAssignmentIdsAndUserId(assignments.stream().map(QuizAssignmentDTO::getId).collect(Collectors.toList()), user.getId());
+        assignments.forEach(quizAssignment -> quizAssignment.setAttempt(attempts.get(quizAssignment.getId())));
     }
 }

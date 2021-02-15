@@ -77,10 +77,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -216,9 +214,9 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             this.assignmentService.augmentAssignerSummaries(quizzes);
 
-            for (QuizAssignmentDTO quiz: quizzes) {
-                quiz.setQuiz(this.contentManager.extractContentSummary(this.quizManager.findQuiz(quiz.getQuizId())));
-            }
+            quizManager.augmentQuizzes(quizzes);
+
+            this.quizAttemptManager.augmentAssignmentsFor(user, quizzes);
 
             return Response.ok(quizzes)
                 .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
@@ -919,17 +917,9 @@ public class QuizFacade extends AbstractIsaacFacade {
             } else {
                 groups = this.groupManager.getAllGroupsOwnedAndManagedByUser(user, false);
             }
-            Collection<QuizAssignmentDTO> assignments = this.quizAssignmentManager.getAssignmentsForGroups(groups);
+            List<QuizAssignmentDTO> assignments = this.quizAssignmentManager.getAssignmentsForGroups(groups);
 
-            Map<String, ContentSummaryDTO> quizCache = new HashMap<>();
-            for (QuizAssignmentDTO assignment: assignments) {
-                String quizId = assignment.getQuizId();
-                ContentSummaryDTO quiz = quizCache.get(quizId);
-                if (quiz == null) {
-                    quizCache.put(quizId, quiz = this.contentManager.extractContentSummary(this.quizManager.findQuiz(quizId)));
-                }
-                assignment.setQuiz(quiz);
-            }
+            quizManager.augmentQuizzes(assignments);
 
             return Response.ok(assignments)
                 .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();

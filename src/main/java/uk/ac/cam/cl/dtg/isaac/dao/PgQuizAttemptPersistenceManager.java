@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.isaac.dao;
 
 import com.google.api.client.util.Lists;
+import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;
 import com.google.inject.Inject;
 import ma.glasnost.orika.MapperFacade;
@@ -34,6 +35,7 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -200,6 +202,39 @@ public class PgQuizAttemptPersistenceManager implements IQuizAttemptPersistenceM
             return setOfResults;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Unable to get completed user ids for assignment: " + assignmentId, e);
+        }
+    }
+
+    @Override
+    public Map<Long, QuizAttemptDTO> getByQuizAssignmentIdsAndUserId(List<Long> quizAssignmentIds, Long userId) throws SegueDatabaseException {
+        try (Connection conn = database.getDatabaseConnection()) {
+            PreparedStatement pst;
+
+            // This is a nasty hack to make a prepared statement using the sql IN operator.
+            StringBuilder builder = new StringBuilder();
+            builder.append("(");
+            for (int i = 0; i < quizAssignmentIds.size(); i++) {
+                builder.append("?,");
+            }
+            String quizAssignmentIdsHoles = builder.deleteCharAt(builder.length() - 1).append(")").toString();
+
+            pst = conn.prepareStatement("SELECT quiz_attempts.* FROM quiz_attempts INNER JOIN quiz_assignments on quiz_attempts.quiz_assignment_id = quiz_assignments.id WHERE quiz_attempts.user_id = ? AND quiz_assignments.id IN " + quizAssignmentIdsHoles);
+            pst.setLong(1, userId);
+            int i = 2;
+            for (Long quizAssignmentId : quizAssignmentIds) {
+                pst.setLong(i++, quizAssignmentId);
+            }
+
+            ResultSet results = pst.executeQuery();
+
+            Map<Long, QuizAttemptDTO> mapOfResults = Maps.newHashMap();
+            while (results.next()) {
+                mapOfResults.put(results.getLong("quiz_assignment_id"), this.convertToQuizAttemptDTO(this.convertFromSQLToQuizAttemptDO(results)));
+            }
+
+            return mapOfResults;
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Unable to find quiz attempts by assignment ids for user id", e);
         }
     }
 

@@ -102,6 +102,16 @@ public class QuizAttemptManagerTest extends AbstractManagerTest {
         assertEquals(TEST_ID, attempt.getId());
     }
 
+    @Test
+    public void augmentAssignmentsFor() throws SegueDatabaseException {
+        withMock(quizAttemptPersistenceManager,
+            m -> expect(m.getByQuizAssignmentIdsAndUserId(Collections.singletonList(studentAssignment.getId()), student.getId()))
+                .andReturn(Collections.singletonMap(studentAssignment.getId(), studentAttempt)));
+        quizAttemptManager.augmentAssignmentsFor(student, Collections.singletonList(studentAssignment));
+
+        assertEquals(studentAttempt, studentAssignment.getAttempt());
+    }
+
     private MockConfigurer<IQuizAttemptPersistenceManager> forStudentAssignmentReturn(QuizAttemptDTO attempt) {
         return m -> expect(m.getByQuizAssignmentIdAndUserId(studentAssignment.getId(), student.getId())).andReturn(attempt);
     }

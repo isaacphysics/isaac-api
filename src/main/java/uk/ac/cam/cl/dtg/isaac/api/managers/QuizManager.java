@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizSectionDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -35,6 +36,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.annotation.Nullable;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -114,6 +116,24 @@ public class QuizManager {
         }
 
         throw new ContentManagerException("Expected an IsaacQuizDTO, got a " + contentDTO.getType());
+    }
+
+    /**
+     * Fetch the quiz for each assignment and set the QuizAssignmentDTO#quiz field.
+     *
+     * @param assignments The quiz assignments to augment.
+     * @throws ContentManagerException If a quiz is missing.
+     */
+    public void augmentQuizzes(List<QuizAssignmentDTO> assignments) throws ContentManagerException {
+        Map<String, ContentSummaryDTO> quizCache = new HashMap<>();
+        for (QuizAssignmentDTO assignment: assignments) {
+            String quizId = assignment.getQuizId();
+            ContentSummaryDTO quiz = quizCache.get(quizId);
+            if (quiz == null) {
+                quizCache.put(quizId, quiz = this.contentManager.extractContentSummary(this.findQuiz(quizId)));
+            }
+            assignment.setQuiz(quiz);
+        }
     }
 
     /**
