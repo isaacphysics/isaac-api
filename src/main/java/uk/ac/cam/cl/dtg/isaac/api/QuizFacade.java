@@ -167,7 +167,7 @@ public class QuizFacade extends AbstractIsaacFacade {
      * @return a Response containing a list of ContentSummaryDTO for the visible quizzes.
      */
     @GET
-    @Path("available")
+    @Path("/available")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @ApiOperation(value = "Get quizzes visible to this user.")
@@ -202,7 +202,7 @@ public class QuizFacade extends AbstractIsaacFacade {
      * @return a Response containing a list of QuizAssignmentDTO for the assigned quizzes.
      */
     @GET
-    @Path("assignments")
+    @Path("/assignments")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @ApiOperation(value = "Get quizzes assigned to this user.")
@@ -245,11 +245,12 @@ public class QuizFacade extends AbstractIsaacFacade {
      * @return a Response containing a list of ContentSummaryDTO for the visible quizzes.
      */
     @GET
-    @Path("/{quizId}")
+    @Path("/{quizId}/preview")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @ApiOperation(value = "Preview an individual quiz.")
-    public final Response previewQuiz(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
+    public final Response previewQuiz(@Context final Request request,
+                                      @Context final HttpServletRequest httpServletRequest,
                                       @PathParam("quizId") final String quizId) {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
@@ -289,7 +290,7 @@ public class QuizFacade extends AbstractIsaacFacade {
      * if they are a member of the group for the assignment.
      * If an attempt has already begun, return the already begun attempt.
      *
-     * TODO: @see startFreeQuizAttempt An endpoint to allow a quiz that is visibleToStudents to be taken by students.
+     * @see #startFreeQuizAttempt An endpoint to allow a quiz that is visibleToStudents to be taken by students.
      *
      * @param httpServletRequest
      *            - so that we can extract user information.
@@ -298,12 +299,13 @@ public class QuizFacade extends AbstractIsaacFacade {
      * @return a QuizAttemptDTO
      */
     @POST
-    @Path("/startQuizAttempt")
+    @Path("/assignment/{quizAssignmentId}/attempt")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @ApiOperation(value = "Start a quiz attempt.")
-    public final Response startQuizAttempt(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
-                                      @FormParam("quizAssignmentId") final Long quizAssignmentId) {
+    public final Response startQuizAttempt(@Context final Request request,
+                                           @Context final HttpServletRequest httpServletRequest,
+                                           @PathParam("quizAssignmentId") final Long quizAssignmentId) {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
@@ -358,12 +360,13 @@ public class QuizFacade extends AbstractIsaacFacade {
      * @return a QuizAttemptDTO
      */
     @POST
-    @Path("/startFreeQuizAttempt")
+    @Path("/{quizId}/attempt")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @ApiOperation(value = "Start a free quiz attempt.")
-    public final Response startFreeQuizAttempt(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
-                                           @FormParam("quizId") final String quizId) {
+    public final Response startFreeQuizAttempt(@Context final Request request,
+                                               @Context final HttpServletRequest httpServletRequest,
+                                               @PathParam("quizId") final String quizId) {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
@@ -420,7 +423,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @GZIP
     @ApiOperation(value = "Get the QuizDTO for a quiz attempt.")
     public final Response getQuizAttempt(@Context final HttpServletRequest httpServletRequest,
-                                             @PathParam("quizAttemptId") final Long quizAttemptId) {
+                                         @PathParam("quizAttemptId") final Long quizAttemptId) {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
@@ -529,7 +532,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/attempt/{quizAttemptId}/complete")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Mark a QuizAttempt as complete (or incomplete).")
+    @ApiOperation(value = "Mark a QuizAttempt as complete.")
     public final Response completeQuizAttempt(@Context final HttpServletRequest httpServletRequest,
                                               @PathParam("quizAttemptId") final Long quizAttemptId) {
         try {
@@ -577,7 +580,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/attempt/{quizAttemptId}/incomplete")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Mark a QuizAttempt as complete (or incomplete).")
+    @ApiOperation(value = "Mark a QuizAttempt as incomplete.")
     public final Response markIncompleteQuizAttempt(@Context final HttpServletRequest httpServletRequest,
                                                     @PathParam("quizAttemptId") final Long quizAttemptId) {
         try {
@@ -682,7 +685,7 @@ public class QuizFacade extends AbstractIsaacFacade {
      * @return Response containing a QuestionValidationResponse object or containing a SegueErrorResponse .
      */
     @POST
-    @Path("attempt/{quizAttemptId}/answer/{question_id}")
+    @Path("/attempt/{quizAttemptId}/answer/{question_id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
@@ -816,7 +819,7 @@ public class QuizFacade extends AbstractIsaacFacade {
      * @return the quiz assignment that has been created, or an error.
      */
     @POST
-    @Path("/createQuizAssignment")
+    @Path("/assignment")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @ApiOperation(value = "Set a quiz to a group, with an optional due date.")
@@ -887,7 +890,7 @@ public class QuizFacade extends AbstractIsaacFacade {
      * @return a Response containing a list of QuizAssignmentDTO for the quizzes they have assigned.
      */
     @GET
-    @Path("assigned")
+    @Path("/assigned")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @ApiOperation(value = "Get quizzes assigned by this user.")
@@ -945,7 +948,7 @@ public class QuizFacade extends AbstractIsaacFacade {
      * @return Details about the assignment.
      */
     @GET
-    @Path("/quizAssignment/{quizAssignmentId}")
+    @Path("/assignment/{quizAssignmentId}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @ApiOperation(value = "View a quiz assignment.")
@@ -1017,7 +1020,7 @@ public class QuizFacade extends AbstractIsaacFacade {
      * @return Confirmation or error.
      */
     @POST
-    @Path("/quizAssignment/{quizAssignmentId}")
+    @Path("/assignment/{quizAssignmentId}")
     @ApiOperation(value = "Update a quiz assignment (only feedbackMode may be updated).")
     public final Response updateQuizAssignment(@Context final HttpServletRequest httpServletRequest,
                                                @PathParam("quizAssignmentId") Long quizAssignmentId,
@@ -1073,7 +1076,7 @@ public class QuizFacade extends AbstractIsaacFacade {
      * @return Confirmation or error.
      */
     @DELETE
-    @Path("/quizAssignment/{quizAssignmentId}")
+    @Path("/assignment/{quizAssignmentId}")
     @ApiOperation(value = "Cancel a quiz assignment.")
     public final Response cancelQuizAssignment(@Context final HttpServletRequest httpServletRequest,
                                                @PathParam("quizAssignmentId") Long quizAssignmentId) {
