@@ -596,11 +596,12 @@ public class EventsFacade extends AbstractIsaacFacade {
                                                        @PathParam("event_id") final String eventId) {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
-            List<EventBookingDTO> eventBookings = this.mapper.mapAsList(bookingManager.getBookingsByEventId(eventId), EventBookingDTO.class);
 
             if (!isUserTeacherOrAbove(userManager, currentUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to use this endpoint.").toResponse();
             }
+
+            List<EventBookingDTO> eventBookings = this.mapper.mapAsList(bookingManager.getBookingsByEventId(eventId), EventBookingDTO.class);
 
             // Only allowed to see the bookings of connected users
             eventBookings = userAssociationManager.filterUnassociatedRecords(
