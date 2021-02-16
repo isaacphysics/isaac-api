@@ -63,8 +63,8 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
         PreparedStatement pst;
         try (Connection conn = database.getDatabaseConnection()) {
             pst = conn.prepareStatement(
-                    "INSERT INTO assignments(gameboard_id, group_id, owner_user_id, creation_date, due_date)"
-                    + " VALUES (?, ?, ?, ?, ?);", Statement.RETURN_GENERATED_KEYS);
+                    "INSERT INTO assignments(gameboard_id, group_id, owner_user_id, creation_date, due_date, notes)"
+                    + " VALUES (?, ?, ?, ?, ?, ?);", Statement.RETURN_GENERATED_KEYS);
 
             pst.setString(1, assignmentToSave.getGameboardId());
             pst.setLong(2, assignmentToSave.getGroupId());
@@ -80,6 +80,12 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
                 pst.setTimestamp(5, new java.sql.Timestamp(assignmentToSave.getDueDate().getTime()));
             } else {
                 pst.setNull(5, Types.TIMESTAMP);
+            }
+
+            if (assignment.getNotes() != null) {
+                pst.setString(6, assignmentToSave.getNotes());
+            } else {
+                pst.setNull(6, Types.VARCHAR);
             }
 
             if (pst.executeUpdate() == 0) {
