@@ -866,7 +866,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                             USER_ID_LIST_FKEY_FIELDNAME, userIds.toArray(),
                             BOOKING_STATUS_FIELDNAME, BookingStatus.RESERVED.toString()
                     ));
-            return Response.ok(this.mapper.map(bookings, EventBookingDTO.class)).build();
+            return Response.ok(this.mapper.mapAsList(bookings, EventBookingDTO.class)).build();
 
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
