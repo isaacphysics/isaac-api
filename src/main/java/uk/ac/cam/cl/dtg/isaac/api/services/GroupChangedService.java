@@ -138,7 +138,7 @@ public class GroupChangedService implements IGroupObserver {
 
         formatAssignmentLikeList(htmlSB, plainTextSB, existingAssignments, "assignments", assignmentManager);
 
-        final List<QuizAssignmentDTO> existingQuizzes = this.quizAssignmentManager.getAssignmentsForGroups(Collections.singletonList(userGroup));
+        final List<QuizAssignmentDTO> existingQuizzes = this.quizAssignmentManager.getActiveAssignmentsForGroups(Collections.singletonList(userGroup));
 
         if (existingQuizzes != null && !existingQuizzes.isEmpty()) {
             htmlSB.append("<br>");

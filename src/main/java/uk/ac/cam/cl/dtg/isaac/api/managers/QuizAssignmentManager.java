@@ -148,6 +148,11 @@ public class QuizAssignmentManager implements IAssignmentLike.Details<QuizAssign
         return this.quizAssignmentPersistenceManager.getAssignmentsByGroupList(groupIds);
     }
 
+    public List<QuizAssignmentDTO> getActiveAssignmentsForGroups(List<UserGroupDTO> groups) throws SegueDatabaseException {
+        List<QuizAssignmentDTO> assignments = getAssignmentsForGroups(groups);
+        return filterActiveAssignments(assignments);
+    }
+
     public void cancelAssignment(QuizAssignmentDTO assignment) throws SegueDatabaseException {
         this.quizAssignmentPersistenceManager.cancelAssignment(assignment.getId());
     }
@@ -161,8 +166,12 @@ public class QuizAssignmentManager implements IAssignmentLike.Details<QuizAssign
 
     private List<QuizAssignmentDTO> getAllActiveAssignments(RegisteredUserDTO user) throws SegueDatabaseException {
         List<QuizAssignmentDTO> allAssignedQuizzes = getAllAssignments(user);
+        return filterActiveAssignments(allAssignedQuizzes);
+    }
+
+    private List<QuizAssignmentDTO> filterActiveAssignments(List<QuizAssignmentDTO> assignments) {
         Date now = new Date();
-        return allAssignedQuizzes.stream().filter(qa -> qa.getDueDate() == null || qa.getDueDate().after(now)).collect(Collectors.toList());
+        return assignments.stream().filter(qa -> qa.getDueDate() == null || qa.getDueDate().after(now)).collect(Collectors.toList());
     }
 
     public void updateAssignment(QuizAssignmentDTO assignment, QuizAssignmentDTO updates) throws SegueDatabaseException {
