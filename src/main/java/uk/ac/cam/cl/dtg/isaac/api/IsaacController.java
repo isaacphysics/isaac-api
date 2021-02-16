@@ -190,11 +190,14 @@ public class IsaacController extends AbstractIsaacFacade {
             @DefaultValue(DEFAULT_SEARCH_RESULT_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
 
         // Impose 1000 character search string limit internally
-        String internalSearchString = searchString.substring(0, Math.min(searchString.length(), 1000));
+        if (searchString.length() > SEARCH_TEXT_CHAR_LIMIT) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Search string exceeded " +
+                    SEARCH_TEXT_CHAR_LIMIT.toString() + " character limit.").toResponse();
+        }
 
         // Calculate the ETag on current live version of the content
         // NOTE: Assumes that the latest version of the content is being used.
-        EntityTag etag = new EntityTag(this.contentIndex.hashCode() + internalSearchString.hashCode()
+        EntityTag etag = new EntityTag(this.contentIndex.hashCode() + searchString.hashCode()
                 + types.hashCode() + "");
 
         Response cachedResponse = generateCachedResponse(request, etag);
@@ -210,11 +213,11 @@ public class IsaacController extends AbstractIsaacFacade {
             }
             List<String> documentTypes = !types.isEmpty() ? Arrays.asList(types.split(",")) : null;
             ResultsWrapper<ContentDTO> searchResults = this.contentManager.siteWideSearch(
-                    this.contentIndex, internalSearchString, documentTypes, showHiddenContent, startIndex, limit);
+                    this.contentIndex, searchString, documentTypes, showHiddenContent, startIndex, limit);
 
             ImmutableMap<String, String> logMap = new ImmutableMap.Builder<String, String>()
                     .put(TYPE_FIELDNAME, types)
-                    .put("searchString", internalSearchString)
+                    .put("searchString", searchString)
                     .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
 
             getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,

@@ -386,6 +386,8 @@ public final class Constants {
 
     public static final String DEFAULT_SEARCH_RESULT_LIMIT_AS_STRING = "25";
 
+    public static final Integer SEARCH_TEXT_CHAR_LIMIT = 1000;
+
     public static final Integer NO_SEARCH_LIMIT = -1;
 
     // Content model specific stuff
