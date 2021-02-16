@@ -122,4 +122,8 @@ public class QuizAttemptManager {
     public QuizAttemptDTO getByQuizAssignmentAndUser(QuizAssignmentDTO assignment, RegisteredUserDTO user) throws SegueDatabaseException {
         return quizAttemptPersistenceManager.getByQuizAssignmentIdAndUserId(assignment.getId(), user.getId());
     }
+
+    public List<QuizAttemptDTO> getFreeAttemptsFor(RegisteredUserDTO user) throws SegueDatabaseException {
+        return quizAttemptPersistenceManager.getFreeAttemptsByUserId(user.getId());
+    }
 }

@@ -211,15 +211,50 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(request);
 
-            List<QuizAssignmentDTO> quizzes = this.quizAssignmentManager.getAssignedQuizzes(user);
+            List<QuizAssignmentDTO> assignments = this.quizAssignmentManager.getAssignedQuizzes(user);
 
-            this.assignmentService.augmentAssignerSummaries(quizzes);
+            this.assignmentService.augmentAssignerSummaries(assignments);
 
-            quizManager.augmentQuizzes(quizzes);
+            quizManager.augmentWithQuizSummary(assignments);
 
-            this.quizAttemptManager.augmentAssignmentsFor(user, quizzes);
+            this.quizAttemptManager.augmentAssignmentsFor(user, assignments);
 
-            return Response.ok(quizzes)
+            return Response.ok(assignments)
+                .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
+        } catch (SegueDatabaseException e) {
+            String message = "SegueDatabaseException whilst getting available quizzes";
+            log.error(message, e);
+            return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        } catch (ContentManagerException e) {
+            String message = "ContentManagerException whilst getting available quizzes";
+            log.error(message, e);
+            return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
+    }
+
+    /**
+     * Get quizzes freely attempted by this user.
+     *
+     * Shows a content summary, so we can track when a user actually attempts a quiz.
+     *
+     * @return a Response containing a list of QuizAttemptDTO for the freely attempted quizzes.
+     */
+    @GET
+    @Path("/free_attempts")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @ApiOperation(value = "Get quizzes freely attempted by this user.")
+    public final Response getFreeAttempts(@Context final HttpServletRequest request) {
+        try {
+            RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(request);
+
+            List<QuizAttemptDTO> attempts = this.quizAttemptManager.getFreeAttemptsFor(user);
+
+            quizManager.augmentWithQuizSummary(attempts);
+
+            return Response.ok(attempts)
                 .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (SegueDatabaseException e) {
             String message = "SegueDatabaseException whilst getting available quizzes";
@@ -940,7 +975,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             }
             List<QuizAssignmentDTO> assignments = this.quizAssignmentManager.getAssignmentsForGroups(groups);
 
-            quizManager.augmentQuizzes(assignments);
+            quizManager.augmentWithQuizSummary(assignments);
 
             return Response.ok(assignments)
                 .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();

@@ -15,16 +15,19 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto;
 
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
+
 import javax.annotation.Nullable;
 import java.util.Date;
 
 /**
  * This class is the Data Transfer Object used to refer to quiz attempts.
  */
-public class QuizAttemptDTO  {
+public class QuizAttemptDTO implements IHasQuizSummary {
     private Long id;
     private Long userId;
     private String quizId;
+    private ContentSummaryDTO quizSummary; // We only need the title really.
     @Nullable private Long quizAssignmentId;
     private Date startDate;
     @Nullable private Date completedDate;
@@ -133,5 +136,15 @@ public class QuizAttemptDTO  {
 
     public void setCompletedDate(@Nullable Date completedDate) {
         this.completedDate = completedDate;
+    }
+
+    @Override
+    public ContentSummaryDTO getQuizSummary() {
+        return quizSummary;
+    }
+
+    @Override
+    public void setQuizSummary(ContentSummaryDTO summary) {
+        this.quizSummary = summary;
     }
 }

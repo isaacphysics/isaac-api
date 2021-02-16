@@ -81,9 +81,12 @@ public class QuizFacadeTest extends AbstractFacadeTest {
     private QuizAssignmentManager quizAssignmentManager;
     private ILogManager logManager;
     private UserAssociationManager associationManager;
+    private List<QuizAttemptDTO> studentOwnAttempts;
 
     @Before
     public void setUp() throws ContentManagerException {
+        studentOwnAttempts = ImmutableList.of(ownAttempt, ownCompletedAttempt, attemptOnNullFeedbackModeQuiz);
+
         assignmentService = createMock(AssignmentService.class);
 
         requestForCaching = createMock(Request.class);
@@ -140,6 +143,9 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                     .findFirst()
                     .orElseThrow(() -> new SegueDatabaseException("No such attempt."));
             });
+
+            expect(m.getFreeAttemptsFor(student)).andStubReturn(studentOwnAttempts);
+            expect(m.getFreeAttemptsFor(anyObject())).andStubReturn(Collections.emptyList());
         });
 
         String currentSHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
@@ -176,14 +182,28 @@ public class QuizFacadeTest extends AbstractFacadeTest {
             requiresLogin(),
             as(student,
                 prepare(assignmentService, m -> m.augmentAssignerSummaries(studentAssignments)),
-                prepare(quizManager, m -> m.augmentQuizzes(studentAssignments)),
+                prepare(quizManager, m -> m.augmentWithQuizSummary(studentAssignments)),
                 prepare(quizAttemptManager, m -> m.augmentAssignmentsFor(student, studentAssignments)),
                 respondsWith(studentAssignments)),
             as(anyOf(teacher, secondStudent),
                 prepare(assignmentService, m -> m.augmentAssignerSummaries(noAssignments)),
-                prepare(quizManager, m -> m.augmentQuizzes(noAssignments)),
+                prepare(quizManager, m -> m.augmentWithQuizSummary(noAssignments)),
                 prepare(quizAttemptManager, m -> m.augmentAssignmentsFor(currentUser(), noAssignments)),
                 respondsWith(noAssignments)
+            ));
+    }
+
+    @Test
+    public void getFreeAttempts() {
+        List<QuizAttemptDTO> noAttempts = Collections.emptyList();
+        forEndpoint(() -> quizFacade.getFreeAttempts(request),
+            requiresLogin(),
+            as(student,
+                prepare(quizManager, m -> m.augmentWithQuizSummary(studentOwnAttempts)),
+                respondsWith(studentOwnAttempts)),
+            as(anyOf(teacher, secondStudent),
+                prepare(quizManager, m -> m.augmentWithQuizSummary(noAttempts)),
+                respondsWith(noAttempts)
             ));
     }
 
@@ -600,7 +620,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                     prepare(quizAssignmentManager, m -> expect(m.getAssignmentsForGroups(studentGroups))
                         .andReturn(teacherAssignmentsToTheirGroups)),
                     prepare(quizManager, m -> {
-                        m.augmentQuizzes(teacherAssignmentsToTheirGroups);
+                        m.augmentWithQuizSummary(teacherAssignmentsToTheirGroups);
                     }),
                     respondsWith(teacherAssignmentsToTheirGroups)
                 ),
@@ -610,7 +630,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                     prepare(quizAssignmentManager, m -> expect(m.getAssignmentsForGroups(Collections.emptyList()))
                         .andReturn(Collections.emptyList())),
                     prepare(quizManager, m -> {
-                        m.augmentQuizzes(Collections.emptyList());
+                        m.augmentWithQuizSummary(Collections.emptyList());
                     }),
                     respondsWith(Collections.emptyList())),
                 as(anyOf(student, secondStudent, otherStudent),
@@ -624,7 +644,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                         .andReturn(studentInactiveGroup)),
                     prepare(quizAssignmentManager, m -> expect(m.getAssignmentsForGroups(Collections.singletonList(studentInactiveGroup)))
                         .andReturn(inactiveGroupAssignments)),
-                    prepare(quizManager, m -> m.augmentQuizzes(inactiveGroupAssignments)),
+                    prepare(quizManager, m -> m.augmentWithQuizSummary(inactiveGroupAssignments)),
                     respondsWith(inactiveGroupAssignments)
                 ),
                 as(anyOf(student, secondStudent, otherStudent),

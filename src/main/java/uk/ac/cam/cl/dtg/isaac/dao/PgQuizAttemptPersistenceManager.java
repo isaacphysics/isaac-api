@@ -239,6 +239,27 @@ public class PgQuizAttemptPersistenceManager implements IQuizAttemptPersistenceM
     }
 
     @Override
+    public List<QuizAttemptDTO> getFreeAttemptsByUserId(Long userId) throws SegueDatabaseException {
+        try (Connection conn = database.getDatabaseConnection()) {
+            PreparedStatement pst;
+
+            pst = conn.prepareStatement("SELECT * FROM quiz_attempts WHERE quiz_attempts.user_id = ? AND quiz_assignment_id IS NULL");
+            pst.setLong(1, userId);
+
+            ResultSet results = pst.executeQuery();
+
+            List<QuizAttemptDTO> listOfResults = Lists.newArrayList();
+            while (results.next()) {
+                listOfResults.add(this.convertToQuizAttemptDTO(this.convertFromSQLToQuizAttemptDO(results)));
+            }
+
+            return listOfResults;
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Unable to find free quiz attempts for user id", e);
+        }
+    }
+
+    @Override
     public void deleteAttempt(Long quizAttemptId) throws SegueDatabaseException {
         PreparedStatement pst;
         try (Connection conn = database.getDatabaseConnection()) {
