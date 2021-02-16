@@ -511,7 +511,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
-            List<EventBookingDTO> eventBookings = this.mapper.mapAsList(bookingManager.adminGetBookingsByEventId(eventId), EventBookingDTO.class);
+            List<DetailedEventBookingDTO> eventBookings = this.mapper.mapAsList(bookingManager.adminGetBookingsByEventId(eventId), DetailedEventBookingDTO.class);
 
             if (Arrays.asList(Role.EVENT_LEADER).contains(currentUser.getRole())) {
                 eventBookings = userAssociationManager.filterUnassociatedRecords(currentUser, eventBookings, booking -> booking.getUserBooked().getId());
@@ -643,7 +643,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
-            List<DetailedEventBookingDTO> eventBookings = bookingManager.getBookingsByEventId(eventId);
+            List<DetailedEventBookingDTO> eventBookings = bookingManager.adminGetBookingsByEventId(eventId);
 
             // Event leaders are only allowed to see the bookings of connected users
             if (Role.EVENT_LEADER.equals(currentUser.getRole())) {
