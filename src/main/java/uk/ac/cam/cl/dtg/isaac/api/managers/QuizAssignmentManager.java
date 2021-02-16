@@ -23,15 +23,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizAssignmentPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dto.IAssignmentLike;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -41,7 +44,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 /**
  * Manage quiz assignments
  */
-public class QuizAssignmentManager {
+public class QuizAssignmentManager implements IAssignmentLike.Details<QuizAssignmentDTO> {
     private static final Logger log = LoggerFactory.getLogger(QuizAssignmentManager.class);
 
     private final IQuizAssignmentPersistenceManager quizAssignmentPersistenceManager;
@@ -110,8 +113,7 @@ public class QuizAssignmentManager {
         newAssignment.setCreationDate(now);
         newAssignment.setId(this.quizAssignmentPersistenceManager.saveAssignment(newAssignment));
 
-        final String quizURL = String.format("https://%s/quiz/%s/assignment/%d", properties.getProperty(HOST_NAME),
-            quiz.getId(), newAssignment.getId());
+        String quizURL = getAssignmentLikeUrl(newAssignment);
 
         emailService.sendAssignmentEmailToGroup(newAssignment, quiz, ImmutableMap.of("quizURL", quizURL) ,
             "email-template-group-quiz-assignment");
@@ -165,5 +167,26 @@ public class QuizAssignmentManager {
 
     public void updateAssignment(QuizAssignmentDTO assignment, QuizAssignmentDTO updates) throws SegueDatabaseException {
         this.quizAssignmentPersistenceManager.updateAssignment(assignment.getId(), updates);
+    }
+
+    @Override
+    public String getAssignmentLikeName(QuizAssignmentDTO assignment) throws ContentManagerException {
+        if (assignment.getQuizSummary() == null) {
+            quizManager.augmentWithQuizSummary(Collections.singletonList(assignment));
+        }
+        ContentSummaryDTO quiz = assignment.getQuizSummary();
+        String name = assignment.getQuizId();
+        if (quiz != null && quiz.getTitle() != null && !quiz.getTitle().isEmpty()) {
+            name = quiz.getTitle();
+        }
+
+        return name;
+    }
+
+    @Override
+    public String getAssignmentLikeUrl(QuizAssignmentDTO assignment) {
+        return String.format("https://%s/quiz/assignment/%s",
+            properties.getProperty(HOST_NAME),
+            assignment.getId());
     }
 }
