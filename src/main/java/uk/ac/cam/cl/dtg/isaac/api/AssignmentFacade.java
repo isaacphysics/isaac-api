@@ -986,9 +986,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             }
 
             if (null != assignmentDTOFromClient.getNotes() && assignmentDTOFromClient.getNotes().length() > 240) {
-                // WARNING 240 is hardcoded
+                // WARNING 500 is hardcoded
                 return new SegueErrorResponse(Status.BAD_REQUEST,
-                        "Assignment notes are limited to 240 characters.").toResponse();
+                        "Assignment notes are limited to 500 characters.").toResponse();
             }
 
             assignmentDTOFromClient.setOwnerUserId(currentlyLoggedInUser.getId());
