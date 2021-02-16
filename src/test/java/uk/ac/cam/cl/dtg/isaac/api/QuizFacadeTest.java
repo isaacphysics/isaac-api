@@ -158,7 +158,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
     public void availableQuizzes() {
         forEndpoint(() -> quizFacade.getAvailableQuizzes(request),
             requiresLogin(),
-            as(anyOf(student, otherStudent),
+            as(anyOf(student, secondStudent),
                 check((response) ->
                     assertEquals(Collections.singletonList(studentQuizSummary), extractResults(response)))
             ),
@@ -179,7 +179,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                 prepare(quizManager, m -> m.augmentQuizzes(studentAssignments)),
                 prepare(quizAttemptManager, m -> m.augmentAssignmentsFor(student, studentAssignments)),
                 respondsWith(studentAssignments)),
-            as(anyOf(teacher, otherStudent),
+            as(anyOf(teacher, secondStudent),
                 prepare(assignmentService, m -> m.augmentAssignerSummaries(noAssignments)),
                 prepare(quizManager, m -> m.augmentQuizzes(noAssignments)),
                 prepare(quizAttemptManager, m -> m.augmentAssignmentsFor(currentUser(), noAssignments)),
@@ -195,29 +195,29 @@ public class QuizFacadeTest extends AbstractFacadeTest {
             requiresLogin(),
             as(studentsTeachersOrAdmin(),
                 prepare(quizAssignmentManager, m -> expect(m.getGroupForAssignment(studentAssignment)).andReturn(studentGroup)),
-                prepare(quizQuestionManager, m -> expect(m.getAssignmentFeedback(studentQuiz, studentAssignment, ImmutableList.of(student, otherStudent)))
-                    .andReturn(ImmutableMap.of(student, studentFeedback, otherStudent, otherStudentFeedback))),
+                prepare(quizQuestionManager, m -> expect(m.getAssignmentFeedback(studentQuiz, studentAssignment, ImmutableList.of(student, secondStudent)))
+                    .andReturn(ImmutableMap.of(student, studentFeedback, secondStudent, otherStudentFeedback))),
                 prepare(associationManager, m -> {
                     expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(student))).andAnswer(grantAccess(true));
-                    expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(otherStudent))).andAnswer(grantAccess(true));
+                    expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(secondStudent))).andAnswer(grantAccess(true));
                 }),
                 check(response -> {
                     assertEquals(studentFeedback, getFeedbackFor(student));
-                    assertEquals(otherStudentFeedback, getFeedbackFor(otherStudent));
+                    assertEquals(otherStudentFeedback, getFeedbackFor(secondStudent));
                 })
             ),
             forbiddenForEveryoneElse(),
             as(studentsTeachersOrAdmin(),
                 prepare(quizAssignmentManager, m -> expect(m.getGroupForAssignment(studentAssignment)).andReturn(studentGroup)),
-                prepare(quizQuestionManager, m -> expect(m.getAssignmentFeedback(studentQuiz, studentAssignment, ImmutableList.of(student, otherStudent)))
-                    .andReturn(ImmutableMap.of(student, studentFeedback, otherStudent, otherStudentFeedback))),
+                prepare(quizQuestionManager, m -> expect(m.getAssignmentFeedback(studentQuiz, studentAssignment, ImmutableList.of(student, secondStudent)))
+                    .andReturn(ImmutableMap.of(student, studentFeedback, secondStudent, otherStudentFeedback))),
                 prepare(associationManager, m -> {
                     expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(student))).andAnswer(grantAccess(true));
-                    expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(otherStudent))).andAnswer(grantAccess(false));
+                    expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(secondStudent))).andAnswer(grantAccess(false));
                 }),
                 check(response -> {
                     assertEquals(studentFeedback, getFeedbackFor(student));
-                    assertNull(getFeedbackFor(otherStudent));
+                    assertNull(getFeedbackFor(secondStudent));
                 })
             )
         );
@@ -316,8 +316,8 @@ public class QuizFacadeTest extends AbstractFacadeTest {
             (assignment) -> () -> quizFacade.startQuizAttempt(requestForCaching, request, assignment.getId()),
             with(studentAssignment,
                 requiresLogin(),
-                as(student,
-                    prepare(quizAttemptManager, m -> expect(m.fetchOrCreate(studentAssignment, student)).andReturn(attempt)),
+                as(anyOf(student, secondStudent),
+                    prepare(quizAttemptManager, m -> expect(m.fetchOrCreate(studentAssignment, currentUser())).andReturn(attempt)),
                     respondsWith(attempt)),
                 forbiddenForEveryoneElse()
             ),
@@ -334,8 +334,8 @@ public class QuizFacadeTest extends AbstractFacadeTest {
         forEndpoint((quiz) -> () -> quizFacade.startFreeQuizAttempt(requestForCaching, request, quiz.getId()),
             with(studentQuiz,
                 requiresLogin(),
-                as(otherStudent,
-                    prepare(quizAttemptManager, m -> expect(m.fetchOrCreateFreeQuiz(studentQuiz, otherStudent)).andReturn(attempt)),
+                as(secondStudent,
+                    prepare(quizAttemptManager, m -> expect(m.fetchOrCreateFreeQuiz(studentQuiz, secondStudent)).andReturn(attempt)),
                     respondsWith(attempt)
                 ),
                 as(student,
@@ -343,7 +343,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                 )
             ),
             with(teacherQuiz,
-                as(anyOf(student, otherStudent),
+                as(anyOf(student, secondStudent),
                     failsWith(Status.FORBIDDEN)
                 )
             )
@@ -356,7 +356,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
         forEndpoint((attempt) -> () -> quizFacade.getQuizAttempt(request, attempt.getId()),
             with(studentAttempt,
                 requiresLogin(),
-                as(otherStudent,
+                as(secondStudent,
                     failsWith(Status.FORBIDDEN)
                 ),
                 as(student,
@@ -442,29 +442,47 @@ public class QuizFacadeTest extends AbstractFacadeTest {
 
     @Test
     public void completeQuizAttemptMarkIncompleteByTeacher() {
-        forEndpoint((attempt) -> () -> quizFacade.markIncompleteQuizAttempt(request, attempt.getId()),
-            with(studentAttempt,
+        forEndpoint((user) -> () -> quizFacade.markIncompleteQuizAttempt(request, studentAssignment.getId(), user.getId()),
+            with(student,
                 requiresLogin(),
-                as(everyone,
-                    failsWith(Status.FORBIDDEN)
-                )
-            ),
-            with(completedAttempt,
                 as(studentsTeachersOrAdmin(),
-                    prepare(quizAttemptManager, m -> m.updateAttemptCompletionStatus(completedAttempt, false)),
+                    prepare(quizAttemptManager, m -> {
+                        expect(m.getByQuizAssignmentAndUser(studentAssignment, student)).andReturn(completedAttempt);
+                        m.updateAttemptCompletionStatus(completedAttempt, false);
+                    }),
                     succeeds()
                 ),
                 everyoneElse(
                     failsWith(Status.FORBIDDEN)
                 )
             ),
-            with(overdueCompletedAttempt,
+            with(student,
+                requiresLogin(),
+                as(studentsTeachersOrAdmin(),
+                    prepare(quizAttemptManager, m -> {
+                        expect(m.getByQuizAssignmentAndUser(studentAssignment, student)).andReturn(studentAttempt);
+                    }),
+                    failsWith(Status.BAD_REQUEST)
+                ),
+                everyoneElse(
+                    failsWith(Status.FORBIDDEN)
+                )
+            ),
+            with(otherStudent,
                 as(studentsTeachersOrAdmin(),
                     failsWith(Status.BAD_REQUEST)
                 ),
                 everyoneElse(
                     failsWith(Status.FORBIDDEN)
                 )
+            )
+        );
+        forEndpoint(() -> quizFacade.markIncompleteQuizAttempt(request, overdueAssignment.getId(), student.getId()),
+            as(studentsTeachersOrAdmin(),
+                failsWith(Status.BAD_REQUEST)
+            ),
+            everyoneElse(
+                failsWith(Status.FORBIDDEN)
             )
         );
     }
@@ -595,7 +613,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                         m.augmentQuizzes(Collections.emptyList());
                     }),
                     respondsWith(Collections.emptyList())),
-                as(anyOf(student, otherStudent),
+                as(anyOf(student, secondStudent, otherStudent),
                     failsWith(SegueErrorResponse.getIncorrectRoleResponse())
                 )
             ),
@@ -609,7 +627,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                     prepare(quizManager, m -> m.augmentQuizzes(inactiveGroupAssignments)),
                     respondsWith(inactiveGroupAssignments)
                 ),
-                as(anyOf(student, otherStudent),
+                as(anyOf(student, secondStudent, otherStudent),
                     failsWith(SegueErrorResponse.getIncorrectRoleResponse())
                 ),
                 everyoneElse(

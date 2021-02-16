@@ -43,6 +43,7 @@ import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -568,29 +569,39 @@ public class QuizFacade extends AbstractIsaacFacade {
      *
      * Only owner and group managers for the quiz assignment can mark it incomplete.
      * If it is a self-taken quiz, you cannot mark it incomplete, as that would make it easier to tweak individual
-     * questions to find the right answers.
+     * questions to find the right answers (also there is no assignment so you can't construct the URL anyway).
      *
      * @param httpServletRequest
      *            - so that we can extract user information.
-     * @param quizAttemptId
-     *            - the ID of the quiz the user wishes to attempt.
+     * @param quizAssignmentId
+     *            - the ID of the assignment you want to mark an attempt incomplete from.
+     * @param userId
+     *            - the ID of the user whose attempt you want to mark incomplete.
      * @return Confirmation or an error.
      */
     @POST
-    @Path("/attempt/{quizAttemptId}/incomplete")
+    @Path("/assignment/{quizAssignmentId}/{userId}/incomplete")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @ApiOperation(value = "Mark a QuizAttempt as incomplete.")
     public final Response markIncompleteQuizAttempt(@Context final HttpServletRequest httpServletRequest,
-                                                    @PathParam("quizAttemptId") final Long quizAttemptId) {
+                                                    @PathParam("quizAssignmentId") final Long quizAssignmentId,
+                                                    @PathParam("userId") final Long userId) {
+        if (null == quizAssignmentId) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Missing quizAssignmentId.").toResponse();
+        }
+        if (null == userId) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Missing userId.").toResponse();
+        }
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
-            QuizAttemptDTO quizAttempt = getQuizAttempt(quizAttemptId);
+            QuizAssignmentDTO assignment = quizAssignmentManager.getById(quizAssignmentId);
 
-            QuizAssignmentDTO assignment = getQuizAssignment(quizAttempt);
 
-            if (assignment == null || !canManageAssignment(assignment, user)) {
+            UserGroupDTO group = quizAssignmentManager.getGroupForAssignment(assignment);
+
+            if (assignment == null || !canManageGroup(user, group)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                     "You can only mark assignments incomplete for groups you own or manage.").toResponse();
             }
@@ -599,8 +610,15 @@ public class QuizFacade extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "You cannot mark a quiz incomplete when it is already due.").toResponse();
             }
 
-            if (quizAttempt.getCompletedDate() == null) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "That quiz is already incomplete.").toResponse();
+            RegisteredUserDTO student = userManager.getUserDTOById(userId);
+            if (!groupManager.isUserInGroup(student, group)) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "That user is not in this group.").toResponse();
+            }
+
+            QuizAttemptDTO quizAttempt = quizAttemptManager.getByQuizAssignmentAndUser(assignment, student);
+
+            if (quizAttempt == null || quizAttempt.getCompletedDate() == null) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "That quiz is already incomplete.").toResponse();
             }
 
             quizAttemptManager.updateAttemptCompletionStatus(quizAttempt, false);
@@ -610,13 +628,13 @@ public class QuizFacade extends AbstractIsaacFacade {
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
-            String message = "SegueDatabaseException whilst marking quiz attempt complete";
+            String message = "SegueDatabaseException whilst marking quiz attempt incomplete";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (AssignmentCancelledException e) {
             return new SegueErrorResponse(Status.FORBIDDEN, "This quiz assignment has been cancelled.").toResponse();
-        } catch (ErrorResponseWrapper responseWrapper) {
-            return responseWrapper.toResponse();
+        } catch (NoUserException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "No such user.").toResponse();
         }
     }
 

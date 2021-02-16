@@ -23,6 +23,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
+import javax.annotation.Nullable;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -115,5 +116,10 @@ public class QuizAttemptManager {
     public void augmentAssignmentsFor(RegisteredUserDTO user, List<QuizAssignmentDTO> assignments) throws SegueDatabaseException {
         Map<Long, QuizAttemptDTO> attempts = quizAttemptPersistenceManager.getByQuizAssignmentIdsAndUserId(assignments.stream().map(QuizAssignmentDTO::getId).collect(Collectors.toList()), user.getId());
         assignments.forEach(quizAssignment -> quizAssignment.setAttempt(attempts.get(quizAssignment.getId())));
+    }
+
+    @Nullable
+    public QuizAttemptDTO getByQuizAssignmentAndUser(QuizAssignmentDTO assignment, RegisteredUserDTO user) throws SegueDatabaseException {
+        return quizAttemptPersistenceManager.getByQuizAssignmentIdAndUserId(assignment.getId(), user.getId());
     }
 }

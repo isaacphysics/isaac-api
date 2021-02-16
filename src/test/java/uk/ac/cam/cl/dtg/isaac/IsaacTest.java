@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.isaac;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import org.junit.Before;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionBase;
@@ -75,6 +76,7 @@ public class IsaacTest {
     protected RegisteredUserDTO secondTeacher;
     protected RegisteredUserDTO otherTeacher;
     protected RegisteredUserDTO noone;
+    protected RegisteredUserDTO secondStudent;
     protected RegisteredUserDTO otherStudent;
     protected RegisteredUserDTO adminUser;
     protected List<RegisteredUserDTO> everyone;
@@ -172,7 +174,11 @@ public class IsaacTest {
 
         noone = null;
 
-        otherStudent = new RegisteredUserDTO("Other", "Student", "other-student@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.FEMALE, somePastDate, "");
+        secondStudent = new RegisteredUserDTO("Second", "Student", "second-student@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.FEMALE, somePastDate, "");
+        secondStudent.setRole(Role.STUDENT);
+        secondStudent.setId(++id);
+
+        otherStudent = new RegisteredUserDTO("Other", "Student", "other-student@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, "");
         otherStudent.setRole(Role.STUDENT);
         otherStudent.setId(++id);
 
@@ -180,7 +186,7 @@ public class IsaacTest {
         adminUser.setRole(Role.ADMIN);
         adminUser.setId(++id);
 
-        everyone = anyOf(student, teacher, secondTeacher, otherTeacher, otherStudent, adminUser);
+        everyone = anyOf(student, teacher, secondTeacher, otherTeacher, secondStudent, otherStudent, adminUser);
 
         studentGroup = new UserGroupDTO();
         studentGroup.setId(++id);
@@ -244,21 +250,27 @@ public class IsaacTest {
         });
         expect(groupManager.isUserInGroup(anyObject(), anyObject())).andStubAnswer(() -> {
             Object[] arguments = getCurrentArguments();
-            if (arguments[0] == student && (arguments[1] == studentGroup || arguments[1] == studentInactiveGroup)) {
+            if ((arguments[0] == student) && (arguments[1] == studentGroup || arguments[1] == studentInactiveGroup)) {
+                return true;
+            } else if (arguments[0] == secondStudent && arguments[1] == studentGroup) {
                 return true;
             } else {
                 return false;
             }
         });
         expect(groupManager.getGroupMembershipList(student, false)).andStubReturn(ImmutableList.of(studentGroup, studentInactiveGroup));
+        expect(groupManager.getGroupMembershipList(secondStudent, false)).andStubReturn(ImmutableList.of(studentGroup));
         expect(groupManager.getUserMembershipMapForGroup(studentGroup.getId())).andStubReturn(
-            Collections.singletonMap(student.getId(), new GroupMembershipDTO(studentGroup.getId(), student.getId(), GroupMembershipStatus.ACTIVE, null, somePastDate))
+            ImmutableMap.of(
+                student.getId(), new GroupMembershipDTO(studentGroup.getId(), student.getId(), GroupMembershipStatus.ACTIVE, null, somePastDate),
+                secondStudent.getId(), new GroupMembershipDTO(studentGroup.getId(), secondStudent.getId(), GroupMembershipStatus.ACTIVE, null, somePastDate)
+            )
         );
         Date beforeSomePastDate = new Date(somePastDate.getTime() - 1000L);
         expect(groupManager.getUserMembershipMapForGroup(studentInactiveGroup.getId())).andStubReturn(
             Collections.singletonMap(student.getId(), new GroupMembershipDTO(studentGroup.getId(), student.getId(), GroupMembershipStatus.INACTIVE, null, beforeSomePastDate))
         );
-        expect(groupManager.getUsersInGroup(studentGroup)).andStubReturn(ImmutableList.of(student, otherStudent));
+        expect(groupManager.getUsersInGroup(studentGroup)).andStubReturn(ImmutableList.of(student, secondStudent));
 
         replay(quizManager, groupManager);
     }

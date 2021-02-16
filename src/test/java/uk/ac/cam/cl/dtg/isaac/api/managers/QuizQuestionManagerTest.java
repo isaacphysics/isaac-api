@@ -264,7 +264,7 @@ public class QuizQuestionManagerTest extends AbstractManagerTest {
 
         Map<RegisteredUserDTO, QuizFeedbackDTO> feedback = quizQuestionManager.getAssignmentFeedback(studentQuiz, studentAssignment, groupMembers);
 
-        assertFalse(feedback.get(otherStudent).isComplete());
+        assertFalse(feedback.get(secondStudent).isComplete());
         assertStudentMarks(feedback.get(student));
         assertEquals(new Integer(3), studentQuiz.getTotal());
     }
