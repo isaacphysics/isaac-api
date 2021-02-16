@@ -332,6 +332,7 @@ public final class Constants {
         ADMIN_EVENT_WAITING_LIST_PROMOTION,
         ADMIN_MERGE_USER,
         ANSWER_QUESTION,
+        ANSWER_QUIZ_QUESTION,
         CHANGE_USER_ROLE,
         CHANGE_GROUP_MEMBERSHIP_STATUS,
         CONTACT_US_FORM_USED,
@@ -496,6 +497,8 @@ public final class Constants {
     public static final String GROUP_FK = "groupId";
     public static final String ASSIGNMENT_FK = "assignmentId";
     public static final String ASSIGNMENT_DUEDATE_FK = "dueDate";
+
+    public static final String QUIZ_ATTEMPT_FK = "quizAttemptId";
     public static final String QUIZ_ASSIGNMENT_FK = "quizAssignmentId";
 
     public static final String EQUALITY_CHECKER_HOST = "EQUALITY_CHECKER_HOST";

@@ -10,7 +10,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <segue.version>2.15.3-SNAPSHOT</segue.version>
+        <segue.version>2.15.4-SNAPSHOT</segue.version>
         <log4j.version>2.13.3</log4j.version>
         <resteasy.version>4.4.0.Final</resteasy.version>
         <guice.version>4.2.2</guice.version>
@@ -209,7 +209,7 @@
 
         <dependency>
             <groupId>org.powermock</groupId>
-            <artifactId>powermock-module-junit4-legacy</artifactId>
+            <artifactId>powermock-module-junit4</artifactId>
             <version>${powermock.version}</version>
             <scope>test</scope>
         </dependency>

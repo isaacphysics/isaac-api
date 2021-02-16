@@ -84,6 +84,7 @@ import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdFromQuestionId;
 
 /**
  * AssignmentFacade
@@ -801,11 +802,11 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     HashMap<String, Integer> questionParts = new HashMap<>(gameboardPartials);
                     for (String s : questionIds) {
                         Integer mark = userAssignments.get(gameboard).get(s);
-                        String[] tokens = s.split("\\|");
-                        questionParts.put(tokens[0], questionParts.get(tokens[0]) + 1);
+                        String questionPageId = extractPageIdFromQuestionId(s);
+                        questionParts.put(questionPageId, questionParts.get(questionPageId) + 1);
                         marks.add(mark);
                         if (null != mark) {
-                            gameboardPartials.put(tokens[0], gameboardPartials.get(tokens[0]) + mark);
+                            gameboardPartials.put(questionPageId, gameboardPartials.get(questionPageId) + mark);
                         }
                     }
                     for (Entry<String, Integer> entry : gameboardPartials.entrySet()) {
