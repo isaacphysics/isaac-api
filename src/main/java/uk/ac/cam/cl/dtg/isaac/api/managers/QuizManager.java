@@ -21,13 +21,16 @@ import com.google.inject.name.Named;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuiz;
 import uk.ac.cam.cl.dtg.isaac.dto.IHasQuizSummary;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizSectionDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
@@ -55,11 +58,12 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.VISIBLE_TO_STUDENTS_FIELDNAME
 public class QuizManager {
     private static final Logger log = LoggerFactory.getLogger(QuizManager.class);
 
+    private final PropertiesLoader properties;
     private final ContentService contentService;
     private final IContentManager contentManager;
     private final ContentSummarizerService contentSummarizerService;
+    private final ContentMapper mapper;
     private final String contentIndex;
-    private final PropertiesLoader properties;
 
     /**
      * Creates a quiz manager.
@@ -72,6 +76,8 @@ public class QuizManager {
      *            - so we can fetch specific content.
      * @param contentSummarizerService
      *            - so we can summarize content with links
+     * @param mapper
+     *            - so we can convert cached content DOs to DTOs.
      * @param contentIndex
      *            - the current version of content to use.
      */
@@ -79,11 +85,13 @@ public class QuizManager {
     public QuizManager(final PropertiesLoader properties, final ContentService contentService,
                        final IContentManager contentManager,
                        final ContentSummarizerService contentSummarizerService,
+                       final ContentMapper mapper,
                        @Named(CONTENT_INDEX) final String contentIndex) {
         this.properties = properties;
         this.contentService = contentService;
         this.contentManager = contentManager;
         this.contentSummarizerService = contentSummarizerService;
+        this.mapper = mapper;
         this.contentIndex = contentIndex;
     }
 
@@ -102,20 +110,26 @@ public class QuizManager {
     }
 
     /**
-     * For use when we expect to only find a single result.
+     * For use when we expect to only find a single result. Returns a fresh DTO (suitable for mutation) every time.
      *
      * @param quizId the id of the quiz.
      *
      * @return The quiz.
      */
     public IsaacQuizDTO findQuiz(final String quizId) throws ContentManagerException {
-        ContentDTO contentDTO = contentManager.getContentById(contentIndex, quizId);
+        Content cachedContent = contentManager.getContentDOById(contentIndex, quizId);
 
-        if (contentDTO instanceof IsaacQuizDTO) {
-            return (IsaacQuizDTO) contentDTO;
+        if (cachedContent instanceof IsaacQuiz) {
+            ContentDTO contentDTO = this.mapper.getDTOByDO(cachedContent);
+
+            if (contentDTO instanceof IsaacQuizDTO) {
+                return (IsaacQuizDTO) contentDTO;
+            } else {
+                throw new ContentManagerException("Expected an IsaacQuizDTO, got a " + contentDTO.getType());
+            }
+        } else {
+            throw new ContentManagerException("Expected an IsaacQuiz, got a " + cachedContent.getType());
         }
-
-        throw new ContentManagerException("Expected an IsaacQuizDTO, got a " + contentDTO.getType());
     }
 
     /**

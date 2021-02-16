@@ -9,6 +9,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizSectionDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -34,8 +35,9 @@ public class QuizManagerTest extends AbstractManagerTest {
         ContentService contentService = createMock(ContentService.class);
         IContentManager contentManager = createMock(IContentManager.class);
         ContentSummarizerService contentSummarizerService = createMock(ContentSummarizerService.class);
+        ContentMapper mapper = createMock(ContentMapper.class);
         String contentIndex = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
-        quizManager = new QuizManager(properties, contentService, contentManager, contentSummarizerService, contentIndex);
+        quizManager = new QuizManager(properties, contentService, contentManager, contentSummarizerService, mapper, contentIndex);
 
         brokenQuiz = new IsaacQuizDTO();
         brokenQuiz.setChildren(ImmutableList.of(quizSection1, new ContentDTO(), quizSection2));
