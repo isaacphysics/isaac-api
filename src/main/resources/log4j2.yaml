@@ -41,7 +41,7 @@ Configuration:
           TimeBasedTriggeringPolicy:
             interval: 10
         PatternLayout:
-          pattern: "[%d{yyyy-MM-dd HH:mm:ss}] [%-5p] %m%n"
+          pattern: "%d{yyyy-MM-dd HH:mm:ss},%m%n"
 
   Loggers:
       Root:
