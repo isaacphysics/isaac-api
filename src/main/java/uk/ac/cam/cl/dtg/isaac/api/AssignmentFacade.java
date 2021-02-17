@@ -960,12 +960,14 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
             UserGroupDTO assigneeGroup = groupManager.getGroupById(assignmentDTOFromClient.getGroupId());
 
-            if (!isUserTeacherOrAbove(userManager, currentlyLoggedInUser)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You need a teacher account to create groups and set assignments!").toResponse();
-            }
+            boolean userIsTeacher = isUserTeacher(userManager, currentlyLoggedInUser);
+            boolean userIsTeacherOrAbove = isUserTeacherOrAbove(userManager, currentlyLoggedInUser);
+            boolean userIsStaff = isUserStaff(userManager, currentlyLoggedInUser);
+            boolean notesIsNullOrEmpty = assignmentDTOFromClient.getNotes() == null || (assignmentDTOFromClient.getNotes() != null && assignmentDTOFromClient.getNotes().isEmpty());
+            boolean notesIsTooLong = assignmentDTOFromClient.getNotes() != null && assignmentDTOFromClient.getNotes().length() > 500;
 
-            if (!isUserStaff(userManager, currentlyLoggedInUser) && (null == assignmentDTOFromClient.getNotes() || !assignmentDTOFromClient.getNotes().isEmpty())) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You cannot provide assignment notes.").toResponse();
+            if (!userIsTeacherOrAbove) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You need a teacher account to create groups and set assignments!").toResponse();
             }
 
             if (null == assigneeGroup) {
@@ -979,16 +981,20 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                         "You can only set assignments to groups you own or manage.").toResponse();
             }
 
+            if (userIsStaff) {
+                if (notesIsTooLong) {
+                    return new SegueErrorResponse(Status.BAD_REQUEST, "Your assignment notes exceed the maximum allowed length of 500 characters.").toResponse();
+                }
+            } else { // user is not staff
+                if (userIsTeacher && !notesIsNullOrEmpty) {
+                    return new SegueErrorResponse(Status.BAD_REQUEST, "You are not allowed to add assignment notes.").toResponse();
+                }
+            }
+
             GameboardDTO gameboard = this.gameManager.getGameboard(assignmentDTOFromClient.getGameboardId());
             if (null == gameboard) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "The gameboard id specified does not exist.")
                         .toResponse();
-            }
-
-            if (null != assignmentDTOFromClient.getNotes() && assignmentDTOFromClient.getNotes().length() > 240) {
-                // WARNING 500 is hardcoded
-                return new SegueErrorResponse(Status.BAD_REQUEST,
-                        "Assignment notes are limited to 500 characters.").toResponse();
             }
 
             assignmentDTOFromClient.setOwnerUserId(currentlyLoggedInUser.getId());
