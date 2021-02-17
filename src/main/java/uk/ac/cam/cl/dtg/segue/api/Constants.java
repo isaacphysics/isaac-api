@@ -380,6 +380,8 @@ public final class Constants {
     public static final String DEFAULT_START_INDEX_AS_STRING = "0";
     public static final String DEFAULT_TYPE_FILTER = "";
 
+    public static final Integer MAX_NOTE_CHAR_LENGTH = 500;
+
     public static final Integer DEFAULT_RESULTS_LIMIT = 10;
     public static final String DEFAULT_RESULTS_LIMIT_AS_STRING = "10";
 

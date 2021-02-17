@@ -964,7 +964,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             boolean userIsTeacherOrAbove = isUserTeacherOrAbove(userManager, currentlyLoggedInUser);
             boolean userIsStaff = isUserStaff(userManager, currentlyLoggedInUser);
             boolean notesIsNullOrEmpty = assignmentDTOFromClient.getNotes() == null || (assignmentDTOFromClient.getNotes() != null && assignmentDTOFromClient.getNotes().isEmpty());
-            boolean notesIsTooLong = assignmentDTOFromClient.getNotes() != null && assignmentDTOFromClient.getNotes().length() > 500;
+            boolean notesIsTooLong = assignmentDTOFromClient.getNotes() != null && assignmentDTOFromClient.getNotes().length() > MAX_NOTE_CHAR_LENGTH;
 
             if (!userIsTeacherOrAbove) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You need a teacher account to create groups and set assignments!").toResponse();
@@ -983,7 +983,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             if (userIsStaff) {
                 if (notesIsTooLong) {
-                    return new SegueErrorResponse(Status.BAD_REQUEST, "Your assignment notes exceed the maximum allowed length of 500 characters.").toResponse();
+                    return new SegueErrorResponse(Status.BAD_REQUEST, "Your assignment notes exceed the maximum allowed length of " +
+                            MAX_NOTE_CHAR_LENGTH.toString() + " characters.").toResponse();
                 }
             } else { // user is not staff
                 if (userIsTeacher && !notesIsNullOrEmpty) {
