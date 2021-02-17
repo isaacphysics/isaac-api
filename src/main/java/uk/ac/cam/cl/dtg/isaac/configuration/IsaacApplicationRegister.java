@@ -113,6 +113,9 @@ public class IsaacApplicationRegister extends Application {
             this.singletons.add(injector.getInstance(EmailFacade.class));
             this.singletons.add(injector.getInstance(UserBadgeManager.class));
             this.singletons.add(injector.getInstance(QuizFacade.class));
+
+            // initialise filters
+            this.singletons.add(injector.getInstance(PerformanceMonitor.class));
             this.singletons.add(injector.getInstance(AuditMonitor.class));
         }
 
@@ -121,11 +124,10 @@ public class IsaacApplicationRegister extends Application {
 
     @Override
     public final Set<Class<?>> getClasses() {
-        Set<Class<?>> result = new HashSet<Class<?>>();
+        Set<Class<?>> result = new HashSet<>();
         
         result.add(RestEasyJacksonConfiguration.class);
-        result.add(PerformanceMonitor.class);
-        
+
         result.add(io.swagger.jaxrs.listing.ApiListingResource.class);
         result.add(io.swagger.jaxrs.listing.SwaggerSerializers.class);
         
