@@ -280,6 +280,41 @@ public class IsaacController extends AbstractIsaacFacade {
     }
 
     /**
+     * Get snapshot for the current user
+     *
+     * @param request
+     *            - so we can find the current user.
+     * @return a map containing the information.
+     */
+    @GET
+    @Path("users/current_user/snapshot")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @ApiOperation(value = "Get snapshot for the current user.")
+    public final Response getCurrentUserSnapshot(@Context final HttpServletRequest request) {
+        RegisteredUserDTO user;
+        try {
+            user = userManager.getCurrentRegisteredUser(request);
+        } catch (NoUserLoggedInException e1) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
+
+        Map<String, Object> dailyStreakRecord = userStreaksManager.getCurrentStreakRecord(user);
+        dailyStreakRecord.put("largestStreak", userStreaksManager.getLongestStreak(user));
+
+        Map<String, Object> weeklyStreakRecord = userStreaksManager.getCurrentWeeklyStreakRecord(user);
+        weeklyStreakRecord.put("largestStreak", userStreaksManager.getLongestWeeklyStreak(user));
+
+        Map<String, Object> userSnapshot = ImmutableMap.of(
+                "dailyStreakRecord", dailyStreakRecord,
+                "weeklyStreakRecord", weeklyStreakRecord,
+                "achievementsRecord", userBadgeManager.getAllUserBadges(user)
+        );
+
+        return Response.ok(userSnapshot).build();
+    }
+
+    /**
      * Get some statistics out of how many questions the user has completed.
      * 
      * Only users with permission can use this endpoint.
