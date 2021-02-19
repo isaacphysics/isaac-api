@@ -49,8 +49,8 @@ public class QuizAssignmentManager implements IAssignmentLike.Details<QuizAssign
 
     private final IQuizAssignmentPersistenceManager quizAssignmentPersistenceManager;
     private final EmailService emailService;
-	private final QuizManager quizManager;
-	private final GroupManager groupManager;
+    private final QuizManager quizManager;
+    private final GroupManager groupManager;
     private final PropertiesLoader properties;
 
     /**

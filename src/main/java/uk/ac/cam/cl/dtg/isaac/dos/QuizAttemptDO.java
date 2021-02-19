@@ -22,15 +22,15 @@ import java.util.Date;
  * This class is the Domain Object used to store Quiz attempts in the isaac CMS.
  */
 public class QuizAttemptDO {
-	private Long id;
-	private Long userId;
-	private String quizId;
-	@Nullable private Long quizAssignmentId;
-	private Date startDate;
-	@Nullable private Date completedDate;
+    private Long id;
+    private Long userId;
+    private String quizId;
+    @Nullable private Long quizAssignmentId;
+    private Date startDate;
+    @Nullable private Date completedDate;
 
-	/**
-	 * Complete QuizAttemptDO constructor with all dependencies.
+    /**
+     * Complete QuizAttemptDO constructor with all dependencies.
      * @param id
      *            - unique id for the quiz attempt
      * @param userId
@@ -46,42 +46,42 @@ public class QuizAttemptDO {
      */
     public QuizAttemptDO(final Long id, final Long userId, final String quizId, final Long quizAssignmentId,
                          Date startDate, @Nullable Date completedDate) {
-		this.id = id;
-		this.userId = userId;
-		this.quizId = quizId;
+        this.id = id;
+        this.userId = userId;
+        this.quizId = quizId;
         this.quizAssignmentId = quizAssignmentId;
         this.startDate = startDate;
         this.completedDate = completedDate;
     }
 
-	/**
-	 * Default constructor required for AutoMapping.
-	 */
-	public QuizAttemptDO() {
+    /**
+     * Default constructor required for AutoMapping.
+     */
+    public QuizAttemptDO() {
 
-	}
+    }
 
-	@Override
-	public int hashCode() {
+    @Override
+    public int hashCode() {
         return 31 + ((id == null) ? 0 : id.hashCode());
-	}
+    }
 
-	@Override
-	public boolean equals(final Object obj) {
-		if (this == obj) {
-			return true;
-		}
-		if (obj == null) {
-			return false;
-		}
-		if (!(obj instanceof QuizAttemptDO)) {
-			return false;
-		}
-		QuizAttemptDO other = (QuizAttemptDO) obj;
-		if (id == null) {
+    @Override
+    public boolean equals(final Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (!(obj instanceof QuizAttemptDO)) {
+            return false;
+        }
+        QuizAttemptDO other = (QuizAttemptDO) obj;
+        if (id == null) {
             return other.id == null;
-		} else {
-		    return id.equals(other.id);
+        } else {
+            return id.equals(other.id);
         }
     }
 

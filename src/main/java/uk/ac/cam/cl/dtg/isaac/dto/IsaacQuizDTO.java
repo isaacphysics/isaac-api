@@ -35,8 +35,8 @@ import java.util.Set;
  */
 @JsonContentType("isaacQuiz")
 public class IsaacQuizDTO extends SeguePageDTO implements EmailService.HasTitleOrId {
-	private boolean visibleToStudents;
-	private QuizFeedbackMode defaultFeedbackMode;
+    private boolean visibleToStudents;
+    private QuizFeedbackMode defaultFeedbackMode;
 
     // Properties for sending feedback
     private Integer total;
@@ -45,57 +45,57 @@ public class IsaacQuizDTO extends SeguePageDTO implements EmailService.HasTitleO
     private List<QuizUserFeedbackDTO> userFeedback;
 
     @JsonCreator
-	public IsaacQuizDTO(
-			@JsonProperty("id") String id,
+    public IsaacQuizDTO(
+            @JsonProperty("id") String id,
             @JsonProperty("title") String title,
-			@JsonProperty("subtitle") String subtitle,
-			@JsonProperty("type") String type,
-			@JsonProperty("author") String author,
-			@JsonProperty("encoding") String encoding,
-			@JsonProperty("canonicalSourceFile") String canonicalSourceFile,
-			@JsonProperty("layout") String layout,
-			@JsonProperty("children") List<ContentBaseDTO> children,
-			@JsonProperty("value") String value,
-			@JsonProperty("attribution") String attribution,
-			@JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
-			@JsonProperty("version") boolean published,
-			@JsonProperty("tags") Set<String> tags,
-			@JsonProperty("level") Integer level,
-			@JsonProperty("visibleToStudents") boolean visibleToStudents,
-			@JsonProperty("defaultFeedbackMode") QuizFeedbackMode defaultFeedbackMode) {
-		super(id, title, subtitle, type, author, encoding,
-				canonicalSourceFile, layout, children, value, attribution,
-				relatedContent, published, tags, level);
+            @JsonProperty("subtitle") String subtitle,
+            @JsonProperty("type") String type,
+            @JsonProperty("author") String author,
+            @JsonProperty("encoding") String encoding,
+            @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
+            @JsonProperty("layout") String layout,
+            @JsonProperty("children") List<ContentBaseDTO> children,
+            @JsonProperty("value") String value,
+            @JsonProperty("attribution") String attribution,
+            @JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
+            @JsonProperty("version") boolean published,
+            @JsonProperty("tags") Set<String> tags,
+            @JsonProperty("level") Integer level,
+            @JsonProperty("visibleToStudents") boolean visibleToStudents,
+            @JsonProperty("defaultFeedbackMode") QuizFeedbackMode defaultFeedbackMode) {
+        super(id, title, subtitle, type, author, encoding,
+                canonicalSourceFile, layout, children, value, attribution,
+                relatedContent, published, tags, level);
 
-		this.visibleToStudents = visibleToStudents;
-		this.defaultFeedbackMode = defaultFeedbackMode;
-	}
+        this.visibleToStudents = visibleToStudents;
+        this.defaultFeedbackMode = defaultFeedbackMode;
+    }
 
-	/**
-	 * Default constructor required for Jackson.
-	 */
-	public IsaacQuizDTO() {
+    /**
+     * Default constructor required for Jackson.
+     */
+    public IsaacQuizDTO() {
 
-	}
+    }
 
-	public boolean getVisibleToStudents() {
-		return visibleToStudents;
-	}
+    public boolean getVisibleToStudents() {
+        return visibleToStudents;
+    }
 
-	public void setVisibleToStudents(boolean visibleToStudents) {
-		this.visibleToStudents = visibleToStudents;
-	}
+    public void setVisibleToStudents(boolean visibleToStudents) {
+        this.visibleToStudents = visibleToStudents;
+    }
 
-	@Nullable
-	public QuizFeedbackMode getDefaultFeedbackMode() {
-		return defaultFeedbackMode;
-	}
+    @Nullable
+    public QuizFeedbackMode getDefaultFeedbackMode() {
+        return defaultFeedbackMode;
+    }
 
-	public void setDefaultFeedbackMode(QuizFeedbackMode defaultFeedbackMode) {
-		this.defaultFeedbackMode = defaultFeedbackMode;
-	}
+    public void setDefaultFeedbackMode(QuizFeedbackMode defaultFeedbackMode) {
+        this.defaultFeedbackMode = defaultFeedbackMode;
+    }
 
-	@Nullable
+    @Nullable
     public Integer getTotal() {
         return total;
     }
