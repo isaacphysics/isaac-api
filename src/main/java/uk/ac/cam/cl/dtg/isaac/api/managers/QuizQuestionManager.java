@@ -202,10 +202,14 @@ public class QuizQuestionManager {
 
         return users.stream().collect(Collectors.toMap(user -> user, user -> {
             // Not completed.
-            if (!completedUserIds.contains(user.getId())) return new QuizFeedbackDTO();
+            if (!completedUserIds.contains(user.getId())) {
+                return new QuizFeedbackDTO();
+            }
 
             // No questions attempted.
-            if (!answers.containsKey(user.getId())) return new QuizFeedbackDTO(null, null);
+            if (!answers.containsKey(user.getId())) {
+                return new QuizFeedbackDTO(null, null);
+            }
 
             // Calculate the scores.
             Map<QuestionDTO, QuestionValidationResponse> answerMap = extractAnswers(questionsToAugment, answers.get(user.getId()));

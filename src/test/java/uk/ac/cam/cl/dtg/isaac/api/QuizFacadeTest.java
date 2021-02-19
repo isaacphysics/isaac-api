@@ -123,14 +123,20 @@ public class QuizFacadeTest extends AbstractFacadeTest {
 
             expect(m.getActiveQuizAssignments(anyObject(), anyObject())).andStubAnswer(() -> {
                 Object[] arguments = getCurrentArguments();
-                if (arguments[1] != student) return Collections.emptyList();
+                if (arguments[1] != student) {
+                    return Collections.emptyList();
+                }
                 return Collections.singletonList(studentAssignment);
             });
 
             expect(m.getGroupForAssignment(anyObject(QuizAssignmentDTO.class))).andStubAnswer(() -> {
                 Object[] arguments = getCurrentArguments();
-                if (Objects.equals(((QuizAssignmentDTO) arguments[0]).getGroupId(), studentGroup.getId())) return studentGroup;
-                if (Objects.equals(((QuizAssignmentDTO) arguments[0]).getGroupId(), studentInactiveGroup.getId())) return studentInactiveGroup;
+                if (Objects.equals(((QuizAssignmentDTO) arguments[0]).getGroupId(), studentGroup.getId())) {
+                    return studentGroup;
+                }
+                if (Objects.equals(((QuizAssignmentDTO) arguments[0]).getGroupId(), studentInactiveGroup.getId())) {
+                    return studentInactiveGroup;
+                }
                 return null;
             });
         });
