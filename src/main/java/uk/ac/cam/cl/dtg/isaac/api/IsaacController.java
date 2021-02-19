@@ -251,9 +251,10 @@ public class IsaacController extends AbstractIsaacFacade {
     @GZIP
     @ApiOperation(value = "Get a binary object from the current content version.",
                   notes = "This can only be used to get images from the content database.")
-    public final Response getImageByPath(@Context final Request request, @PathParam("path") final String path) {
+    public final Response getImageByPath(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
+                                         @PathParam("path") final String path) {
         // entity tags etc are already added by segue
-        return api.getImageFileContent(request, this.contentIndex, path);
+        return api.getImageFileContent(request, httpServletRequest, this.contentIndex, path);
     }
 
     /**
