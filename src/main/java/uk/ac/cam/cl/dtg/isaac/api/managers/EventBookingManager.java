@@ -136,6 +136,17 @@ public class EventBookingManager {
     }
 
     /**
+     * This will get all reservations made by a given user.
+     *
+     * @param userId - user of interest.
+     * @return events
+     * @throws SegueDatabaseException - if an error occurs.
+     */
+    public List<DetailedEventBookingDTO> getAllEventReservationsForUser(final Long userId) throws SegueDatabaseException {
+        return this.bookingPersistenceManager.getEventReservationsByUserId(userId);
+    }
+
+    /**
      * @param bookingId - of interest
      * @return event booking
      * @throws SegueDatabaseException - if an error occurs.

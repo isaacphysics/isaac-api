@@ -80,6 +80,17 @@ public class EventBookingPersistenceManager {
     }
 
     /**
+     * @param userId
+     *            - user of interest.
+     * @return events
+     * @throws SegueDatabaseException
+     *             - if an error occurs.
+     */
+    public List<DetailedEventBookingDTO> getEventReservationsByUserId(final Long userId) throws SegueDatabaseException {
+        return convertToDTO(Lists.newArrayList(dao.findAllReservationsByUserId(userId)));
+    }
+
+    /**
      * @param bookingId
      *            - of interest
      * @return event booking
