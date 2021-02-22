@@ -359,9 +359,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             final IsaacEventPageDTO eventDTOById = this.getAugmentedEventDTOById(request, booking.getEventId());
 
-            if (!filteredResults.contains(eventDTOById)) {
-                filteredResults.add(eventDTOById);
-            }
+            filteredResults.add(eventDTOById);
         }
         return new ResultsWrapper<>(filteredResults, (long) filteredResults.size());
     }

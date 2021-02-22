@@ -439,7 +439,7 @@ public class PgEventBookings implements EventBookings {
 
         try (Connection conn = ds.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM event_bookings WHERE reserved_by = ?");
+            pst = conn.prepareStatement("SELECT distinct on (event_id) * FROM event_bookings WHERE reserved_by = ?");
             pst.setLong(1, userId);
             ResultSet results = pst.executeQuery();
 
