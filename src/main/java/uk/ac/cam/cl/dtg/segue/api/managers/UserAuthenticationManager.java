@@ -47,6 +47,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.UserFromAuthProvider;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 
 import javax.annotation.Nullable;
 import javax.crypto.Mac;
@@ -126,13 +127,11 @@ public class UserAuthenticationManager {
      * This method is used to extract user-identifying features of a request and return them in csv format.
      * NOTE: The validity of the session token is not checked against the database.
      *
-     * For interest the IP address format is described in the REMOTE_ADDR section of <a href="https://www.ietf.org/rfc/rfc3875">RFC 3875</>.
-     *
      * @param request - http request from which to extract user identifying features.
      * @return A string of comma-separated user identifying values from the request.
      */
     public String getUserIdentifierCsv(final HttpServletRequest request) {
-        String ipAddress = request.getRemoteAddr();
+        String ipAddress = RequestIPExtractor.getClientIpAddr(request);
 
         String jSessionId = null;
         try { jSessionId = this.getJSessionIdFromRequest(request); }
