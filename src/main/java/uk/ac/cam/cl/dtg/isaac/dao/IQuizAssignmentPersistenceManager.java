@@ -17,7 +17,6 @@ package uk.ac.cam.cl.dtg.isaac.dao;
 
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentCancelledException;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
 import java.util.List;
@@ -63,12 +62,26 @@ public interface IQuizAssignmentPersistenceManager {
      */
     List<QuizAssignmentDTO> getAssignmentsByGroupList(List<Long> groupIds) throws SegueDatabaseException;
 
+    /**
+     * Get a quiz assignment from its ID.
+     *
+     * @param quizAssignmentId The ID of the quiz assignment.
+     * @return The quiz assignment.
+     */
     QuizAssignmentDTO getAssignmentById(Long quizAssignmentId) throws SegueDatabaseException, AssignmentCancelledException;
 
     /**
-     * Cancel (delete) a quiz assignment.
+     * Cancel (soft delete) a quiz assignment.
      *
-     * @param assignment The quiz assignment to cancel.
+     * @param quizAssignmentId The ID of the quiz assignment to cancel.
      */
-    void cancelAssignment(QuizAssignmentDTO assignment) throws SegueDatabaseException;
+    void cancelAssignment(Long quizAssignmentId) throws SegueDatabaseException;
+
+    /**
+     * Update a quiz assignment.
+     *
+     * @param quizAssignmentId The ID of the quiz assignment to update.
+     * @param updates The values to update (ony feedbackMode is considered).
+     */
+    void updateAssignment(Long quizAssignmentId, QuizAssignmentDTO updates) throws SegueDatabaseException;
 }

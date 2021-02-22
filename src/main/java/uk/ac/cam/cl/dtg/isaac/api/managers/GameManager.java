@@ -15,26 +15,18 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
-import java.util.*;
-import java.util.stream.Collectors;
-
-import javax.annotation.Nullable;
-
+import com.google.api.client.util.Lists;
+import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
+import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import ma.glasnost.orika.MapperFacade;
-
 import org.apache.commons.collections4.comparators.ComparatorChain;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.api.client.util.Lists;
-import com.google.api.client.util.Maps;
-import com.google.inject.Inject;
-
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.api.Constants.GameboardItemState;
 import uk.ac.cam.cl.dtg.isaac.api.Constants.GameboardState;
@@ -42,7 +34,12 @@ import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
-import uk.ac.cam.cl.dtg.isaac.dto.*;
+import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuickQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
@@ -59,9 +56,38 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
-import static com.google.common.collect.Maps.*;
+
+import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import static com.google.common.collect.Maps.immutableEntry;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.COMPLETION_FIELDNAME;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.CREATED_DATE_FIELDNAME;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.GAMEBOARD_MAX_TITLE_LENGTH;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.GAME_BOARD_TARGET_SIZE;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.HIDE_FROM_FILTER_TAG;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_TYPE;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.QuestionPartState;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.RELATED_CONTENT_FIELDNAME;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.VISITED_DATE_FIELDNAME;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.WILDCARD_TYPE;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.ID_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.LEVEL_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TAGS_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TITLE_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX;
 
 /**
  * This class will be responsible for generating and managing gameboards used by users.
@@ -663,10 +689,22 @@ public class GameManager {
         // do a depth first traversal of the question page to get the correct order of questions
         ContentDTO questionPage = this.contentManager.getContentById(this.contentManager.getCurrentContentSHA(),
                 questionPageId);
-        List<ContentDTO> dfs = Lists.newArrayList();
-        dfs = depthFirstQuestionSearch(questionPage, dfs);
+        return getAllMarkableQuestionPartsDFSOrder(questionPage);
+    }
 
-        return this.filterQuestionParts(dfs);
+    /**
+     * Get all questions in a piece of content. This method will conduct a DFS traversal and
+     * ensure the collection is ordered as per the DFS. Quick questions will be filtered out.
+     *
+     * @param content
+     *            - results depend on each question having an id prefixed with the question page id.
+     * @return collection of markable question parts (questions).
+     */
+    public static List<QuestionDTO> getAllMarkableQuestionPartsDFSOrder(ContentDTO content) {
+        List<ContentDTO> dfs = Lists.newArrayList();
+        dfs = depthFirstQuestionSearch(content, dfs);
+
+        return filterQuestionParts(dfs);
     }
 
     /**
@@ -778,7 +816,7 @@ public class GameManager {
      *            list of content.
      * @return list of question dtos.
      */
-    private Collection<QuestionDTO> filterQuestionParts(final Collection<ContentDTO> contentToFilter) {
+    private static List<QuestionDTO> filterQuestionParts(final Collection<ContentDTO> contentToFilter) {
         List<QuestionDTO> results = Lists.newArrayList();
         for (ContentDTO possibleQuestion : contentToFilter) {
 
@@ -799,7 +837,7 @@ public class GameManager {
      * @param result - the list of questions
      * @return a list of questions ordered by DFS.
      */
-    private List<ContentDTO> depthFirstQuestionSearch(final ContentDTO c, final List<ContentDTO> result) {
+    private static List<ContentDTO> depthFirstQuestionSearch(final ContentDTO c, final List<ContentDTO> result) {
         if (c == null || c.getChildren() == null || c.getChildren().size() == 0) {
             return result;
         }

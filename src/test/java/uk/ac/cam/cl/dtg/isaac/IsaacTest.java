@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.isaac;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import org.junit.Before;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionBase;
@@ -54,6 +55,8 @@ import static org.easymock.EasyMock.getCurrentArguments;
 import static org.powermock.api.easymock.PowerMock.createMock;
 import static org.powermock.api.easymock.PowerMock.createPartialMockForAllMethodsExcept;
 import static org.powermock.api.easymock.PowerMock.replay;
+import static org.powermock.api.easymock.PowerMock.reset;
+import static org.powermock.api.easymock.PowerMock.verify;
 
 public class IsaacTest {
     protected static Date somePastDate = new Date(System.currentTimeMillis() - 7*24*60*60*1000);
@@ -63,6 +66,9 @@ public class IsaacTest {
     protected IsaacQuiz studentQuizDO;
     protected IsaacQuizDTO teacherQuiz;
     protected IsaacQuizDTO otherQuiz;
+    protected IsaacQuizSectionDTO quizSection1;
+    protected IsaacQuizSectionDTO quizSection2;
+
     protected ContentSummaryDTO studentQuizSummary;
     protected ContentSummaryDTO teacherQuizSummary;
     protected RegisteredUserDTO student;
@@ -70,6 +76,7 @@ public class IsaacTest {
     protected RegisteredUserDTO secondTeacher;
     protected RegisteredUserDTO otherTeacher;
     protected RegisteredUserDTO noone;
+    protected RegisteredUserDTO secondStudent;
     protected RegisteredUserDTO otherStudent;
     protected RegisteredUserDTO adminUser;
     protected List<RegisteredUserDTO> everyone;
@@ -78,6 +85,7 @@ public class IsaacTest {
 
     protected QuizAssignmentDTO studentAssignment;
     protected QuizAssignmentDTO overdueAssignment;
+    private QuizAssignmentDTO completedAssignment;
     protected ImmutableList<Long> studentGroups;
     protected List<QuizAssignmentDTO> teacherAssignmentsToTheirGroups;
     private QuizAssignmentDTO otherAssignment;
@@ -91,8 +99,11 @@ public class IsaacTest {
     protected QuizAttemptDTO otherAttempt;
     protected QuizAttemptDTO ownAttempt;
     protected QuizAttemptDTO ownCompletedAttempt;
+    protected QuizAttemptDTO attemptOnNullFeedbackModeQuiz;
     protected List<QuizAttemptDTO> studentAttempts;
     protected IsaacQuestionBaseDTO question;
+    protected IsaacQuestionBaseDTO question2;
+    protected IsaacQuestionBaseDTO question3;
     protected IsaacQuestionBase questionDO;
     protected IsaacQuestionBaseDTO questionPageQuestion;
     protected IsaacQuestionBase questionPageQuestionDO;
@@ -101,7 +112,6 @@ public class IsaacTest {
     protected QuizManager quizManager;
 
     protected Map<Object, MockConfigurer> defaultsMap = new HashMap<>();
-    private QuizAssignmentDTO completedAssignment;
 
     @Before
     public final void initializeIsaacTest() throws SegueDatabaseException, ContentManagerException {
@@ -122,16 +132,26 @@ public class IsaacTest {
         question = new IsaacQuestionBaseDTO();
         question.setId("studentQuiz|section1|question1");
 
+        question2 = new IsaacQuestionBaseDTO();
+        question2.setId("studentQuiz|section2|question2");
+
+        question3 = new IsaacQuestionBaseDTO();
+        question3.setId("studentQuiz|section2|question3");
+
         questionDO = new IsaacQuestionBase();
         questionDO.setId(question.getId());
 
-        IsaacQuizSectionDTO quizSection = new IsaacQuizSectionDTO();
-        quizSection.setId("studentQuiz|section1");
-        quizSection.setChildren(Collections.singletonList(question));
+        quizSection1 = new IsaacQuizSectionDTO();
+        quizSection1.setId("studentQuiz|section1");
+        quizSection1.setChildren(Collections.singletonList(question));
 
-        studentQuiz = new IsaacQuizDTO("studentQuiz", null, null, null, null, null, null, null, Collections.singletonList(quizSection), null, null, null, false, null, null, true);
-        teacherQuiz = new IsaacQuizDTO("teacherQuiz", null, null, null, null, null, null, null, null, null, null, null, false, null, null, false);
-        otherQuiz = new IsaacQuizDTO("otherQuiz", null, null, null, null, null, null, null, Collections.singletonList(quizSection), null, null, null, false, null, null, true);
+        quizSection2 = new IsaacQuizSectionDTO();
+        quizSection2.setId("studentQuiz|section2");
+        quizSection2.setChildren(ImmutableList.of(question2, question3));
+
+        studentQuiz = new IsaacQuizDTO("studentQuiz", null, null, null, null, null, null, null, ImmutableList.of(quizSection1, quizSection2), null, null, null, false, null, null, true, QuizFeedbackMode.OVERALL_MARK);
+        teacherQuiz = new IsaacQuizDTO("teacherQuiz", null, null, null, null, null, null, null, null, null, null, null, false, null, null, false, null);
+        otherQuiz = new IsaacQuizDTO("otherQuiz", null, null, null, null, null, null, null, Collections.singletonList(quizSection1), null, null, null, false, null, null, true, QuizFeedbackMode.DETAILED_FEEDBACK);
 
         // A bit scrappy, but hopefully sufficient.
         studentQuizDO = new IsaacQuiz("studentQuiz", null, null, null, null, null, null, null, null, null, null, null, false, null, null, true);
@@ -154,7 +174,11 @@ public class IsaacTest {
 
         noone = null;
 
-        otherStudent = new RegisteredUserDTO("Other", "Student", "other-student@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.FEMALE, somePastDate, "");
+        secondStudent = new RegisteredUserDTO("Second", "Student", "second-student@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.FEMALE, somePastDate, "");
+        secondStudent.setRole(Role.STUDENT);
+        secondStudent.setId(++id);
+
+        otherStudent = new RegisteredUserDTO("Other", "Student", "other-student@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, "");
         otherStudent.setRole(Role.STUDENT);
         otherStudent.setId(++id);
 
@@ -162,7 +186,7 @@ public class IsaacTest {
         adminUser.setRole(Role.ADMIN);
         adminUser.setId(++id);
 
-        everyone = anyOf(student, teacher, secondTeacher, otherTeacher, otherStudent, adminUser);
+        everyone = anyOf(student, teacher, secondTeacher, otherTeacher, secondStudent, otherStudent, adminUser);
 
         studentGroup = new UserGroupDTO();
         studentGroup.setId(++id);
@@ -183,7 +207,7 @@ public class IsaacTest {
 
         completedAssignment = new QuizAssignmentDTO(++id, studentQuiz.getId(), teacher.getId(), studentGroup.getId(), someFurtherPastDate, somePastDate, QuizFeedbackMode.OVERALL_MARK);
         studentAssignment = new QuizAssignmentDTO(++id, studentQuiz.getId(), teacher.getId(), studentGroup.getId(), somePastDate, someFutureDate, QuizFeedbackMode.OVERALL_MARK);
-        overdueAssignment = new QuizAssignmentDTO(++id, studentQuiz.getId(), teacher.getId(), studentGroup.getId(), someFurtherPastDate, somePastDate, QuizFeedbackMode.OVERALL_MARK);
+        overdueAssignment = new QuizAssignmentDTO(++id, studentQuiz.getId(), teacher.getId(), studentGroup.getId(), someFurtherPastDate, somePastDate, QuizFeedbackMode.SECTION_MARKS);
         otherAssignment = new QuizAssignmentDTO(++id, teacherQuiz.getId(), teacher.getId(), studentGroup.getId(), somePastDate, someFutureDate, QuizFeedbackMode.OVERALL_MARK);
 
         studentInactiveIgnoredAssignment = new QuizAssignmentDTO(++id, teacherQuiz.getId(), teacher.getId(), studentInactiveGroup.getId(), somePastDate, someFutureDate, QuizFeedbackMode.OVERALL_MARK);
@@ -201,8 +225,9 @@ public class IsaacTest {
 
         ownCompletedAttempt = new QuizAttemptDTO(++id, student.getId(), otherQuiz.getId(), null, somePastDate, somePastDate);
         ownAttempt = new QuizAttemptDTO(++id, student.getId(), otherQuiz.getId(), null, somePastDate, null);
+        attemptOnNullFeedbackModeQuiz = new QuizAttemptDTO(101L, student.getId(), teacherQuiz.getId(), null, somePastDate, somePastDate);
 
-        studentAttempts = ImmutableList.of(studentAttempt, overdueAttempt, completedAttempt, overdueCompletedAttempt, otherAttempt, ownAttempt, ownCompletedAttempt);
+        studentAttempts = ImmutableList.of(studentAttempt, overdueAttempt, completedAttempt, overdueCompletedAttempt, otherAttempt, ownAttempt, ownCompletedAttempt, attemptOnNullFeedbackModeQuiz);
     }
 
     protected void initializeMocks() throws ContentManagerException, SegueDatabaseException {
@@ -212,6 +237,7 @@ public class IsaacTest {
         expect(quizManager.findQuiz(studentQuiz.getId())).andStubReturn(studentQuiz);
         expect(quizManager.findQuiz(teacherQuiz.getId())).andStubReturn(teacherQuiz);
         expect(quizManager.findQuiz(otherQuiz.getId())).andStubReturn(otherQuiz);
+        expect(quizManager.extractSectionObjects(studentQuiz)).andStubReturn(ImmutableList.of(quizSection1, quizSection2));
 
         groupManager = createPartialMockForAllMethodsExcept(GroupManager.class, "filterItemsBasedOnMembershipContext");
         expect(groupManager.getGroupById(anyLong())).andStubAnswer(() -> {
@@ -224,20 +250,27 @@ public class IsaacTest {
         });
         expect(groupManager.isUserInGroup(anyObject(), anyObject())).andStubAnswer(() -> {
             Object[] arguments = getCurrentArguments();
-            if (arguments[0] == student && (arguments[1] == studentGroup || arguments[1] == studentInactiveGroup)) {
+            if ((arguments[0] == student) && (arguments[1] == studentGroup || arguments[1] == studentInactiveGroup)) {
+                return true;
+            } else if (arguments[0] == secondStudent && arguments[1] == studentGroup) {
                 return true;
             } else {
                 return false;
             }
         });
         expect(groupManager.getGroupMembershipList(student, false)).andStubReturn(ImmutableList.of(studentGroup, studentInactiveGroup));
+        expect(groupManager.getGroupMembershipList(secondStudent, false)).andStubReturn(ImmutableList.of(studentGroup));
         expect(groupManager.getUserMembershipMapForGroup(studentGroup.getId())).andStubReturn(
-            Collections.singletonMap(student.getId(), new GroupMembershipDTO(studentGroup.getId(), student.getId(), GroupMembershipStatus.ACTIVE, null, somePastDate))
+            ImmutableMap.of(
+                student.getId(), new GroupMembershipDTO(studentGroup.getId(), student.getId(), GroupMembershipStatus.ACTIVE, null, somePastDate),
+                secondStudent.getId(), new GroupMembershipDTO(studentGroup.getId(), secondStudent.getId(), GroupMembershipStatus.ACTIVE, null, somePastDate)
+            )
         );
         Date beforeSomePastDate = new Date(somePastDate.getTime() - 1000L);
         expect(groupManager.getUserMembershipMapForGroup(studentInactiveGroup.getId())).andStubReturn(
             Collections.singletonMap(student.getId(), new GroupMembershipDTO(studentGroup.getId(), student.getId(), GroupMembershipStatus.INACTIVE, null, beforeSomePastDate))
         );
+        expect(groupManager.getUsersInGroup(studentGroup)).andStubReturn(ImmutableList.of(student, secondStudent));
 
         replay(quizManager, groupManager);
     }
@@ -262,6 +295,19 @@ public class IsaacTest {
     protected <T> void registerDefaultsFor(T mock, MockConfigurer<T> defaults) {
         defaultsMap.put(mock, defaults);
         defaults.configure(mock);
+    }
+
+    @SafeVarargs
+    protected final <T> void withMock(T mock, MockConfigurer<T>... setups) {
+        verify(mock);
+        reset(mock);
+        if (defaultsMap.containsKey(mock)) {
+            ((MockConfigurer<T>) defaultsMap.get(mock)).configure(mock);
+        }
+        for (MockConfigurer<T> setup: setups) {
+            setup.configure(mock);
+        }
+        replay(mock);
     }
 
     /**

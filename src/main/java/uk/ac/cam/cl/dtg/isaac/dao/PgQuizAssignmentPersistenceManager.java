@@ -170,6 +170,7 @@ public class PgQuizAssignmentPersistenceManager implements IQuizAssignmentPersis
     public QuizAssignmentDTO getAssignmentById(Long quizAssignmentId) throws SegueDatabaseException, AssignmentCancelledException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
+            // Deleted quiz assignments are filtered below with a specific error
             pst = conn.prepareStatement("SELECT * FROM quiz_assignments WHERE id = ?");
             pst.setLong(1, quizAssignmentId);
 
@@ -187,16 +188,31 @@ public class PgQuizAssignmentPersistenceManager implements IQuizAssignmentPersis
     }
 
     @Override
-    public void cancelAssignment(QuizAssignmentDTO assignment) throws SegueDatabaseException {
+    public void cancelAssignment(Long quizAssignmentId) throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
             pst = conn.prepareStatement("UPDATE quiz_assignments SET deleted = true WHERE id = ?");
 
-            pst.setLong(1, assignment.getId());
+            pst.setLong(1, quizAssignmentId);
 
             pst.execute();
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception while deleting quiz assignment", e);
+        }
+    }
+
+    @Override
+    public void updateAssignment(Long quizAssignmentId, QuizAssignmentDTO updates) throws SegueDatabaseException {
+        try (Connection conn = database.getDatabaseConnection()) {
+            PreparedStatement pst;
+            pst = conn.prepareStatement("UPDATE quiz_assignments SET quiz_feedback_mode = ? WHERE id = ?");
+
+            pst.setString(1, updates.getQuizFeedbackMode().name());
+            pst.setLong(2, quizAssignmentId);
+
+            pst.execute();
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception while updating quiz assignment", e);
         }
     }
 
