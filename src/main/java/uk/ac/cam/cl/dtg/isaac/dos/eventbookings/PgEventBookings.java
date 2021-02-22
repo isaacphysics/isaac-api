@@ -434,6 +434,7 @@ public class PgEventBookings implements EventBookings {
         }
     }
 
+    @Override
     public Iterable<EventBooking> findAllReservationsByUserId(final Long userId) throws SegueDatabaseException {
         Validate.notNull(userId);
 
