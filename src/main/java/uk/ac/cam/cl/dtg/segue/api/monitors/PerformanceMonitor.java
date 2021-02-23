@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
 import uk.ac.cam.cl.dtg.segue.api.services.MonitorService;
 
+import javax.annotation.Priority;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ContainerResponseContext;
@@ -37,6 +38,7 @@ import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.REQUEST_LATENCY_H
  * Allows us to log the performance of all requests.
  *
  */
+@Priority(0) // Setting the priority to 0 makes sure this filter is applied first on request and last on response
 @Provider
 public class PerformanceMonitor implements ContainerRequestFilter, ContainerResponseFilter {
     private static final Logger log = LoggerFactory.getLogger(PerformanceMonitor.class);
@@ -46,7 +48,7 @@ public class PerformanceMonitor implements ContainerRequestFilter, ContainerResp
     private static final long NUMBER_OF_MILLISECONDS_IN_A_SECOND = 1000;
 
     @Context private HttpRequest request;
-    private MonitorService monitorService;
+    private final MonitorService monitorService;
 
     /**
      * PerformanceMonitor.
