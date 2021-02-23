@@ -142,6 +142,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
      *            - a comma separated list of levels
      * @param concepts
      *            - a comma separated list of conceptIds
+     * @param questionCategories
+     *            - a comma separated list of question categories
      * @return a Response containing a gameboard object or containing a SegueErrorResponse.
      */
     @GET
@@ -152,12 +154,14 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     public final Response generateTemporaryGameboard(@Context final HttpServletRequest request,
             @QueryParam("title") final String title, @QueryParam("subjects") final String subjects,
             @QueryParam("fields") final String fields, @QueryParam("topics") final String topics,
-            @QueryParam("levels") final String levels, @QueryParam("concepts") final String concepts) {
+            @QueryParam("levels") final String levels, @QueryParam("concepts") final String concepts,
+            @QueryParam("questionCategories") final String questionCategories) {
         List<String> subjectsList = null;
         List<String> fieldsList = null;
         List<String> topicsList = null;
         List<Integer> levelsList = null;
         List<String> conceptsList = null;
+        List<String> questionCategoriesList = null;
 
         if (null != subjects && !subjects.isEmpty()) {
             subjectsList = Arrays.asList(subjects.split(","));
@@ -189,12 +193,16 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             conceptsList = Arrays.asList(concepts.split(","));
         }
 
+        if (null != questionCategories && !questionCategories.isEmpty()) {
+            questionCategoriesList = Arrays.asList(questionCategories.split(","));
+        }
+
         try {
             AbstractSegueUserDTO boardOwner = this.userManager.getCurrentUser(request);
             GameboardDTO gameboard;
 
             gameboard = gameManager.generateRandomGameboard(title, subjectsList, fieldsList, topicsList, levelsList,
-                    conceptsList, boardOwner);
+                    conceptsList, questionCategoriesList, boardOwner);
 
             if (null == gameboard) {
                 return new SegueErrorResponse(Status.NO_CONTENT,
