@@ -353,9 +353,9 @@ public class EventsFacade extends AbstractIsaacFacade {
             throws SegueDatabaseException, ContentManagerException {
         List<ContentDTO> filteredResults = Lists.newArrayList();
 
-        List<DetailedEventBookingDTO> userReservationList = this.bookingManager.getAllEventReservationsForUser(currentUser.getId());
+        List<EventBookingDTO> userReservationList = this.mapper.mapAsList(bookingManager.getAllEventReservationsForUser(currentUser.getId()), EventBookingDTO.class);
 
-        for (DetailedEventBookingDTO booking : userReservationList) {
+        for (EventBookingDTO booking : userReservationList) {
 
             final IsaacEventPageDTO eventDTOById = this.getAugmentedEventDTOById(request, booking.getEventId());
 
