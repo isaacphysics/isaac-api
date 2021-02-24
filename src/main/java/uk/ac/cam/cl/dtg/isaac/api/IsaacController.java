@@ -189,6 +189,12 @@ public class IsaacController extends AbstractIsaacFacade {
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
             @DefaultValue(DEFAULT_SEARCH_RESULT_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
 
+        // Impose 1000 character search string limit internally
+        if (searchString.length() > SEARCH_TEXT_CHAR_LIMIT) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Search string exceeded " +
+                    SEARCH_TEXT_CHAR_LIMIT.toString() + " character limit.").toResponse();
+        }
+
         // Calculate the ETag on current live version of the content
         // NOTE: Assumes that the latest version of the content is being used.
         EntityTag etag = new EntityTag(this.contentIndex.hashCode() + searchString.hashCode()
