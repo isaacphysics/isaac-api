@@ -204,7 +204,8 @@ public class EventsFacade extends AbstractIsaacFacade {
             @QueryParam("sort_by") final String sortOrder,
             @QueryParam("show_active_only") final Boolean showActiveOnly,
             @QueryParam("show_inactive_only") final Boolean showInactiveOnly,
-            @QueryParam("show_booked_only") final Boolean showMyBookingsOnly) {
+            @QueryParam("show_booked_only") final Boolean showMyBookingsOnly,
+            @QueryParam("show_reservations_only") final Boolean showReservationsOnly) {
         Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 
         Integer newLimit = null;
@@ -266,6 +267,18 @@ public class EventsFacade extends AbstractIsaacFacade {
                 } else {
                     SegueErrorResponse.getNotLoggedInResponse();
                 }
+            } else if (null != showReservationsOnly && showReservationsOnly) {
+                RegisteredUserDTO currentUser = null;
+                try {
+                    currentUser = this.userManager.getCurrentRegisteredUser(request);
+                } catch (NoUserLoggedInException e) {
+                    /* Safe to ignore; will just leave currentUser null. */
+                }
+                if (null != currentUser) {
+                    findByFieldNames = getEventsReservedByUser(request, currentUser);
+                } else {
+                    SegueErrorResponse.getNotLoggedInResponse();
+                }
             } else {
                 findByFieldNames = this.contentManager.findByFieldNames(
                     this.contentIndex, ContentService.generateDefaultFieldToMatch(fieldsToMatch),
@@ -323,6 +336,31 @@ public class EventsFacade extends AbstractIsaacFacade {
 
 			filteredResults.add(eventDTOById);
 		}
+        return new ResultsWrapper<>(filteredResults, (long) filteredResults.size());
+    }
+
+    /**
+     * Get Events Reserved by user.
+     *
+     * @param request - the http request so we can resolve booking information
+     * @param currentUser - the currently logged on user.
+     * @return a list of event pages that the user has been booked
+     * @throws SegueDatabaseException
+     * @throws ContentManagerException
+     */
+    private ResultsWrapper<ContentDTO> getEventsReservedByUser(final HttpServletRequest request,
+                                                               final RegisteredUserDTO currentUser)
+            throws SegueDatabaseException, ContentManagerException {
+        List<ContentDTO> filteredResults = Lists.newArrayList();
+
+        List<EventBookingDTO> userReservationList = this.mapper.mapAsList(bookingManager.getAllEventReservationsForUser(currentUser.getId()), EventBookingDTO.class);
+
+        for (EventBookingDTO booking : userReservationList) {
+
+            final IsaacEventPageDTO eventDTOById = this.getAugmentedEventDTOById(request, booking.getEventId());
+
+            filteredResults.add(eventDTOById);
+        }
         return new ResultsWrapper<>(filteredResults, (long) filteredResults.size());
     }
 
