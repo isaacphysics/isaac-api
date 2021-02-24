@@ -36,18 +36,7 @@ import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuthAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IPasswordAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.OAuth1Token;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationCodeException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidSessionException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.*;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
@@ -58,6 +47,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.UserFromAuthProvider;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 
 import javax.annotation.Nullable;
 import javax.crypto.Mac;
@@ -131,6 +121,31 @@ public class UserAuthenticationManager {
         boolean isProduction = properties.getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(EnvironmentType.PROD.name());
         this.checkOriginHeader = isProduction;
         this.setSecureCookies = isProduction;
+    }
+
+    /**
+     * This method is used to extract user-identifying features of a request and return them in csv format.
+     * NOTE: The validity of the session token is not checked against the database.
+     *
+     * @param request - http request from which to extract user identifying features.
+     * @return A string of comma-separated user identifying values from the request.
+     */
+    public String getUserIdentifierCsv(final HttpServletRequest request) {
+        String ipAddress = RequestIPExtractor.getClientIpAddr(request);
+
+        String jSessionId = null;
+        try { jSessionId = this.getJSessionIdFromRequest(request); }
+        catch (InvalidSessionException e) { /* Do nothing - leave jSessionId as null */ }
+
+        Map<String, String> sessionInformation = Maps.newHashMap();
+        try { sessionInformation = getSegueSessionFromRequest(request); }
+        catch (InvalidSessionException | IOException e) { /* Do nothing - leave session map empty */ }
+
+        String segueUserId = sessionInformation.get(SESSION_USER_ID);
+        String sessionToken = sessionInformation.get(SESSION_TOKEN);
+        boolean isValidHmac = hasValidHmac(sessionInformation);
+
+        return String.format("%s,%s,%s,%s,%b", ipAddress, jSessionId, segueUserId, sessionToken, isValidHmac);
     }
 
     /**
@@ -304,7 +319,7 @@ public class UserAuthenticationManager {
 
         return passwordAuthenticator.hasPasswordRegistered(user);
     }
-    
+
     /**
      * This method will look up a userDO based on the session information provided.
      * @param request containing session information
@@ -959,15 +974,9 @@ public class UserAuthenticationManager {
 
         SimpleDateFormat sessionDateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
 
-        String hmacKey = properties.getProperty(HMAC_SALT);
-
         String userId = sessionInformation.get(SESSION_USER_ID);
         String userSessionToken = sessionInformation.get(SESSION_TOKEN);
         String sessionDate = sessionInformation.get(DATE_EXPIRES);
-        String partialLoginFlag = sessionInformation.get(PARTIAL_LOGIN_FLAG);
-        String sessionHMAC = sessionInformation.get(HMAC);
-
-        String ourHMAC = calculateSessionHMAC(hmacKey, userId, sessionDate, userSessionToken, partialLoginFlag);
 
         // Check that there is a user ID provided:
         if (null == userId) {
@@ -988,7 +997,7 @@ public class UserAuthenticationManager {
         }
 
         // Check no one has tampered with the cookie:
-        if (!ourHMAC.equals(sessionHMAC)) {
+        if (!hasValidHmac(sessionInformation)) {
             log.debug("Invalid HMAC detected for user id " + userId);
             return false;
         }
@@ -1029,6 +1038,46 @@ public class UserAuthenticationManager {
         }
 
         return UserAuthenticationManager.calculateHMAC(key, sb.toString());
+    }
+
+    /**
+     * This method is used to check whether a Segue Session's reported HMAC matches our recalculation. Assuming we've
+     * kept our HMAC_SALT secret and non-guessable, that will mean the session information has not been tampered with.
+     *
+     * NOTE: Even if the HMAC is correct, it does not mean the session is valid, for that, use #isValidUsersSession(...).
+     *
+     * @param sessionInformation Map of keys and values representing the session.
+     * @return Whether or not the reported HMAC matches our computation.
+     */
+    private boolean hasValidHmac(final Map<String, String> sessionInformation) {
+        String hmacKey = properties.getProperty(HMAC_SALT);
+        String supposedUserId = sessionInformation.get(SESSION_USER_ID);
+        String userSessionToken = sessionInformation.get(SESSION_TOKEN);
+        String sessionDate = sessionInformation.get(DATE_EXPIRES);
+        String partialLoginFlag = sessionInformation.get(PARTIAL_LOGIN_FLAG);
+        String sessionHMAC = sessionInformation.get(HMAC);
+
+        String ourHMAC = calculateSessionHMAC(hmacKey, supposedUserId, sessionDate, userSessionToken, partialLoginFlag);
+        return ourHMAC.equals(sessionHMAC);
+    }
+
+    private String getJSessionIdFromRequest(final HttpServletRequest request) throws InvalidSessionException {
+        Cookie jSessionCookie = null;
+        if (request.getCookies() == null) {
+            throw new InvalidSessionException("There are no cookies set.");
+        }
+
+        for (Cookie c : request.getCookies()) {
+            if (c.getName().equals(JSESSION_COOOKIE)) {
+                jSessionCookie = c;
+            }
+        }
+
+        if (null == jSessionCookie) {
+            throw new InvalidSessionException("There are no cookies set.");
+        }
+
+        return jSessionCookie.getValue();
     }
 
     /**

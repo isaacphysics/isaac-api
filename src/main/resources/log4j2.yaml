@@ -34,6 +34,15 @@ Configuration:
         PatternLayout:
           pattern: "[%d{yyyy-MM-dd HH:mm:ss}] [%-5p] %m%n"
 
+      - name: Audit_Appender
+        fileName: ${LOG_PATH_VAR}/audit-${LOG_FILE_SUFFIX}.log
+        filePattern: ${LOG_PATH_VAR}/audit-${LOG_FILE_SUFFIX}.log.%d{yyyy-MM-dd}.gz
+        Policies:
+          TimeBasedTriggeringPolicy:
+            interval: 10
+        PatternLayout:
+          pattern: "%d{yyyy-MM-dd HH:mm:ss},%m%n"
+
   Loggers:
       Root:
         level: ${CONSOLE_LOGGING_LEVEL}
@@ -50,3 +59,8 @@ Configuration:
           level: warn
           AppenderRef:
             - ref: Perf_Appender
+
+        - name: uk.ac.cam.cl.dtg.segue.api.monitors.AuditMonitor
+          level: trace
+          AppenderRef:
+            - ref: Audit_Appender
