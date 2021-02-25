@@ -62,5 +62,6 @@ Configuration:
 
         - name: uk.ac.cam.cl.dtg.segue.api.monitors.AuditMonitor
           level: trace
+          additivity: false
           AppenderRef:
             - ref: Audit_Appender
