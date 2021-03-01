@@ -179,7 +179,7 @@ public class QuizQuestionManagerTest extends AbstractManagerTest {
             m.shuffleChoiceQuestionsChoices(student.getId().toString(), questions);
         });
 
-        quizQuestionManager.augmentQuestionsForUser(studentQuiz, studentAttempt, student, true);
+        quizQuestionManager.augmentQuestionsForUser(studentQuiz, studentAttempt, true);
     }
 
     @Test

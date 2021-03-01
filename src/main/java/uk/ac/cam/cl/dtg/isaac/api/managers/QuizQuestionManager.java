@@ -123,21 +123,19 @@ public class QuizQuestionManager {
      *            question DTOs.
      * @param quizAttempt
      *            - which attempt at the quiz to get attempts for.
-     * @param user
-     *            - which user to augment the questions for.
      * @param includeCorrect
      *            - include whether the answers are correct.
      *
      * @return The quiz object augmented (generally a modified parameter).
      */
-    public IsaacQuizDTO augmentQuestionsForUser(IsaacQuizDTO quiz, QuizAttemptDTO quizAttempt, RegisteredUserDTO user, boolean includeCorrect) throws SegueDatabaseException {
+    public IsaacQuizDTO augmentQuestionsForUser(IsaacQuizDTO quiz, QuizAttemptDTO quizAttempt, boolean includeCorrect) throws SegueDatabaseException {
         List<QuestionDTO> questionsToAugment = GameManager.getAllMarkableQuestionPartsDFSOrder(quiz);
 
         Map<QuestionDTO, QuestionValidationResponse> answerMap = getAnswerMap(quizAttempt, questionsToAugment);
 
         this.augmentQuestionObjectWithAttemptInformation(answerMap, includeCorrect);
 
-        questionManager.shuffleChoiceQuestionsChoices(user.getId().toString(), questionsToAugment);
+        questionManager.shuffleChoiceQuestionsChoices(quizAttempt.getUserId().toString(), questionsToAugment);
 
         return quiz;
     }
