@@ -27,6 +27,7 @@ import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.EmailTemplateDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.util.Arrays;
@@ -456,11 +457,11 @@ public class EventBookingManagerTest {
         RegisteredUserDTO reservedStudent = testCase.student1;
         DetailedEventBookingDTO reservedStudentBooking = new DetailedEventBookingDTO() {{
             setEventId(testCase.event.getId()); setBookingStatus(BookingStatus.RESERVED);
-            setUserBooked(new UserSummaryDTO() {{setId(reservedStudent.getId());}});
+            setUserBooked(new UserSummaryWithEmailAddressDTO() {{setId(reservedStudent.getId());}});
         }};
         DetailedEventBookingDTO reservedStudentBookingAfterConfirmation = new DetailedEventBookingDTO() {{
             setEventId(testCase.event.getId()); setBookingStatus(BookingStatus.CONFIRMED);
-            setUserBooked(new UserSummaryDTO() {{setId(reservedStudent.getId());}});
+            setUserBooked(new UserSummaryWithEmailAddressDTO() {{setId(reservedStudent.getId());}});
         }};
 
         // Expected external calls
@@ -506,7 +507,7 @@ public class EventBookingManagerTest {
         someUser.setRole(Role.TEACHER);
 
         DetailedEventBookingDTO firstBooking = new DetailedEventBookingDTO();
-        UserSummaryDTO firstUser = new UserSummaryDTO();
+        UserSummaryWithEmailAddressDTO firstUser = new UserSummaryWithEmailAddressDTO();
         firstBooking.setEventId(testEvent.getId());
         firstUser.setId(6L);
         firstUser.setRole(Role.TEACHER);
@@ -515,7 +516,7 @@ public class EventBookingManagerTest {
         firstBooking.setAdditionalInformation(someAdditionalInformation);
 
         DetailedEventBookingDTO secondBooking = new DetailedEventBookingDTO();
-        UserSummaryDTO secondUser = new UserSummaryDTO();
+        UserSummaryWithEmailAddressDTO secondUser = new UserSummaryWithEmailAddressDTO();
         secondUser.setId(2L);
         secondUser.setRole(Role.TEACHER);
         secondBooking.setEventId(testEvent.getId());
@@ -844,7 +845,7 @@ public class EventBookingManagerTest {
         // Make student two have a cancelled booking
         DetailedEventBookingDTO student2sCancelledBooking = new DetailedEventBookingDTO() {{
             setBookingStatus(BookingStatus.CANCELLED); setEventId(testCase.event.getId());
-            setUserBooked(new UserSummaryDTO() {{setId(testCase.student2.getId());}});
+            setUserBooked(new UserSummaryWithEmailAddressDTO() {{setId(testCase.student2.getId());}});
         }};
 
         // Define expected external calls
@@ -989,7 +990,7 @@ public class EventBookingManagerTest {
         // Make student two have a cancelled booking
         DetailedEventBookingDTO student2sCancelledReservation = new DetailedEventBookingDTO() {{
             setBookingStatus(BookingStatus.CANCELLED); setEventId(testCase.event.getId());
-            setUserBooked(new UserSummaryDTO() {{setId(testCase.student2.getId());}});
+            setUserBooked(new UserSummaryWithEmailAddressDTO() {{setId(testCase.student2.getId());}});
             setReservedById(testCase.teacher.getId());
         }};
         Map<BookingStatus, Map<Role, Long>> previousBookingCounts = generatePlacesAvailableMap();
