@@ -366,7 +366,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             // Create a quiz attempt
             QuizAttemptDTO quizAttempt = this.quizAttemptManager.fetchOrCreate(quizAssignment, user);
 
-            quizAttempt = augmentAttempt(quizAttempt, false);
+            quizAttempt = augmentAttempt(quizAttempt, quizAssignment, false);
 
             return Response.ok(quizAttempt)
                 .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
@@ -434,7 +434,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             // Create a quiz attempt
             QuizAttemptDTO quizAttempt = this.quizAttemptManager.fetchOrCreateFreeQuiz(quiz, user);
 
-            quizAttempt = augmentAttempt(quizAttempt, false);
+            quizAttempt = augmentAttempt(quizAttempt, null, false);
 
             return Response.ok(quizAttempt)
                 .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
@@ -473,9 +473,9 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             QuizAttemptDTO quizAttempt = getIncompleteQuizAttemptForUser(quizAttemptId, user);
 
-            checkQuizAssignmentNotCancelledOrOverdue(quizAttempt);
+            QuizAssignmentDTO quizAssignment = checkQuizAssignmentNotCancelledOrOverdue(quizAttempt);
 
-            quizAttempt = augmentAttempt(quizAttempt, false);
+            quizAttempt = augmentAttempt(quizAttempt, quizAssignment, false);
 
             return Response.ok(quizAttempt)
                 .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
@@ -1125,7 +1125,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                     "That student has not completed this quiz assignment.").toResponse();
             }
 
-            quizAttempt = augmentAttempt(quizAttempt, true);
+            quizAttempt = augmentAttempt(quizAttempt, assignment, true);
 
             return Response.ok(quizAttempt)
                 .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
@@ -1250,6 +1250,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         }
     }
 
+    @Nullable
     private QuizAssignmentDTO checkQuizAssignmentNotCancelledOrOverdue(QuizAttemptDTO quizAttempt) throws SegueDatabaseException, AssignmentCancelledException, ErrorResponseWrapper {
         // Relying on the side-effects of getting the assignment.
         QuizAssignmentDTO quizAssignment = getQuizAssignment(quizAttempt);
@@ -1319,12 +1320,15 @@ public class QuizFacade extends AbstractIsaacFacade {
             || isUserAnAdmin(userManager, currentlyLoggedInUser);
     }
 
-    private QuizAttemptDTO augmentAttempt(QuizAttemptDTO quizAttempt, boolean includeCorrect) throws ContentManagerException, SegueDatabaseException {
+    private QuizAttemptDTO augmentAttempt(QuizAttemptDTO quizAttempt, @Nullable QuizAssignmentDTO quizAssignment, boolean includeCorrect) throws ContentManagerException, SegueDatabaseException {
         IsaacQuizDTO quiz = quizManager.findQuiz(quizAttempt.getQuizId());
-
         quiz = quizQuestionManager.augmentQuestionsForUser(quiz, quizAttempt, includeCorrect);
-
         quizAttempt.setQuiz(quiz);
+
+        if (quizAssignment != null) {
+            this.assignmentService.augmentAssignerSummaries(Collections.singletonList(quizAssignment));
+            quizAttempt.setQuizAssignment(quizAssignment);
+        }
 
         return quizAttempt;
     }

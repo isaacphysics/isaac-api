@@ -32,6 +32,7 @@ public class QuizAttemptDTO implements IHasQuizSummary {
     private Date startDate;
     @Nullable private Date completedDate;
     @Nullable private IsaacQuizDTO quiz; // For passing a users answers etc.
+    @Nullable private QuizAssignmentDTO quizAssignment; // For info on setter etc.
 
     /**
      * Complete QuizAttemptDO constructor with all dependencies.
@@ -156,5 +157,14 @@ public class QuizAttemptDTO implements IHasQuizSummary {
 
     public void setQuiz(IsaacQuizDTO quiz) {
         this.quiz = quiz;
+    }
+
+    @Nullable
+    public QuizAssignmentDTO getQuizAssignment() {
+        return quizAssignment;
+    }
+
+    public void setQuizAssignment(QuizAssignmentDTO quizAssignment) {
+        this.quizAssignment = quizAssignment;
     }
 }

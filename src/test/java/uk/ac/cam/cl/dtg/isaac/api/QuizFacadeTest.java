@@ -288,6 +288,10 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                 prepare(associationManager, m -> expect(m.hasPermission(currentUser(), student)).andReturn(true)),
                 prepare(quizAttemptManager, m -> expect(m.getByQuizAssignmentAndUser(studentAssignment, student)).andReturn(completedAttempt)),
                 prepare(quizQuestionManager, m -> expect(m.augmentQuestionsForUser(studentQuiz, completedAttempt, true)).andReturn(augmentedQuiz)),
+                prepare(assignmentService, m -> {
+                    m.augmentAssignerSummaries(Collections.singletonList(studentAssignment));
+                    expectLastCall();
+                }),
                 succeeds(),
                 check(response -> assertEquals(((QuizAttemptDTO) response.getEntity()).getQuiz(), augmentedQuiz))
             ),
@@ -383,6 +387,10 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                     prepare(quizAttemptManager, m -> expect(m.fetchOrCreate(studentAssignment, currentUser())).andReturn(attempt)),
                     prepare(quizManager, m -> expect(m.findQuiz(testQuizId)).andReturn(testQuiz)),
                     prepare(quizQuestionManager, m -> expect(m.augmentQuestionsForUser(testQuiz, attempt, false)).andReturn(testQuiz)),
+                    prepare(assignmentService, m -> {
+                        m.augmentAssignerSummaries(Collections.singletonList(studentAssignment));
+                        expectLastCall();
+                    }),
                     respondsWith(attempt),
                     check(_ignore -> assertEquals(testQuiz, attempt.getQuiz()))),
                 forbiddenForEveryoneElse()
@@ -437,6 +445,10 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                 as(student,
                     prepare(quizQuestionManager, m ->
                         expect(m.augmentQuestionsForUser(studentQuiz, studentAttempt, false)).andReturn(augmentedQuiz)),
+                    prepare(assignmentService, m -> {
+                        m.augmentAssignerSummaries(Collections.singletonList(studentAssignment));
+                        expectLastCall();
+                    }),
                     respondsWith(studentAttempt),
                     check(_ignore -> assertEquals(augmentedQuiz, studentAttempt.getQuiz()))
                 )
