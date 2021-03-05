@@ -114,10 +114,14 @@ public class QuizManager {
      *
      * @param quizId the id of the quiz.
      *
-     * @return The quiz.
+     * @return The quiz or null.
      */
     public IsaacQuizDTO findQuiz(final String quizId) throws ContentManagerException {
         Content cachedContent = contentManager.getContentDOById(contentIndex, quizId);
+
+        if (cachedContent == null) {
+            return null;
+        }
 
         if (cachedContent instanceof IsaacQuiz) {
             ContentDTO contentDTO = this.mapper.getDTOByDO(cachedContent);
