@@ -1,7 +1,8 @@
 package uk.ac.cam.cl.dtg.segue.dos.content;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import uk.ac.cam.cl.dtg.segue.dto.content.CodeDTO;
+
+import java.util.List;
 
 /**
  * Code (Abstract) Domain Object To be used anywhere that a figure should be displayed in the CMS.
@@ -10,26 +11,18 @@ import uk.ac.cam.cl.dtg.segue.dto.content.CodeDTO;
 @DTOMapping(CodeDTO.class)
 @JsonContentType("code")
 public class Code extends Content {
-    protected Content code;
-    protected String pythonUrl;
+
+    protected List<ContentBase> code;
 
     public Code() {
 
     }
 
-    public final Content getCode() {
+    public final List<ContentBase> getCode() {
         return code;
     }
 
-    public final void setCode(final Content code) {
+    public final void setCode(final List<ContentBase> code) {
         this.code = code;
-    }
-
-    public final String getPythonUrl() {
-        return this.pythonUrl;
-    }
-
-    public final void setPythonUrl(final String pythonUrl) {
-        this.pythonUrl = pythonUrl;
     }
 }

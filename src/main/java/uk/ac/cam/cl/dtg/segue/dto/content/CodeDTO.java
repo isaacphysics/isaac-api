@@ -1,31 +1,19 @@
 package uk.ac.cam.cl.dtg.segue.dto.content;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 
 public class CodeDTO extends ContentDTO {
-    protected ContentDTO code;
-    protected String pythonUrl;
+    protected List<ContentBaseDTO> code;
 
-    @JsonCreator
-    public CodeDTO(@JsonProperty("code") ContentDTO code, @JsonProperty("pythonUrl") String pythonUrl) {
+    public CodeDTO() {
+
+    }
+
+    public List<ContentBaseDTO> getCode() {
+        return code;
+    }
+
+    public void setCode(final List<ContentBaseDTO> code) {
         this.code = code;
-        this.pythonUrl = pythonUrl;
-    }
-
-    public ContentDTO getCode() {
-        return this.code;
-    }
-
-    public void setCode(ContentDTO code) {
-        this.code = code;
-    }
-
-    public String getPythonUrl() {
-        return this.pythonUrl;
-    }
-
-    public void setPythonUrl(String pythonUrl) {
-        this.pythonUrl = pythonUrl;
     }
 }
