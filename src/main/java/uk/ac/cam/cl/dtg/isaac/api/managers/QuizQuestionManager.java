@@ -142,19 +142,19 @@ public class QuizQuestionManager {
 
     /**
      * Modify the quiz to contain feedback for the specified mode, and possibly the users answers and the correct answers.
-     *
+     *  @param quizAttempt
+     *            - which attempt at the quiz to get attempts for.
      * @param quiz
      *            - to augment - this object may be mutated as a result of this method. i.e BestAttempt field set on
      *            question DTOs.
-     * @param quizAttempt
-     *            - which attempt at the quiz to get attempts for.
      * @param feedbackMode
-     *            - the type of feedback to augment.
+     *            - what level of feedback to augment with.
      */
-    public IsaacQuizDTO augmentFeedbackFor(IsaacQuizDTO quiz, QuizAttemptDTO quizAttempt, QuizFeedbackMode feedbackMode) throws SegueDatabaseException, ContentManagerException {
+    public QuizAttemptDTO augmentFeedbackFor(QuizAttemptDTO quizAttempt, IsaacQuizDTO quiz, QuizFeedbackMode feedbackMode) throws SegueDatabaseException, ContentManagerException {
+        quizAttempt.setFeedbackMode(feedbackMode);
         if (feedbackMode == QuizFeedbackMode.NONE) {
             // No feedback, no augmentation to do.
-            return quiz;
+            return quizAttempt;
         }
 
         // Go get the answers
@@ -174,7 +174,9 @@ public class QuizQuestionManager {
 
         quiz.setIndividualFeedback(feedback);
 
-        return quiz;
+        quizAttempt.setQuiz(quiz);
+
+        return quizAttempt;
     }
 
     /**

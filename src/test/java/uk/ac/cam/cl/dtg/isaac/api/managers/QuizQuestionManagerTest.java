@@ -22,7 +22,7 @@ import org.junit.Before;
 import org.junit.Test;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizQuestionAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizFeedbackDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -192,11 +192,12 @@ public class QuizQuestionManagerTest extends AbstractManagerTest {
                 )));
         });
 
-        IsaacQuizDTO resultQuiz = quizQuestionManager.augmentFeedbackFor(studentQuiz, studentAttempt, QuizFeedbackMode.DETAILED_FEEDBACK);
+        QuizAttemptDTO resultAttempt = quizQuestionManager.augmentFeedbackFor(studentAttempt, studentQuiz, QuizFeedbackMode.DETAILED_FEEDBACK);
 
-        assertNotNull(resultQuiz.getIndividualFeedback());
-        assertNotNull(resultQuiz.getIndividualFeedback().getOverallMark());
-        assertNotNull(resultQuiz.getIndividualFeedback().getSectionMarks());
+        assertNotNull(resultAttempt.getQuiz());
+        assertNotNull(resultAttempt.getQuiz().getIndividualFeedback());
+        assertNotNull(resultAttempt.getQuiz().getIndividualFeedback().getOverallMark());
+        assertNotNull(resultAttempt.getQuiz().getIndividualFeedback().getSectionMarks());
         assertNotNull(question.getBestAttempt());
         assertTrue(question.getBestAttempt().isCorrect());
         assertNotNull(question2.getBestAttempt());
@@ -206,9 +207,10 @@ public class QuizQuestionManagerTest extends AbstractManagerTest {
 
     @Test
     public void augmentFeedbackForWithNoneFeedbackModeDoesNoWork() throws SegueDatabaseException, ContentManagerException {
-        IsaacQuizDTO resultQuiz = quizQuestionManager.augmentFeedbackFor(studentQuiz, studentAttempt, QuizFeedbackMode.NONE);
+        QuizAttemptDTO resultAttempt = quizQuestionManager.augmentFeedbackFor(studentAttempt, studentQuiz, QuizFeedbackMode.NONE);
 
-        assertNull(resultQuiz.getIndividualFeedback());
+        assertNull(resultAttempt.getQuiz().getIndividualFeedback());
+        assertNull(question.getBestAttempt());
     }
 
     @Test

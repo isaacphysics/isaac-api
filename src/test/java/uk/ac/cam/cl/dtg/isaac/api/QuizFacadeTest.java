@@ -468,7 +468,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
 
     @Test
     public void getQuizAttemptFeedback() {
-        IsaacQuizDTO augmentedQuiz = new IsaacQuizDTO();
+        QuizAttemptDTO augmentedAttempt = new QuizAttemptDTO();
         forEndpoint((attempt) -> () -> quizFacade.getQuizAttemptFeedback(request, attempt.getId()),
             with(studentAttempt,
                 requiresLogin(),
@@ -481,27 +481,27 @@ public class QuizFacadeTest extends AbstractFacadeTest {
             ),
             with(completedAttempt,
                 as(student,
-                    prepare(quizQuestionManager, m -> expect(m.augmentFeedbackFor(studentQuiz, completedAttempt, QuizFeedbackMode.OVERALL_MARK)).andReturn(augmentedQuiz)),
-                    respondsWith(augmentedQuiz)
+                    prepare(quizQuestionManager, m -> expect(m.augmentFeedbackFor(completedAttempt, studentQuiz, QuizFeedbackMode.OVERALL_MARK)).andReturn(augmentedAttempt)),
+                    respondsWith(augmentedAttempt)
                 ),
                 forbiddenForEveryoneElse()
             ),
             with(overdueCompletedAttempt,
                 as(student,
-                    prepare(quizQuestionManager, m -> expect(m.augmentFeedbackFor(studentQuiz, overdueCompletedAttempt, QuizFeedbackMode.SECTION_MARKS)).andReturn(augmentedQuiz)),
-                    respondsWith(augmentedQuiz)
+                    prepare(quizQuestionManager, m -> expect(m.augmentFeedbackFor(overdueCompletedAttempt, studentQuiz, QuizFeedbackMode.SECTION_MARKS)).andReturn(augmentedAttempt)),
+                    respondsWith(augmentedAttempt)
                 )
             ),
             with(ownCompletedAttempt,
                 as(student,
-                    prepare(quizQuestionManager, m -> expect(m.augmentFeedbackFor(otherQuiz, ownCompletedAttempt, QuizFeedbackMode.DETAILED_FEEDBACK)).andReturn(augmentedQuiz)),
-                    respondsWith(augmentedQuiz)
+                    prepare(quizQuestionManager, m -> expect(m.augmentFeedbackFor(ownCompletedAttempt, otherQuiz, QuizFeedbackMode.DETAILED_FEEDBACK)).andReturn(augmentedAttempt)),
+                    respondsWith(augmentedAttempt)
                 )
             ),
             with(attemptOnNullFeedbackModeQuiz,
                 as(student,
-                    prepare(quizQuestionManager, m -> expect(m.augmentFeedbackFor(teacherQuiz, attemptOnNullFeedbackModeQuiz, QuizFeedbackMode.DETAILED_FEEDBACK)).andReturn(augmentedQuiz)),
-                    respondsWith(augmentedQuiz)
+                    prepare(quizQuestionManager, m -> expect(m.augmentFeedbackFor(attemptOnNullFeedbackModeQuiz, teacherQuiz, QuizFeedbackMode.DETAILED_FEEDBACK)).andReturn(augmentedAttempt)),
+                    respondsWith(augmentedAttempt)
                 )
             )
         );

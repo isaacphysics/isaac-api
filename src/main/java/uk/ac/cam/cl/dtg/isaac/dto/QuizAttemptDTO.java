@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto;
 
+import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 
 import javax.annotation.Nullable;
@@ -33,6 +34,7 @@ public class QuizAttemptDTO implements IHasQuizSummary {
     @Nullable private Date completedDate;
     @Nullable private IsaacQuizDTO quiz; // For passing a users answers etc.
     @Nullable private QuizAssignmentDTO quizAssignment; // For info on setter etc.
+    private QuizFeedbackMode feedbackMode;
 
     /**
      * Complete QuizAttemptDO constructor with all dependencies.
@@ -166,5 +168,14 @@ public class QuizAttemptDTO implements IHasQuizSummary {
 
     public void setQuizAssignment(QuizAssignmentDTO quizAssignment) {
         this.quizAssignment = quizAssignment;
+    }
+
+    @Nullable
+    public QuizFeedbackMode getFeedbackMode() {
+        return feedbackMode;
+    }
+
+    public void setFeedbackMode(QuizFeedbackMode feedbackMode) {
+        this.feedbackMode = feedbackMode;
     }
 }

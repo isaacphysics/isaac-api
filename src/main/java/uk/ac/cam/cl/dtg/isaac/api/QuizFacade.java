@@ -535,9 +535,11 @@ public class QuizFacade extends AbstractIsaacFacade {
                 }
             }
 
-            quiz = quizQuestionManager.augmentFeedbackFor(quiz, quizAttempt, feedbackMode);
+            quizAttempt = quizQuestionManager.augmentFeedbackFor(quizAttempt, quiz, feedbackMode);
 
-            return Response.ok(quiz)
+            augmentAttempt(quizAttempt, quizAssignment);
+
+            return Response.ok(quizAttempt)
                 .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
                 .build();
 
@@ -1325,6 +1327,10 @@ public class QuizFacade extends AbstractIsaacFacade {
         quiz = quizQuestionManager.augmentQuestionsForUser(quiz, quizAttempt, includeCorrect);
         quizAttempt.setQuiz(quiz);
 
+        return augmentAttempt(quizAttempt, quizAssignment);
+    }
+
+    private QuizAttemptDTO augmentAttempt(QuizAttemptDTO quizAttempt, @Nullable QuizAssignmentDTO quizAssignment) throws SegueDatabaseException {
         if (quizAssignment != null) {
             this.assignmentService.augmentAssignerSummaries(Collections.singletonList(quizAssignment));
             quizAttempt.setQuizAssignment(quizAssignment);
