@@ -25,6 +25,7 @@ import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
 import uk.ac.cam.cl.dtg.isaac.dao.IAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IAssignmentLike;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
@@ -37,13 +38,12 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
-import static uk.ac.cam.cl.dtg.util.NameFormatter.getTeacherNameFromUser;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
 /**
  * AssignmentManager.
  */
-public class AssignmentManager {
+public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO> {
     private static final Logger log = LoggerFactory.getLogger(AssignmentManager.class);
 
     private final IAssignmentPersistenceManager assignmentPersistenceManager;
@@ -257,5 +257,22 @@ public class AssignmentManager {
         }
 
         return groups;
+    }
+
+    @Override
+    public String getAssignmentLikeName(AssignmentDTO existingAssignment) throws SegueDatabaseException {
+        GameboardDTO gameboard = gameManager.getGameboard(existingAssignment.getGameboardId());
+        String name = existingAssignment.getGameboardId();
+        if (gameboard != null && gameboard.getTitle() != null && !gameboard.getTitle().isEmpty()) {
+            name = gameboard.getTitle();
+        }
+        return name;
+    }
+
+    @Override
+    public String getAssignmentLikeUrl(AssignmentDTO existingAssignment) {
+        return String.format("https://%s/assignment/%s",
+                        properties.getProperty(HOST_NAME),
+                        existingAssignment.getGameboardId());
     }
 }

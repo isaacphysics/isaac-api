@@ -332,6 +332,7 @@ public final class Constants {
         ADMIN_EVENT_WAITING_LIST_PROMOTION,
         ADMIN_MERGE_USER,
         ANSWER_QUESTION,
+        ANSWER_QUIZ_QUESTION,
         CHANGE_USER_ROLE,
         CHANGE_GROUP_MEMBERSHIP_STATUS,
         CONTACT_US_FORM_USED,
@@ -386,6 +387,8 @@ public final class Constants {
     public static final String DEFAULT_RESULTS_LIMIT_AS_STRING = "10";
 
     public static final String DEFAULT_SEARCH_RESULT_LIMIT_AS_STRING = "25";
+
+    public static final Integer SEARCH_TEXT_CHAR_LIMIT = 1000;
 
     public static final Integer NO_SEARCH_LIMIT = -1;
 
@@ -490,6 +493,7 @@ public final class Constants {
     public static final String REDIRECT_URL = "redirectUrl";
 
     public static final String SEGUE_AUTH_COOKIE = "SEGUE_AUTH_COOKIE";
+    public static final String JSESSION_COOOKIE = "JSESSIONID";
 
     public static final String DEFAULT_DATE_FORMAT = "EEE MMM dd HH:mm:ss Z yyyy";
 
@@ -498,6 +502,8 @@ public final class Constants {
     public static final String GROUP_FK = "groupId";
     public static final String ASSIGNMENT_FK = "assignmentId";
     public static final String ASSIGNMENT_DUEDATE_FK = "dueDate";
+
+    public static final String QUIZ_ATTEMPT_FK = "quizAttemptId";
     public static final String QUIZ_ASSIGNMENT_FK = "quizAssignmentId";
 
     public static final String EQUALITY_CHECKER_HOST = "EQUALITY_CHECKER_HOST";

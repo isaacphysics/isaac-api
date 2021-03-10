@@ -180,14 +180,20 @@ public class IsaacController extends AbstractIsaacFacade {
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("search/{searchString}")
+    @Path("/search")
     @GZIP
     @ApiOperation(value = "Search for content objects matching the provided criteria.")
     public final Response search(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
-            @PathParam("searchString") final String searchString,
+            @QueryParam("query") final String searchString,
             @DefaultValue(DEFAULT_TYPE_FILTER) @QueryParam("types") final String types,
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
             @DefaultValue(DEFAULT_SEARCH_RESULT_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
+
+        // Impose 1000 character search string limit internally
+        if (searchString.length() > SEARCH_TEXT_CHAR_LIMIT) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Search string exceeded " +
+                    SEARCH_TEXT_CHAR_LIMIT.toString() + " character limit.").toResponse();
+        }
 
         // Calculate the ETag on current live version of the content
         // NOTE: Assumes that the latest version of the content is being used.
@@ -251,9 +257,10 @@ public class IsaacController extends AbstractIsaacFacade {
     @GZIP
     @ApiOperation(value = "Get a binary object from the current content version.",
                   notes = "This can only be used to get images from the content database.")
-    public final Response getImageByPath(@Context final Request request, @PathParam("path") final String path) {
+    public final Response getImageByPath(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
+                                         @PathParam("path") final String path) {
         // entity tags etc are already added by segue
-        return api.getImageFileContent(request, this.contentIndex, path);
+        return api.getImageFileContent(request, httpServletRequest, this.contentIndex, path);
     }
 
     /**
@@ -277,6 +284,41 @@ public class IsaacController extends AbstractIsaacFacade {
         }
 
         return getUserProgressInformation(request, user.getId());
+    }
+
+    /**
+     * Get snapshot for the current user
+     *
+     * @param request
+     *            - so we can find the current user.
+     * @return a map containing the information.
+     */
+    @GET
+    @Path("users/current_user/snapshot")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @ApiOperation(value = "Get snapshot for the current user.")
+    public final Response getCurrentUserSnapshot(@Context final HttpServletRequest request) {
+        RegisteredUserDTO user;
+        try {
+            user = userManager.getCurrentRegisteredUser(request);
+        } catch (NoUserLoggedInException e1) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
+
+        Map<String, Object> dailyStreakRecord = userStreaksManager.getCurrentStreakRecord(user);
+        dailyStreakRecord.put("largestStreak", userStreaksManager.getLongestStreak(user));
+
+        Map<String, Object> weeklyStreakRecord = userStreaksManager.getCurrentWeeklyStreakRecord(user);
+        weeklyStreakRecord.put("largestStreak", userStreaksManager.getLongestWeeklyStreak(user));
+
+        Map<String, Object> userSnapshot = ImmutableMap.of(
+                "dailyStreakRecord", dailyStreakRecord,
+                "weeklyStreakRecord", weeklyStreakRecord,
+                "achievementsRecord", userBadgeManager.getAllUserBadges(user)
+        );
+
+        return Response.ok(userSnapshot).build();
     }
 
     /**

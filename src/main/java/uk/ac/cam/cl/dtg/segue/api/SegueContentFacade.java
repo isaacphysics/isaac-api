@@ -532,9 +532,10 @@ public class SegueContentFacade extends AbstractSegueFacade {
     @Produces("*/*")
     @Cache
     @GZIP
+    @Deprecated  // TODO: Remove/alter this endpoint, since the "version" param is not used!
     @ApiOperation(value = "Get a binary object from the content of a specific version.",
                   notes = "This can only be used to get images from the content database.")
-    public final Response getImageFileContent(@Context final Request request,
+    public final Response getImageFileContent(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
             @PathParam("version") final String version, @PathParam("path") final String path) {
 
         if (null == version || null == path || Files.getFileExtension(path).isEmpty()) {
@@ -599,8 +600,9 @@ public class SegueContentFacade extends AbstractSegueFacade {
         }
 
         if (null == fileContent) {
+            String refererHeader = httpServletRequest.getHeader("Referer");
             SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the file: " + path);
-            log.warn(error.getErrorMessage());
+            log.warn(String.format("Unable to locate the file: (%s). Referer: (%s)", path, refererHeader));
             return error.toResponse(getCacheControl(NUMBER_SECONDS_IN_TEN_MINUTES, false), etag);
         }
 

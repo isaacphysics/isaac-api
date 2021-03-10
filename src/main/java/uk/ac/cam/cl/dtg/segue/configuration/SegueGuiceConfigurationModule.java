@@ -98,6 +98,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType.*;
 
 /**
  * This class is responsible for injecting configuration values for persistence related classes.
@@ -205,6 +206,21 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         this.bindConstantToProperty(CONTENT_INDEX, globalProperties);
 
         this.bindConstantToProperty(Constants.API_METRICS_EXPORT_PORT, globalProperties);
+
+        this.bind(String.class).toProvider(() -> {
+            // Any binding to String without a matching @Named annotation will always get the empty string
+            // which seems incredibly likely to cause errors and rarely to be intended behaviour,
+            // so throw an error early in DEV and log an error in PROD.
+            try {
+                throw new IllegalArgumentException("Binding a String without a matching @Named annotation");
+            } catch (IllegalArgumentException e) {
+                if (globalProperties.getProperty(SEGUE_APP_ENVIRONMENT).equals(DEV.name())) {
+                    throw e;
+                }
+                log.error("Binding a String without a matching @Named annotation", e);
+            }
+            return "";
+        });
     }
 
     /**

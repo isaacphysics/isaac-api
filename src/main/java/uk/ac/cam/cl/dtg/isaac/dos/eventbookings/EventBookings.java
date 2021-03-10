@@ -160,6 +160,18 @@ public interface EventBookings {
      */
     Iterable<EventBooking> findAllByUserId(final Long userId) throws SegueDatabaseException;
 
+
+    /**
+     * Find all event reservations by a given user.
+     *
+     * @param userId
+     *            - the user of interest.
+     * @return an iterable with all the events matching the criteria.
+     * @throws SegueDatabaseException
+     *             - if an error occurs.
+     */
+    Iterable<EventBooking> findAllReservationsByUserId(final Long userId) throws SegueDatabaseException;
+
     /**
      * Find an event booking by event and user id.
      * 

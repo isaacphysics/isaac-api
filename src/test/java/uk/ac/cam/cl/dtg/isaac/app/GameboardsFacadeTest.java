@@ -107,11 +107,13 @@ public class GameboardsFacadeTest {
 		String levels = "2,3,4";
 		String concepts = "newtoni";
 		String title = "Newton";
+		String questionCategory = "problem_solving";
 
 		expect(
-				dummyGameManager.generateRandomGameboard(EasyMock.<String> anyObject(),
+				dummyGameManager.generateRandomGameboard(
+						EasyMock.<String> anyObject(), EasyMock.<List<String>> anyObject(),
 						EasyMock.<List<String>> anyObject(), EasyMock.<List<String>> anyObject(),
-						EasyMock.<List<String>> anyObject(), EasyMock.<List<Integer>> anyObject(),
+						EasyMock.<List<Integer>> anyObject(), EasyMock.<List<String>> anyObject(),
 						EasyMock.<List<String>> anyObject(), EasyMock.<AbstractSegueUserDTO> anyObject()))
 					.andReturn(null).atLeastOnce();
 
@@ -121,7 +123,7 @@ public class GameboardsFacadeTest {
 		replay(dummyGameManager);
 
 		Response r = gameboardFacade.generateTemporaryGameboard(dummyRequest, title, subjects, fields, topics,
-				levels, concepts);
+				levels, concepts, questionCategory);
 
 		assertTrue(r.getStatus() == Status.NO_CONTENT.getStatusCode());
 		verify(dummyGameManager);

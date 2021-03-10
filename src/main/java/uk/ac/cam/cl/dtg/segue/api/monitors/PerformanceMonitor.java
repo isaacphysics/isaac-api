@@ -15,21 +15,22 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.monitors;
 
+import com.google.inject.Inject;
 import org.apache.commons.lang3.time.StopWatch;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
+import uk.ac.cam.cl.dtg.segue.api.services.MonitorService;
 
+import javax.annotation.Priority;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Provider;
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
 
 import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.REQUEST_LATENCY_HISTOGRAM;
 
@@ -37,23 +38,24 @@ import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.REQUEST_LATENCY_H
  * Allows us to log the performance of all requests.
  *
  */
+@Priority(0) // Setting the priority to 0 makes sure this filter is applied first on request and last on response
 @Provider
 public class PerformanceMonitor implements ContainerRequestFilter, ContainerResponseFilter {
     private static final Logger log = LoggerFactory.getLogger(PerformanceMonitor.class);
 
-    @Context
-    private HttpRequest request;
-
     public static final long WARNING_THRESHOLD = 3000;
     public static final long ERROR_THRESHOLD = 10000;
     private static final long NUMBER_OF_MILLISECONDS_IN_A_SECOND = 1000;
-    private static final String NO_MATCHING_ENDPOINT = "NO_MATCHING_ENDPOINT";
+
+    @Context private HttpRequest request;
+    private final MonitorService monitorService;
 
     /**
      * PerformanceMonitor.
      */
-    public PerformanceMonitor() {
-
+    @Inject
+    public PerformanceMonitor(final MonitorService monitorService) {
+        this.monitorService = monitorService;
     }
 
     @Override
@@ -80,7 +82,7 @@ public class PerformanceMonitor implements ContainerRequestFilter, ContainerResp
         if (timeInMs < WARNING_THRESHOLD) {
             log.debug(String.format("Request: %s %s took %dms",
                     requestContext.getMethod(), request.getUri().getPath(), timeInMs));
-        } else if (timeInMs > WARNING_THRESHOLD && timeInMs < ERROR_THRESHOLD) {
+        } else if (timeInMs < ERROR_THRESHOLD) {
             log.warn(String.format("Performance Warning: Request: %s %s took %dms and exceeded threshold of %d",
                     requestContext.getMethod(), request.getUri().getPath(), timeInMs, WARNING_THRESHOLD));
         } else {
@@ -90,25 +92,9 @@ public class PerformanceMonitor implements ContainerRequestFilter, ContainerResp
 
         // Record for metrics
         REQUEST_LATENCY_HISTOGRAM
-                .labels(requestContext.getMethod(), pathWithoutPathParamValues(request.getUri()))
+                .labels(requestContext.getMethod(), monitorService.getPathWithoutPathParamValues(request.getUri()))
                 .observe((double)timeInMs / NUMBER_OF_MILLISECONDS_IN_A_SECOND);
     }
 
-    private String pathWithoutPathParamValues(UriInfo uri) {
-        List<String> matchingUris = uri.getMatchedURIs(); // Ordered so that current resource URI is first
 
-        if (matchingUris.isEmpty()) {
-            return NO_MATCHING_ENDPOINT;
-        }
-
-        String mostSpecificMatchingUri = "/" + matchingUris.get(0);
-        // Replace any path param values with its curly-braced, path param identifier
-        for (Map.Entry<String, List<String>> pathParams : uri.getPathParameters().entrySet()) {
-            for (String paramValue : pathParams.getValue()) {
-                mostSpecificMatchingUri =
-                        mostSpecificMatchingUri.replace(paramValue, "{" + pathParams.getKey() + "}");
-            }
-        }
-        return mostSpecificMatchingUri;
-    }
 }

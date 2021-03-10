@@ -58,7 +58,7 @@ public class PostgresSqlDb implements Closeable {
         dataSource.setValidationQuery("SELECT 1");
         dataSource.setTestOnReturn(false);
         dataSource.setTimeBetweenEvictionRunsMillis(30000);
-        dataSource.setMaxTotal(50);
+        dataSource.setMaxTotal(30);
         dataSource.setInitialSize(10);
         dataSource.setMaxWaitMillis(10000);
         dataSource.setRemoveAbandonedTimeout(60);

@@ -18,12 +18,15 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
+import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
 
+import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -32,45 +35,100 @@ import java.util.Set;
  */
 @JsonContentType("isaacQuiz")
 public class IsaacQuizDTO extends SeguePageDTO implements EmailService.HasTitleOrId {
-	private boolean visibleToStudents;
+    private boolean visibleToStudents;
+    private QuizFeedbackMode defaultFeedbackMode;
 
-	@JsonCreator
-	public IsaacQuizDTO(
-			@JsonProperty("id") String id,
+    // Properties for sending feedback
+    private Integer total;
+    private Map<String, Integer> sectionTotals;
+    private QuizFeedbackDTO individualFeedback;
+    private List<QuizUserFeedbackDTO> userFeedback;
+
+    @JsonCreator
+    public IsaacQuizDTO(
+            @JsonProperty("id") String id,
             @JsonProperty("title") String title,
-			@JsonProperty("subtitle") String subtitle,
-			@JsonProperty("type") String type,
-			@JsonProperty("author") String author,
-			@JsonProperty("encoding") String encoding,
-			@JsonProperty("canonicalSourceFile") String canonicalSourceFile,
-			@JsonProperty("layout") String layout,
-			@JsonProperty("children") List<ContentBaseDTO> children,
-			@JsonProperty("value") String value,
-			@JsonProperty("attribution") String attribution,
-			@JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
-			@JsonProperty("version") boolean published,
-			@JsonProperty("tags") Set<String> tags,
-			@JsonProperty("level") Integer level,
-			@JsonProperty("visibleToStudents") boolean visibleToStudents) {
-		super(id, title, subtitle, type, author, encoding,
-				canonicalSourceFile, layout, children, value, attribution,
-				relatedContent, published, tags, level);
+            @JsonProperty("subtitle") String subtitle,
+            @JsonProperty("type") String type,
+            @JsonProperty("author") String author,
+            @JsonProperty("encoding") String encoding,
+            @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
+            @JsonProperty("layout") String layout,
+            @JsonProperty("children") List<ContentBaseDTO> children,
+            @JsonProperty("value") String value,
+            @JsonProperty("attribution") String attribution,
+            @JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
+            @JsonProperty("version") boolean published,
+            @JsonProperty("tags") Set<String> tags,
+            @JsonProperty("level") Integer level,
+            @JsonProperty("visibleToStudents") boolean visibleToStudents,
+            @JsonProperty("defaultFeedbackMode") QuizFeedbackMode defaultFeedbackMode) {
+        super(id, title, subtitle, type, author, encoding,
+                canonicalSourceFile, layout, children, value, attribution,
+                relatedContent, published, tags, level);
 
-		this.visibleToStudents = visibleToStudents;
-	}
+        this.visibleToStudents = visibleToStudents;
+        this.defaultFeedbackMode = defaultFeedbackMode;
+    }
 
-	/**
-	 * Default constructor required for Jackson.
-	 */
-	public IsaacQuizDTO() {
+    /**
+     * Default constructor required for Jackson.
+     */
+    public IsaacQuizDTO() {
 
-	}
+    }
 
-	public boolean getVisibleToStudents() {
-		return visibleToStudents;
-	}
+    public boolean getVisibleToStudents() {
+        return visibleToStudents;
+    }
 
-	public void setVisibleToStudents(boolean visibleToStudents) {
-		this.visibleToStudents = visibleToStudents;
-	}
+    public void setVisibleToStudents(boolean visibleToStudents) {
+        this.visibleToStudents = visibleToStudents;
+    }
+
+    @Nullable
+    public QuizFeedbackMode getDefaultFeedbackMode() {
+        return defaultFeedbackMode;
+    }
+
+    public void setDefaultFeedbackMode(QuizFeedbackMode defaultFeedbackMode) {
+        this.defaultFeedbackMode = defaultFeedbackMode;
+    }
+
+    @Nullable
+    public Integer getTotal() {
+        return total;
+    }
+
+    public void setTotal(Integer total) {
+        this.total = total;
+    }
+
+    @Nullable
+    public Map<String, Integer> getSectionTotals() {
+        return sectionTotals;
+    }
+
+    public void setSectionTotals(Map<String, Integer> sectionTotals) {
+        this.sectionTotals = sectionTotals;
+    }
+
+
+    @Nullable
+    public QuizFeedbackDTO getIndividualFeedback() {
+        return individualFeedback;
+    }
+
+    public void setIndividualFeedback(QuizFeedbackDTO individualFeedback) {
+        this.individualFeedback = individualFeedback;
+    }
+
+    @Nullable
+    public List<QuizUserFeedbackDTO> getUserFeedback() {
+        return userFeedback;
+    }
+
+    public void setUserFeedback(List<QuizUserFeedbackDTO> userFeedback) {
+        this.userFeedback = userFeedback;
+    }
 }

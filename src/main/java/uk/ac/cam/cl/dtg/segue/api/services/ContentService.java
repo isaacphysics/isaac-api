@@ -17,6 +17,7 @@ package uk.ac.cam.cl.dtg.segue.api.services;
 
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
@@ -28,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.google.common.collect.Maps.immutableEntry;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ID_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
 
@@ -36,7 +38,7 @@ public class ContentService {
     private final String contentIndex;
 
     @Inject
-    public ContentService(final IContentManager contentManager, final String contentIndex) {
+    public ContentService(final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex) {
         this.contentManager = contentManager;
         this.contentIndex = contentIndex;
     }
