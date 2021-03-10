@@ -183,7 +183,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 assignment.setGameboard(gameboardsMap.get(assignment.getGameboardId()));
 
                 // Augment with group name if allowed
-                // TODO: Do we want staff and/or admins here?
                 UserGroupDTO group = groupManager.getGroupById(assignment.getGroupId());
                 if (GroupManager.isOwnerOrAdditionalManager(group, currentlyLoggedInUser.getId())) {
                     assignment.setGroupName(group.getGroupName());
