@@ -482,6 +482,10 @@ public class QuizFacadeTest extends AbstractFacadeTest {
             with(completedAttempt,
                 as(student,
                     prepare(quizQuestionManager, m -> expect(m.augmentFeedbackFor(completedAttempt, studentQuiz, QuizFeedbackMode.OVERALL_MARK)).andReturn(augmentedAttempt)),
+                    prepare(assignmentService, m -> {
+                        m.augmentAssignerSummaries(Collections.singletonList(studentAssignment));
+                        expectLastCall();
+                    }),
                     respondsWith(augmentedAttempt)
                 ),
                 forbiddenForEveryoneElse()
@@ -489,6 +493,10 @@ public class QuizFacadeTest extends AbstractFacadeTest {
             with(overdueCompletedAttempt,
                 as(student,
                     prepare(quizQuestionManager, m -> expect(m.augmentFeedbackFor(overdueCompletedAttempt, studentQuiz, QuizFeedbackMode.SECTION_MARKS)).andReturn(augmentedAttempt)),
+                    prepare(assignmentService, m -> {
+                        m.augmentAssignerSummaries(Collections.singletonList(overdueAssignment));
+                        expectLastCall();
+                    }),
                     respondsWith(augmentedAttempt)
                 )
             ),
