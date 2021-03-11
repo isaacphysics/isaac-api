@@ -569,7 +569,7 @@ public class QuizFacade extends AbstractIsaacFacade {
      *            - so that we can extract user information.
      * @param quizAttemptId
      *            - the ID of the quiz the user wishes to attempt.
-     * @return Confirmation or an error.
+     * @return The updated quiz attempt or an error.
      */
     @POST
     @Path("/attempt/{quizAttemptId}/complete")
@@ -591,10 +591,9 @@ public class QuizFacade extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.FORBIDDEN, "That quiz is already complete.").toResponse();
             }
 
-            quizAttemptManager.updateAttemptCompletionStatus(quizAttempt, true);
+            quizAttempt = quizAttemptManager.updateAttemptCompletionStatus(quizAttempt, true);
 
-            return Response.noContent().build();
-
+            return Response.ok(quizAttempt).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
@@ -619,7 +618,7 @@ public class QuizFacade extends AbstractIsaacFacade {
      *            - the ID of the assignment you want to mark an attempt incomplete from.
      * @param userId
      *            - the ID of the user whose attempt you want to mark incomplete.
-     * @return Confirmation or an error.
+     * @return The updated attempt or an error.
      */
     @POST
     @Path("/assignment/{quizAssignmentId}/{userId}/incomplete")
@@ -663,10 +662,9 @@ public class QuizFacade extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "That quiz is already incomplete.").toResponse();
             }
 
-            quizAttemptManager.updateAttemptCompletionStatus(quizAttempt, false);
+            quizAttempt = quizAttemptManager.updateAttemptCompletionStatus(quizAttempt, false);
 
-            return Response.noContent().build();
-
+            return Response.ok(quizAttempt).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {

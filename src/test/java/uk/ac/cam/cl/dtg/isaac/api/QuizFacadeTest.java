@@ -509,12 +509,13 @@ public class QuizFacadeTest extends AbstractFacadeTest {
 
     @Test
     public void completeQuizAttempt() {
+        QuizAttemptDTO updatedAttempt = new QuizAttemptDTO();
         forEndpoint((attempt) -> () -> quizFacade.completeQuizAttempt(request, attempt.getId()),
             with(studentAttempt,
                 requiresLogin(),
                 as(student,
-                    prepare(quizAttemptManager, m -> m.updateAttemptCompletionStatus(studentAttempt, true)),
-                    succeeds()
+                    prepare(quizAttemptManager, m -> expect(m.updateAttemptCompletionStatus(studentAttempt, true)).andReturn(updatedAttempt)),
+                    respondsWith(updatedAttempt)
                 ),
                 everyoneElse(
                     failsWith(Status.FORBIDDEN)
@@ -530,15 +531,16 @@ public class QuizFacadeTest extends AbstractFacadeTest {
 
     @Test
     public void completeQuizAttemptMarkIncompleteByTeacher() {
+        QuizAttemptDTO updatedAttempt = new QuizAttemptDTO();
         forEndpoint((user) -> () -> quizFacade.markIncompleteQuizAttempt(request, studentAssignment.getId(), user.getId()),
             with(student,
                 requiresLogin(),
                 as(studentsTeachersOrAdmin(),
                     prepare(quizAttemptManager, m -> {
                         expect(m.getByQuizAssignmentAndUser(studentAssignment, student)).andReturn(completedAttempt);
-                        m.updateAttemptCompletionStatus(completedAttempt, false);
+                        expect(m.updateAttemptCompletionStatus(completedAttempt, false)).andReturn(updatedAttempt);
                     }),
-                    succeeds()
+                    respondsWith(updatedAttempt)
                 ),
                 everyoneElse(
                     failsWith(Status.FORBIDDEN)

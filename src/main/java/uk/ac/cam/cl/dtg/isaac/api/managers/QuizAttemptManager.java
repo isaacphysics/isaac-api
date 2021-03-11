@@ -105,8 +105,9 @@ public class QuizAttemptManager {
         quizAttemptPersistenceManager.deleteAttempt(quizAttempt.getId());
     }
 
-    public void updateAttemptCompletionStatus(QuizAttemptDTO quizAttempt, boolean newCompletionStatus) throws SegueDatabaseException {
-        quizAttemptPersistenceManager.updateAttemptCompletionStatus(quizAttempt.getId(), newCompletionStatus);
+    public QuizAttemptDTO updateAttemptCompletionStatus(QuizAttemptDTO quizAttempt, boolean newCompletionStatus) throws SegueDatabaseException {
+        quizAttempt.setCompletedDate(quizAttemptPersistenceManager.updateAttemptCompletionStatus(quizAttempt.getId(), newCompletionStatus));
+        return quizAttempt;
     }
 
     public Set<Long> getCompletedUserIds(QuizAssignmentDTO assignment) throws SegueDatabaseException {

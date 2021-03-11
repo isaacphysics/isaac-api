@@ -27,6 +27,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
+import javax.annotation.Nullable;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -167,19 +168,23 @@ public class PgQuizAttemptPersistenceManager implements IQuizAttemptPersistenceM
     }
 
     @Override
-    public void updateAttemptCompletionStatus(Long quizAttemptId, boolean newCompletionStatus) throws SegueDatabaseException {
+    @Nullable
+    public Date updateAttemptCompletionStatus(Long quizAttemptId, boolean newCompletionStatus) throws SegueDatabaseException {
         PreparedStatement pst;
         try (Connection conn = database.getDatabaseConnection()) {
+            Date completedDate = newCompletionStatus ? new Date() : null;
             pst = conn.prepareStatement("UPDATE quiz_attempts SET completed_date = ? WHERE id = ?");
 
-            if (newCompletionStatus) {
-                pst.setTimestamp(1, new java.sql.Timestamp(new Date().getTime()));
+            if (completedDate != null) {
+                pst.setTimestamp(1, new java.sql.Timestamp(completedDate.getTime()));
             } else {
                 pst.setNull(1, Types.TIMESTAMP);
             }
             pst.setLong(2, quizAttemptId);
 
             pst.executeUpdate();
+
+            return completedDate;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Unable to mark quiz attempt complete", e);
         }
