@@ -209,7 +209,7 @@ public class QuizQuestionManagerTest extends AbstractManagerTest {
     public void augmentFeedbackForWithNoneFeedbackModeDoesNoWork() throws SegueDatabaseException, ContentManagerException {
         QuizAttemptDTO resultAttempt = quizQuestionManager.augmentFeedbackFor(studentAttempt, studentQuiz, QuizFeedbackMode.NONE);
 
-        assertNull(resultAttempt.getQuiz().getIndividualFeedback());
+        assertNull(resultAttempt.getQuiz());
         assertNull(question.getBestAttempt());
     }
 
