@@ -135,6 +135,10 @@ public class PgQuizAssignmentPersistenceManager implements IQuizAssignmentPersis
 
     @Override
     public List<QuizAssignmentDTO> getAssignmentsByGroupList(List<Long> groupIds) throws SegueDatabaseException {
+        List<QuizAssignmentDTO> listOfResults = Lists.newArrayList();
+        if (groupIds.isEmpty()) {
+            return listOfResults; // IN condition below doesn't work with empty list.
+        }
         try (Connection conn = database.getDatabaseConnection()) {
             StringBuilder sb = new StringBuilder();
             sb.append("SELECT * FROM quiz_assignments WHERE group_id IN (");
@@ -153,7 +157,6 @@ public class PgQuizAssignmentPersistenceManager implements IQuizAssignmentPersis
             }
 
             ResultSet results = pst.executeQuery();
-            List<QuizAssignmentDTO> listOfResults = Lists.newArrayList();
 
             while (results.next()) {
                 listOfResults.add(this.convertToQuizAssignmentDTO(this.convertFromSQLToQuizAssignmentDO(results)));

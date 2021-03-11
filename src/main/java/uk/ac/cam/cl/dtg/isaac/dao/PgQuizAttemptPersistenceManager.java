@@ -212,6 +212,10 @@ public class PgQuizAttemptPersistenceManager implements IQuizAttemptPersistenceM
 
     @Override
     public Map<Long, QuizAttemptDTO> getByQuizAssignmentIdsAndUserId(List<Long> quizAssignmentIds, Long userId) throws SegueDatabaseException {
+        Map<Long, QuizAttemptDTO> mapOfResults = Maps.newHashMap();
+        if (quizAssignmentIds.isEmpty()) {
+            return mapOfResults; // IN condition below doesn't work with empty list.
+        }
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
 
@@ -232,7 +236,6 @@ public class PgQuizAttemptPersistenceManager implements IQuizAttemptPersistenceM
 
             ResultSet results = pst.executeQuery();
 
-            Map<Long, QuizAttemptDTO> mapOfResults = Maps.newHashMap();
             while (results.next()) {
                 mapOfResults.put(results.getLong("quiz_assignment_id"), this.convertToQuizAttemptDTO(this.convertFromSQLToQuizAttemptDO(results)));
             }
