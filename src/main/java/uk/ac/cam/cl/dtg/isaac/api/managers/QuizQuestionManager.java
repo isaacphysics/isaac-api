@@ -208,7 +208,10 @@ public class QuizQuestionManager {
 
             // No questions attempted.
             if (!answers.containsKey(user.getId())) {
-                return new QuizFeedbackDTO(null, null);
+                Map<String, QuizFeedbackDTO.Mark> sectionMarks = sections.stream().collect(Collectors.toMap(
+                    s -> s.getId(),
+                    s -> QuizFeedbackDTO.Mark.notAttempted(quiz.getSectionTotals().get(s.getId()))));
+                return new QuizFeedbackDTO(QuizFeedbackDTO.Mark.notAttempted(quiz.getTotal()), sectionMarks);
             }
 
             // Calculate the scores.

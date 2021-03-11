@@ -21,6 +21,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 
 import javax.annotation.Nullable;
 import java.util.Date;
+import java.util.List;
 
 /**
  * This class is the Data Transfer Object used to refer to quiz assignments.
@@ -37,6 +38,8 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
     private QuizFeedbackMode quizFeedbackMode;
 
     private QuizAttemptDTO attempt; // For augmenting a user's attempt when fetching assignments.
+    private List<QuizUserFeedbackDTO> userFeedback; // For augmenting all student's marks when a teacher fetches assignment.
+    private IsaacQuizDTO quiz; // For augmenting when a teacher fetches assignment.
 
     /**
      * Complete AssignmentDTO constructor with all dependencies.
@@ -232,6 +235,24 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
 
     public void setAttempt(@Nullable QuizAttemptDTO attempt) {
         this.attempt = attempt;
+    }
+
+    @Nullable
+    public List<QuizUserFeedbackDTO> getUserFeedback() {
+        return userFeedback;
+    }
+
+    public void setUserFeedback(List<QuizUserFeedbackDTO> userFeedback) {
+        this.userFeedback = userFeedback;
+    }
+
+    @Nullable
+    public IsaacQuizDTO getQuiz() {
+        return quiz;
+    }
+
+    public void setQuiz(IsaacQuizDTO quiz) {
+        this.quiz = quiz;
     }
 
     @Override

@@ -258,7 +258,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
     }
 
     private QuizFeedbackDTO getFeedbackFor(RegisteredUserDTO student) {
-        return studentQuiz.getUserFeedback().stream().filter(f -> f.getUser().getId().equals(student.getId())).findFirst().get().getFeedback();
+        return studentAssignment.getUserFeedback().stream().filter(f -> f.getUser().getId().equals(student.getId())).findFirst().get().getFeedback();
     }
 
     @Test

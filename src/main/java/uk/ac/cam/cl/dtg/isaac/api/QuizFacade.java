@@ -1049,9 +1049,10 @@ public class QuizFacade extends AbstractIsaacFacade {
                     userSummary.isAuthorisedFullAccess() ? feedback.getValue() : null));
             }
 
-            quiz.setUserFeedback(userFeedback);
+            assignment.setUserFeedback(userFeedback);
+            assignment.setQuiz(quiz);
 
-            return Response.ok(quiz)
+            return Response.ok(assignment)
                 .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();

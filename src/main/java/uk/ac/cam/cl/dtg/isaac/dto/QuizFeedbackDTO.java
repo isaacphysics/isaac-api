@@ -29,6 +29,12 @@ public class QuizFeedbackDTO {
             this.incorrect = 0;
             this.notAttempted = 0;
         }
+
+        public static Mark notAttempted(Integer notAttempted) {
+            Mark mark = new Mark();
+            mark.notAttempted = notAttempted;
+            return mark;
+        }
     }
 
     @Nullable
