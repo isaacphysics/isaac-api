@@ -35,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.api.managers.ExternalAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.IStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.ITransactionManager;
@@ -130,6 +131,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static IUserAlerts userAlerts = null;
     private static IUserStreaksManager userStreaksManager = null;
     private static IUserBadgePersistenceManager userBadgePersitenceManager = null;
+    private static IExternalAccountDataManager externalAccountDataManager = null;
 
     private static Collection<Class<? extends ServletContextListener>> contextListeners;
     private static Map<String, Reflections> reflections = com.google.common.collect.Maps.newHashMap();
@@ -901,6 +903,19 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         }
 
         return segueJobService;
+    }
+
+    /**
+     */
+    @Provides
+    @Singleton
+    @Inject
+    private static IExternalAccountDataManager getExternalAccountDataManager(final PostgresSqlDb database) {
+
+        if (null == externalAccountDataManager) {
+            externalAccountDataManager = new PgExternalAccountPersistenceManager(database);
+        }
+        return externalAccountDataManager;
     }
 
     /**
