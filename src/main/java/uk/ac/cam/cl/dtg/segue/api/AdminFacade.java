@@ -40,6 +40,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
 import uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import uk.ac.cam.cl.dtg.segue.api.managers.ExternalAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.ExternalAccountSynchronisationException;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -1627,18 +1628,21 @@ public class AdminFacade extends AbstractSegueFacade {
     @Path("/sync_external_accounts")
     @ApiOperation(value = "Trigger an update for external providers where account details have changed.")
     public Response syncExternalAccounts(@Context final HttpServletRequest httpServletRequest) {
-        //TODO - either remove this or add sensible error reporting!
+        //TODO - remove this?
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(httpServletRequest);
             if (!isUserAnAdmin(userManager, user)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
-            externalAccountManager.processRecentlyUpdatedUsers();
+            externalAccountManager.synchroniseChangedUsers();
 
             return Response.ok().build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (ExternalAccountSynchronisationException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Database error while attempting to synchronise users!", e).toResponse();
         }
     }
 }

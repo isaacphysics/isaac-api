@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.segue.dao.users;
+package uk.ac.cam.cl.dtg.segue.api.managers;
 
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dos.users.UserExternalAccountChanges;
+public class ExternalAccountSynchronisationException extends Exception {
+    private static final long serialVersionUID = 503895514003323L;
 
-import java.util.List;
-
-public interface IExternalAccountDataManager {
-
-    List<UserExternalAccountChanges> getRecentlyChangedRecords() throws SegueDatabaseException;
-
-    void updateProviderLastUpdated(final Long userId) throws SegueDatabaseException;
-
-    void updateExternalAccount(final Long userId, final String providerUserIdentifier) throws SegueDatabaseException;
+    /**
+     *  General exception for exceptions when synchronising data with external providers.
+     *
+     * @param message
+     *            - to explain the exception.
+     */
+    public ExternalAccountSynchronisationException(final String message) {
+        super(message);
+    }
 }

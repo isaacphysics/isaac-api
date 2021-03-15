@@ -13,18 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.segue.dao.users;
+package uk.ac.cam.cl.dtg.util.email;
 
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dos.users.UserExternalAccountChanges;
+public enum MailJetSubscriptionAction {
+    SOFT_SUBSCRIBE("addnoforce"),
+    FORCE_SUBSCRIBE("addforce"),
+    UNSUBSCRIBE("unsub"),
+    REMOVE("remove");
 
-import java.util.List;
+    public final String value;
 
-public interface IExternalAccountDataManager {
-
-    List<UserExternalAccountChanges> getRecentlyChangedRecords() throws SegueDatabaseException;
-
-    void updateProviderLastUpdated(final Long userId) throws SegueDatabaseException;
-
-    void updateExternalAccount(final Long userId, final String providerUserIdentifier) throws SegueDatabaseException;
+    /**
+     *  Class to represent the different possible subscription actions supported by the MailJet API.
+     * @param value string value needed by MailJet
+     */
+    MailJetSubscriptionAction(final String value) {
+        this.value = value;
+    }
 }
