@@ -25,16 +25,18 @@ import java.util.Date;
 /**
  * This class is the Data Transfer Object used to refer to quiz assignments.
  */
-public class QuizAssignmentDTO implements IAssignmentLike {
+public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
     private Long id;
     private String quizId;
-    private ContentSummaryDTO quiz; // We only need the title really.
+    private ContentSummaryDTO quizSummary; // We only need the title really.
     private Long groupId;
     private Long ownerUserId;
     private UserSummaryDTO assignerSummary;
     private Date creationDate;
     private Date dueDate;
     private QuizFeedbackMode quizFeedbackMode;
+
+    private QuizAttemptDTO attempt; // For augmenting a user's attempt when fetching assignments.
 
     /**
      * Complete AssignmentDTO constructor with all dependencies.
@@ -110,23 +112,12 @@ public class QuizAssignmentDTO implements IAssignmentLike {
         this.quizId = quizId;
     }
 
-    /**
-     * Gets the quizDTO.
-     *
-     * @return the quizDTO
-     */
-    public ContentSummaryDTO getQuiz() {
-        return quiz;
+    public ContentSummaryDTO getQuizSummary() {
+        return quizSummary;
     }
 
-    /**
-     * Sets the contentSummaryDTO.
-     *
-     * @param contentSummaryDTO
-     *            the contentSummaryDTO to set
-     */
-    public void setQuiz(final ContentSummaryDTO contentSummaryDTO) {
-        this.quiz = contentSummaryDTO;
+    public void setQuizSummary(final ContentSummaryDTO contentSummaryDTO) {
+        this.quizSummary = contentSummaryDTO;
     }
 
     /**
@@ -232,5 +223,27 @@ public class QuizAssignmentDTO implements IAssignmentLike {
      */
     public void setQuizFeedbackMode(final QuizFeedbackMode quizFeedbackMode) {
         this.quizFeedbackMode = quizFeedbackMode;
+    }
+
+    @Nullable
+    public QuizAttemptDTO getAttempt() {
+        return attempt;
+    }
+
+    public void setAttempt(@Nullable QuizAttemptDTO attempt) {
+        this.attempt = attempt;
+    }
+
+    @Override
+    public String toString() {
+        return "QuizAssignmentDTO [" +
+            "id=" + id +
+            ", quizId='" + quizId + '\'' +
+            ", groupId=" + groupId +
+            ", ownerUserId=" + ownerUserId +
+            ", creationDate=" + creationDate +
+            ", dueDate=" + dueDate +
+            ", quizFeedbackMode=" + quizFeedbackMode +
+            ']';
     }
 }

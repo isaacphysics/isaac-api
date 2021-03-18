@@ -55,33 +55,15 @@ services:
       POSTGRES_PASSWORD: rutherf0rd
     ports:
       - "5432:5432"
-  app-physics:
-    network_mode: bridge
-    container_name: app-physics
-    image: nginx:stable
-    volumes:
-      - "../isaac-app/app:/usr/share/nginx/html:ro"
-      - "../isaac-app/nginx.conf:/etc/nginx/nginx.conf:ro"
-    ports:
-      - "8000:80"
-  app-chemistry:
-    network_mode: bridge
-    container_name: app-chemistry
-    image: nginx:stable
-    volumes:
-      - "../isaac-app/app:/usr/share/nginx/html:ro"
-      - "../isaac-app/nginx.conf:/etc/nginx/nginx.conf:ro"
-    ports:
-      - "8001:80"
-  app-biology:
-    network_mode: bridge
-    container_name: app-biology
-    image: nginx:stable
-    volumes:
-      - "../isaac-app/app:/usr/share/nginx/html:ro"
-      - "../isaac-app/nginx.conf:/etc/nginx/nginx.conf:ro"
-    ports:
-      - "8002:80"
+#  app-physics:
+#    network_mode: bridge
+#    container_name: app-physics
+#    image: nginx:stable
+#    volumes:
+#      - "../isaac-app/app:/usr/share/nginx/html:ro"
+#      - "../isaac-app/nginx.conf:/etc/nginx/nginx.conf:ro"
+#    ports:
+#      - "8000:80"
 networks:
   default:
     external:
