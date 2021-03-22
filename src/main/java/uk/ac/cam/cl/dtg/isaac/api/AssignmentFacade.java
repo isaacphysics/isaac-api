@@ -986,10 +986,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     return new SegueErrorResponse(Status.BAD_REQUEST, "Your assignment notes exceed the maximum allowed length of " +
                             MAX_NOTE_CHAR_LENGTH.toString() + " characters.").toResponse();
                 }
-            } else { // user is not staff but it is a teacher, if we got here unscathed
-                if (!notesIsNullOrEmpty) {
-                    return new SegueErrorResponse(Status.BAD_REQUEST, "You are not allowed to add assignment notes.").toResponse();
-                }
+            } else if (!notesIsNullOrEmpty) {
+                // user is not staff but it is a teacher, if we got here unscathed
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You are not allowed to add assignment notes.").toResponse();
             }
 
             GameboardDTO gameboard = this.gameManager.getGameboard(assignmentDTOFromClient.getGameboardId());
