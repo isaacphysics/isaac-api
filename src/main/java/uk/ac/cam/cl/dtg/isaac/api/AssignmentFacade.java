@@ -185,7 +185,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
                 // Augment with group name if allowed
                 UserGroupDTO group = groupManager.getGroupById(assignment.getGroupId());
-                assignment.setGroupName(group.getGroupName());
+                if (group.getLastUpdated() != null) {
+                    assignment.setGroupName(group.getGroupName());
+                }
             }
 
             this.assignmentService.augmentAssignerSummaries(assignments);
