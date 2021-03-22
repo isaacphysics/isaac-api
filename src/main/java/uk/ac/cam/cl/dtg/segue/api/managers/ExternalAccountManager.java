@@ -37,13 +37,28 @@ public class ExternalAccountManager {
     private final IExternalAccountDataManager database;
     private final MailJetApiClientWrapper mailjetApi;
 
+    /**
+     *  Synchronise account settings, email preferences and verification status with third party providers.
+     *
+     *  Currently this class is highly specialised for synchronising with MailJet.
+     *
+     * @param mailjetApi - to enable updates on MailJet
+     * @param database - to persist external identifiers and to record sync success.
+     */
     @Inject
     public ExternalAccountManager(final MailJetApiClientWrapper mailjetApi, final IExternalAccountDataManager database) {
         this.database = database;
         this.mailjetApi = mailjetApi;
     }
 
-    public void synchroniseChangedUsers() throws ExternalAccountSynchronisationException {
+    /**
+     *  Synchronise account settings and data with external providers.
+     *
+     *  Whilst the actions this method takes are mostly idempotent, it should not be run simultaneously with itself.
+     *
+     * @throws ExternalAccountSynchronisationException on unrecoverable errors with external providers.
+     */
+    public synchronized void synchroniseChangedUsers() throws ExternalAccountSynchronisationException {
         try {
             List<UserExternalAccountChanges> userRecordsToUpdate = database.getRecentlyChangedRecords();
 
@@ -78,7 +93,7 @@ public class ExternalAccountManager {
                             //    Action: delete old email, add new user for new email
                             log.debug("Case: account email change.");
                             mailjetApi.permanentlyDeleteAccountById(mailjetId);
-                            mailjetId = mailjetApi.addNewUser(accountEmail);
+                            mailjetId = mailjetApi.addNewUserOrGetUserIfExists(accountEmail);
                             updateUserOnMailJet(mailjetId, userRecord);
                         } else {
                             // Case: changed details/preferences:
@@ -93,11 +108,10 @@ public class ExternalAccountManager {
                             //    Expect: null "mailjet_id", not DELIVERY_FAILED
                             //    Action: create MailJet ID, update details, update subscriptions, update provider_last_updated
                             log.debug("Case: new to Isaac/not on MailJet");
-                            mailjetId = mailjetApi.addNewUser(accountEmail);
+                            mailjetId = mailjetApi.addNewUserOrGetUserIfExists(accountEmail);
                             updateUserOnMailJet(mailjetId, userRecord);
                         } else {
                             // Not on MailJet, but invalid email so don't add to MailJet.
-                            // Do we need this row?
                             log.debug("Case: invalid/incorrect user to skip.");
                             database.updateExternalAccount(userId, null);
                         }
@@ -137,7 +151,6 @@ public class ExternalAccountManager {
     private void deleteUserFromMailJet(final String mailjetId, final UserExternalAccountChanges userRecord) throws SegueDatabaseException, MailjetException {
         Long userId = userRecord.getUserId();
         mailjetApi.permanentlyDeleteAccountById(mailjetId);
-        // Do we need to keep this row?
         database.updateExternalAccount(userId, null);
     }
 }

@@ -100,13 +100,15 @@ public class MailJetApiClientWrapper {
     }
 
     /**
-     *  Add a new user to MailJet or find by email if they already exist as a fallback
+     *  Add a new user to MailJet
+     *
+     *  If the user already exists, find by email as a fallback to ensure idempotence and better error recovery.
      *
      * @param email - email address
      * @return the MailJet user ID
      * @throws MailjetException  - if underlying MailjetClient throws an exception
      */
-    public String addNewUser(final String email) throws MailjetException {
+    public String addNewUserOrGetUserIfExists(final String email) throws MailjetException {
         if (null == email) {
             return null;
         }

@@ -1622,13 +1622,13 @@ public class AdminFacade extends AbstractSegueFacade {
     }
 
     /**
-     *  Manually trigger a sync. Unfinished.
+     *  Manually trigger a sync for testing or debugging purposes. Minimal success or failure reporting.
      */
     @GET
     @Path("/sync_external_accounts")
     @ApiOperation(value = "Trigger an update for external providers where account details have changed.")
     public Response syncExternalAccounts(@Context final HttpServletRequest httpServletRequest) {
-        //TODO - remove this?
+        //TODO - automate this with Quartz, then review if this is still necessary?
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(httpServletRequest);
             if (!isUserAnAdmin(userManager, user)) {

@@ -16,7 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.dos.users;
 
 /**
- *  A class to represent the state of a user that needs synchronising with an external provider.
+ *  An internal class to represent the state of a user that needs synchronising with an external provider.
  */
 public class UserExternalAccountChanges {
 
