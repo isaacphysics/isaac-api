@@ -960,7 +960,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
             UserGroupDTO assigneeGroup = groupManager.getGroupById(assignmentDTOFromClient.getGroupId());
 
-            boolean userIsTeacher = isUserTeacher(userManager, currentlyLoggedInUser);
             boolean userIsTeacherOrAbove = isUserTeacherOrAbove(userManager, currentlyLoggedInUser);
             boolean userIsStaff = isUserStaff(userManager, currentlyLoggedInUser);
             boolean notesIsNullOrEmpty = assignmentDTOFromClient.getNotes() == null || (assignmentDTOFromClient.getNotes() != null && assignmentDTOFromClient.getNotes().isEmpty());

@@ -327,9 +327,4 @@ public abstract class AbstractSegueFacade {
             throws NoUserLoggedInException {
         return !userManager.checkUserRole(userDTO, Collections.singletonList(Role.STUDENT));
     }
-
-    public static boolean isUserTeacher(final UserAccountManager userManager, final RegisteredUserDTO userDTO)
-        throws NoUserLoggedInException {
-        return userManager.checkUserRole(userDTO, Collections.singletonList(Role.TEACHER));
-    }
 }
