@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
-import com.google.inject.Inject;
 import com.mailjet.client.errors.MailjetClientCommunicationException;
 import com.mailjet.client.errors.MailjetException;
 import com.mailjet.client.errors.MailjetRateLimitException;
@@ -31,7 +30,7 @@ import uk.ac.cam.cl.dtg.util.email.MailJetSubscriptionAction;
 
 import java.util.List;
 
-public class ExternalAccountManager {
+public class ExternalAccountManager implements IExternalAccountManager {
     private static final Logger log = LoggerFactory.getLogger(ExternalAccountManager.class);
 
     private final IExternalAccountDataManager database;
@@ -45,7 +44,6 @@ public class ExternalAccountManager {
      * @param mailjetApi - to enable updates on MailJet
      * @param database - to persist external identifiers and to record sync success.
      */
-    @Inject
     public ExternalAccountManager(final MailJetApiClientWrapper mailjetApi, final IExternalAccountDataManager database) {
         this.database = database;
         this.mailjetApi = mailjetApi;

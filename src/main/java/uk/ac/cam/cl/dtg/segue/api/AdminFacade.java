@@ -39,8 +39,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
 import uk.ac.cam.cl.dtg.segue.api.Constants.*;
-import uk.ac.cam.cl.dtg.segue.api.managers.ExternalAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.ExternalAccountSynchronisationException;
+import uk.ac.cam.cl.dtg.segue.api.managers.IExternalAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -139,7 +139,7 @@ public class AdminFacade extends AbstractSegueFacade {
     private final AbstractUserPreferenceManager userPreferenceManager;
     private final EventBookingManager eventBookingManager;
     private final UserAssociationManager associationManager;
-    private final ExternalAccountManager externalAccountManager;
+    private final IExternalAccountManager externalAccountManager;
     private final IMisuseMonitor misuseMonitor;
 
     /**
@@ -172,7 +172,7 @@ public class AdminFacade extends AbstractSegueFacade {
                        final StatisticsManager statsManager, final LocationManager locationManager,
                        final SchoolListReader schoolReader, final AbstractUserPreferenceManager userPreferenceManager,
                        final EventBookingManager eventBookingManager, final UserAssociationManager associationManager,
-                       final ExternalAccountManager externalAccountManager, final IMisuseMonitor misuseMonitor) {
+                       final IExternalAccountManager externalAccountManager, final IMisuseMonitor misuseMonitor) {
         super(properties, logManager);
         this.userManager = userManager;
         this.contentManager = contentManager;
@@ -1642,7 +1642,7 @@ public class AdminFacade extends AbstractSegueFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (ExternalAccountSynchronisationException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Database error while attempting to synchronise users!", e).toResponse();
+                    "Fatal error while attempting to synchronise users!", e).toResponse();
         }
     }
 }

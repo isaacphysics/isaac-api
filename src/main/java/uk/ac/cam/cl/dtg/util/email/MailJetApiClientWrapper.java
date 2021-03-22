@@ -33,11 +33,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.ws.rs.core.Response;
-
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 public class MailJetApiClientWrapper {
 
@@ -48,18 +45,23 @@ public class MailJetApiClientWrapper {
 
     /**
      *  Wrapper for MailjetClient class.
-     * @param properties - needed to get the MailJet keys and list IDs
+     *
+     *  @param mailjetApiKey - MailJet API Key
+     *  @param mailjetApiSecret - MailJet API Client Secret
+     *  @param mailjetNewsListId - MailJet list ID for NEWS_AND_UPDATES
+     *  @param mailjetEventsListId - MailJet list ID for EVENTS
      */
     @Inject
-    public MailJetApiClientWrapper(final PropertiesLoader properties) {
+    public MailJetApiClientWrapper(final String mailjetApiKey, final String mailjetApiSecret,
+                                   final String mailjetNewsListId, final String mailjetEventsListId) {
         ClientOptions options = ClientOptions.builder()
-                .apiKey(properties.getProperty(MAILJET_API_KEY))
-                .apiSecretKey(properties.getProperty(MAILJET_API_SECRET))
+                .apiKey(mailjetApiKey)
+                .apiSecretKey(mailjetApiSecret)
                 .build();
 
         this.mailjetClient = new MailjetClient(options);
-        this.newsListId = properties.getProperty(MAILJET_NEWS_LIST_ID);
-        this.eventsListId = properties.getProperty(MAILJET_EVENTS_LIST_ID);
+        this.newsListId = mailjetNewsListId;
+        this.eventsListId = mailjetEventsListId;
     }
 
     /**
