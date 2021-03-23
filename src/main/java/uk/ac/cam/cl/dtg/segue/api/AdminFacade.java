@@ -39,6 +39,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
 import uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import uk.ac.cam.cl.dtg.segue.api.managers.ExternalAccountSynchronisationException;
+import uk.ac.cam.cl.dtg.segue.api.managers.IExternalAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -137,6 +139,7 @@ public class AdminFacade extends AbstractSegueFacade {
     private final AbstractUserPreferenceManager userPreferenceManager;
     private final EventBookingManager eventBookingManager;
     private final UserAssociationManager associationManager;
+    private final IExternalAccountManager externalAccountManager;
     private final IMisuseMonitor misuseMonitor;
 
     /**
@@ -169,7 +172,7 @@ public class AdminFacade extends AbstractSegueFacade {
                        final StatisticsManager statsManager, final LocationManager locationManager,
                        final SchoolListReader schoolReader, final AbstractUserPreferenceManager userPreferenceManager,
                        final EventBookingManager eventBookingManager, final UserAssociationManager associationManager,
-                       final IMisuseMonitor misuseMonitor) {
+                       final IExternalAccountManager externalAccountManager, final IMisuseMonitor misuseMonitor) {
         super(properties, logManager);
         this.userManager = userManager;
         this.contentManager = contentManager;
@@ -180,6 +183,7 @@ public class AdminFacade extends AbstractSegueFacade {
         this.userPreferenceManager = userPreferenceManager;
         this.eventBookingManager = eventBookingManager;
         this.associationManager = associationManager;
+        this.externalAccountManager = externalAccountManager;
         this.misuseMonitor = misuseMonitor;
     }
 
@@ -1614,6 +1618,31 @@ public class AdminFacade extends AbstractSegueFacade {
             }
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
+        }
+    }
+
+    /**
+     *  Manually trigger a sync for testing or debugging purposes. Minimal success or failure reporting.
+     */
+    @GET
+    @Path("/sync_external_accounts")
+    @ApiOperation(value = "Trigger an update for external providers where account details have changed.")
+    public Response syncExternalAccounts(@Context final HttpServletRequest httpServletRequest) {
+        //TODO - automate this with Quartz, then review if this is still necessary?
+        try {
+            RegisteredUserDTO user = userManager.getCurrentRegisteredUser(httpServletRequest);
+            if (!isUserAnAdmin(userManager, user)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
+            externalAccountManager.synchroniseChangedUsers();
+
+            return Response.ok().build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (ExternalAccountSynchronisationException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Fatal error while attempting to synchronise users!", e).toResponse();
         }
     }
 }
