@@ -29,6 +29,7 @@ import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.EventStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.DetailedEventBookingDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.ITransactionManager;
@@ -135,6 +136,17 @@ public class EventBookingManager {
     }
 
     /**
+     * This will get all reservations made by a given user.
+     *
+     * @param userId - user of interest.
+     * @return events
+     * @throws SegueDatabaseException - if an error occurs.
+     */
+    public List<DetailedEventBookingDTO> getAllEventReservationsForUser(final Long userId) throws SegueDatabaseException {
+        return this.bookingPersistenceManager.getEventReservationsByUserId(userId);
+    }
+
+    /**
      * @param bookingId - of interest
      * @return event booking
      * @throws SegueDatabaseException - if an error occurs.
@@ -158,12 +170,21 @@ public class EventBookingManager {
      * @return event bookings
      * @throws SegueDatabaseException - if an error occurs.
      */
-    public List<EventBookingDTO> getBookingsByEventId(final String eventId) throws SegueDatabaseException {
+    public List<DetailedEventBookingDTO> getBookingsByEventId(final String eventId) throws SegueDatabaseException {
         return this.bookingPersistenceManager.getBookingsByEventId(eventId);
     }
 
     public EventBookingDTO getBookingByEventIdAndUserId(final String eventId, final Long userId) throws SegueDatabaseException {
         return this.bookingPersistenceManager.getBookingByEventIdAndUserId(eventId, userId);
+    }
+
+    /**
+     * @param eventId - of interest
+     * @return event bookings
+     * @throws SegueDatabaseException - if an error occurs.
+     */
+    public List<DetailedEventBookingDTO> adminGetBookingsByEventId(final String eventId) throws SegueDatabaseException {
+        return this.bookingPersistenceManager.adminGetBookingsByEventId(eventId);
     }
 
     /**
@@ -177,7 +198,7 @@ public class EventBookingManager {
     public Long countNumberOfBookingsWithStatus(final String eventId, final BookingStatus status)
             throws SegueDatabaseException {
         long v = 0L;
-        for (EventBookingDTO eb : this.bookingPersistenceManager.getBookingsByEventId(eventId)) {
+        for (EventBookingDTO eb : this.bookingPersistenceManager.adminGetBookingsByEventId(eventId)) {
             if (status.equals(eb.getBookingStatus())) {
                 v++;
             }
@@ -697,7 +718,7 @@ public class EventBookingManager {
         try {
             this.bookingPersistenceManager.acquireDistributedLock(event.getId());
 
-            final EventBookingDTO eventBooking = this.bookingPersistenceManager.getBookingByEventIdAndUserId(
+            final DetailedEventBookingDTO eventBooking = this.bookingPersistenceManager.getBookingByEventIdAndUserId(
                     event.getId(), userDTO.getId());
             if (null == eventBooking) {
                 throw new EventBookingUpdateException("Unable to promote a booking that doesn't exist.");
@@ -763,11 +784,11 @@ public class EventBookingManager {
      * @throws SegueDatabaseException       - Database error.
      * @throws EventBookingUpdateException  - Unable to update the event booking.
      */
-    public EventBookingDTO recordAttendance(final IsaacEventPageDTO event, final RegisteredUserDTO
+    public DetailedEventBookingDTO recordAttendance(final IsaacEventPageDTO event, final RegisteredUserDTO
             userDTO, final boolean attended)
             throws SegueDatabaseException, EventBookingUpdateException {
 
-        final EventBookingDTO eventBooking = this.bookingPersistenceManager.getBookingByEventIdAndUserId(
+        final DetailedEventBookingDTO eventBooking = this.bookingPersistenceManager.getBookingByEventIdAndUserId(
                 event.getId(), userDTO.getId());
         if (null == eventBooking) {
             throw new EventBookingUpdateException("Unable to record attendance for booking that doesn't exist.");
@@ -778,7 +799,7 @@ public class EventBookingManager {
             throw new EventBookingUpdateException("Booking attendance is already registered.");
         }
 
-        EventBookingDTO updatedStatus = this.bookingPersistenceManager.updateBookingStatus(eventBooking.getEventId(),
+        DetailedEventBookingDTO updatedStatus = this.bookingPersistenceManager.updateBookingStatus(eventBooking.getEventId(),
                 userDTO.getId(), attendanceStatus, eventBooking.getAdditionalInformation());
 
         return updatedStatus;

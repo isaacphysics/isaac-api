@@ -15,26 +15,18 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
-import java.util.*;
-import java.util.stream.Collectors;
-
-import javax.annotation.Nullable;
-
+import com.google.api.client.util.Lists;
+import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
+import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import ma.glasnost.orika.MapperFacade;
-
 import org.apache.commons.collections4.comparators.ComparatorChain;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.api.client.util.Lists;
-import com.google.api.client.util.Maps;
-import com.google.inject.Inject;
-
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.api.Constants.GameboardItemState;
 import uk.ac.cam.cl.dtg.isaac.api.Constants.GameboardState;
@@ -42,7 +34,12 @@ import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
-import uk.ac.cam.cl.dtg.isaac.dto.*;
+import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuickQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
@@ -59,9 +56,38 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
-import static com.google.common.collect.Maps.*;
+
+import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import static com.google.common.collect.Maps.immutableEntry;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.COMPLETION_FIELDNAME;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.CREATED_DATE_FIELDNAME;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.GAMEBOARD_MAX_TITLE_LENGTH;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.GAME_BOARD_TARGET_SIZE;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.HIDE_FROM_FILTER_TAG;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_TYPE;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.QuestionPartState;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.RELATED_CONTENT_FIELDNAME;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.VISITED_DATE_FIELDNAME;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.WILDCARD_TYPE;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.ID_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.LEVEL_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TAGS_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TITLE_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX;
 
 /**
  * This class will be responsible for generating and managing gameboards used by users.
@@ -117,16 +143,18 @@ public class GameManager {
      *
      * @param title
      *            title of the board
-     * @param subjectsList
+     * @param subjects
      *            list of subjects to include in filtered results
-     * @param fieldsList
+     * @param fields
      *            list of fields to include in filtered results
-     * @param topicsList
+     * @param topics
      *            list of topics to include in filtered results
-     * @param levelsList
+     * @param levels
      *            list of levels to include in filtered results
-     * @param conceptsList
+     * @param concepts
      *            list of concepts (relatedContent) to include in filtered results
+     * @param questionCategories
+     *            list of question categories (i.e. problem_solving, book) to include in filtered results
      * @param boardOwner
      *            The user that should be marked as the creator of the gameBoard.
      * @return a gameboard if possible that satisifies the conditions provided by the parameters. Will return null if no
@@ -138,10 +166,11 @@ public class GameManager {
      * @throws ContentManagerException
      *             - if there is an error retrieving the content requested.
      */
-    public GameboardDTO generateRandomGameboard(final String title, final List<String> subjectsList,
-            final List<String> fieldsList, final List<String> topicsList, final List<Integer> levelsList,
-            final List<String> conceptsList, final AbstractSegueUserDTO boardOwner) throws NoWildcardException,
-            SegueDatabaseException, ContentManagerException {
+    public GameboardDTO generateRandomGameboard(
+            final String title, final List<String> subjects, final List<String> fields, final List<String> topics,
+            final List<Integer> levels, final List<String> concepts, final List<String> questionCategories,
+            final AbstractSegueUserDTO boardOwner)
+    throws NoWildcardException, SegueDatabaseException, ContentManagerException {
 
         Long boardOwnerId;
         if (boardOwner instanceof RegisteredUserDTO) {
@@ -154,19 +183,19 @@ public class GameManager {
         Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts = questionManager
                 .getQuestionAttemptsByUser(boardOwner);
 
-        GameFilter gameFilter = new GameFilter(subjectsList, fieldsList, topicsList, levelsList, conceptsList);
+        GameFilter gameFilter = new GameFilter(subjects, fields, topics, levels, concepts, questionCategories);
 
-        List<GameboardItem> selectionOfGameboardQuestions = this.getSelectedGameboardQuestions(gameFilter,
-                usersQuestionAttempts);
+        List<GameboardItem> selectionOfGameboardQuestions =
+                this.getSelectedGameboardQuestions(gameFilter, usersQuestionAttempts);
 
         if (!selectionOfGameboardQuestions.isEmpty()) {
             String uuid = UUID.randomUUID().toString();
 
-            // filter game board ready questions to make up a decent game board.
+            // filter game board ready questions to make up a decent gameboard.
             log.debug("Created gameboard " + uuid);
 
             GameboardDTO gameboardDTO = new GameboardDTO(uuid, title, selectionOfGameboardQuestions,
-                    getRandomWildcard(mapper, subjectsList), generateRandomWildCardPosition(), new Date(), gameFilter,
+                    getRandomWildcard(mapper, subjects), generateRandomWildCardPosition(), new Date(), gameFilter,
                     boardOwnerId, GameboardCreationMethod.FILTER, Sets.newHashSet());
 
             this.gameboardPersistenceManager.temporarilyStoreGameboard(gameboardDTO);
@@ -663,10 +692,22 @@ public class GameManager {
         // do a depth first traversal of the question page to get the correct order of questions
         ContentDTO questionPage = this.contentManager.getContentById(this.contentManager.getCurrentContentSHA(),
                 questionPageId);
-        List<ContentDTO> dfs = Lists.newArrayList();
-        dfs = depthFirstQuestionSearch(questionPage, dfs);
+        return getAllMarkableQuestionPartsDFSOrder(questionPage);
+    }
 
-        return this.filterQuestionParts(dfs);
+    /**
+     * Get all questions in a piece of content. This method will conduct a DFS traversal and
+     * ensure the collection is ordered as per the DFS. Quick questions will be filtered out.
+     *
+     * @param content
+     *            - results depend on each question having an id prefixed with the question page id.
+     * @return collection of markable question parts (questions).
+     */
+    public static List<QuestionDTO> getAllMarkableQuestionPartsDFSOrder(ContentDTO content) {
+        List<ContentDTO> dfs = Lists.newArrayList();
+        dfs = depthFirstQuestionSearch(content, dfs);
+
+        return filterQuestionParts(dfs);
     }
 
     /**
@@ -778,7 +819,7 @@ public class GameManager {
      *            list of content.
      * @return list of question dtos.
      */
-    private Collection<QuestionDTO> filterQuestionParts(final Collection<ContentDTO> contentToFilter) {
+    private static List<QuestionDTO> filterQuestionParts(final Collection<ContentDTO> contentToFilter) {
         List<QuestionDTO> results = Lists.newArrayList();
         for (ContentDTO possibleQuestion : contentToFilter) {
 
@@ -799,7 +840,7 @@ public class GameManager {
      * @param result - the list of questions
      * @return a list of questions ordered by DFS.
      */
-    private List<ContentDTO> depthFirstQuestionSearch(final ContentDTO c, final List<ContentDTO> result) {
+    private static List<ContentDTO> depthFirstQuestionSearch(final ContentDTO c, final List<ContentDTO> result) {
         if (c == null || c.getChildren() == null || c.getChildren().size() == 0) {
             return result;
         }
@@ -1178,28 +1219,34 @@ public class GameManager {
 
         Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMatchOutput = Maps.newHashMap();
 
-        // Deal with tags which represent subjects, fields and topics
-        List<String> ands = Lists.newArrayList();
-        List<String> ors = Lists.newArrayList();
+        // Filter on content tags
+        List<String> tagAnds = Lists.newArrayList();
+        List<String> tagOrs = Lists.newArrayList();
 
+        // handle question categories
+        if (null != gameFilter.getQuestionCategories()) {
+            tagAnds.addAll(gameFilter.getQuestionCategories());
+        }
+
+        // deal with tags which represent subjects, fields and topics
         if (null != gameFilter.getSubjects()) {
             if (gameFilter.getSubjects().size() > 1) {
-                ors.addAll(gameFilter.getSubjects());
+                tagOrs.addAll(gameFilter.getSubjects());
             } else { // should be exactly 1
-                ands.addAll(gameFilter.getSubjects());
+                tagAnds.addAll(gameFilter.getSubjects());
 
                 // ok now we are allowed to look at the fields
                 if (null != gameFilter.getFields()) {
                     if (gameFilter.getFields().size() > 1) {
-                        ors.addAll(gameFilter.getFields());
+                        tagOrs.addAll(gameFilter.getFields());
                     } else { // should be exactly 1
-                        ands.addAll(gameFilter.getFields());
+                        tagAnds.addAll(gameFilter.getFields());
 
                         if (null != gameFilter.getTopics()) {
                             if (gameFilter.getTopics().size() > 1) {
-                                ors.addAll(gameFilter.getTopics());
+                                tagOrs.addAll(gameFilter.getTopics());
                             } else {
-                                ands.addAll(gameFilter.getTopics());
+                                tagAnds.addAll(gameFilter.getTopics());
                             }
                         }
                     }
@@ -1207,15 +1254,14 @@ public class GameManager {
             }
         }
 
-        // deal with adding overloaded tags field for subjects, fields and
-        // topics
-        if (ands.size() > 0) {
+        // deal with adding overloaded tags field for subjects, fields and topics
+        if (tagAnds.size() > 0) {
             Map.Entry<BooleanOperator, String> newEntry = immutableEntry(BooleanOperator.AND, TAGS_FIELDNAME);
-            fieldsToMatchOutput.put(newEntry, ands);
+            fieldsToMatchOutput.put(newEntry, tagAnds);
         }
-        if (ors.size() > 0) {
+        if (tagOrs.size() > 0) {
             Map.Entry<BooleanOperator, String> newEntry = immutableEntry(BooleanOperator.OR, TAGS_FIELDNAME);
-            fieldsToMatchOutput.put(newEntry, ors);
+            fieldsToMatchOutput.put(newEntry, tagOrs);
         }
 
         // now deal with levels
@@ -1235,14 +1281,9 @@ public class GameManager {
             fieldsToMatchOutput.put(newEntry, gameFilter.getConcepts());
         }
 
+        // handle exclusions
         List<String> tagsToExclude = Lists.newArrayList();
-        // add no filter constraint
-        tagsToExclude.add(HIDE_FROM_FILTER_TAG);
-
-        // Temporarily ignore book and quick_quiz question types.
-        // Strings hardcoded until question types are passed in as part of the query.
-        tagsToExclude.addAll(ImmutableList.of("quick_quiz", "book"));
-
+        tagsToExclude.add(HIDE_FROM_FILTER_TAG); // add no filter constraint
         fieldsToMatchOutput.put(immutableEntry(BooleanOperator.NOT, TAGS_FIELDNAME), tagsToExclude);
 
         return fieldsToMatchOutput;

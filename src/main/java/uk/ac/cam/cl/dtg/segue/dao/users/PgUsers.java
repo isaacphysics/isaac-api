@@ -559,7 +559,8 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
                 // Hash all PII in user object
                 removePIIFromUserDO(userToDelete);
-
+                // Ensure the last updated time is that of deletion
+                userToDelete.setLastUpdated(new Date());
                 // save it using this connection with auto commit turned off
                 this.updateUser(conn, userToDelete);
 

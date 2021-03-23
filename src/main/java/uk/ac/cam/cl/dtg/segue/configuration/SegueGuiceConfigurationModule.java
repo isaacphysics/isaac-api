@@ -35,17 +35,31 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.api.managers.ExternalAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.IExternalAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.IStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.ITransactionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.IUserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.PgTransactionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.StubExternalAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.*;
-import uk.ac.cam.cl.dtg.segue.auth.*;
+import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
+import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.ISecondFactorAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.ISegueHashingAlgorithm;
+import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v1;
+import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v2;
+import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v3;
+import uk.ac.cam.cl.dtg.segue.auth.SegueTOTPAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.TwitterAuthenticator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
@@ -62,7 +76,18 @@ import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.IUserBadgePersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.PgUserBadgePersistenceManager;
-import uk.ac.cam.cl.dtg.segue.dao.users.*;
+import uk.ac.cam.cl.dtg.segue.dao.users.IAnonymousUserDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.IExternalAccountDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.IPasswordDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.ITOTPDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupPersistenceManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.PgAnonymousUsers;
+import uk.ac.cam.cl.dtg.segue.dao.users.PgExternalAccountPersistenceManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.PgPasswordDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.PgTOTPDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.PgUserGroupPersistenceManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.PgUsers;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dos.AbstractUserPreferenceManager;
@@ -81,6 +106,7 @@ import uk.ac.cam.cl.dtg.segue.scheduler.SegueScheduledJob;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.email.MailJetApiClientWrapper;
 import uk.ac.cam.cl.dtg.util.locations.IPInfoDBLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.IPLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeIOLocationResolver;
@@ -98,6 +124,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType.*;
 
 /**
  * This class is responsible for injecting configuration values for persistence related classes.
@@ -129,6 +156,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static IUserAlerts userAlerts = null;
     private static IUserStreaksManager userStreaksManager = null;
     private static IUserBadgePersistenceManager userBadgePersitenceManager = null;
+    private static IExternalAccountManager externalAccountManager = null;
 
     private static Collection<Class<? extends ServletContextListener>> contextListeners;
     private static Map<String, Reflections> reflections = com.google.common.collect.Maps.newHashMap();
@@ -205,6 +233,21 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         this.bindConstantToProperty(CONTENT_INDEX, globalProperties);
 
         this.bindConstantToProperty(Constants.API_METRICS_EXPORT_PORT, globalProperties);
+
+        this.bind(String.class).toProvider(() -> {
+            // Any binding to String without a matching @Named annotation will always get the empty string
+            // which seems incredibly likely to cause errors and rarely to be intended behaviour,
+            // so throw an error early in DEV and log an error in PROD.
+            try {
+                throw new IllegalArgumentException("Binding a String without a matching @Named annotation");
+            } catch (IllegalArgumentException e) {
+                if (globalProperties.getProperty(SEGUE_APP_ENVIRONMENT).equals(DEV.name())) {
+                    throw e;
+                }
+                log.error("Binding a String without a matching @Named annotation", e);
+            }
+            return "";
+        });
     }
 
     /**
@@ -885,6 +928,34 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         }
 
         return segueJobService;
+    }
+
+    /**
+     */
+    @Provides
+    @Singleton
+    @Inject
+    private static IExternalAccountManager getExternalAccountManager(final PropertiesLoader properties, final PostgresSqlDb database) {
+
+        if (null == externalAccountManager) {
+            String mailjetKey = properties.getProperty(MAILJET_API_KEY);
+            String mailjetSecret = properties.getProperty(MAILJET_API_SECRET);
+
+            if (null != mailjetKey && null != mailjetSecret && !mailjetKey.isEmpty() && !mailjetSecret.isEmpty()) {
+                // If MailJet is configured, initialise the sync:
+                IExternalAccountDataManager externalAccountDataManager = new PgExternalAccountPersistenceManager(database);
+                MailJetApiClientWrapper mailJetApiClientWrapper = new MailJetApiClientWrapper(mailjetKey, mailjetSecret,
+                        properties.getProperty(MAILJET_NEWS_LIST_ID), properties.getProperty(MAILJET_EVENTS_LIST_ID));
+
+                log.info("Created singleton of ExternalAccountManager.");
+                externalAccountManager = new ExternalAccountManager(mailJetApiClientWrapper, externalAccountDataManager);
+            } else {
+                // Else warn and initialise a placeholder that always throws an error if used:
+                log.warn("Created stub of ExternalAccountManager since external provider not configured.");
+                externalAccountManager = new StubExternalAccountManager();
+            }
+        }
+        return externalAccountManager;
     }
 
     /**

@@ -20,7 +20,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
-import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
@@ -36,6 +37,8 @@ import java.util.List;
 import java.util.Map;
 
 public class PgQuizQuestionAttemptPersistenceManager implements IQuizQuestionAttemptPersistenceManager {
+    private static final Logger log = LoggerFactory.getLogger(PgQuizQuestionAttemptPersistenceManager.class);
+
     private final ObjectMapper objectMapper;
     private final PostgresSqlDb database;
 
@@ -98,6 +101,40 @@ public class PgQuizQuestionAttemptPersistenceManager implements IQuizQuestionAtt
                 String questionId = results.getString("question_id");
 
                 List<QuestionValidationResponse> questionAttempts = resultsMap.computeIfAbsent(questionId, (ignore) -> Lists.newArrayList());
+
+                QuestionValidationResponse questionAttempt = objectMapper.readValue(
+                    results.getString("question_attempt"), QuestionValidationResponse.class);
+
+                questionAttempts.add(questionAttempt);
+            }
+
+            return resultsMap;
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        } catch (JsonProcessingException e) {
+            throw new SegueDatabaseException("Unable to process json exception", e);
+        }
+    }
+
+    @Override
+    public Map<Long, Map<String, List<QuestionValidationResponse>>> getAllAnswersForQuizAssignment(Long quizAssignmentId) throws SegueDatabaseException {
+        PreparedStatement pst;
+        try (Connection conn = database.getDatabaseConnection()) {
+            pst = conn.prepareStatement("SELECT user_id, question_id, question_attempt FROM quiz_question_attempts" +
+                " INNER JOIN quiz_attempts ON (quiz_attempts.id = quiz_question_attempts.quiz_attempt_id) WHERE quiz_assignment_id = ? ORDER BY quiz_attempt_id, timestamp");
+
+            pst.setLong(1, quizAssignmentId);
+
+            ResultSet results = pst.executeQuery();
+
+            Map<Long, Map<String, List<QuestionValidationResponse>>> resultsMap = Maps.newHashMap();
+            while (results.next()) {
+                Long userId = results.getLong("user_id");
+                String questionId = results.getString("question_id");
+
+                Map<String, List<QuestionValidationResponse>> userAttemptsMap = resultsMap.compute(userId, (ignoreKey, ignoreValue) -> Maps.newHashMap());
+
+                List<QuestionValidationResponse> questionAttempts = userAttemptsMap.computeIfAbsent(questionId, (ignore) -> Lists.newArrayList());
 
                 QuestionValidationResponse questionAttempt = objectMapper.readValue(
                     results.getString("question_attempt"), QuestionValidationResponse.class);

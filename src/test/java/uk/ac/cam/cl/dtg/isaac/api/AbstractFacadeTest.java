@@ -15,6 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
+import com.google.api.client.util.Maps;
+import com.google.common.base.Joiner;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
@@ -25,7 +27,9 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 
+import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -34,17 +38,20 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
+import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.getCurrentArguments;
 import static org.junit.Assert.assertEquals;
 import static org.powermock.api.easymock.PowerMock.createMock;
 import static org.powermock.api.easymock.PowerMock.createPartialMock;
 import static org.powermock.api.easymock.PowerMock.replay;
-import static org.powermock.api.easymock.PowerMock.reset;
 import static org.powermock.api.easymock.PowerMock.verifyAll;
 
 /**
@@ -82,12 +89,39 @@ abstract public class AbstractFacadeTest extends IsaacTest {
     private RegisteredUserDTO specialEveryoneElse = new RegisteredUserDTO();
     private RegisteredUserDTO currentUser = null;
 
+    private Map<RegisteredUserDTO, UserSummaryDTO> userSummaries = Maps.newHashMap();
+
+
     @Before
     public void abstractFacadeTestSetup() {
         request = createMock(HttpServletRequest.class);
         replay(request);
 
-        userManager = createPartialMock(UserAccountManager.class, "getCurrentRegisteredUser");
+        userManager = createPartialMock(UserAccountManager.class, "getCurrentRegisteredUser", "convertToUserSummaryObject", "getUserDTOById");
+
+        registerDefaultsFor(userManager, m -> {
+            expect(m.convertToUserSummaryObject(anyObject(RegisteredUserDTO.class))).andStubAnswer(() -> {
+                Object[] arguments = getCurrentArguments();
+                RegisteredUserDTO user = (RegisteredUserDTO) arguments[0];
+                return getUserSummaryFor(user);
+            });
+            expect(m.getUserDTOById(student.getId())).andStubReturn(student);
+            expect(m.getUserDTOById(otherStudent.getId())).andStubReturn(otherStudent);
+        });
+
+        replay(userManager);
+    }
+
+    protected UserSummaryDTO getUserSummaryFor(RegisteredUserDTO user) {
+        return userSummaries.computeIfAbsent(user, u -> {
+            UserSummaryDTO result = new UserSummaryDTO();
+            result.setId(u.getId());
+            result.setRole(u.getRole());
+            result.setEmailVerificationStatus(u.getEmailVerificationStatus());
+            result.setGivenName(u.getGivenName());
+            result.setFamilyName(u.getFamilyName());
+            return result;
+        });
     }
 
     /**
@@ -98,7 +132,7 @@ abstract public class AbstractFacadeTest extends IsaacTest {
     @SafeVarargs
     protected final <T> void forEndpoint(Function<T, Supplier<Response>> endpoint, WithParam<T>... withs) {
         for (WithParam<T> with: withs) {
-            forEndpoint(endpoint.apply(with.with), with.testcases.toArray(new Testcase[]{}));
+            forEndpoint(new Endpoint(endpoint, with.with), with.testcases.toArray(new Testcase[]{}));
         }
     }
 
@@ -106,6 +140,10 @@ abstract public class AbstractFacadeTest extends IsaacTest {
      * Run tests on an endpoint.
      */
     protected void forEndpoint(Supplier<Response> endpoint, Testcase... testcases) {
+        forEndpoint(new Endpoint(endpoint), testcases);
+    }
+
+    private void forEndpoint(Endpoint endpoint, Testcase... testcases) {
         Set<RegisteredUserDTO> users = new HashSet<>(everyone);
         for (Testcase testcase : testcases) {
             try {
@@ -189,28 +227,28 @@ abstract public class AbstractFacadeTest extends IsaacTest {
      * Assert the response code matches the specified response, and if a SegueErrorResponse is provided, check the messages match.
      */
     protected CheckStep failsWith(Response expected) {
-        return new CheckStep((response) -> assertErrorResponse(expected, response));
+        return new CheckStep((response) -> assertErrorResponse(expected, response), "fails with " + expected);
     }
 
     /**
      * Assert the response fails with the specified status.
      */
     protected CheckStep failsWith(Status status) {
-        return new CheckStep((response) -> assertErrorResponse(status, response));
+        return new CheckStep((response) -> assertErrorResponse(status, response), "fails with " + status.getReasonPhrase());
     }
 
     /**
      * Assert the response is of the expected value.
      */
     protected CheckStep respondsWith(Object expected) {
-        return new CheckStep((response) -> assertEquals(expected, response.getEntity()));
+        return new CheckStep((response) -> assertEquals(expected, response.getEntity()), "responds with " + expected);
     }
 
     /**
      * Asserts the response has a successful (2XX) status code.
      */
     protected CheckStep succeeds() {
-        return new CheckStep((response) -> assertEquals(Status.Family.SUCCESSFUL, response.getStatusInfo().getFamily()));
+        return new CheckStep((response) -> assertEquals(Status.Family.SUCCESSFUL, response.getStatusInfo().getFamily()), "succeeds");
     }
 
     /**
@@ -248,8 +286,21 @@ abstract public class AbstractFacadeTest extends IsaacTest {
 
     class CheckStep implements Step {
         private final Consumer<Response> checker;
+        private final String name;
+
         CheckStep(Consumer<Response> checker) {
             this.checker = checker;
+            this.name = "Checking: " + checker;
+        }
+
+        CheckStep(Consumer<Response> checker, String name) {
+            this.checker = checker;
+            this.name = name;
+        }
+
+        @Override
+        public String toString() {
+            return name;
         }
     }
 
@@ -263,7 +314,12 @@ abstract public class AbstractFacadeTest extends IsaacTest {
         }
 
         public void run() {
-            preparation.configure(mock);
+            withMock(mock, preparation);
+        }
+
+        @Override
+        public String toString() {
+            return "Preparing: " + mock;
         }
     }
 
@@ -277,28 +333,69 @@ abstract public class AbstractFacadeTest extends IsaacTest {
         }
     }
 
+    static class Endpoint implements Supplier<Response> {
+        private final Supplier<Response> endpoint;
+        private final String name;
+
+        Endpoint(Supplier<Response> endpoint) {
+            this.endpoint = endpoint;
+            name = "on " + endpoint.toString();
+        }
+
+
+        <T> Endpoint(Function<T, Supplier<Response>> endpoint, T with) {
+            this.endpoint = endpoint.apply(with);
+            this.name = "endpoint called with " + with + " (on " + endpoint + ")";
+        }
+
+        @Override
+        public Response get() {
+            return endpoint.get();
+        }
+
+        @Override
+        public String toString() {
+            return name;
+        }
+    }
+
     class Testcase {
         private final List<RegisteredUserDTO> users;
         private final List<Step> steps;
 
         Testcase(Step[] steps) {
             this.users = null;
-            this.steps = Arrays.asList(steps);
+            this.steps = checkSteps(steps);
         }
 
         Testcase(RegisteredUserDTO user, Step[] steps) {
             this.users = Collections.singletonList(user);
-            this.steps = Arrays.asList(steps);
+            this.steps = checkSteps(steps);
         }
 
         Testcase(List<RegisteredUserDTO> users, Step[] steps) {
             this.users = users;
-            this.steps = Arrays.asList(steps);
+            this.steps = checkSteps(steps);
         }
 
-        private void runOn(Supplier<Response> endpoint) {
+        private List<Step> checkSteps(Step[] steps) {
+            List<Step> stepList = Arrays.asList(steps);
+            Map<Object, Integer> mocksPrepared = Maps.newHashMap();
+            stepList.forEach(step -> {
+                if (step instanceof PrepareStep) {
+                    mocksPrepared.merge(((PrepareStep) step).mock, 1, Integer::sum);
+                }
+            });
+            List<Object> brokenMocks = mocksPrepared.entrySet().stream().filter(entry -> entry.getValue() > 1).map(entry -> entry.getKey()).collect(Collectors.toList());
+            if (!brokenMocks.isEmpty()) {
+                throw new IllegalArgumentException("Test prepartion steps are broken. The following mocks are prepared multiple times:\r\n" + Joiner.on("\r\n").join(brokenMocks) + "\r\n(consolidate prepare steps for a single mock)");
+            }
+            return stepList;
+        }
+
+        private void runOn(Endpoint endpoint) {
             if (users == null) {
-                runSteps(endpoint);
+                verifyEndpoint("Before login", endpoint);
             } else {
                 for (RegisteredUserDTO user : users) {
                     runStepsAs(user, endpoint);
@@ -306,7 +403,7 @@ abstract public class AbstractFacadeTest extends IsaacTest {
             }
         }
 
-        private void runSteps(Supplier<Response> endpoint) {
+        private void runSteps(Endpoint endpoint) {
             Response response = null;
             for (Step step : steps) {
                 if (step instanceof CheckStep) {
@@ -315,34 +412,35 @@ abstract public class AbstractFacadeTest extends IsaacTest {
                     }
                     ((CheckStep) step).checker.accept(response);
                 } else if (step instanceof PrepareStep) {
-                    PrepareStep<?> prepareStep = (PrepareStep) step;
-                    reset(prepareStep.mock);
-                    if (defaultsMap.containsKey(prepareStep.mock)) {
-                        defaultsMap.get(prepareStep.mock).configure(prepareStep.mock);
-                    }
-                    prepareStep.run();
-                    replay(prepareStep.mock);
+                    ((PrepareStep) step).run();
                 }
             }
         }
 
-        private void runStepsAs(RegisteredUserDTO user, Supplier<Response> endpoint) {
-            try {
-                reset(userManager);
+        private void runStepsAs(@Nullable RegisteredUserDTO user, Endpoint endpoint) {
+            withMock(userManager, m -> {
                 if (user == null) {
-                    expect(userManager.getCurrentRegisteredUser(request)).andThrow(new NoUserLoggedInException());
+                    expect(m.getCurrentRegisteredUser(request)).andThrow(new NoUserLoggedInException());
                 } else {
-                    expect(userManager.getCurrentRegisteredUser(request)).andReturn(user);
+                    expect(m.getCurrentRegisteredUser(request)).andReturn(user);
                 }
-                replay(userManager);
-                currentUser = user;
+            });
+            currentUser = user;
 
+            String userName = user == null ? "no-one" : (user.getGivenName() + " " + user.getFamilyName());
+            verifyEndpoint("As " + userName, endpoint);
+        }
+
+        private void verifyEndpoint(String when, Endpoint endpoint) {
+            try {
                 runSteps(endpoint);
-
                 verifyAll();
-            } catch (NoUserLoggedInException e) {
-                // Can't happen
-                throw new RuntimeException(e);
+            } catch (AssertionError e) {
+                String message = when + ", test failed, expected:\r\n";
+                message += steps.stream().map(s -> "  " + s.toString() + "\r\n").collect(Collectors.joining());
+                message += endpoint.toString();
+                System.err.println(message);
+                throw e;
             }
         }
     }

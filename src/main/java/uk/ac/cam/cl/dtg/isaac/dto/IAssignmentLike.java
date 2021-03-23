@@ -1,5 +1,7 @@
 package uk.ac.cam.cl.dtg.isaac.dto;
 
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 
 import javax.annotation.Nullable;
@@ -18,4 +20,8 @@ public interface IAssignmentLike {
     @Nullable
     Date getDueDate();
 
+    interface Details<T extends IAssignmentLike> {
+        String getAssignmentLikeName(T assignment) throws SegueDatabaseException, ContentManagerException;
+        String getAssignmentLikeUrl(T assignment);
+    }
 }

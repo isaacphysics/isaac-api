@@ -187,6 +187,12 @@ public final class Constants {
     public static final String EVENT_ADMIN_EMAIL = "EVENT_ADMIN_EMAIL";
     public static final String EVENT_ICAL_UID_DOMAIN = "EVENT_ICAL_UID_DOMAIN";
 
+    // MailJet Stuff:
+    public static final String MAILJET_API_KEY = "MAILJET_API_KEY";
+    public static final String MAILJET_API_SECRET = "MAILJET_API_SECRET";
+    public static final String MAILJET_NEWS_LIST_ID = "MAILJET_NEWS_LIST_ID";
+    public static final String MAILJET_EVENTS_LIST_ID = "MAILJET_EVENTS_LIST_ID";
+
     /**
      * Suffix to append to raw fields (minus dot separator) - these are fields that the search engine should not do any
      * processing on (e.g. no stemming)
@@ -390,6 +396,8 @@ public final class Constants {
 
     public static final String DEFAULT_SEARCH_RESULT_LIMIT_AS_STRING = "25";
 
+    public static final Integer SEARCH_TEXT_CHAR_LIMIT = 1000;
+
     public static final Integer NO_SEARCH_LIMIT = -1;
 
     // Content model specific stuff
@@ -493,6 +501,7 @@ public final class Constants {
     public static final String REDIRECT_URL = "redirectUrl";
 
     public static final String SEGUE_AUTH_COOKIE = "SEGUE_AUTH_COOKIE";
+    public static final String JSESSION_COOOKIE = "JSESSIONID";
 
     public static final String DEFAULT_DATE_FORMAT = "EEE MMM dd HH:mm:ss Z yyyy";
 
