@@ -225,10 +225,6 @@ public class QuizFacade extends AbstractIsaacFacade {
             String message = "SegueDatabaseException whilst getting available quizzes";
             log.error(message, e);
             return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, message).toResponse();
-        } catch (ContentManagerException e) {
-            String message = "ContentManagerException whilst getting available quizzes";
-            log.error(message, e);
-            return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
@@ -258,10 +254,6 @@ public class QuizFacade extends AbstractIsaacFacade {
                 .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (SegueDatabaseException e) {
             String message = "SegueDatabaseException whilst getting available quizzes";
-            log.error(message, e);
-            return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, message).toResponse();
-        } catch (ContentManagerException e) {
-            String message = "ContentManagerException whilst getting available quizzes";
             log.error(message, e);
             return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (NoUserLoggedInException e) {
@@ -311,9 +303,8 @@ public class QuizFacade extends AbstractIsaacFacade {
             return ok(quiz)
                 .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, false)).tag(etag).build();
         } catch (ContentManagerException e) {
-            String message = "ContentManagerException whilst previewing a quiz";
-            log.error(message, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+            log.error("Content error whilst previewing a quiz", e);
+            return SegueErrorResponse.getResourceNotFoundResponse("The content for that quiz has become unavailable.");
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
@@ -382,9 +373,8 @@ public class QuizFacade extends AbstractIsaacFacade {
         } catch (AssignmentCancelledException e) {
             return new SegueErrorResponse(Status.GONE, "This quiz assignment has been cancelled.").toResponse();
         } catch (ContentManagerException e) {
-            String message = "ContentManagerException whilst starting a quiz attempt";
-            log.error(message, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+            log.error("Content error whilst starting a quiz attempt", e);
+            return SegueErrorResponse.getResourceNotFoundResponse("The content for that quiz has become unavailable.");
         }
     }
 
@@ -446,9 +436,8 @@ public class QuizFacade extends AbstractIsaacFacade {
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (ContentManagerException e) {
-            String message = "ContentManagerException whilst starting a free quiz attempt";
-            log.error(message, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+            log.error("Content error whilst starting a free quiz attempt", e);
+            return SegueErrorResponse.getResourceNotFoundResponse("The content for that quiz has become unavailable.");
         }
     }
 
@@ -489,9 +478,8 @@ public class QuizFacade extends AbstractIsaacFacade {
         } catch (AssignmentCancelledException e) {
             return new SegueErrorResponse(Status.FORBIDDEN, "This quiz assignment has been cancelled.").toResponse();
         } catch (ContentManagerException e) {
-            String message = "ContentManagerException whilst getting quiz attempt";
-            log.error(message, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+            log.error("Content error whilst getting quiz attempt", e);
+            return SegueErrorResponse.getResourceNotFoundResponse("The content for that quiz has become unavailable.");
         } catch (ErrorResponseWrapper responseWrapper) {
             return responseWrapper.toResponse();
         }
@@ -552,9 +540,8 @@ public class QuizFacade extends AbstractIsaacFacade {
         } catch (AssignmentCancelledException e) {
             return new SegueErrorResponse(Status.FORBIDDEN, "This quiz assignment has been cancelled.").toResponse();
         } catch (ContentManagerException e) {
-            String message = "ContentManagerException whilst getting quiz attempt";
-            log.error(message, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+            log.error("Content error whilst getting quiz attempt", e);
+            return SegueErrorResponse.getResourceNotFoundResponse("The content for that quiz has become unavailable.");
         } catch (ErrorResponseWrapper responseWrapper) {
             return responseWrapper.toResponse();
         }
@@ -933,9 +920,8 @@ public class QuizFacade extends AbstractIsaacFacade {
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (ContentManagerException e) {
-            String message = "Content error whilst setting quiz";
-            log.error(message, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+            log.error("Content error whilst setting quiz", e);
+            return SegueErrorResponse.getResourceNotFoundResponse("The content for that quiz has become unavailable.");
         }
     }
 
@@ -988,10 +974,6 @@ public class QuizFacade extends AbstractIsaacFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
             String message = "Database error whilst getting assigned quizzes";
-            log.error(message, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
-        } catch (ContentManagerException e) {
-            String message = "Content error whilst getting assigned quizzes";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         }
@@ -1063,9 +1045,8 @@ public class QuizFacade extends AbstractIsaacFacade {
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (ContentManagerException e) {
-            String message = "Content error whilst viewing quiz assignment";
-            log.error(message, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+            log.error("Content error whilst viewing quiz assignment", e);
+            return SegueErrorResponse.getResourceNotFoundResponse("The content for that quiz has become unavailable.");
         }
     }
 
@@ -1140,9 +1121,8 @@ public class QuizFacade extends AbstractIsaacFacade {
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (ContentManagerException e) {
-            String message = "Content error whilst viewing quiz assignment attempt";
-            log.error(message, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+            log.error("Content error whilst viewing quiz assignment attempt", e);
+            return SegueErrorResponse.getResourceNotFoundResponse("The content for that quiz has become unavailable.");
         } catch (NoUserException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "That user does not exist.").toResponse();
         }
