@@ -642,10 +642,21 @@ public class AdminFacade extends AbstractSegueFacade {
 
             for (Map<String, Object> eventDetails: eventDetailsList) {
                 String recipientEmail = (String) eventDetails.get("email");
+                // TODO: this is very MailJet specific:
+                String mailjetListId = (String) eventDetails.get("mj_list_id");
+                EmailType unsubscribedEmailType = EmailType.NEWS_AND_UPDATES;
+                if (getProperties().getProperty(MAILJET_NEWS_LIST_ID).equals(mailjetListId)) {
+                    unsubscribedEmailType = EmailType.NEWS_AND_UPDATES;
+                } else if (getProperties().getProperty(MAILJET_EVENTS_LIST_ID).equals(mailjetListId)) {
+                    unsubscribedEmailType = EmailType.EVENTS;
+                } else {
+                    log.warn(String.format("User with email (%s) attempted to unsubscribe from unrecognised list (%s)!", recipientEmail, mailjetListId));
+                }
+                // Find and unsubscribe user:
                 if (recipientEmail != null && !recipientEmail.isEmpty()) {
                     try {
                         RegisteredUserDTO user = userManager.getUserDTOByEmail(recipientEmail);
-                        UserPreference preferenceToSave = new UserPreference(user.getId(), SegueUserPreferences.EMAIL_PREFERENCE.name(), EmailType.NEWS_AND_UPDATES.name(), false);
+                        UserPreference preferenceToSave = new UserPreference(user.getId(), SegueUserPreferences.EMAIL_PREFERENCE.name(), unsubscribedEmailType.name(), false);
                         userPreferencesToUpdate.add(preferenceToSave);
                     } catch (NoUserException e) {
                         log.warn(String.format("User with email (%s) attempted to unsubscribe, but no Isaac account found!", recipientEmail));
