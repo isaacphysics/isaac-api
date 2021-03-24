@@ -35,6 +35,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -575,9 +576,10 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
                 // Hash all linked account provider IDs to prevent clashes if the user creates a new account.
                 PreparedStatement markUserAsDeleted;
-                markUserAsDeleted = conn.prepareStatement("UPDATE users SET deleted = TRUE WHERE id = ?");
+                markUserAsDeleted = conn.prepareStatement("UPDATE users SET deleted=TRUE, last_updated=? WHERE id = ?");
 
-                markUserAsDeleted.setLong(1, userToDelete.getId());
+                markUserAsDeleted.setTimestamp(1, new Timestamp(new Date().getTime()));
+                markUserAsDeleted.setLong(2, userToDelete.getId());
                 markUserAsDeleted.execute();
 
                 conn.commit();
