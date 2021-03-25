@@ -586,7 +586,7 @@ public class AdminFacade extends AbstractSegueFacade {
                                                 @PathParam("providerToken") final String providerToken,
                                                 final List<Map<String, Object>> eventDetailsList) {
         try {
-            final String expectedProviderToken = getProperties().getProperty(MAILJET_SECRET_KEY);
+            final String expectedProviderToken = getProperties().getProperty(MAILJET_WEBHOOK_TOKEN);
             if (!expectedProviderToken.equals(providerToken)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
@@ -633,7 +633,7 @@ public class AdminFacade extends AbstractSegueFacade {
                                                 @PathParam("providerToken") final String providerToken,
                                                 final List<Map<String, Object>> eventDetailsList) {
         try {
-            final String expectedProviderToken = getProperties().getProperty(MAILJET_SECRET_KEY);
+            final String expectedProviderToken = getProperties().getProperty(MAILJET_WEBHOOK_TOKEN);
             if (!expectedProviderToken.equals(providerToken)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
