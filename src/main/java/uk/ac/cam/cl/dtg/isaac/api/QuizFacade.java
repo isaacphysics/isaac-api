@@ -649,9 +649,16 @@ public class QuizFacade extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "That quiz is already incomplete.").toResponse();
             }
 
-            quizAttempt = quizAttemptManager.updateAttemptCompletionStatus(quizAttempt, false);
+            quizAttemptManager.updateAttemptCompletionStatus(quizAttempt, false);
 
-            return Response.ok(quizAttempt).build();
+            QuizUserFeedbackDTO feedback;
+            UserSummaryDTO userSummary = associationManager.enforceAuthorisationPrivacy(user,
+                userManager.convertToUserSummaryObject(student));
+
+            feedback = new QuizUserFeedbackDTO(userSummary,
+                userSummary.isAuthorisedFullAccess() ? new QuizFeedbackDTO() : null);
+
+            return Response.ok(feedback).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
