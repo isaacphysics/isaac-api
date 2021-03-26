@@ -228,6 +228,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                     expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(student))).andAnswer(grantAccess(true));
                     expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(secondStudent))).andAnswer(grantAccess(true));
                 }),
+                prepare(assignmentService, m -> m.augmentAssignerSummaries(Collections.singletonList(studentAssignment))),
                 check(response -> {
                     assertEquals(studentFeedback, getFeedbackFor(student));
                     assertEquals(otherStudentFeedback, getFeedbackFor(secondStudent));
@@ -242,6 +243,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                     expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(student))).andAnswer(grantAccess(true));
                     expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(secondStudent))).andAnswer(grantAccess(false));
                 }),
+                prepare(assignmentService, m -> m.augmentAssignerSummaries(Collections.singletonList(studentAssignment))),
                 check(response -> {
                     assertEquals(studentFeedback, getFeedbackFor(student));
                     assertNull(getFeedbackFor(secondStudent));

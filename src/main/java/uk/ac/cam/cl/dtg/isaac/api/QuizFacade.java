@@ -1019,8 +1019,10 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             if (!canManageGroup(user, group)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
-                    "You can only cancel assignments to groups you own or manage.").toResponse();
+                    "You can only view assignments to groups you own or manage.").toResponse();
             }
+
+            this.assignmentService.augmentAssignerSummaries(Collections.singletonList(assignment));
 
             IsaacQuizDTO quiz = quizManager.findQuiz(assignment.getQuizId());
 
