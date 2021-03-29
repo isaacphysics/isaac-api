@@ -917,6 +917,9 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             this.getLogManager().logEvent(currentlyLoggedInUser, request, Constants.IsaacServerLogType.SET_NEW_QUIZ_ASSIGNMENT, eventDetails);
 
+            List<QuizAssignmentDTO> assignments = Collections.singletonList(assignmentWithID);
+            quizManager.augmentWithQuizSummary(assignments);
+
             return Response.ok(assignmentWithID).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();

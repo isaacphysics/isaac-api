@@ -311,6 +311,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                 requiresLogin(),
                 as(studentsTeachersOrAdmin(),
                     prepare(quizAssignmentManager, m -> expect(m.createAssignment(assignmentRequest)).andReturn(newAssignment)),
+                    prepare(quizManager, m -> m.augmentWithQuizSummary(Collections.singletonList(newAssignment))),
                     respondsWith(newAssignment),
                     check(ignoreResponse -> assertEquals(currentUser().getId(), assignmentRequest.getOwnerUserId()))
                 ),
