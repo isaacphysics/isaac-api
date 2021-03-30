@@ -50,6 +50,7 @@ import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.api.monitors.UserSearchMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
+import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.LocationManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
@@ -569,7 +570,113 @@ public class AdminFacade extends AbstractSegueFacade {
         return Response.ok().build();
     }
 
+    /* This method will allow users' email verification status to be changed en-mass.
+     *
+     * @param request
+     *            - to help determine access rights.
+     * @param eventDetailsList
+     *            - a list of objects in the MailJet JSON format
+     * @return Success shown by returning an ok response
+     */
+    @POST
+    @Path("/users/delivery_failed_notification/{providerToken}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response notifyExternalDeliveryFailure(@Context final HttpServletRequest request,
+                                                @PathParam("providerToken") final String providerToken,
+                                                final List<Map<String, Object>> eventDetailsList) {
+        try {
+            final String expectedProviderToken = getProperties().getProperty(MAILJET_WEBHOOK_TOKEN);
+            if (null == expectedProviderToken || expectedProviderToken.isEmpty()) {
+                return SegueErrorResponse.getNotImplementedResponse();
+            }
+            if (!expectedProviderToken.equals(providerToken)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
 
+            for (Map<String, Object> eventDetails: eventDetailsList) {
+                String recipientEmail = (String) eventDetails.get("email");
+                Object permanentFailureObject = eventDetails.get("hard_bounce");
+                String errorMessage = (String) eventDetails.get("error");
+
+                // Assume a hard failure unless told otherwise or message triggered by duplication issue:
+                boolean permanentFailure = !"duplicate in campaign".equals(errorMessage);
+                // The "hard_bounce" parameter might be null, a String, or a Boolean value:
+                if (permanentFailureObject instanceof Boolean) {
+                    permanentFailure = (boolean) permanentFailureObject;
+                } else if (permanentFailureObject instanceof String) {
+                    permanentFailure = Boolean.parseBoolean((String) permanentFailureObject);
+                }
+                // Update delivery failure status if necessary:
+                if (recipientEmail != null && !recipientEmail.isEmpty() && permanentFailure) {
+                    this.userManager.updateUserEmailVerificationStatus(recipientEmail, EmailVerificationStatus.DELIVERY_FAILED);
+                }
+            }
+            String remoteIpAddress = RequestIPExtractor.getClientIpAddr(request);
+            log.info(String.format("Request from (%s) updated the status of %s emails to DELIVERY_FAILED.", remoteIpAddress, eventDetailsList.size()));
+            return Response.ok().build();
+        } catch (SegueDatabaseException | ClassCastException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to process request.").toResponse();
+        }
+    }
+
+    /* This method will allow users' email preference status to be changed en-mass.
+     *
+     * @param request
+     *            - to help determine access rights.
+     * @param webhookPayload
+     *            - a list of user webhookPayload that need to be changed
+     * @return Success shown by returning an ok response
+     */
+    @POST
+    @Path("/users/unsubscription_notification/{providerToken}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response notifyExternalUnsubscriptionEvent(@Context final HttpServletRequest request,
+                                                @PathParam("providerToken") final String providerToken,
+                                                final List<Map<String, Object>> eventDetailsList) {
+        try {
+            final String expectedProviderToken = getProperties().getProperty(MAILJET_WEBHOOK_TOKEN);
+            if (null == expectedProviderToken || expectedProviderToken.isEmpty()) {
+                return SegueErrorResponse.getNotImplementedResponse();
+            }
+            if (!expectedProviderToken.equals(providerToken)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
+            List<UserPreference> userPreferencesToUpdate = Lists.newArrayList();
+
+            for (Map<String, Object> eventDetails: eventDetailsList) {
+                String recipientEmail = (String) eventDetails.get("email");
+                // TODO: this is very MailJet specific:
+                String mailjetListId = (String) eventDetails.get("mj_list_id");
+                EmailType unsubscribedEmailType = EmailType.NEWS_AND_UPDATES;
+                if (getProperties().getProperty(MAILJET_NEWS_LIST_ID).equals(mailjetListId)) {
+                    unsubscribedEmailType = EmailType.NEWS_AND_UPDATES;
+                } else if (getProperties().getProperty(MAILJET_EVENTS_LIST_ID).equals(mailjetListId)) {
+                    unsubscribedEmailType = EmailType.EVENTS;
+                } else {
+                    log.warn(String.format("User with email (%s) attempted to unsubscribe from unrecognised list (%s)!", recipientEmail, mailjetListId));
+                }
+                // Find and unsubscribe user:
+                if (recipientEmail != null && !recipientEmail.isEmpty()) {
+                    try {
+                        RegisteredUserDTO user = userManager.getUserDTOByEmail(recipientEmail);
+                        UserPreference preferenceToSave = new UserPreference(user.getId(), SegueUserPreferences.EMAIL_PREFERENCE.name(), unsubscribedEmailType.name(), false);
+                        userPreferencesToUpdate.add(preferenceToSave);
+                    } catch (NoUserException e) {
+                        log.warn(String.format("User with email (%s) attempted to unsubscribe, but no Isaac account found!", recipientEmail));
+                    }
+                }
+            }
+            userPreferenceManager.saveUserPreferences(userPreferencesToUpdate);
+            String remoteIpAddress = RequestIPExtractor.getClientIpAddr(request);
+            log.info(String.format("Request from (%s) unsubscribed %s emails from NEWS_AND_UPDATES emails.", remoteIpAddress, userPreferencesToUpdate.size()));
+            return Response.ok().build();
+        } catch (SegueDatabaseException | ClassCastException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to process request.").toResponse();
+        }
+    }
 
     /**
      * This method will delete all cached data from the CMS and any search indices.
