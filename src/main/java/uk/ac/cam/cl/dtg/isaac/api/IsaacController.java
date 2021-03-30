@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.api;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.io.Files;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
@@ -62,6 +63,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -260,7 +263,79 @@ public class IsaacController extends AbstractIsaacFacade {
     public final Response getImageByPath(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
                                          @PathParam("path") final String path) {
         // entity tags etc are already added by segue
-        return api.getImageFileContent(request, httpServletRequest, this.contentIndex, path);
+
+        // This comes from SegueContentFacade::getImageFileContent -- no other method was calling it, so moving it here.
+        if (null == this.contentIndex || null == path || Files.getFileExtension(path).isEmpty()) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
+                    "Bad input to api call. Required parameter not provided.");
+            log.debug(error.getErrorMessage());
+            return error.toResponse();
+        }
+        // 'version' now points to an ElasticSearch index name (live or latest, probably)
+        // Go there and look up the git sha.
+        String sha = this.contentManager.getCurrentContentSHA();
+
+        // determine if we can use the cache if so return cached response.
+        EntityTag etag = new EntityTag(sha.hashCode() + path.hashCode() + "");
+        Response cachedResponse = generateCachedResponse(request, etag, NUMBER_SECONDS_IN_ONE_DAY);
+
+        if (cachedResponse != null) {
+            return cachedResponse;
+        }
+
+        ByteArrayOutputStream fileContent = null;
+        String mimeType = MediaType.WILDCARD;
+
+        switch (Files.getFileExtension(path).toLowerCase()) {
+            case "svg":
+                mimeType = "image/svg+xml";
+                break;
+
+            case "jpg":
+                mimeType = "image/jpeg";
+                break;
+
+            case "png":
+                mimeType = "image/png";
+                break;
+
+            case "gif":
+                mimeType = "image/gif";
+                break;
+
+            default:
+                // if it is an unknown type return an error as they shouldn't be
+                // using this endpoint.
+                SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
+                        "Invalid file extension requested");
+                log.debug(error.getErrorMessage());
+                return error.toResponse(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, false), etag);
+        }
+
+        try {
+            fileContent = this.contentManager.getFileBytes(sha, path);
+        } catch (IOException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Error reading from file repository", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        } catch (UnsupportedOperationException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Multiple files match the search path provided.", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        }
+
+        if (null == fileContent) {
+            String refererHeader = httpServletRequest.getHeader("Referer");
+            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the file: " + path);
+            log.warn(String.format("Unable to locate the file: (%s). Referer: (%s)", path, refererHeader));
+            return error.toResponse(getCacheControl(NUMBER_SECONDS_IN_TEN_MINUTES, false), etag);
+        }
+
+        return Response.ok(fileContent.toByteArray()).type(mimeType)
+                .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, true))
+                .tag(etag).build();
     }
 
     /**
@@ -391,27 +466,4 @@ public class IsaacController extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         }
     }
-
-    /**
-     * Statistics endpoint.
-     * 
-     * @param request
-     *            - to determine access.
-     * @return stats
-     */
-    @GET
-    @Path("stats/questions_answered/count")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @ApiOperation(value = "Get the total number of questions attempted on the platform.",
-                  notes = "For performance reasons, this number is cached server-side for 10 minutes.")
-    public Response getQuestionCount(@Context final HttpServletRequest request) {
-        // Update the question count if it's expired
-        questionCountCache.get();
-
-        // Return the old question count
-        return Response.ok(ImmutableMap.of("answeredQuestionCount", lastQuestionCount))
-                .cacheControl(getCacheControl(NUMBER_SECONDS_IN_MINUTE, false)).build();
-    }
-
 }

@@ -112,39 +112,6 @@ public class NotificationFacade extends AbstractSegueFacade {
     }
 
     /**
-     * getNotificationById.
-     * 
-     * @param request
-     *            - for user lookup.
-     * @param notificationId
-     *            - the id of interest.
-     * @return a notification by id
-     */
-    @GET
-    @Path("/{notification_id}")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @ApiOperation(value = "Get a specific notification by id.")
-    public Response getNotificationById(@Context final HttpServletRequest request,
-            @PathParam("notification_id") final String notificationId) {
-        if (!userManager.isRegisteredUserLoggedIn(request)) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        }
-
-        try {
-            ContentDTO notificationById = notificationPicker.getNotificationById(notificationId);
-            return Response.ok(notificationById)
-                    .cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
-
-        } catch (ContentManagerException e) {
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Problem locating the content", e)
-                    .toResponse();
-        } catch (ResourceNotFoundException e) {
-            return SegueErrorResponse.getResourceNotFoundResponse("Couldn't locate the Notification you requested");
-        }
-    }
-
-    /**
      * updateNotificationStatus.
      * 
      * @param request

@@ -30,7 +30,6 @@ import io.swagger.annotations.ApiOperation;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.Validate;
 import org.jboss.resteasy.annotations.GZIP;
-import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
@@ -670,101 +669,6 @@ public class UsersFacade extends AbstractSegueFacade {
     }
 
     /**
-     * Get the event data for a specified user.
-     *
-     * @param request
-     *            - request information used for caching.
-     * @param httpServletRequest
-     *            - the request which may contain session information.
-     * @param userIdOfInterest
-     *            - userId of interest - currently only supports looking at own data.
-     * @param fromDate
-     *            - date to start search
-     * @param toDate
-     *            - date to end search
-     * @param events
-     *            - comma separated list of events of interest.
-     * @param bin
-     *            - Should we group data into the first day of the month? true or false.
-     * @return Returns a map of eventType to Map of dates to total number of events.
-     */
-    @GET
-    @Path("users/{user_id}/event_data/over_time")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @ApiOperation(value = "Get log data counts for a specific user.")
-    public Response getEventDataForUser(@Context final Request request,
-                                        @Context final HttpServletRequest httpServletRequest, @PathParam("user_id") final Long userIdOfInterest,
-                                        @QueryParam("from_date") final Long fromDate, @QueryParam("to_date") final Long toDate,
-                                        @QueryParam("events") final String events, @QueryParam("bin_data") final Boolean bin) {
-        final boolean binData;
-        if (null == bin || !bin) {
-            binData = false;
-        } else {
-            binData = true;
-        }
-
-        if (null == events) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "You must specify the events you are interested in.")
-                    .toResponse();
-        }
-
-        if (null == fromDate || null == toDate) {
-            return new SegueErrorResponse(Status.BAD_REQUEST,
-                    "You must specify the from_date and to_date you are interested in.").toResponse();
-        }
-
-        if (fromDate > toDate) {
-            return new SegueErrorResponse(Status.BAD_REQUEST,
-                    "The from_date must be before the to_date!").toResponse();
-        }
-
-        try {
-            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
-
-            RegisteredUserDTO userOfInterest = userManager.getUserDTOById(userIdOfInterest);
-            if (userOfInterest == null) {
-                throw new NoUserException("No user found with this ID.");
-            }
-
-            UserSummaryDTO userOfInterestSummaryObject = userManager.convertToUserSummaryObject(userOfInterest);
-
-            if (!events.equals(SegueServerLogType.ANSWER_QUESTION.name()) && !isUserAnAdmin(userManager, currentUser)) {
-                // Non-admins should not be able to choose random log events.
-                return SegueErrorResponse.getIncorrectRoleResponse();
-            }
-
-            // decide if the user is allowed to view this data.
-            if (!currentUser.getId().equals(userIdOfInterest)
-                    && !userAssociationManager.hasPermission(currentUser, userOfInterestSummaryObject)) {
-                return SegueErrorResponse.getIncorrectRoleResponse();
-            }
-
-            // No point looking for stats from before the user registered (except for merged logs at registration and
-            // these will only be ANONYMOUS_SESSION_DURATION_IN_MINUTES before registration anyway: less than 1 month):
-            Date fromDateObject = new Date(fromDate);
-            if (fromDateObject.before(userOfInterest.getRegistrationDate())) {
-                fromDateObject = userOfInterest.getRegistrationDate();
-            }
-
-            Map<String, Map<LocalDate, Long>> eventLogsByDate = this.statsManager.getEventLogsByDateAndUserList(
-                    Lists.newArrayList(events.split(",")), fromDateObject, new Date(toDate),
-                    Arrays.asList(userOfInterest), binData);
-
-            return Response.ok(eventLogsByDate).build();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (NoUserException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to find user with the id provided.").toResponse();
-        } catch (SegueDatabaseException e) {
-            log.error("Unable to look up user event history for user " + userIdOfInterest, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while looking up event information")
-                    .toResponse();
-        }
-    }
-
-
-    /**
      * This method allows the requester to provide a list of user ids and get back a mapping of the user
      * id to the school information. This is useful for building up tables of users school information.
      *
@@ -831,42 +735,6 @@ public class UsersFacade extends AbstractSegueFacade {
                     .toResponse();
         }
     }
-
-
-    /**
-     * Get a Set of all schools reported by users in the school other field.
-     *
-     * @param request
-     *            for caching purposes.
-     * @return list of strings.
-     */
-    @GET
-    @Path("users/schools_other")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @ApiOperation(value = "Get a list of all custom provided schools.",
-                  notes = "This data only contains schools listed in the 'School (Other)' field on user accounts.")
-    public Response getAllSchoolOtherResponses(@Context final Request request) {
-
-        Set<School> schoolOthers = schoolOtherSupplier.get();
-        if (null != schoolOthers) {
-            EntityTag etag = new EntityTag(schoolOthers.toString().hashCode() + "");
-            Response cachedResponse = generateCachedResponse(request, etag, Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK);
-            if (cachedResponse != null) {
-                return cachedResponse;
-            }
-
-            return Response.ok(schoolOthers).tag(etag)
-                    .cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
-
-        } else {
-            log.error("Unable to get school list");
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while looking up schools")
-                    .toResponse();
-        }
-    }
-
-
 
     /**
      * Update a user object.

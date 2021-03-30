@@ -121,33 +121,6 @@ public class EmailFacade extends AbstractSegueFacade {
         this.misuseMonitor = misuseMonitor;
 	}
     
-    
-    /**
-     * Get the number of emails left on the queue.
-     * 
-     * This method will return the current number of emails left on the email queue
-     *
-     * @param request
-     * 			- the request 
-     * @return the size of the queue
-     */
-    @GET
-    @Path("/email/queuesize")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    public final Response getEmailQueueSize(@Context final HttpServletRequest request) {
-        try {
-            if (!isUserAnAdmin(userManager, request)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin to access this endpoint.").toResponse();
-            }
-
-            ImmutableMap<String, Integer> response = ImmutableMap.of("length", this.emailManager.getQueueLength());
-            return Response.ok(response).build();
-        } catch (NoUserLoggedInException e2) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        }
-    }
-    
     /**
      * GetEmailInBrowserById from the database.
      * 
@@ -252,12 +225,13 @@ public class EmailFacade extends AbstractSegueFacade {
     /**
      * GetEmailTypes returns the valid email preferences.
      * 
-     * This method will returnserialised html that displays an email object
+     * This method will return serialised html that displays an email object
      * 
      * @param request
      *            - so that we can allow only logged in users to view their own data. 
      * @return Response object containing the serialized content object. (with no levels of recursion into the content)
      */
+    /* THIS MAY BE REINSTATED IN THE FUTURE
     @GET
     @Path("/email/preferences")
     @Produces(MediaType.APPLICATION_JSON)
@@ -276,6 +250,7 @@ public class EmailFacade extends AbstractSegueFacade {
     	
 		return Response.ok(resultList).build();
     }
+    */
     
     /**
      * End point that verifies whether or not a validation token is valid.

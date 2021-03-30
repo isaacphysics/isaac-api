@@ -154,48 +154,4 @@ public class LogEventFacade extends AbstractSegueFacade {
             return error.toResponse();
         }
     }
-
-    /**
-     * Lists all existing log event types in the database.
-     *
-     * FIXME - this will run slowly and should be removed or cached!
-     *
-     * @param request
-     *            - request information used for caching.
-     * @param httpServletRequest
-     *            - the request which may contain session information.
-     * @return segue version as a string wrapped in a response.
-     */
-    @GET
-    @Path("event_types")
-    @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "List all existing log event types in the database.",
-                  notes = "This method is only available to staff members.")
-    public final Response getLogEventTypes(@Context final Request request, @Context final HttpServletRequest httpServletRequest) {
-
-        ImmutableMap<String, Collection<String>> result;
-        try {
-            if (!isUserStaff(this.userManager, httpServletRequest)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be a staff member to access this endpoint.")
-                        .toResponse();
-            }
-
-            result = new ImmutableMap.Builder<String, Collection<String>>().put("results",
-                    getLogManager().getAllEventTypes()).build();
-        } catch (SegueDatabaseException e) {
-            log.error("Database error has occurred", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "A database error has occurred.").toResponse();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        }
-
-        EntityTag etag = new EntityTag(result.toString().hashCode() + "");
-        Response cachedResponse = generateCachedResponse(request, etag, NUMBER_SECONDS_IN_ONE_DAY);
-        if (cachedResponse != null) {
-            return cachedResponse;
-        }
-
-        return Response.ok(result).tag(etag).cacheControl(this.getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, false))
-                .build();
-    }
 }

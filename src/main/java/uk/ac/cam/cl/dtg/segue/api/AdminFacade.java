@@ -220,84 +220,11 @@ public class AdminFacade extends AbstractSegueFacade {
      *
      * @param request
      *            - to determine access.
-     * @return stats
-     */
-    @GET
-    @Path("/stats/users")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    public Response countUsersByRole(@Context final HttpServletRequest request) {
-        try {
-            if (!isUserStaff(userManager, request)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin to access this endpoint.")
-                        .toResponse();
-            }
-
-            return Response.ok(ImmutableMap.of("role", userManager.getRoleCount()))
-                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_MINUTE, false)).build();
-        } catch (SegueDatabaseException e) {
-            log.error("Unable to load general statistics.", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        }
-    }
-
-    /**
-     * Locations stats.
-     * 
-     * @param request
-     *            - to determine access.
-     * @param requestForCaching
-     *            - to speed up access.
-     * @param fromDate
-     *            - date to start search
-     * @param toDate
-     *            - date to end search
-     * @return stats
-     */
-    @GET
-    @Path("/stats/users/last_locations")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    public Response getLastLocations(@Context final HttpServletRequest request,
-            @Context final Request requestForCaching, @QueryParam("from_date") final Long fromDate,
-                                     @QueryParam("to_date") final Long toDate) {
-        try {
-            if (!isUserStaff(userManager, request)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be a staff member to access this endpoint.")
-                        .toResponse();
-            }
-            if (null == fromDate || null == toDate) {
-                return new SegueErrorResponse(Status.BAD_REQUEST,
-                        "You must specify the from_date and to_date you are interested in.").toResponse();
-            }
-            if (toDate < fromDate) {
-                return new SegueErrorResponse(Status.BAD_REQUEST,
-                        "The from_date must be before the to_date.").toResponse();
-            }
-
-            Collection<Location> locationInformation = statsManager.getLocationInformation(new Date(fromDate), new Date(toDate));
-
-            return Response.ok(locationInformation).cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false))
-                    .build();
-        } catch (SegueDatabaseException e) {
-            log.error("Database error while trying to get last locations", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        }
-    }
-
-    /**
-     * Statistics endpoint.
-     * 
-     * @param request
-     *            - to determine access.
      * @param requestForCache
      *            - to determine caching.
      * @return stats
      */
+    /* THIS MAY BE REINSTATED IN THE FUTURE
     @GET
     @Path("/stats/schools")
     @Produces(MediaType.APPLICATION_JSON)
@@ -335,32 +262,7 @@ public class AdminFacade extends AbstractSegueFacade {
                     .toResponse();
         }
     }
-
-
-    /**
-     * Get user last seen information map.
-     * 
-     * @param request
-     *            - to determine access.
-     * @return stats
-     */
-    @GET
-    @Path("/stats/users/last_access")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    public Response getUserLastAccessInformation(@Context final HttpServletRequest request) {
-        try {
-            if (!isUserAnAdmin(userManager, request)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
-                        .toResponse();
-            }
-
-            return Response.ok(statsManager.getLastSeenUserMap()).build();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        }
-    }
-
+    */
 
     /**
      * This method will allow users to be mass-converted to a new role.
@@ -1094,56 +996,6 @@ public class AdminFacade extends AbstractSegueFacade {
     }
 
     /**
-     * Get users by school id.
-     * 
-     * @param request
-     *            - to determine access.
-     * @param schoolId
-     *            - of the school of interest.
-     * @return stats
-     */
-    @GET
-    @Path("/users/schools/{school_id}")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    public Response getSchoolStatistics(@Context final HttpServletRequest request,
-            @PathParam("school_id") final String schoolId) {
-        try {
-            if (!isUserStaff(userManager, request)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
-                        .toResponse();
-            }
-
-            School school = schoolReader.findSchoolById(schoolId);
-            
-            Map<String, Object> result = ImmutableMap.of("school", school, "users",
-                    statsManager.getUsersBySchoolId(schoolId));
-            
-            return Response.ok(result).build();
-        } catch (UnableToIndexSchoolsException e) {
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Unable To Index SchoolIndexer Exception in admin facade", e).toResponse();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (ResourceNotFoundException e) {
-            return new SegueErrorResponse(Status.NOT_FOUND, "We cannot locate the school requested").toResponse();
-        } catch (SegueDatabaseException | SegueSearchException e) {
-            log.error("Error while trying to list users belonging to a school.", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error").toResponse();
-        } catch (NumberFormatException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "The school id provided is invalid.").toResponse();
-        } catch (JsonParseException | JsonMappingException e) {
-            log.error("Problem parsing school", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to read school").toResponse();
-        } catch (IOException e) {
-            log.error("Problem parsing school", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "IOException while trying to communicate with the school service.").toResponse();
-        }
-    }
-
-
-    /**
      * Service method to fetch the event data for a specified user.
      *
      * @param request
@@ -1213,6 +1065,7 @@ public class AdminFacade extends AbstractSegueFacade {
      *            - Should we group data into the first day of the month? true or false.
      * @return Returns a map of eventType to Map of dates to total number of events.
      */
+    /* THIS MAY BE REINSTATED IN THE FUTURE
     @GET
     @Path("/users/event_data/over_time")
     @Produces(MediaType.APPLICATION_JSON)
@@ -1247,6 +1100,7 @@ public class AdminFacade extends AbstractSegueFacade {
         return Response.ok(eventLogsByDate).tag(etag)
                 .cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false)).build();
     }
+    */
 
 
     /**
@@ -1268,6 +1122,7 @@ public class AdminFacade extends AbstractSegueFacade {
      *            - Should we group data into the first day of the month? true or false.
      * @return Returns a map of eventType to Map of dates to total number of events.
      */
+    /* THIS MAY BE REINSTATED IN THE FUTURE
     @GET
     @Path("/users/event_data/over_time/download")
     @Produces("text/csv")
@@ -1319,129 +1174,7 @@ public class AdminFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while creating the CSV file").toResponse();
         }
     }
-
-    /**
-     * Get the ip address location information.
-     * 
-     * @param request
-     *            - request information used for caching.
-     * @param httpServletRequest
-     *            - the request which may contain session information.
-     * @param ipaddress
-     *            - ip address to geocode.
-     * @return Returns a location from an ip address
-     */
-    @GET
-    @Path("/geocode_ip")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    public Response findIP(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
-            @QueryParam("ip") final String ipaddress) {
-
-        if (null == ipaddress) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "You must specify the ip address you are interested in.")
-                    .toResponse();
-        }
-
-        try {
-            if (!isUserStaff(userManager, httpServletRequest)) {
-                return new SegueErrorResponse(Status.FORBIDDEN,
-                        "You must be logged in as staff to access this function.").toResponse();
-            }
-
-            return Response.ok(locationManager.resolveAllLocationInformation(ipaddress)).build();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (IOException e) {
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Unable to contact server to resolve location information", e).toResponse();
-        } catch (LocationServerException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Problem resolving ip address", e).toResponse();
-        }
-    }
-
-    /**
-     * Get current perf log for analytics purposes.
-     * 
-     * @param request
-     *            - request information used for caching.
-     * @param httpServletRequest
-     *            - the request which may contain session information.
-     * @return Returns a location from an ip address
-     */
-    @GET
-    @Path("/view_perf_log")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    public Response viewPerfLog(@Context final Request request, @Context final HttpServletRequest httpServletRequest) {
-        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(System.getProperty("catalina.base")
-                + File.separator + "logs" + File.separator + "perf.log"))) {
-            if (!isUserAnAdmin(userManager, httpServletRequest)) {
-                return new SegueErrorResponse(Status.FORBIDDEN,
-                        "You must be logged in as staff to access this function.").toResponse();
-            }
-
-            StringBuilder output = new StringBuilder();
-            String line;
-            while ((line = bufferedReader.readLine()) != null) {
-                
-                if (line.contains("callback")) {
-                    // strip out query params that are provided on callback urls for security.
-                    output.append(line.substring(0, line.indexOf("?")));
-                } else {
-                    output.append(line);    
-                }
-                output.append("\n");
-            }
-            log.info(String.format("User (%s) has accessed the perf logs.",
-                    userManager.getCurrentRegisteredUser(httpServletRequest).getEmail()));
-            return Response.ok(output.toString()).build();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (IOException e) {
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Unable to read the log file requested", e).toResponse();
-        }
-    }
-
-    /**
-     * Get current questionMetaData for analytics purposes.
-     * 
-     * @param request
-     *            - request information used for caching.
-     * @param httpServletRequest
-     *            - the request which may contain session information.
-     * @return Returns a location from an ip address
-     */
-    @GET
-    @Path("/download_meta_data")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    public Response getMetaData(@Context final Request request, @Context final HttpServletRequest httpServletRequest) {
-        try {
-            if (!isUserStaff(userManager, httpServletRequest)) {
-                return new SegueErrorResponse(Status.FORBIDDEN,
-                        "You must be logged in as staff to access this function.").toResponse();
-            }
-
-            ResultsWrapper<ContentDTO> allByType = this.contentManager.getAllByTypeRegEx(
-                    this.contentIndex, ".*", 0, -1);
-            
-            List<ContentSummaryDTO> results = Lists.newArrayList();
-            for (ContentDTO c : allByType.getResults()) {
-                results.add(this.contentManager.extractContentSummary(c));
-            }
-
-            ResultsWrapper<ContentSummaryDTO> toReturn = new ResultsWrapper<>(results,
-                    allByType.getTotalResults());
-            return Response.ok(toReturn).build();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (ContentManagerException e) {
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to read the log file requested", e)
-                    .toResponse();
-        }
-    }
+    */
 
     /**
      * This method will allow the live version served by the site to be changed.
