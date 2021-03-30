@@ -494,7 +494,7 @@ public class GitContentManager implements IContentManager {
     }
 
     @Override
-    public final Set<String> getTagsList(final String version) throws ContentManagerException {
+    public final Set<String> getTagsList(final String version) {
         Validate.notBlank(version);
 
         List<Object> tagObjects = (List<Object>) searchProvider.getById(
@@ -504,7 +504,7 @@ public class GitContentManager implements IContentManager {
     }
 
     @Override
-    public final Collection<String> getAllUnits(final String version) throws ContentManagerException {
+    public final Collection<String> getAllUnits(final String version) {
         Validate.notBlank(version);
 
         String unitType = Constants.CONTENT_INDEX_TYPE.UNIT.toString();

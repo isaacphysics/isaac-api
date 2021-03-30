@@ -1178,7 +1178,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     }
 
     @Nullable
-    private QuizAssignmentDTO getQuizAssignment(QuizAttemptDTO quizAttempt) throws SegueDatabaseException, AssignmentCancelledException, ErrorResponseWrapper {
+    private QuizAssignmentDTO getQuizAssignment(QuizAttemptDTO quizAttempt) throws SegueDatabaseException, AssignmentCancelledException {
         if (quizAttempt.getQuizAssignmentId() != null) {
             return quizAssignmentManager.getById(quizAttempt.getQuizAssignmentId());
         }

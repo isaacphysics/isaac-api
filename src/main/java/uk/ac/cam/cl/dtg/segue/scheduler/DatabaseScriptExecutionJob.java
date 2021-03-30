@@ -46,7 +46,7 @@ public class DatabaseScriptExecutionJob implements Job {
     }
 
     @Override
-    public void execute(JobExecutionContext context) throws JobExecutionException {
+    public void execute(JobExecutionContext context) {
         // extract information needed to run the job from context map
         JobDataMap dataMap = context.getJobDetail().getJobDataMap();
 

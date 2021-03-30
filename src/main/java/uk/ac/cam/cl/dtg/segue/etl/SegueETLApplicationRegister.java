@@ -28,7 +28,6 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.PROXY_PATH;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_APP_VERSION;
 
 /**

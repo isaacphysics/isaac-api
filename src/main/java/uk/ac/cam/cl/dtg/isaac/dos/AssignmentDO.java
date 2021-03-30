@@ -17,8 +17,6 @@ package uk.ac.cam.cl.dtg.isaac.dos;
 
 import java.util.Date;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 /**
  * This class is the Domain Object used to store Assignments in the isaac CMS.
  */

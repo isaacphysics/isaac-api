@@ -48,7 +48,7 @@ public class IPInfoDBLocationResolver implements IPLocationResolver {
          * @param value
          *            of the IPInfoDB response
          */
-        private IPInfoDBLocationResponseProperties(final String value) {
+        IPInfoDBLocationResponseProperties(final String value) {
             valueAsString = value;
         }
 

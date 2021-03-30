@@ -52,8 +52,17 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.collect.Maps.immutableEntry;
@@ -196,11 +205,9 @@ public class StatisticsManager implements IStatisticsManager {
      * 
      * @throws UnableToIndexSchoolsException
      *             - if there is a problem getting school details.
-     * @throws SegueDatabaseException
-     *             - if there is a database exception.
      */
     public List<Map<String, Object>> getSchoolStatistics() 
-            throws UnableToIndexSchoolsException, SegueDatabaseException, SegueSearchException {
+            throws UnableToIndexSchoolsException, SegueSearchException {
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> cachedOutput = (List<Map<String, Object>>) this.longStatsCache
                 .getIfPresent(SCHOOL_STATS);

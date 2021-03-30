@@ -19,7 +19,6 @@ import com.google.common.collect.Maps;
 import org.quartz.Job;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 import java.util.Map;
 

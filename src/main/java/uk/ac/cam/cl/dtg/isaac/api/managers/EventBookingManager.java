@@ -1222,11 +1222,10 @@ public class EventBookingManager {
      * @param user                   user to book on to the event.
      * @param enforceBookingDeadline - whether or not to enforce the booking deadline of the event
      * @throws EmailMustBeVerifiedException - if this method requires a validated e-mail address.
-     * @throws DuplicateBookingException    - Duplicate booking, only unique bookings.
      * @throws EventDeadlineException       - The deadline for booking has passed.
      */
     private void ensureValidEventAndUser(final IsaacEventPageDTO event, final RegisteredUserDTO user, final boolean
-            enforceBookingDeadline) throws EmailMustBeVerifiedException, DuplicateBookingException, EventDeadlineException {
+            enforceBookingDeadline) throws EmailMustBeVerifiedException, EventDeadlineException {
         Date now = new Date();
 
         // check if if the end date has passed. Allowed to add to wait list after deadline.

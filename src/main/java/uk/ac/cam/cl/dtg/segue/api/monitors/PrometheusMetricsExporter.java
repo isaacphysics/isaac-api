@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.monitors;
 
-import com.google.common.primitives.Ints;
 import io.prometheus.client.exporter.HTTPServer;
 import io.prometheus.client.hotspot.DefaultExports;
 import org.slf4j.Logger;

@@ -25,7 +25,6 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 
 import java.util.List;
 
-
 /**
  * Content DO for IsaacItemQuestions.
  *

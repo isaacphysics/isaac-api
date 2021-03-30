@@ -24,7 +24,6 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
-import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 /**
  * An interface defining the password authentication process.
@@ -84,13 +83,9 @@ public interface IPasswordAuthenticator extends IAuthenticator {
      * @param userToAttachToken
      *            - the user which should have token information added. -
      * @return The reset token
-     * @throws NoSuchAlgorithmException
-     *             - if the configured algorithm is not valid.
-     * @throws InvalidKeySpecException
-     *             - if the preconfigured key spec is invalid.
      */
-    String createPasswordResetTokenForUser(RegisteredUser userToAttachToken) throws NoSuchAlgorithmException,
-            InvalidKeySpecException, SegueDatabaseException, NoCredentialsAvailableException;
+    String createPasswordResetTokenForUser(RegisteredUser userToAttachToken) throws
+            SegueDatabaseException;
 
     /**
      * This method will test if the user's reset token is valid reset token for a given user.
@@ -129,13 +124,9 @@ public interface IPasswordAuthenticator extends IAuthenticator {
      *            - the email we're verifying
      * 
      * @return UserDO which has the associated verification token.
-     * @throws NoSuchAlgorithmException
-     *             - if the configured algorithm is not valid.
-     * @throws InvalidKeySpecException
-     *             - if the preconfigured key spec is invalid.
      */
     RegisteredUser createEmailVerificationTokenForUser(final RegisteredUser userToAttachVerificationToken, 
-            final String email) throws NoSuchAlgorithmException, InvalidKeySpecException;
+            final String email);
 
     /**
      * This method tests whether the verification token is valid.

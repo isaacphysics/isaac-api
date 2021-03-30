@@ -73,7 +73,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueServerLogType;
 
 /**
  * An email facade front end.
@@ -324,7 +325,7 @@ public class EmailFacade extends AbstractSegueFacade {
 
             return Response.ok().build();
 
-        } catch (CommunicationException | NoSuchAlgorithmException | InvalidKeySpecException | SegueDatabaseException e) {
+        } catch (SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Error sending verification message.", e);
             log.error(error.getErrorMessage(), e);
@@ -385,7 +386,7 @@ public class EmailFacade extends AbstractSegueFacade {
 
     		for (String key : roles.keySet()) {
 				RegisteredUserDTO prototype = new RegisteredUserDTO();
-				List<RegisteredUserDTO> selectedUsers = Lists.newArrayList();
+				List<RegisteredUserDTO> selectedUsers;
     			
                 Role inferredRole = Role.valueOf(key);
                 Boolean userGroupSelected = roles.get(key);

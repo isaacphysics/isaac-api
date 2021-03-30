@@ -30,7 +30,6 @@ import twitter4j.auth.AccessToken;
 import twitter4j.auth.RequestToken;
 import twitter4j.conf.ConfigurationBuilder;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
@@ -173,7 +172,7 @@ public class TwitterAuthenticator implements IOAuth1Authenticator {
 
     @Override
     public synchronized UserFromAuthProvider getUserInfo(final String internalProviderReference)
-            throws NoUserException, IOException, AuthenticatorSecurityException {
+            throws NoUserException, IOException {
         Credential credentials = credentialStore.get(internalProviderReference);
         twitter.setOAuthAccessToken(new AccessToken(credentials.getAccessToken(), credentials.getRefreshToken()));
 

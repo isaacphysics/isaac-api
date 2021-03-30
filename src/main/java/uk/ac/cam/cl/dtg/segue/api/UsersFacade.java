@@ -103,8 +103,13 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacUserPreferences;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_AUTH_EMAIL_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_AUTH_GROUP_MANAGER_EMAIL_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_AUTH_GROUP_MANAGER_INITIATED_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueServerLogType;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueUserPreferences;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_FKEY_FIELDNAME;
 
 /**
  * User facade.
@@ -860,9 +865,6 @@ public class UsersFacade extends AbstractSegueFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (NoUserException e) {
             return new SegueErrorResponse(Status.NOT_FOUND, "The user specified does not exist.").toResponse();
-        } catch (DuplicateAccountException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST,
-                    "An account already exists with the e-mail address specified.").toResponse();
         } catch (SegueDatabaseException e) {
             log.error("Unable to modify user", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while modifying the user").toResponse();
@@ -918,18 +920,10 @@ public class UsersFacade extends AbstractSegueFacade {
             log.warn("Missing field during update operation. ", e);
             return new SegueErrorResponse(Status.BAD_REQUEST, "You are missing a required field. "
                     + "Please make sure you have specified all mandatory fields in your response.").toResponse();
-        } catch (DuplicateAccountException e) {
-            log.warn(String.format("Duplicated account registration attempt with email '%s'. ", userObjectFromClient.getEmail()));
-            return new SegueErrorResponse(Status.BAD_REQUEST,
-                    "An account already exists with the e-mail address specified.").toResponse();
         } catch (SegueDatabaseException e) {
             String errorMsg = "Unable to set a password, due to an internal database error.";
             log.error(errorMsg, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
-        } catch (AuthenticationProviderMappingException e) {
-            log.warn("Unable to map to a known authenticator during registration. The provider is unknown!");
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Unable to map to a known authenticator. The provider: is unknown").toResponse();
         } catch (EmailMustBeVerifiedException e) {
             log.warn("Someone attempted to register with an Isaac email address: " + userObjectFromClient.getEmail());
             return new SegueErrorResponse(Status.BAD_REQUEST,

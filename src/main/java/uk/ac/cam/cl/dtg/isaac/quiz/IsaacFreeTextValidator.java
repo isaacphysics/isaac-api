@@ -30,9 +30,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.StringChoice;
 import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class IsaacFreeTextValidator implements IValidator {
     private static final Logger log = LoggerFactory.getLogger(IsaacFreeTextValidator.class);

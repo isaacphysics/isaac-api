@@ -332,10 +332,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * 
      * @param email
      * 		- the email we want to send
-     * @throws SegueDatabaseException
-     *             - the content was of incorrect type
      */
-    public void addSystemEmailToQueue(final EmailCommunicationMessage email) throws SegueDatabaseException {
+    public void addSystemEmailToQueue(final EmailCommunicationMessage email) {
         addToQueue(email);
         log.info(String.format("Added system email to the queue with subject: %s", email.getSubject()));
     }
@@ -386,7 +384,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
             if (valueToStore != null) {
                 String existingValue = outputMap.get(keyPrefix + mapEntry.getKey());
-                if (existingValue != null && "".equals(existingValue) && !"".equals(valueToStore)) {
+                if ("".equals(existingValue) && !"".equals(valueToStore)) {
                     // we can safely replace it with a better value
                     outputMap.put(keyPrefix + mapEntry.getKey(), valueToStore);
                 }

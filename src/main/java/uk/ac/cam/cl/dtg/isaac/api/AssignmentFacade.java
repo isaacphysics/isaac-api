@@ -82,8 +82,13 @@ import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.GameboardItemState;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.GameboardState;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacServerLogType;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.ASSIGNMENT_DUEDATE_FK;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.ASSIGNMENT_FK;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.GROUP_FK;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
 import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdFromQuestionId;
 
 /**

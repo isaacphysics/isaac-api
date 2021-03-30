@@ -204,13 +204,11 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
      * @param provider
      *            - The search provider.
      * @return schoolList reader
-     * @throws IOException
-     *             - if there is a problem loading the school list.
      */
     @Inject
     @Provides
     @Singleton
-    private SchoolListReader getSchoolListReader(final ISearchProvider provider) throws IOException {
+    private SchoolListReader getSchoolListReader(final ISearchProvider provider) {
         if (null == schoolListReader) {
             schoolListReader = new SchoolListReader(provider);
             log.info("Creating singleton of SchoolListReader");

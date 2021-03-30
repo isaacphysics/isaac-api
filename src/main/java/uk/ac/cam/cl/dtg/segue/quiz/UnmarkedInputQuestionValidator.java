@@ -45,7 +45,7 @@ public class UnmarkedInputQuestionValidator implements IValidator {
         Validate.notNull(answer);
 
         // check that the question is of type ChoiceQuestion before we go ahead
-        ChoiceQuestion choiceQuestion = null;
+        ChoiceQuestion choiceQuestion;
         if (question instanceof ChoiceQuestion) {
             choiceQuestion = (ChoiceQuestion) question;
             

@@ -15,53 +15,45 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
-import com.google.api.client.util.Maps;
-import com.google.common.io.Files;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.jboss.resteasy.annotations.GZIP;
-import org.jboss.resteasy.annotations.cache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
-import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.annotation.Nullable;
-import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.google.common.collect.Maps.immutableEntry;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_DAY;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_HOUR;
 
 /**
  * Segue Content Facade
@@ -243,26 +235,19 @@ public class SegueContentFacade extends AbstractSegueFacade {
     @GZIP
     @ApiOperation(value = "List all tags currently in use.")
     public final Response getTagListByLiveVersion(@Context final Request request) {
-        try {
-            // Calculate the ETag on last modified date of tags list
-            EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode()
-                    + "tagList".hashCode() + "");
+        // Calculate the ETag on last modified date of tags list
+        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode()
+                + "tagList".hashCode() + "");
 
-            Response cachedResponse = generateCachedResponse(request, etag);
+        Response cachedResponse = generateCachedResponse(request, etag);
 
-            if (cachedResponse != null) {
-                return cachedResponse;
-            }
-
-            Set<String> tags = this.contentManager.getTagsList(this.contentIndex);
-
-            return Response.ok(tags).cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
-        } catch (ContentManagerException e1) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Error locating the version requested",
-                    e1);
-            log.error(error.getErrorMessage(), e1);
-            return error.toResponse();
+        if (cachedResponse != null) {
+            return cachedResponse;
         }
+
+        Set<String> tags = this.contentManager.getTagsList(this.contentIndex);
+
+        return Response.ok(tags).cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
     }
 
     /**
@@ -289,14 +274,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
         }
 
         Collection<String> units;
-        try {
-            units = this.contentManager.getAllUnits(this.contentIndex);
-        } catch (ContentManagerException e1) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Error locating the version requested",
-                    e1);
-            log.error(error.getErrorMessage(), e1);
-            return error.toResponse();
-        }
+        units = this.contentManager.getAllUnits(this.contentIndex);
 
         return Response.ok(units).tag(etag).cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, true)).build();
     }

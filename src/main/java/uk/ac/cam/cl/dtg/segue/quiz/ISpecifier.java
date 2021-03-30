@@ -16,7 +16,6 @@
 package uk.ac.cam.cl.dtg.segue.quiz;
 
 
-import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 
 /**

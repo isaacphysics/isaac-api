@@ -70,7 +70,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.DATE_EXPIRES;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_DATE_FORMAT;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.HMAC;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.HMAC_SALT;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.JSESSION_COOOKIE;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.OAUTH_TOKEN_PARAM_NAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.PARTIAL_LOGIN_FLAG;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_AUTH_COOKIE;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SESSION_EXPIRY_SECONDS_DEFAULT;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SESSION_EXPIRY_SECONDS_REMEMBERED;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SESSION_TOKEN;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SESSION_USER_ID;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.STATE_PARAM_NAME;
 
 /**
  * This class handles all authentication details, including creation / destruction of sessions. It also handles adding
@@ -169,7 +183,7 @@ public class UserAuthenticationManager {
 
         // if we are an OAuthProvider redirect to the provider
         // authorisation URL.
-        URI redirectLink = null;
+        URI redirectLink;
         if (federatedAuthenticator instanceof IOAuth2Authenticator) {
             IOAuth2Authenticator oauth2Provider = (IOAuth2Authenticator) federatedAuthenticator;
             String antiForgeryTokenFromProvider = oauth2Provider.getAntiForgeryStateToken();
@@ -205,8 +219,6 @@ public class UserAuthenticationManager {
      * @return a user object with 3rd party data inside.
      * @throws AuthenticationProviderMappingException
      *             - if we cannot locate an appropriate authenticator.
-     * @throws SegueDatabaseException
-     *             - if there is a local database error.
      * @throws IOException
      *             - Problem reading something
      * @throws NoUserException
@@ -222,14 +234,14 @@ public class UserAuthenticationManager {
      */
     public UserFromAuthProvider getThirdPartyUserInformation(final HttpServletRequest request, final String provider)
             throws AuthenticationProviderMappingException, AuthenticatorSecurityException, NoUserException,
-            IOException, SegueDatabaseException, AuthenticationCodeException, CodeExchangeException,
+            IOException, AuthenticationCodeException, CodeExchangeException,
             CrossSiteRequestForgeryException {
         IAuthenticator authenticator = mapToProvider(provider);
 
         IOAuthAuthenticator oauthProvider;
 
         // this is a reference that the provider can use to look up user details.
-        String providerSpecificUserLookupReference = null;
+        String providerSpecificUserLookupReference;
 
         // if we are an OAuth2Provider complete next steps of oauth
         if (authenticator instanceof IOAuthAuthenticator) {
@@ -531,7 +543,7 @@ public class UserAuthenticationManager {
         Validate.notEmpty(provider, "Provider name must not be empty or null if we are going "
                 + "to map it to an implementation.");
 
-        AuthenticationProvider enumProvider = null;
+        AuthenticationProvider enumProvider;
         try {
             enumProvider = AuthenticationProvider.valueOf(provider.toUpperCase());
         } catch (IllegalArgumentException e) {
@@ -559,18 +571,12 @@ public class UserAuthenticationManager {
      * @param providerUserObject
      *            - the user object provided by the 3rd party authenticator.
      * 
-     * @throws AuthenticatorSecurityException
-     *             - If a third party authenticator fails a security check.
-     * @throws NoUserException
-     *             - If we are unable to find a user that matches
-     * @throws IOException
-     *             - If there is a problem reading from the data source.
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
      */
     public void linkProviderToExistingAccount(final RegisteredUser currentUser,
             final AuthenticationProvider federatedAuthenticator, final UserFromAuthProvider providerUserObject)
-            throws AuthenticatorSecurityException, NoUserException, IOException, SegueDatabaseException {
+            throws SegueDatabaseException {
         Validate.notNull(currentUser);
         Validate.notNull(federatedAuthenticator);
         Validate.notNull(providerUserObject);
@@ -665,8 +671,6 @@ public class UserAuthenticationManager {
 
         } catch (ContentManagerException e) {
             log.error("ContentManagerException " + e.getMessage());
-        } catch (NoCredentialsAvailableException e) {
-            log.error("Unable to find user or credentials " + e.getMessage());
         }
     }
     
@@ -720,13 +724,11 @@ public class UserAuthenticationManager {
      *            - A user DTO object sanitised so that we can send it to the email manager.
      * @param additionalEmailValues
      *            - Additional email values to find and replace including any password reset urls.
-     * @throws CommunicationException
-     *             - if a fault occurred whilst sending the communique
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
      */
     private void sendFederatedAuthenticatorResetMessage(final RegisteredUser user, final RegisteredUserDTO userAsDTO, final Map<String, Object> additionalEmailValues)
-            throws CommunicationException,
+            throws
             SegueDatabaseException {
         Validate.notNull(user);
         
@@ -792,17 +794,13 @@ public class UserAuthenticationManager {
      * @return an internal reference number that will allow retrieval of the users information from the provider.
      * @throws AuthenticationCodeException
      *             - possible authentication code issues.
-     * @throws IOException
-     *             - error reading from client key?
      * @throws CodeExchangeException
      *             - exception whilst exchanging codes
-     * @throws NoUserException
-     *             - cannot find the user requested
      * @throws CrossSiteRequestForgeryException
      *             - Unable to guarantee no CSRF
      */
     private String getOauthInternalRefCode(final IOAuthAuthenticator oauthProvider, final HttpServletRequest request)
-            throws AuthenticationCodeException, IOException, CodeExchangeException, NoUserException,
+            throws AuthenticationCodeException, CodeExchangeException,
             CrossSiteRequestForgeryException {
         // verify there is no cross site request forgery going on.
         if (request.getQueryString() == null || !ensureNoCSRF(request, oauthProvider)) {
@@ -853,8 +851,7 @@ public class UserAuthenticationManager {
         String csrfTokenFromUser = (String) request.getSession().getAttribute(key);
         String csrfTokenFromProvider = request.getParameter(key);
 
-        if (null == csrfTokenFromUser || null == csrfTokenFromProvider
-                || !csrfTokenFromUser.equals(csrfTokenFromProvider)) {
+        if (null == csrfTokenFromUser || !csrfTokenFromUser.equals(csrfTokenFromProvider)) {
             log.error("Invalid state parameter - Provider said: " + request.getParameter(STATE_PARAM_NAME)
                     + " Session said: " + request.getSession().getAttribute(STATE_PARAM_NAME));
             return false;

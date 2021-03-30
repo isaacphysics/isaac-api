@@ -37,7 +37,6 @@ import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -68,11 +67,20 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import static com.google.common.collect.Maps.immutableEntry;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.COMPLETION_FIELDNAME;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.CREATED_DATE_FIELDNAME;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.FASTTRACK_LEVEL;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.GAMEBOARD_ID_FKEY;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.GAMEBOARD_ID_FKEYS;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.GameboardState;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacServerLogType;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.VISITED_DATE_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_TEN_MINUTES;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TITLE_FIELDNAME;
 
 /**
  * Games boards Facade.
@@ -634,10 +642,6 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                     e1);
             log.error(error.getErrorMessage(), e1);
             return error.toResponse();
-        }
-
-        if (null == gameboards) {
-            return Response.noContent().build();
         }
 
         getLogManager().logEvent(

@@ -15,9 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.segue.auth;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
-
 /**
  * Interface representing some kind of hashing service, specially written for Segue.
  */
@@ -27,18 +24,14 @@ public interface ISegueHashingAlgorithm {
      * @param password - plain text password
      * @param salt - salt
      * @return hashed password
-     * @throws NoSuchAlgorithmException
-     * @throws InvalidKeySpecException
      */
-    String hashPassword(final String password, final String salt) throws NoSuchAlgorithmException,
-            InvalidKeySpecException;
+    String hashPassword(final String password, final String salt);
 
     /**
      * Generate a salt value
      * @return random salt
-     * @throws NoSuchAlgorithmException
      */
-    String generateSalt() throws NoSuchAlgorithmException;
+    String generateSalt();
 
     /**
      * A unique identifier for this Segue Compatible algorithm.
@@ -52,9 +45,7 @@ public interface ISegueHashingAlgorithm {
      * @param salt -- salt value
      * @param keyLength - key length
      * @return hash as a byte array
-     * @throws NoSuchAlgorithmException
-     * @throws InvalidKeySpecException
      */
     byte[] computeHash(final String str, final String salt, final int keyLength)
-            throws NoSuchAlgorithmException, InvalidKeySpecException;
+    ;
 }

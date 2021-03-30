@@ -117,7 +117,6 @@ import javax.servlet.ServletContextListener;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.UnknownHostException;
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
@@ -803,23 +802,17 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      * @param password
      *            - the name of the database to configure the wrapper to use.
      * @return PostgresSqlDb db object preconfigured to work with the segue database.
-     * @throws SQLException
-     *             - If we cannot create the connection.
      */
     @Provides
     @Singleton
     @Inject
     private static PostgresSqlDb getPostgresDB(@Named(Constants.POSTGRES_DB_URL) final String databaseUrl,
                                                @Named(Constants.POSTGRES_DB_USER) final String username,
-                                               @Named(Constants.POSTGRES_DB_PASSWORD) final String password) throws SQLException {
+                                               @Named(Constants.POSTGRES_DB_PASSWORD) final String password) {
 
         if (null == postgresDB) {
-            try {
-                postgresDB = new PostgresSqlDb(databaseUrl, username, password);
-                log.info("Created Singleton of PostgresDb wrapper");
-            } catch (ClassNotFoundException e) {
-                log.error("Unable to locate postgres driver.", e);
-            }
+            postgresDB = new PostgresSqlDb(databaseUrl, username, password);
+            log.info("Created Singleton of PostgresDb wrapper");
         }
 
         return postgresDB;
@@ -1035,11 +1028,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         elasticSearchClient.close();
         elasticSearchClient = null;
 
-        try {
-            postgresDB.close();
-            postgresDB = null;
-        } catch (IOException e) {
-            log.error("Unable to close external connection", e);
-        }
+        postgresDB.close();
+        postgresDB = null;
     }
 }

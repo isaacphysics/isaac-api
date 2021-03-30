@@ -538,13 +538,9 @@ public class PgLogManager implements ILogManager {
      * @param ipAddress
      *            - the ip address of the client making the request
      * @return a log event.
-     * @throws JsonProcessingException
-     *             - if we cannot process the json
-     * @throws SegueDatabaseException
-     *             - If we cannot record the ip address location information
      */
     private LogEvent buildLogEvent(final String userId, final String anonymousUserId, final String eventType,
-            final Object eventDetails, final String ipAddress) throws JsonProcessingException, SegueDatabaseException {
+            final Object eventDetails, final String ipAddress) {
         if (null == userId && null == anonymousUserId) {
             throw new IllegalArgumentException("UserId or anonymousUserId must be set.");
         }

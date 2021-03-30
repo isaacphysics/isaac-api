@@ -283,10 +283,8 @@ public interface IContentManager {
      * @param version
      *            - version to look up tag list for.
      * @return A set of tags that have been already used in a particular version of the content
-     * @throws ContentManagerException
-     *             - if there is an error retrieving the content requested.
      */
-    Set<String> getTagsList(String version) throws ContentManagerException;
+    Set<String> getTagsList(String version);
 
     /**
      * A method that will return an unordered set of all units registered for a particular version of the content.
@@ -294,10 +292,8 @@ public interface IContentManager {
      * @param version
      *            - version to look up unit list for.
      * @return A set of units that have been already used in a particular version of the content
-     * @throws ContentManagerException
-     *             - if there is an error retrieving the content requested.
      */
-    Collection<String> getAllUnits(String version) throws ContentManagerException;
+    Collection<String> getAllUnits(String version);
 
     /**
      * Provides a Set of currently indexed and cached versions.

@@ -49,11 +49,9 @@ public interface IStatisticsManager {
      *
      * @throws UnableToIndexSchoolsException
      *             - if there is a problem getting school details.
-     * @throws SegueDatabaseException
-     *             - if there is a database exception.
      */
     List<Map<String, Object>> getSchoolStatistics()
-            throws UnableToIndexSchoolsException, SegueDatabaseException, SegueSearchException;
+            throws UnableToIndexSchoolsException, SegueSearchException;
 
     /**
      * Get the number of users per school.

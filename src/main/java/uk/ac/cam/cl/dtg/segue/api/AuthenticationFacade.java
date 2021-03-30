@@ -69,7 +69,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Map;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.REDIRECT_URL;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueServerLogType;
 
 /**
  * AuthenticationFacade.

@@ -17,7 +17,6 @@ package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -1183,12 +1182,10 @@ public class GameManager {
      * @param id
      *            - of wildcard
      * @return wildcard or an exception.
-     * @throws NoWildcardException
-     *             - if we cannot locate the exception.
      * @throws ContentManagerException
      *             - if we cannot access the content requested.
      */
-    private IsaacWildcard getWildCardById(final String id) throws NoWildcardException, ContentManagerException {
+    private IsaacWildcard getWildCardById(final String id) throws ContentManagerException {
         Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
 
         fieldsToMap.put(immutableEntry(BooleanOperator.AND, ID_FIELDNAME), Collections.singletonList(id));
@@ -1395,10 +1392,6 @@ public class GameManager {
         // wildcard for this gameboard.
         try {
             this.getWildCardById(gameboardDTO.getWildCard().getId());
-        } catch (NoWildcardException e) {
-            throw new InvalidGameboardException(String.format(
-                    "The gameboard provided contains an invalid wildcard with id [%s]", gameboardDTO.getWildCard()
-                            .getId()));
         } catch (ContentManagerException e) {
             log.error("Error validating gameboard.", e);
             throw new InvalidGameboardException(

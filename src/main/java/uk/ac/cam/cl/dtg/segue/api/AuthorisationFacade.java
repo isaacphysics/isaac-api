@@ -61,7 +61,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.ASSOCIATION_TOKEN_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.GROUP_FK;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueServerLogType;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_LIST_FKEY_FIELDNAME;
 
 /**
  * AuthorizationFacade.

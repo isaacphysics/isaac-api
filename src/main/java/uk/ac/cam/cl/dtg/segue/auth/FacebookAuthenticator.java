@@ -126,7 +126,7 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 	}
 
 	@Override
-	public String getAuthorizationUrl(final String antiForgeryStateToken) throws IOException {
+	public String getAuthorizationUrl(final String antiForgeryStateToken) {
         AuthorizationCodeRequestUrl urlBuilder = new AuthorizationCodeRequestUrl(AUTH_URL, clientId);
 
 		urlBuilder.set(Constants.STATE_PARAM_NAME, antiForgeryStateToken);
@@ -139,7 +139,7 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 	}
 
 	@Override
-	public String extractAuthCode(final String url) throws IOException {
+	public String extractAuthCode(final String url) {
 		// Copied verbatim from GoogleAuthenticator.extractAuthCode
         AuthorizationCodeResponseUrl authResponse = new AuthorizationCodeResponseUrl(url);
 
@@ -215,8 +215,7 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 
 	@Override
 	public synchronized UserFromAuthProvider getUserInfo(final String internalProviderReference)
-		throws NoUserException, IOException,
-			AuthenticatorSecurityException {
+		throws NoUserException, AuthenticatorSecurityException {
 		Credential credentials = credentialStore.get(internalProviderReference);
 
 		if (verifyAccessTokenIsValid(credentials)) {

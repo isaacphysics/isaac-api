@@ -22,7 +22,6 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 public class IPQuestionAttemptMisuseHandler implements IMisuseHandler {
@@ -73,11 +72,7 @@ public class IPQuestionAttemptMisuseHandler implements IMisuseHandler {
         final String subject = "HARD Threshold limit reached for IP Address based Question Attempts!";
         EmailCommunicationMessage e = new EmailCommunicationMessage(properties.getProperty(Constants.SERVER_ADMIN_ADDRESS),
                 subject, message, message, EmailType.ADMIN);
-        try {
-            emailManager.addSystemEmailToQueue(e);
-        } catch (SegueDatabaseException e1) {
-            log.error("Database error when attempting to send threshold limit warnings: " + e1.getMessage());
-        }
+        emailManager.addSystemEmailToQueue(e);
         log.warn("Too many requests from an IP Address: " + message + " This may be a scripted attack!");
     }
 }

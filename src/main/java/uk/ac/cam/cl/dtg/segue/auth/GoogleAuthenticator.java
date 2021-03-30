@@ -134,12 +134,10 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
      *            - The allowed URI for callbacks as registered with google.
      * @param requestedScopes
      *            - The scopes that will be granted to Segue.
-     * @throws IOException
-     *             - if we cannot load the secret file.
      */
     public GoogleAuthenticator(final GoogleClientSecrets clientSecret,
             @Named(Constants.GOOGLE_CALLBACK_URI) final String callbackUri,
-            @Named(Constants.GOOGLE_OAUTH_SCOPES) final String requestedScopes) throws IOException {
+            @Named(Constants.GOOGLE_OAUTH_SCOPES) final String requestedScopes) {
         this.jsonFactory = new JacksonFactory();
         this.httpTransport = new NetHttpTransport();
 
@@ -165,8 +163,8 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
     }
 
     @Override
-    public String getAuthorizationUrl(final String antiForgeryStateToken) throws IOException {
-        GoogleAuthorizationCodeRequestUrl urlBuilder = null;
+    public String getAuthorizationUrl(final String antiForgeryStateToken) {
+        GoogleAuthorizationCodeRequestUrl urlBuilder;
         urlBuilder = new GoogleAuthorizationCodeRequestUrl(clientSecrets.getDetails().getClientId(), callbackUri,
                 requestedScopes);
         // .setAccessType("online") // these can be used to force approval each
@@ -179,8 +177,8 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
     }
 
     @Override
-    public String extractAuthCode(final String url) throws IOException {
-        AuthorizationCodeResponseUrl authResponse = new AuthorizationCodeResponseUrl(url.toString());
+    public String extractAuthCode(final String url) {
+        AuthorizationCodeResponseUrl authResponse = new AuthorizationCodeResponseUrl(url);
 
         if (authResponse.getError() == null) {
             log.debug("User granted access to our app.");
@@ -192,7 +190,7 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
     }
 
     @Override
-    public synchronized String exchangeCode(final String authorizationCode) throws IOException, CodeExchangeException {
+    public synchronized String exchangeCode(final String authorizationCode) throws CodeExchangeException {
         try {
             GoogleTokenResponse response = new GoogleAuthorizationCodeTokenRequest(httpTransport, jsonFactory,
                     clientSecrets.getDetails().getClientId(), clientSecrets.getDetails().getClientSecret(),
@@ -218,7 +216,7 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
 
     @Override
     public synchronized UserFromAuthProvider getUserInfo(final String internalProviderReference)
-            throws NoUserException, IOException, AuthenticatorSecurityException {
+            throws NoUserException, AuthenticatorSecurityException {
         Credential credentials = credentialStore.getIfPresent(internalProviderReference);        
         if (verifyAccessTokenIsValid(credentials)) {
             log.debug("Successful Verification of access token with provider.");

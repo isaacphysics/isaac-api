@@ -15,8 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.segue.auth;
 
-import java.io.IOException;
-
 /**
  * This interface defines the required methods for an oauth 2.0 provider.
  * 
@@ -32,10 +30,8 @@ public interface IOAuth2Authenticator extends IOAuthAuthenticator {
 	 * @return String - A url which should be fully formed and ready for the
 	 *         user to login with - this should result in a callback to a
 	 *         prearranged api endpoint if successful.
-	 * @throws IOException
-	 *             - if there is a problem with the end point.
 	 */
-	String getAuthorizationUrl(final String antiForgeryStateToken) throws IOException;
+	String getAuthorizationUrl(final String antiForgeryStateToken);
 
 	/**
 	 * This method generates an anti CSRF token to be included in the

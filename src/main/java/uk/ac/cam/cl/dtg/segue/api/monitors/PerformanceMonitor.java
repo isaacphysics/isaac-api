@@ -20,7 +20,6 @@ import org.apache.commons.lang3.time.StopWatch;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
 import uk.ac.cam.cl.dtg.segue.api.services.MonitorService;
 
 import javax.annotation.Priority;
@@ -59,15 +58,14 @@ public class PerformanceMonitor implements ContainerRequestFilter, ContainerResp
     }
 
     @Override
-    public void filter(final ContainerRequestContext requestContext) throws IOException {
+    public void filter(final ContainerRequestContext requestContext) {
         StopWatch timer = new StopWatch();
         timer.start();
         request.setAttribute("timer", timer);
     }
 
     @Override
-    public void filter(final ContainerRequestContext requestContext, final ContainerResponseContext responseContext)
-            throws IOException {
+    public void filter(final ContainerRequestContext requestContext, final ContainerResponseContext responseContext) {
         StopWatch timer = (StopWatch) request.getAttribute("timer");
         request.removeAttribute("timer");
         

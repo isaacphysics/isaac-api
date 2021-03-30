@@ -1,15 +1,10 @@
 package uk.ac.cam.cl.dtg.segue.dao.userBadges;
 
-import uk.ac.cam.cl.dtg.segue.api.managers.ITransactionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.ITransaction;
 import uk.ac.cam.cl.dtg.segue.dos.UserBadge;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
-
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.SQLException;
 
 /**
  * Created by du220 on 27/04/2018.
