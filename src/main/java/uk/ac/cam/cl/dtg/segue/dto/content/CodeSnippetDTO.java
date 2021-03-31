@@ -19,8 +19,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Glossary Term object The glossary term object is a specialized form of content and allows the storage of data
- * relating to glossary terms.
+ * Code snippet is a special type of content
  *
  */
 public class CodeSnippetDTO extends ContentDTO {
