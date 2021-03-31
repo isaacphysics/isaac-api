@@ -188,6 +188,7 @@ public final class Constants {
     public static final String EVENT_ICAL_UID_DOMAIN = "EVENT_ICAL_UID_DOMAIN";
 
     // MailJet Stuff:
+    public static final String MAILJET_WEBHOOK_TOKEN = "MAILJET_WEBHOOK_TOKEN";
     public static final String MAILJET_API_KEY = "MAILJET_API_KEY";
     public static final String MAILJET_API_SECRET = "MAILJET_API_SECRET";
     public static final String MAILJET_NEWS_LIST_ID = "MAILJET_NEWS_LIST_ID";
@@ -379,6 +380,7 @@ public final class Constants {
 
     // IP Geocoding stuff
     public static final String IP_INFO_DB_API_KEY = "IP_INFO_DB_API_KEY";
+
 
     /*
      * Default values.
