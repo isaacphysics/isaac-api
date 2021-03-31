@@ -110,6 +110,20 @@ ALTER SEQUENCE public.event_bookings_id_seq OWNED BY public.event_bookings.id;
 
 
 --
+-- Name: external_accounts; Type: TABLE; Schema: public; Owner: rutherford
+--
+
+CREATE TABLE public.external_accounts (
+    user_id integer NOT NULL,
+    provider_name text NOT NULL,
+    provider_user_identifier text,
+    provider_last_updated timestamp without time zone
+);
+
+
+ALTER TABLE public.external_accounts OWNER TO rutherford;
+
+--
 -- Name: gameboards; Type: TABLE; Schema: public; Owner: rutherford
 --
 
@@ -824,6 +838,14 @@ ALTER TABLE ONLY public.event_bookings
 
 
 --
+-- Name: external_accounts external_accounts_pk; Type: CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY public.external_accounts
+    ADD CONSTRAINT external_accounts_pk PRIMARY KEY (user_id, provider_name);
+
+
+--
 -- Name: gameboards gameboard-id-pkey; Type: CONSTRAINT; Schema: public; Owner: rutherford
 --
 
@@ -1228,6 +1250,14 @@ ALTER TABLE ONLY public.event_bookings
 
 ALTER TABLE ONLY public.event_bookings
     ADD CONSTRAINT event_bookings_users_id_fk FOREIGN KEY (reserved_by) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: external_accounts external_accounts_fk; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY public.external_accounts
+    ADD CONSTRAINT external_accounts_fk FOREIGN KEY (user_id) REFERENCES public.users(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
