@@ -123,40 +123,38 @@ public class QuizQuestionManager {
      *            question DTOs.
      * @param quizAttempt
      *            - which attempt at the quiz to get attempts for.
-     * @param user
-     *            - which user to augment the questions for.
      * @param includeCorrect
      *            - include whether the answers are correct.
      *
      * @return The quiz object augmented (generally a modified parameter).
      */
-    public IsaacQuizDTO augmentQuestionsForUser(IsaacQuizDTO quiz, QuizAttemptDTO quizAttempt, RegisteredUserDTO user, boolean includeCorrect) throws SegueDatabaseException {
+    public IsaacQuizDTO augmentQuestionsForUser(IsaacQuizDTO quiz, QuizAttemptDTO quizAttempt, boolean includeCorrect) throws SegueDatabaseException {
         List<QuestionDTO> questionsToAugment = GameManager.getAllMarkableQuestionPartsDFSOrder(quiz);
 
         Map<QuestionDTO, QuestionValidationResponse> answerMap = getAnswerMap(quizAttempt, questionsToAugment);
 
         this.augmentQuestionObjectWithAttemptInformation(answerMap, includeCorrect);
 
-        questionManager.shuffleChoiceQuestionsChoices(user.getId().toString(), questionsToAugment);
+        questionManager.shuffleChoiceQuestionsChoices(quizAttempt.getUserId().toString(), questionsToAugment);
 
         return quiz;
     }
 
     /**
      * Modify the quiz to contain feedback for the specified mode, and possibly the users answers and the correct answers.
-     *
+     *  @param quizAttempt
+     *            - which attempt at the quiz to get attempts for.
      * @param quiz
      *            - to augment - this object may be mutated as a result of this method. i.e BestAttempt field set on
      *            question DTOs.
-     * @param quizAttempt
-     *            - which attempt at the quiz to get attempts for.
      * @param feedbackMode
-     *            - the type of feedback to augment.
+     *            - what level of feedback to augment with.
      */
-    public IsaacQuizDTO augmentFeedbackFor(IsaacQuizDTO quiz, QuizAttemptDTO quizAttempt, QuizFeedbackMode feedbackMode) throws SegueDatabaseException, ContentManagerException {
+    public QuizAttemptDTO augmentFeedbackFor(QuizAttemptDTO quizAttempt, IsaacQuizDTO quiz, QuizFeedbackMode feedbackMode) throws SegueDatabaseException, ContentManagerException {
+        quizAttempt.setFeedbackMode(feedbackMode);
         if (feedbackMode == QuizFeedbackMode.NONE) {
             // No feedback, no augmentation to do.
-            return quiz;
+            return quizAttempt;
         }
 
         // Go get the answers
@@ -176,7 +174,9 @@ public class QuizQuestionManager {
 
         quiz.setIndividualFeedback(feedback);
 
-        return quiz;
+        quizAttempt.setQuiz(quiz);
+
+        return quizAttempt;
     }
 
     /**
@@ -208,7 +208,10 @@ public class QuizQuestionManager {
 
             // No questions attempted.
             if (!answers.containsKey(user.getId())) {
-                return new QuizFeedbackDTO(null, null);
+                Map<String, QuizFeedbackDTO.Mark> sectionMarks = sections.stream().collect(Collectors.toMap(
+                    s -> s.getId(),
+                    s -> QuizFeedbackDTO.Mark.notAttempted(quiz.getSectionTotals().get(s.getId()))));
+                return new QuizFeedbackDTO(QuizFeedbackDTO.Mark.notAttempted(quiz.getTotal()), sectionMarks);
             }
 
             // Calculate the scores.

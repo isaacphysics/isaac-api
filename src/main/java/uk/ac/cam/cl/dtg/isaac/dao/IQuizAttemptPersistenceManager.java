@@ -18,6 +18,8 @@ package uk.ac.cam.cl.dtg.isaac.dao;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
+import javax.annotation.Nullable;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -71,8 +73,10 @@ public interface IQuizAttemptPersistenceManager {
      * Mark a quiz complete (or incomplete) in the database.
      *
      * @param quizAttemptId The id of the attempt to delete.
+     * @return The new value for completedDate.
      */
-    void updateAttemptCompletionStatus(Long quizAttemptId, boolean newCompletionStatus) throws SegueDatabaseException;
+    @Nullable
+    Date updateAttemptCompletionStatus(Long quizAttemptId, boolean newCompletionStatus) throws SegueDatabaseException;
 
     /**
      * Get the set of user IDs that have attempted and completed a given assignment.

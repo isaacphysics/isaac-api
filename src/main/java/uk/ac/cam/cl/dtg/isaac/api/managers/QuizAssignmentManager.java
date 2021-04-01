@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
-import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
@@ -142,9 +141,6 @@ public class QuizAssignmentManager implements IAssignmentLike.Details<QuizAssign
 
     public List<QuizAssignmentDTO> getAssignmentsForGroups(List<UserGroupDTO> groups) throws SegueDatabaseException {
         List<Long> groupIds = groups.stream().map(UserGroupDTO::getId).collect(Collectors.toList());
-        if (groups.size() == 0) {
-            return Lists.newArrayList();
-        }
         return this.quizAssignmentPersistenceManager.getAssignmentsByGroupList(groupIds);
     }
 

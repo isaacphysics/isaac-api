@@ -113,7 +113,6 @@ public class IsaacQuizDTO extends SeguePageDTO implements EmailService.HasTitleO
         this.sectionTotals = sectionTotals;
     }
 
-
     @Nullable
     public QuizFeedbackDTO getIndividualFeedback() {
         return individualFeedback;
@@ -121,14 +120,5 @@ public class IsaacQuizDTO extends SeguePageDTO implements EmailService.HasTitleO
 
     public void setIndividualFeedback(QuizFeedbackDTO individualFeedback) {
         this.individualFeedback = individualFeedback;
-    }
-
-    @Nullable
-    public List<QuizUserFeedbackDTO> getUserFeedback() {
-        return userFeedback;
-    }
-
-    public void setUserFeedback(List<QuizUserFeedbackDTO> userFeedback) {
-        this.userFeedback = userFeedback;
     }
 }
