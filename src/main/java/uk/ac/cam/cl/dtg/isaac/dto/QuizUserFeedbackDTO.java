@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 public class QuizUserFeedbackDTO {
     private UserSummaryDTO user;
@@ -35,5 +36,19 @@ public class QuizUserFeedbackDTO {
     @Nullable
     public QuizFeedbackDTO getFeedback() {
         return feedback;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        QuizUserFeedbackDTO that = (QuizUserFeedbackDTO) o;
+        return Objects.equals(user, that.user) &&
+            Objects.equals(feedback, that.feedback);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(user, feedback);
     }
 }

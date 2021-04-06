@@ -232,12 +232,15 @@ public class IsaacTest {
 
     protected void initializeMocks() throws ContentManagerException, SegueDatabaseException {
         quizManager = createMock(QuizManager.class);
-        expect(quizManager.getAvailableQuizzes(true, null, null)).andStubReturn(wrap(studentQuizSummary));
-        expect(quizManager.getAvailableQuizzes(false, null, null)).andStubReturn(wrap(studentQuizSummary, teacherQuizSummary));
-        expect(quizManager.findQuiz(studentQuiz.getId())).andStubReturn(studentQuiz);
-        expect(quizManager.findQuiz(teacherQuiz.getId())).andStubReturn(teacherQuiz);
-        expect(quizManager.findQuiz(otherQuiz.getId())).andStubReturn(otherQuiz);
-        expect(quizManager.extractSectionObjects(studentQuiz)).andStubReturn(ImmutableList.of(quizSection1, quizSection2));
+
+        registerDefaultsFor(quizManager, m -> {
+            expect(m.getAvailableQuizzes(true, null, null)).andStubReturn(wrap(studentQuizSummary));
+            expect(m.getAvailableQuizzes(false, null, null)).andStubReturn(wrap(studentQuizSummary, teacherQuizSummary));
+            expect(m.findQuiz(studentQuiz.getId())).andStubReturn(studentQuiz);
+            expect(m.findQuiz(teacherQuiz.getId())).andStubReturn(teacherQuiz);
+            expect(m.findQuiz(otherQuiz.getId())).andStubReturn(otherQuiz);
+            expect(m.extractSectionObjects(studentQuiz)).andStubReturn(ImmutableList.of(quizSection1, quizSection2));
+        });
 
         groupManager = createPartialMockForAllMethodsExcept(GroupManager.class, "filterItemsBasedOnMembershipContext");
         expect(groupManager.getGroupById(anyLong())).andStubAnswer(() -> {

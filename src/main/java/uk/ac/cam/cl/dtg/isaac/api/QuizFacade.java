@@ -225,10 +225,6 @@ public class QuizFacade extends AbstractIsaacFacade {
             String message = "SegueDatabaseException whilst getting available quizzes";
             log.error(message, e);
             return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, message).toResponse();
-        } catch (ContentManagerException e) {
-            String message = "ContentManagerException whilst getting available quizzes";
-            log.error(message, e);
-            return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
@@ -258,10 +254,6 @@ public class QuizFacade extends AbstractIsaacFacade {
                 .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (SegueDatabaseException e) {
             String message = "SegueDatabaseException whilst getting available quizzes";
-            log.error(message, e);
-            return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, message).toResponse();
-        } catch (ContentManagerException e) {
-            String message = "ContentManagerException whilst getting available quizzes";
             log.error(message, e);
             return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (NoUserLoggedInException e) {
@@ -311,9 +303,8 @@ public class QuizFacade extends AbstractIsaacFacade {
             return ok(quiz)
                 .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, false)).tag(etag).build();
         } catch (ContentManagerException e) {
-            String message = "ContentManagerException whilst previewing a quiz";
-            log.error(message, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+            log.error("Content error whilst previewing a quiz", e);
+            return SegueErrorResponse.getResourceNotFoundResponse("The content for that quiz has become unavailable.");
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
@@ -366,9 +357,11 @@ public class QuizFacade extends AbstractIsaacFacade {
             // Create a quiz attempt
             QuizAttemptDTO quizAttempt = this.quizAttemptManager.fetchOrCreate(quizAssignment, user);
 
-            // TODO: Might as well augment the result to avoid a round-trip
+            quizAttempt = augmentAttempt(quizAttempt, quizAssignment, false);
 
-            return Response.ok(quizAttempt).build();
+            return Response.ok(quizAttempt)
+                .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
+                .build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
@@ -379,6 +372,9 @@ public class QuizFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.FORBIDDEN, "You have already completed your attempt at this quiz.").toResponse();
         } catch (AssignmentCancelledException e) {
             return new SegueErrorResponse(Status.GONE, "This quiz assignment has been cancelled.").toResponse();
+        } catch (ContentManagerException e) {
+            log.error("Content error whilst starting a quiz attempt", e);
+            return SegueErrorResponse.getResourceNotFoundResponse("The content for that quiz has become unavailable.");
         }
     }
 
@@ -428,9 +424,11 @@ public class QuizFacade extends AbstractIsaacFacade {
             // Create a quiz attempt
             QuizAttemptDTO quizAttempt = this.quizAttemptManager.fetchOrCreateFreeQuiz(quiz, user);
 
-            // TODO: Might as well augment the result to avoid a round-trip
+            quizAttempt = augmentAttempt(quizAttempt, null, false);
 
-            return Response.ok(quizAttempt).build();
+            return Response.ok(quizAttempt)
+                .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
+                .build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
@@ -438,9 +436,8 @@ public class QuizFacade extends AbstractIsaacFacade {
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (ContentManagerException e) {
-            String message = "ContentManagerException whilst starting a free quiz attempt";
-            log.error(message, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+            log.error("Content error whilst starting a free quiz attempt", e);
+            return SegueErrorResponse.getResourceNotFoundResponse("The content for that quiz has become unavailable.");
         }
     }
 
@@ -465,16 +462,13 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             QuizAttemptDTO quizAttempt = getIncompleteQuizAttemptForUser(quizAttemptId, user);
 
-            checkQuizAssignmentNotCancelledOrOverdue(quizAttempt);
+            QuizAssignmentDTO quizAssignment = checkQuizAssignmentNotCancelledOrOverdue(quizAttempt);
 
-            IsaacQuizDTO quiz = quizManager.findQuiz(quizAttempt.getQuizId());
+            quizAttempt = augmentAttempt(quizAttempt, quizAssignment, false);
 
-            quiz = quizQuestionManager.augmentQuestionsForUser(quiz, quizAttempt, user, false);
-
-            return Response.ok(quiz)
+            return Response.ok(quizAttempt)
                 .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
                 .build();
-
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
@@ -484,9 +478,8 @@ public class QuizFacade extends AbstractIsaacFacade {
         } catch (AssignmentCancelledException e) {
             return new SegueErrorResponse(Status.FORBIDDEN, "This quiz assignment has been cancelled.").toResponse();
         } catch (ContentManagerException e) {
-            String message = "ContentManagerException whilst getting quiz attempt";
-            log.error(message, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+            log.error("Content error whilst getting quiz attempt", e);
+            return SegueErrorResponse.getResourceNotFoundResponse("The content for that quiz has become unavailable.");
         } catch (ErrorResponseWrapper responseWrapper) {
             return responseWrapper.toResponse();
         }
@@ -509,7 +502,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @GZIP
     @ApiOperation(value = "Get the feedback for a quiz attempt.")
     public final Response getQuizAttemptFeedback(@Context final HttpServletRequest httpServletRequest,
-                                         @PathParam("quizAttemptId") final Long quizAttemptId) {
+                                                 @PathParam("quizAttemptId") final Long quizAttemptId) {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
@@ -530,9 +523,11 @@ public class QuizFacade extends AbstractIsaacFacade {
                 }
             }
 
-            quiz = quizQuestionManager.augmentFeedbackFor(quiz, quizAttempt, feedbackMode);
+            quizAttempt = quizQuestionManager.augmentFeedbackFor(quizAttempt, quiz, feedbackMode);
 
-            return Response.ok(quiz)
+            augmentAttempt(quizAttempt, quizAssignment);
+
+            return Response.ok(quizAttempt)
                 .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
                 .build();
 
@@ -545,9 +540,8 @@ public class QuizFacade extends AbstractIsaacFacade {
         } catch (AssignmentCancelledException e) {
             return new SegueErrorResponse(Status.FORBIDDEN, "This quiz assignment has been cancelled.").toResponse();
         } catch (ContentManagerException e) {
-            String message = "ContentManagerException whilst getting quiz attempt";
-            log.error(message, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+            log.error("Content error whilst getting quiz attempt", e);
+            return SegueErrorResponse.getResourceNotFoundResponse("The content for that quiz has become unavailable.");
         } catch (ErrorResponseWrapper responseWrapper) {
             return responseWrapper.toResponse();
         }
@@ -562,7 +556,7 @@ public class QuizFacade extends AbstractIsaacFacade {
      *            - so that we can extract user information.
      * @param quizAttemptId
      *            - the ID of the quiz the user wishes to attempt.
-     * @return Confirmation or an error.
+     * @return The updated quiz attempt or an error.
      */
     @POST
     @Path("/attempt/{quizAttemptId}/complete")
@@ -584,10 +578,9 @@ public class QuizFacade extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.FORBIDDEN, "That quiz is already complete.").toResponse();
             }
 
-            quizAttemptManager.updateAttemptCompletionStatus(quizAttempt, true);
+            quizAttempt = quizAttemptManager.updateAttemptCompletionStatus(quizAttempt, true);
 
-            return Response.noContent().build();
-
+            return Response.ok(quizAttempt).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
@@ -612,7 +605,7 @@ public class QuizFacade extends AbstractIsaacFacade {
      *            - the ID of the assignment you want to mark an attempt incomplete from.
      * @param userId
      *            - the ID of the user whose attempt you want to mark incomplete.
-     * @return Confirmation or an error.
+     * @return The updated attempt or an error.
      */
     @POST
     @Path("/assignment/{quizAssignmentId}/{userId}/incomplete")
@@ -658,8 +651,14 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             quizAttemptManager.updateAttemptCompletionStatus(quizAttempt, false);
 
-            return Response.noContent().build();
+            QuizUserFeedbackDTO feedback;
+            UserSummaryDTO userSummary = associationManager.enforceAuthorisationPrivacy(user,
+                userManager.convertToUserSummaryObject(student));
 
+            feedback = new QuizUserFeedbackDTO(userSummary,
+                userSummary.isAuthorisedFullAccess() ? new QuizFeedbackDTO() : null);
+
+            return Response.ok(feedback).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
@@ -918,6 +917,9 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             this.getLogManager().logEvent(currentlyLoggedInUser, request, Constants.IsaacServerLogType.SET_NEW_QUIZ_ASSIGNMENT, eventDetails);
 
+            List<QuizAssignmentDTO> assignments = Collections.singletonList(assignmentWithID);
+            quizManager.augmentWithQuizSummary(assignments);
+
             return Response.ok(assignmentWithID).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
@@ -928,9 +930,8 @@ public class QuizFacade extends AbstractIsaacFacade {
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (ContentManagerException e) {
-            String message = "Content error whilst setting quiz";
-            log.error(message, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+            log.error("Content error whilst setting quiz", e);
+            return SegueErrorResponse.getResourceNotFoundResponse("The content for that quiz has become unavailable.");
         }
     }
 
@@ -985,10 +986,6 @@ public class QuizFacade extends AbstractIsaacFacade {
             String message = "Database error whilst getting assigned quizzes";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
-        } catch (ContentManagerException e) {
-            String message = "Content error whilst getting assigned quizzes";
-            log.error(message, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         }
     }
 
@@ -996,7 +993,7 @@ public class QuizFacade extends AbstractIsaacFacade {
      * Allows a teacher to see results of an assignment
      *
      * @param httpServletRequest so that we can extract user information.
-     * @param quizAssignmentId the id of the assignment to cancel.
+     * @param quizAssignmentId the id of the assignment to view.
      *
      * @return Details about the assignment.
      */
@@ -1025,8 +1022,10 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             if (!canManageGroup(user, group)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
-                    "You can only cancel assignments to groups you own or manage.").toResponse();
+                    "You can only view assignments to groups you own or manage.").toResponse();
             }
+
+            this.assignmentService.augmentAssignerSummaries(Collections.singletonList(assignment));
 
             IsaacQuizDTO quiz = quizManager.findQuiz(assignment.getQuizId());
 
@@ -1044,9 +1043,10 @@ public class QuizFacade extends AbstractIsaacFacade {
                     userSummary.isAuthorisedFullAccess() ? feedback.getValue() : null));
             }
 
-            quiz.setUserFeedback(userFeedback);
+            assignment.setUserFeedback(userFeedback);
+            assignment.setQuiz(quiz);
 
-            return Response.ok(quiz)
+            return Response.ok(assignment)
                 .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
@@ -1057,9 +1057,86 @@ public class QuizFacade extends AbstractIsaacFacade {
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (ContentManagerException e) {
-            String message = "Content error whilst viewing quiz assignment";
+            log.error("Content error whilst viewing quiz assignment", e);
+            return SegueErrorResponse.getResourceNotFoundResponse("The content for that quiz has become unavailable.");
+        }
+    }
+
+    /**
+     * Allows a teacher to see a specific user's attempt to an assignment.
+     *
+     * @param httpServletRequest so that we can extract user information.
+     * @param quizAssignmentId the id of the assignment.
+     * @param userId the id of the user to get the answers for.
+     *
+     * @return Details about the user's attempt.
+     */
+    @GET
+    @Path("/assignment/{quizAssignmentId}/attempt/{userId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @ApiOperation(value = "View a quiz assignment attempt.")
+    public final Response getQuizAssignmentAttempt(@Context final HttpServletRequest httpServletRequest,
+                                                   @PathParam("quizAssignmentId") Long quizAssignmentId,
+                                                   @PathParam("userId") Long userId) {
+
+        if (null == quizAssignmentId || null == userId) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid quiz assignment and user id id.").toResponse();
+        }
+
+        try {
+            RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
+
+            if (!(isUserTeacherOrAbove(userManager, user))) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
+            QuizAssignmentDTO assignment = quizAssignmentManager.getById(quizAssignmentId);
+
+            UserGroupDTO group = quizAssignmentManager.getGroupForAssignment(assignment);
+
+            if (!canManageGroup(user, group)) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                    "You can only view assignments to groups you own or manage.").toResponse();
+            }
+
+            RegisteredUserDTO student = this.userManager.getUserDTOById(userId);
+
+            if (!groupManager.isUserInGroup(student, group)) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                    "That student is not in the group for this quiz assignment.").toResponse();
+            }
+
+            if (!associationManager.hasPermission(user, student)) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                    "You do not have access to that student's data.").toResponse();
+            }
+
+            QuizAttemptDTO quizAttempt = quizAttemptManager.getByQuizAssignmentAndUser(assignment, student);
+
+            if (quizAttempt == null || quizAttempt.getCompletedDate() == null) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                    "That student has not completed this quiz assignment.").toResponse();
+            }
+
+            quizAttempt = augmentAttempt(quizAttempt, assignment, true);
+
+            return Response.ok(quizAttempt)
+                .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
+                .build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (AssignmentCancelledException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "This assignment has been cancelled.").toResponse();
+        } catch (SegueDatabaseException e) {
+            String message = "Database error whilst viewing quiz assignment attempt";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        } catch (ContentManagerException e) {
+            log.error("Content error whilst viewing quiz assignment attempt", e);
+            return SegueErrorResponse.getResourceNotFoundResponse("The content for that quiz has become unavailable.");
+        } catch (NoUserException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "That user does not exist.").toResponse();
         }
     }
 
@@ -1166,6 +1243,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         }
     }
 
+    @Nullable
     private QuizAssignmentDTO checkQuizAssignmentNotCancelledOrOverdue(QuizAttemptDTO quizAttempt) throws SegueDatabaseException, AssignmentCancelledException, ErrorResponseWrapper {
         // Relying on the side-effects of getting the assignment.
         QuizAssignmentDTO quizAssignment = getQuizAssignment(quizAttempt);
@@ -1235,4 +1313,20 @@ public class QuizFacade extends AbstractIsaacFacade {
             || isUserAnAdmin(userManager, currentlyLoggedInUser);
     }
 
+    private QuizAttemptDTO augmentAttempt(QuizAttemptDTO quizAttempt, @Nullable QuizAssignmentDTO quizAssignment, boolean includeCorrect) throws ContentManagerException, SegueDatabaseException {
+        IsaacQuizDTO quiz = quizManager.findQuiz(quizAttempt.getQuizId());
+        quiz = quizQuestionManager.augmentQuestionsForUser(quiz, quizAttempt, includeCorrect);
+        quizAttempt.setQuiz(quiz);
+
+        return augmentAttempt(quizAttempt, quizAssignment);
+    }
+
+    private QuizAttemptDTO augmentAttempt(QuizAttemptDTO quizAttempt, @Nullable QuizAssignmentDTO quizAssignment) throws SegueDatabaseException {
+        if (quizAssignment != null) {
+            this.assignmentService.augmentAssignerSummaries(Collections.singletonList(quizAssignment));
+            quizAttempt.setQuizAssignment(quizAssignment);
+        }
+
+        return quizAttempt;
+    }
 }

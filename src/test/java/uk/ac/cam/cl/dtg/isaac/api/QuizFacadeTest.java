@@ -31,6 +31,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizFeedbackDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.QuizUserFeedbackDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -227,6 +228,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                     expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(student))).andAnswer(grantAccess(true));
                     expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(secondStudent))).andAnswer(grantAccess(true));
                 }),
+                prepare(assignmentService, m -> m.augmentAssignerSummaries(Collections.singletonList(studentAssignment))),
                 check(response -> {
                     assertEquals(studentFeedback, getFeedbackFor(student));
                     assertEquals(otherStudentFeedback, getFeedbackFor(secondStudent));
@@ -241,6 +243,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                     expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(student))).andAnswer(grantAccess(true));
                     expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(secondStudent))).andAnswer(grantAccess(false));
                 }),
+                prepare(assignmentService, m -> m.augmentAssignerSummaries(Collections.singletonList(studentAssignment))),
                 check(response -> {
                     assertEquals(studentFeedback, getFeedbackFor(student));
                     assertNull(getFeedbackFor(secondStudent));
@@ -258,7 +261,45 @@ public class QuizFacadeTest extends AbstractFacadeTest {
     }
 
     private QuizFeedbackDTO getFeedbackFor(RegisteredUserDTO student) {
-        return studentQuiz.getUserFeedback().stream().filter(f -> f.getUser().getId().equals(student.getId())).findFirst().get().getFeedback();
+        return studentAssignment.getUserFeedback().stream().filter(f -> f.getUser().getId().equals(student.getId())).findFirst().get().getFeedback();
+    }
+
+    @Test
+    public void getQuizAssignmentAttempt() {
+        IsaacQuizDTO augmentedQuiz = new IsaacQuizDTO();
+        forEndpoint(() -> quizFacade.getQuizAssignmentAttempt(request, studentAssignment.getId(), student.getId()),
+            requiresLogin(),
+            as(studentsTeachersOrAdmin(),
+                prepare(quizAssignmentManager, m -> expect(m.getGroupForAssignment(studentAssignment)).andReturn(studentGroup)),
+                prepare(associationManager, m -> expect(m.hasPermission(currentUser(), student)).andReturn(false)),
+                failsWith(Status.FORBIDDEN)
+            ),
+            as(studentsTeachersOrAdmin(),
+                prepare(quizAssignmentManager, m -> expect(m.getGroupForAssignment(studentAssignment)).andReturn(studentGroup)),
+                prepare(associationManager, m -> expect(m.hasPermission(currentUser(), student)).andReturn(true)),
+                prepare(quizAttemptManager, m -> expect(m.getByQuizAssignmentAndUser(studentAssignment, student)).andReturn(null)),
+                failsWith(Status.FORBIDDEN)
+            ),
+            as(studentsTeachersOrAdmin(),
+                prepare(quizAssignmentManager, m -> expect(m.getGroupForAssignment(studentAssignment)).andReturn(studentGroup)),
+                prepare(associationManager, m -> expect(m.hasPermission(currentUser(), student)).andReturn(true)),
+                prepare(quizAttemptManager, m -> expect(m.getByQuizAssignmentAndUser(studentAssignment, student)).andReturn(studentAttempt)),
+                failsWith(Status.FORBIDDEN)
+            ),
+            as(studentsTeachersOrAdmin(),
+                prepare(quizAssignmentManager, m -> expect(m.getGroupForAssignment(studentAssignment)).andReturn(studentGroup)),
+                prepare(associationManager, m -> expect(m.hasPermission(currentUser(), student)).andReturn(true)),
+                prepare(quizAttemptManager, m -> expect(m.getByQuizAssignmentAndUser(studentAssignment, student)).andReturn(completedAttempt)),
+                prepare(quizQuestionManager, m -> expect(m.augmentQuestionsForUser(studentQuiz, completedAttempt, true)).andReturn(augmentedQuiz)),
+                prepare(assignmentService, m -> {
+                    m.augmentAssignerSummaries(Collections.singletonList(studentAssignment));
+                    expectLastCall();
+                }),
+                succeeds(),
+                check(response -> assertEquals(((QuizAttemptDTO) response.getEntity()).getQuiz(), augmentedQuiz))
+            ),
+            forbiddenForEveryoneElse()
+        );
     }
 
     @Test
@@ -270,6 +311,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                 requiresLogin(),
                 as(studentsTeachersOrAdmin(),
                     prepare(quizAssignmentManager, m -> expect(m.createAssignment(assignmentRequest)).andReturn(newAssignment)),
+                    prepare(quizManager, m -> m.augmentWithQuizSummary(Collections.singletonList(newAssignment))),
                     respondsWith(newAssignment),
                     check(ignoreResponse -> assertEquals(currentUser().getId(), assignmentRequest.getOwnerUserId()))
                 ),
@@ -337,6 +379,9 @@ public class QuizFacadeTest extends AbstractFacadeTest {
     @Test
     public void startQuizAttempt() {
         QuizAttemptDTO attempt = new QuizAttemptDTO();
+        String testQuizId = "TEST_QUIZ_ID";
+        attempt.setQuizId(testQuizId);
+        IsaacQuizDTO testQuiz = new IsaacQuizDTO();
 
         forEndpoint(
             (assignment) -> () -> quizFacade.startQuizAttempt(requestForCaching, request, assignment.getId()),
@@ -344,7 +389,14 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                 requiresLogin(),
                 as(anyOf(student, secondStudent),
                     prepare(quizAttemptManager, m -> expect(m.fetchOrCreate(studentAssignment, currentUser())).andReturn(attempt)),
-                    respondsWith(attempt)),
+                    prepare(quizManager, m -> expect(m.findQuiz(testQuizId)).andReturn(testQuiz)),
+                    prepare(quizQuestionManager, m -> expect(m.augmentQuestionsForUser(testQuiz, attempt, false)).andReturn(testQuiz)),
+                    prepare(assignmentService, m -> {
+                        m.augmentAssignerSummaries(Collections.singletonList(studentAssignment));
+                        expectLastCall();
+                    }),
+                    respondsWith(attempt),
+                    check(_ignore -> assertEquals(testQuiz, attempt.getQuiz()))),
                 forbiddenForEveryoneElse()
             ),
             with(overdueAssignment,
@@ -356,12 +408,21 @@ public class QuizFacadeTest extends AbstractFacadeTest {
     @Test
     public void startFreeQuizAttempt() {
         QuizAttemptDTO attempt = new QuizAttemptDTO();
+        String testQuizId = "TEST_QUIZ_ID";
+        attempt.setQuizId(testQuizId);
+        IsaacQuizDTO testQuiz = new IsaacQuizDTO();
 
         forEndpoint((quiz) -> () -> quizFacade.startFreeQuizAttempt(requestForCaching, request, quiz.getId()),
             with(studentQuiz,
                 requiresLogin(),
                 as(secondStudent,
                     prepare(quizAttemptManager, m -> expect(m.fetchOrCreateFreeQuiz(studentQuiz, secondStudent)).andReturn(attempt)),
+                    prepare(quizManager, m -> {
+                        expect(m.findQuiz(studentQuiz.getId())).andReturn(studentQuiz);
+                        // This is a bit of a swizz; the attempt we return above refers to a different, fresh quiz, which we wire up here.
+                        expect(m.findQuiz(testQuizId)).andReturn(testQuiz);
+                    }),
+                    prepare(quizQuestionManager, m -> expect(m.augmentQuestionsForUser(testQuiz, attempt, false)).andReturn(testQuiz)),
                     respondsWith(attempt)
                 ),
                 as(student,
@@ -387,8 +448,13 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                 ),
                 as(student,
                     prepare(quizQuestionManager, m ->
-                        expect(m.augmentQuestionsForUser(studentQuiz, studentAttempt, student, false)).andReturn(augmentedQuiz)),
-                    respondsWith(augmentedQuiz)
+                        expect(m.augmentQuestionsForUser(studentQuiz, studentAttempt, false)).andReturn(augmentedQuiz)),
+                    prepare(assignmentService, m -> {
+                        m.augmentAssignerSummaries(Collections.singletonList(studentAssignment));
+                        expectLastCall();
+                    }),
+                    respondsWith(studentAttempt),
+                    check(_ignore -> assertEquals(augmentedQuiz, studentAttempt.getQuiz()))
                 )
             ),
             with(overdueAttempt,
@@ -406,7 +472,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
 
     @Test
     public void getQuizAttemptFeedback() {
-        IsaacQuizDTO augmentedQuiz = new IsaacQuizDTO();
+        QuizAttemptDTO augmentedAttempt = new QuizAttemptDTO();
         forEndpoint((attempt) -> () -> quizFacade.getQuizAttemptFeedback(request, attempt.getId()),
             with(studentAttempt,
                 requiresLogin(),
@@ -419,27 +485,35 @@ public class QuizFacadeTest extends AbstractFacadeTest {
             ),
             with(completedAttempt,
                 as(student,
-                    prepare(quizQuestionManager, m -> expect(m.augmentFeedbackFor(studentQuiz, completedAttempt, QuizFeedbackMode.OVERALL_MARK)).andReturn(augmentedQuiz)),
-                    respondsWith(augmentedQuiz)
+                    prepare(quizQuestionManager, m -> expect(m.augmentFeedbackFor(completedAttempt, studentQuiz, QuizFeedbackMode.OVERALL_MARK)).andReturn(augmentedAttempt)),
+                    prepare(assignmentService, m -> {
+                        m.augmentAssignerSummaries(Collections.singletonList(studentAssignment));
+                        expectLastCall();
+                    }),
+                    respondsWith(augmentedAttempt)
                 ),
                 forbiddenForEveryoneElse()
             ),
             with(overdueCompletedAttempt,
                 as(student,
-                    prepare(quizQuestionManager, m -> expect(m.augmentFeedbackFor(studentQuiz, overdueCompletedAttempt, QuizFeedbackMode.SECTION_MARKS)).andReturn(augmentedQuiz)),
-                    respondsWith(augmentedQuiz)
+                    prepare(quizQuestionManager, m -> expect(m.augmentFeedbackFor(overdueCompletedAttempt, studentQuiz, QuizFeedbackMode.SECTION_MARKS)).andReturn(augmentedAttempt)),
+                    prepare(assignmentService, m -> {
+                        m.augmentAssignerSummaries(Collections.singletonList(overdueAssignment));
+                        expectLastCall();
+                    }),
+                    respondsWith(augmentedAttempt)
                 )
             ),
             with(ownCompletedAttempt,
                 as(student,
-                    prepare(quizQuestionManager, m -> expect(m.augmentFeedbackFor(otherQuiz, ownCompletedAttempt, QuizFeedbackMode.DETAILED_FEEDBACK)).andReturn(augmentedQuiz)),
-                    respondsWith(augmentedQuiz)
+                    prepare(quizQuestionManager, m -> expect(m.augmentFeedbackFor(ownCompletedAttempt, otherQuiz, QuizFeedbackMode.DETAILED_FEEDBACK)).andReturn(augmentedAttempt)),
+                    respondsWith(augmentedAttempt)
                 )
             ),
             with(attemptOnNullFeedbackModeQuiz,
                 as(student,
-                    prepare(quizQuestionManager, m -> expect(m.augmentFeedbackFor(teacherQuiz, attemptOnNullFeedbackModeQuiz, QuizFeedbackMode.DETAILED_FEEDBACK)).andReturn(augmentedQuiz)),
-                    respondsWith(augmentedQuiz)
+                    prepare(quizQuestionManager, m -> expect(m.augmentFeedbackFor(attemptOnNullFeedbackModeQuiz, teacherQuiz, QuizFeedbackMode.DETAILED_FEEDBACK)).andReturn(augmentedAttempt)),
+                    respondsWith(augmentedAttempt)
                 )
             )
         );
@@ -447,12 +521,13 @@ public class QuizFacadeTest extends AbstractFacadeTest {
 
     @Test
     public void completeQuizAttempt() {
+        QuizAttemptDTO updatedAttempt = new QuizAttemptDTO();
         forEndpoint((attempt) -> () -> quizFacade.completeQuizAttempt(request, attempt.getId()),
             with(studentAttempt,
                 requiresLogin(),
                 as(student,
-                    prepare(quizAttemptManager, m -> m.updateAttemptCompletionStatus(studentAttempt, true)),
-                    succeeds()
+                    prepare(quizAttemptManager, m -> expect(m.updateAttemptCompletionStatus(studentAttempt, true)).andReturn(updatedAttempt)),
+                    respondsWith(updatedAttempt)
                 ),
                 everyoneElse(
                     failsWith(Status.FORBIDDEN)
@@ -468,15 +543,29 @@ public class QuizFacadeTest extends AbstractFacadeTest {
 
     @Test
     public void completeQuizAttemptMarkIncompleteByTeacher() {
+        QuizAttemptDTO updatedAttempt = new QuizAttemptDTO();
         forEndpoint((user) -> () -> quizFacade.markIncompleteQuizAttempt(request, studentAssignment.getId(), user.getId()),
             with(student,
                 requiresLogin(),
                 as(studentsTeachersOrAdmin(),
                     prepare(quizAttemptManager, m -> {
                         expect(m.getByQuizAssignmentAndUser(studentAssignment, student)).andReturn(completedAttempt);
-                        m.updateAttemptCompletionStatus(completedAttempt, false);
+                        expect(m.updateAttemptCompletionStatus(completedAttempt, false)).andReturn(updatedAttempt);
                     }),
-                    succeeds()
+                    prepare(associationManager, m -> {
+                        expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(student))).andAnswer(grantAccess(true));
+                    }),
+                    respondsWith(new QuizUserFeedbackDTO(getUserSummaryFor(student), new QuizFeedbackDTO()))
+                ),
+                as(studentsTeachersOrAdmin(),
+                    prepare(quizAttemptManager, m -> {
+                        expect(m.getByQuizAssignmentAndUser(studentAssignment, student)).andReturn(completedAttempt);
+                        expect(m.updateAttemptCompletionStatus(completedAttempt, false)).andReturn(updatedAttempt);
+                    }),
+                    prepare(associationManager, m -> {
+                        expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(student))).andAnswer(grantAccess(false));
+                    }),
+                    respondsWith(new QuizUserFeedbackDTO(getUserSummaryFor(student), null))
                 ),
                 everyoneElse(
                     failsWith(Status.FORBIDDEN)

@@ -133,7 +133,7 @@ public class SchoolListReader {
 
         List<String> matchingSchoolList;
         
-        matchingSchoolList = searchProvider.findByPrefix(SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString(),
+        matchingSchoolList = searchProvider.findByExactMatch(SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString(),
                 SCHOOL_URN_FIELDNAME.toLowerCase() + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX,
                 schoolURN, 0, DEFAULT_RESULTS_LIMIT, null).getResults();
 

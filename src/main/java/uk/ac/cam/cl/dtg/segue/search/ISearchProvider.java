@@ -159,6 +159,28 @@ public interface ISearchProvider {
             int startIndex, int limit, Long randomSeed, Map<String, AbstractFilterInstruction> filterInstructions) throws SegueSearchException;
 
     /**
+     * Query for a list of Results that exactly match a given id.
+     *
+     * @param indexBase
+     *            base string for the index that the content is stored in
+     * @param indexType
+     *            - type of index as registered with search provider.
+     * @param fieldname
+     *            - fieldName to search within.
+     * @param needle
+     *            - needle to search for.
+     * @param startIndex
+     *            - start index for results
+     * @param limit
+     *            - the maximum number of results to return -1 will attempt to return all results.
+     * @param filterInstructions
+     *            - post search filter instructions e.g. remove content of a certain type.
+     * @return A list of results that match the id prefix.
+     */
+    ResultsWrapper<String> findByExactMatch(String indexBase, String indexType, String fieldname, String needle,
+                                            int startIndex, int limit, @Nullable Map<String, AbstractFilterInstruction> filterInstructions) throws SegueSearchException;
+
+    /**
      * Query for a list of Results that match a given id prefix.
      * 
      * This is useful if you use un-analysed fields for ids and use the dot separator as a way of nesting fields.

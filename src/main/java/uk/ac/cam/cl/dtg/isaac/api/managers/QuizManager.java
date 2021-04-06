@@ -25,6 +25,8 @@ import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuiz;
 import uk.ac.cam.cl.dtg.isaac.dto.IHasQuizSummary;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizSectionDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -114,13 +116,13 @@ public class QuizManager {
      *
      * @param quizId the id of the quiz.
      *
-     * @return The quiz or null.
+     * @return The quiz.
      */
     public IsaacQuizDTO findQuiz(final String quizId) throws ContentManagerException {
         Content cachedContent = contentManager.getContentDOById(contentIndex, quizId);
 
         if (cachedContent == null) {
-            return null;
+            throw new ContentManagerException("Couldn't find quiz with id " + quizId);
         }
 
         if (cachedContent instanceof IsaacQuiz) {
@@ -132,7 +134,7 @@ public class QuizManager {
                 throw new ContentManagerException("Expected an IsaacQuizDTO, got a " + contentDTO.getType());
             }
         } else {
-            throw new ContentManagerException("Expected an IsaacQuiz, got a " + cachedContent.getType());
+            throw new ContentManagerException("Expected an IsaacQuiz (id=" + quizId + "), got a " + cachedContent.getType());
         }
     }
 
@@ -140,15 +142,25 @@ public class QuizManager {
      * Fetch the quiz for each item and set the quizSummary field.
      *
      * @param items The items to augment.
-     * @throws ContentManagerException If a quiz is missing.
      */
-    public <T extends IHasQuizSummary> void augmentWithQuizSummary(List<T> items) throws ContentManagerException {
+    public <T extends IHasQuizSummary> void augmentWithQuizSummary(List<T> items) {
         Map<String, ContentSummaryDTO> quizCache = new HashMap<>();
         for (IHasQuizSummary item: items) {
             String quizId = item.getQuizId();
             ContentSummaryDTO quiz = quizCache.get(quizId);
             if (quiz == null) {
-                quizCache.put(quizId, quiz = this.contentManager.extractContentSummary(this.findQuiz(quizId)));
+                try {
+                    quiz = this.contentManager.extractContentSummary(this.findQuiz(quizId));
+                } catch (ContentManagerException e) {
+                    if (item instanceof QuizAttemptDTO) {
+                        log.warn("Attempt (" + ((QuizAttemptDTO) item).getId() +  ") exists with quiz ID ("
+                            + item.getQuizId() + ") that does not exist!");
+                    } else if (item instanceof QuizAssignmentDTO) {
+                        log.warn("Assignment (" + ((QuizAssignmentDTO) item).getId() +  ") exists with quiz ID ("
+                            + item.getQuizId() + ") that does not exist!");
+                    }
+                }
+                quizCache.put(quizId, quiz);
             }
             item.setQuizSummary(quiz);
         }

@@ -17,6 +17,7 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 
 import javax.annotation.Nullable;
 import java.util.Map;
+import java.util.Objects;
 
 public class QuizFeedbackDTO {
     public static class Mark {
@@ -28,6 +29,27 @@ public class QuizFeedbackDTO {
             this.correct = 0;
             this.incorrect = 0;
             this.notAttempted = 0;
+        }
+
+        public static Mark notAttempted(Integer notAttempted) {
+            Mark mark = new Mark();
+            mark.notAttempted = notAttempted;
+            return mark;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Mark mark = (Mark) o;
+            return Objects.equals(correct, mark.correct) &&
+                Objects.equals(incorrect, mark.incorrect) &&
+                Objects.equals(notAttempted, mark.notAttempted);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(correct, incorrect, notAttempted);
         }
     }
 
@@ -67,5 +89,20 @@ public class QuizFeedbackDTO {
 
     public void setComplete(boolean complete) {
         this.complete = complete;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        QuizFeedbackDTO that = (QuizFeedbackDTO) o;
+        return Objects.equals(complete, that.complete) &&
+            Objects.equals(overallMark, that.overallMark) &&
+            Objects.equals(sectionMarks, that.sectionMarks);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(complete, overallMark, sectionMarks);
     }
 }
