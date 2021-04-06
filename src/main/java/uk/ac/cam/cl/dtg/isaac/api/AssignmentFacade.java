@@ -86,6 +86,7 @@ import java.util.stream.Collectors;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdFromQuestionId;
+import static uk.ac.cam.cl.dtg.util.NameFormatter.getFilteredGroupNameFromGroup;
 
 /**
  * AssignmentFacade
@@ -185,9 +186,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
                 // Augment with group name if allowed
                 UserGroupDTO group = groupManager.getGroupById(assignment.getGroupId());
-                if (group.getLastUpdated() != null) {
-                    assignment.setGroupName(group.getGroupName());
-                }
+                assignment.setGroupName(getFilteredGroupNameFromGroup(group));
             }
 
             this.assignmentService.augmentAssignerSummaries(assignments);
