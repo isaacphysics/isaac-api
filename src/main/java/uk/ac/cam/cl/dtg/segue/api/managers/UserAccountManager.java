@@ -334,7 +334,7 @@ public class UserAccountManager implements IUserAccountManager {
     public final RegisteredUserDTO authenticateWithCredentials(final HttpServletRequest request,
             final HttpServletResponse response, final String provider, final String email, final String password, final boolean rememberMe)
             throws AuthenticationProviderMappingException, IncorrectCredentialsProvidedException, NoUserException,
-            NoCredentialsAvailableException, SegueDatabaseException, AdditionalAuthenticationRequiredException, MFARequiredButNotConfiguredException {
+            NoCredentialsAvailableException, SegueDatabaseException, AdditionalAuthenticationRequiredException, MFARequiredButNotConfiguredException, InvalidKeySpecException, NoSuchAlgorithmException {
         Validate.notBlank(email);
         Validate.notBlank(password);
 
@@ -421,7 +421,7 @@ public class UserAccountManager implements IUserAccountManager {
      */
     public void ensureCorrectPassword(final String provider, final String email, final String password)
             throws AuthenticationProviderMappingException, IncorrectCredentialsProvidedException, NoUserException,
-            NoCredentialsAvailableException, SegueDatabaseException {
+            NoCredentialsAvailableException, SegueDatabaseException, InvalidKeySpecException, NoSuchAlgorithmException {
 
         // this method will throw an error if the credentials are incorrect.
         this.userAuthenticationManager.getSegueUserFromCredentials(provider, email, password);
@@ -479,7 +479,8 @@ public class UserAccountManager implements IUserAccountManager {
      * @throws NoUserLoggedInException
      *             - if there is no registered user logged in.
      */
-    public final boolean checkUserRole(final RegisteredUserDTO user, final Collection<Role> validRoles) throws NoUserLoggedInException {
+    public final boolean checkUserRole(final RegisteredUserDTO user, final Collection<Role> validRoles)
+            throws NoUserLoggedInException {
         if (null == user) {
             throw new NoUserLoggedInException();
         }
@@ -636,7 +637,8 @@ public class UserAccountManager implements IUserAccountManager {
      * @throws SegueDatabaseException
      *             - If there is another database error
      */
-    public final RegisteredUserDTO getUserDTOById(final Long id, final boolean includeDeleted) throws NoUserException, SegueDatabaseException {
+    public final RegisteredUserDTO getUserDTOById(final Long id, final boolean includeDeleted) throws NoUserException,
+            SegueDatabaseException {
         RegisteredUser user;
         if (includeDeleted) {
             user = this.database.getById(id, true);
@@ -734,7 +736,7 @@ public class UserAccountManager implements IUserAccountManager {
             final HttpServletResponse response, final RegisteredUser user, final String newPassword,
                                                         final boolean rememberMe) throws InvalidPasswordException,
             MissingRequiredFieldException, SegueDatabaseException,
-            EmailMustBeVerifiedException {
+            EmailMustBeVerifiedException, InvalidKeySpecException, NoSuchAlgorithmException {
         Validate.isTrue(user.getId() == null,
                 "When creating a new user the user id must not be set.");
 
@@ -826,8 +828,9 @@ public class UserAccountManager implements IUserAccountManager {
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
      */
-    public RegisteredUserDTO updateUserObject(final RegisteredUser updatedUser, final String newPassword) throws InvalidPasswordException,
-            MissingRequiredFieldException, SegueDatabaseException {
+    public RegisteredUserDTO updateUserObject(final RegisteredUser updatedUser, final String newPassword)
+            throws InvalidPasswordException, MissingRequiredFieldException, SegueDatabaseException,
+            InvalidKeySpecException, NoSuchAlgorithmException {
         Validate.notNull(updatedUser.getId());
 
         // We want to map to DTO first to make sure that the user cannot
@@ -1025,7 +1028,8 @@ public class UserAccountManager implements IUserAccountManager {
      * @throws SegueDatabaseException
      *             if an error occurs
      */
-    public void mergeUserAccounts(final RegisteredUserDTO target, final RegisteredUserDTO source) throws SegueDatabaseException {
+    public void mergeUserAccounts(final RegisteredUserDTO target, final RegisteredUserDTO source)
+            throws SegueDatabaseException {
         // check the users exist
         if (null == target) {
             throw new SegueDatabaseException("Merge users target is null");
@@ -1203,7 +1207,8 @@ public class UserAccountManager implements IUserAccountManager {
      *             - If there is an internal database error.
      */
     public RegisteredUserDTO resetPassword(final String token, final String newPassword)
-            throws InvalidTokenException, InvalidPasswordException, SegueDatabaseException {
+            throws InvalidTokenException, InvalidPasswordException, SegueDatabaseException, InvalidKeySpecException,
+            NoSuchAlgorithmException {
         return this.convertUserDOToUserDTO(this.userAuthenticationManager.resetPassword(token, newPassword));
     }
 

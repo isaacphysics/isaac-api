@@ -302,9 +302,9 @@ public class UserAuthenticationManager {
      *             - If the account exists but does not have a local password
      */
     public final RegisteredUser getSegueUserFromCredentials(final String provider, final String email, 
-                        final String plainTextPassword) throws AuthenticationProviderMappingException, 
-                        SegueDatabaseException, IncorrectCredentialsProvidedException, NoUserException, 
-                        NoCredentialsAvailableException {
+                        final String plainTextPassword) throws AuthenticationProviderMappingException,
+            SegueDatabaseException, IncorrectCredentialsProvidedException, NoUserException,
+            NoCredentialsAvailableException, InvalidKeySpecException, NoSuchAlgorithmException {
         Validate.notBlank(email);
         Validate.notNull(plainTextPassword);
         IAuthenticator authenticator = mapToProvider(provider);
@@ -690,7 +690,7 @@ public class UserAuthenticationManager {
      *             - If there is an internal database error.
      */
     public RegisteredUser resetPassword(final String token, final String newPassword)
-            throws InvalidTokenException, InvalidPasswordException, SegueDatabaseException {
+            throws InvalidTokenException, InvalidPasswordException, SegueDatabaseException, InvalidKeySpecException, NoSuchAlgorithmException {
         // Ensure new password is valid
 
         if (null == newPassword || newPassword.isEmpty()) {

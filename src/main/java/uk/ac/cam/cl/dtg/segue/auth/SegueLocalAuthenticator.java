@@ -88,7 +88,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 
     @Override
     public void setOrChangeUsersPassword(final RegisteredUser userToSetPasswordFor, final String plainTextPassword)
-            throws InvalidPasswordException, SegueDatabaseException {
+            throws InvalidPasswordException, SegueDatabaseException, InvalidKeySpecException, NoSuchAlgorithmException {
         ensureValidPassword(plainTextPassword);
 
         this.updateUsersPasswordWithoutValidation(userToSetPasswordFor, plainTextPassword);
@@ -97,7 +97,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
     @Override
     public RegisteredUser authenticate(final String usersEmailAddress, final String plainTextPassword)
             throws IncorrectCredentialsProvidedException, NoUserException, NoCredentialsAvailableException,
-            SegueDatabaseException {
+            SegueDatabaseException, InvalidKeySpecException, NoSuchAlgorithmException {
 
         if (null == usersEmailAddress || null == plainTextPassword) {
             throw new IncorrectCredentialsProvidedException("Incorrect credentials provided.");
@@ -184,7 +184,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 
     @Override
     public String createPasswordResetTokenForUser(final RegisteredUser userToAttachToken)
-            throws SegueDatabaseException {
+            throws SegueDatabaseException, InvalidKeySpecException, NoSuchAlgorithmException {
         Validate.notNull(userToAttachToken);
 
         LocalUserCredential luc = passwordDataManager.getLocalUserCredential(userToAttachToken.getId());
@@ -267,7 +267,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
      * @throws SegueDatabaseException
      */
     private void updateUsersPasswordWithoutValidation(final RegisteredUser userToSetPasswordFor, final String plainTextPassword)
-            throws SegueDatabaseException {
+            throws SegueDatabaseException, NoSuchAlgorithmException, InvalidKeySpecException {
         String passwordSalt = preferredAlgorithm.generateSalt();
         String hashedPassword = preferredAlgorithm.hashPassword(plainTextPassword, passwordSalt);
 

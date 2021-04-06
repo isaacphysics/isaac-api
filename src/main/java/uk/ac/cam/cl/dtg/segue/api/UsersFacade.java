@@ -251,7 +251,7 @@ public class UsersFacade extends AbstractSegueFacade {
     @ApiOperation(value = "Create a new user or update an existing user.")
     public Response createOrUpdateUserSettings(@Context final HttpServletRequest request,
                                                @Context final HttpServletResponse response,
-                                               final String userObjectString) {
+                                               final String userObjectString) throws InvalidKeySpecException, NoSuchAlgorithmException {
 
         UserSettings userSettingsObjectFromClient;
         String newPassword;
@@ -514,7 +514,8 @@ public class UsersFacade extends AbstractSegueFacade {
     @ApiOperation(value = "Reset an account password using a reset token.",
                   notes = "The 'token' should be generated using one of the endpoints for requesting a password reset.")
     public Response resetPassword(@PathParam("token") final String token, final Map<String, String> clientResponse,
-                                  @Context final HttpServletRequest request) {
+                                  @Context final HttpServletRequest request)
+            throws InvalidKeySpecException, NoSuchAlgorithmException {
         try {
             String newPassword = clientResponse.get("password");
             RegisteredUserDTO userDTO = userManager.resetPassword(token, newPassword);
@@ -765,7 +766,8 @@ public class UsersFacade extends AbstractSegueFacade {
     private Response updateUserObject(final HttpServletRequest request, final HttpServletResponse response,
                                       final RegisteredUser userObjectFromClient, final String passwordCurrent, final String newPassword,
                                       final Map<String, Map<String, Boolean>> userPreferenceObject)
-                                throws IncorrectCredentialsProvidedException, NoCredentialsAvailableException {
+            throws IncorrectCredentialsProvidedException, NoCredentialsAvailableException, InvalidKeySpecException,
+            NoSuchAlgorithmException {
         Validate.notNull(userObjectFromClient.getId());
 
         // this is an update as the user has an id
@@ -899,7 +901,8 @@ public class UsersFacade extends AbstractSegueFacade {
     private Response createUserObjectAndLogIn(final HttpServletRequest request, final HttpServletResponse response,
                                               final RegisteredUser userObjectFromClient, final String newPassword,
                                               final Map<String, Map<String, Boolean>> userPreferenceObject,
-                                              final boolean rememberMe) {
+                                              final boolean rememberMe)
+            throws InvalidKeySpecException, NoSuchAlgorithmException {
         try {
             RegisteredUserDTO savedUser = userManager.createUserObjectAndSession(request, response,
                     userObjectFromClient, newPassword, rememberMe);

@@ -46,7 +46,7 @@ public interface IPasswordAuthenticator extends IAuthenticator {
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
      */
-    void setOrChangeUsersPassword(RegisteredUser user, final String plainTextPassword) throws InvalidPasswordException, SegueDatabaseException;
+    void setOrChangeUsersPassword(RegisteredUser user, final String plainTextPassword) throws InvalidPasswordException, SegueDatabaseException, InvalidKeySpecException, NoSuchAlgorithmException;
 
     /**
      * authenticate This method authenticates a given user based on the given e-mail address and password.
@@ -67,7 +67,7 @@ public interface IPasswordAuthenticator extends IAuthenticator {
      */
     RegisteredUser authenticate(String usersEmailAddress, String plainTextPassword)
             throws IncorrectCredentialsProvidedException, NoUserException, NoCredentialsAvailableException,
-            SegueDatabaseException;
+            SegueDatabaseException, InvalidKeySpecException, NoSuchAlgorithmException;
 
     /**
      * Method to check if a user has a password configured.
@@ -85,7 +85,7 @@ public interface IPasswordAuthenticator extends IAuthenticator {
      * @return The reset token
      */
     String createPasswordResetTokenForUser(RegisteredUser userToAttachToken) throws
-            SegueDatabaseException;
+            SegueDatabaseException, InvalidKeySpecException, NoSuchAlgorithmException;
 
     /**
      * This method will test if the user's reset token is valid reset token for a given user.
