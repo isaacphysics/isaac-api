@@ -29,33 +29,37 @@ public class AssignmentDTO implements IAssignmentLike {
     private String gameboardId;
     private GameboardDTO gameboard;
     private Long groupId;
+    private String groupName;
     private Long ownerUserId;
+    private String notes;
     private UserSummaryDTO assignerSummary;
     private Date creationDate;
     private Date dueDate;
 
     /**
      * Complete AssignmentDTO constructor with all dependencies.
-     * 
      * @param id
      *            - unique id for the gameboard
      * @param gameboardId
      *            - The gameboard to assign as homework.
      * @param ownerUserId
-     *            - User id of the owner of the gameboard.
+*            - User id of the owner of the gameboard.
      * @param groupId
-     *            - Group id who should be assigned the game board.
+*            - Group id who should be assigned the game board.
+     * @param groupName
+     * @param notes
      * @param creationDate
-     *            - the date the assignment was created.
+ *            - the date the assignment was created.
      * @param dueDate
-     *            - the date the assignment should be completed by
      */
     public AssignmentDTO(final Long id, final String gameboardId, final Long ownerUserId, final Long groupId,
-            final Date creationDate, final Date dueDate) {
+                         String groupName, String notes, final Date creationDate, final Date dueDate) {
         this.id = id;
         this.gameboardId = gameboardId;
         this.ownerUserId = ownerUserId;
         this.groupId = groupId;
+        this.groupName = groupName;
+        this.notes = notes;
         this.creationDate = creationDate;
         this.dueDate = dueDate;
     }
@@ -169,6 +173,22 @@ public class AssignmentDTO implements IAssignmentLike {
     }
 
     /**
+     * get the group's name.
+     * @return groupName -- the group's name
+     */
+    public String getGroupName() {
+        return groupName;
+    }
+
+    /**
+     * set the group's name.
+     * @param groupName -- the group's name
+     */
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
+    }
+
+    /**
      * Gets the ownerUserId.
      * 
      * @return the ownerUserId
@@ -185,6 +205,22 @@ public class AssignmentDTO implements IAssignmentLike {
      */
     public void setOwnerUserId(final Long ownerUserId) {
         this.ownerUserId = ownerUserId;
+    }
+
+    /**
+     * get notes to an assignment.
+     * @return notes - the notes
+     */
+    public String getNotes() {
+        return notes;
+    }
+
+    /**
+     * set notes to an assignment.
+     * @param notes - the notes
+     */
+    public void setNotes(String notes) {
+        this.notes = notes;
     }
 
     /**

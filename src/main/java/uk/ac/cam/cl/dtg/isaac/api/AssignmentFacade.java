@@ -45,6 +45,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
@@ -85,6 +86,7 @@ import java.util.stream.Collectors;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdFromQuestionId;
+import static uk.ac.cam.cl.dtg.util.NameFormatter.getFilteredGroupNameFromGroup;
 
 /**
  * AssignmentFacade
@@ -181,6 +183,10 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             // we want to populate gameboard details for the assignment DTO.
             for (AssignmentDTO assignment : assignments) {
                 assignment.setGameboard(gameboardsMap.get(assignment.getGameboardId()));
+
+                // Augment with group name if allowed
+                UserGroupDTO group = groupManager.getGroupById(assignment.getGroupId());
+                assignment.setGroupName(getFilteredGroupNameFromGroup(group));
             }
 
             this.assignmentService.augmentAssignerSummaries(assignments);
@@ -953,7 +959,12 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
             UserGroupDTO assigneeGroup = groupManager.getGroupById(assignmentDTOFromClient.getGroupId());
 
-            if (!isUserTeacherOrAbove(userManager, currentlyLoggedInUser)) {
+            boolean userIsTeacherOrAbove = isUserTeacherOrAbove(userManager, currentlyLoggedInUser);
+            boolean userIsStaff = isUserStaff(userManager, currentlyLoggedInUser);
+            boolean notesIsNullOrEmpty = assignmentDTOFromClient.getNotes() == null || (assignmentDTOFromClient.getNotes() != null && assignmentDTOFromClient.getNotes().isEmpty());
+            boolean notesIsTooLong = assignmentDTOFromClient.getNotes() != null && assignmentDTOFromClient.getNotes().length() > MAX_NOTE_CHAR_LENGTH;
+
+            if (!userIsTeacherOrAbove) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You need a teacher account to create groups and set assignments!").toResponse();
             }
 
@@ -966,6 +977,16 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     && !isUserAnAdmin(userManager, currentlyLoggedInUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only set assignments to groups you own or manage.").toResponse();
+            }
+
+            if (userIsStaff) {
+                if (notesIsTooLong) {
+                    return new SegueErrorResponse(Status.BAD_REQUEST, "Your assignment notes exceed the maximum allowed length of " +
+                            MAX_NOTE_CHAR_LENGTH.toString() + " characters.").toResponse();
+                }
+            } else if (!notesIsNullOrEmpty) {
+                // user is not staff but it is a teacher, if we got here unscathed
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You are not allowed to add assignment notes.").toResponse();
             }
 
             GameboardDTO gameboard = this.gameManager.getGameboard(assignmentDTOFromClient.getGameboardId());
