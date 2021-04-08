@@ -67,6 +67,7 @@ public class ExternalAccountManager implements IExternalAccountManager {
                 try {
 
                     String accountEmail = userRecord.getAccountEmail();
+                    boolean accountEmailDeliveryFailed = EmailVerificationStatus.DELIVERY_FAILED.equals(userRecord.getEmailVerificationStatus());
                     String mailjetId = userRecord.getProviderUserId();
                     JSONObject mailjetDetails;
 
@@ -79,7 +80,7 @@ public class ExternalAccountManager implements IExternalAccountManager {
                             //    Action: GDPR deletion, null out MailJet ID?, update provider_last_updated
                             log.debug("Case: deletion.");
                             deleteUserFromMailJet(mailjetId, userRecord);
-                        } else if (EmailVerificationStatus.DELIVERY_FAILED.equals(userRecord.getEmailVerificationStatus())) {
+                        } else if (accountEmailDeliveryFailed) {
                             // Case: DELIVERY_FAILED but already on MailJet
                             //    Expect: DELIVERY_FAILED, but non-null "mailjet_id"
                             //    Action: same as deletion? Or just remove from lists for now?
@@ -101,7 +102,7 @@ public class ExternalAccountManager implements IExternalAccountManager {
                             updateUserOnMailJet(mailjetId, userRecord);
                         }
                     } else {
-                        if (!EmailVerificationStatus.DELIVERY_FAILED.equals(userRecord.getEmailVerificationStatus())) {
+                        if (!accountEmailDeliveryFailed && !userRecord.isDeleted()) {
                             // Case: new to Isaac, not on MailJet:
                             //    Expect: null "mailjet_id", not DELIVERY_FAILED
                             //    Action: create MailJet ID, update details, update subscriptions, update provider_last_updated
