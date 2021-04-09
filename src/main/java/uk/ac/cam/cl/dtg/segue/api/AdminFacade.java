@@ -649,11 +649,11 @@ public class AdminFacade extends AbstractSegueFacade {
             for (Map<String, Object> eventDetails: eventDetailsList) {
                 String recipientEmail = (String) eventDetails.get("email");
                 // TODO: this is very MailJet specific:
-                String mailjetListId = (String) eventDetails.get("mj_list_id");
+                Integer mailjetListId = (Integer) eventDetails.get("mj_list_id");
                 EmailType unsubscribedEmailType = EmailType.NEWS_AND_UPDATES;
-                if (getProperties().getProperty(MAILJET_NEWS_LIST_ID).equals(mailjetListId)) {
+                if (null != mailjetListId && getProperties().getProperty(MAILJET_NEWS_LIST_ID).equals(mailjetListId.toString())) {
                     unsubscribedEmailType = EmailType.NEWS_AND_UPDATES;
-                } else if (getProperties().getProperty(MAILJET_EVENTS_LIST_ID).equals(mailjetListId)) {
+                } else if (null != mailjetListId && getProperties().getProperty(MAILJET_EVENTS_LIST_ID).equals(mailjetListId.toString())) {
                     unsubscribedEmailType = EmailType.EVENTS;
                 } else {
                     log.warn(String.format("User with email (%s) attempted to unsubscribe from unrecognised list (%s)!", recipientEmail, mailjetListId));
