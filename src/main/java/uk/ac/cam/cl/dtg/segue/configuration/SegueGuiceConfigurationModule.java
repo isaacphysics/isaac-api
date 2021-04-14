@@ -191,6 +191,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         }
     }
 
+    public SegueGuiceConfigurationModule(PropertiesLoader propertyLoader) {
+        if (globalProperties == null) {
+            globalProperties = propertyLoader;
+        }
+    }
+
     @Override
     protected void configure() {
         try {

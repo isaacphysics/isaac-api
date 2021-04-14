@@ -78,6 +78,14 @@ public class PropertiesLoader {
         return value;
     }
 
+    public void setProperty(final String key, final String value) {
+        if (null == key || "".equals(key)) {
+            log.warn("Property key must not be null or empty.");
+        }
+
+        loadedProperties.setProperty(key, value);
+    }
+
     public Set<String> stringPropertyNames() {
         Validate.notBlank(propertiesFile, "Property file cannot be null");
 
