@@ -5,24 +5,25 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.util.Modules;
-import junit.framework.TestFailure;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.utility.DockerImageName;
-import uk.ac.cam.cl.dtg.isaac.IsaacTest;
 import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.isaac.configuration.SegueConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 
-public class EventsFacadeTest extends IsaacTest {
+@PowerMockIgnore("javax.net.ssl.*")
+public class EventsFacadeTest extends AbstractFacadeTest {
 
     public EventsFacade eventsFacade;
 
@@ -44,7 +45,7 @@ public class EventsFacadeTest extends IsaacTest {
     public void setUp() throws RuntimeException {
         PropertiesLoader properties = null;
         try {
-            properties = new PropertiesLoader("/Users/morpheu5/src/isaac/isaac-other-resources/segue-test-config.properties");
+            properties = new PropertiesLoader("../isaac-other-resources/segue-test-config.properties");
         } catch (IOException e) {
             throw new RuntimeException("Error loading properties file." + e);
         }
@@ -68,6 +69,8 @@ public class EventsFacadeTest extends IsaacTest {
 
     @Test
     public void someTest() {
-        assertEquals(1, 1);
+        Response r = eventsFacade.getEvents(this.request, "", 0, 1000, "DESC", false, false, false, false);
+        int status = r.getStatus();
+        assertEquals(status, 200);
     }
 }
