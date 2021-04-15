@@ -538,6 +538,13 @@ public class IsaacNumericValidatorTest {
             boolean result = Whitebox.<Boolean>invokeMethod(validator, "numericValuesMatch", numberToMatch, numberToTest, 2);
             assertTrue(result);
         }
+
+        String powerOfTenToMatch = "10000";
+        List<String> powersOfTenToTest = Arrays.asList("10000", "1x10^4", "1e4", "1E4", "1 x 10**4", "10^4", "10**(4)", "10^{4}", "100x10^2");
+        for (String powerOfTenToTest : powersOfTenToTest) {
+            boolean result = Whitebox.<Boolean>invokeMethod(validator, "numericValuesMatch", powerOfTenToMatch, powerOfTenToTest, 1);
+            assertTrue(result);
+        }
     }
 
     /*
