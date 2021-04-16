@@ -1,42 +1,75 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.util.Modules;
+import ma.glasnost.orika.MapperFacade;
+import org.apache.commons.lang3.SystemUtils;
 import org.junit.Before;
-import org.junit.Rule;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
+import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
+import uk.ac.cam.cl.dtg.isaac.api.services.GroupChangedService;
 import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.isaac.configuration.SegueConfigurationModule;
+import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.PgTransactionManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
+import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
+import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.ISecondFactorAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.SegueTOTPAuthenticator;
+import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
+import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dao.associations.PgAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.PgAnonymousUsers;
+import uk.ac.cam.cl.dtg.segue.dao.users.PgUsers;
+import uk.ac.cam.cl.dtg.segue.database.GitDb;
+import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
+import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import static org.easymock.EasyMock.createMock;
-
+import javax.transaction.TransactionManager;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.powermock.api.easymock.PowerMock.createMock;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_LINUX_CONFIG_LOCATION;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_GIT_DB;
 
 @PowerMockIgnore("javax.net.ssl.*")
 public class EventsFacadeTest extends AbstractFacadeTest {
 
     public EventsFacade eventsFacade;
 
-    @Rule
-    public GenericContainer postgres = new GenericContainer(DockerImageName.parse("postgres:12"))
-            .withExposedPorts(5432)
-            .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust") // Does not require password, OK for testing
+    @ClassRule
+    public PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(DockerImageName.parse("postgres:12"))
+            .withDatabaseName("rutherford")
+            .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust")
+            .withInitScript("src/main/resources/db_scripts/postgres-rutherford-create-script.sql")
+            .waitingFor(Wait.forHealthcheck())
             ;
-    @Rule
+
+    @ClassRule
     public GenericContainer elasticsearch = new GenericContainer(DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch-oss:7.8.0"))
             .withExposedPorts(9200, 9300)
             .withEnv("cluster.name", "isaac")
@@ -46,8 +79,16 @@ public class EventsFacadeTest extends AbstractFacadeTest {
             ;
 
     @Before
-    public void setUp() throws RuntimeException, IOException {
-        PropertiesLoader mockedProperties = new PropertiesLoader("config-templates/windows--local-dev-segue-config.properties") {
+    public void setUp() throws RuntimeException, IOException, ClassNotFoundException {
+        String configLocation = SystemUtils.IS_OS_LINUX ? DEFAULT_LINUX_CONFIG_LOCATION : null;
+        if (System.getProperty("config.location") != null) {
+            configLocation = System.getProperty("config.location");
+        }
+        if (System.getenv("SEGUE_CONFIG_LOCATION") != null){
+            configLocation = System.getenv("SEGUE_CONFIG_LOCATION");
+        }
+
+        PropertiesLoader mockedProperties = new PropertiesLoader(configLocation) {
             final Map<String, String> propertyOverrides = ImmutableMap.of(
                     "SEARCH_CLUSTER_NAME", "isaac"
             );
@@ -57,12 +98,56 @@ public class EventsFacadeTest extends AbstractFacadeTest {
             }
         };
 
+        PostgresSqlDb postgresSqlDb = new PostgresSqlDb(
+            "jdbc:postgres://localhost:5432/rutherford", // FIXME: This needs to pull the right port from the container but the container must be ready
+            "test",
+            "test")
+            ; // user/pass are irrelevant
+        PgUsers pgUsers = new PgUsers(postgresSqlDb);
+        PgAnonymousUsers pgAnonymousUsers = new PgAnonymousUsers(postgresSqlDb);
+        QuestionManager questionDb = createMock(QuestionManager.class);
+        Map<AuthenticationProvider, IAuthenticator> providersToRegister = createMock(Map.class);
+        MapperFacade dtoMapper = createMock(MapperFacade.class);
+        EmailManager emailManager = createMock(EmailManager.class);
+        ILogManager logManager = createMock(ILogManager.class);
+        UserAuthenticationManager userAuthenticationManager = new UserAuthenticationManager(pgUsers, mockedProperties,
+                providersToRegister, dtoMapper, emailManager);
+        ISecondFactorAuthenticator secondFactorManager = createMock(SegueTOTPAuthenticator.class);
+
+        UserAccountManager userAccountManager =
+                new UserAccountManager(pgUsers, questionDb, mockedProperties, providersToRegister, dtoMapper,
+                        emailManager, pgAnonymousUsers, logManager, userAuthenticationManager, secondFactorManager);
+
+        // FIXME: This should be passed in from the environment and point to an actual test repo.
+        GitDb gitDb = new GitDb(mockedProperties.getProperty(LOCAL_GIT_DB));
+        ElasticSearchProvider elasticSearchProvider =
+                new ElasticSearchProvider(ElasticSearchProvider.getTransportClient(
+                        "isaac",
+                        "localhost",
+                        9200)
+                );
+        ContentMapper contentMapper = new ContentMapper();
+        IContentManager contentManager = new GitContentManager(gitDb, elasticSearchProvider, contentMapper, mockedProperties);
+        ObjectMapper objectMapper = new ObjectMapper();
+        EventBookingPersistenceManager bookingPersistanceManager =
+                new EventBookingPersistenceManager(postgresSqlDb, userManager, contentManager, objectMapper, null,
+                        "contentIndex");
+        PgAssociationDataManager pgAssociationDataManager = new PgAssociationDataManager(postgresSqlDb);
+        UserAssociationManager userAssociationManager = new UserAssociationManager(pgAssociationDataManager, userManager, groupManager);
+        PgTransactionManager pgTransactionManager = new PgTransactionManager(postgresSqlDb);
+        EventBookingManager eventBookingManager =
+                new EventBookingManager(bookingPersistanceManager, emailManager, userAssociationManager,
+                        mockedProperties, groupManager, userAccountManager, pgTransactionManager);
+
         // Create Mocked Injector
         SegueGuiceConfigurationModule.setGlobalPropertiesIfNotSet(mockedProperties);
         Module productionModule = Modules.combine(new IsaacGuiceConfigurationModule(), new SegueGuiceConfigurationModule());
         Module testModule = Modules.override(productionModule).with(new AbstractModule() {
             @Override protected void configure() {
                 // ... register mocks
+                bind(UserAccountManager.class).toInstance(userAccountManager);
+                bind(GameManager.class).toInstance(createMock(GameManager.class));
+                bind(GroupChangedService.class).toInstance(createMock(GroupChangedService.class));
             }
         });
         Injector injector = Guice.createInjector(testModule);
@@ -76,8 +161,8 @@ public class EventsFacadeTest extends AbstractFacadeTest {
 
     @Test
     public void someTest() {
-        Response r = eventsFacade.getEvents(this.request, "", 0, 1000, "DESC", false, false, false, false);
-        int status = r.getStatus();
-        assertEquals(status, 200);
+        Response response = eventsFacade.getEvents(this.request, "", 0, 1000, "DESC", false, false, false, false);
+        int status = response.getStatus();
+        assertEquals(status, Response.Status.OK.getStatusCode());
     }
 }

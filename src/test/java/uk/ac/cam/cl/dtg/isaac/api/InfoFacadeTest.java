@@ -6,6 +6,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.util.Modules;
+import org.apache.commons.lang3.SystemUtils;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -36,6 +37,7 @@ import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.replay;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_LINUX_CONFIG_LOCATION;
 
 @PowerMockIgnore("javax.net.ssl.*")
 public class InfoFacadeTest extends IsaacTest {
@@ -60,13 +62,21 @@ public class InfoFacadeTest extends IsaacTest {
 
     @Before
     public void setUp() throws RuntimeException, IOException {
-        PropertiesLoader mockedProperties = new PropertiesLoader("config-templates/windows--local-dev-segue-config.properties") {
-            final Map<String, String> overrides = ImmutableMap.of(
+        String configLocation = SystemUtils.IS_OS_LINUX ? DEFAULT_LINUX_CONFIG_LOCATION : null;
+        if (System.getProperty("config.location") != null) {
+            configLocation = System.getProperty("config.location");
+        }
+        if (System.getenv("SEGUE_CONFIG_LOCATION") != null){
+            configLocation = System.getenv("SEGUE_CONFIG_LOCATION");
+        }
+
+        PropertiesLoader mockedProperties = new PropertiesLoader(configLocation) {
+            final Map<String, String> propertyOverrides = ImmutableMap.of(
                     "SEARCH_CLUSTER_NAME", "isaac"
             );
             @Override
             public String getProperty(String key) {
-                return overrides.getOrDefault(key, super.getProperty(key));
+                return propertyOverrides.getOrDefault(key, super.getProperty(key));
             }
         };
 
