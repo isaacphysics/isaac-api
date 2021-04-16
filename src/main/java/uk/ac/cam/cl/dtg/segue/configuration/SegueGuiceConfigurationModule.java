@@ -162,6 +162,17 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static Map<String, Reflections> reflections = com.google.common.collect.Maps.newHashMap();
 
     /**
+     * A setter method that is mostly useful for testing. It populates the global properties static value if it has not
+     * previously been set.
+     * @param globalProperties PropertiesLoader object to be used for loading properties (if it has not previously been set).
+     */
+    public static void setGlobalPropertiesIfNotSet(final PropertiesLoader globalProperties) {
+        if (SegueGuiceConfigurationModule.globalProperties == null) {
+            SegueGuiceConfigurationModule.globalProperties = globalProperties;
+        }
+    }
+
+    /**
      * Create a SegueGuiceConfigurationModule.
      */
     public SegueGuiceConfigurationModule() {
@@ -188,12 +199,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             } catch (IOException e) {
                 log.error("Error loading properties file.", e);
             }
-        }
-    }
-
-    public SegueGuiceConfigurationModule(PropertiesLoader propertyLoader) {
-        if (globalProperties == null) {
-            globalProperties = propertyLoader;
         }
     }
 

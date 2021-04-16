@@ -5,24 +5,24 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.util.Modules;
-import junit.framework.TestFailure;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.utility.DockerImageName;
-import uk.ac.cam.cl.dtg.isaac.IsaacTest;
 import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.isaac.configuration.SegueConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import java.io.IOException;
-
+import static org.easymock.EasyMock.createMock;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
 import static org.junit.Assert.assertEquals;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
-public class EventsFacadeTest extends IsaacTest {
+public class EventsFacadeTest {
 
     public EventsFacade eventsFacade;
 
@@ -42,16 +42,28 @@ public class EventsFacadeTest extends IsaacTest {
 
     @Before
     public void setUp() throws RuntimeException {
-        PropertiesLoader properties = null;
-        try {
-            properties = new PropertiesLoader("/Users/morpheu5/src/isaac/isaac-other-resources/segue-test-config.properties");
-        } catch (IOException e) {
-            throw new RuntimeException("Error loading properties file." + e);
-        }
-        properties.setProperty("POSTGRES_DB_URL", "jdbc:postgresql://localhost:" + postgres.getMappedPort(5432) + "/rutherford");
+        PropertiesLoader mockedProperties = createMock(PropertiesLoader.class);
+        expect(mockedProperties.getProperty(SEARCH_CLUSTER_NAME)).andReturn("isaac").anyTimes();
+        expect(mockedProperties.getProperty(SEARCH_CLUSTER_ADDRESS)).andReturn("").anyTimes();
+        expect(mockedProperties.getProperty(SEARCH_CLUSTER_PORT)).andReturn("").anyTimes();
+
+        expect(mockedProperties.getProperty(HOST_NAME)).andReturn("").anyTimes();
+        expect(mockedProperties.getProperty(MAILER_SMTP_SERVER)).andReturn("").anyTimes();
+        expect(mockedProperties.getProperty(MAIL_FROM_ADDRESS)).andReturn("").anyTimes();
+        expect(mockedProperties.getProperty(MAIL_NAME)).andReturn("").anyTimes();
+        expect(mockedProperties.getProperty(SERVER_ADMIN_ADDRESS)).andReturn("").anyTimes();
+
+        expect(mockedProperties.getProperty(LOGGING_ENABLED)).andReturn("").anyTimes();
+        expect(mockedProperties.getProperty(IP_INFO_DB_API_KEY)).andReturn("").anyTimes();
+        expect(mockedProperties.getProperty(SCHOOL_CSV_LIST_PATH)).andReturn("").anyTimes();
+        expect(mockedProperties.getProperty(CONTENT_INDEX)).andReturn("").anyTimes();
+        expect(mockedProperties.getProperty(API_METRICS_EXPORT_PORT)).andReturn("").anyTimes();
+
+        replay(mockedProperties);
 
         // Create Mocked Injector
-        Module productionModule = Modules.combine(new IsaacGuiceConfigurationModule(), new SegueGuiceConfigurationModule(properties));
+        SegueGuiceConfigurationModule.setGlobalPropertiesIfNotSet(mockedProperties);
+        Module productionModule = Modules.combine(new IsaacGuiceConfigurationModule(), new SegueGuiceConfigurationModule());
         Module testModule = Modules.override(productionModule).with(new AbstractModule() {
             @Override protected void configure() {
                 // ... register mocks
