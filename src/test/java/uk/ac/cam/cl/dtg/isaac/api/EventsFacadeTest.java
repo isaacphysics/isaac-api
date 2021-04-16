@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -8,6 +9,7 @@ import com.google.inject.util.Modules;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.utility.DockerImageName;
 import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
@@ -17,12 +19,15 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import static org.easymock.EasyMock.createMock;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.replay;
-import static org.junit.Assert.assertEquals;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
-public class EventsFacadeTest {
+import javax.ws.rs.core.Response;
+import java.io.IOException;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+
+@PowerMockIgnore("javax.net.ssl.*")
+public class EventsFacadeTest extends AbstractFacadeTest {
 
     public EventsFacade eventsFacade;
 
@@ -41,25 +46,16 @@ public class EventsFacadeTest {
             ;
 
     @Before
-    public void setUp() throws RuntimeException {
-        PropertiesLoader mockedProperties = createMock(PropertiesLoader.class);
-        expect(mockedProperties.getProperty(SEARCH_CLUSTER_NAME)).andReturn("isaac").anyTimes();
-        expect(mockedProperties.getProperty(SEARCH_CLUSTER_ADDRESS)).andReturn("").anyTimes();
-        expect(mockedProperties.getProperty(SEARCH_CLUSTER_PORT)).andReturn("").anyTimes();
-
-        expect(mockedProperties.getProperty(HOST_NAME)).andReturn("").anyTimes();
-        expect(mockedProperties.getProperty(MAILER_SMTP_SERVER)).andReturn("").anyTimes();
-        expect(mockedProperties.getProperty(MAIL_FROM_ADDRESS)).andReturn("").anyTimes();
-        expect(mockedProperties.getProperty(MAIL_NAME)).andReturn("").anyTimes();
-        expect(mockedProperties.getProperty(SERVER_ADMIN_ADDRESS)).andReturn("").anyTimes();
-
-        expect(mockedProperties.getProperty(LOGGING_ENABLED)).andReturn("").anyTimes();
-        expect(mockedProperties.getProperty(IP_INFO_DB_API_KEY)).andReturn("").anyTimes();
-        expect(mockedProperties.getProperty(SCHOOL_CSV_LIST_PATH)).andReturn("").anyTimes();
-        expect(mockedProperties.getProperty(CONTENT_INDEX)).andReturn("").anyTimes();
-        expect(mockedProperties.getProperty(API_METRICS_EXPORT_PORT)).andReturn("").anyTimes();
-
-        replay(mockedProperties);
+    public void setUp() throws RuntimeException, IOException {
+        PropertiesLoader mockedProperties = new PropertiesLoader("config-templates/windows--local-dev-segue-config.properties") {
+            final Map<String, String> propertyOverrides = ImmutableMap.of(
+                    "SEARCH_CLUSTER_NAME", "isaac"
+            );
+            @Override
+            public String getProperty(String key) {
+                return propertyOverrides.getOrDefault(key, super.getProperty(key));
+            }
+        };
 
         // Create Mocked Injector
         SegueGuiceConfigurationModule.setGlobalPropertiesIfNotSet(mockedProperties);
@@ -80,6 +76,8 @@ public class EventsFacadeTest {
 
     @Test
     public void someTest() {
-        assertEquals(1, 1);
+        Response r = eventsFacade.getEvents(this.request, "", 0, 1000, "DESC", false, false, false, false);
+        int status = r.getStatus();
+        assertEquals(status, 200);
     }
 }
