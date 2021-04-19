@@ -68,6 +68,7 @@ public class ExternalAccountManager implements IExternalAccountManager {
 
                     String accountEmail = userRecord.getAccountEmail();
                     boolean accountEmailDeliveryFailed = EmailVerificationStatus.DELIVERY_FAILED.equals(userRecord.getEmailVerificationStatus());
+                    boolean subscribedToAnyLists = userRecord.allowsNewsEmails() || userRecord.allowsEventsEmails();
                     String mailjetId = userRecord.getProviderUserId();
                     JSONObject mailjetDetails;
 
@@ -102,16 +103,17 @@ public class ExternalAccountManager implements IExternalAccountManager {
                             updateUserOnMailJet(mailjetId, userRecord);
                         }
                     } else {
-                        if (!accountEmailDeliveryFailed && !userRecord.isDeleted()) {
+                        if (!accountEmailDeliveryFailed && !userRecord.isDeleted() && subscribedToAnyLists) {
                             // Case: new to Isaac, not on MailJet:
-                            //    Expect: null "mailjet_id", not DELIVERY_FAILED
+                            //    Expect: null "mailjet_id", not DELIVERY_FAILED, not deleted, subscribed to at least one list
                             //    Action: create MailJet ID, update details, update subscriptions, update provider_last_updated
-                            log.debug("Case: new to Isaac/not on MailJet");
+                            log.debug("Case: new to Isaac/not yet on MailJet");
                             mailjetId = mailjetApi.addNewUserOrGetUserIfExists(accountEmail);
                             updateUserOnMailJet(mailjetId, userRecord);
                         } else {
-                            // Not on MailJet, but invalid email so don't add to MailJet.
-                            log.debug("Case: invalid/incorrect user to skip.");
+                            // Case: not on MailJet, do not upload to Mailjet:
+                            //     Expect: either invalid email, deleted, or not subscribed at all so don't upload.
+                            log.debug("Case: invalid/incorrect/already-unsubscribed user to skip.");
                             database.updateExternalAccount(userId, null);
                         }
                     }
