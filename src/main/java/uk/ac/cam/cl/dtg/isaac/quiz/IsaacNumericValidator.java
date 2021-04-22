@@ -168,11 +168,7 @@ public class IsaacNumericValidator implements IValidator {
                     validUnits = bestResponse.getCorrectUnits();
                 }
                 // Our new bestResponse is about incorrect significant figures:
-                Content sigFigResponse = new Content(
-                        "Your <strong>Significant figures</strong> are incorrect, "
-                                + "read our "
-                                + "<strong><a target='_blank' href='/solving_problems#acc_solving_problems_sig_figs'>"
-                                + "sig fig guide</a></strong>.");
+                Content sigFigResponse = new Content(DEFAULT_VALIDATION_RESPONSE);
                 sigFigResponse.setTags(new HashSet<>(Collections.singletonList("sig_figs")));
                 bestResponse = new QuantityValidationResponse(question.getId(), answerFromUser, false, sigFigResponse,
                         false, validUnits, new Date());
