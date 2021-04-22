@@ -392,7 +392,7 @@ public class IsaacNumericValidatorTest {
         // Test response:
         QuestionValidationResponse response_1sf = validator.validateQuestionResponse(someNumericQuestion, q_1sf);
         assertFalse("expected 2 not to match 1.6875 to 2 or 3 sf", response_1sf.isCorrect());
-        assertTrue(response_1sf.getExplanation().getValue().toLowerCase().contains("check your working"));
+        assertTrue(response_1sf.getExplanation().getTags().contains("sig_figs"));
     }
 
     //  ---------- Tests from here test invalid questions themselves ----------
