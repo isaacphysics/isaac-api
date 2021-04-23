@@ -10,7 +10,6 @@ import com.google.inject.util.Modules;
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.SystemUtils;
 import org.junit.Before;
-import org.junit.ClassRule;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.testcontainers.containers.GenericContainer;
@@ -46,7 +45,6 @@ import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import javax.transaction.TransactionManager;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Map;
@@ -61,25 +59,43 @@ public class EventsFacadeTest extends AbstractFacadeTest {
 
     public EventsFacade eventsFacade;
 
-    @ClassRule
-    public PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(DockerImageName.parse("postgres:12"))
-            .withDatabaseName("rutherford")
-            .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust")
-            .withInitScript("src/main/resources/db_scripts/postgres-rutherford-create-script.sql")
-            .waitingFor(Wait.forHealthcheck())
-            ;
-
-    @ClassRule
-    public GenericContainer elasticsearch = new GenericContainer(DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch-oss:7.8.0"))
-            .withExposedPorts(9200, 9300)
-            .withEnv("cluster.name", "isaac")
-            .withEnv("network.host", "0.0.0.0")
-            .withEnv("node.name", "localhost")
-            .withEnv("cluster.initial_master_nodes", "localhost")
-            ;
+//    @ClassRule
+//    public PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(DockerImageName.parse("postgres:12"))
+//            .withDatabaseName("rutherford")
+//            .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust")
+//            .withInitScript("src/main/resources/db_scripts/postgres-rutherford-create-script.sql")
+//            .waitingFor(Wait.forHealthcheck())
+//            ;
+//
+//    @ClassRule
+//    public GenericContainer<?> elasticsearch = new GenericContainer<>(DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch-oss:7.8.0"))
+//            .withExposedPorts(9200, 9300)
+//            .withEnv("cluster.name", "isaac")
+//            .withEnv("network.host", "0.0.0.0")
+//            .withEnv("node.name", "localhost")
+//            .withEnv("cluster.initial_master_nodes", "localhost")
+//            ;
 
     @Before
     public void setUp() throws RuntimeException, IOException, ClassNotFoundException {
+        PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(DockerImageName.parse("postgres:12"))
+                .withDatabaseName("rutherford")
+                .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust")
+                .withInitScript("src/main/resources/db_scripts/postgres-rutherford-create-script.sql")
+                .waitingFor(Wait.forHealthcheck())
+                ;
+        postgres.start();
+
+        GenericContainer<?> elasticsearch = new GenericContainer<>(DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch-oss:7.8.0"))
+                .withExposedPorts(9200, 9300)
+                .withEnv("cluster.name", "isaac")
+                .withEnv("network.host", "0.0.0.0")
+                .withEnv("node.name", "localhost")
+                .withEnv("cluster.initial_master_nodes", "localhost")
+                .waitingFor(Wait.forHealthcheck());
+                ;
+        elasticsearch.start();
+
         String configLocation = SystemUtils.IS_OS_LINUX ? DEFAULT_LINUX_CONFIG_LOCATION : null;
         if (System.getProperty("config.location") != null) {
             configLocation = System.getProperty("config.location");
@@ -99,14 +115,18 @@ public class EventsFacadeTest extends AbstractFacadeTest {
         };
 
         PostgresSqlDb postgresSqlDb = new PostgresSqlDb(
-            "jdbc:postgres://localhost:5432/rutherford", // FIXME: This needs to pull the right port from the container but the container must be ready
+            "jdbc:postgres://localhost:" + postgres.getMappedPort(5432) + "/rutherford",
             "test",
             "test")
-            ; // user/pass are irrelevant
+            ; // user/pass are irrelevant because POSTGRES_HOST_AUTH_METHOD is set to "trust"
+        
         PgUsers pgUsers = new PgUsers(postgresSqlDb);
         PgAnonymousUsers pgAnonymousUsers = new PgAnonymousUsers(postgresSqlDb);
         QuestionManager questionDb = createMock(QuestionManager.class);
+
+        // The following may need some actual authentication providers...
         Map<AuthenticationProvider, IAuthenticator> providersToRegister = createMock(Map.class);
+
         MapperFacade dtoMapper = createMock(MapperFacade.class);
         EmailManager emailManager = createMock(EmailManager.class);
         ILogManager logManager = createMock(ILogManager.class);
@@ -124,7 +144,7 @@ public class EventsFacadeTest extends AbstractFacadeTest {
                 new ElasticSearchProvider(ElasticSearchProvider.getTransportClient(
                         "isaac",
                         "localhost",
-                        9200)
+                        elasticsearch.getMappedPort(9200))
                 );
         ContentMapper contentMapper = new ContentMapper();
         IContentManager contentManager = new GitContentManager(gitDb, elasticSearchProvider, contentMapper, mockedProperties);

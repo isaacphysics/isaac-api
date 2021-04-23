@@ -47,12 +47,12 @@ public class InfoFacadeTest extends IsaacTest {
     public Request requestForCaching;
 
     @ClassRule
-    public static GenericContainer postgres = new GenericContainer(DockerImageName.parse("postgres:12"))
+    public static GenericContainer<?> postgres = new GenericContainer<>(DockerImageName.parse("postgres:12"))
             .withExposedPorts(5432)
             .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust") // Does not require password, OK for testing
             ;
     @ClassRule
-    public static GenericContainer elasticsearch = new GenericContainer(DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch-oss:7.8.0"))
+    public static GenericContainer<?> elasticsearch = new GenericContainer<>(DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch-oss:7.8.0"))
             .withExposedPorts(9200, 9300)
             .withEnv("cluster.name", "isaac")
             .withEnv("network.host", "0.0.0.0")
