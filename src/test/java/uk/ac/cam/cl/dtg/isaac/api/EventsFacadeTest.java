@@ -10,11 +10,15 @@ import com.google.inject.util.Modules;
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.SystemUtils;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.ext.ScriptUtils;
+import org.testcontainers.jdbc.JdbcDatabaseDelegate;
 import org.testcontainers.utility.DockerImageName;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
@@ -47,6 +51,9 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -59,30 +66,19 @@ public class EventsFacadeTest extends AbstractFacadeTest {
 
     public EventsFacade eventsFacade;
 
-//    @ClassRule
-//    public PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(DockerImageName.parse("postgres:12"))
-//            .withDatabaseName("rutherford")
-//            .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust")
-//            .withInitScript("src/main/resources/db_scripts/postgres-rutherford-create-script.sql")
-//            .waitingFor(Wait.forHealthcheck())
-//            ;
-//
-//    @ClassRule
-//    public GenericContainer<?> elasticsearch = new GenericContainer<>(DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch-oss:7.8.0"))
-//            .withExposedPorts(9200, 9300)
-//            .withEnv("cluster.name", "isaac")
-//            .withEnv("network.host", "0.0.0.0")
-//            .withEnv("node.name", "localhost")
-//            .withEnv("cluster.initial_master_nodes", "localhost")
-//            ;
-
     @Before
     public void setUp() throws RuntimeException, IOException, ClassNotFoundException {
+        LogMessageWaitStrategy postgresWaitStrategy = new LogMessageWaitStrategy();
+        Path initScriptPath = Paths.get("src", "main", "resources", "db_scripts", "postgres-rutherford-create-script.sql");
+        postgresWaitStrategy.withRegEx(".*database system is ready to accept connections.*");
+
         PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(DockerImageName.parse("postgres:12"))
                 .withDatabaseName("rutherford")
                 .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust")
-                .withInitScript("src/main/resources/db_scripts/postgres-rutherford-create-script.sql")
-                .waitingFor(Wait.forHealthcheck())
+                .withUsername("rutherford")
+                .withPassword("somerandompassword")
+                .withUrlParam("TC_INITSCRIPT", "file:postgres-rutherford-create-script.sql")
+                .waitingFor(postgresWaitStrategy)
                 ;
         postgres.start();
 
@@ -94,7 +90,7 @@ public class EventsFacadeTest extends AbstractFacadeTest {
                 .withEnv("cluster.initial_master_nodes", "localhost")
                 .waitingFor(Wait.forHealthcheck());
                 ;
-        elasticsearch.start();
+//        elasticsearch.start();
 
         String configLocation = SystemUtils.IS_OS_LINUX ? DEFAULT_LINUX_CONFIG_LOCATION : null;
         if (System.getProperty("config.location") != null) {
@@ -115,9 +111,9 @@ public class EventsFacadeTest extends AbstractFacadeTest {
         };
 
         PostgresSqlDb postgresSqlDb = new PostgresSqlDb(
-            "jdbc:postgres://localhost:" + postgres.getMappedPort(5432) + "/rutherford",
-            "test",
-            "test")
+            postgres.getJdbcUrl(),
+            "rutherford",
+            "somerandompassword")
             ; // user/pass are irrelevant because POSTGRES_HOST_AUTH_METHOD is set to "trust"
         
         PgUsers pgUsers = new PgUsers(postgresSqlDb);
