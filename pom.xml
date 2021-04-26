@@ -35,7 +35,11 @@
             <id>jgit-repository</id>
             <url>https://repo.eclipse.org/content/groups/releases/</url>
         </repository>
-    </repositories>
+        <repository>
+            <id>central</id>
+            <name>Maven Central</name>
+            <url>https://repo1.maven.org/maven2/</url>
+        </repository></repositories>
     <dependencies>
         <dependency>
             <groupId>org.isaacphysics.thirdparty</groupId>
@@ -219,6 +223,12 @@
             <version>1.15.3</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>elasticsearch</artifactId>
+            <version>1.15.3</version>
+            <scope>test</scope>
+        </dependency>
 
         <dependency>
             <groupId>org.powermock</groupId>
@@ -393,6 +403,12 @@
                     <artifactId>resteasy-jaxrs</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>uk.ac.cam.cl.dtg.teaching</groupId>
+            <artifactId>isaac-api</artifactId>
+            <version>2.16.6-SNAPSHOT</version>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>
