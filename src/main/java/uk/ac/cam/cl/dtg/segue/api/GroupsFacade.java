@@ -680,7 +680,7 @@ public class GroupsFacade extends AbstractSegueFacade {
      *
      * @param request - for authentication
      * @param groupId - group to delete the manager from
-     * @param userId - the additional manager to delete
+     * @param userIdToRemove - the additional manager to delete
      * @return No Content response or error response
      */
     @DELETE
@@ -690,28 +690,31 @@ public class GroupsFacade extends AbstractSegueFacade {
     @ApiOperation(value = "Remove an additional manager from a group.")
     public Response removeAdditionalManagerFromGroup(@Context final HttpServletRequest request,
                                                 @PathParam("group_id") final Long groupId,
-                                                   @PathParam("user_id") final Long userId) {
+                                                   @PathParam("user_id") final Long userIdToRemove) {
         if (null == groupId) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "The group ID must be specified.").toResponse();
         }
 
-        if (null == userId) {
+        if (null == userIdToRemove) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "The ID of the user to remove must be specified.").toResponse();
         }
 
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
-
             UserGroupDTO group = groupManager.getGroupById(groupId);
 
-            if (!group.getOwnerId().equals(user.getId()) && !isUserAnAdmin(userManager, user)) {
+            boolean userIsGroupOwner = group.getOwnerId().equals(user.getId());
+            boolean userIsAdditionalManager = GroupManager.isInAdditionalManagerList(group, user.getId());
+            boolean managerRemovingThemselves = userIsAdditionalManager && user.getId().equals(userIdToRemove);
+
+            if (!userIsGroupOwner && !managerRemovingThemselves && !isUserAnAdmin(userManager, user)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "Only group owners can modify additional group managers!").toResponse();
             }
 
-            RegisteredUserDTO userToRemove = this.userManager.getUserDTOById(userId);
+            RegisteredUserDTO userToRemove = this.userManager.getUserDTOById(userIdToRemove);
 
             this.getLogManager().logEvent(user, request, SegueServerLogType.DELETE_ADDITIONAL_GROUP_MANAGER,
-                    ImmutableMap.of(GROUP_FK, group.getId(), USER_ID_FKEY_FIELDNAME, userId));
+                    ImmutableMap.of(GROUP_FK, group.getId(), USER_ID_FKEY_FIELDNAME, userIdToRemove));
 
             return Response.ok(this.groupManager.removeUserFromManagerList(group, userToRemove)).build();
         } catch (SegueDatabaseException e) {
