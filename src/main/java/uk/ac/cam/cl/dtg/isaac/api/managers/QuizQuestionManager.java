@@ -42,6 +42,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
+import javax.annotation.Nullable;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.util.Collection;
@@ -323,6 +324,7 @@ public class QuizQuestionManager {
      * @param answerMap The individual's answers.
      * @return The quiz feedback.
      */
+    @Nullable
     private QuizFeedbackDTO getIndividualQuizFeedback(List<IsaacQuizSectionDTO> sections, QuizFeedbackMode feedbackMode, Collection<QuestionDTO> questionsToAugment, Map<QuestionDTO, QuestionValidationResponse> answerMap) {
         if (feedbackMode == QuizFeedbackMode.NONE) {
             return null;
