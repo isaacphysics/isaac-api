@@ -485,7 +485,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
             ),
             with(completedAttempt,
                 as(student,
-                    prepare(quizQuestionManager, m -> expect(m.augmentFeedbackFor(completedAttempt, studentQuiz, QuizFeedbackMode.OVERALL_MARK)).andReturn(augmentedAttempt)),
+                    prepare(quizQuestionManager, m -> expect(m.augmentFeedbackFor(completedAttempt, studentQuiz, QuizFeedbackMode.DETAILED_FEEDBACK)).andReturn(augmentedAttempt)),
                     prepare(assignmentService, m -> {
                         m.augmentAssignerSummaries(Collections.singletonList(studentAssignment));
                         expectLastCall();
