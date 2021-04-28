@@ -993,6 +993,7 @@ public class UserAccountManager implements IUserAccountManager {
             return;
         }
         userToSave.setEmailVerificationStatus(requestedEmailVerificationStatus);
+        userToSave.setLastUpdated(new Date());
         this.database.createOrUpdateUser(userToSave);
     }
 
