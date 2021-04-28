@@ -330,7 +330,7 @@ public class QuestionFacade extends AbstractSegueFacade {
                             IPQuestionAttemptMisuseHandler.class.getSimpleName());
                 } catch (SegueResourceMisuseException e) {
                     this.getLogManager().logEvent(currentUser, request, SegueServerLogType.QUESTION_ATTEMPT_RATE_LIMITED, response.getEntity());
-                    String message = "Too many question attempts! Please log in or try again later.";
+                    String message = "Too many question attempts! Please either create an account, log in, or try again later.";
                     return SegueErrorResponse.getRateThrottledResponse(message);
                 }
             }
