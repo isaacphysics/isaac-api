@@ -326,7 +326,6 @@ public class IsaacNumericValidatorTest {
         QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
 
         assertFalse(response.isCorrect());
-        assertTrue(response.getExplanation().getValue().toLowerCase().contains("significant figures"));
         assertTrue(response.getExplanation().getTags().contains("sig_figs"));
     }
 
@@ -386,14 +385,14 @@ public class IsaacNumericValidatorTest {
         // Test response:
         QuestionValidationResponse response_5sf = validator.validateQuestionResponse(someNumericQuestion, q_5sf);
         assertFalse("expected 1.6875 not to match 1.6875 to 2 or 3 sf", response_5sf.isCorrect());
-        assertTrue(response_5sf.getExplanation().getValue().toLowerCase().contains("significant figures"));
+        assertTrue(response_5sf.getExplanation().getTags().contains("sig_figs"));
 
         // Set up a user answer:
         Quantity q_1sf = new Quantity("2");
         // Test response:
         QuestionValidationResponse response_1sf = validator.validateQuestionResponse(someNumericQuestion, q_1sf);
         assertFalse("expected 2 not to match 1.6875 to 2 or 3 sf", response_1sf.isCorrect());
-        assertTrue(response_1sf.getExplanation().getValue().toLowerCase().contains("significant figures"));
+        assertTrue(response_1sf.getExplanation().getTags().contains("sig_figs"));
     }
 
     //  ---------- Tests from here test invalid questions themselves ----------
@@ -536,6 +535,13 @@ public class IsaacNumericValidatorTest {
 
         for (String numberToTest : numbersToTest) {
             boolean result = Whitebox.<Boolean>invokeMethod(validator, "numericValuesMatch", numberToMatch, numberToTest, 2);
+            assertTrue(result);
+        }
+
+        String powerOfTenToMatch = "10000";
+        List<String> powersOfTenToTest = Arrays.asList("10000", "1x10^4", "1e4", "1E4", "1 x 10**4", "10^4", "10**(4)", "10^{4}", "100x10^2");
+        for (String powerOfTenToTest : powersOfTenToTest) {
+            boolean result = Whitebox.<Boolean>invokeMethod(validator, "numericValuesMatch", powerOfTenToMatch, powerOfTenToTest, 1);
             assertTrue(result);
         }
     }

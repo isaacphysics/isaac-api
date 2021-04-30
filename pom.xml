@@ -10,9 +10,9 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <segue.version>2.16.6-SNAPSHOT</segue.version>
+        <segue.version>2.16.7-SNAPSHOT</segue.version>
         <log4j.version>2.13.3</log4j.version>
-        <resteasy.version>4.5.9.Final</resteasy.version>
+        <resteasy.version>4.5.11.Final</resteasy.version>
         <guice.version>4.2.3</guice.version>
         <oauth-client.version>1.30.4</oauth-client.version>
         <jackson.version>2.12.1</jackson.version>
@@ -134,7 +134,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>28.2-jre</version>
+            <version>30.1.1-jre</version>
         </dependency>
 
         <dependency>

@@ -45,11 +45,16 @@ public class IsaacNumericValidator implements IValidator {
 
     private static final String DEFAULT_VALIDATION_RESPONSE = "Check your working.";
     private static final String DEFAULT_WRONG_UNIT_VALIDATION_RESPONSE = "Check your units.";
-    // Many users are getting answers wrong solely because we don't allow their (unambiguous) syntax for 10^x. Be nicer!
-    // Allow spaces either side of the times and allow * x X × and \times as multiplication!
-    // Also allow ^ or ** for powers. Allow e or E. Allow optional brackets around the powers of 10.
-    // Extract exponent as either group <exp1> or <exp2> (the other will become '').
-    private static final String NUMERIC_QUESTION_PARSE_REGEX = "[ ]?((\\*|x|X|×|\\\\times)[ ]?10(\\^|\\*\\*)|e|E)([({](?<exp1>-?[0-9]+)[)}]|(?<exp2>-?[0-9]+))";
+    /* Many users are getting answers wrong solely because we don't allow their (unambiguous) syntax for 10^x. Be nicer!
+       Allow spaces either side of the times and allow * x X × and \times as multiplication!
+       Also allow ^ or ** for powers. Allow e or E. Allow optional brackets around the powers of 10.
+       Extract exponent as either group <exp1> or <exp2> (the other will become '').
+
+       Inputs of style "1x10^3" and of style "10^3" must be dealt with separately, since for the latter we need
+       to add a "1" to the start so both can become "1e3" when replacing the 10 part.
+     */
+    private static final String PREFIXED_POWER_OF_TEN_REGEX = "[ ]?((\\*|x|X|×|\\\\times)[ ]?10(\\^|\\*\\*)|e|E)([({](?<exp1>-?[0-9]+)[)}]|(?<exp2>-?[0-9]+))";
+    private static final String BARE_POWER_OF_TEN_REGEX = "^(10(\\^|\\*\\*))([({](?<exp1>-?[0-9]+)[)}]|(?<exp2>-?[0-9]+))$";
     private static final String INVALID_NEGATIVE_STANDARD_FORM = ".*?10-([0-9]+).*?";
 
     /**
@@ -163,11 +168,7 @@ public class IsaacNumericValidator implements IValidator {
                     validUnits = bestResponse.getCorrectUnits();
                 }
                 // Our new bestResponse is about incorrect significant figures:
-                Content sigFigResponse = new Content(
-                        "Your <strong>Significant figures</strong> are incorrect, "
-                                + "read our "
-                                + "<strong><a target='_blank' href='/solving_problems#acc_solving_problems_sig_figs'>"
-                                + "sig fig guide</a></strong>.");
+                Content sigFigResponse = new Content(DEFAULT_VALIDATION_RESPONSE);
                 sigFigResponse.setTags(new HashSet<>(Collections.singletonList("sig_figs")));
                 bestResponse = new QuantityValidationResponse(question.getId(), answerFromUser, false, sigFigResponse,
                         false, validUnits, new Date());
@@ -308,11 +309,8 @@ public class IsaacNumericValidator implements IValidator {
         log.debug("\t[numericValuesMatch]");
         double trustedDouble, untrustedDouble;
 
-        // Replace "x10^(...)" with "e(...)", allowing many common unambiguous cases!
-        String untrustedParsedValue = untrustedValue.replace("−", "-");
-        untrustedParsedValue = untrustedParsedValue.replaceFirst(NUMERIC_QUESTION_PARSE_REGEX, "e${exp1}${exp2}");
-
-        String trustedParsedValue = trustedValue.replaceFirst(NUMERIC_QUESTION_PARSE_REGEX, "e${exp1}${exp2}");
+        String untrustedParsedValue = reformatNumberForParsing(untrustedValue);
+        String trustedParsedValue = reformatNumberForParsing(trustedValue);
 
         // Round to N s.f. for trusted value
         trustedDouble = roundStringValueToSigFigs(trustedParsedValue, significantFiguresRequired);
@@ -350,9 +348,7 @@ public class IsaacNumericValidator implements IValidator {
      */
     private SigFigResult extractSignificantFigures(final String valueToCheck) {
         log.debug("\t[extractSignificantFigures]");
-        // Replace "x10^(...)" with "e(...)", allowing many common unambiguous cases!
-        String untrustedParsedValue = valueToCheck.replace("−", "-");
-        untrustedParsedValue = untrustedParsedValue.replaceFirst(NUMERIC_QUESTION_PARSE_REGEX, "e${exp1}${exp2}");
+        String untrustedParsedValue = reformatNumberForParsing(valueToCheck);
 
         // Parse exactly into a BigDecimal:
         BigDecimal bd = new BigDecimal(untrustedParsedValue);
@@ -482,5 +478,21 @@ public class IsaacNumericValidator implements IValidator {
             }
         }
         return null;
+    }
+
+    /**
+     * Format a number in string form such that Java BigDecimal can parse it.
+     *
+     * Replace "x10^(...)" with "e(...)", allowing many common unambiguous cases, and fix uses of Unicode minus signs,
+     * and allow bare powers of ten.
+     *
+     * @param numberToFormat - number in some unambiguous standard form.
+     * @return - number in engineering standard form e.g. "3.4e3"
+     */
+    private String reformatNumberForParsing(final String numberToFormat) {
+        String reformattedNumber = numberToFormat.replace("−", "-");
+        reformattedNumber = reformattedNumber.replaceFirst(PREFIXED_POWER_OF_TEN_REGEX, "e${exp1}${exp2}");
+        reformattedNumber = reformattedNumber.replaceFirst(BARE_POWER_OF_TEN_REGEX, "1e${exp1}${exp2}");
+        return reformattedNumber;
     }
 }

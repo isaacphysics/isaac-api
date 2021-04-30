@@ -1184,6 +1184,7 @@ public class UserAccountManager implements IUserAccountManager {
             user.setEmail(user.getEmailToVerify());
             user.setEmailVerificationToken(null);
             user.setEmailToVerify(null);
+            user.setLastUpdated(new Date());
 
             // Save user
             RegisteredUser createOrUpdateUser = this.database.createOrUpdateUser(user);
