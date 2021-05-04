@@ -65,7 +65,6 @@ public class QuizManager {
     private final IContentManager contentManager;
     private final ContentSummarizerService contentSummarizerService;
     private final ContentMapper mapper;
-    private final String contentIndex;
 
     /**
      * Creates a quiz manager.
@@ -94,7 +93,6 @@ public class QuizManager {
         this.contentManager = contentManager;
         this.contentSummarizerService = contentSummarizerService;
         this.mapper = mapper;
-        this.contentIndex = contentIndex;
     }
 
     public ResultsWrapper<ContentSummaryDTO> getAvailableQuizzes(boolean onlyVisibleToStudents, @Nullable Integer startIndex, @Nullable Integer limit) throws ContentManagerException {
@@ -119,7 +117,7 @@ public class QuizManager {
      * @return The quiz.
      */
     public IsaacQuizDTO findQuiz(final String quizId) throws ContentManagerException {
-        Content cachedContent = contentManager.getContentDOById(contentIndex, quizId);
+        Content cachedContent = contentManager.getContentDOById(this.contentManager.getCurrentContentSHA(), quizId);
 
         if (cachedContent == null) {
             throw new ContentManagerException("Couldn't find quiz with id " + quizId);
