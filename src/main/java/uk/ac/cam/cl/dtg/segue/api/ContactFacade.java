@@ -19,6 +19,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.validator.routines.EmailValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -92,8 +94,8 @@ public class ContactFacade extends AbstractSegueFacade {
     @Consumes(MediaType.APPLICATION_JSON)
     @ApiOperation(value = "Submit a contact form request.")
     public Response contactUs(final Map<String, String> form, @Context final HttpServletRequest request) {
-        if (form.get("firstName") == null || form.get("lastName") == null || form.get("emailAddress") == null
-                || form.get("subject") == null || form.get("message") == null) {
+        if (StringUtils.isEmpty(form.get("firstName")) || StringUtils.isEmpty(form.get("lastName")) || StringUtils.isEmpty(form.get("emailAddress"))
+                || !EmailValidator.getInstance().isValid(form.get("emailAddress")) || StringUtils.isEmpty(form.get("subject")) || StringUtils.isEmpty(form.get("message"))) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Missing form details.");
             return error.toResponse();
         }
