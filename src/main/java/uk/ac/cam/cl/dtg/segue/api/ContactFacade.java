@@ -95,8 +95,13 @@ public class ContactFacade extends AbstractSegueFacade {
     @ApiOperation(value = "Submit a contact form request.")
     public Response contactUs(final Map<String, String> form, @Context final HttpServletRequest request) {
         if (StringUtils.isEmpty(form.get("firstName")) || StringUtils.isEmpty(form.get("lastName")) || StringUtils.isEmpty(form.get("emailAddress"))
-                || !EmailValidator.getInstance().isValid(form.get("emailAddress")) || StringUtils.isEmpty(form.get("subject")) || StringUtils.isEmpty(form.get("message"))) {
+                || StringUtils.isEmpty(form.get("subject")) || StringUtils.isEmpty(form.get("message"))) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Missing form details.");
+            return error.toResponse();
+        }
+
+        if (!EmailValidator.getInstance().isValid(form.get("emailAddress"))) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid email address.");
             return error.toResponse();
         }
 
