@@ -69,18 +69,8 @@ import java.util.List;
 import java.util.Map;
 
 import static com.google.common.collect.Maps.immutableEntry;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.COMPLETION_FIELDNAME;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.CREATED_DATE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.FASTTRACK_LEVEL;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.GAMEBOARD_ID_FKEY;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.GAMEBOARD_ID_FKEYS;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.GameboardState;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacServerLogType;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.VISITED_DATE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_TEN_MINUTES;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TITLE_FIELDNAME;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Games boards Facade.

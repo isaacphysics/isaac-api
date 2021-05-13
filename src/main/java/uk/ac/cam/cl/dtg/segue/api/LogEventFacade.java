@@ -42,11 +42,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.util.Map;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.ISAAC_CLIENT_LOG_TYPES;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.ISAAC_SERVER_LOG_TYPES;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_SERVER_LOG_TYPES;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * LogEventFacade. This facade is responsible for allowing the front end to log arbitrary information in the log
