@@ -175,7 +175,7 @@ class ETLConfigurationModule extends AbstractModule {
     @Singleton
     private SchoolIndexer getSchoolListIndexer(@Named(Constants.SCHOOL_CSV_LIST_PATH) final String schoolListPath,
                                                  final ElasticSearchIndexer es,
-                                                 final ContentMapper mapper) throws IOException {
+                                                 final ContentMapper mapper) {
         if (null == schoolIndexer) {
             schoolIndexer = new SchoolIndexer(es, mapper, schoolListPath);
             log.info("Creating singleton of SchoolListReader");

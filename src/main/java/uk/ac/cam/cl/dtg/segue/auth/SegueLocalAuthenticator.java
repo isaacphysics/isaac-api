@@ -28,7 +28,6 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.FailedToHashPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
@@ -89,7 +88,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 
     @Override
     public void setOrChangeUsersPassword(final RegisteredUser userToSetPasswordFor, final String plainTextPassword)
-            throws InvalidPasswordException, SegueDatabaseException {
+            throws InvalidPasswordException, SegueDatabaseException, InvalidKeySpecException, NoSuchAlgorithmException {
         ensureValidPassword(plainTextPassword);
 
         this.updateUsersPasswordWithoutValidation(userToSetPasswordFor, plainTextPassword);
@@ -98,7 +97,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
     @Override
     public RegisteredUser authenticate(final String usersEmailAddress, final String plainTextPassword)
             throws IncorrectCredentialsProvidedException, NoUserException, NoCredentialsAvailableException,
-            SegueDatabaseException {
+            SegueDatabaseException, InvalidKeySpecException, NoSuchAlgorithmException {
 
         if (null == usersEmailAddress || null == plainTextPassword) {
             throw new IncorrectCredentialsProvidedException("Incorrect credentials provided.");
@@ -115,31 +114,23 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
             throw new NoCredentialsAvailableException("This user does not have any local credentials setup.");
         }
 
-        try {
-            // work out what algorithm is being used.
-            ISegueHashingAlgorithm hashingAlgorithmUsed = this.possibleAlgorithms.get(luc.getSecurityScheme());
+        // work out what algorithm is being used.
+        ISegueHashingAlgorithm hashingAlgorithmUsed = this.possibleAlgorithms.get(luc.getSecurityScheme());
 
-            if (hashingAlgorithmUsed.hashPassword(plainTextPassword, luc.getSecureSalt()).equals(
-                    luc.getPassword())) {
+        if (hashingAlgorithmUsed.hashPassword(plainTextPassword, luc.getSecureSalt()).equals(
+                luc.getPassword())) {
 
-                // success, now check if we should rehash the password or not.
-                if (!preferredAlgorithm.hashingAlgorithmName().equals(hashingAlgorithmUsed.hashingAlgorithmName())) {
+            // success, now check if we should rehash the password or not.
+            if (!preferredAlgorithm.hashingAlgorithmName().equals(hashingAlgorithmUsed.hashingAlgorithmName())) {
 
-                    // update the password
-                    this.updateUsersPasswordWithoutValidation(localUserAccount, plainTextPassword);
-                    log.info(String.format("Account id (%s) password algorithm automatically upgraded.", localUserAccount.getId()));
-                }
-
-                return localUserAccount;
-            } else {
-                throw new IncorrectCredentialsProvidedException("Incorrect credentials provided.");
+                // update the password
+                this.updateUsersPasswordWithoutValidation(localUserAccount, plainTextPassword);
+                log.info(String.format("Account id (%s) password algorithm automatically upgraded.", localUserAccount.getId()));
             }
-        } catch (NoSuchAlgorithmException e) {
-            log.error("Error detecting security algorithm", e);
-            return null;
-        } catch (InvalidKeySpecException e) {
-            log.error("Error building secret key specification", e);
-            return null;
+
+            return localUserAccount;
+        } else {
+            throw new IncorrectCredentialsProvidedException("Incorrect credentials provided.");
         }
     }
 
@@ -159,7 +150,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 
     @Override
     public RegisteredUser createEmailVerificationTokenForUser(final RegisteredUser userToAttachVerificationToken, 
-            final String email) throws NoSuchAlgorithmException, InvalidKeySpecException {
+            final String email) {
         Validate.notNull(userToAttachVerificationToken);
         Validate.notNull(email, "Email used for verification cannot be null");
         
@@ -193,7 +184,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 
     @Override
     public String createPasswordResetTokenForUser(final RegisteredUser userToAttachToken)
-            throws NoSuchAlgorithmException, InvalidKeySpecException, SegueDatabaseException, NoCredentialsAvailableException {
+            throws SegueDatabaseException, InvalidKeySpecException, NoSuchAlgorithmException {
         Validate.notNull(userToAttachToken);
 
         LocalUserCredential luc = passwordDataManager.getLocalUserCredential(userToAttachToken.getId());
@@ -276,23 +267,15 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
      * @throws SegueDatabaseException
      */
     private void updateUsersPasswordWithoutValidation(final RegisteredUser userToSetPasswordFor, final String plainTextPassword)
-            throws SegueDatabaseException {
-        try {
-            String passwordSalt = preferredAlgorithm.generateSalt();
-            String hashedPassword = preferredAlgorithm.hashPassword(plainTextPassword, passwordSalt);
+            throws SegueDatabaseException, NoSuchAlgorithmException, InvalidKeySpecException {
+        String passwordSalt = preferredAlgorithm.generateSalt();
+        String hashedPassword = preferredAlgorithm.hashPassword(plainTextPassword, passwordSalt);
 
-            LocalUserCredential luc = new LocalUserCredential(
-                    userToSetPasswordFor.getId(),
-                    hashedPassword, passwordSalt, preferredAlgorithm.hashingAlgorithmName());
+        LocalUserCredential luc = new LocalUserCredential(
+                userToSetPasswordFor.getId(),
+                hashedPassword, passwordSalt, preferredAlgorithm.hashingAlgorithmName());
 
-            // now we want to update the database
-            passwordDataManager.createOrUpdateLocalUserCredential(luc);
-        } catch (NoSuchAlgorithmException e) {
-            log.error("Error detecting security algorithm", e);
-            throw new FailedToHashPasswordException("Security algorithm configuration error.");
-        } catch (InvalidKeySpecException e) {
-            log.error("Error building secret key specification", e);
-            throw new FailedToHashPasswordException("Security algorithm configuration error.");
-        }
+        // now we want to update the database
+        passwordDataManager.createOrUpdateLocalUserCredential(luc);
     }
 }

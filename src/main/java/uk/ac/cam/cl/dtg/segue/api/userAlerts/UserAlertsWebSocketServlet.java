@@ -1,6 +1,5 @@
 package uk.ac.cam.cl.dtg.segue.api.userAlerts;
 
-
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import org.eclipse.jetty.websocket.servlet.WebSocketServlet;

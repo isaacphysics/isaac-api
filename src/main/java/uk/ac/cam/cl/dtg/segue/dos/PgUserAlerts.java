@@ -2,7 +2,6 @@ package uk.ac.cam.cl.dtg.segue.dos;
 
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
-import uk.ac.cam.cl.dtg.segue.api.userAlerts.IAlertListener;
 import uk.ac.cam.cl.dtg.segue.api.userAlerts.UserAlertsWebSocket;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;

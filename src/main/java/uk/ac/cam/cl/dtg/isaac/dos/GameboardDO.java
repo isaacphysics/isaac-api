@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dos;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;

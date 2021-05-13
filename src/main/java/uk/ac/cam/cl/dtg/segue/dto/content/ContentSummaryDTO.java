@@ -18,7 +18,6 @@ package uk.ac.cam.cl.dtg.segue.dto.content;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.api.client.util.Lists;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**

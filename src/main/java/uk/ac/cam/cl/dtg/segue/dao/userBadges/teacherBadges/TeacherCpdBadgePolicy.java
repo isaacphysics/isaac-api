@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacEventPage;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;

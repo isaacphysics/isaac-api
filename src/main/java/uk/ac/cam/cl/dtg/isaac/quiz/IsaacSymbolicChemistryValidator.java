@@ -288,9 +288,9 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                         int counter = 0;
                         // FIXME: Nuclear Equations and Expressions don't have 'sameCoefficient' property?!
                         // So ignore this for now!
-//                        if (response.get("sameCoefficient").equals(true)) {
-//                            counter++;
-//                        }
+                        // if (response.get("sameCoefficient").equals(true)) {
+                        //     counter++;
+                        // }
 
                         matchType = MatchType.valueOf("WEAK" + counter);
 

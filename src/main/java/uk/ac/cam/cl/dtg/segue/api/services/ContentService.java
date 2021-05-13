@@ -123,7 +123,7 @@ public class ContentService {
         Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatchOutput = Maps.newHashMap();
 
         for (Map.Entry<String, List<String>> pair : fieldsToMatch.entrySet()) {
-            Map.Entry<Constants.BooleanOperator, String> newEntry = null;
+            Map.Entry<Constants.BooleanOperator, String> newEntry;
             if (pair.getKey().equals(ID_FIELDNAME)) {
                 newEntry = immutableEntry(Constants.BooleanOperator.OR, pair.getKey());
             } else if (pair.getKey().equals(TYPE_FIELDNAME) && pair.getValue().size() > 1) {

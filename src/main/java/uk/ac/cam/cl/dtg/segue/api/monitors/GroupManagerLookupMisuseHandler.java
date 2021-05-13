@@ -22,7 +22,6 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.google.inject.Inject;
@@ -82,12 +81,7 @@ public class GroupManagerLookupMisuseHandler implements IMisuseHandler {
         final String subject = "Soft Threshold limit reached for GroupManagerLookup endpoint";
         EmailCommunicationMessage e = new EmailCommunicationMessage(properties.getProperty(Constants.SERVER_ADMIN_ADDRESS),
                                                 subject, message, message, EmailType.ADMIN);
-        try {
-            emailManager.addSystemEmailToQueue(e);
-        } catch (SegueDatabaseException e1) {
-            log.error("Database access error when attempting to send hard threshold limit warnings: "
-                    + e1.getMessage());
-        }
+        emailManager.addSystemEmailToQueue(e);
         log.warn("Soft threshold limit: " + message);
 
     }
@@ -98,12 +92,7 @@ public class GroupManagerLookupMisuseHandler implements IMisuseHandler {
 
         EmailCommunicationMessage e = new EmailCommunicationMessage(properties.getProperty(Constants.SERVER_ADMIN_ADDRESS),
                 subject, message, message, EmailType.ADMIN);
-        try {
-            emailManager.addSystemEmailToQueue(e);
-        } catch (SegueDatabaseException e1) {
-            log.error("Database access error when attempting to send hard threshold limit warnings: "
-                    + e1.getMessage());
-        }
+        emailManager.addSystemEmailToQueue(e);
         log.warn("Hard threshold limit: " + message);
 
     }

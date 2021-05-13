@@ -108,7 +108,7 @@ public abstract class AbstractSegueFacade {
      *         resource.
      */
     public Response generateCachedResponse(final Request request, final EntityTag etag, final Integer maxAge) {
-        Response.ResponseBuilder rb = null;
+        Response.ResponseBuilder rb;
 
         // Verify if it matched with etag available in http request
         rb = request.evaluatePreconditions(etag);

@@ -37,7 +37,6 @@ import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -68,7 +67,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import static com.google.common.collect.Maps.immutableEntry;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
@@ -344,77 +342,6 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                     Status.NOT_FOUND, "Error locating the version requested", e1);
             log.error(error.getErrorMessage(), e1);
             return error.toResponse();
-        }
-    }
-
-    /**
-     * getBoardPopularityList.
-     * 
-     * @param request
-     *            for checking if the user is authorised to use this endpoint
-     * @return list of popular boards.
-     */
-    @GET
-    @Path("gameboards/popular")
-    @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Get a temporary board of questions matching provided constraints.")
-    public Response getBoardPopularityList(@Context final HttpServletRequest request) {
-        final String connections = "connections";
-        try {
-            RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(request);
-
-            if (!isUserStaff(userManager, currentUser)) {
-                return SegueErrorResponse.getIncorrectRoleResponse();
-            }
-
-            Map<String, Integer> numberOfConnectedUsersByGameboard = this.gameManager
-                    .getNumberOfConnectedUsersByGameboard();
-
-            List<Map<String, Object>> resultList = Lists.newArrayList();
-
-            for (Entry<String, Integer> e : numberOfConnectedUsersByGameboard.entrySet()) {
-                if (e.getValue() > 1) {
-                    GameboardDTO liteGameboard = this.gameManager.getLiteGameboard(e.getKey());
-
-                    if (liteGameboard.getOwnerUserId() != null) {
-                        RegisteredUserDTO ownerUser = userManager.getUserDTOById(liteGameboard.getOwnerUserId());
-                        liteGameboard.setOwnerUserInformation(associationManager.enforceAuthorisationPrivacy(
-                                currentUser, userManager.convertToUserSummaryObject(ownerUser)));
-                    }
-
-                    resultList.add(ImmutableMap.of("gameboard", liteGameboard, "connections", e.getValue()));
-                }
-            }
-
-            resultList.sort((o1, o2) -> {
-                // Descending numerical order
-                if ((Integer) o1.get(connections) < (Integer) o2.get(connections)) {
-                    return 1;
-                }
-                if ((Integer) o1.get(connections) > (Integer) o2.get(connections)) {
-                    return -1;
-                }
-                return 0;
-            });
-
-            int sharedBoards = 0;
-
-            for (Map<String, Object> e : resultList) {
-                if ((Integer) e.get(connections) > 1) {
-                    sharedBoards++;
-                }
-            }
-
-            ImmutableMap<String, Object> resultMap = ImmutableMap.of("boardList", resultList, "sharedBoards",
-                    sharedBoards);
-
-            return Response.ok(resultMap).build();
-        } catch (SegueDatabaseException | NoUserException e) {
-            String message = "Error whilst trying to get the gameboard popularity list.";
-            log.error(message, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
-        } catch (NoUserLoggedInException e1) {
-            return SegueErrorResponse.getNotLoggedInResponse();
         }
     }
 
@@ -705,10 +632,6 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                     e1);
             log.error(error.getErrorMessage(), e1);
             return error.toResponse();
-        }
-
-        if (null == gameboards) {
-            return Response.noContent().build();
         }
 
         getLogManager().logEvent(

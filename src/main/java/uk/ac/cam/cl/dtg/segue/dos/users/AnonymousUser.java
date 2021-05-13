@@ -16,10 +16,6 @@
 package uk.ac.cam.cl.dtg.segue.dos.users;
 
 import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
-import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

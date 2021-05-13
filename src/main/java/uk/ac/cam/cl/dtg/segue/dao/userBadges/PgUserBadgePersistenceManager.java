@@ -3,8 +3,6 @@ package uk.ac.cam.cl.dtg.segue.dao.userBadges;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
-import uk.ac.cam.cl.dtg.segue.api.managers.ITransactionManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.PgTransactionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
@@ -14,7 +12,6 @@ import uk.ac.cam.cl.dtg.segue.dos.UserBadge;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 import java.io.IOException;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;

@@ -1,18 +1,11 @@
 package uk.ac.cam.cl.dtg.segue.etl;
 
-import java.util.Collection;
-import java.util.List;
-
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
-import javax.servlet.annotation.WebListener;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
-
-import com.google.api.client.util.Lists;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 

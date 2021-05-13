@@ -570,7 +570,7 @@ public class QuestionManager {
         }
 
         Choice answerFromUser = mapper.getAutoMapper().map(answer, Choice.class);
-        String specification = null;
+        String specification;
         try {
             specification = specifier.createSpecification(answerFromUser);
         } catch (ValidatorUnavailableException e) {

@@ -180,7 +180,7 @@ public class ContentIndexer {
                 // module. Required to deal with type polymorphism
                 ObjectMapper objectMapper = mapper.getSharedContentObjectMapper();
 
-                Content content = null;
+                Content content;
                 try {
                     content = (Content) objectMapper.readValue(out.toString(), ContentBase.class);
 
@@ -321,7 +321,7 @@ public class ContentIndexer {
         }
 
         // Try to figure out the parent ids.
-        String newParentId = null;
+        String newParentId;
         if (null == parentId && content.getId() != null) {
             newParentId = content.getId();
         } else {
