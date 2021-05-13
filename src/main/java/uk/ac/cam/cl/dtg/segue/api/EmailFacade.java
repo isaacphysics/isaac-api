@@ -217,36 +217,6 @@ public class EmailFacade extends AbstractSegueFacade {
     }
     
     /**
-     * GetEmailTypes returns the valid email preferences.
-     * 
-     * This method will return serialised html that displays an email object
-     * 
-     * @param request
-     *            - so that we can allow only logged in users to view their own data. 
-     * @return Response object containing the serialized content object. (with no levels of recursion into the content)
-     */
-    /* THIS MAY BE REINSTATED IN THE FUTURE
-    @GET
-    @Path("/email/preferences")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @ApiOperation(value = "List the valid email preference types.")
-    public final Response getEmailTypes(@Context final HttpServletRequest request) {
-    	EmailType [] types = EmailType.values();
-    	List<Map<String, Object>> resultList = Lists.newArrayList();
-    	for (EmailType type : types) {
-    		if (type.isValidEmailPreference()) {
-    			HashMap<String, Object> map = new HashMap<>();
-    			map.put("name", type.toString());
-    			resultList.add(map);
-    		}
-    	}    	
-    	
-		return Response.ok(resultList).build();
-    }
-    */
-    
-    /**
      * End point that verifies whether or not a validation token is valid.
      * 
      * @param userId

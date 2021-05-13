@@ -206,55 +206,6 @@ public class AdminFacade extends AbstractSegueFacade {
     }
 
     /**
-     * Statistics endpoint.
-     *
-     * @param request
-     *            - to determine access.
-     * @param requestForCache
-     *            - to determine caching.
-     * @return stats
-     */
-    /* THIS MAY BE REINSTATED IN THE FUTURE
-    @GET
-    @Path("/stats/schools")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    public Response getSchoolsStatistics(@Context final HttpServletRequest request,
-            @Context final Request requestForCache) {
-        try {
-            if (!isUserStaff(userManager, request)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
-                        .toResponse();
-            }
-
-            List<Map<String, Object>> schoolStatistics = statsManager.getSchoolStatistics();
-
-            // Calculate the ETag
-            EntityTag etag = new EntityTag(schoolStatistics.toString().hashCode() + "");
-
-            Response cachedResponse = generateCachedResponse(requestForCache, etag);
-            if (cachedResponse != null) {
-                return cachedResponse;
-            }
-
-            return Response.ok(schoolStatistics).tag(etag)
-                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false))
-                    .build();
-        } catch (UnableToIndexSchoolsException e) {
-            log.error("Unable to get school statistics", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Unable To Index SchoolIndexer Exception in admin facade", e).toResponse();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (SegueDatabaseException | SegueSearchException e1) {
-            log.error("Unable to get school statistics", e1);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error during user lookup")
-                    .toResponse();
-        }
-    }
-    */
-
-    /**
      * This method will allow users to be mass-converted to a new role.
      * 
      * @param request
@@ -461,10 +412,12 @@ public class AdminFacade extends AbstractSegueFacade {
         return Response.ok().build();
     }
 
-    /* This method will allow users' email verification status to be changed en-mass.
+    /** This method will allow users' email verification status to be changed en-mass.
      *
      * @param request
      *            - to help determine access rights.
+     * @param providerToken
+     *            - a path parameter to restrict access
      * @param eventDetailsList
      *            - a list of objects in the MailJet JSON format
      * @return Success shown by returning an ok response
@@ -511,12 +464,14 @@ public class AdminFacade extends AbstractSegueFacade {
         }
     }
 
-    /* This method will allow users' email preference status to be changed en-mass.
+    /** This method will allow users' email preference status to be changed en-mass.
      *
      * @param request
      *            - to help determine access rights.
-     * @param webhookPayload
-     *            - a list of user webhookPayload that need to be changed
+     * @param providerToken
+     *            - a path parameter to restrict access
+     * @param eventDetailsList
+     *            - the unsubscription event list, currently in MailJet format
      * @return Success shown by returning an ok response
      */
     @POST
@@ -1090,187 +1045,6 @@ public class AdminFacade extends AbstractSegueFacade {
                     + userIdMergeDTO.getTargetId() + ", " + userIdMergeDTO.getSourceId()).toResponse();
         }
     }
-
-    /**
-     * Service method to fetch the event data for a specified user.
-     *
-     * @param request
-     *            - request information used authentication
-     * @param requestForCaching
-     *            - request information used for caching.
-     * @param httpServletRequest
-     *            - the request which may contain session information.
-     * @param fromDate
-     *            - date to start search
-     * @param toDate
-     *            - date to end search
-     * @param events
-     *            - comma separated list of events of interest.,
-     * @param bin
-     *            - Should we group data into the first day of the month? true or false.
-     * @return Returns a map of eventType to Map of dates to total number of events.
-     * @throws BadRequestException
-     *            - because the request is missing various essential parameters
-     * @throws ForbiddenException
-     *            - because the user is not an admin
-     * @throws NoUserLoggedInException
-     *            - because the user is not logged in
-     * @throws SegueDatabaseException
-     *            - because there has been some problem with database access
-     */
-    private Map<String, Map<LocalDate, Long>> fetchEventDataForAllUsers(@Context final Request request,
-             @Context final HttpServletRequest httpServletRequest, @Context final Request requestForCaching,
-             @QueryParam("from_date") final Long fromDate, @QueryParam("to_date") final Long toDate,
-             @QueryParam("events") final String events, @QueryParam("bin_data") final Boolean bin)
-            throws BadRequestException, ForbiddenException, NoUserLoggedInException, SegueDatabaseException {
-
-        final boolean binData = null != bin && bin;
-
-        if (null == events || events.isEmpty()) {
-            throw new BadRequestException("You must specify the events you are interested in.");
-        }
-
-        if (null == fromDate || null == toDate) {
-            throw new BadRequestException("You must specify the from_date and to_date you are interested in.");
-        }
-
-        if (!isUserStaff(userManager, httpServletRequest)) {
-            throw new ForbiddenException("You must be logged in as an admin to access this function.");
-        }
-
-        return this.statsManager.getEventLogsByDate(
-                Lists.newArrayList(events.split(",")), new Date(fromDate), new Date(toDate), binData);
-    }
-
-    /**
-     * Get the event data for a specified user.
-     * 
-     * @param request
-     *            - request information used authentication
-     * @param requestForCaching
-     *            - request information used for caching.
-     * @param httpServletRequest
-     *            - the request which may contain session information.
-     * @param fromDate
-     *            - date to start search
-     * @param toDate
-     *            - date to end search
-     * @param events
-     *            - comma separated list of events of interest.,
-     * @param bin
-     *            - Should we group data into the first day of the month? true or false.
-     * @return Returns a map of eventType to Map of dates to total number of events.
-     */
-    /* THIS MAY BE REINSTATED IN THE FUTURE
-    @GET
-    @Path("/users/event_data/over_time")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    public Response getEventDataForAllUsers(@Context final Request request,
-            @Context final HttpServletRequest httpServletRequest, @Context final Request requestForCaching,
-            @QueryParam("from_date") final Long fromDate, @QueryParam("to_date") final Long toDate,
-            @QueryParam("events") final String events, @QueryParam("bin_data") final Boolean bin) {
-
-        Map<String, Map<LocalDate, Long>> eventLogsByDate;
-        try {
-            eventLogsByDate = fetchEventDataForAllUsers(request, httpServletRequest, requestForCaching, fromDate,
-                    toDate, events, bin);
-        } catch (BadRequestException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
-        } catch (ForbiddenException e) {
-            return new SegueErrorResponse(Status.FORBIDDEN, e.getMessage()).toResponse();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (SegueDatabaseException e) {
-            log.error("Database error while getting event details for a user.", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to complete the request.").toResponse();
-        }
-
-        EntityTag etag = new EntityTag(eventLogsByDate.toString().hashCode() + "");
-
-        Response cachedResponse = generateCachedResponse(requestForCaching, etag);
-        if (cachedResponse != null) {
-            return cachedResponse;
-        }
-
-        return Response.ok(eventLogsByDate).tag(etag)
-                .cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false)).build();
-    }
-    */
-
-
-    /**
-     * Get the event data for a specified user, in CSV format.
-     *
-     * @param request
-     *            - request information used authentication
-     * @param requestForCaching
-     *            - request information used for caching.
-     * @param httpServletRequest
-     *            - the request which may contain session information.
-     * @param fromDate
-     *            - date to start search
-     * @param toDate
-     *            - date to end search
-     * @param events
-     *            - comma separated list of events of interest.,
-     * @param bin
-     *            - Should we group data into the first day of the month? true or false.
-     * @return Returns a map of eventType to Map of dates to total number of events.
-     */
-    /* THIS MAY BE REINSTATED IN THE FUTURE
-    @GET
-    @Path("/users/event_data/over_time/download")
-    @Produces("text/csv")
-    @GZIP
-    public Response getEventDataForAllUsersDownloadCSV(@Context final Request request,
-            @Context final HttpServletRequest httpServletRequest, @Context final Request requestForCaching,
-            @QueryParam("from_date") final Long fromDate, @QueryParam("to_date") final Long toDate,
-            @QueryParam("events") final String events, @QueryParam("bin_data") final Boolean bin) {
-
-        try {
-            Map<String, Map<LocalDate, Long>> eventLogsByDate;
-            eventLogsByDate = fetchEventDataForAllUsers(request, httpServletRequest, requestForCaching, fromDate,
-                    toDate, events, bin);
-
-            StringWriter stringWriter = new StringWriter();
-            CSVWriter csvWriter = new CSVWriter(stringWriter);
-            List<String[]> rows = Lists.newArrayList();
-            rows.add(new String[]{"event_type", "timestamp", "value"});
-
-            for(Map.Entry<String, Map<LocalDate, Long>> eventType : eventLogsByDate.entrySet()) {
-                String eventTypeKey = eventType.getKey();
-                for(Map.Entry<LocalDate, Long> record : eventType.getValue().entrySet()) {
-                    rows.add(new String[]{eventTypeKey, record.getKey().toString(), record.getValue().toString()});
-                }
-            }
-            csvWriter.writeAll(rows);
-            csvWriter.close();
-
-            EntityTag etag = new EntityTag(eventLogsByDate.toString().hashCode() + "");
-            Response cachedResponse = generateCachedResponse(requestForCaching, etag);
-            if (cachedResponse != null) {
-                return cachedResponse;
-            }
-
-            return Response.ok(stringWriter.toString()).tag(etag)
-                    .header("Content-Disposition", "attachment; filename=admin_stats.csv")
-                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false)).build();
-        } catch (BadRequestException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
-        } catch (ForbiddenException e) {
-            return new SegueErrorResponse(Status.FORBIDDEN, e.getMessage()).toResponse();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (SegueDatabaseException e) {
-            log.error("Database error while getting event details for a user.", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to complete the request.").toResponse();
-        } catch (IOException e) {
-            log.error("IO error while creating the CSV file.", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while creating the CSV file").toResponse();
-        }
-    }
-    */
 
     /**
      * This method will allow the live version served by the site to be changed.
