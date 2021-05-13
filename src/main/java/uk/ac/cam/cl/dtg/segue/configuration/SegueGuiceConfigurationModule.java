@@ -591,8 +591,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *            - list of known providers.
      * @param emailQueue
      *            - so that we can send e-mails.
-     * @param mapperFacade
-     *            - for DO and DTO mapping.
      * @return Content version controller with associated dependencies.
      */
     @Inject
@@ -600,11 +598,10 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Singleton
     private UserAuthenticationManager getUserAuthenticationManager(final IUserDataManager database, final PropertiesLoader properties,
                                               final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
-                                              final EmailManager emailQueue, final MapperFacade mapperFacade) {
+                                              final EmailManager emailQueue) {
         if (null == userAuthenticationManager) {
-            userAuthenticationManager = new UserAuthenticationManager(database, properties, providersToRegister,
-                    mapperFacade, emailQueue);
-            log.info("Creating singleton of UserManager");
+            userAuthenticationManager = new UserAuthenticationManager(database, properties, providersToRegister, emailQueue);
+            log.info("Creating singleton of UserAuthenticationManager");
         }
 
         return userAuthenticationManager;

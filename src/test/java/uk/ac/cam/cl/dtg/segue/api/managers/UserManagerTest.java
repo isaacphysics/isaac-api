@@ -700,16 +700,14 @@ public class UserManagerTest {
     }
     
     private UserAuthenticationManager buildTestAuthenticationManager() {
-        return new UserAuthenticationManager(dummyDatabase, dummyPropertiesLoader, dummyProvidersMap, dummyMapper,
-                dummyQueue);
+        return new UserAuthenticationManager(dummyDatabase, dummyPropertiesLoader, dummyProvidersMap, dummyQueue);
     }
     
     private UserAuthenticationManager buildTestAuthenticationManager(AuthenticationProvider provider, IAuthenticator authenticator) {
         HashMap<AuthenticationProvider, IAuthenticator> providerMap = new HashMap<AuthenticationProvider, IAuthenticator>();
         providerMap.put(provider, authenticator);
         providerMap.put(AuthenticationProvider.SEGUE, dummyLocalAuth);
-        return new UserAuthenticationManager(dummyDatabase, dummyPropertiesLoader, providerMap, dummyMapper,
-                dummyQueue);
+        return new UserAuthenticationManager(dummyDatabase, dummyPropertiesLoader, providerMap, dummyQueue);
     }
 
     private Map<String, String> getSessionInformationAsAMap(UserAuthenticationManager userAuthManager, String userId, String dateExpires, Integer sessionToken)

@@ -18,10 +18,7 @@ package uk.ac.cam.cl.dtg.segue.api;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Maps;
-import com.google.api.client.util.Sets;
 import com.google.common.base.Strings;
-import com.google.common.base.Supplier;
-import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -33,7 +30,6 @@ import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
-import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
@@ -44,7 +40,6 @@ import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.api.monitors.TeacherPasswordResetMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.FailedToHashPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
@@ -99,8 +94,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
@@ -117,12 +110,10 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class UsersFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(UsersFacade.class);
     private final UserAccountManager userManager;
-    private final StatisticsManager statsManager;
     private final UserAssociationManager userAssociationManager;
     private final IMisuseMonitor misuseMonitor;
     private final AbstractUserPreferenceManager userPreferenceManager;
     private final SchoolListReader schoolListReader;
-    private final Supplier<Set<School>> schoolOtherSupplier;
 
     /**
      * Construct an instance of the UsersFacade.
@@ -133,8 +124,6 @@ public class UsersFacade extends AbstractSegueFacade {
      *            - user manager for the application
      * @param logManager
      *            - so we can log interesting events.
-     * @param statsManager
-     *            - so we can view stats on interesting events.
      * @param userAssociationManager
      *            - so we can check permissions..
      * @param misuseMonitor
@@ -146,40 +135,15 @@ public class UsersFacade extends AbstractSegueFacade {
      */
     @Inject
     public UsersFacade(final PropertiesLoader properties, final UserAccountManager userManager,
-                       final ILogManager logManager, final StatisticsManager statsManager,
-                       final UserAssociationManager userAssociationManager, final IMisuseMonitor misuseMonitor,
-                       final AbstractUserPreferenceManager userPreferenceManager, final SchoolListReader schoolListReader) {
+                       final ILogManager logManager, final UserAssociationManager userAssociationManager,
+                       final IMisuseMonitor misuseMonitor, final AbstractUserPreferenceManager userPreferenceManager,
+                       final SchoolListReader schoolListReader) {
         super(properties, logManager);
         this.userManager = userManager;
-        this.statsManager = statsManager;
         this.userAssociationManager = userAssociationManager;
         this.misuseMonitor = misuseMonitor;
         this.userPreferenceManager = userPreferenceManager;
         this.schoolListReader = schoolListReader;
-
-        this.schoolOtherSupplier = Suppliers.memoizeWithExpiration(new Supplier<Set<School>>() {
-            @Override
-            public Set<School> get() {
-                try {
-                    List<RegisteredUserDTO> users = userManager.findUsers(new RegisteredUserDTO());
-
-                    Set<School> schoolOthers = Sets.newHashSet();
-
-                    for (RegisteredUserDTO user : users) {
-                        if (user.getSchoolOther() != null) {
-                            School pseudoSchool = new School();
-                            pseudoSchool.setUrn(Integer.toString(user.getSchoolOther().hashCode()));
-                            pseudoSchool.setName(user.getSchoolOther());
-                            pseudoSchool.setDataSource(School.SchoolDataSource.USER_ENTERED);
-                            schoolOthers.add(pseudoSchool);
-                        }
-                    }
-                    return schoolOthers;
-                } catch (SegueDatabaseException e) {
-                    return null;
-                }
-            }
-        }, 1, TimeUnit.DAYS);
     }
 
     /**

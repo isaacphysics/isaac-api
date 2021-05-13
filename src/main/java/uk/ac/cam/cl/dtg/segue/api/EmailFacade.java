@@ -86,7 +86,6 @@ public class EmailFacade extends AbstractSegueFacade {
     private final EmailManager emailManager;
     private final UserAccountManager userManager;
     private final IContentManager contentManager;
-    private final String contentIndex;
     private final IMisuseMonitor misuseMonitor;
 
     /**
@@ -108,11 +107,9 @@ public class EmailFacade extends AbstractSegueFacade {
     @Inject
     public EmailFacade(final PropertiesLoader properties, final ILogManager logManager,
             final EmailManager emailManager, final UserAccountManager userManager,
-                       final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex,
-                       final IMisuseMonitor misuseMonitor) {
+                       final IContentManager contentManager, final IMisuseMonitor misuseMonitor) {
 		super(properties, logManager);
         this.contentManager = contentManager;
-        this.contentIndex = contentIndex;
 		this.emailManager = emailManager;
 		this.userManager = userManager;
         this.misuseMonitor = misuseMonitor;

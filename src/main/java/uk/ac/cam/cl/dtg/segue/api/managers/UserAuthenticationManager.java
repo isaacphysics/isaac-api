@@ -21,7 +21,6 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.Validate;
 import org.eclipse.jetty.websocket.api.UpgradeRequest;
@@ -107,15 +106,13 @@ public class UserAuthenticationManager {
      * @param properties
      *            - A property loader
      * @param providersToRegister
- *            - A map of known authentication providers.
-     * @param dtoMapper
-*            - the preconfigured DO to DTO object mapper for user objects.
+     *             - A map of known authentication providers.
      * @param emailQueue
      */
     @Inject
     public UserAuthenticationManager(final IUserDataManager database,
                                      final PropertiesLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
-                                     final MapperFacade dtoMapper, final EmailManager emailQueue) {
+                                     final EmailManager emailQueue) {
         Validate.notNull(properties.getProperty(HMAC_SALT));
         Validate.notNull(properties.getProperty(SESSION_EXPIRY_SECONDS_DEFAULT));
         Validate.notNull(properties.getProperty(SESSION_EXPIRY_SECONDS_REMEMBERED));
