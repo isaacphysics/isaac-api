@@ -206,7 +206,7 @@ public class IsaacTest {
         studentGroups = ImmutableList.of(studentGroup.getId(), studentInactiveGroup.getId());
 
         completedAssignment = new QuizAssignmentDTO(++id, studentQuiz.getId(), teacher.getId(), studentGroup.getId(), someFurtherPastDate, somePastDate, QuizFeedbackMode.OVERALL_MARK);
-        studentAssignment = new QuizAssignmentDTO(++id, studentQuiz.getId(), teacher.getId(), studentGroup.getId(), somePastDate, someFutureDate, QuizFeedbackMode.OVERALL_MARK);
+        studentAssignment = new QuizAssignmentDTO(++id, studentQuiz.getId(), teacher.getId(), studentGroup.getId(), somePastDate, someFutureDate, QuizFeedbackMode.DETAILED_FEEDBACK);
         overdueAssignment = new QuizAssignmentDTO(++id, studentQuiz.getId(), teacher.getId(), studentGroup.getId(), someFurtherPastDate, somePastDate, QuizFeedbackMode.SECTION_MARKS);
         otherAssignment = new QuizAssignmentDTO(++id, teacherQuiz.getId(), teacher.getId(), studentGroup.getId(), somePastDate, someFutureDate, QuizFeedbackMode.OVERALL_MARK);
 
