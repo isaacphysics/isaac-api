@@ -40,6 +40,7 @@ import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.api.monitors.TeacherPasswordResetMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.FailedToHashPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
@@ -882,6 +883,9 @@ public class UsersFacade extends AbstractSegueFacade {
             log.warn("Missing field during update operation. ", e);
             return new SegueErrorResponse(Status.BAD_REQUEST, "You are missing a required field. "
                     + "Please make sure you have specified all mandatory fields in your response.").toResponse();
+        } catch (DuplicateAccountException e) {
+            log.debug("Duplicate user already exists in the database.", e);
+            return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
         } catch (SegueDatabaseException e) {
             String errorMsg = "Unable to set a password, due to an internal database error.";
             log.error(errorMsg, e);
