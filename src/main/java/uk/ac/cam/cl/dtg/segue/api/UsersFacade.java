@@ -884,7 +884,7 @@ public class UsersFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST, "You are missing a required field. "
                     + "Please make sure you have specified all mandatory fields in your response.").toResponse();
         } catch (DuplicateAccountException e) {
-            log.info(String.format("Duplicate account registration attempt for (%s)", userObjectFromClient.getEmail()));
+            log.warn(String.format("Duplicate account registration attempt for (%s)", userObjectFromClient.getEmail()));
             return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
         } catch (SegueDatabaseException e) {
             String errorMsg = "Unable to set a password, due to an internal database error.";
