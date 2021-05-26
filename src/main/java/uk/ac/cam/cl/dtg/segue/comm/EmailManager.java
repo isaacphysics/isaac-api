@@ -261,7 +261,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         ImmutableMap<String, Object> eventDetails = new ImmutableMap.Builder<String, Object>().put(USER_ID_LIST_FKEY_FIELDNAME, ids)
                 .put("contentObjectId", contentObjectId)
                 .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA())
-                .put("numberFiltered", numberOfFilteredUsers).build();
+                .put("numberFiltered", numberOfFilteredUsers)
+                .put("type", emailType).build();
 
         this.logManager.logInternalEvent(sendingUser, SegueServerLogType.SEND_MASS_EMAIL, eventDetails);
         log.info(String.format("Admin user (%s) added %d emails to the queue. %d were filtered.", sendingUser.getEmail(),
