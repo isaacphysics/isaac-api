@@ -980,7 +980,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      */
     public static Reflections getReflectionsClass(final String pkg) {
         if (!reflections.containsKey(pkg)) {
-            log.info("Caching reflections scan on uk.ac.cam.cl.dtg.segue....");
+            log.info(String.format("Caching reflections scan on '%s'", pkg));
             reflections.put(pkg, new Reflections(pkg));
         }
         return reflections.get(pkg);

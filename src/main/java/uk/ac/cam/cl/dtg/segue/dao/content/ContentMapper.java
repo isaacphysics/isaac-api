@@ -336,6 +336,8 @@ public class ContentMapper {
         if (ContentMapper.preconfiguredObjectMapper != null) {
             return preconfiguredObjectMapper;
         }
+
+        log.info("Initialising preconfiguredObjectMapper and caching it.");
         
         preconfiguredObjectMapper = generateNewPreconfiguredContentMapper();
 
