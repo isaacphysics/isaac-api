@@ -421,8 +421,7 @@ public class IsaacController extends AbstractIsaacFacade {
             userOfInterestSummary = userManager.convertToUserSummaryObject(userOfInterestFull);
 
             if (associationManager.hasPermission(user, userOfInterestSummary)) {
-                Map<String, Object> userProgressInformation = statsManager
-                        .getUserQuestionInformation(userOfInterestFull);
+                Map<String, Object> userProgressInformation = statsManager.getUserQuestionInformation(userOfInterestFull);
 
                 // augment details with user snapshot data (perhaps one day we will replace the entire endpoint with this call)
                 Map<String, Object> dailyStreakRecord = userStreaksManager.getCurrentStreakRecord(userOfInterestFull);

@@ -868,8 +868,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *            - dependency
      * @param questionManager
      *            - dependency
-     * @param gameManager
-     *            - dependency
      * @return stats manager
      */
     @Provides
@@ -878,12 +876,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static StatisticsManager getStatsManager(final UserAccountManager userManager,
                                                      final ILogManager logManager, final SchoolListReader schoolManager,
                                                      final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final LocationManager locationHistoryManager,
-                                                     final GroupManager groupManager, final QuestionManager questionManager, final GameManager gameManager,
+                                                     final GroupManager groupManager, final QuestionManager questionManager,
                                                      final IUserStreaksManager userStreaksManager) {
 
         if (null == statsManager) {
             statsManager = new StatisticsManager(userManager, logManager, schoolManager, contentManager, contentIndex,
-                    locationHistoryManager, groupManager, questionManager, gameManager, userStreaksManager);
+                    locationHistoryManager, groupManager, questionManager, userStreaksManager);
             log.info("Created Singleton of Statistics Manager");
         }
 
