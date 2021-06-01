@@ -36,6 +36,7 @@ import java.util.regex.Pattern;
 public class IsaacStringMatchValidator implements IValidator {
     private static final Logger log = LoggerFactory.getLogger(IsaacStringMatchValidator.class);
     private static final Pattern TRAILING_SPACES = Pattern.compile("\\s+$", Pattern.MULTILINE);
+    private static final Pattern LEADING_SPACES = Pattern.compile("^\\s+", Pattern.MULTILINE);
     
     @Override
     public final QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
@@ -100,7 +101,8 @@ public class IsaacStringMatchValidator implements IValidator {
                 }
 
                 // ... check if they match the choice, ...
-                if (valuesMatch(stringChoice, userAnswer, stringChoice.isCaseInsensitive(), stringMatchQuestion.getPreserveTrailingWhitespace())) {
+                if (valuesMatch(stringChoice.getValue(), userAnswer.getValue(), stringChoice.isCaseInsensitive(),
+                        stringMatchQuestion.getPreserveLeadingWhitespace(), stringMatchQuestion.getPreserveTrailingWhitespace())) {
                     if (stringChoice.isCaseInsensitive()) {
                         if (!responseCorrect) {
                             // ... allowing case-insensitive matching only if haven't already matched a correct answer ...
@@ -120,10 +122,8 @@ public class IsaacStringMatchValidator implements IValidator {
         return new QuestionValidationResponse(question.getId(), userAnswer, responseCorrect, feedback, new Date());
     }
 
-    private boolean valuesMatch(final StringChoice trustedChoice, final StringChoice userChoice,
-                                final Boolean caseInsensitive, final Boolean preserveTrailingWhitespace) {
-        String trustedValue = trustedChoice.getValue();
-        String userValue = userChoice.getValue();
+    private boolean valuesMatch(String trustedValue, String userValue, final Boolean caseInsensitive,
+                                final Boolean preserveLeadingWhitespace, final Boolean preserveTrailingWhitespace) {
 
         if (null == trustedValue || null == userValue) {
             return false;
@@ -132,6 +132,11 @@ public class IsaacStringMatchValidator implements IValidator {
         if (null != caseInsensitive && caseInsensitive) {
             trustedValue = trustedValue.toLowerCase();
             userValue = userValue.toLowerCase();
+        }
+        if (null == preserveLeadingWhitespace || !preserveLeadingWhitespace) {
+            // Strip trailing whitespace by default:
+            trustedValue = LEADING_SPACES.matcher(trustedValue).replaceAll("");
+            userValue = LEADING_SPACES.matcher(userValue).replaceAll("");
         }
         if (null == preserveTrailingWhitespace || !preserveTrailingWhitespace) {
             // Strip trailing whitespace by default:

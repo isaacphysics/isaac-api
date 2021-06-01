@@ -28,6 +28,7 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 public class IsaacStringMatchQuestionDTO extends IsaacQuestionBaseDTO {
     private Boolean multiLineEntry;
     private Boolean preserveTrailingWhitespace;
+    private Boolean preserveLeadingWhitespace;
 
     public Boolean getMultiLineEntry() {
         return multiLineEntry;
@@ -43,5 +44,13 @@ public class IsaacStringMatchQuestionDTO extends IsaacQuestionBaseDTO {
 
     public void setPreserveTrailingWhitespace(final Boolean preserveTrailingWhitespace) {
         this.preserveTrailingWhitespace = preserveTrailingWhitespace;
+    }
+
+    public Boolean getPreserveLeadingWhitespace() {
+        return preserveLeadingWhitespace;
+    }
+
+    public void setPreserveLeadingWhitespace(final Boolean preserveLeadingWhitespace) {
+        this.preserveLeadingWhitespace = preserveLeadingWhitespace;
     }
 }

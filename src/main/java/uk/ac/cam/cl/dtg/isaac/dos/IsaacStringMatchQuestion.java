@@ -31,6 +31,7 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 public class IsaacStringMatchQuestion extends IsaacQuestionBase {
     private Boolean multiLineEntry;
     private Boolean preserveTrailingWhitespace;
+    private Boolean preserveLeadingWhitespace;
 
     public Boolean getMultiLineEntry() {
         return multiLineEntry;
@@ -46,5 +47,13 @@ public class IsaacStringMatchQuestion extends IsaacQuestionBase {
 
     public void setPreserveTrailingWhitespace(final Boolean preserveTrailingWhitespace) {
         this.preserveTrailingWhitespace = preserveTrailingWhitespace;
+    }
+
+    public Boolean getPreserveLeadingWhitespace() {
+        return preserveLeadingWhitespace;
+    }
+
+    public void setPreserveLeadingWhitespace(final Boolean preserveLeadingWhitespace) {
+        this.preserveLeadingWhitespace = preserveLeadingWhitespace;
     }
 }
