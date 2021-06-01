@@ -27,8 +27,8 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 @ValidatesWith(IsaacStringMatchValidator.class)
 public class IsaacStringMatchQuestionDTO extends IsaacQuestionBaseDTO {
     private Boolean multiLineEntry;
-    private Boolean preserveTrailingWhitespace;
     private Boolean preserveLeadingWhitespace;
+    private Boolean preserveTrailingWhitespace;
 
     public Boolean getMultiLineEntry() {
         return multiLineEntry;

@@ -35,8 +35,8 @@ import java.util.regex.Pattern;
  */
 public class IsaacStringMatchValidator implements IValidator {
     private static final Logger log = LoggerFactory.getLogger(IsaacStringMatchValidator.class);
-    private static final Pattern TRAILING_SPACES = Pattern.compile("\\s+$", Pattern.MULTILINE);
     private static final Pattern LEADING_SPACES = Pattern.compile("^\\s+", Pattern.MULTILINE);
+    private static final Pattern TRAILING_SPACES = Pattern.compile("\\s+$", Pattern.MULTILINE);
     
     @Override
     public final QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
@@ -134,7 +134,7 @@ public class IsaacStringMatchValidator implements IValidator {
             userValue = userValue.toLowerCase();
         }
         if (null == preserveLeadingWhitespace || !preserveLeadingWhitespace) {
-            // Strip trailing whitespace by default:
+            // Strip leading whitespace by default:
             trustedValue = LEADING_SPACES.matcher(trustedValue).replaceAll("");
             userValue = LEADING_SPACES.matcher(userValue).replaceAll("");
         }
