@@ -203,7 +203,8 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
 
             ResultSet results = pst.executeQuery();
 
-            Map<String, Map<String, List<QuestionValidationResponse>>> mapOfQuestionAttemptsByPage = Maps.newHashMap();
+            // Since we go to the effort of sorting the attempts in Postgres, use LinkedHashMap which is ordered:
+            Map<String, Map<String, List<QuestionValidationResponse>>> mapOfQuestionAttemptsByPage = Maps.newLinkedHashMap();
 
             while (results.next()) {
                 QuestionValidationResponse questionAttempt = objectMapper.readValue(
@@ -216,7 +217,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
                         .get(questionPageId);
                 
                 if (null == attemptsForThisQuestionPage) {
-                    attemptsForThisQuestionPage = Maps.newHashMap();
+                    attemptsForThisQuestionPage = Maps.newLinkedHashMap();
                     mapOfQuestionAttemptsByPage.put(questionPageId, attemptsForThisQuestionPage);
                 }
                 
