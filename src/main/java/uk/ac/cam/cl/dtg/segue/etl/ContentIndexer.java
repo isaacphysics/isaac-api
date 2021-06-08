@@ -20,6 +20,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacEventPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuiz;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuizSection;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicChemistryQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicQuestion;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
@@ -203,6 +205,19 @@ public class ContentIndexer {
                         for (Content flattenedContent : this.flattenContentObjects(content)) {
                             if (flattenedContent.getId() == null) {
                                 continue;
+                            }
+
+                            // Prevents ETL indexing of quizzes that contain anything that is not an IsaacQuizSection
+                            // in the top-level children array.
+                            // NOTE: I'm not sure this is the right place for this but I couldn't find a better one.
+                            // This also seems to be the only time we can prevent a file from being indexed entirely.
+                            if (flattenedContent instanceof IsaacQuiz) {
+                                List<ContentBase> children = flattenedContent.getChildren();
+                                if (children.stream().anyMatch(c -> !(c instanceof IsaacQuizSection))) {
+                                    log.debug("IsaacQuiz (" + flattenedContent.getId()
+                                           + ") contains top-level non-quiz sections. Skipping.");
+                                    continue;
+                                }
                             }
 
                             if (flattenedContent.getId().length() > 512) {
