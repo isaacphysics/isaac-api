@@ -216,6 +216,9 @@ public class ContentIndexer {
                                 if (children.stream().anyMatch(c -> !(c instanceof IsaacQuizSection))) {
                                     log.debug("IsaacQuiz (" + flattenedContent.getId()
                                            + ") contains top-level non-quiz sections. Skipping.");
+                                    this.registerContentProblem(flattenedContent, "Index failure - Invalid "
+                                           + "content type among quiz sections. Quizzes can only contain quiz sections "
+                                           + "in the top-level children array.", indexProblemCache);
                                     continue;
                                 }
                             }
