@@ -33,6 +33,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -854,7 +855,7 @@ public class GameboardPersistenceManager {
         gameboardDO.setId(results.getString("id"));
         gameboardDO.setTitle(results.getString("title"));
         gameboardDO.setQuestions(Arrays.asList((String[]) results.getArray("questions").getArray()));
-        gameboardDO.setWildCard(objectMapper.readValue(results.getObject("wildcard").toString(), IsaacWildcard.class));
+        gameboardDO.setWildCard(Objects.isNull(results.getObject("wildcard")) ? null : objectMapper.readValue(results.getObject("wildcard").toString(), IsaacWildcard.class));
         gameboardDO.setWildCardPosition(results.getInt("wildcard_position"));
         gameboardDO.setGameFilter(objectMapper
                 .readValue(results.getObject("game_filter").toString(), GameFilter.class));
