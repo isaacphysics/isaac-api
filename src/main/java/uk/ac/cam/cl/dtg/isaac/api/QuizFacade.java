@@ -304,7 +304,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                 .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, false)).tag(etag).build();
         } catch (ContentManagerException e) {
             log.error("Content error whilst previewing a quiz", e);
-            return SegueErrorResponse.getResourceNotFoundResponse("The content for that quiz has become unavailable.");
+            return SegueErrorResponse.getResourceNotFoundResponse("This quiz has become unavailable.");
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
@@ -346,7 +346,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             // Check the user is an active member of the relevant group
             UserGroupDTO group = quizAssignmentManager.getGroupForAssignment(quizAssignment);
             if (!groupManager.isUserInGroup(user, group)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You are not a member of a group assigned this quiz.").toResponse();
+                return new SegueErrorResponse(Status.FORBIDDEN, "You are not a member of a group to which this quiz is assigned.").toResponse();
             }
 
             // Check the due date hasn't passed
@@ -369,12 +369,12 @@ public class QuizFacade extends AbstractIsaacFacade {
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (AttemptCompletedException e) {
-            return new SegueErrorResponse(Status.FORBIDDEN, "You have already completed your attempt at this quiz.").toResponse();
+            return new SegueErrorResponse(Status.FORBIDDEN, "You have already completed your attempt for this quiz.").toResponse();
         } catch (AssignmentCancelledException e) {
             return new SegueErrorResponse(Status.GONE, "This quiz assignment has been cancelled.").toResponse();
         } catch (ContentManagerException e) {
             log.error("Content error whilst starting a quiz attempt", e);
-            return SegueErrorResponse.getResourceNotFoundResponse("The content for that quiz has become unavailable.");
+            return SegueErrorResponse.getResourceNotFoundResponse("This quiz has become unavailable.");
         }
     }
 
@@ -411,14 +411,14 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             // Check it is visibleToStudents
             if (!quiz.getVisibleToStudents()) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "This quiz is not available for students to attempt freely.").toResponse();
+                return new SegueErrorResponse(Status.FORBIDDEN, "Free attempts are not available for this quiz.").toResponse();
             }
 
             // Check if there is an active assignment of this quiz
             List<QuizAssignmentDTO> activeQuizAssignments = this.quizAssignmentManager.getActiveQuizAssignments(quiz, user);
 
             if (!activeQuizAssignments.isEmpty()) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You are currently set this quiz so you cannot attempt it freely.").toResponse();
+                return new SegueErrorResponse(Status.FORBIDDEN, "You are currently set this quiz. You must complete your assignment before you can attempt this quiz freely.").toResponse();
             }
 
             // Create a quiz attempt
@@ -437,7 +437,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (ContentManagerException e) {
             log.error("Content error whilst starting a free quiz attempt", e);
-            return SegueErrorResponse.getResourceNotFoundResponse("The content for that quiz has become unavailable.");
+            return SegueErrorResponse.getResourceNotFoundResponse("This quiz has become unavailable.");
         }
     }
 
@@ -479,7 +479,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.FORBIDDEN, "This quiz assignment has been cancelled.").toResponse();
         } catch (ContentManagerException e) {
             log.error("Content error whilst getting quiz attempt", e);
-            return SegueErrorResponse.getResourceNotFoundResponse("The content for that quiz has become unavailable.");
+            return SegueErrorResponse.getResourceNotFoundResponse("This quiz has become unavailable.");
         } catch (ErrorResponseWrapper responseWrapper) {
             return responseWrapper.toResponse();
         }
@@ -541,7 +541,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.FORBIDDEN, "This quiz assignment has been cancelled.").toResponse();
         } catch (ContentManagerException e) {
             log.error("Content error whilst getting quiz attempt", e);
-            return SegueErrorResponse.getResourceNotFoundResponse("The content for that quiz has become unavailable.");
+            return SegueErrorResponse.getResourceNotFoundResponse("This quiz has become unavailable.");
         } catch (ErrorResponseWrapper responseWrapper) {
             return responseWrapper.toResponse();
         }
@@ -635,7 +635,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             }
 
             if (assignment.getDueDate() != null && assignment.getDueDate().before(new Date())) {
-                return new SegueErrorResponse(Status.BAD_REQUEST, "You cannot mark a quiz incomplete when it is already due.").toResponse();
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You cannot mark a quiz attempt as incomplete while it is still due.").toResponse();
             }
 
             RegisteredUserDTO student = userManager.getUserDTOById(userId);
@@ -836,7 +836,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             QuizAttemptDTO quizAttempt = this.quizAttemptManager.getById(quizAttemptId);
 
             if (!quizAttempt.getUserId().equals(user.getId())) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "This is not your quiz attempt to cancel.").toResponse();
+                return new SegueErrorResponse(Status.FORBIDDEN, "You cannot cancel a quiz attempt for someone else.").toResponse();
             }
 
             if (quizAttempt.getQuizAssignmentId() != null) {
@@ -931,7 +931,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (ContentManagerException e) {
             log.error("Content error whilst setting quiz", e);
-            return SegueErrorResponse.getResourceNotFoundResponse("The content for that quiz has become unavailable.");
+            return SegueErrorResponse.getResourceNotFoundResponse("This quiz has become unavailable.");
         }
     }
 
@@ -1058,7 +1058,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (ContentManagerException e) {
             log.error("Content error whilst viewing quiz assignment", e);
-            return SegueErrorResponse.getResourceNotFoundResponse("The content for that quiz has become unavailable.");
+            return SegueErrorResponse.getResourceNotFoundResponse("This quiz has become unavailable.");
         }
     }
 
@@ -1104,7 +1104,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             if (!groupManager.isUserInGroup(student, group)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
-                    "That student is not in the group for this quiz assignment.").toResponse();
+                    "That student is not in the group that was assigned this quiz.").toResponse();
             }
 
             if (!associationManager.hasPermission(user, student)) {
@@ -1134,7 +1134,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (ContentManagerException e) {
             log.error("Content error whilst viewing quiz assignment attempt", e);
-            return SegueErrorResponse.getResourceNotFoundResponse("The content for that quiz has become unavailable.");
+            return SegueErrorResponse.getResourceNotFoundResponse("This quiz has become unavailable.");
         } catch (NoUserException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "That user does not exist.").toResponse();
         }
