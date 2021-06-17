@@ -15,10 +15,12 @@
  */
 package uk.ac.cam.cl.dtg.segue.dos.content;
 
-import java.util.Set;
-
-import uk.ac.cam.cl.dtg.segue.dao.TrimWhitespaceDeserializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import uk.ac.cam.cl.dtg.segue.dao.TrimWhitespaceDeserializer;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Represents any content related data that can be stored by the api
@@ -27,12 +29,13 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
  * deserialized using a custom serializer (ContentBaseDeserializer).
  */
 public abstract class ContentBase {
-
     protected String id;
     protected String type;
     protected Set<String> tags;
     protected String canonicalSourceFile;
     protected String version;
+    protected List<Map<String, List<String>>> audience;
+    protected Map<String, List<String>> display;
 
     public String getId() {
         return id;
@@ -73,6 +76,22 @@ public abstract class ContentBase {
 
     public void setVersion(String version) {
         this.version = version;
+    }
+
+    public List<Map<String, List<String>>> getAudience() {
+        return audience;
+    }
+
+    public void setAudience(List<Map<String, List<String>>> audience) {
+        this.audience = audience;
+    }
+
+    public Map<String, List<String>> getDisplay() {
+        return display;
+    }
+
+    public void setDisplay(Map<String, List<String>> display) {
+        this.display = display;
     }
 
     @Override
