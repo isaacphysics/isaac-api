@@ -217,7 +217,7 @@ public class QuizQuestionManager {
 
             // Calculate the scores.
             Map<QuestionDTO, QuestionValidationResponse> answerMap = extractAnswers(questionsToAugment, answers.get(user.getId()));
-            return getIndividualQuizFeedback(sections, assignment.getQuizFeedbackMode(), questionsToAugment, answerMap);
+            return getIndividualQuizFeedback(sections, QuizFeedbackMode.DETAILED_FEEDBACK, questionsToAugment, answerMap);
         }));
     }
 
