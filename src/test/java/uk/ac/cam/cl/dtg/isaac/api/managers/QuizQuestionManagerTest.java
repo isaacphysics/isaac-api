@@ -264,7 +264,7 @@ public class QuizQuestionManagerTest extends AbstractManagerTest {
                 entry -> singletonList(entry.getValue()))))
         ));
 
-        Map<RegisteredUserDTO, QuizFeedbackDTO> feedback = quizQuestionManager.getAssignmentManagerFeedback(studentQuiz, studentAssignment, groupMembers);
+        Map<RegisteredUserDTO, QuizFeedbackDTO> feedback = quizQuestionManager.getAssignmentTeacherFeedback(studentQuiz, studentAssignment, groupMembers);
 
         assertFalse(feedback.get(secondStudent).isComplete());
         assertStudentMarks(feedback.get(student));

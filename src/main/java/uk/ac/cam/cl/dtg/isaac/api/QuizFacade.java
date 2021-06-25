@@ -1031,7 +1031,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group);
 
-            Map<RegisteredUserDTO, QuizFeedbackDTO> feedbackMap = quizQuestionManager.getAssignmentManagerFeedback(quiz, assignment, groupMembers);
+            Map<RegisteredUserDTO, QuizFeedbackDTO> feedbackMap = quizQuestionManager.getAssignmentTeacherFeedback(quiz, assignment, groupMembers);
 
             List<QuizUserFeedbackDTO> userFeedback = new ArrayList<>();
 
