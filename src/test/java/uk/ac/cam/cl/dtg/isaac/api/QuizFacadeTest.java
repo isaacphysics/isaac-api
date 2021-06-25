@@ -222,7 +222,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
             requiresLogin(),
             as(studentsTeachersOrAdmin(),
                 prepare(quizAssignmentManager, m -> expect(m.getGroupForAssignment(studentAssignment)).andReturn(studentGroup)),
-                prepare(quizQuestionManager, m -> expect(m.getAssignmentFeedback(studentQuiz, studentAssignment, ImmutableList.of(student, secondStudent)))
+                prepare(quizQuestionManager, m -> expect(m.getAssignmentManagerFeedback(studentQuiz, studentAssignment, ImmutableList.of(student, secondStudent)))
                     .andReturn(ImmutableMap.of(student, studentFeedback, secondStudent, otherStudentFeedback))),
                 prepare(associationManager, m -> {
                     expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(student))).andAnswer(grantAccess(true));
@@ -237,7 +237,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
             forbiddenForEveryoneElse(),
             as(studentsTeachersOrAdmin(),
                 prepare(quizAssignmentManager, m -> expect(m.getGroupForAssignment(studentAssignment)).andReturn(studentGroup)),
-                prepare(quizQuestionManager, m -> expect(m.getAssignmentFeedback(studentQuiz, studentAssignment, ImmutableList.of(student, secondStudent)))
+                prepare(quizQuestionManager, m -> expect(m.getAssignmentManagerFeedback(studentQuiz, studentAssignment, ImmutableList.of(student, secondStudent)))
                     .andReturn(ImmutableMap.of(student, studentFeedback, secondStudent, otherStudentFeedback))),
                 prepare(associationManager, m -> {
                     expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(student))).andAnswer(grantAccess(true));
