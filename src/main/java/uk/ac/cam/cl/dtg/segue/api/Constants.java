@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
+import com.google.common.collect.ImmutableSet;
 import org.postgresql.util.PGInterval;
 
 import java.util.Arrays;
@@ -213,8 +214,10 @@ public final class Constants {
      * 
      */
     public enum BooleanOperator {
-        AND, OR, NOT
+        AND, OR, NOT, NESTED_AND, NESTED_OR, NESTED_NOT
     };
+    public static Set<BooleanOperator> NestedBooleanOperators =
+            ImmutableSet.of(BooleanOperator.NESTED_AND, BooleanOperator.NESTED_OR, BooleanOperator.NESTED_NOT);
 
     public static final String SCHOOLS_INDEX_BASE = "schools";
     public enum SCHOOLS_INDEX_TYPE {
@@ -405,6 +408,9 @@ public final class Constants {
     public static final String TITLE_FIELDNAME = "title";
     public static final String TYPE_FIELDNAME = "type";
     public static final String TAGS_FIELDNAME = "tags";
+    public static final String STAGE_FIELDNAME = "audience.stage.keyword";
+    public static final String DIFFICULTY_FIELDNAME = "audience.difficulty.keyword";
+    public static final String EXAM_BOARD_FIELDNAME = "audience.examBoard.keyword";
     public static final String VALUE_FIELDNAME = "value";
     public static final String LEVEL_FIELDNAME = "level";
     public static final String SUMMARY_FIELDNAME = "summary";

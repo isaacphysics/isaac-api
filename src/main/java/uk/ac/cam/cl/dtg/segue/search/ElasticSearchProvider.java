@@ -25,6 +25,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
+import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
 import org.elasticsearch.action.admin.indices.settings.get.GetSettingsResponse;
@@ -424,33 +425,59 @@ public class ElasticSearchProvider implements ISearchProvider {
     private BoolQueryBuilder generateBoolMatchQuery(
             final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch) {
         BoolQueryBuilder query = QueryBuilders.boolQuery();
+        BoolQueryBuilder nestedQuery = QueryBuilders.boolQuery();
+        String nestedPath = null;
 
         // This Set will allow us to calculate the minimum should match value -
         // it is assumed that for each or'd field there should be a match
         Set<String> shouldMatchSet = Sets.newHashSet();
+        Set<String> nestedShouldMatchSet = Sets.newHashSet();
+
         for (Map.Entry<Map.Entry<Constants.BooleanOperator, String>, List<String>> pair : fieldsToMatch.entrySet()) {
             // extract the MapEntry which contains a key value pair of the
             // operator and the list of operands to match against.
             Constants.BooleanOperator operatorForThisField = pair.getKey().getKey();
+            String field = pair.getKey().getValue();
+
+            // Nested query is its own separate bool object but the logic is the same
+            BoolQueryBuilder thisQuery = query;
+            Set<String> thisShouldMatchSet = shouldMatchSet;
+            if (Constants.NestedBooleanOperators.contains(operatorForThisField)) {
+                String thisFieldsNestedPath = field.split("\\.")[0];
+                if (nestedPath == null) {
+                    nestedPath = thisFieldsNestedPath;
+                } else if (!nestedPath.equals(thisFieldsNestedPath)) {
+                    log.warn("Generate bool match query cannot handle two different nested paths '" +
+                            nestedPath + "' AND '" + thisFieldsNestedPath + "'. Ignoring it and continuing anyway.");
+                }
+                thisQuery = nestedQuery;
+                thisShouldMatchSet = nestedShouldMatchSet;
+            }
 
             // go through each operand and add it to the query
             if (pair.getValue() != null) {
                 for (String queryItem : pair.getValue()) {
-                    if (operatorForThisField.equals(Constants.BooleanOperator.OR)) {
-                        shouldMatchSet.add(pair.getKey().getValue());
-                        query.should(QueryBuilders.matchQuery(pair.getKey().getValue(), queryItem))
-                                .minimumShouldMatch(shouldMatchSet.size());
-                    } else if (operatorForThisField.equals(Constants.BooleanOperator.NOT)) {
-                        query.mustNot(QueryBuilders.matchQuery(pair.getKey().getValue(), queryItem));
+                    if (ImmutableSet.of(Constants.BooleanOperator.OR, Constants.BooleanOperator.NESTED_OR)
+                            .contains(operatorForThisField)) {
+                        thisShouldMatchSet.add(pair.getKey().getValue());
+                        thisQuery.should(QueryBuilders.matchQuery(pair.getKey().getValue(), queryItem))
+                                .minimumShouldMatch(thisShouldMatchSet.size());
+                    } else if (ImmutableSet.of(Constants.BooleanOperator.NOT, Constants.BooleanOperator.NESTED_NOT)
+                            .contains(operatorForThisField)) {
+                        thisQuery.mustNot(QueryBuilders.matchQuery(pair.getKey().getValue(), queryItem));
                     } else {
-                        query.must(QueryBuilders.matchQuery(pair.getKey().getValue(), queryItem));
+                        thisQuery.must(QueryBuilders.matchQuery(pair.getKey().getValue(), queryItem));
                     }
                 }
-
             } else {
                 log.warn("Null argument received in paginated match search... "
                         + "This is not usually expected. Ignoring it and continuing anyway.");
             }
+        }
+
+        // If we have had nested fields in our query add the nested boolean query to the parent query
+        if (nestedPath != null && nestedQuery.hasClauses()) {
+            query.must(QueryBuilders.nestedQuery(nestedPath, nestedQuery, ScoreMode.Total));
         }
         return query;
     }

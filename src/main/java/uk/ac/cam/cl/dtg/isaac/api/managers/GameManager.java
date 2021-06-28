@@ -80,13 +80,7 @@ import static uk.ac.cam.cl.dtg.isaac.api.Constants.QuestionPartState;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.RELATED_CONTENT_FIELDNAME;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.VISITED_DATE_FIELDNAME;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.WILDCARD_TYPE;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.ID_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.LEVEL_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TAGS_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TITLE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * This class will be responsible for generating and managing gameboards used by users.
@@ -1274,6 +1268,24 @@ public class GameManager {
             fieldsToMatchOutput.put(newEntry, levelsAsString);
         }
 
+        // Handle the nested audience fields: stage, difficulty and examBoard
+        if (null != gameFilter.getStages()) {
+            // To start with we will only support the AND of stages which will almost always be one stage.
+            // Thorough testing should be done before switching this to a NESTED_OR to make sure it acts as expected when
+            // combined with the other nested OR queries.
+            Map.Entry<BooleanOperator, String> newEntry = immutableEntry(BooleanOperator.NESTED_AND, STAGE_FIELDNAME);
+            fieldsToMatchOutput.put(newEntry, gameFilter.getStages());
+        }
+        if (null != gameFilter.getDifficulties()) {
+            Map.Entry<BooleanOperator, String> newEntry = immutableEntry(BooleanOperator.NESTED_OR, DIFFICULTY_FIELDNAME);
+            fieldsToMatchOutput.put(newEntry, gameFilter.getDifficulties());
+        }
+        if (null != gameFilter.getExamBoards()) {
+            Map.Entry<BooleanOperator, String> newEntry = immutableEntry(BooleanOperator.NESTED_OR, EXAM_BOARD_FIELDNAME);
+            fieldsToMatchOutput.put(newEntry, gameFilter.getExamBoards());
+        }
+
+        // handle concepts
         if (null != gameFilter.getConcepts()) {
             Map.Entry<BooleanOperator, String> newEntry 
                 = immutableEntry(BooleanOperator.AND, RELATED_CONTENT_FIELDNAME);
