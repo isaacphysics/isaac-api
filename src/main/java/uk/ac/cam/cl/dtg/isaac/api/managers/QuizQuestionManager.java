@@ -192,7 +192,7 @@ public class QuizQuestionManager {
      * @param users
      *            - the users to get feedback for.
      */
-    public Map<RegisteredUserDTO, QuizFeedbackDTO> getAssignmentFeedback(IsaacQuizDTO quiz, QuizAssignmentDTO assignment, List<RegisteredUserDTO> users) throws ContentManagerException, SegueDatabaseException {
+    public Map<RegisteredUserDTO, QuizFeedbackDTO> getAssignmentTeacherFeedback(IsaacQuizDTO quiz, QuizAssignmentDTO assignment, List<RegisteredUserDTO> users) throws ContentManagerException, SegueDatabaseException {
         Collection<QuestionDTO> questionsToAugment = GameManager.getAllMarkableQuestionPartsDFSOrder(quiz);
         List<IsaacQuizSectionDTO> sections = quizManager.extractSectionObjects(quiz);
         augmentQuizTotals(quiz, questionsToAugment);
@@ -217,7 +217,7 @@ public class QuizQuestionManager {
 
             // Calculate the scores.
             Map<QuestionDTO, QuestionValidationResponse> answerMap = extractAnswers(questionsToAugment, answers.get(user.getId()));
-            return getIndividualQuizFeedback(sections, assignment.getQuizFeedbackMode(), questionsToAugment, answerMap);
+            return getIndividualQuizFeedback(sections, QuizFeedbackMode.DETAILED_FEEDBACK, questionsToAugment, answerMap);
         }));
     }
 
