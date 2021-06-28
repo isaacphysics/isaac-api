@@ -168,6 +168,7 @@ public class GameManager {
     public GameboardDTO generateRandomGameboard(
             final String title, final List<String> subjects, final List<String> fields, final List<String> topics,
             final List<Integer> levels, final List<String> concepts, final List<String> questionCategories,
+            final List<String> stages, final List<String> difficulties, final List<String> examBoards,
             final AbstractSegueUserDTO boardOwner)
     throws NoWildcardException, SegueDatabaseException, ContentManagerException {
 
@@ -182,7 +183,8 @@ public class GameManager {
         Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts = questionManager
                 .getQuestionAttemptsByUser(boardOwner);
 
-        GameFilter gameFilter = new GameFilter(subjects, fields, topics, levels, concepts, questionCategories);
+        GameFilter gameFilter = new GameFilter(
+                subjects, fields, topics, levels, concepts, questionCategories, stages, difficulties, examBoards);
 
         List<GameboardItem> selectionOfGameboardQuestions =
                 this.getSelectedGameboardQuestions(gameFilter, usersQuestionAttempts);

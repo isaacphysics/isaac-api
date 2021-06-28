@@ -160,6 +160,9 @@ public class GameboardsFacade extends AbstractIsaacFacade {
         List<Integer> levelsList = null;
         List<String> conceptsList = null;
         List<String> questionCategoriesList = null;
+        List<String> stages = null;
+        List<String> difficulties = null;
+        List<String> examBoards = null;
 
         if (null != subjects && !subjects.isEmpty()) {
             subjectsList = Arrays.asList(subjects.split(","));
@@ -200,7 +203,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             GameboardDTO gameboard;
 
             gameboard = gameManager.generateRandomGameboard(title, subjectsList, fieldsList, topicsList, levelsList,
-                    conceptsList, questionCategoriesList, boardOwner);
+                    conceptsList, questionCategoriesList, stages, difficulties, examBoards,boardOwner);
 
             if (null == gameboard) {
                 return new SegueErrorResponse(Status.NO_CONTENT,

@@ -114,7 +114,9 @@ public class GameboardsFacadeTest {
 						EasyMock.<String> anyObject(), EasyMock.<List<String>> anyObject(),
 						EasyMock.<List<String>> anyObject(), EasyMock.<List<String>> anyObject(),
 						EasyMock.<List<Integer>> anyObject(), EasyMock.<List<String>> anyObject(),
-						EasyMock.<List<String>> anyObject(), EasyMock.<AbstractSegueUserDTO> anyObject()))
+						EasyMock.<List<String>> anyObject(), EasyMock.<List<String>> anyObject(),
+						EasyMock.<List<String>> anyObject(), EasyMock.<List<String>> anyObject(),
+						EasyMock.<AbstractSegueUserDTO> anyObject()))
 					.andReturn(null).atLeastOnce();
 
 		expect(userManager.getCurrentUser(dummyRequest)).andReturn(new AnonymousUserDTO("testID"))
