@@ -90,6 +90,14 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
     private static final String VALID_GAMEBOARD_ID_REGEX = "^[a-z0-9_-]+$";
 
+    private static List<String> splitCsvStringQueryParam(final String queryParamCsv) {
+        if (null != queryParamCsv && !queryParamCsv.isEmpty()) {
+            return Arrays.asList(queryParamCsv.split(","));
+        } else {
+            return null;
+        }
+    }
+
     /**
      * GamesFacade. For management of gameboards etc.
      * 
@@ -152,29 +160,18 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     public final Response generateTemporaryGameboard(@Context final HttpServletRequest request,
             @QueryParam("title") final String title, @QueryParam("subjects") final String subjects,
             @QueryParam("fields") final String fields, @QueryParam("topics") final String topics,
-            @QueryParam("levels") final String levels, @QueryParam("concepts") final String concepts,
-            @QueryParam("questionCategories") final String questionCategories) {
-        List<String> subjectsList = null;
-        List<String> fieldsList = null;
-        List<String> topicsList = null;
+            @QueryParam("stages") final String stages, @QueryParam("difficulties") final String difficulties,
+            @QueryParam("examBoards") final String examBoards, @QueryParam("levels") final String levels,
+            @QueryParam("concepts") final String concepts, @QueryParam("questionCategories") final String questionCategories) {
+        List<String> subjectsList = splitCsvStringQueryParam(subjects);
+        List<String> fieldsList = splitCsvStringQueryParam(fields);
+        List<String> topicsList = splitCsvStringQueryParam(topics);
         List<Integer> levelsList = null;
-        List<String> conceptsList = null;
-        List<String> questionCategoriesList = null;
-        List<String> stages = null;
-        List<String> difficulties = null;
-        List<String> examBoards = null;
-
-        if (null != subjects && !subjects.isEmpty()) {
-            subjectsList = Arrays.asList(subjects.split(","));
-        }
-
-        if (null != fields && !fields.isEmpty()) {
-            fieldsList = Arrays.asList(fields.split(","));
-        }
-
-        if (null != topics && !topics.isEmpty()) {
-            topicsList = Arrays.asList(topics.split(","));
-        }
+        List<String> stagesList = splitCsvStringQueryParam(stages);
+        List<String> difficultiesList = splitCsvStringQueryParam(difficulties);
+        List<String> examBoardsList = splitCsvStringQueryParam(examBoards);
+        List<String> conceptsList = splitCsvStringQueryParam(concepts);
+        List<String> questionCategoriesList = splitCsvStringQueryParam(questionCategories);
 
         if (null != levels && !levels.isEmpty()) {
             String[] levelsAsString = levels.split(",");
@@ -190,20 +187,12 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             }
         }
 
-        if (null != concepts && !concepts.isEmpty()) {
-            conceptsList = Arrays.asList(concepts.split(","));
-        }
-
-        if (null != questionCategories && !questionCategories.isEmpty()) {
-            questionCategoriesList = Arrays.asList(questionCategories.split(","));
-        }
-
         try {
             AbstractSegueUserDTO boardOwner = this.userManager.getCurrentUser(request);
             GameboardDTO gameboard;
 
             gameboard = gameManager.generateRandomGameboard(title, subjectsList, fieldsList, topicsList, levelsList,
-                    conceptsList, questionCategoriesList, stages, difficulties, examBoards,boardOwner);
+                    conceptsList, questionCategoriesList, stagesList, difficultiesList, examBoardsList,boardOwner);
 
             if (null == gameboard) {
                 return new SegueErrorResponse(Status.NO_CONTENT,
