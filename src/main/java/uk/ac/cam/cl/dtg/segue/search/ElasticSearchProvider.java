@@ -457,16 +457,13 @@ public class ElasticSearchProvider implements ISearchProvider {
             // go through each operand and add it to the query
             if (pair.getValue() != null) {
                 for (String queryItem : pair.getValue()) {
-                    if (ImmutableSet.of(Constants.BooleanOperator.OR, Constants.BooleanOperator.NESTED_OR)
-                            .contains(operatorForThisField)) {
-                        thisShouldMatchSet.add(pair.getKey().getValue());
-                        thisQuery.should(QueryBuilders.matchQuery(pair.getKey().getValue(), queryItem))
-                                .minimumShouldMatch(thisShouldMatchSet.size());
-                    } else if (ImmutableSet.of(Constants.BooleanOperator.NOT, Constants.BooleanOperator.NESTED_NOT)
-                            .contains(operatorForThisField)) {
-                        thisQuery.mustNot(QueryBuilders.matchQuery(pair.getKey().getValue(), queryItem));
+                    if (ImmutableSet.of(Constants.BooleanOperator.OR, Constants.BooleanOperator.NESTED_OR).contains(operatorForThisField)) {
+                        thisShouldMatchSet.add(field);
+                        thisQuery.should(QueryBuilders.matchQuery(field, queryItem)).minimumShouldMatch(thisShouldMatchSet.size());
+                    } else if (ImmutableSet.of(Constants.BooleanOperator.NOT, Constants.BooleanOperator.NESTED_NOT).contains(operatorForThisField)) {
+                        thisQuery.mustNot(QueryBuilders.matchQuery(field, queryItem));
                     } else {
-                        thisQuery.must(QueryBuilders.matchQuery(pair.getKey().getValue(), queryItem));
+                        thisQuery.must(QueryBuilders.matchQuery(field, queryItem));
                     }
                 }
             } else {
