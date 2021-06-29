@@ -408,9 +408,6 @@ public final class Constants {
     public static final String TITLE_FIELDNAME = "title";
     public static final String TYPE_FIELDNAME = "type";
     public static final String TAGS_FIELDNAME = "tags";
-    public static final String STAGE_FIELDNAME = "audience.stage.keyword";
-    public static final String DIFFICULTY_FIELDNAME = "audience.difficulty.keyword";
-    public static final String EXAM_BOARD_FIELDNAME = "audience.examBoard.keyword";
     public static final String VALUE_FIELDNAME = "value";
     public static final String LEVEL_FIELDNAME = "level";
     public static final String SUMMARY_FIELDNAME = "summary";
@@ -421,6 +418,9 @@ public final class Constants {
     public static final String SEARCHABLE_CONTENT_FIELDNAME = "searchableContent";
     public static final String VISIBLE_TO_STUDENTS_FIELDNAME = "visibleToStudents";
 
+    public static final String STAGE_FIELDNAME = "audience.stage";
+    public static final String DIFFICULTY_FIELDNAME = "audience.difficulty";
+    public static final String EXAM_BOARD_FIELDNAME = "audience.examBoard";
     public static final Set<String> NESTED_FIELDS =
             // NOTE: if you are adding a nested field name that does not have the nested path audience, you will
             // need to alter (at least) generateBoolMatchQuery to be a little smarter - possible, though
