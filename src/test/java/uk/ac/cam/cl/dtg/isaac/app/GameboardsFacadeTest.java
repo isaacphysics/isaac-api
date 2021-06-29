@@ -108,9 +108,9 @@ public class GameboardsFacadeTest {
 		String concepts = "newtoni";
 		String title = "Newton";
 		String questionCategory = "problem_solving";
-		String stages = "A Level";
-		String difficulties = "Practice 1";
-		String examBoards = null;
+		String stages = "a_level";
+		String difficulties = "practice_1";
+		String examBoards = "wjec";
 
 		expect(
 				dummyGameManager.generateRandomGameboard(
@@ -128,7 +128,7 @@ public class GameboardsFacadeTest {
 		replay(dummyGameManager);
 
 		Response r = gameboardFacade.generateTemporaryGameboard(dummyRequest, title, subjects, fields, topics,
-				levels, concepts, stages, difficulties, examBoards, questionCategory);
+				stages, difficulties, examBoards,levels, concepts, questionCategory);
 
 		assertTrue(r.getStatus() == Status.NO_CONTENT.getStatusCode());
 		verify(dummyGameManager);
