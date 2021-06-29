@@ -171,7 +171,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/available")
     @Produces(MediaType.APPLICATION_JSON)
     @ApiOperation(value = "Get quizzes visible to this user, from index 0.")
-    public final Response getAvailableQuizzes(@Context final HttpServletRequest request) {
+    public final Response getAvailableQuizzesFromZero(@Context final HttpServletRequest request) {
         return getAvailableQuizzes(request, 0);
     }
 

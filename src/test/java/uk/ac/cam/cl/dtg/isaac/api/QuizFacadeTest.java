@@ -169,7 +169,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
 
     @Test
     public void availableQuizzes() {
-        forEndpoint(() -> quizFacade.getAvailableQuizzes(request),
+        forEndpoint(() -> quizFacade.getAvailableQuizzesFromZero(request),
             requiresLogin(),
             as(anyOf(student, secondStudent),
                 check((response) ->
