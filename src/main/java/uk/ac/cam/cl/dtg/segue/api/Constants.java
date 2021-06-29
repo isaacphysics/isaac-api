@@ -421,6 +421,11 @@ public final class Constants {
     public static final String SEARCHABLE_CONTENT_FIELDNAME = "searchableContent";
     public static final String VISIBLE_TO_STUDENTS_FIELDNAME = "visibleToStudents";
 
+    public static final Set<String> NESTED_FIELDS =
+            // NOTE: if you are adding a nested field name that does not have the nested path audience, you will
+            // need to alter (at least) generateBoolMatchQuery to be a little smarter - possible, though
+            ImmutableSet.of(STAGE_FIELDNAME, DIFFICULTY_FIELDNAME, EXAM_BOARD_FIELDNAME);
+
     public static final String USER_ID_FKEY_FIELDNAME = "userId";
     public static final String OLD_USER_ID_FKEY_FIELDNAME = "oldUserId";
     public static final String USER_ID_LIST_FKEY_FIELDNAME = "userIds";

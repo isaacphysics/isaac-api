@@ -67,6 +67,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -295,9 +296,12 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @ApiOperation(value = "List all question page objects matching the provided criteria.")
-    public final Response getQuestionList(@Context final Request request, @QueryParam("ids") final String ids,
-            @QueryParam("searchString") final String searchString, @QueryParam("tags") final String tags,
-            @QueryParam("levels") final String level, @DefaultValue("false") @QueryParam("fasttrack") final Boolean fasttrack,
+    public final Response getQuestionList(@Context final Request request,
+            @QueryParam("ids") final String ids, @QueryParam("searchString") final String searchString,
+            @QueryParam("tags") final String tags, @QueryParam("levels") final String level,
+            @QueryParam("stages") final String stages, @QueryParam("difficulties") final String difficulties,
+            @QueryParam("examBoards") final String examBoards,
+            @DefaultValue("false") @QueryParam("fasttrack") final Boolean fasttrack,
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
             @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
         StringBuilder etagCodeBuilder = new StringBuilder();
@@ -331,14 +335,20 @@ public class PagesFacade extends AbstractIsaacFacade {
             etagCodeBuilder.append(ids);
         }
 
-        if (tags != null && !tags.isEmpty()) {
-            fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
-            etagCodeBuilder.append(tags);
-        }
-
-        if (level != null && !level.isEmpty()) {
-            fieldsToMatch.put(LEVEL_FIELDNAME, Arrays.asList(level.split(",")));
-            etagCodeBuilder.append(level);
+        Map<String, String> fieldNameToValues = new HashMap<String, String>() {{
+            this.put(TAGS_FIELDNAME, tags);
+            this.put(LEVEL_FIELDNAME, level);
+            this.put(STAGE_FIELDNAME, stages);
+            this.put(DIFFICULTY_FIELDNAME, difficulties);
+            this.put(EXAM_BOARD_FIELDNAME, examBoards);
+        }};
+        for (Map.Entry<String, String> entry : fieldNameToValues.entrySet()) {
+            String fieldName = entry.getKey();
+            String queryStringValue = entry.getValue();
+            if (queryStringValue != null && !queryStringValue.isEmpty()) {
+                fieldsToMatch.put(fieldName, Arrays.asList(queryStringValue.split(",")));
+                etagCodeBuilder.append(queryStringValue);
+            }
         }
 
         // Calculate the ETag on last modified date of tags list
@@ -358,8 +368,7 @@ public class PagesFacade extends AbstractIsaacFacade {
             if (searchString != null && !searchString.isEmpty()) {
                 ResultsWrapper<ContentDTO> c;
 
-                c = api.segueSearch(searchString, this.contentIndex, fieldsToMatch, newStartIndex,
-                            newLimit);
+                c = api.segueSearch(searchString, this.contentIndex, fieldsToMatch, newStartIndex, newLimit);
 
                 ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
                         this.extractContentSummaryFromList(c.getResults()),

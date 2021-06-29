@@ -610,8 +610,11 @@ public class ElasticSearchProvider implements ISearchProvider {
         Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> result = Maps.newHashMap();
 
         for (Map.Entry<String, List<String>> pair : fieldsThatMustMatch.entrySet()) {
-            Map.Entry<Constants.BooleanOperator, String> mapEntry = com.google.common.collect.Maps.immutableEntry(
-                    Constants.BooleanOperator.OR, pair.getKey());
+            String field = pair.getKey();
+            Constants.BooleanOperator operator = Constants.NESTED_FIELDS.contains(field) ?
+                    Constants.BooleanOperator.NESTED_OR : Constants.BooleanOperator.OR;
+            Map.Entry<Constants.BooleanOperator, String> mapEntry =
+                    com.google.common.collect.Maps.immutableEntry(operator, field);
 
             result.put(mapEntry, pair.getValue());
         }
