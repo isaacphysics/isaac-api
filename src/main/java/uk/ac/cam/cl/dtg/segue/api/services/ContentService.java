@@ -31,6 +31,7 @@ import java.util.Map;
 import static com.google.common.collect.Maps.immutableEntry;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ID_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NESTED_FIELDS;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
 
 public class ContentService {
@@ -129,6 +130,8 @@ public class ContentService {
             } else if (pair.getKey().equals(TYPE_FIELDNAME) && pair.getValue().size() > 1) {
                 // special case of when you want to allow more than one
                 newEntry = immutableEntry(Constants.BooleanOperator.OR, pair.getKey());
+            } else if (NESTED_FIELDS.contains(pair.getKey())) {
+                newEntry = immutableEntry(Constants.BooleanOperator.NESTED_OR, pair.getKey());
             } else {
                 newEntry = immutableEntry(Constants.BooleanOperator.AND, pair.getKey());
             }

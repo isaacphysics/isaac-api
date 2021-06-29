@@ -28,6 +28,9 @@ public class GameFilter {
     private List<String> fields;
     private List<String> topics;
     private List<Integer> levels;
+    private List<String> stages;
+    private List<String> difficulties;
+    private List<String> examBoards;
     private List<String> concepts;
     private List<String> questionCategories;
 
@@ -40,6 +43,9 @@ public class GameFilter {
         this.fields = Lists.newArrayList();
         this.topics = Lists.newArrayList();
         this.levels = Lists.newArrayList();
+        this.stages = Lists.newArrayList();
+        this.difficulties = Lists.newArrayList();
+        this.examBoards = Lists.newArrayList();
         this.concepts = Lists.newArrayList();
         this.questionCategories = Lists.newArrayList();
     }
@@ -61,11 +67,15 @@ public class GameFilter {
      *            - List of questionCategories to get the gameboard ('problem_solving', 'book', etc.)
      */
     public GameFilter(final List<String> subjects, final List<String> fields, final List<String> topics,
-            final List<Integer> levels, final List<String> concepts, final List<String> questionCategories) {
+            final List<Integer> levels, final List<String> concepts, final List<String> questionCategories,
+            final List<String> stages, final List<String> difficulties, final List<String> examBoards) {
         this.subjects = subjects;
         this.fields = fields;
         this.topics = topics;
         this.levels = levels;
+        this.stages = stages;
+        this.difficulties = difficulties;
+        this.examBoards = examBoards;
         this.concepts = concepts;
         this.questionCategories = questionCategories;
     }
@@ -107,6 +117,33 @@ public class GameFilter {
     }
 
     /**
+     * Gets the stagesList.
+     *
+     * @return the stagesList
+     */
+    public final List<String> getStages() {
+        return stages;
+    }
+
+    /**
+     * Gets the difficultiesList.
+     *
+     * @return the difficultiesList
+     */
+    public final List<String> getDifficulties() {
+        return difficulties;
+    }
+
+    /**
+     * Gets the examBoardsList.
+     *
+     * @return the examBoardsList
+     */
+    public final List<String> getExamBoards() {
+        return examBoards;
+    }
+
+    /**
      * Gets the conceptsList.
      * 
      * @return the conceptsList
@@ -114,7 +151,6 @@ public class GameFilter {
     public final List<String> getConcepts() {
         return concepts;
     }
-
 
     /**
      * Gets the questionCategories.
@@ -163,6 +199,36 @@ public class GameFilter {
      */
     public final void setLevels(final List<Integer> levels) {
         this.levels = levels;
+    }
+
+    /**
+     * Sets the stages.
+     *
+     * @param stages
+     *            the stages to set
+     */
+    public final void setStages(final List<String> stages) {
+        this.stages = stages;
+    }
+
+    /**
+     * Sets the difficulties.
+     *
+     * @param difficulties
+     *            the difficulties to set
+     */
+    public final void setDifficulties(final List<String> difficulties) {
+        this.difficulties = difficulties;
+    }
+
+    /**
+     * Sets the exam boards.
+     *
+     * @param examBoards
+     *            the exam boards to set
+     */
+    public final void setExamBoards(final List<String> examBoards) {
+        this.examBoards = examBoards;
     }
 
     /**

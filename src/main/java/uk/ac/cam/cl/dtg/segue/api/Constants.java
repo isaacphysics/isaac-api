@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
+import com.google.common.collect.ImmutableSet;
 import org.postgresql.util.PGInterval;
 
 import java.util.Arrays;
@@ -213,8 +214,10 @@ public final class Constants {
      * 
      */
     public enum BooleanOperator {
-        AND, OR, NOT
+        AND, OR, NOT, NESTED_AND, NESTED_OR, NESTED_NOT
     };
+    public static Set<BooleanOperator> NestedBooleanOperators =
+            ImmutableSet.of(BooleanOperator.NESTED_AND, BooleanOperator.NESTED_OR, BooleanOperator.NESTED_NOT);
 
     public static final String SCHOOLS_INDEX_BASE = "schools";
     public enum SCHOOLS_INDEX_TYPE {
@@ -414,6 +417,14 @@ public final class Constants {
     public static final String[] ADDRESS_FIELDNAMES = {"addressLine1", "addressLine2", "town", "county", "postalCode"};
     public static final String SEARCHABLE_CONTENT_FIELDNAME = "searchableContent";
     public static final String VISIBLE_TO_STUDENTS_FIELDNAME = "visibleToStudents";
+
+    public static final String STAGE_FIELDNAME = "audience.stage";
+    public static final String DIFFICULTY_FIELDNAME = "audience.difficulty";
+    public static final String EXAM_BOARD_FIELDNAME = "audience.examBoard";
+    public static final Set<String> NESTED_FIELDS =
+            // NOTE: if you are adding a nested field name that does not have the nested path audience, you will
+            // need to alter (at least) generateBoolMatchQuery to be a little smarter - possible, though
+            ImmutableSet.of(STAGE_FIELDNAME, DIFFICULTY_FIELDNAME, EXAM_BOARD_FIELDNAME);
 
     public static final String USER_ID_FKEY_FIELDNAME = "userId";
     public static final String OLD_USER_ID_FKEY_FIELDNAME = "oldUserId";

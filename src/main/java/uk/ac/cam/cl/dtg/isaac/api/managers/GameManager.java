@@ -80,13 +80,7 @@ import static uk.ac.cam.cl.dtg.isaac.api.Constants.QuestionPartState;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.RELATED_CONTENT_FIELDNAME;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.VISITED_DATE_FIELDNAME;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.WILDCARD_TYPE;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.ID_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.LEVEL_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TAGS_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TITLE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * This class will be responsible for generating and managing gameboards used by users.
@@ -168,6 +162,7 @@ public class GameManager {
     public GameboardDTO generateRandomGameboard(
             final String title, final List<String> subjects, final List<String> fields, final List<String> topics,
             final List<Integer> levels, final List<String> concepts, final List<String> questionCategories,
+            final List<String> stages, final List<String> difficulties, final List<String> examBoards,
             final AbstractSegueUserDTO boardOwner)
     throws NoWildcardException, SegueDatabaseException, ContentManagerException {
 
@@ -182,7 +177,8 @@ public class GameManager {
         Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts = questionManager
                 .getQuestionAttemptsByUser(boardOwner);
 
-        GameFilter gameFilter = new GameFilter(subjects, fields, topics, levels, concepts, questionCategories);
+        GameFilter gameFilter = new GameFilter(
+                subjects, fields, topics, levels, concepts, questionCategories, stages, difficulties, examBoards);
 
         List<GameboardItem> selectionOfGameboardQuestions =
                 this.getSelectedGameboardQuestions(gameFilter, usersQuestionAttempts);
@@ -1272,6 +1268,21 @@ public class GameManager {
             fieldsToMatchOutput.put(newEntry, levelsAsString);
         }
 
+        // Handle the nested audience fields: stage, difficulty and examBoard
+        if (null != gameFilter.getStages()) {
+            Map.Entry<BooleanOperator, String> newEntry = immutableEntry(BooleanOperator.NESTED_OR, STAGE_FIELDNAME);
+            fieldsToMatchOutput.put(newEntry, gameFilter.getStages());
+        }
+        if (null != gameFilter.getDifficulties()) {
+            Map.Entry<BooleanOperator, String> newEntry = immutableEntry(BooleanOperator.NESTED_OR, DIFFICULTY_FIELDNAME);
+            fieldsToMatchOutput.put(newEntry, gameFilter.getDifficulties());
+        }
+        if (null != gameFilter.getExamBoards()) {
+            Map.Entry<BooleanOperator, String> newEntry = immutableEntry(BooleanOperator.NESTED_OR, EXAM_BOARD_FIELDNAME);
+            fieldsToMatchOutput.put(newEntry, gameFilter.getExamBoards());
+        }
+
+        // handle concepts
         if (null != gameFilter.getConcepts()) {
             Map.Entry<BooleanOperator, String> newEntry 
                 = immutableEntry(BooleanOperator.AND, RELATED_CONTENT_FIELDNAME);
