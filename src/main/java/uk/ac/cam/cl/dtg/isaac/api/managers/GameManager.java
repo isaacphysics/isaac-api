@@ -1270,10 +1270,7 @@ public class GameManager {
 
         // Handle the nested audience fields: stage, difficulty and examBoard
         if (null != gameFilter.getStages()) {
-            // To start with we will only support the AND of stages which will almost always be one stage.
-            // Thorough testing should be done before switching this to a NESTED_OR to make sure it acts as expected when
-            // combined with the other nested OR queries.
-            Map.Entry<BooleanOperator, String> newEntry = immutableEntry(BooleanOperator.NESTED_AND, STAGE_FIELDNAME);
+            Map.Entry<BooleanOperator, String> newEntry = immutableEntry(BooleanOperator.NESTED_OR, STAGE_FIELDNAME);
             fieldsToMatchOutput.put(newEntry, gameFilter.getStages());
         }
         if (null != gameFilter.getDifficulties()) {
