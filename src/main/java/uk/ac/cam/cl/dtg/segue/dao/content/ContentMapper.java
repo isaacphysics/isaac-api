@@ -379,27 +379,13 @@ public class ContentMapper {
             log.info("Creating instance of content auto mapper.");
             MapperFactory mapperFactory = new DefaultMapperFactory.Builder().build();
 
-            ContentBaseOrikaConverter contentConverter = new ContentBaseOrikaConverter(this);
-            ChoiceOrikaConverter choiceConverter = new ChoiceOrikaConverter();
-            ItemOrikaConverter itemConverter = new ItemOrikaConverter();
-
-            QuestionValidationResponseOrikaConverter questionValidationResponseConverter 
-                = new QuestionValidationResponseOrikaConverter();
-
-            AnonymousUserQuestionAttemptsOrikaConverter anonymousUserOrikaConverter 
-                = new AnonymousUserQuestionAttemptsOrikaConverter();
-
             ConverterFactory converterFactory = mapperFactory.getConverterFactory();
-
-            converterFactory.registerConverter(contentConverter);
-            converterFactory.registerConverter(choiceConverter);
-            converterFactory.registerConverter(itemConverter);
-            converterFactory.registerConverter(questionValidationResponseConverter);
-            converterFactory.registerConverter("anonymousUserAttemptsToDTOConverter", anonymousUserOrikaConverter);
-
-            // special rules
-//            mapperFactory.classMap(AnonymousUser.class, AnonymousUserDTO.class).fieldMap("temporaryQuestionAttempts")
-//                    .converter("anonymousUserAttemptsToDTOConverter").add().byDefault().register();
+            converterFactory.registerConverter(new ContentBaseOrikaConverter(this));
+            converterFactory.registerConverter(new ChoiceOrikaConverter());
+            converterFactory.registerConverter(new ItemOrikaConverter());
+            converterFactory.registerConverter(new QuestionValidationResponseOrikaConverter());
+            converterFactory.registerConverter(new AnonymousUserQuestionAttemptsOrikaConverter());
+            converterFactory.registerConverter(new AudienceOrikaConverter());
 
             this.autoMapper = mapperFactory.getMapperFacade();
         }
