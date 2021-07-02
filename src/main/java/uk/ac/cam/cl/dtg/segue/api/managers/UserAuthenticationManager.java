@@ -931,7 +931,7 @@ public class UserAuthenticationManager {
             Map<String, String> sessionInformation = sessionInformationBuilder.build();
 
             Cookie authCookie = new Cookie(SEGUE_AUTH_COOKIE,
-                    serializationMapper.writeValueAsString(sessionInformation));
+                    Base64.encodeBase64String(serializationMapper.writeValueAsString(sessionInformation).getBytes()));
             authCookie.setMaxAge(sessionExpiryTimeInSeconds);
             authCookie.setPath("/");
             authCookie.setHttpOnly(true);
@@ -1101,7 +1101,7 @@ public class UserAuthenticationManager {
         }
 
         @SuppressWarnings("unchecked")
-        Map<String, String> sessionInformation = this.serializationMapper.readValue(segueAuthCookie.getValue(),
+        Map<String, String> sessionInformation = this.serializationMapper.readValue(Base64.decodeBase64(segueAuthCookie.getValue()),
                 HashMap.class);
 
         return sessionInformation;
@@ -1131,7 +1131,7 @@ public class UserAuthenticationManager {
         }
 
         @SuppressWarnings("unchecked")
-        Map<String, String> sessionInformation = this.serializationMapper.readValue(segueAuthCookie.getValue(),
+        Map<String, String> sessionInformation = this.serializationMapper.readValue(Base64.decodeBase64(segueAuthCookie.getValue()),
                 HashMap.class);
 
         return sessionInformation;
