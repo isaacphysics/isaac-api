@@ -339,7 +339,7 @@ public class UserAuthenticationManager {
         try {
             currentSessionInformation = this.getSegueSessionFromRequest(request);
         } catch (IOException e1) {
-            log.error("Error parsing session information to retrieve user.");
+            log.debug("Error parsing session information to retrieve user.");
             return null;
         } catch (InvalidSessionException e) {
             log.debug("We cannot read the session information. It probably doesn't exist");
@@ -976,6 +976,10 @@ public class UserAuthenticationManager {
         }
 
         // Check the expiry time has not passed:
+        if (null == sessionDate) {
+            log.debug("No session date provided by cookie, invalid!");
+            return false;
+        }
         Calendar sessionExpiryDate = Calendar.getInstance();
         try {
             sessionExpiryDate.setTime(sessionDateFormat.parse(sessionDate));
@@ -989,7 +993,7 @@ public class UserAuthenticationManager {
 
         // Check no one has tampered with the cookie:
         if (!hasValidHmac(sessionInformation)) {
-            log.debug("Invalid HMAC detected for user id " + userId);
+            log.warn(String.format("Invalid Cookie HMAC detected for user id (%s)!", userId));
             return false;
         }
 
