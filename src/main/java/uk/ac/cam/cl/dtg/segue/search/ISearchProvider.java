@@ -18,7 +18,7 @@ package uk.ac.cam.cl.dtg.segue.search;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
+import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 
 import javax.annotation.Nullable;
@@ -26,7 +26,6 @@ import javax.validation.constraints.NotNull;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 /**
  * Interface describing behaviour of search providers.
@@ -71,9 +70,9 @@ public interface ISearchProvider {
      * @return Results
      */
     ResultsWrapper<String> matchSearch(final String indexBase, final String indexType,
-            final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch, final int startIndex,
-            final int limit, final Map<String, Constants.SortOrder> sortInstructions,
-            @Nullable final Map<String, AbstractFilterInstruction> filterInstructions) throws SegueSearchException;
+                                       final List<IContentManager.BooleanSearchClause> fieldsToMatch, final int startIndex, final int limit,
+                                       final Map<String, Constants.SortOrder> sortInstructions,
+                                       @Nullable final Map<String, AbstractFilterInstruction> filterInstructions) throws SegueSearchException;
 
     /**
      * Executes a fuzzy search on an array of fields and will consider the fieldsThatMustMatchMap.
@@ -143,7 +142,7 @@ public interface ISearchProvider {
      * @param indexType
      *            - type of index as registered with search provider.
      * @param fieldsToMatch
-     *            - Map of Map<Map.Entry<Constants.BooleanOperator, String>, List<String>>
+     *            - List of boolean clauses used for field matching.
      * @param startIndex
      *            - start index for results
      * @param limit
@@ -155,8 +154,8 @@ public interface ISearchProvider {
      * @return results in a random order for a given match search.
      */
     ResultsWrapper<String> randomisedMatchSearch(String indexBase, String indexType,
-            Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch, 
-            int startIndex, int limit, Long randomSeed, Map<String, AbstractFilterInstruction> filterInstructions) throws SegueSearchException;
+                                                 List<IContentManager.BooleanSearchClause> fieldsToMatch, int startIndex, int limit, Long randomSeed,
+                                                 Map<String, AbstractFilterInstruction> filterInstructions) throws SegueSearchException;
 
     /**
      * Query for a list of Results that exactly match a given id.

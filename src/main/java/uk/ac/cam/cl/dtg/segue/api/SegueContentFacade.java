@@ -49,7 +49,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_DAY;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_HOUR;
 
 /**
  * Segue Content Facade
@@ -102,8 +105,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
      * @param version
      *            - the version of the content to search. If null it will default to the current live version.
      * @param fieldsToMatch
-     *            - Map representing fieldName -> field value mappings to search for. Note: tags is a special field name
-     *            and the list will be split by commas.
+     *            - List of Boolean search clauses that must be true for the returned content.
      * @param startIndex
      *            - the start index for the search results.
      * @param limit
@@ -111,7 +113,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
      * @return Response containing a ResultsWrapper<ContentDTO> or a Response containing null if none found.
      */
     public final ResultsWrapper<ContentDTO> findMatchingContent(final String version,
-            final Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMatch,
+            final List<IContentManager.BooleanSearchClause> fieldsToMatch,
             @Nullable final Integer startIndex, @Nullable final Integer limit) throws ContentManagerException {
 
         return contentService.findMatchingContent(version, fieldsToMatch, startIndex, limit);
@@ -121,14 +123,13 @@ public class SegueContentFacade extends AbstractSegueFacade {
      * This method will return a ResultsWrapper<ContentDTO> based on the parameters supplied. Providing the results in a
      * randomised order.
      * 
-     * This method is the same as {@link #findMatchingContentRandomOrder(String, Map, Integer, Integer, Long)} but uses
+     * This method is the same as {@link #findMatchingContentRandomOrder(String, List, Integer, Integer, Long)} but uses
      * a default random seed.
      * 
      * @param version
      *            - the version of the content to search. If null it will default to the current live version.
      * @param fieldsToMatch
-     *            - Map representing fieldName -> field value mappings to search for. Note: tags is a special field name
-     *            and the list will be split by commas.
+     *            - List of Boolean search clauses that must be true for the returned content.
      * @param startIndex
      *            - the start index for the search results.
      * @param limit
@@ -136,8 +137,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
      * @return Response containing a ResultsWrapper<ContentDTO> or a Response containing null if none found.
      */
     public final ResultsWrapper<ContentDTO> findMatchingContentRandomOrder(@Nullable final String version,
-            final Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMatch, final Integer startIndex,
-            final Integer limit) {
+                                                                           final List<IContentManager.BooleanSearchClause> fieldsToMatch, final Integer startIndex, final Integer limit) {
         return this.findMatchingContentRandomOrder(version, fieldsToMatch, startIndex, limit, null);
     }
 
@@ -148,8 +148,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
      * @param version
      *            - the version of the content to search. If null it will default to the current live version.
      * @param fieldsToMatch
-     *            - Map representing fieldName -> field value mappings to search for. Note: tags is a special field name
-     *            and the list will be split by commas.
+     *            - List of Boolean search clauses that must be true for the returned content.
      * @param startIndex
      *            - the start index for the search results.
      * @param limit
@@ -159,8 +158,8 @@ public class SegueContentFacade extends AbstractSegueFacade {
      * @return Response containing a ResultsWrapper<ContentDTO> or a Response containing null if none found.
      */
     public final ResultsWrapper<ContentDTO> findMatchingContentRandomOrder(@Nullable final String version,
-            final Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMatch, final Integer startIndex,
-            final Integer limit, final Long randomSeed) {
+                                                                           final List<IContentManager.BooleanSearchClause> fieldsToMatch, final Integer startIndex,
+                                                                           final Integer limit, final Long randomSeed) {
 
         String newVersion = this.contentIndex;
         Integer newLimit = DEFAULT_RESULTS_LIMIT;

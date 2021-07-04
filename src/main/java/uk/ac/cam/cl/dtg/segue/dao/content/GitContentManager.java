@@ -349,26 +349,24 @@ public class GitContentManager implements IContentManager {
 
     @Override
     public final ResultsWrapper<ContentDTO> findByFieldNames(final String version,
-            final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
-            final Integer startIndex, final Integer limit) throws ContentManagerException {
+                                                             final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex, final Integer limit)
+            throws ContentManagerException {
 
         return this.findByFieldNames(version, fieldsToMatch, startIndex, limit, null);
     }
 
     @Override
     public final ResultsWrapper<ContentDTO> findByFieldNames(final String version,
-            final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
-            final Integer startIndex, final Integer limit,
-            @Nullable final Map<String, Constants.SortOrder> sortInstructions) throws ContentManagerException {
+                                                             final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex, final Integer limit,
+                                                             @Nullable final Map<String, Constants.SortOrder> sortInstructions) throws ContentManagerException {
         return this.findByFieldNames(version, fieldsToMatch, startIndex, limit, sortInstructions, null);
     }
 
     @Override
     public final ResultsWrapper<ContentDTO> findByFieldNames(final String version,
-            final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
-            final Integer startIndex, final Integer limit,
-            @Nullable final Map<String, Constants.SortOrder> sortInstructions,
-            @Nullable final Map<String, AbstractFilterInstruction> filterInstructions) throws ContentManagerException {
+                                                             final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex, final Integer limit,
+                                                             @Nullable final Map<String, Constants.SortOrder> sortInstructions,
+                                                             @Nullable final Map<String, AbstractFilterInstruction> filterInstructions) throws ContentManagerException {
         ResultsWrapper<ContentDTO> finalResults;
 
         final Map<String, Constants.SortOrder> newSortInstructions;
@@ -405,15 +403,15 @@ public class GitContentManager implements IContentManager {
 
     @Override
     public final ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(final String version,
-            final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
-            final Integer startIndex, final Integer limit) throws ContentManagerException {
+                                                                        final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex, final Integer limit)
+            throws ContentManagerException {
         return this.findByFieldNamesRandomOrder(version, fieldsToMatch, startIndex, limit, null);
     }
 
     @Override
     public final ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(final String version,
-            final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
-            final Integer startIndex, final Integer limit, final Long randomSeed) throws ContentManagerException {
+                                                                        final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex, final Integer limit, final Long randomSeed)
+    throws ContentManagerException {
         ResultsWrapper<ContentDTO> finalResults;
 
         ResultsWrapper<String> searchHits;
@@ -564,17 +562,16 @@ public class GitContentManager implements IContentManager {
         }
 
         // build query the db to get full content information
-        Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap
-            = new HashMap<>();
+        List<BooleanSearchClause> fieldsToMap = Lists.newArrayList();
 
         List<String> relatedContentIds = Lists.newArrayList();
         for (ContentSummaryDTO summary : contentDTO.getRelatedContent()) {
             relatedContentIds.add(summary.getId());
         }
 
-        fieldsToMap.put(
-                Maps.immutableEntry(Constants.BooleanOperator.OR, Constants.ID_FIELDNAME + '.'
-                        + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX), relatedContentIds);
+        fieldsToMap.add(new BooleanSearchClause(
+                Constants.ID_FIELDNAME + '.' + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
+                Constants.BooleanOperator.OR, relatedContentIds));
 
         ResultsWrapper<ContentDTO> results = this.findByFieldNames(version, fieldsToMap, 0, relatedContentIds.size());
 

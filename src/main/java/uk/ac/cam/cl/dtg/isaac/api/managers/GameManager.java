@@ -27,8 +27,6 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
-import uk.ac.cam.cl.dtg.isaac.api.Constants.GameboardItemState;
-import uk.ac.cam.cl.dtg.isaac.api.Constants.GameboardState;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionPage;
@@ -39,8 +37,6 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuickQuestionDTO;
-import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
-import uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -57,29 +53,11 @@ import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.google.common.collect.Maps.immutableEntry;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.COMPLETION_FIELDNAME;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.CREATED_DATE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.GAMEBOARD_MAX_TITLE_LENGTH;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.GAME_BOARD_TARGET_SIZE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.HIDE_FROM_FILTER_TAG;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_TYPE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.QuestionPartState;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.RELATED_CONTENT_FIELDNAME;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.VISITED_DATE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.WILDCARD_TYPE;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
@@ -647,9 +625,10 @@ public class GameManager {
      *             - if we cannot access the content requested.
      */
     public List<IsaacWildcard> getWildcards() throws NoWildcardException, ContentManagerException {
-        Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
+        List<IContentManager.BooleanSearchClause> fieldsToMap = Lists.newArrayList();
 
-        fieldsToMap.put(immutableEntry(BooleanOperator.OR, TYPE_FIELDNAME), Collections.singletonList(WILDCARD_TYPE));
+        fieldsToMap.add(new IContentManager.BooleanSearchClause(
+                TYPE_FIELDNAME, BooleanOperator.OR, Collections.singletonList(WILDCARD_TYPE)));
 
         Map<String, SortOrder> sortInstructions = Maps.newHashMap();
         sortInstructions.put(TITLE_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, SortOrder.ASC);
@@ -976,9 +955,10 @@ public class GameManager {
     private List<GameboardItem> getNextQuestionsForFilter(final GameFilter gameFilter, final int index,
             final Long randomSeed) throws ContentManagerException {
         // get some questions
-        Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
-        fieldsToMap.put(immutableEntry(BooleanOperator.AND, TYPE_FIELDNAME), Collections.singletonList(QUESTION_TYPE));
-        fieldsToMap.putAll(generateFieldToMatchForQuestionFilter(gameFilter));
+        List<IContentManager.BooleanSearchClause> fieldsToMap = Lists.newArrayList();
+        fieldsToMap.add(new IContentManager.BooleanSearchClause(
+                TYPE_FIELDNAME, BooleanOperator.AND, Collections.singletonList(QUESTION_TYPE)));
+        fieldsToMap.addAll(generateFieldToMatchForQuestionFilter(gameFilter));
 
         // Search for questions that match the fields to map variable.
 
@@ -1133,9 +1113,10 @@ public class GameManager {
      */
     private IsaacWildcard getRandomWildcard(final MapperFacade mapper, final List<String> subjectsList) throws NoWildcardException,
             ContentManagerException {
-        Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
+        List<IContentManager.BooleanSearchClause> fieldsToMap = Lists.newArrayList();
 
-        fieldsToMap.put(immutableEntry(BooleanOperator.OR, TYPE_FIELDNAME), Collections.singletonList(WILDCARD_TYPE));
+        fieldsToMap.add(new IContentManager.BooleanSearchClause(
+                TYPE_FIELDNAME, BooleanOperator.OR, Collections.singletonList(WILDCARD_TYPE)));
 
         // FIXME - the 999 is a magic number because using NO_SEARCH_LIMIT doesn't work for all elasticsearch queries!
         ResultsWrapper<ContentDTO> wildcardResults = this.contentManager.findByFieldNamesRandomOrder(
@@ -1201,7 +1182,7 @@ public class GameManager {
      *            - filter object containing all the filter information used to make this board.
      * @return A map ready to be passed to a content provider
      */
-    private static Map<Map.Entry<BooleanOperator, String>, List<String>> generateFieldToMatchForQuestionFilter(
+    private static List<IContentManager.BooleanSearchClause> generateFieldToMatchForQuestionFilter(
             final GameFilter gameFilter) {
 
         // Validate that the field sizes are as we expect for tags
@@ -1210,16 +1191,17 @@ public class GameManager {
             throw new IllegalArgumentException("Error validating filter query.");
         }
 
-        Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMatchOutput = Maps.newHashMap();
+        List<IContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
+
+        // handle question categories
+        if (null != gameFilter.getQuestionCategories()) {
+            fieldsToMatch.add(new IContentManager.BooleanSearchClause(
+                    TAGS_FIELDNAME, BooleanOperator.OR, gameFilter.getQuestionCategories()));
+        }
 
         // Filter on content tags
         List<String> tagAnds = Lists.newArrayList();
         List<String> tagOrs = Lists.newArrayList();
-
-        // handle question categories
-        if (null != gameFilter.getQuestionCategories()) {
-            tagAnds.addAll(gameFilter.getQuestionCategories());
-        }
 
         // deal with tags which represent subjects, fields and topics
         if (null != gameFilter.getSubjects()) {
@@ -1249,52 +1231,47 @@ public class GameManager {
 
         // deal with adding overloaded tags field for subjects, fields and topics
         if (tagAnds.size() > 0) {
-            Map.Entry<BooleanOperator, String> newEntry = immutableEntry(BooleanOperator.AND, TAGS_FIELDNAME);
-            fieldsToMatchOutput.put(newEntry, tagAnds);
+            fieldsToMatch.add(new IContentManager.BooleanSearchClause(TAGS_FIELDNAME, BooleanOperator.AND, tagAnds));
         }
         if (tagOrs.size() > 0) {
-            Map.Entry<BooleanOperator, String> newEntry = immutableEntry(BooleanOperator.OR, TAGS_FIELDNAME);
-            fieldsToMatchOutput.put(newEntry, tagOrs);
+            fieldsToMatch.add(new IContentManager.BooleanSearchClause(TAGS_FIELDNAME, BooleanOperator.OR, tagOrs));
         }
 
         // now deal with levels
         if (null != gameFilter.getLevels()) {
-            List<String> levelsAsString = Lists.newArrayList();
+            List<String> levelsAsStrings = Lists.newArrayList();
             for (Integer levelInt : gameFilter.getLevels()) {
-                levelsAsString.add(levelInt.toString());
+                levelsAsStrings.add(levelInt.toString());
             }
-
-            Map.Entry<BooleanOperator, String> newEntry = immutableEntry(BooleanOperator.OR, LEVEL_FIELDNAME);
-            fieldsToMatchOutput.put(newEntry, levelsAsString);
+            fieldsToMatch.add(new IContentManager.BooleanSearchClause(LEVEL_FIELDNAME, BooleanOperator.OR, levelsAsStrings));
         }
 
         // Handle the nested audience fields: stage, difficulty and examBoard
         if (null != gameFilter.getStages()) {
-            Map.Entry<BooleanOperator, String> newEntry = immutableEntry(BooleanOperator.NESTED_OR, STAGE_FIELDNAME);
-            fieldsToMatchOutput.put(newEntry, gameFilter.getStages());
+            fieldsToMatch.add(new IContentManager.BooleanSearchClause(
+                    STAGE_FIELDNAME, BooleanOperator.OR, gameFilter.getStages()));
         }
         if (null != gameFilter.getDifficulties()) {
-            Map.Entry<BooleanOperator, String> newEntry = immutableEntry(BooleanOperator.NESTED_OR, DIFFICULTY_FIELDNAME);
-            fieldsToMatchOutput.put(newEntry, gameFilter.getDifficulties());
+            fieldsToMatch.add(new IContentManager.BooleanSearchClause(
+                    DIFFICULTY_FIELDNAME, BooleanOperator.OR, gameFilter.getDifficulties()));
         }
         if (null != gameFilter.getExamBoards()) {
-            Map.Entry<BooleanOperator, String> newEntry = immutableEntry(BooleanOperator.NESTED_OR, EXAM_BOARD_FIELDNAME);
-            fieldsToMatchOutput.put(newEntry, gameFilter.getExamBoards());
+            fieldsToMatch.add(new IContentManager.BooleanSearchClause(
+                    EXAM_BOARD_FIELDNAME, BooleanOperator.OR, gameFilter.getExamBoards()));
         }
 
         // handle concepts
         if (null != gameFilter.getConcepts()) {
-            Map.Entry<BooleanOperator, String> newEntry 
-                = immutableEntry(BooleanOperator.AND, RELATED_CONTENT_FIELDNAME);
-            fieldsToMatchOutput.put(newEntry, gameFilter.getConcepts());
+            fieldsToMatch.add(new IContentManager.BooleanSearchClause(
+                    RELATED_CONTENT_FIELDNAME, BooleanOperator.AND, gameFilter.getConcepts()));
         }
 
         // handle exclusions
         List<String> tagsToExclude = Lists.newArrayList();
         tagsToExclude.add(HIDE_FROM_FILTER_TAG); // add no filter constraint
-        fieldsToMatchOutput.put(immutableEntry(BooleanOperator.NOT, TAGS_FIELDNAME), tagsToExclude);
+        fieldsToMatch.add(new IContentManager.BooleanSearchClause(TAGS_FIELDNAME, BooleanOperator.NOT, tagsToExclude));
 
-        return fieldsToMatchOutput;
+        return fieldsToMatch;
     }
 
     /**

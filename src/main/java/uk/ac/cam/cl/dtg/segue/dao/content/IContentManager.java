@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.content;
 
-import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
@@ -30,7 +29,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 /**
@@ -39,6 +37,26 @@ import java.util.Set;
  * @author Stephen Cummins
  */
 public interface IContentManager {
+
+    class BooleanSearchClause {
+        private String field;
+        private BooleanOperator operator;
+        private List<String> values;
+        public BooleanSearchClause(final String field, final BooleanOperator operator, final List<String> values) {
+            this.field = field;
+            this.operator = operator;
+            this.values = values;
+        }
+        public String getField() {
+            return this.field;
+        }
+        public BooleanOperator getOperator() {
+            return this.operator;
+        }
+        public List<String> getValues() {
+            return this.values;
+        }
+    }
 
     /**
      * Goes to the configured Database and attempts to find a content item with the specified ID. This returns the
@@ -116,7 +134,7 @@ public interface IContentManager {
      * @param version
      *            - version of the content to search.
      * @param fieldsToMatch
-     *            - Map which is used for field matching.
+     *            - List of boolean clauses used for field matching.
      * @param startIndex
      *            - the index of the first item to return.
      * @param limit
@@ -126,8 +144,8 @@ public interface IContentManager {
      *             - if there is an error retrieving the content requested.
      */
     ResultsWrapper<ContentDTO> findByFieldNames(String version,
-            final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch, Integer startIndex,
-            Integer limit) throws ContentManagerException;
+                                                final List<BooleanSearchClause> fieldsToMatch, Integer startIndex,
+                                                Integer limit) throws ContentManagerException;
 
     /**
      * Method to allow bulk search of content based on the type field.
@@ -135,7 +153,7 @@ public interface IContentManager {
      * @param version
      *            - version of the content to search.
      * @param fieldsToMatch
-     *            - Map which is used for field matching.
+     *            - List of boolean clauses used for field matching.
      * @param startIndex
      *            - the index of the first item to return.
      * @param limit
@@ -147,8 +165,8 @@ public interface IContentManager {
      *             - if there is an error retrieving the content requested.
      */
     ResultsWrapper<ContentDTO> findByFieldNames(String version,
-            Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch, Integer startIndex, Integer limit,
-            Map<String, SortOrder> sortInstructions) throws ContentManagerException;
+                                                List<BooleanSearchClause> fieldsToMatch, Integer startIndex, Integer limit,
+                                                Map<String, SortOrder> sortInstructions) throws ContentManagerException;
 
     /**
      * Method to allow bulk search of content based on the type field.
@@ -156,7 +174,7 @@ public interface IContentManager {
      * @param version
      *            - version of the content to search.
      * @param fieldsToMatch
-     *            - Map which is used for field matching.
+     *            - List of boolean clauses used for field matching.
      * @param startIndex
      *            - the index of the first item to return.
      * @param limit
@@ -170,9 +188,9 @@ public interface IContentManager {
      *             - if there is an error retrieving the content requested.
      */
     ResultsWrapper<ContentDTO> findByFieldNames(String version,
-            Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch, Integer startIndex, Integer limit,
-            Map<String, SortOrder> sortInstructions,
-            @Nullable final Map<String, AbstractFilterInstruction> filterInstructions) throws ContentManagerException;
+                                                List<BooleanSearchClause> fieldsToMatch, Integer startIndex, Integer limit,
+                                                Map<String, SortOrder> sortInstructions,
+                                                @Nullable final Map<String, AbstractFilterInstruction> filterInstructions) throws ContentManagerException;
 
     /**
      * The same as findByFieldNames but the results list is returned in a randomised order.
@@ -180,7 +198,7 @@ public interface IContentManager {
      * @param version
      *            - version of the content to search.
      * @param fieldsToMatch
-     *            - Map which is used for field matching.
+     *            - List of boolean clauses used for field matching.
      * @param startIndex
      *            - the index of the first item to return.
      * @param limit
@@ -190,8 +208,7 @@ public interface IContentManager {
      *             - if there is an error retrieving the content requested.
      */
     ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(String version,
-            Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch, Integer startIndex,
-            Integer limit) throws ContentManagerException;
+                                                           List<BooleanSearchClause> fieldsToMatch, Integer startIndex, Integer limit) throws ContentManagerException;
 
     /**
      * The same as findByFieldNames but the results list is returned in a randomised order.
@@ -199,7 +216,7 @@ public interface IContentManager {
      * @param version
      *            - version of the content to search.
      * @param fieldsToMatch
-     *            - Map which is used for field matching.
+     *            - List of boolean clauses used for field matching.
      * @param startIndex
      *            - the index of the first item to return.
      * @param limit
@@ -211,8 +228,8 @@ public interface IContentManager {
      *             - if there is an error retrieving the content requested.
      */
     ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(String version,
-            Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch, Integer startIndex, Integer limit,
-            @Nullable Long randomSeed) throws ContentManagerException;
+                                                           List<BooleanSearchClause> fieldsToMatch, Integer startIndex, Integer limit,
+                                                           @Nullable Long randomSeed) throws ContentManagerException;
 
     /**
      * Allows fullText search using the internal search provider.
