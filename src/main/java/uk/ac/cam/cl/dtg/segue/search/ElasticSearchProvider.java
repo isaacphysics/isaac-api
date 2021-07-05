@@ -444,7 +444,7 @@ public class ElasticSearchProvider implements ISearchProvider {
             }
 
             // The way we're using this query, if we have a "should" the document needs to match at least one of the options.
-            if (atLeastOneShouldMatch) {
+            if (Constants.BooleanOperator.OR.equals(searchClause.getOperator())) {
                 query.minimumShouldMatch(1);
             }
 

@@ -52,9 +52,10 @@ public class ContentService {
      * @param limit         - the max number of results to return.
      * @return Response containing a ResultsWrapper<ContentDTO> or a Response containing null if none found.
      */
-    public final ResultsWrapper<ContentDTO> findMatchingContent(final String version,
-                                                                final List<IContentManager.BooleanSearchClause> fieldsToMatch,
-                                                                @Nullable final Integer startIndex, @Nullable final Integer limit) throws ContentManagerException {
+    public final ResultsWrapper<ContentDTO> findMatchingContent(
+            final String version, final List<IContentManager.BooleanSearchClause> fieldsToMatch,
+            @Nullable final Integer startIndex, @Nullable final Integer limit
+    ) throws ContentManagerException {
 
         String newVersion = this.contentIndex;
         Integer newLimit = Constants.DEFAULT_RESULTS_LIMIT;

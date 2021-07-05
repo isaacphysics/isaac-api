@@ -69,10 +69,12 @@ public interface ISearchProvider {
      *            - the map of how to sort each field of interest.
      * @return Results
      */
-    ResultsWrapper<String> matchSearch(final String indexBase, final String indexType,
-                                       final List<IContentManager.BooleanSearchClause> fieldsToMatch, final int startIndex, final int limit,
-                                       final Map<String, Constants.SortOrder> sortInstructions,
-                                       @Nullable final Map<String, AbstractFilterInstruction> filterInstructions) throws SegueSearchException;
+    ResultsWrapper<String> matchSearch(
+            final String indexBase, final String indexType,
+            final List<IContentManager.BooleanSearchClause> fieldsToMatch, final int startIndex, final int limit,
+            final Map<String, Constants.SortOrder> sortInstructions,
+            @Nullable final Map<String, AbstractFilterInstruction> filterInstructions
+    ) throws SegueSearchException;
 
     /**
      * Executes a fuzzy search on an array of fields and will consider the fieldsThatMustMatchMap.
@@ -97,10 +99,12 @@ public interface ISearchProvider {
      *            - array (var args) of fields to search using the searchString
      * @return results
      */
-    ResultsWrapper<String> fuzzySearch(final String indexBase, final String indexType, final String searchString,
+    ResultsWrapper<String> fuzzySearch(
+            final String indexBase, final String indexType, final String searchString,
             final Integer startIndex, final Integer limit, final Map<String, List<String>> fieldsThatMustMatch,
-                                       @Nullable final Map<String, AbstractFilterInstruction> filterInstructions,
-                                       final String... fields) throws SegueSearchException;
+            @Nullable final Map<String, AbstractFilterInstruction> filterInstructions,
+            final String... fields
+    ) throws SegueSearchException;
 
     public ResultsWrapper<String> nestedMatchSearch(
             final String indexBase, final String indexType, final Integer startIndex, final Integer limit,
@@ -130,9 +134,10 @@ public interface ISearchProvider {
      * @param filterInstructions - instructions for filtering the results
      * @return results
      */
-    ResultsWrapper<String> termSearch(final String indexBase, final String indexType, final String searchterms,
-                                      final String field, final int startIndex, final int limit,
-                                      final Map<String, AbstractFilterInstruction> filterInstructions) throws SegueSearchException;
+    ResultsWrapper<String> termSearch(
+            final String indexBase, final String indexType, final String searchterms, final String field,
+            final int startIndex, final int limit, final Map<String, AbstractFilterInstruction> filterInstructions
+    ) throws SegueSearchException;
 
     /**
      * RandomisedPaginatedMatchSearch The same as paginatedMatchSearch but the results are returned in a random order.
@@ -153,9 +158,10 @@ public interface ISearchProvider {
      *            - post search filter instructions e.g. remove content of a certain type.
      * @return results in a random order for a given match search.
      */
-    ResultsWrapper<String> randomisedMatchSearch(String indexBase, String indexType,
-                                                 List<IContentManager.BooleanSearchClause> fieldsToMatch, int startIndex, int limit, Long randomSeed,
-                                                 Map<String, AbstractFilterInstruction> filterInstructions) throws SegueSearchException;
+    ResultsWrapper<String> randomisedMatchSearch(
+            String indexBase, String indexType, List<IContentManager.BooleanSearchClause> fieldsToMatch,
+            int startIndex, int limit, Long randomSeed, Map<String, AbstractFilterInstruction> filterInstructions
+    ) throws SegueSearchException;
 
     /**
      * Query for a list of Results that exactly match a given id.
@@ -176,8 +182,10 @@ public interface ISearchProvider {
      *            - post search filter instructions e.g. remove content of a certain type.
      * @return A list of results that match the id prefix.
      */
-    ResultsWrapper<String> findByExactMatch(String indexBase, String indexType, String fieldname, String needle,
-                                            int startIndex, int limit, @Nullable Map<String, AbstractFilterInstruction> filterInstructions) throws SegueSearchException;
+    ResultsWrapper<String> findByExactMatch(
+            String indexBase, String indexType, String fieldname, String needle, int startIndex, int limit,
+            @Nullable Map<String, AbstractFilterInstruction> filterInstructions
+    ) throws SegueSearchException;
 
     /**
      * Query for a list of Results that match a given id prefix.
@@ -200,8 +208,10 @@ public interface ISearchProvider {
      *            - post search filter instructions e.g. remove content of a certain type.
      * @return A list of results that match the id prefix.
      */
-    ResultsWrapper<String> findByPrefix(String indexBase, String indexType, String fieldname, String prefix,
-            int startIndex, int limit, @Nullable Map<String, AbstractFilterInstruction> filterInstructions) throws SegueSearchException;
+    ResultsWrapper<String> findByPrefix(
+            String indexBase, String indexType, String fieldname, String prefix, int startIndex, int limit,
+            @Nullable Map<String, AbstractFilterInstruction> filterInstructions
+    ) throws SegueSearchException;
     
     /**
      * Find content by a regex.
@@ -222,8 +232,10 @@ public interface ISearchProvider {
      *            - post search filter instructions e.g. remove content of a certain type.
      * @return A list of results that match the id prefix.
      */
-    ResultsWrapper<String> findByRegEx(String indexBase, String indexType, String fieldname, String regex, int startIndex,
-            int limit, @Nullable Map<String, AbstractFilterInstruction> filterInstructions) throws SegueSearchException;
+    ResultsWrapper<String> findByRegEx(
+            String indexBase, String indexType, String fieldname, String regex, int startIndex, int limit,
+            @Nullable Map<String, AbstractFilterInstruction> filterInstructions
+    ) throws SegueSearchException;
 
     /*
      * TODO: We need to change the return type of these two methods to avoid having ES specific things

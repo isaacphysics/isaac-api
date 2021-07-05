@@ -407,7 +407,7 @@ public class GameboardPersistenceManager {
 		GameboardDO gameboardDO = this.convertToGameboardDO(gameboardDTO);
 		
 		// build query the db to get full question information
-        List<IContentManager.BooleanSearchClause> fieldsToMap = com.google.api.client.util.Lists.newArrayList();
+        List<IContentManager.BooleanSearchClause> fieldsToMap = Lists.newArrayList();
 
         fieldsToMap.add(new IContentManager.BooleanSearchClause(
             Constants.ID_FIELDNAME + '.' + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Constants.BooleanOperator.OR, gameboardDO.getQuestions()));

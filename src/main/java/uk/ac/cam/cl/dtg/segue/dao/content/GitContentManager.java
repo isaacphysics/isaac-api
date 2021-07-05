@@ -348,25 +348,27 @@ public class GitContentManager implements IContentManager {
     }
 
     @Override
-    public final ResultsWrapper<ContentDTO> findByFieldNames(final String version,
-                                                             final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex, final Integer limit)
-            throws ContentManagerException {
-
+    public final ResultsWrapper<ContentDTO> findByFieldNames(
+            final String version, final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex,
+            final Integer limit
+    ) throws ContentManagerException {
         return this.findByFieldNames(version, fieldsToMatch, startIndex, limit, null);
     }
 
     @Override
-    public final ResultsWrapper<ContentDTO> findByFieldNames(final String version,
-                                                             final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex, final Integer limit,
-                                                             @Nullable final Map<String, Constants.SortOrder> sortInstructions) throws ContentManagerException {
+    public final ResultsWrapper<ContentDTO> findByFieldNames(
+            final String version, final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex,
+            final Integer limit, @Nullable final Map<String, Constants.SortOrder> sortInstructions
+    ) throws ContentManagerException {
         return this.findByFieldNames(version, fieldsToMatch, startIndex, limit, sortInstructions, null);
     }
 
     @Override
-    public final ResultsWrapper<ContentDTO> findByFieldNames(final String version,
-                                                             final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex, final Integer limit,
-                                                             @Nullable final Map<String, Constants.SortOrder> sortInstructions,
-                                                             @Nullable final Map<String, AbstractFilterInstruction> filterInstructions) throws ContentManagerException {
+    public final ResultsWrapper<ContentDTO> findByFieldNames(
+            final String version, final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex,
+            final Integer limit, @Nullable final Map<String, Constants.SortOrder> sortInstructions,
+            @Nullable final Map<String, AbstractFilterInstruction> filterInstructions
+    ) throws ContentManagerException {
         ResultsWrapper<ContentDTO> finalResults;
 
         final Map<String, Constants.SortOrder> newSortInstructions;
@@ -402,16 +404,18 @@ public class GitContentManager implements IContentManager {
     }
 
     @Override
-    public final ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(final String version,
-                                                                        final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex, final Integer limit)
-            throws ContentManagerException {
+    public final ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(
+            final String version, final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex,
+            final Integer limit
+    ) throws ContentManagerException {
         return this.findByFieldNamesRandomOrder(version, fieldsToMatch, startIndex, limit, null);
     }
 
     @Override
-    public final ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(final String version,
-                                                                        final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex, final Integer limit, final Long randomSeed)
-    throws ContentManagerException {
+    public final ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(
+            final String version, final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex,
+            final Integer limit, final Long randomSeed
+    ) throws ContentManagerException {
         ResultsWrapper<ContentDTO> finalResults;
 
         ResultsWrapper<String> searchHits;

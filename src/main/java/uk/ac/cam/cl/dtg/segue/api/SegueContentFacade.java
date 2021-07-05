@@ -136,8 +136,9 @@ public class SegueContentFacade extends AbstractSegueFacade {
      *            - the max number of results to return.
      * @return Response containing a ResultsWrapper<ContentDTO> or a Response containing null if none found.
      */
-    public final ResultsWrapper<ContentDTO> findMatchingContentRandomOrder(@Nullable final String version,
-                                                                           final List<IContentManager.BooleanSearchClause> fieldsToMatch, final Integer startIndex, final Integer limit) {
+    public final ResultsWrapper<ContentDTO> findMatchingContentRandomOrder(
+            @Nullable final String version, final List<IContentManager.BooleanSearchClause> fieldsToMatch,
+            final Integer startIndex, final Integer limit) {
         return this.findMatchingContentRandomOrder(version, fieldsToMatch, startIndex, limit, null);
     }
 
@@ -157,9 +158,9 @@ public class SegueContentFacade extends AbstractSegueFacade {
      *            - to allow some control over the random order of the results.
      * @return Response containing a ResultsWrapper<ContentDTO> or a Response containing null if none found.
      */
-    public final ResultsWrapper<ContentDTO> findMatchingContentRandomOrder(@Nullable final String version,
-                                                                           final List<IContentManager.BooleanSearchClause> fieldsToMatch, final Integer startIndex,
-                                                                           final Integer limit, final Long randomSeed) {
+    public final ResultsWrapper<ContentDTO> findMatchingContentRandomOrder(
+            @Nullable final String version, final List<IContentManager.BooleanSearchClause> fieldsToMatch,
+            final Integer startIndex, final Integer limit, final Long randomSeed) {
 
         String newVersion = this.contentIndex;
         Integer newLimit = DEFAULT_RESULTS_LIMIT;

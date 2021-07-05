@@ -143,9 +143,9 @@ public interface IContentManager {
      * @throws ContentManagerException
      *             - if there is an error retrieving the content requested.
      */
-    ResultsWrapper<ContentDTO> findByFieldNames(String version,
-                                                final List<BooleanSearchClause> fieldsToMatch, Integer startIndex,
-                                                Integer limit) throws ContentManagerException;
+    ResultsWrapper<ContentDTO> findByFieldNames(
+            String version, final List<BooleanSearchClause> fieldsToMatch, Integer startIndex, Integer limit
+    ) throws ContentManagerException;
 
     /**
      * Method to allow bulk search of content based on the type field.
@@ -164,9 +164,10 @@ public interface IContentManager {
      * @throws ContentManagerException
      *             - if there is an error retrieving the content requested.
      */
-    ResultsWrapper<ContentDTO> findByFieldNames(String version,
-                                                List<BooleanSearchClause> fieldsToMatch, Integer startIndex, Integer limit,
-                                                Map<String, SortOrder> sortInstructions) throws ContentManagerException;
+    ResultsWrapper<ContentDTO> findByFieldNames(
+            String version, List<BooleanSearchClause> fieldsToMatch, Integer startIndex, Integer limit,
+            Map<String, SortOrder> sortInstructions
+    ) throws ContentManagerException;
 
     /**
      * Method to allow bulk search of content based on the type field.
@@ -187,10 +188,10 @@ public interface IContentManager {
      * @throws ContentManagerException
      *             - if there is an error retrieving the content requested.
      */
-    ResultsWrapper<ContentDTO> findByFieldNames(String version,
-                                                List<BooleanSearchClause> fieldsToMatch, Integer startIndex, Integer limit,
-                                                Map<String, SortOrder> sortInstructions,
-                                                @Nullable final Map<String, AbstractFilterInstruction> filterInstructions) throws ContentManagerException;
+    ResultsWrapper<ContentDTO> findByFieldNames(
+            String version, List<BooleanSearchClause> fieldsToMatch, Integer startIndex, Integer limit,
+            Map<String, SortOrder> sortInstructions, @Nullable final Map<String, AbstractFilterInstruction> filterInstructions
+    ) throws ContentManagerException;
 
     /**
      * The same as findByFieldNames but the results list is returned in a randomised order.
@@ -207,8 +208,9 @@ public interface IContentManager {
      * @throws ContentManagerException
      *             - if there is an error retrieving the content requested.
      */
-    ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(String version,
-                                                           List<BooleanSearchClause> fieldsToMatch, Integer startIndex, Integer limit) throws ContentManagerException;
+    ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(
+            String version, List<BooleanSearchClause> fieldsToMatch, Integer startIndex, Integer limit
+    ) throws ContentManagerException;
 
     /**
      * The same as findByFieldNames but the results list is returned in a randomised order.
@@ -227,9 +229,9 @@ public interface IContentManager {
      * @throws ContentManagerException
      *             - if there is an error retrieving the content requested.
      */
-    ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(String version,
-                                                           List<BooleanSearchClause> fieldsToMatch, Integer startIndex, Integer limit,
-                                                           @Nullable Long randomSeed) throws ContentManagerException;
+    ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(
+            String version, List<BooleanSearchClause> fieldsToMatch, Integer startIndex, Integer limit, @Nullable Long randomSeed
+    ) throws ContentManagerException;
 
     /**
      * Allows fullText search using the internal search provider.
