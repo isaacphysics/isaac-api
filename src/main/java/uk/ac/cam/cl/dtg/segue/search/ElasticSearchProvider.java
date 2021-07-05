@@ -429,12 +429,10 @@ public class ElasticSearchProvider implements ISearchProvider {
             // Each search clause is its own boolean query that gets added to the master query as a must match clause
             BoolQueryBuilder query = QueryBuilders.boolQuery();
 
-            boolean atLeastOneShouldMatch = false;
             // Add the clause to the query value by value
             for (String value : searchClause.getValues()) {
                 if (Constants.BooleanOperator.OR.equals(searchClause.getOperator())) {
                     query.should(QueryBuilders.matchQuery(searchClause.getField(), value));
-                    atLeastOneShouldMatch = true;
                 } else if (Constants.BooleanOperator.AND.equals(searchClause.getOperator())) {
                     query.must(QueryBuilders.matchQuery(searchClause.getField(), value));
                 } else if (Constants.BooleanOperator.NOT.equals(searchClause.getOperator())) {
