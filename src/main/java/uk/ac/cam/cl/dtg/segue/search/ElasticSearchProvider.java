@@ -17,14 +17,13 @@ package uk.ac.cam.cl.dtg.segue.search;
 
 import com.carrotsearch.hppc.cursors.ObjectObjectCursor;
 import com.google.api.client.util.Lists;
-import com.google.api.client.util.Maps;
-import com.google.api.client.util.Sets;
 import com.google.common.base.CaseFormat;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
+import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
 import org.elasticsearch.action.admin.indices.settings.get.GetSettingsResponse;
@@ -53,6 +52,7 @@ import org.elasticsearch.transport.client.PreBuiltTransportClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 
 import javax.annotation.Nullable;
@@ -62,13 +62,13 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static com.google.common.collect.Maps.immutableEntry;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.SEARCH_MAX_WINDOW_SIZE;
 
 
@@ -113,7 +113,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 
     @Override
     public ResultsWrapper<String> matchSearch(final String indexBase, final String indexType,
-                                              final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch, final int startIndex,
+                                              final List<IContentManager.BooleanSearchClause> fieldsToMatch, final int startIndex,
                                               final int limit, final Map<String, Constants.SortOrder> sortInstructions,
                                               @Nullable final Map<String, AbstractFilterInstruction> filterInstructions) throws SegueSearchException {
         // build up the query from the fieldsToMatch map
@@ -128,8 +128,8 @@ public class ElasticSearchProvider implements ISearchProvider {
 
     @Override
     public final ResultsWrapper<String> randomisedMatchSearch(final String indexBase, final String indexType,
-                                                              final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch, final int startIndex,
-                                                              final int limit, final Long randomSeed, final Map<String, AbstractFilterInstruction> filterInstructions)
+                                                              final List<IContentManager.BooleanSearchClause> fieldsToMatch, final int startIndex, final int limit,
+                                                              final Long randomSeed, final Map<String, AbstractFilterInstruction> filterInstructions)
             throws SegueSearchException {
         // build up the query from the fieldsToMatch map
         QueryBuilder query = QueryBuilders.constantScoreQuery(generateBoolMatchQuery(fieldsToMatch));
@@ -397,10 +397,11 @@ public class ElasticSearchProvider implements ISearchProvider {
             if (fieldToFilterInstruction.getValue() instanceof SimpleFilterInstruction) {
                 SimpleFilterInstruction sfi = (SimpleFilterInstruction) fieldToFilterInstruction.getValue();
 
-                Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch = Maps.newHashMap();
 
-                fieldsToMatch.put(immutableEntry(Constants.BooleanOperator.AND, fieldToFilterInstruction.getKey()),
-                        Arrays.asList(sfi.getMustMatchValue()));
+                List<IContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
+                fieldsToMatch.add(new IContentManager.BooleanSearchClause(
+                        fieldToFilterInstruction.getKey(), Constants.BooleanOperator.AND,
+                        Collections.singletonList(sfi.getMustMatchValue())));
 
                 filter.must(this.generateBoolMatchQuery(fieldsToMatch));
             }
@@ -421,38 +422,41 @@ public class ElasticSearchProvider implements ISearchProvider {
      *            - the fields that the bool query should match.
      * @return a bool query configured to match the fields to match.
      */
-    private BoolQueryBuilder generateBoolMatchQuery(
-            final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch) {
-        BoolQueryBuilder query = QueryBuilders.boolQuery();
+    private BoolQueryBuilder generateBoolMatchQuery(final List<IContentManager.BooleanSearchClause> fieldsToMatch) {
+        BoolQueryBuilder masterQuery = QueryBuilders.boolQuery();
 
-        // This Set will allow us to calculate the minimum should match value -
-        // it is assumed that for each or'd field there should be a match
-        Set<String> shouldMatchSet = Sets.newHashSet();
-        for (Map.Entry<Map.Entry<Constants.BooleanOperator, String>, List<String>> pair : fieldsToMatch.entrySet()) {
-            // extract the MapEntry which contains a key value pair of the
-            // operator and the list of operands to match against.
-            Constants.BooleanOperator operatorForThisField = pair.getKey().getKey();
+        for (IContentManager.BooleanSearchClause searchClause : fieldsToMatch) {
+            // Each search clause is its own boolean query that gets added to the master query as a must match clause
+            BoolQueryBuilder query = QueryBuilders.boolQuery();
 
-            // go through each operand and add it to the query
-            if (pair.getValue() != null) {
-                for (String queryItem : pair.getValue()) {
-                    if (operatorForThisField.equals(Constants.BooleanOperator.OR)) {
-                        shouldMatchSet.add(pair.getKey().getValue());
-                        query.should(QueryBuilders.matchQuery(pair.getKey().getValue(), queryItem))
-                                .minimumShouldMatch(shouldMatchSet.size());
-                    } else if (operatorForThisField.equals(Constants.BooleanOperator.NOT)) {
-                        query.mustNot(QueryBuilders.matchQuery(pair.getKey().getValue(), queryItem));
-                    } else {
-                        query.must(QueryBuilders.matchQuery(pair.getKey().getValue(), queryItem));
-                    }
+            // Add the clause to the query value by value
+            for (String value : searchClause.getValues()) {
+                if (Constants.BooleanOperator.OR.equals(searchClause.getOperator())) {
+                    query.should(QueryBuilders.matchQuery(searchClause.getField(), value));
+                } else if (Constants.BooleanOperator.AND.equals(searchClause.getOperator())) {
+                    query.must(QueryBuilders.matchQuery(searchClause.getField(), value));
+                } else if (Constants.BooleanOperator.NOT.equals(searchClause.getOperator())) {
+                    query.mustNot(QueryBuilders.matchQuery(searchClause.getField(), value));
+                } else {
+                    log.warn("Null argument received in paginated match search... "
+                            + "This is not usually expected. Ignoring it and continuing anyway.");
                 }
+            }
 
-            } else {
-                log.warn("Null argument received in paginated match search... "
-                        + "This is not usually expected. Ignoring it and continuing anyway.");
+            // The way we're using this query, if we have a "should" the document needs to match at least one of the options.
+            if (Constants.BooleanOperator.OR.equals(searchClause.getOperator())) {
+                query.minimumShouldMatch(1);
+            }
+
+            if (!Constants.NESTED_FIELDS.contains(searchClause.getField())) {
+                masterQuery.must(query);
+            } else { // Nested fields need to use a nested query which specifies the path of the nested field
+                String nestedPath = searchClause.getField().split("\\.")[0];
+                masterQuery.must(QueryBuilders.nestedQuery(nestedPath, query, ScoreMode.Total));
             }
         }
-        return query;
+
+        return masterQuery;
     }
 
     /**
@@ -574,19 +578,16 @@ public class ElasticSearchProvider implements ISearchProvider {
      *            - the map that should be converted into a suitable map for querying.
      * @return Map where each field is using the OR boolean operator.
      */
-    private Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> convertToBoolMap(
-            final Map<String, List<String>> fieldsThatMustMatch) {
+    private List<IContentManager.BooleanSearchClause> convertToBoolMap(final Map<String, List<String>> fieldsThatMustMatch) {
         if (null == fieldsThatMustMatch) {
             return null;
         }
 
-        Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> result = Maps.newHashMap();
+        List<IContentManager.BooleanSearchClause> result = Lists.newArrayList();
 
         for (Map.Entry<String, List<String>> pair : fieldsThatMustMatch.entrySet()) {
-            Map.Entry<Constants.BooleanOperator, String> mapEntry = com.google.common.collect.Maps.immutableEntry(
-                    Constants.BooleanOperator.OR, pair.getKey());
-
-            result.put(mapEntry, pair.getValue());
+            result.add(new IContentManager.BooleanSearchClause(
+                    pair.getKey(), Constants.BooleanOperator.OR, pair.getValue()));
         }
 
         return result;

@@ -28,6 +28,7 @@ import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -39,6 +40,7 @@ import java.util.Map;
 class ElasticSearchIndexer extends ElasticSearchProvider {
     private static final Logger log = LoggerFactory.getLogger(ElasticSearchIndexer.class);
     private final Map<String, List<String>> rawFieldsListByType = new HashMap<>();
+    private final Map<String, List<String>> nestedFieldsByType = new HashMap<>();
 
     /**
      * Constructor for creating an instance of the ElasticSearchProvider Object.
@@ -50,6 +52,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
         super(searchClient);
         rawFieldsListByType.put("content", Lists.newArrayList("id", "title"));
         rawFieldsListByType.put("school", Lists.newArrayList("urn"));
+        nestedFieldsByType.put("content", Lists.newArrayList("audience"));
     }
 
 
@@ -66,7 +69,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
 
         // check index already exists if not execute any initialisation steps.
         if (!this.hasIndex(indexBase, indexType)) {
-            if (this.rawFieldsListByType.containsKey(indexType)) {
+            if (this.rawFieldsListByType.containsKey(indexType) || this.nestedFieldsByType.containsKey(indexType)) {
                 this.sendMappingCorrections(typedIndex, indexType);
             }
         }
@@ -243,6 +246,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
      */
     private void sendMappingCorrections(final String typedIndex, String indexType) {
         try {
+            // Specify index settings
             CreateIndexRequestBuilder indexBuilder = client.admin().indices().prepareCreate(typedIndex).setSettings(
                     XContentFactory.jsonBuilder()
                             .startObject()
@@ -257,13 +261,13 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
 //                                .endObject()
                             .endObject());
 
-            // start json structure
+            // Add mapping to specify properties of the index
             final XContentBuilder mappingBuilder = XContentFactory.jsonBuilder()
                     .startObject().startObject(indexType).startObject("properties");
 
-            for (String fieldName : this.rawFieldsListByType.get(indexType)) {
-                log.debug("Sending raw mapping correction for " + fieldName + "."
-                        + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX);
+            // Add mapping to specify raw, un-analyzed fields
+            for (String fieldName : this.rawFieldsListByType.getOrDefault(indexType, Collections.emptyList())) {
+                log.debug("Sending raw mapping correction for " + fieldName + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX);
                 mappingBuilder
                         .startObject(fieldName)
                             .field("type", "text")
@@ -277,16 +281,19 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
                         .endObject();
             }
 
-            // close off json structure
-            mappingBuilder.endObject().endObject().endObject();
+            // Add mapping to specify nested object fields
+            for (String fieldName : this.nestedFieldsByType.getOrDefault(indexType, Collections.emptyList())) {
+                log.debug("Sending mapping correction for nested field " + fieldName);
+                mappingBuilder.startObject(fieldName).field("type", "nested").endObject();
+            }
 
-            // Send Mapping information
+            mappingBuilder.endObject().endObject().endObject();
             indexBuilder.addMapping(indexType, mappingBuilder);
+
             indexBuilder.execute().actionGet();
 
         } catch (IOException e) {
             log.error("Error while sending mapping correction " + "instructions to the ElasticSearch Server", e);
         }
     }
-
 }

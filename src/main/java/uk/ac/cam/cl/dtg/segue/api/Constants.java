@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
+import com.google.common.collect.ImmutableSet;
 import org.postgresql.util.PGInterval;
 
 import java.util.Arrays;
@@ -414,6 +415,12 @@ public final class Constants {
     public static final String[] ADDRESS_FIELDNAMES = {"addressLine1", "addressLine2", "town", "county", "postalCode"};
     public static final String SEARCHABLE_CONTENT_FIELDNAME = "searchableContent";
     public static final String VISIBLE_TO_STUDENTS_FIELDNAME = "visibleToStudents";
+
+    public static final String STAGE_FIELDNAME = "audience.stage";
+    public static final String DIFFICULTY_FIELDNAME = "audience.difficulty";
+    public static final String EXAM_BOARD_FIELDNAME = "audience.examBoard";
+    public static final Set<String> NESTED_FIELDS =
+            ImmutableSet.of(STAGE_FIELDNAME, DIFFICULTY_FIELDNAME, EXAM_BOARD_FIELDNAME);
 
     public static final String USER_ID_FKEY_FIELDNAME = "userId";
     public static final String OLD_USER_ID_FKEY_FIELDNAME = "oldUserId";
