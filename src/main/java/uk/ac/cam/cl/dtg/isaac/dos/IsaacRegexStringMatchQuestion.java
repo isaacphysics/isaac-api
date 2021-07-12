@@ -26,7 +26,7 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
  *
  */
 @DTOMapping(IsaacRegexStringMatchQuestionDTO.class)
-@JsonContentType("isaacStringMatchQuestion")
+@JsonContentType("isaacRegexStringMatchQuestion")
 @ValidatesWith(IsaacRegexStringMatchValidator.class)
 public class IsaacRegexStringMatchQuestion extends IsaacQuestionBase {
     private Boolean multiLineEntry;

@@ -22,18 +22,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import uk.ac.cam.cl.dtg.segue.dos.content.ChemicalFormula;
-import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
-import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
-import uk.ac.cam.cl.dtg.segue.dos.content.Formula;
-import uk.ac.cam.cl.dtg.segue.dos.content.FreeTextRule;
-import uk.ac.cam.cl.dtg.segue.dos.content.GraphChoice;
-import uk.ac.cam.cl.dtg.segue.dos.content.Item;
-import uk.ac.cam.cl.dtg.segue.dos.content.ItemChoice;
-import uk.ac.cam.cl.dtg.segue.dos.content.LogicFormula;
-import uk.ac.cam.cl.dtg.segue.dos.content.ParsonsChoice;
-import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
-import uk.ac.cam.cl.dtg.segue.dos.content.StringChoice;
+import uk.ac.cam.cl.dtg.segue.dos.content.*;
 
 import java.io.IOException;
 
@@ -90,6 +79,8 @@ public class ChoiceDeserializer extends JsonDeserializer<Choice> {
                 return getSingletonChoiceMapper().readValue(root.toString(), GraphChoice.class);
             case "stringChoice":
                 return getSingletonChoiceMapper().readValue(root.toString(), StringChoice.class);
+            case "regexChoice":
+                return getSingletonChoiceMapper().readValue(root.toString(), RegexPattern.class);
             case "freeTextRule":
                 return getSingletonChoiceMapper().readValue(root.toString(), FreeTextRule.class);
             case "parsonsChoice":

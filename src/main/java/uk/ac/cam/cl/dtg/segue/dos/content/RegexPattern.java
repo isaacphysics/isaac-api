@@ -13,20 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.segue.dto.content;
+package uk.ac.cam.cl.dtg.segue.dos.content;
+
+import uk.ac.cam.cl.dtg.segue.dto.content.RegexPatternDTO;
 
 /**
- * DTO to represent a Quantity choice.
+ * Regex Pattern allows marking as case-insensitive for more relaxed checking.
  *
  */
-public class RegexChoiceDTO extends ChoiceDTO {
+@DTOMapping(RegexPatternDTO.class)
+@JsonContentType("regexPattern")
+public class RegexPattern extends Choice {
     private boolean caseInsensitive;
 
-    /**
-     * Default constructor required for mapping.
-     */
-    public RegexChoiceDTO() {
-
+    public RegexPattern() {
+        
     }
 
     /**
@@ -44,4 +45,5 @@ public class RegexChoiceDTO extends ChoiceDTO {
     public void setCaseInsensitive(final boolean caseInsensitive) {
         this.caseInsensitive = caseInsensitive;
     }
+
 }

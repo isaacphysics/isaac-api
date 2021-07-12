@@ -23,7 +23,7 @@ import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
-import uk.ac.cam.cl.dtg.segue.dos.content.RegexChoice;
+import uk.ac.cam.cl.dtg.segue.dos.content.RegexPattern;
 import uk.ac.cam.cl.dtg.segue.dos.content.StringChoice;
 import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 
@@ -45,13 +45,13 @@ public class IsaacRegexStringMatchValidator implements IValidator {
 
         if (!(question instanceof IsaacRegexStringMatchQuestion)) {
             throw new IllegalArgumentException(String.format(
-                    "This validator only works with Isaac String Match Questions... (%s is not string match)",
+                    "This validator only works with Isaac Regex String Match Questions... (%s is not string match)",
                     question.getId()));
         }
 
         if (!(answer instanceof StringChoice)) {
             throw new IllegalArgumentException(String.format(
-                    "Expected StringChoice for IsaacStringMatchQuestion: %s. Received (%s) ", question.getId(),
+                    "Expected StringChoice for IsaacRegexStringMatchQuestion: %s. Received (%s) ", question.getId(),
                     answer.getClass()));
         }
 
@@ -86,31 +86,31 @@ public class IsaacRegexStringMatchValidator implements IValidator {
             // For all the choices on this question...
             for (Choice c : orderedChoices) {
 
-                // ... that are of the RegexChoice type, ...
-                if (!(c instanceof RegexChoice)) {
+                // ... that are of the RegexPattern type, ...
+                if (!(c instanceof RegexPattern)) {
                     log.error("Isaac RegexStringMatch Validator for questionId: " + regexStringMatchQuestion.getId()
-                            + " expected there to be a RegexChoice. Instead it found a Choice.");
+                            + " expected there to be a RegexPattern. Instead it found a Choice.");
                     continue;
                 }
-                RegexChoice regexChoice = (RegexChoice) c;
+                RegexPattern regexPattern = (RegexPattern) c;
 
-                if (null == regexChoice.getValue() || regexChoice.getValue().isEmpty()) {
-                    log.error("Expected a regex to match on, but none found in choice for question id: "
+                if (null == regexPattern.getValue() || regexPattern.getValue().isEmpty()) {
+                    log.error("Expected a regex pattern to match on, but none found in choice for question id: "
                             + regexStringMatchQuestion.getId());
                     continue;
                 }
 
                 // ... check if they match the choice, ...
-                if (matchesPattern(regexChoice.getValue(), userAnswer.getValue(), regexChoice.isCaseInsensitive())) {
-                    if (regexChoice.isCaseInsensitive()) {
+                if (matchesPattern(regexPattern.getValue(), userAnswer.getValue(), regexPattern.isCaseInsensitive())) {
+                    if (regexPattern.isCaseInsensitive()) {
                         if (!responseCorrect) {
                             // ... allowing case-insensitive matching only if haven't already matched a correct answer ...
-                            feedback = (Content) regexChoice.getExplanation();
-                            responseCorrect = regexChoice.isCorrect();
+                            feedback = (Content) regexPattern.getExplanation();
+                            responseCorrect = regexPattern.isCorrect();
                         }
                     } else {
-                        feedback = (Content) regexChoice.getExplanation();
-                        responseCorrect = regexChoice.isCorrect();
+                        feedback = (Content) regexPattern.getExplanation();
+                        responseCorrect = regexPattern.isCorrect();
                         // ... and taking exact case-sensitive matches to be the best possible and stopping if found.
                         break;
                     }
