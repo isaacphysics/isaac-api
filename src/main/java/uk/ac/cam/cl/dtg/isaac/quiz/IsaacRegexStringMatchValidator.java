@@ -45,7 +45,7 @@ public class IsaacRegexStringMatchValidator implements IValidator {
 
         if (!(question instanceof IsaacRegexStringMatchQuestion)) {
             throw new IllegalArgumentException(String.format(
-                    "This validator only works with Isaac Regex String Match Questions... (%s is not string match)",
+                    "This validator only works with Isaac Regex String Match Questions... (%s is not regex string match)",
                     question.getId()));
         }
 
