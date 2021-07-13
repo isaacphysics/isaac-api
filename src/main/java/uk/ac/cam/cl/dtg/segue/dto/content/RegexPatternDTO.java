@@ -16,11 +16,12 @@
 package uk.ac.cam.cl.dtg.segue.dto.content;
 
 /**
- * DTO to represent a Quantity choice.
+ * DTO to represent a regex pattern.
  *
  */
 public class RegexPatternDTO extends ChoiceDTO {
     private boolean caseInsensitive;
+    private boolean multiLineRegex;
 
     /**
      * Default constructor required for mapping.
@@ -43,5 +44,21 @@ public class RegexPatternDTO extends ChoiceDTO {
      */
     public void setCaseInsensitive(final boolean caseInsensitive) {
         this.caseInsensitive = caseInsensitive;
+    }
+
+    /**
+     * @return Whether this regex pattern should have the multiline flag set.
+     */
+    public boolean isMultiLineRegex() {
+        return multiLineRegex;
+    }
+
+    /**
+     * Whether this regex pattern should match strings across multiple lines.
+     *
+     * @param multiLineRegex Whether this regex pattern should have the multiline flag set.
+     */
+    public void setMultiLineRegex(final boolean multiLineRegex) {
+        this.multiLineRegex = multiLineRegex;
     }
 }

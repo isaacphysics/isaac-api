@@ -100,20 +100,13 @@ public class IsaacRegexStringMatchValidator implements IValidator {
                     continue;
                 }
 
-                // ... check if they match the choice, ...
-                if (matchesPattern(regexPattern.getValue(), userAnswer.getValue(), regexPattern.isCaseInsensitive())) {
-                    if (regexPattern.isCaseInsensitive()) {
-                        if (!responseCorrect) {
-                            // ... allowing case-insensitive matching only if haven't already matched a correct answer ...
-                            feedback = (Content) regexPattern.getExplanation();
-                            responseCorrect = regexPattern.isCorrect();
-                        }
-                    } else {
-                        feedback = (Content) regexPattern.getExplanation();
-                        responseCorrect = regexPattern.isCorrect();
-                        // ... and taking exact case-sensitive matches to be the best possible and stopping if found.
-                        break;
-                    }
+                // ... check if they match the pattern, ...
+                if (matchesPattern(regexPattern.getValue(), userAnswer.getValue(), regexPattern.isCaseInsensitive(),
+                        regexPattern.isMultiLineRegex())) {
+                    // ... and break at the first matched pattern.
+                    feedback = (Content) regexPattern.getExplanation();
+                    responseCorrect = regexPattern.isCorrect();
+                    break;
                 }
             }
         }
@@ -121,14 +114,17 @@ public class IsaacRegexStringMatchValidator implements IValidator {
         return new QuestionValidationResponse(question.getId(), userAnswer, responseCorrect, feedback, new Date());
     }
 
-    private boolean matchesPattern(String trustedRegexPattern, String userValue, final Boolean caseInsensitive) {
+    private boolean matchesPattern(String trustedRegexPattern, String userValue, final Boolean caseInsensitive,
+                                   final Boolean multiLineRegex) {
 
         if (null == trustedRegexPattern || null == userValue) {
             return false;
         }
 
+        // The pattern is case sensitive and single line by default
         Pattern answerPattern = Pattern.compile(trustedRegexPattern,
-                (null != caseInsensitive && caseInsensitive ? Pattern.CASE_INSENSITIVE : 0) | Pattern.MULTILINE);
+                (null != caseInsensitive && caseInsensitive ? Pattern.CASE_INSENSITIVE : 0)
+                        | (null != multiLineRegex && multiLineRegex ? Pattern.MULTILINE : 0));
 
         return answerPattern.matcher(userValue).matches();
     }

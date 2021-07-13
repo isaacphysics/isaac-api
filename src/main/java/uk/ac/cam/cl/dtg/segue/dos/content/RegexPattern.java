@@ -18,13 +18,14 @@ package uk.ac.cam.cl.dtg.segue.dos.content;
 import uk.ac.cam.cl.dtg.segue.dto.content.RegexPatternDTO;
 
 /**
- * Regex Pattern allows marking as case-insensitive for more relaxed checking.
+ * Regex Pattern allows for case-insensitive and multiple-line answer matching.
  *
  */
 @DTOMapping(RegexPatternDTO.class)
 @JsonContentType("regexPattern")
 public class RegexPattern extends Choice {
     private boolean caseInsensitive;
+    private boolean multiLineRegex;
 
     public RegexPattern() {
         
@@ -46,4 +47,19 @@ public class RegexPattern extends Choice {
         this.caseInsensitive = caseInsensitive;
     }
 
+    /**
+     * @return Whether this regex pattern should have the multiline flag set.
+     */
+    public boolean isMultiLineRegex() {
+        return multiLineRegex;
+    }
+
+    /**
+     * Whether this regex pattern should match strings across multiple lines.
+     *
+     * @param multiLineRegex Whether this regex pattern should have the multiline flag set.
+     */
+    public void setMultiLineRegex(final boolean multiLineRegex) {
+        this.multiLineRegex = multiLineRegex;
+    }
 }
