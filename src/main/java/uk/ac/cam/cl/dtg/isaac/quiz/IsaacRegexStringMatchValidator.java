@@ -29,8 +29,7 @@ import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 
 import java.util.Date;
 import java.util.List;
-import java.util.regex.Pattern;
-
+import com.google.re2j.Pattern;
 
 /**
  * Validator that only provides functionality to validate Regex String Match questions.
