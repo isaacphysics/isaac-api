@@ -134,7 +134,7 @@ public class IsaacItemQuestionValidator implements IValidator {
                     - submittedItemIds.size() <= choiceItemIds.size()
                     - All submitted ids are within the set of choice ids
                  */
-                if (allowSubsetMatch && Sets.intersection(submittedItemIds, choiceItemIds) == submittedItemIds) {
+                if (allowSubsetMatch && Sets.intersection(submittedItemIds, choiceItemIds).equals(submittedItemIds)) {
                     responseCorrect = itemChoice.isCorrect();
                     feedback = (Content) itemChoice.getExplanation();
                     break;
