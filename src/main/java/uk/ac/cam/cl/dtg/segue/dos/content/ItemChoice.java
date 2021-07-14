@@ -27,6 +27,7 @@ import java.util.List;
 @JsonContentType("itemChoice")
 public class ItemChoice extends Choice {
 
+    private Boolean allowSubsetMatch;
     private List<Item> items;
 
     /**
@@ -42,4 +43,8 @@ public class ItemChoice extends Choice {
     public void setItems(final List<Item> items) {
         this.items = items;
     }
+
+    public Boolean isAllowSubsetMatch() { return this.allowSubsetMatch; }
+
+    public void setAllowSubsetMatch(final boolean allowSubsetMatch) { this.allowSubsetMatch = allowSubsetMatch; }
 }
