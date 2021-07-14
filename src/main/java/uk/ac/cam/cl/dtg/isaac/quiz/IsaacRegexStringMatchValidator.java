@@ -1,5 +1,5 @@
-/*
- * Copyright 2017 James Sharkey
+/**
+ * Copyright 2021 Chris Purdy
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -121,7 +121,7 @@ public class IsaacRegexStringMatchValidator implements IValidator {
             return false;
         }
 
-        // The pattern is case sensitive and single line by default
+        // The pattern is case sensitive and single line by default - the regex flags are combined with bitwise OR
         Pattern answerPattern = Pattern.compile(trustedRegexPattern,
                 (null != caseInsensitive && caseInsensitive ? Pattern.CASE_INSENSITIVE : 0)
                         | (null != multiLineRegex && multiLineRegex ? Pattern.MULTILINE : 0));

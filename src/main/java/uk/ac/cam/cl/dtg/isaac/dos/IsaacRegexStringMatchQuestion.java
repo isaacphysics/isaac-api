@@ -1,5 +1,5 @@
-/*
- * Copyright 2017 James Sharkey
+/**
+ * Copyright 2021 Chris Purdy
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 
 /**
- * DO for isaacStringMatchQuestion.
+ * DO for isaacRegexStringMatchQuestion.
  *
  */
 @DTOMapping(IsaacRegexStringMatchQuestionDTO.class)
