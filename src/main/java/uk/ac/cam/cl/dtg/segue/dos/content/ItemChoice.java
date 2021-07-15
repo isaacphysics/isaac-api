@@ -44,7 +44,11 @@ public class ItemChoice extends Choice {
         this.items = items;
     }
 
-    public Boolean isAllowSubsetMatch() { return this.allowSubsetMatch; }
+    public Boolean isAllowSubsetMatch() {
+        return this.allowSubsetMatch;
+    }
 
-    public void setAllowSubsetMatch(final boolean allowSubsetMatch) { this.allowSubsetMatch = allowSubsetMatch; }
+    public void setAllowSubsetMatch(final boolean allowSubsetMatch) {
+        this.allowSubsetMatch = allowSubsetMatch;
+    }
 }

@@ -162,7 +162,8 @@ public class IsaacItemQuestionValidator implements IValidator {
            for the ordering.
          */
         orderedChoices.sort((o1, o2) -> {
-            int o1Val = 1, o2Val = 1;
+            int o1Val = 1;
+            int o2Val = 1;
             Boolean subsetMatch;
             if (o1 instanceof ItemChoice) {
                 subsetMatch = ((ItemChoice) o1).isAllowSubsetMatch();
