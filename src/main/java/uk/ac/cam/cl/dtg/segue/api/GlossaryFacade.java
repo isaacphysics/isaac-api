@@ -16,7 +16,7 @@
 
 package uk.ac.cam.cl.dtg.segue.api;
 
-import com.google.api.client.util.Maps;
+import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
@@ -42,10 +42,11 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
-import static com.google.common.collect.Maps.immutableEntry;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
 
 /**
  * Glossary Facade
@@ -91,8 +92,9 @@ public class GlossaryFacade extends AbstractSegueFacade {
     public final Response getTerms(@QueryParam("start_index") final String startIndex,
                                    @QueryParam("limit") final String limit) {
 
-        Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMatch = Maps.newHashMap();
-        fieldsToMatch.put(immutableEntry(BooleanOperator.AND, TYPE_FIELDNAME), Collections.singletonList("glossaryTerm"));
+        List<IContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
+        fieldsToMatch.add(new IContentManager.BooleanSearchClause(
+                TYPE_FIELDNAME, BooleanOperator.AND, Collections.singletonList("glossaryTerm")));
 
         ResultsWrapper<ContentDTO> c;
         try {

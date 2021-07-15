@@ -15,7 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
-import com.google.api.client.util.Maps;
+import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.slf4j.Logger;
@@ -47,7 +47,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.google.common.collect.Maps.immutableEntry;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUIZ_TYPE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
@@ -97,11 +96,13 @@ public class QuizManager {
 
     public ResultsWrapper<ContentSummaryDTO> getAvailableQuizzes(boolean onlyVisibleToStudents, @Nullable Integer startIndex, @Nullable Integer limit) throws ContentManagerException {
 
-        Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch = Maps.newHashMap();
-        fieldsToMatch.put(immutableEntry(Constants.BooleanOperator.AND, TYPE_FIELDNAME), Collections.singletonList(QUIZ_TYPE));
+        List<IContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
+        fieldsToMatch.add(new IContentManager.BooleanSearchClause(
+                TYPE_FIELDNAME, Constants.BooleanOperator.AND, Collections.singletonList(QUIZ_TYPE)));
 
         if (onlyVisibleToStudents) {
-            fieldsToMatch.put(immutableEntry(Constants.BooleanOperator.AND, VISIBLE_TO_STUDENTS_FIELDNAME), Collections.singletonList(Boolean.toString(true)));
+            fieldsToMatch.add(new IContentManager.BooleanSearchClause(
+                    VISIBLE_TO_STUDENTS_FIELDNAME, Constants.BooleanOperator.AND, Collections.singletonList(Boolean.toString(true))));
         }
 
         ResultsWrapper<ContentDTO> content = this.contentService.findMatchingContent(null, fieldsToMatch, startIndex, limit);
