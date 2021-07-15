@@ -20,8 +20,9 @@ package uk.ac.cam.cl.dtg.segue.dto.content;
  *
  */
 public class RegexPatternDTO extends ChoiceDTO {
-    private boolean caseInsensitive;
-    private boolean multiLineRegex;
+    private Boolean caseInsensitive;
+    private Boolean multiLineRegex;
+    private Boolean matchWholeString;
 
     /**
      * Default constructor required for mapping.
@@ -60,5 +61,22 @@ public class RegexPatternDTO extends ChoiceDTO {
      */
     public void setMultiLineRegex(final boolean multiLineRegex) {
         this.multiLineRegex = multiLineRegex;
+    }
+
+    /**
+     * @return Whether this regex pattern is partial or exact match.
+     */
+    public boolean ismatchWholeString() {
+        return matchWholeString;
+    }
+
+    /**
+     * This determines whether to use .find() or .match() when matching strings
+     * against this regex. If matchWholeString is true, we use .match().
+     *
+     * @param matchWholeString  Whether this regex pattern is partial or exact match.
+     */
+    public void setMatchWholeString(final boolean matchWholeString) {
+        this.matchWholeString = matchWholeString;
     }
 }

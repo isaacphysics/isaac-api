@@ -13,19 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.isaac.dto;
+package uk.ac.cam.cl.dtg.isaac.dos;
 
-import uk.ac.cam.cl.dtg.isaac.quiz.IsaacRegexStringMatchValidator;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacRegexMatchQuestionDTO;
+import uk.ac.cam.cl.dtg.isaac.quiz.IsaacRegexMatchValidator;
+import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 
 /**
- * DTO for isaacRegexStringMatchQuestion.
- * 
+ * DO for isaacRegexMatchQuestion.
+ *
  */
-@JsonContentType("isaacRegexStringMatchQuestion")
-@ValidatesWith(IsaacRegexStringMatchValidator.class)
-public class IsaacRegexStringMatchQuestionDTO extends IsaacQuestionBaseDTO {
+@DTOMapping(IsaacRegexMatchQuestionDTO.class)
+@JsonContentType("isaacRegexMatchQuestion")
+@ValidatesWith(IsaacRegexMatchValidator.class)
+public class IsaacRegexMatchQuestion extends IsaacQuestionBase {
     private Boolean multiLineEntry;
 
     public Boolean getMultiLineEntry() {
@@ -35,5 +38,4 @@ public class IsaacRegexStringMatchQuestionDTO extends IsaacQuestionBaseDTO {
     public void setMultiLineEntry(final Boolean multiLineEntry) {
         this.multiLineEntry = multiLineEntry;
     }
-
 }

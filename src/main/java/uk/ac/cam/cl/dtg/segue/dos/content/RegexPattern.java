@@ -24,8 +24,9 @@ import uk.ac.cam.cl.dtg.segue.dto.content.RegexPatternDTO;
 @DTOMapping(RegexPatternDTO.class)
 @JsonContentType("regexPattern")
 public class RegexPattern extends Choice {
-    private boolean caseInsensitive;
-    private boolean multiLineRegex;
+    private Boolean caseInsensitive;
+    private Boolean multiLineRegex;
+    private Boolean matchWholeString;
 
     public RegexPattern() {
         
@@ -61,5 +62,22 @@ public class RegexPattern extends Choice {
      */
     public void setMultiLineRegex(final boolean multiLineRegex) {
         this.multiLineRegex = multiLineRegex;
+    }
+
+    /**
+     * @return Whether this regex pattern is partial or exact match.
+     */
+    public boolean isMatchWholeString() {
+        return matchWholeString;
+    }
+
+    /**
+     * This determines whether to use .find() or .match() when matching strings
+     * against this regex. If matchWholeString is true, we use .match().
+     *
+     * @param matchWholeString  Whether this regex pattern is partial or exact match.
+     */
+    public void setMatchWholeString(final boolean matchWholeString) {
+        this.matchWholeString = matchWholeString;
     }
 }
