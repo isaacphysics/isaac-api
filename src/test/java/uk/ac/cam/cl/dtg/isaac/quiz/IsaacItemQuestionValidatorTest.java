@@ -185,7 +185,9 @@ public class IsaacItemQuestionValidatorTest {
         // Set up user answer that is a subset of both the correct and incorrect choice
         ItemChoice c = new ItemChoice();
         Item submittedItem1 = new Item("id001", null);
-        c.setItems(ImmutableList.of(submittedItem1));
+        Item submittedItem2 = new Item("id002", null);
+        Item submittedItem3 = new Item("id003", null);
+        c.setItems(ImmutableList.of(submittedItem1, submittedItem2, submittedItem3));
 
         // Test response:
         QuestionValidationResponse response = validator.validateQuestionResponse(someItemQuestion, c);
@@ -193,11 +195,11 @@ public class IsaacItemQuestionValidatorTest {
     }
 
     /*
-       Test that if the correct choice is a strict subset of the submitted answer, it is not marked as correct,
+       Test that if the correct choice is a strict subset of the submitted answer, it is marked as correct,
        if the correct choice is marked as subset match.
     */
     @Test
-    public final void isaacItemQuestionValidator_CorrectChoiceSubsetOfSubmitted_IncorrectResponseShouldBeReturned() {
+    public final void isaacItemQuestionValidator_CorrectChoiceSubsetOfSubmitted_CorrectResponseShouldBeReturned() {
 
         // Enable subset matching on the correct choice
         ((ItemChoice) someItemQuestion.getChoices().get(1)).setAllowSubsetMatch(true);
@@ -211,8 +213,7 @@ public class IsaacItemQuestionValidatorTest {
 
         // Test response:
         QuestionValidationResponse response = validator.validateQuestionResponse(someItemQuestion, c);
-        assertFalse(response.isCorrect());
-        assertNull(response.getExplanation());
+        assertTrue(response.isCorrect());
     }
 
     /*
@@ -257,10 +258,11 @@ public class IsaacItemQuestionValidatorTest {
     }
 
     /*
-       Test that a subset answer to a 'subset match enabled' choice is marked as correct.
+       Test that if the submitted answer is a strict subset of the correct choice, it is marked as incorrect,
+       if the correct choice is marked as subset match.
     */
     @Test
-    public final void isaacItemQuestionValidator_SubsetOfCorrectItems_CorrectResponseShouldBeReturned() {
+    public final void isaacItemQuestionValidator_SubmittedSubsetOfCorrectChoice_CorrectResponseShouldBeReturned() {
 
         // Set up the question object:
         IsaacItemQuestion itemQuestion = new IsaacItemQuestion();
@@ -278,14 +280,15 @@ public class IsaacItemQuestionValidatorTest {
 
         itemQuestion.setChoices(ImmutableList.of(subsetCorrectAnswer));
 
-        // Set up user answer
+        // Set up user answer as a subset of the correct choice items
         ItemChoice userAnswer = new ItemChoice();
         Item submittedItem1 = new Item("id001", null);
         userAnswer.setItems(ImmutableList.of(submittedItem1));
 
         // Test response:
         QuestionValidationResponse response = validator.validateQuestionResponse(itemQuestion, userAnswer);
-        assertTrue(response.isCorrect());
+        assertFalse(response.isCorrect());
+        assertNull(response.getExplanation());
     }
 
     /*

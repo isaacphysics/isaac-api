@@ -129,12 +129,12 @@ public class IsaacItemQuestionValidator implements IValidator {
                 // Do not allow subset matching by default
                 boolean allowSubsetMatch = (null != itemChoice.isAllowSubsetMatch() && itemChoice.isAllowSubsetMatch());
 
-                /* If the intersection of the submitted and choice ids is equal to the submitted ones, then
+                /* If the intersection of the submitted and choice ids is equal to the choice ones, then
                    this means that:
-                    - submittedItemIds.size() <= choiceItemIds.size()
-                    - All submitted ids are within the set of choice ids
+                    - choiceItemIds.size() <= submittedItemIds.size()
+                    - All choice ids are within the set of submitted ids
                  */
-                if (allowSubsetMatch && Sets.intersection(submittedItemIds, choiceItemIds).equals(submittedItemIds)) {
+                if (allowSubsetMatch && Sets.intersection(submittedItemIds, choiceItemIds).equals(choiceItemIds)) {
                     responseCorrect = itemChoice.isCorrect();
                     feedback = (Content) itemChoice.getExplanation();
                     break;
