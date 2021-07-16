@@ -24,6 +24,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuiz;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuizSection;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicChemistryQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicVariableQuestion;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
@@ -835,7 +836,30 @@ public class ContentIndexer {
                                 this.registerContentProblem(c, "Symbolic Question: " + q.getId() + " has Formula ("
                                         + choice.getValue() + ") with pythonExpression which contains a '\\' character.", indexProblemCache);
                             } else if (f.getPythonExpression() == null || f.getPythonExpression().isEmpty()) {
-                                this.registerContentProblem( c, "Symbolic Question: " + q.getId() + " has Formula ("
+                                this.registerContentProblem(c, "Symbolic Question: " + q.getId() + " has Formula ("
+                                        + choice.getValue() + ") with empty pythonExpression!", indexProblemCache);
+                            }
+                        } else {
+                            this.registerContentProblem(c, "Symbolic Question: " + q.getId() + " has non-Formula Choice ("
+                                    + choice.getValue() + "). It must be deleted and a new Formula Choice created.", indexProblemCache);
+                        }
+                    }
+                } else if (c.getClass().equals(IsaacSymbolicVariableQuestion.class)) {
+                    IsaacSymbolicVariableQuestion q = (IsaacSymbolicVariableQuestion) c;
+                    for (String sym : q.getAvailableSymbols()) {
+                        if (sym.contains("\\")) {
+                            this.registerContentProblem(c, "Symbolic Question: " + q.getId() + " has availableSymbol ("
+                                    + sym + ") which contains a '\\' character.", indexProblemCache);
+                        }
+                    }
+                    for (Choice choice : q.getChoices()) {
+                        if (choice instanceof Formula) {
+                            Formula f = (Formula) choice;
+                            if (f.getPythonExpression().contains("\\")) {
+                                this.registerContentProblem(c, "Symbolic Question: " + q.getId() + " has Formula ("
+                                        + choice.getValue() + ") with pythonExpression which contains a '\\' character.", indexProblemCache);
+                            } else if (f.getPythonExpression() == null || f.getPythonExpression().isEmpty()) {
+                                this.registerContentProblem(c, "Symbolic Question: " + q.getId() + " has Formula ("
                                         + choice.getValue() + ") with empty pythonExpression!", indexProblemCache);
                             }
                         } else {

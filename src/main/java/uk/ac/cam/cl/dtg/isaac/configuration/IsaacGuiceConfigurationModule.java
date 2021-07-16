@@ -38,6 +38,7 @@ import uk.ac.cam.cl.dtg.isaac.dao.PgQuizQuestionAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicChemistryValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicLogicValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicValidator;
+import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicVariableValidator;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
@@ -165,6 +166,20 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
     private static IsaacSymbolicValidator getSymbolicValidator(PropertiesLoader properties) {
 
         return new IsaacSymbolicValidator(properties.getProperty(Constants.EQUALITY_CHECKER_HOST),
+                properties.getProperty(Constants.EQUALITY_CHECKER_PORT));
+    }
+
+    /**
+     * Gets an instance of the symbolic variable question validator.
+     *
+     * @return IsaacSymbolicVariableValidator preconfigured to work with the specified checker.
+     */
+    @Provides
+    @Singleton
+    @Inject
+    private static IsaacSymbolicVariableValidator getSymbolicVariableValidator(PropertiesLoader properties) {
+
+        return new IsaacSymbolicVariableValidator(properties.getProperty(Constants.EQUALITY_CHECKER_HOST),
                 properties.getProperty(Constants.EQUALITY_CHECKER_PORT));
     }
 
