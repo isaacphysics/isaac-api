@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
+import com.google.common.collect.ImmutableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
@@ -157,9 +158,8 @@ public class IsaacNumericValidator implements IValidator {
             }
 
             // Step 3 - then do sig fig checking:
-            if (!this.verifyCorrectNumberOfSignificantFigures(answerFromUser.getValue(),
-                    isaacNumericQuestion.getSignificantFiguresMin(), isaacNumericQuestion.getSignificantFiguresMax())) {
-                // Make sure that the answer is to the right number of sig figs before we proceed.
+            if (tooFewSignificantFigures(answerFromUser.getValue(), isaacNumericQuestion.getSignificantFiguresMin())) {
+                // If too few sig figs then give feedback about this.
 
                 // If we have unit information available put it in our response.
                 Boolean validUnits = null;
@@ -169,10 +169,28 @@ public class IsaacNumericValidator implements IValidator {
                 }
                 // Our new bestResponse is about incorrect significant figures:
                 Content sigFigResponse = new Content(DEFAULT_VALIDATION_RESPONSE);
-                sigFigResponse.setTags(new HashSet<>(Collections.singletonList("sig_figs")));
+                sigFigResponse.setTags(new HashSet<>(ImmutableList.of("sig_figs", "sig_figs_too_few")));
                 bestResponse = new QuantityValidationResponse(question.getId(), answerFromUser, false, sigFigResponse,
                         false, validUnits, new Date());
             }
+            if (tooManySignificantFigures(answerFromUser.getValue(), isaacNumericQuestion.getSignificantFiguresMax())
+                    && bestResponse.isCorrect()) {
+                // If (and only if) _correct_, but to too many sig figs, give feedback about this.
+
+                // If we have unit information available put it in our response.
+                Boolean validUnits = null;
+                if (isaacNumericQuestion.getRequireUnits()) {
+                    // Whatever the current bestResponse is, it contains all we need to know about the units:
+                    validUnits = bestResponse.getCorrectUnits();
+                }
+                // Our new bestResponse is about incorrect significant figures:
+                Content sigFigResponse = new Content(DEFAULT_VALIDATION_RESPONSE);
+                sigFigResponse.setTags(new HashSet<>(ImmutableList.of("sig_figs", "sig_figs_too_many")));
+                bestResponse = new QuantityValidationResponse(question.getId(), answerFromUser, false, sigFigResponse,
+                        false, validUnits, new Date());
+            }
+
+            // And then return the bestResponse:
             log.debug("Finished validation: correct=" + bestResponse.isCorrect() + ", correctValue="
                     + bestResponse.getCorrectValue() + ", correctUnits=" + bestResponse.getCorrectUnits());
             return useDefaultFeedbackIfNecessary(isaacNumericQuestion, bestResponse);
@@ -414,26 +432,33 @@ public class IsaacNumericValidator implements IValidator {
     }
 
     /**
-     * Helper method to verify if the answer given is to the correct number of significant figures.
+     * Helper method to verify if the answer given is to too few significant figures.
      *
      * @param valueToCheck      - the value as a string from the user to check.
      * @param minAllowedSigFigs - the minimum number of significant figures that is expected for the answer to be correct.
-     * @param maxAllowedSigFigs - the maximum number of significant figures that is expected for the answer to be correct.
-     * @return true if yes false if not.
+     * @return true if too few, false if not.
      */
-    private boolean verifyCorrectNumberOfSignificantFigures(final String valueToCheck, final int minAllowedSigFigs,
-                                                            final int maxAllowedSigFigs) {
-        log.debug("\t[verifyCorrectNumberOfSignificantFigures]");
+    private boolean tooFewSignificantFigures(final String valueToCheck, final int minAllowedSigFigs) {
+        log.debug("\t[tooFewSignificantFigures]");
 
         SigFigResult sigFigsFromUser = extractSignificantFigures(valueToCheck);
 
-        if (!sigFigsFromUser.isAmbiguous) {
-            int userSigFigs = sigFigsFromUser.sigFigsMin;  // If not ambiguous, min and max are guaranteed to be equal!
-            return userSigFigs <= maxAllowedSigFigs && userSigFigs >= minAllowedSigFigs;
-        } else {
-            // Must check that the two ranges have some overlap:
-            return sigFigsFromUser.sigFigsMin <= maxAllowedSigFigs && minAllowedSigFigs <= sigFigsFromUser.sigFigsMax;
-        }
+        return sigFigsFromUser.sigFigsMax < minAllowedSigFigs;
+    }
+
+    /**
+     * Helper method to verify if the answer given is to too many significant figures.
+     *
+     * @param valueToCheck      - the value as a string from the user to check.
+     * @param maxAllowedSigFigs - the maximum number of significant figures that is expected for the answer to be correct.
+     * @return true if too many, false if not.
+     */
+    private boolean tooManySignificantFigures(final String valueToCheck, final int maxAllowedSigFigs) {
+        log.debug("\t[tooManySignificantFigures]");
+
+        SigFigResult sigFigsFromUser = extractSignificantFigures(valueToCheck);
+
+        return sigFigsFromUser.sigFigsMin > maxAllowedSigFigs;
     }
 
     /**
@@ -506,7 +531,6 @@ public class IsaacNumericValidator implements IValidator {
      * @param response - the response to modify if necessary
      * @return the modified response object
      */
-
     private QuantityValidationResponse useDefaultFeedbackIfNecessary(final IsaacNumericQuestion question,
                                                                      final QuantityValidationResponse response) {
         Content feedback = response.getExplanation();
