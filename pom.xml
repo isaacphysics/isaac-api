@@ -204,6 +204,10 @@
                     <artifactId>jsr311-api</artifactId>
                     <groupId>javax.ws.rs</groupId>
                 </exclusion>
+                <exclusion>
+                    <artifactId>validation-api</artifactId>
+                    <groupId>javax.validation</groupId>
+                </exclusion>
             </exclusions>
         </dependency>
 
