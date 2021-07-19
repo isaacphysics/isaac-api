@@ -15,9 +15,11 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
+import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableMap;
 import com.google.errorprone.annotations.DoNotCall;
 import com.google.inject.Inject;
+import com.opencsv.CSVWriter;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.jboss.resteasy.annotations.GZIP;
@@ -33,7 +35,9 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.QuizManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizQuestionManager;
 import uk.ac.cam.cl.dtg.isaac.api.services.AssignmentService;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizSectionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizFeedbackDTO;
@@ -56,6 +60,7 @@ import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
@@ -77,11 +82,15 @@ import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static javax.ws.rs.core.Response.Status;
 import static javax.ws.rs.core.Response.ok;
@@ -1031,17 +1040,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group);
 
-            Map<RegisteredUserDTO, QuizFeedbackDTO> feedbackMap = quizQuestionManager.getAssignmentTeacherFeedback(quiz, assignment, groupMembers);
-
-            List<QuizUserFeedbackDTO> userFeedback = new ArrayList<>();
-
-            for (Map.Entry<RegisteredUserDTO, QuizFeedbackDTO> feedback : feedbackMap.entrySet()) {
-                UserSummaryDTO userSummary = associationManager.enforceAuthorisationPrivacy(user,
-                    userManager.convertToUserSummaryObject(feedback.getKey()));
-
-                userFeedback.add(new QuizUserFeedbackDTO(userSummary,
-                    userSummary.isAuthorisedFullAccess() ? feedback.getValue() : null));
-            }
+            List<QuizUserFeedbackDTO> userFeedback = getUserFeedback(user, assignment, quiz, groupMembers);
 
             assignment.setUserFeedback(userFeedback);
             assignment.setQuiz(quiz);
@@ -1059,6 +1058,123 @@ public class QuizFacade extends AbstractIsaacFacade {
         } catch (ContentManagerException e) {
             log.error("Content error whilst viewing quiz assignment", e);
             return SegueErrorResponse.getResourceNotFoundResponse("This quiz has become unavailable.");
+        }
+    }
+
+    /**
+     * Allows a teacher to download the results of an assignment as a CSV
+     *
+     * @param httpServletRequest so that we can extract user information.
+     * @param quizAssignmentId the id of the assignment to view.
+     * @param formatMode set to "excel" for some MS Excel magic
+     *
+     * @return Details about the assignment.
+     */
+    @GET
+    @Path("/assignment/{quizAssignmentId}/download")
+    @Produces("text/plain")
+    @GZIP
+    @ApiOperation(value = "Download a quiz assignment as a CSV.")
+    public final Response getQuizAssignmentCSV(@Context final HttpServletRequest httpServletRequest,
+                                               @PathParam("quizAssignmentId") Long quizAssignmentId,
+                                               @QueryParam("format") final String formatMode) {
+
+        if (null == quizAssignmentId) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid quiz assignment id.").toResponse();
+        }
+
+        try {
+            RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
+            if (!(isUserTeacherOrAbove(userManager, user))) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
+            QuizAssignmentDTO assignment = quizAssignmentManager.getById(quizAssignmentId);
+            UserGroupDTO group = quizAssignmentManager.getGroupForAssignment(assignment);
+            if (!canManageGroup(user, group)) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "You can only view assignments to groups you own or manage.").toResponse();
+            }
+
+            IsaacQuizDTO quiz = quizManager.findQuiz(assignment.getQuizId());
+            List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group);
+
+            List<String[]> rows = Lists.newArrayList();
+            StringWriter stringWriter = new StringWriter();
+            CSVWriter csvWriter = new CSVWriter(stringWriter);
+            StringBuilder headerBuilder = new StringBuilder();
+            if (null != formatMode && formatMode.toLowerCase().equals("excel")) {
+                headerBuilder.append("\uFEFF");  // UTF-8 Byte Order Marker
+            }
+            headerBuilder.append(String.format("Quiz (%s) Results: Downloaded on %s \nGenerated by: %s %s \n\n",
+                    quiz.getTitle(), new Date(), user.getGivenName(), user.getFamilyName()));
+            headerBuilder.append(",,\"Completed\",");
+            List<String> questionTitles = new ArrayList<>();
+            List<String> questionIds = new ArrayList<>();
+            for (ContentBaseDTO section : quiz.getChildren().stream().filter(c -> c instanceof IsaacQuizSectionDTO).collect(Collectors.toList())) {
+                if (section instanceof IsaacQuizSectionDTO) {
+                    IsaacQuizSectionDTO quizSection = (IsaacQuizSectionDTO) section;
+                    List<ContentBaseDTO> quizQuestions = quizSection.getChildren().stream().filter(c -> c instanceof IsaacQuestionBaseDTO).collect(Collectors.toList());
+                    for (int i = 0; i < quizQuestions.size(); ++i) {
+                        questionTitles.add(String.format("\"%s - Q%d\"", quizSection.getTitle(), i+1));
+                        questionIds.add(quizQuestions.get(i).getId());
+                    }
+                }
+            }
+            headerBuilder.append(String.join(",", questionTitles));
+            headerBuilder.append("\n");
+
+            List<QuizUserFeedbackDTO> userFeedback = getUserFeedback(user, assignment, quiz, groupMembers);
+            for (QuizUserFeedbackDTO f : userFeedback) {
+                QuizFeedbackDTO feedback = f.getFeedback();
+                List<String> row = new ArrayList<>(Arrays.asList(f.getUser().getFamilyName(), f.getUser().getGivenName()));
+                if (null == feedback) {
+                    row.add("This user has revoked their data sharing authorization.");
+                } else {
+                    row.add(feedback.isComplete() ? "yes" : "no");
+                    for (String questionId : questionIds) {
+                        if (feedback.getQuestionMarks() != null) {
+                            QuizFeedbackDTO.Mark questionMark = feedback.getQuestionMarks().get(questionId);
+                            if (questionMark.notAttempted == 1) {
+                                row.add("Not Attempted");
+                            } else if (questionMark.incorrect == 1) {
+                                row.add("Incorrect");
+                            } else if (questionMark.correct == 1) {
+                                row.add("Correct");
+                            } else {
+                                row.add("ERROR"); // This should not happen at this level
+                            }
+                        } else {
+                            // The front-end shows this as "Not completed" so I'm leaving this empty
+                            // because we already have a "Completed" column
+                            row.add("");
+                        }
+                    }
+                }
+                rows.add(row.toArray(new String[0]));
+            }
+
+            csvWriter.writeAll(rows);
+            csvWriter.close();
+
+            headerBuilder.append(stringWriter.toString());
+            // get game manager completion information for this assignment.
+            return Response.ok(headerBuilder.toString())
+//                    .header("Content-Disposition", "attachment; filename=quiz_results.csv")
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (AssignmentCancelledException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "This assignment has been cancelled.").toResponse();
+        } catch (SegueDatabaseException e) {
+            String message = "Database error whilst viewing quiz assignment";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        } catch (ContentManagerException e) {
+            log.error("Content error whilst viewing quiz assignment", e);
+            return SegueErrorResponse.getResourceNotFoundResponse("This quiz has become unavailable.");
+        } catch (IOException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while building the CSV file.").toResponse();
         }
     }
 
@@ -1320,6 +1436,20 @@ public class QuizFacade extends AbstractIsaacFacade {
 
         return augmentAttempt(quizAttempt, quizAssignment);
     }
+
+    private List<QuizUserFeedbackDTO> getUserFeedback(RegisteredUserDTO user, QuizAssignmentDTO assignment, IsaacQuizDTO quiz, List<RegisteredUserDTO> groupMembers) throws ContentManagerException, SegueDatabaseException {
+        Map<RegisteredUserDTO, QuizFeedbackDTO> feedbackMap = quizQuestionManager.getAssignmentTeacherFeedback(quiz, assignment, groupMembers);
+        List<QuizUserFeedbackDTO> userFeedback = new ArrayList<>();
+        for (Map.Entry<RegisteredUserDTO, QuizFeedbackDTO> feedback : feedbackMap.entrySet()) {
+            UserSummaryDTO userSummary = associationManager.enforceAuthorisationPrivacy(user,
+                    userManager.convertToUserSummaryObject(feedback.getKey()));
+
+            userFeedback.add(new QuizUserFeedbackDTO(userSummary,
+                    userSummary.isAuthorisedFullAccess() ? feedback.getValue() : null));
+        }
+        return userFeedback;
+    }
+
 
     private QuizAttemptDTO augmentAttempt(QuizAttemptDTO quizAttempt, @Nullable QuizAssignmentDTO quizAssignment) throws SegueDatabaseException {
         if (quizAssignment != null) {
