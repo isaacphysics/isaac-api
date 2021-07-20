@@ -63,8 +63,11 @@ public class ChoiceQuestionValidator implements IValidator {
                 }
             }
 
-            log.info("Unable to find choice for question ( " + question.getId() + " ) matching the answer supplied ("
-                    + answer + "). Returning that it is incorrect without an explanation.");
+            if (null == feedback) {
+                // This should not happen for multiple choice questions.
+                log.warn("Unable to find choice for question ( " + question.getId() + " ) matching the answer supplied ("
+                        + answer.getValue() + ")!");
+            }
 
             // If we still have no feedback to give, use the question's default feedback if any to use:
             if (feedbackIsNullOrEmpty(feedback) && null != choiceQuestion.getDefaultFeedback()) {
