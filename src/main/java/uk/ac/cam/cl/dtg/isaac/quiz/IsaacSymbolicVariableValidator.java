@@ -20,8 +20,8 @@ import org.apache.commons.lang3.Validate;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicVariableQuestion;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacSymbolicVariableQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.dos.FormulaValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
@@ -32,11 +32,14 @@ import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatorUnavailableException;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 
 /**
  * Validator that provides functionality to validate symbolic questions.
@@ -178,14 +181,11 @@ public class IsaacSymbolicVariableValidator implements IValidator {
 
 
                 try {
-                    HashMap<String, String> req = Maps.newHashMap();
+                    HashMap<String, Object> req = Maps.newHashMap();
                     req.put("target", formulaChoice.getPythonExpression());
                     req.put("test", submittedFormula.getPythonExpression());
-                    req.put("substitutions", "{'a': 2, 'b': 3}");
                     req.put("description", symbolicVariableQuestion.getId());
-                    if (symbolicVariableQuestion.getAvailableSymbols() != null) {
-                        req.put("symbols", String.join(",", symbolicVariableQuestion.getAvailableSymbols()));
-                    }
+                    req.put("substitutions", new JSONObject(submittedFormula.getEnumeratedVariables()).toString());
 
                     HashMap<String, Object> response = getResponseFromExternalValidator(externalValidatorUrl, req);
 

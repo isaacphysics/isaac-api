@@ -188,7 +188,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                 try {
 
                     // Pass some JSON to a REST endpoint and get some JSON back.
-                    HashMap<String, String> req = Maps.newHashMap();
+                    HashMap<String, Object> req = Maps.newHashMap();
                     req.put("target", formulaChoice.getMhchemExpression());
                     req.put("test", submittedFormula.getMhchemExpression());
                     req.put("description", chemistryQuestion.getId());

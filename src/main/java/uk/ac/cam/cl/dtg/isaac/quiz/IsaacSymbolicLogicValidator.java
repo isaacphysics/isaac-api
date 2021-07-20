@@ -174,7 +174,7 @@ public class IsaacSymbolicLogicValidator implements IValidator {
                 MatchType matchType = MatchType.NONE;
 
                 try {
-                    HashMap<String, String> req = Maps.newHashMap();
+                    HashMap<String, Object> req = Maps.newHashMap();
                     req.put("target", logicFormulaChoice.getPythonExpression());
                     req.put("test", submittedLogicFormula.getPythonExpression());
                     req.put("description", symbolicLogicQuestion.getId());
