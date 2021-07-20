@@ -198,7 +198,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + "");
 
-            // ** HARD-CODED DANGER AHEAD **
+            // FIXME: ** HARD-CODED DANGER AHEAD **
             // The limit parameter in the following call is hard-coded and should be returned to a more reasonable
             // number once we have a front-end pagination/load-more system in place.
             ResultsWrapper<ContentSummaryDTO> summary = this.quizManager.getAvailableQuizzes(isStudent, startIndex, 9000);
