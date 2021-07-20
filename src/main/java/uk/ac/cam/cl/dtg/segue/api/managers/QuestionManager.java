@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
@@ -25,12 +26,14 @@ import io.prometheus.client.Histogram;
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.Validate;
 import org.joda.time.LocalDate;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.configuration.IsaacApplicationRegister;
 import uk.ac.cam.cl.dtg.isaac.dos.TestCase;
 import uk.ac.cam.cl.dtg.isaac.dos.TestQuestion;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacItemQuestionDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacSymbolicVariableQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
 import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
@@ -66,10 +69,14 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatorUnavailableException;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
@@ -125,7 +132,7 @@ public class QuestionManager {
                 VALIDATOR_LATENCY_HISTOGRAM.labels(validator.getClass().getSimpleName()).startTimer();
         try {
             validateQuestionResponse = validator.validateQuestionResponse(question, answerFromUser);
-        } catch (ValidatorUnavailableException e) {
+        } catch (ValidatorUnavailableException | JsonProcessingException e) {
             return SegueErrorResponse.getServiceUnavailableResponse(e.getClass().getSimpleName() + ": "
                     + e.getMessage());
         } finally {
@@ -223,6 +230,12 @@ public class QuestionManager {
 
         List<QuestionDTO> questionsToAugment = extractQuestionObjects(page);
 
+        for (QuestionDTO question : questionsToAugment) {
+            if (question.getType().equals("isaacSymbolicVariableQuestion")) {
+                this.augmentSymbolicVariableQuestionObjectWithValues(page, (IsaacSymbolicVariableQuestionDTO) question, userId);
+            }
+        }
+
         this.augmentQuestionObjectWithAttemptInformation(page, questionsToAugment, usersQuestionAttempts);
 
         shuffleChoiceQuestionsChoices(userId, questionsToAugment);
@@ -279,6 +292,50 @@ public class QuestionManager {
             question.setBestAttempt(this.convertQuestionValidationResponseToDTO(bestAnswer));
 
         }
+        return page;
+    }
+
+
+    /**
+     * Modify a question objects in a page such that it contains bestAttempt information if we can provide it.
+     *
+     * @param page
+     *            - the page this object may be mutated as a result of this method. i.e BestAttempt field set on
+     *            question DTOs.
+     * @param questionToAugment
+     *            - The question which should be augmented.
+     * @return augmented page - the return result is by convenience as the page provided as a parameter will be mutated.
+     */
+    private SeguePageDTO augmentSymbolicVariableQuestionObjectWithValues(final SeguePageDTO page,
+                                                                     final IsaacSymbolicVariableQuestionDTO questionToAugment, final String userId) {
+
+        String variables = questionToAugment.getVariables();
+        List<String> variablesList = Arrays.asList(variables.split(","));
+        Integer questionIntegerId;
+        try {
+            questionIntegerId = Integer.parseInt(questionToAugment.getId().replaceAll("\\D+",""));
+        } catch (NumberFormatException e) {
+            questionIntegerId = 100;
+        }
+
+        HashMap<String, Integer> varMap = Maps.newHashMap();
+        for (String variable : variablesList) {
+            Integer seed;
+            try {
+                seed = Integer.parseInt(userId);
+            }
+            catch (NumberFormatException e)
+            {
+                seed = new Random().nextInt();
+            }
+            long unixTimestamp = Instant.now().getEpochSecond();
+            Integer position = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".indexOf(variable.toUpperCase()) + 1;
+            Integer value = new Random(position + seed + questionIntegerId).nextInt(10);
+            varMap.put(variable, value);
+        }
+
+        questionToAugment.setEnumeratedVariables(varMap);
+
         return page;
     }
 
@@ -365,7 +422,7 @@ public class QuestionManager {
             }
 
             return results;
-        } catch (InstantiationException | IllegalAccessException e) {
+        } catch (InstantiationException | IllegalAccessException | JsonProcessingException e) {
             throw new BadRequestException(String.format(e.getMessage()));
         }
     }

@@ -19,6 +19,7 @@ package uk.ac.cam.cl.dtg.segue.quiz;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import org.apache.http.HttpEntity;
@@ -28,6 +29,10 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicVariableValidator;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
@@ -48,6 +53,7 @@ import java.util.Map;
  *
  */
 public interface IValidator {
+    public static final Logger log = LoggerFactory.getLogger(IsaacSymbolicVariableValidator.class);
     
     /**
      * validateQuestionResponse This method is specifically for single field questions.
@@ -65,7 +71,7 @@ public interface IValidator {
      * @return a QuestionValidationResponseDTO
      */
     QuestionValidationResponse validateQuestionResponse(Question question, Choice answer)
-            throws ValidatorUnavailableException;
+            throws ValidatorUnavailableException, JsonProcessingException;
 
     /**
      * Create a new list of Choice objects, sorted into correct-first order for checking.
@@ -97,7 +103,7 @@ public interface IValidator {
      * @throws IOException - on failure to communicate with the external validator
      */
     default HashMap<String, Object> getResponseFromExternalValidator(final String externalValidatorUrl,
-                                                                     final Map<String, String> requestBody) throws IOException {
+                                                                     final Map<String, Object> requestBody) throws IOException {
         // This is ridiculous. All we want to do is pass some JSON to a REST endpoint and get some JSON back.
         ObjectMapper mapper = new ObjectMapper();
         StringWriter sw = new StringWriter();

@@ -15,6 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.segue.dto.content;
 
+import java.util.HashMap;
+
 /**
  * DTO to represent a Quantity choice.
  *
@@ -22,6 +24,7 @@ package uk.ac.cam.cl.dtg.segue.dto.content;
 public class FormulaDTO extends ChoiceDTO {
     private String pythonExpression;
     private boolean requiresExactMatch;
+    private HashMap<String, Integer> enumeratedVariables;
 
     /**
      * Default constructor required for mapping.
@@ -63,5 +66,11 @@ public class FormulaDTO extends ChoiceDTO {
      */
     public void setRequiresExactMatch(boolean requiresExactMatch) {
         this.requiresExactMatch = requiresExactMatch;
+    }
+
+    public final HashMap<String, Integer> getEnumeratedVariables() {return enumeratedVariables;}
+
+    public final void setEnumeratedVariables(HashMap<String, Integer> enumeratedVariables) {
+        this.enumeratedVariables = enumeratedVariables;
     }
 }

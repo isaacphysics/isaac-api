@@ -17,6 +17,8 @@ package uk.ac.cam.cl.dtg.segue.dos.content;
 
 import uk.ac.cam.cl.dtg.segue.dto.content.FormulaDTO;
 
+import java.util.HashMap;
+
 /**
  * Formula is a specialised choice object that allows a python expression representing the formula to be stored.
  *
@@ -28,6 +30,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.FormulaDTO;
 public class Formula extends Choice {
     private String pythonExpression;
     private boolean requiresExactMatch;
+    private HashMap<String, Integer> enumeratedVariables;
     
     public Formula() {
         
@@ -61,6 +64,12 @@ public class Formula extends Choice {
      */
     public void setRequiresExactMatch(boolean requiresExactMatch) {
         this.requiresExactMatch = requiresExactMatch;
+    }
+
+    public HashMap<String, Integer> getEnumeratedVariables() {return enumeratedVariables;}
+
+    public void setEnumeratedVariables(HashMap<String, Integer> enumeratedVariables) {
+        this.enumeratedVariables = enumeratedVariables;
     }
 
 }
