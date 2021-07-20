@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.content;
 
-import ma.glasnost.orika.CustomConverter;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.metadata.Type;
 import org.slf4j.Logger;
@@ -31,7 +30,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
  * Responsible for converting Content objects to their correct subtype.
  * 
  */
-public class ContentBaseOrikaConverter extends CustomConverter<ContentBase, ContentBaseDTO> {
+public class ContentBaseOrikaConverter extends AbstractPolymorphicConverter<ContentBase, ContentBaseDTO> {
     private static final Logger log = LoggerFactory.getLogger(ContentBaseOrikaConverter.class);
 
     private ContentMapper contentMapper;

@@ -16,7 +16,6 @@
 package uk.ac.cam.cl.dtg.segue.dao.content;
 
 import ma.glasnost.orika.MappingContext;
-import ma.glasnost.orika.converter.BidirectionalConverter;
 import ma.glasnost.orika.metadata.Type;
 import uk.ac.cam.cl.dtg.segue.dos.content.Item;
 import uk.ac.cam.cl.dtg.segue.dos.content.ParsonsItem;
@@ -27,7 +26,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ParsonsItemDTO;
  * Converts Item objects to and from their DTO equivalents.
  *
  */
-public class ItemOrikaConverter extends BidirectionalConverter<Item, ItemDTO> {
+public class ItemOrikaConverter extends AbstractPolymorphicBidirectionalConverter<Item, ItemDTO> {
 
     /**
      * Constructs an Orika Converter specialises in selecting the correct subclass for choice objects.

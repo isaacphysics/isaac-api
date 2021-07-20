@@ -17,9 +17,9 @@ package uk.ac.cam.cl.dtg.segue.dao.users;
 
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
-import ma.glasnost.orika.CustomConverter;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.metadata.Type;
+import uk.ac.cam.cl.dtg.segue.dao.content.AbstractPolymorphicConverter;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 
@@ -34,8 +34,8 @@ import java.util.Map;
  */
 public class AnonymousUserQuestionAttemptsOrikaConverter
         extends
-        CustomConverter<Map<String, Map<String, List<QuestionValidationResponse>>>, 
-        Map<String, Map<String, List<QuestionValidationResponseDTO>>>> {
+        AbstractPolymorphicConverter<Map<String, Map<String, List<QuestionValidationResponse>>>,
+                Map<String, Map<String, List<QuestionValidationResponseDTO>>>> {
 
     /**
      * Constructs an Orika Converter specialises in selecting the correct subclass for choice objects.
