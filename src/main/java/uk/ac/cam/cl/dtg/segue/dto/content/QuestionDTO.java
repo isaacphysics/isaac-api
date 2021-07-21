@@ -27,7 +27,6 @@ import java.util.List;
 public class QuestionDTO extends ContentDTO {
     protected ContentBaseDTO answer;
     protected List<ContentBaseDTO> hints;
-    protected ContentDTO defaultFeedback;
 
     // Set if the user is logged in and we have information.
     protected QuestionValidationResponseDTO bestAttempt;
@@ -77,25 +76,6 @@ public class QuestionDTO extends ContentDTO {
      */
     public void setHints(final List<ContentBaseDTO> hints) {
         this.hints = hints;
-    }
-
-    /**
-     * Gets the default feedback to be used when no other feedback is generated..
-     *
-     * @return the defaultFeedback
-     */
-    public final ContentDTO getDefaultFeedback() {
-        return defaultFeedback;
-    }
-
-    /**
-     * Sets the default feedback to be used when no other feedback is generated.
-     *
-     * @param defaultFeedback
-     *            the defaultFeedback to set
-     */
-    public final void setDefaultFeedback(final ContentDTO defaultFeedback) {
-        this.defaultFeedback = defaultFeedback;
     }
 
     /**
