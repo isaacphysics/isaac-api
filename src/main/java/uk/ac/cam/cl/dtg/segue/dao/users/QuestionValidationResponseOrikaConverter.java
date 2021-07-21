@@ -16,8 +16,8 @@
 package uk.ac.cam.cl.dtg.segue.dao.users;
 
 import ma.glasnost.orika.MappingContext;
-import ma.glasnost.orika.converter.BidirectionalConverter;
 import ma.glasnost.orika.metadata.Type;
+import uk.ac.cam.cl.dtg.segue.dao.content.AbstractPolymorphicBidirectionalConverter;
 import uk.ac.cam.cl.dtg.segue.dos.QuantityValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dto.QuantityValidationResponseDTO;
@@ -30,7 +30,7 @@ import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
  * 
  */
 public class QuestionValidationResponseOrikaConverter extends
-        BidirectionalConverter<QuestionValidationResponse, QuestionValidationResponseDTO> {
+        AbstractPolymorphicBidirectionalConverter<QuestionValidationResponse, QuestionValidationResponseDTO> {
 
     /**
      * Constructs an Orika Converter specialises in selecting the correct subclass for choice objects.

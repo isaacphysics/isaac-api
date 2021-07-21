@@ -16,7 +16,6 @@
 package uk.ac.cam.cl.dtg.segue.dao.content;
 
 import ma.glasnost.orika.MappingContext;
-import ma.glasnost.orika.converter.BidirectionalConverter;
 import ma.glasnost.orika.metadata.Type;
 import uk.ac.cam.cl.dtg.segue.dos.content.ChemicalFormula;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
@@ -45,7 +44,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.StringChoiceDTO;
  * Responsible for converting Choice objects to their correct subtype.
  * 
  */
-public class ChoiceOrikaConverter extends BidirectionalConverter<Choice, ChoiceDTO> {
+public class ChoiceOrikaConverter extends AbstractPolymorphicBidirectionalConverter<Choice, ChoiceDTO> {
 
     /**
      * Constructs an Orika Converter specialises in selecting the correct subclass for choice objects.
