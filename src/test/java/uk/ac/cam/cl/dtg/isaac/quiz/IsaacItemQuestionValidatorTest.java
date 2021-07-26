@@ -355,6 +355,23 @@ public class IsaacItemQuestionValidatorTest {
         assertEquals(response.getExplanation().getValue(), incorrectExplanation);
     }
 
+    /*
+       Test that duplicate items in an otherwise correct answer make it invalid.
+    */
+    @Test
+    public final void isaacItemQuestionValidator_DuplicateItems_ErrorMessageShown() {
+        // Set up user answer:
+        ItemChoice c = new ItemChoice();
+        Item submittedItem1 = new Item("id001", null);
+        Item submittedItem3 = new Item("id003", null);
+        c.setItems(ImmutableList.of(submittedItem1, submittedItem1, submittedItem3));
+
+        // Test response:
+        QuestionValidationResponse response = validator.validateQuestionResponse(someItemQuestion, c);
+        assertFalse(response.isCorrect());
+        assertTrue(response.getExplanation().getValue().contains("duplicate items"));
+    }
+
     //  ---------- Tests from here test invalid questions themselves ----------
 
     /*
