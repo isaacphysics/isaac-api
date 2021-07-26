@@ -79,6 +79,7 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -1052,8 +1053,8 @@ public class QuizFacade extends AbstractIsaacFacade {
             IsaacQuizDTO quiz = quizManager.findQuiz(assignment.getQuizId());
 
             List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group).stream()
-                    .sorted((RegisteredUserDTO a, RegisteredUserDTO b) -> (a.getFamilyName().compareTo(b.getFamilyName())))
-                    .sorted((RegisteredUserDTO a, RegisteredUserDTO b) -> (a.getGivenName().compareTo(b.getGivenName())))
+                    .sorted(Comparator.comparing(RegisteredUserDTO::getFamilyName))
+                    .sorted(Comparator.comparing(RegisteredUserDTO::getGivenName))
                     .collect(Collectors.toList());
 
             Map<RegisteredUserDTO, QuizFeedbackDTO> feedbackMap = quizQuestionManager.getAssignmentTeacherFeedback(quiz, assignment, groupMembers);
