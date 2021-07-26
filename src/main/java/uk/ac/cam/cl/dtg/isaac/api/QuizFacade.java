@@ -82,6 +82,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static javax.ws.rs.core.Response.Status;
 import static javax.ws.rs.core.Response.ok;
@@ -1050,18 +1051,22 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             IsaacQuizDTO quiz = quizManager.findQuiz(assignment.getQuizId());
 
-            List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group);
+            List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group).stream()
+                    .sorted((RegisteredUserDTO a, RegisteredUserDTO b) -> (a.getFamilyName().compareTo(b.getFamilyName())))
+                    .sorted((RegisteredUserDTO a, RegisteredUserDTO b) -> (a.getGivenName().compareTo(b.getGivenName())))
+                    .collect(Collectors.toList());
 
             Map<RegisteredUserDTO, QuizFeedbackDTO> feedbackMap = quizQuestionManager.getAssignmentTeacherFeedback(quiz, assignment, groupMembers);
 
             List<QuizUserFeedbackDTO> userFeedback = new ArrayList<>();
 
-            for (Map.Entry<RegisteredUserDTO, QuizFeedbackDTO> feedback : feedbackMap.entrySet()) {
+            for (RegisteredUserDTO groupMember : groupMembers) {
+                QuizFeedbackDTO feedback  = feedbackMap.get(groupMember);
                 UserSummaryDTO userSummary = associationManager.enforceAuthorisationPrivacy(user,
-                    userManager.convertToUserSummaryObject(feedback.getKey()));
+                    userManager.convertToUserSummaryObject(groupMember));
 
                 userFeedback.add(new QuizUserFeedbackDTO(userSummary,
-                    userSummary.isAuthorisedFullAccess() ? feedback.getValue() : null));
+                    userSummary.isAuthorisedFullAccess() ? feedback : null));
             }
 
             assignment.setUserFeedback(userFeedback);
