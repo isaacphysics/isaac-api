@@ -10,9 +10,9 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <segue.version>2.16.18-SNAPSHOT</segue.version>
+        <segue.version>2.17.1-SNAPSHOT</segue.version>
         <log4j.version>2.13.3</log4j.version>
-        <resteasy.version>4.5.11.Final</resteasy.version>
+        <resteasy.version>4.7.0.Final</resteasy.version>
         <guice.version>4.2.3</guice.version>
         <oauth-client.version>1.30.4</oauth-client.version>
         <jackson.version>2.12.1</jackson.version>
@@ -20,7 +20,7 @@
         <powermock.version>2.0.4</powermock.version>
         <swagger-ui-version>3.19.5</swagger-ui-version>
         <prometheus.version>0.8.0</prometheus.version>
-        <jetty-maven-version>9.3.29.v20201019</jetty-maven-version>
+        <jetty-version>9.4.42.v20210604</jetty-version>
         <jetty.port.api>8080</jetty.port.api>
         <jetty.port.etl>8090</jetty.port.etl>
         <web.xml>override-api-web.xml</web.xml>
@@ -58,7 +58,7 @@
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-servlets</artifactId>
-            <version>${jetty-maven-version}</version>
+            <version>${jetty-version}</version>
         </dependency>
 
         <dependency>
@@ -82,6 +82,12 @@
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-jaxb-provider</artifactId>
             <version>${resteasy.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.sun.activation</groupId>
+                    <artifactId>jakarta.activation</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
@@ -103,6 +109,12 @@
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-guice</artifactId>
             <version>${resteasy.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>jakarta.inject</groupId>
+                    <artifactId>jakarta.inject-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.google.inject</groupId>
@@ -130,7 +142,7 @@
         <dependency>
             <groupId>ma.glasnost.orika</groupId>
             <artifactId>orika-core</artifactId>
-            <version>1.4.5</version>
+            <version>1.5.4</version>
         </dependency>
 
         <dependency>
@@ -203,6 +215,10 @@
                 <exclusion>
                     <artifactId>jsr311-api</artifactId>
                     <groupId>javax.ws.rs</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>validation-api</artifactId>
+                    <groupId>javax.validation</groupId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -371,14 +387,26 @@
         <dependency>
             <groupId>org.eclipse.jetty.websocket</groupId>
             <artifactId>javax-websocket-server-impl</artifactId>
-            <version>9.3.29.v20201019</version>
+            <version>${jetty-version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.websocket</groupId>
+                    <artifactId>javax.websocket-client-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!--Jetty Websocket API server side dependency -->
         <dependency>
             <groupId>org.eclipse.jetty.websocket</groupId>
             <artifactId>websocket-server</artifactId>
-            <version>9.3.29.v20201019</version>
+            <version>${jetty-version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.annotation</groupId>
+                    <artifactId>javax.annotation-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Graph checker code -->
@@ -472,7 +500,7 @@
             <plugin>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-maven-plugin</artifactId>
-                <version>${jetty-maven-version}</version>
+                <version>${jetty-version}</version>
                 <configuration>
                     <webApp>
                         <contextPath>/isaac-api</contextPath>
@@ -564,7 +592,7 @@
                     <plugin>
                         <groupId>org.eclipse.jetty</groupId>
                         <artifactId>jetty-maven-plugin</artifactId>
-                        <version>${jetty-maven-version}</version>
+                        <version>${jetty-version}</version>
                         <configuration>
                             <webApp>
                                 <contextPath>/isaac-api</contextPath>

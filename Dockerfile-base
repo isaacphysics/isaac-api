@@ -1,5 +1,5 @@
 # Step : Download dependencies so that they are cached in the docker layer if the pom file doesn't change
-FROM maven:3.5.3-jdk-8-alpine as target
+FROM maven:3.8.1-openjdk-8 as target
 WORKDIR /isaac-api
 COPY pom.xml .
 RUN mvn dependency:go-offline

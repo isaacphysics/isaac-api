@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,14 +16,12 @@
 package uk.ac.cam.cl.dtg.segue.dto.content;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 
 import java.util.List;
 
-import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
-
 /**
- * Choice object The choice object is a specialized form of content and allows the storage of data relating to possible
- * answers to questions.
+ * Base class for all question types.
  * 
  */
 public class QuestionDTO extends ContentDTO {

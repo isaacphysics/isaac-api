@@ -33,7 +33,8 @@ import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
-import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetRequestMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetByEmailMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetByIPMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.RegistrationMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
@@ -389,13 +390,15 @@ public class UsersFacade extends AbstractSegueFacade {
                   notes = "The email address must be provided as a RegisteredUserDTO object, although only the 'email' field is required.")
     public Response generatePasswordResetToken(final RegisteredUserDTO userObject,
                                                @Context final HttpServletRequest request) {
-        if (null == userObject) {
+        if (null == userObject || null == userObject.getEmail() || userObject.getEmail().isEmpty()) {
             log.debug("User is null");
-            return new SegueErrorResponse(Status.BAD_REQUEST, "No user settings provided.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "No account email address provided.").toResponse();
         }
 
         try {
-            misuseMonitor.notifyEvent(userObject.getEmail(), PasswordResetRequestMisuseHandler.class.getSimpleName());
+            String requestingIPAddress = RequestIPExtractor.getClientIpAddr(request);
+            misuseMonitor.notifyEvent(userObject.getEmail(), PasswordResetByEmailMisuseHandler.class.getSimpleName());
+            misuseMonitor.notifyEvent(requestingIPAddress, PasswordResetByIPMisuseHandler.class.getSimpleName());
             userManager.resetPasswordRequest(userObject);
 
             this.getLogManager()
@@ -420,7 +423,7 @@ public class UsersFacade extends AbstractSegueFacade {
         } catch (SegueResourceMisuseException e) {
             String message = "You have exceeded the number of requests allowed for this endpoint. "
                     + "Please try again later.";
-            log.error("Too many password resets requested by: (" + userObject.getEmail() + ")", e.toString());
+            log.error("Password reset request blocked for email: (" + userObject.getEmail() + ")", e.toString());
             return SegueErrorResponse.getRateThrottledResponse(message);
         }
     }
