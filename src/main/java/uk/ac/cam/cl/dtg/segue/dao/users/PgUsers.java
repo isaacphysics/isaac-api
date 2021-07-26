@@ -23,6 +23,7 @@ import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.dao.AbstractPgDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
+import uk.ac.cam.cl.dtg.segue.dos.users.CodeLanguage;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.ExamBoard;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
@@ -682,7 +683,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
                     .prepareStatement(
                             "INSERT INTO users(family_name, given_name, email, role, "
                             + "date_of_birth, gender, registration_date, school_id, "
-                            + "school_other, exam_board, last_updated, email_verification_status, "
+                            + "school_other, exam_board, code_language, last_updated, email_verification_status, "
                             + "last_seen, email_verification_token, email_to_verify) "
                     + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
                             Statement.RETURN_GENERATED_KEYS);
@@ -698,11 +699,12 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             setValueHelper(pst, 8, userToCreate.getSchoolId());
             setValueHelper(pst, 9, userToCreate.getSchoolOther());
             setValueHelper(pst, 10, userToCreate.getExamBoard());
-            setValueHelper(pst, 11, userToCreate.getLastUpdated());
-            setValueHelper(pst, 12,  userToCreate.getEmailVerificationStatus());
-            setValueHelper(pst, 13, userToCreate.getLastSeen());
-            setValueHelper(pst, 14, userToCreate.getEmailVerificationToken());
-            setValueHelper(pst, 15, userToCreate.getEmailToVerify());
+            setValueHelper(pst, 11, userToCreate.getCodeLanguage());
+            setValueHelper(pst, 12, userToCreate.getLastUpdated());
+            setValueHelper(pst, 13,  userToCreate.getEmailVerificationStatus());
+            setValueHelper(pst, 14, userToCreate.getLastSeen());
+            setValueHelper(pst, 15, userToCreate.getEmailVerificationToken());
+            setValueHelper(pst, 16, userToCreate.getEmailToVerify());
             
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save user.");
@@ -761,7 +763,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
                 .prepareStatement(
                         "UPDATE users SET family_name = ?, given_name = ?, email = ?, role = ?, "
                         + "date_of_birth = ?, gender = ?, registration_date = ?, school_id = ?, "
-                        + "school_other = ?, exam_board = ?, last_updated = ?, email_verification_status = ?, "
+                        + "school_other = ?, exam_board = ?, code_language = ?, last_updated = ?, email_verification_status = ?, "
                         + "last_seen = ?, email_verification_token = ?, email_to_verify = ? "
                         + "WHERE id = ?;");
 
@@ -776,12 +778,13 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
         setValueHelper(pst, 8, userToCreate.getSchoolId());
         setValueHelper(pst, 9, userToCreate.getSchoolOther());
         setValueHelper(pst, 10, userToCreate.getExamBoard());
-        setValueHelper(pst, 11, userToCreate.getLastUpdated());
-        setValueHelper(pst, 12,  userToCreate.getEmailVerificationStatus());
-        setValueHelper(pst, 13, userToCreate.getLastSeen());
-        setValueHelper(pst, 14, userToCreate.getEmailVerificationToken());
-        setValueHelper(pst, 15, userToCreate.getEmailToVerify());
-        setValueHelper(pst, 16, userToCreate.getId());
+        setValueHelper(pst, 11, userToCreate.getCodeLanguage());
+        setValueHelper(pst, 12, userToCreate.getLastUpdated());
+        setValueHelper(pst, 13,  userToCreate.getEmailVerificationStatus());
+        setValueHelper(pst, 14, userToCreate.getLastSeen());
+        setValueHelper(pst, 15, userToCreate.getEmailVerificationToken());
+        setValueHelper(pst, 16, userToCreate.getEmailToVerify());
+        setValueHelper(pst, 17, userToCreate.getId());
 
         if (pst.executeUpdate() == 0) {
             throw new SegueDatabaseException("Unable to save user.");
@@ -834,6 +837,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
         
         u.setSchoolOther(results.getString("school_other"));
         u.setExamBoard(results.getString("exam_board") != null ? ExamBoard.valueOf(results.getString("exam_board")) : null);
+        u.setCodeLanguage(results.getString("code_language") != null ? CodeLanguage.valueOf(results.getString("code_language")) : null);
         u.setLastUpdated(results.getTimestamp("last_updated"));
         u.setLastSeen(results.getTimestamp("last_seen"));
         u.setEmailToVerify(results.getString("email_to_verify"));
