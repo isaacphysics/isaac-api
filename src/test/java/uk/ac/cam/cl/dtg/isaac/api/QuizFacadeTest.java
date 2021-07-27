@@ -219,36 +219,36 @@ public class QuizFacadeTest extends AbstractFacadeTest {
         QuizFeedbackDTO studentFeedback = new QuizFeedbackDTO();
         QuizFeedbackDTO otherStudentFeedback = new QuizFeedbackDTO();
         forEndpoint(() -> quizFacade.getQuizAssignment(request, studentAssignment.getId()),
-            requiresLogin(),
-            as(studentsTeachersOrAdmin(),
-                prepare(quizAssignmentManager, m -> expect(m.getGroupForAssignment(studentAssignment)).andReturn(studentGroup)),
-                prepare(quizQuestionManager, m -> expect(m.getAssignmentTeacherFeedback(studentQuiz, studentAssignment, ImmutableList.of(student, secondStudent)))
-                    .andReturn(ImmutableMap.of(student, studentFeedback, secondStudent, otherStudentFeedback))),
-                prepare(associationManager, m -> {
-                    expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(student))).andAnswer(grantAccess(true));
-                    expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(secondStudent))).andAnswer(grantAccess(true));
-                }),
-                prepare(assignmentService, m -> m.augmentAssignerSummaries(Collections.singletonList(studentAssignment))),
-                check(response -> {
-                    assertEquals(studentFeedback, getFeedbackFor(student));
-                    assertEquals(otherStudentFeedback, getFeedbackFor(secondStudent));
-                })
-            ),
-            forbiddenForEveryoneElse(),
-            as(studentsTeachersOrAdmin(),
-                prepare(quizAssignmentManager, m -> expect(m.getGroupForAssignment(studentAssignment)).andReturn(studentGroup)),
-                prepare(quizQuestionManager, m -> expect(m.getAssignmentTeacherFeedback(studentQuiz, studentAssignment, ImmutableList.of(student, secondStudent)))
-                    .andReturn(ImmutableMap.of(student, studentFeedback, secondStudent, otherStudentFeedback))),
-                prepare(associationManager, m -> {
-                    expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(student))).andAnswer(grantAccess(true));
-                    expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(secondStudent))).andAnswer(grantAccess(false));
-                }),
-                prepare(assignmentService, m -> m.augmentAssignerSummaries(Collections.singletonList(studentAssignment))),
-                check(response -> {
-                    assertEquals(studentFeedback, getFeedbackFor(student));
-                    assertNull(getFeedbackFor(secondStudent));
-                })
-            )
+                requiresLogin(),
+                as(studentsTeachersOrAdmin(),
+                        prepare(quizAssignmentManager, m -> expect(m.getGroupForAssignment(studentAssignment)).andReturn(studentGroup)),
+                        prepare(quizQuestionManager, m -> expect(m.getAssignmentTeacherFeedback(studentQuiz, studentAssignment, ImmutableList.of(secondStudent, student)))
+                                .andReturn(ImmutableMap.of(secondStudent, otherStudentFeedback, student, studentFeedback))),
+                        prepare(associationManager, m -> {
+                            expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(secondStudent))).andAnswer(grantAccess(true));
+                            expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(student))).andAnswer(grantAccess(true));
+                        }),
+                        prepare(assignmentService, m -> m.augmentAssignerSummaries(Collections.singletonList(studentAssignment))),
+                        check(response -> {
+                            assertEquals(otherStudentFeedback, getFeedbackFor(secondStudent));
+                            assertEquals(studentFeedback, getFeedbackFor(student));
+                        })
+                ),
+                forbiddenForEveryoneElse(),
+                as(studentsTeachersOrAdmin(),
+                        prepare(quizAssignmentManager, m -> expect(m.getGroupForAssignment(studentAssignment)).andReturn(studentGroup)),
+                        prepare(quizQuestionManager, m -> expect(m.getAssignmentTeacherFeedback(studentQuiz, studentAssignment, ImmutableList.of(secondStudent, student)))
+                                .andReturn(ImmutableMap.of(secondStudent, otherStudentFeedback, student, studentFeedback))),
+                        prepare(associationManager, m -> {
+                            expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(secondStudent))).andAnswer(grantAccess(false));
+                            expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(student))).andAnswer(grantAccess(true));
+                        }),
+                        prepare(assignmentService, m -> m.augmentAssignerSummaries(Collections.singletonList(studentAssignment))),
+                        check(response -> {
+                            assertNull(getFeedbackFor(secondStudent));
+                            assertEquals(studentFeedback, getFeedbackFor(student));
+                        })
+                )
         );
     }
 
