@@ -24,6 +24,7 @@ import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuiz;
 import uk.ac.cam.cl.dtg.isaac.dto.IHasQuizSummary;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizRubricDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizSectionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
@@ -177,11 +178,11 @@ public class QuizManager {
     public List<IsaacQuizSectionDTO> extractSectionObjects(IsaacQuizDTO quiz) throws ContentManagerException {
         if (properties.getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(Constants.EnvironmentType.DEV.name())) {
             for (ContentBaseDTO content : quiz.getChildren()) {
-                if (!(content instanceof IsaacQuizSectionDTO)) {
+                if (!(content instanceof IsaacQuizSectionDTO || content instanceof IsaacQuizRubricDTO)) {
                     throw new ContentManagerException("Quiz id " + quiz.getId() + " contains top-level non-section: " + content);
                 }
             }
-            return quiz.getChildren().stream().map(c -> ((IsaacQuizSectionDTO) c)).collect(Collectors.toList());
+            return quiz.getChildren().stream().filter(c -> c instanceof IsaacQuizSectionDTO).map(c -> ((IsaacQuizSectionDTO) c)).collect(Collectors.toList());
         } else {
             return quiz.getChildren().stream().flatMap(c -> {
                 if (c instanceof IsaacQuizSectionDTO) {
