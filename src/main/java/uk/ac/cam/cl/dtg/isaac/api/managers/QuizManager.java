@@ -24,7 +24,6 @@ import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuiz;
 import uk.ac.cam.cl.dtg.isaac.dto.IHasQuizSummary;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizRubricDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizSectionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
@@ -178,7 +177,7 @@ public class QuizManager {
     public List<IsaacQuizSectionDTO> extractSectionObjects(IsaacQuizDTO quiz) throws ContentManagerException {
         if (properties.getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(Constants.EnvironmentType.DEV.name())) {
             for (ContentBaseDTO content : quiz.getChildren()) {
-                if (!(content instanceof IsaacQuizSectionDTO || content instanceof IsaacQuizRubricDTO)) {
+                if (!(content instanceof IsaacQuizSectionDTO)) {
                     throw new ContentManagerException("Quiz id " + quiz.getId() + " contains top-level non-section: " + content);
                 }
             }

@@ -21,7 +21,6 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacEventPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuiz;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuizRubric;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuizSection;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicChemistryQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicQuestion;
@@ -214,7 +213,7 @@ public class ContentIndexer {
                             // This also seems to be the only time we can prevent a file from being indexed entirely.
                             if (flattenedContent instanceof IsaacQuiz) {
                                 List<ContentBase> children = flattenedContent.getChildren();
-                                if (children.stream().anyMatch(c -> !(c instanceof IsaacQuizSection || c instanceof IsaacQuizRubric))) {
+                                if (children.stream().anyMatch(c -> !(c instanceof IsaacQuizSection))) {
                                     log.debug("IsaacQuiz (" + flattenedContent.getId()
                                            + ") contains top-level non-quiz sections. Skipping.");
                                     this.registerContentProblem(flattenedContent, "Index failure - Invalid "
