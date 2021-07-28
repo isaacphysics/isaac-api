@@ -75,7 +75,7 @@ public class ChoiceOrikaConverter extends BidirectionalConverter<Choice, ChoiceD
         } else if (source instanceof StringChoice) {
             return super.mapperFacade.map(source, StringChoiceDTO.class);
         } else if (source instanceof RegexPattern) {
-            return super.mapperFacade.map(source, StringChoiceDTO.class);
+            return super.mapperFacade.map(source, RegexPatternDTO.class);
         } else if (source instanceof FreeTextRule) {
             return super.mapperFacade.map(source, FreeTextRuleDTO.class);
         } else if (source instanceof ParsonsChoice) {
@@ -110,7 +110,7 @@ public class ChoiceOrikaConverter extends BidirectionalConverter<Choice, ChoiceD
         } else if (source instanceof StringChoiceDTO) {
             return super.mapperFacade.map(source, StringChoice.class);
         } else if (source instanceof RegexPatternDTO) {
-            return super.mapperFacade.map(source, StringChoice.class);
+            return super.mapperFacade.map(source, RegexPattern.class);
         } else if (source instanceof FreeTextRuleDTO) {
             return super.mapperFacade.map(source, FreeTextRule.class);
         } else if (source instanceof ParsonsChoiceDTO) {
