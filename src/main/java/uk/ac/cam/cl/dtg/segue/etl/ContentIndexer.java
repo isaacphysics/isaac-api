@@ -208,7 +208,7 @@ public class ContentIndexer {
                             }
 
                             // Prevents ETL indexing of quizzes that contain anything that is not an IsaacQuizSection
-                            // or IsaacQuicRubric in the top-level children array.
+                            // in the top-level children array.
                             // NOTE: I'm not sure this is the right place for this but I couldn't find a better one.
                             // This also seems to be the only time we can prevent a file from being indexed entirely.
                             if (flattenedContent instanceof IsaacQuiz) {
@@ -218,7 +218,7 @@ public class ContentIndexer {
                                            + ") contains top-level non-quiz sections. Skipping.");
                                     this.registerContentProblem(flattenedContent, "Index failure - Invalid "
                                            + "content type among quiz sections. Quizzes can only contain quiz sections "
-                                           + "or rubric in the top-level children array.", indexProblemCache);
+                                           + "in the top-level children array.", indexProblemCache);
                                     continue;
                                 }
                             }
