@@ -154,6 +154,7 @@ public class IsaacTest {
         otherQuiz = new IsaacQuizDTO("otherQuiz", null, null, null, null, null, null, null, Collections.singletonList(quizSection1), null, null, null, false, null, null, true, QuizFeedbackMode.DETAILED_FEEDBACK, null);
 
         // A bit scrappy, but hopefully sufficient.
+        studentQuizDO = new IsaacQuiz("studentQuiz", null, null, null, null, null, null, null, null, null, null, null, false, null, null, true, null);
 
         student = new RegisteredUserDTO("Some", "Student", "test-student@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, "");
         student.setRole(Role.STUDENT);
