@@ -745,8 +745,11 @@ public class ContentIndexer {
 
                 // check that there is some alt text.
                 if (f.getAltText() == null || f.getAltText().isEmpty()) {
-                    this.registerContentProblem(c, "No altText attribute set for media element: " + f.getSrc()
-                            + " in Git source file " + c.getCanonicalSourceFile(), indexProblemCache);
+                    if (!(f instanceof Video)) {
+                        // Videos probably don't need alt text unless there is a good reason.
+                        this.registerContentProblem(c, "No altText attribute set for media element: " + f.getSrc()
+                                + " in Git source file " + c.getCanonicalSourceFile(), indexProblemCache);
+                    }
                 }
             }
             if (c instanceof Question && c.getId() == null) {
