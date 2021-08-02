@@ -121,10 +121,18 @@ public class IsaacNumericValidator implements IValidator {
         }
 
         try {
+            // Should this answer include units?
+            boolean shouldValidateWithUnits = isaacNumericQuestion.getRequireUnits();
+            if (shouldValidateWithUnits && null != isaacNumericQuestion.getDisplayUnit() && !isaacNumericQuestion.getDisplayUnit().isEmpty()) {
+                log.warn(String.format("Question has inconsistent units settings, overriding requiresUnits: %s! src: %s",
+                        question.getId(), question.getCanonicalSourceFile()));
+                shouldValidateWithUnits = false;
+            }
+
             if (null == answerFromUser.getValue() || answerFromUser.getValue().isEmpty()) {
                 return new QuantityValidationResponse(question.getId(), answerFromUser, false, new Content(
                         "You did not provide an answer."), false, false, new Date());
-            } else if (null == answerFromUser.getUnits() && (isaacNumericQuestion.getRequireUnits())) {
+            } else if (null == answerFromUser.getUnits() && shouldValidateWithUnits) {
                 return new QuantityValidationResponse(question.getId(), answerFromUser, false, new Content(
                         "You did not provide any units."), null, false, new Date());
             }
@@ -142,7 +150,7 @@ public class IsaacNumericValidator implements IValidator {
             }
 
             // Step 2 - then do correct answer numeric equivalence checking.
-            if (isaacNumericQuestion.getRequireUnits()) {
+            if (shouldValidateWithUnits) {
                 bestResponse = this.validateWithUnits(isaacNumericQuestion, answerFromUser);
             } else {
                 bestResponse = this.validateWithoutUnits(isaacNumericQuestion, answerFromUser);

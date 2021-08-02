@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -38,6 +38,7 @@ public class IsaacNumericQuestion extends IsaacQuestionBase {
     private Integer significantFiguresMin;
     private Integer significantFiguresMax;
     private List<String> availableUnits;
+    private String displayUnit;
 
     /**
      * Gets the requireUnits.
@@ -115,5 +116,22 @@ public class IsaacNumericQuestion extends IsaacQuestionBase {
             return new ArrayList<String>();
         }
         return availableUnits;
+    }
+
+    /**
+     *  Get the unit to be displayed to the user instead of the available units dropdown.
+     *
+     * @return the unit string
+     */
+    public String getDisplayUnit() {
+        return displayUnit;
+    }
+
+    /**
+     * Set the unit to be displayed to the user instead of the available units dropdown.
+     * @param displayUnit - the unit to be displayed.
+     */
+    public void setDisplayUnit(String displayUnit) {
+        this.displayUnit = displayUnit;
     }
 }

@@ -36,6 +36,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -603,6 +604,34 @@ public class IsaacNumericValidatorTest {
 
         // This should throw an exception:
         validator.validateQuestionResponse(numericQuestion, new Choice());
+    }
+
+    /*
+     Test displayUnit overrides requiresUnits.
+    */
+    @Test
+    public final void isaacNumericValidator_TestInconsistentDisplayUnitsOverride_UnitsIgnored() {
+        // Set up the question object:
+        IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
+        someNumericQuestion.setRequireUnits(true);
+        someNumericQuestion.setDisplayUnit("SOME-FAKE-UNIT");
+
+        List<Choice> answerList = Lists.newArrayList();
+        Quantity someCorrectAnswer = new Quantity(correctIntegerAnswer, "SOME-FAKE-UNIT");
+        someCorrectAnswer.setCorrect(true);
+        answerList.add(someCorrectAnswer);
+        someNumericQuestion.setChoices(answerList);
+
+        // Set up a user answer without units:
+        Quantity q = new Quantity(correctIntegerAnswer);
+        QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
+
+        // Check that units are ignored for validation:
+        assertTrue(response.isCorrect());
+        if (response instanceof QuantityValidationResponse) {
+            QuantityValidationResponse qResponse = (QuantityValidationResponse) response;
+            assertNull(qResponse.getCorrectUnits());
+        }
     }
 
     //  ---------- Tests from here test internal methods of the validator ----------
