@@ -560,7 +560,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                 properties.getProperty(HOST_NAME)));
         globalTokens.put("myAssignmentsURL", String.format("https://%s/assignments",
                 properties.getProperty(HOST_NAME)));
-        globalTokens.put("myQuizzesURL", String.format("https://%s/quiz/assignments",
+        globalTokens.put("myQuizzesURL", String.format("https://%s/quizzes",
             properties.getProperty(HOST_NAME)));
         globalTokens.put("myBookedEventsURL", String.format("https://%s/events?show_booked_only=true",
                 properties.getProperty(HOST_NAME)));
@@ -734,8 +734,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             misuseMonitor.registerHandler(EmailVerificationRequestMisuseHandler.class.getSimpleName(),
                     new EmailVerificationRequestMisuseHandler());
 
-            misuseMonitor.registerHandler(PasswordResetRequestMisuseHandler.class.getSimpleName(),
-                    new PasswordResetRequestMisuseHandler());
+            misuseMonitor.registerHandler(PasswordResetByEmailMisuseHandler.class.getSimpleName(),
+                    new PasswordResetByEmailMisuseHandler());
+
+            misuseMonitor.registerHandler(PasswordResetByIPMisuseHandler.class.getSimpleName(),
+                    new PasswordResetByIPMisuseHandler(emailManager, properties));
 
             misuseMonitor.registerHandler(TeacherPasswordResetMisuseHandler.class.getSimpleName(),
                     new TeacherPasswordResetMisuseHandler());

@@ -745,8 +745,11 @@ public class ContentIndexer {
 
                 // check that there is some alt text.
                 if (f.getAltText() == null || f.getAltText().isEmpty()) {
-                    this.registerContentProblem(c, "No altText attribute set for media element: " + f.getSrc()
-                            + " in Git source file " + c.getCanonicalSourceFile(), indexProblemCache);
+                    if (!(f instanceof Video)) {
+                        // Videos probably don't need alt text unless there is a good reason.
+                        this.registerContentProblem(c, "No altText attribute set for media element: " + f.getSrc()
+                                + " in Git source file " + c.getCanonicalSourceFile(), indexProblemCache);
+                    }
                 }
             }
             if (c instanceof Question && c.getId() == null) {
@@ -801,6 +804,7 @@ public class ContentIndexer {
                     if (choice instanceof Quantity) {
                         Quantity quantity = (Quantity) choice;
 
+                        // Check valid number:
                         try {
                             //noinspection ResultOfMethodCallIgnored
                             Double.parseDouble(quantity.getValue());
@@ -810,10 +814,21 @@ public class ContentIndexer {
                                             + ")  with value that cannot be interpreted as a number. "
                                             + "Users will never be able to match this answer.", indexProblemCache);
                         }
-                    } else if (q.getRequireUnits()) {
+
+                        if (!q.getRequireUnits() && (null != quantity.getUnits() && !quantity.getUnits().isEmpty())) {
+                            this.registerContentProblem(c, "Numeric Question: " + q.getId() +
+                                    " has a Quantity with units but does not require units!", indexProblemCache);
+                        }
+
+
+                    } else {
                         this.registerContentProblem(c, "Numeric Question: " + q.getId() + " has non-Quantity Choice ("
                                 + choice.getValue() + "). It must be deleted and a new Quantity Choice created.", indexProblemCache);
                     }
+                }
+                if (q.getRequireUnits() && (null != q.getDisplayUnit() && !q.getDisplayUnit().isEmpty())) {
+                    this.registerContentProblem(c, "Numeric Question: " + q.getId() + " has a displayUnit set but also requiresUnits!"
+                                    + " Units will be ignored for this question!", indexProblemCache);
                 }
 
             }

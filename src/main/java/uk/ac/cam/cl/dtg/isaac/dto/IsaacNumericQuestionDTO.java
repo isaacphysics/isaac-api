@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -36,9 +36,8 @@ import static uk.ac.cam.cl.dtg.isaac.api.Constants.NUMERIC_QUESTION_DEFAULT_SIGN
 @ValidatesWith(IsaacNumericValidator.class)
 public class IsaacNumericQuestionDTO extends IsaacQuestionBaseDTO {
     private Boolean requireUnits;
-    private Integer significantFiguresMin;
-    private Integer significantFiguresMax;
     private List<String> availableUnits;
+    private String displayUnit;
 
     /**
      * Gets the requireUnits.
@@ -98,49 +97,20 @@ public class IsaacNumericQuestionDTO extends IsaacQuestionBaseDTO {
     }
 
     /**
-     * Gets the minimum allowed number of significant figures.
+     *  Get the unit to be displayed to the user instead of the available units dropdown.
      *
-     * @return the number of sig figs.
+     * @return the unit string
      */
-    @JsonIgnore
-    public int getSignificantFiguresMin() {
-        if (null == significantFiguresMin) {
-            return NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES;
-        }
-        return significantFiguresMin;
+    public String getDisplayUnit() {
+        return displayUnit;
     }
 
     /**
-     * Sets the minimum allowed number of significant figures.
-     *
-     * @param significantFigures
-     *            - minimum allowed number of significant figures
+     * Set the unit to be displayed to the user instead of the available units dropdown.
+     * @param displayUnit - the unit to be displayed.
      */
-    public void setSignificantFiguresMin(final Integer significantFigures) {
-        this.significantFiguresMin = significantFigures;
-    }
-
-    /**
-     * Gets the maximum allowed number of significant figures.
-     *
-     * @return the maximum allowed number of sig figs.
-     */
-    @JsonIgnore
-    public int getSignificantFiguresMax() {
-        if (null == significantFiguresMax) {
-            return NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES;
-        }
-        return significantFiguresMax;
-    }
-
-    /**
-     * Sets the maximum allowed number of significant figures.
-     *
-     * @param significantFigures
-     *            - maximum allowed number of significant figures
-     */
-    public void setSignificantFiguresMax(final Integer significantFigures) {
-        this.significantFiguresMax = significantFigures;
+    public void setDisplayUnit(String displayUnit) {
+        this.displayUnit = displayUnit;
     }
 
 }
