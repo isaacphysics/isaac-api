@@ -35,7 +35,6 @@ import java.util.Set;
 public class IsaacQuiz extends SeguePage {
 
     private boolean visibleToStudents;
-    private String rubric;
 
     @JsonCreator
     public IsaacQuiz(
@@ -53,14 +52,12 @@ public class IsaacQuiz extends SeguePage {
             @JsonProperty("version") boolean published,
             @JsonProperty("tags") Set<String> tags,
             @JsonProperty("level") Integer level,
-            @JsonProperty("visibleToStudents") boolean visibleToStudents,
-            @JsonProperty("rubric") String rubric) {
+            @JsonProperty("visibleToStudents") boolean visibleToStudents) {
         super(id, title, subtitle, type, author, encoding,
                 canonicalSourceFile, layout, children, value, attribution,
                 relatedContent, published, tags, level);
 
         this.visibleToStudents = visibleToStudents;
-        this.rubric = rubric;
     }
 
     /**
@@ -77,8 +74,4 @@ public class IsaacQuiz extends SeguePage {
     public void setVisibleToStudents(boolean visibleToStudents) {
         this.visibleToStudents = visibleToStudents;
     }
-
-    public String getRubric() { return rubric; }
-
-    public void setRubric(String rubric) { this.rubric = rubric; }
 }
