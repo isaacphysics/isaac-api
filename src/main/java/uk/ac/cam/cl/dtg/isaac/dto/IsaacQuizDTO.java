@@ -91,10 +91,14 @@ public class IsaacQuizDTO extends SeguePageDTO implements EmailService.HasTitleO
     }
 
     @Nullable
-    public ContentDTO getRubric() {return rubric;}
+    public ContentDTO getRubric() {
+        return rubric;
+    }
 
     @Nullable
-    public void setRubric(ContentDTO rubric) {this.rubric = rubric;}
+    public void setRubric(ContentDTO rubric) {
+        this.rubric = rubric;
+    }
 
     @Nullable
     public QuizFeedbackMode getDefaultFeedbackMode() {

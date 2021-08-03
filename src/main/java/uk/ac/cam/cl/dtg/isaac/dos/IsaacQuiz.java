@@ -79,7 +79,11 @@ public class IsaacQuiz extends SeguePage {
         this.visibleToStudents = visibleToStudents;
     }
 
-    public Content getRubric() {return rubric;}
+    public Content getRubric() {
+        return rubric;
+    }
 
-    public void setRubric(Content rubric){this.rubric = rubric;}
+    public void setRubric(Content rubric){
+        this.rubric = rubric;
+    }
 }
