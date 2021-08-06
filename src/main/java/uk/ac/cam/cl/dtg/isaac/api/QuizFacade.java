@@ -1283,7 +1283,9 @@ public class QuizFacade extends AbstractIsaacFacade {
                     "That student has not completed this quiz assignment.").toResponse();
             }
 
-            quizAttempt = augmentAttempt(quizAttempt, assignment, true);
+            IsaacQuizDTO quiz = quizManager.findQuiz(quizAttempt.getQuizId());
+
+            quizAttempt = quizQuestionManager.augmentFeedbackFor(quizAttempt, quiz, QuizFeedbackMode.DETAILED_FEEDBACK);
 
             return Response.ok(quizAttempt)
                 .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
