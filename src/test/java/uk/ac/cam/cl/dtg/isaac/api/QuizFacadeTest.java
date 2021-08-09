@@ -291,10 +291,6 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                 prepare(associationManager, m -> expect(m.hasPermission(currentUser(), student)).andReturn(true)),
                 prepare(quizAttemptManager, m -> expect(m.getByQuizAssignmentAndUser(studentAssignment, student)).andReturn(completedAttempt)),
                 prepare(quizQuestionManager, m -> expect(m.augmentFeedbackFor(completedAttempt, studentQuiz, QuizFeedbackMode.DETAILED_FEEDBACK)).andReturn(augmentedQuiz)),
-//                prepare(assignmentService, m -> {
-//                    m.augmentAssignerSummaries(Collections.singletonList(studentAssignment));
-//                    expectLastCall();
-//                }),
                 succeeds(),
                 check(response -> assertEquals(((QuizAttemptDTO) response.getEntity()).getQuiz(), augmentedQuiz.getQuiz()))
             ),
