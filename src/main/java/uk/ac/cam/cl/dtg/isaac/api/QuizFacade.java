@@ -1285,6 +1285,11 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             IsaacQuizDTO quiz = quizManager.findQuiz(quizAttempt.getQuizId());
 
+            UserSummaryDTO userSummary = associationManager.enforceAuthorisationPrivacy(user,
+                    userManager.convertToUserSummaryObject(student));
+
+            quizAttempt.setUserSummary(userSummary);
+
             quizAttempt = quizQuestionManager.augmentFeedbackFor(quizAttempt, quiz, QuizFeedbackMode.DETAILED_FEEDBACK);
 
             return Response.ok(quizAttempt)
