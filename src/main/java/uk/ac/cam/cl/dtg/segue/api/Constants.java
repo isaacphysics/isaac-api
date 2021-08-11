@@ -295,6 +295,7 @@ public final class Constants {
     public static final String POSTGRES_DB_PASSWORD = "POSTGRES_DB_PASSWORD";
 
     public enum TimeInterval {
+        TWO_YEARS(2, 0, 0, 0, 0, 0),
         SIX_MONTHS(0, 6, 0, 0, 0, 0),
         NINETY_DAYS(0, 0, 90, 0, 0, 0),
         THIRTY_DAYS(0, 0, 30, 0, 0, 0),
