@@ -86,7 +86,6 @@ public class PgEventBooking implements EventBooking {
         this.updated = updated;
         this.created = created;
         if (additionalInformation != null) {
-            ObjectMapper mapper = new ObjectMapper();
             try {
                 this.additionalInformation = this.convertFromJsonbToMap(additionalInformation);
             } catch (IOException e) {
@@ -214,14 +213,14 @@ public class PgEventBooking implements EventBooking {
     private Map<String, String> convertFromJsonbToMap(Object objectToConvert) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         final String stringVersion = mapper.writeValueAsString(objectToConvert);
-        Map<String, String> iterimResult = mapper.readValue(stringVersion, HashMap.class);
+        Map<String, String> interimResult = mapper.readValue(stringVersion, HashMap.class);
 
         // this check is here to see if the map coming in is actually a jsonb map, if not assume it doesn't need to be
         // unpacked
-        if (iterimResult.containsKey("type") && iterimResult.get("type").equals("jsonb")) {
-            return mapper.readValue(iterimResult.get("value"), HashMap.class);
+        if (interimResult.containsKey("type") && interimResult.get("type").equals("jsonb")) {
+            return mapper.readValue(interimResult.get("value"), HashMap.class);
         }
 
-        return iterimResult;
+        return interimResult;
     }
 }
