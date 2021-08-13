@@ -62,6 +62,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
  */
 public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
     //private static final Logger log = LoggerFactory.getLogger(PgUsers.class);
+    private static final String POSTGRES_EXCEPTION_MESSAGE = "Postgres exception";
     private static final String JSONB_PROCESSING_ERROR_MESSAGE = "Postgres JSONb processing exception";
 
     private final PostgresSqlDb database;
@@ -105,7 +106,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             results.next();
             return results.getInt("TOTAL") != 0;
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         }     
     }
 
@@ -148,7 +149,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             }
             return authenticationProviders;
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         }
     }
 
@@ -182,7 +183,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
             return new UserAuthenticationSettings(userId, providersList, results.getBoolean("has_segue_account"), results.getBoolean("mfa_status"));
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         }
     }
 
@@ -216,7 +217,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             }
             return userCredentialsExistence;
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         }
     }
 
@@ -239,7 +240,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             
             return getById(results.getLong("user_id"));
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         }    
     }
 
@@ -266,7 +267,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             return true;
             
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         }
     }
 
@@ -288,7 +289,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             
             pst.execute();
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         }
     }
 
@@ -319,7 +320,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
             return this.findOneUser(results);
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         } catch (JsonProcessingException e) {
             throw new SegueDatabaseException(JSONB_PROCESSING_ERROR_MESSAGE, e);
         }
@@ -337,7 +338,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             
             return this.findOneUser(results);
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         } catch (JsonProcessingException e) {
             throw new SegueDatabaseException(JSONB_PROCESSING_ERROR_MESSAGE, e);
         }
@@ -415,7 +416,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
             return this.findAllUsers(results);
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         } catch (JsonProcessingException e) {
             throw new SegueDatabaseException(JSONB_PROCESSING_ERROR_MESSAGE, e);
         }
@@ -446,7 +447,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             
             return this.findAllUsers(results);
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         } catch (JsonProcessingException e) {
             throw new SegueDatabaseException(JSONB_PROCESSING_ERROR_MESSAGE, e);
         }
@@ -467,7 +468,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
             return resultToReturn;
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         }
     }
 
@@ -488,7 +489,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
             return resultToReturn;
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         }
     }
 
@@ -505,7 +506,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             }
             return resultsToReturn;
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         }
     }
 
@@ -527,7 +528,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             }
             return resultsToReturn;
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         }
     }
 
@@ -543,7 +544,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             
             return this.findOneUser(results);
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         } catch (JsonProcessingException e) {
             throw new SegueDatabaseException(JSONB_PROCESSING_ERROR_MESSAGE, e);
         }
@@ -608,7 +609,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
                 conn.setAutoCommit(true);
             }
         } catch (SQLException e1) {
-            throw new SegueDatabaseException("Postgres exception", e1);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e1);
         } catch (JsonProcessingException e1) {
             throw new SegueDatabaseException(JSONB_PROCESSING_ERROR_MESSAGE, e1);
         }
@@ -641,7 +642,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
                 conn.setAutoCommit(true);
             }
         } catch (SQLException e1) {
-            throw new SegueDatabaseException("Postgres exception", e1);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e1);
         }
     }
 
@@ -661,7 +662,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             pst.setLong(2, user.getId());
             pst.execute();
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         }
     }
 
@@ -675,7 +676,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             pst.setLong(1, user.getId());
             pst.execute();
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         }
     }
 
@@ -746,7 +747,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             }
 
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         } catch (JsonProcessingException e) {
             throw new SegueDatabaseException(JSONB_PROCESSING_ERROR_MESSAGE, e);
         }
@@ -768,7 +769,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
         try (Connection conn = database.getDatabaseConnection()) {
             return this.updateUser(conn, userToCreate);
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         } catch (JsonProcessingException e) {
             throw new SegueDatabaseException(JSONB_PROCESSING_ERROR_MESSAGE, e);
         }
