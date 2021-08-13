@@ -40,16 +40,7 @@ import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.api.monitors.TeacherPasswordResetMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.FailedToHashPasswordException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.*;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
@@ -62,6 +53,7 @@ import uk.ac.cam.cl.dtg.segue.dos.UserPreference;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
+import uk.ac.cam.cl.dtg.segue.dos.users.UserContext;
 import uk.ac.cam.cl.dtg.segue.dos.users.UserSettings;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -98,8 +90,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacUserPreferences;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_AUTH_EMAIL_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_AUTH_GROUP_MANAGER_EMAIL_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_AUTH_GROUP_MANAGER_INITIATED_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueServerLogType;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueUserPreferences;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_FKEY_FIELDNAME;
 
 /**
  * User facade.
@@ -239,11 +236,13 @@ public class UsersFacade extends AbstractSegueFacade {
         // Extract the user preferences, which are validated before saving by userPreferenceObjectToList(...).
         Map<String, Map<String, Boolean>> userPreferences = userSettingsObjectFromClient.getUserPreferences();
 
-        if (null != registeredUser.getId()) {
+        List<UserContext> registeredUserContexts = userSettingsObjectFromClient.getRegisteredUserContexts();
 
+        if (null != registeredUser.getId()) {
             try {
                 return this.updateUserObject(request, response, registeredUser,
-                        userSettingsObjectFromClient.getPasswordCurrent(), newPassword, userPreferences);
+                        userSettingsObjectFromClient.getPasswordCurrent(), newPassword,
+                        userPreferences, registeredUserContexts);
             } catch (IncorrectCredentialsProvidedException e) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "Incorrect credentials provided.", e)
                         .toResponse();
@@ -728,7 +727,8 @@ public class UsersFacade extends AbstractSegueFacade {
      */
     private Response updateUserObject(final HttpServletRequest request, final HttpServletResponse response,
                                       final RegisteredUser userObjectFromClient, final String passwordCurrent, final String newPassword,
-                                      final Map<String, Map<String, Boolean>> userPreferenceObject)
+                                      final Map<String, Map<String, Boolean>> userPreferenceObject,
+                                      final List<UserContext> registeredUserContexts)
             throws IncorrectCredentialsProvidedException, NoCredentialsAvailableException, InvalidKeySpecException,
             NoSuchAlgorithmException {
         Validate.notNull(userObjectFromClient.getId());
@@ -785,6 +785,18 @@ public class UsersFacade extends AbstractSegueFacade {
                     && !userObjectFromClient.getRole().equals(existingUserFromDb.getRole())) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to change a users role.")
                         .toResponse();
+            }
+
+            if (registeredUserContexts != null) {
+                // We always set the last confirmed date from code rather than trusting the client
+                userObjectFromClient.setRegisteredContexts(registeredUserContexts);
+                userObjectFromClient.setRegisteredContextsLastConfirmed(new Date());
+            } else {
+                // Registered contexts should only ever be set via the registeredUserContexts object, so that it is the
+                // server that sets the time that they last confirmed their user context values.
+                // To ensure this, we overwrite the fields with the values already set in the db if registeredUserContexts is null
+                userObjectFromClient.setRegisteredContexts(existingUserFromDb.getRegisteredContexts());
+                userObjectFromClient.setRegisteredContextsLastConfirmed(existingUserFromDb.getRegisteredContextsLastConfirmed());
             }
 
             RegisteredUserDTO updatedUser = userManager.updateUserObject(userObjectFromClient, newPassword);
