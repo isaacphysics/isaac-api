@@ -17,7 +17,6 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 
 import javax.annotation.Nullable;
 import java.util.Date;
@@ -35,7 +34,6 @@ public class QuizAttemptDTO implements IHasQuizSummary {
     @Nullable private Date completedDate;
     @Nullable private IsaacQuizDTO quiz; // For passing a users answers etc.
     @Nullable private QuizAssignmentDTO quizAssignment; // For info on setter etc.
-    @Nullable private UserSummaryDTO userSummary; // Attempts user's summary,
     private QuizFeedbackMode feedbackMode;
 
     /**
@@ -125,15 +123,6 @@ public class QuizAttemptDTO implements IHasQuizSummary {
 
     public void setQuizAssignmentId(@Nullable Long quizAssignmentId) {
         this.quizAssignmentId = quizAssignmentId;
-    }
-
-    @Nullable
-    public UserSummaryDTO getUserSummary() {
-        return userSummary;
-    }
-
-    public void setUserSummary(@Nullable UserSummaryDTO userSummary) {
-        this.userSummary = userSummary;
     }
 
     public Date getStartDate() {

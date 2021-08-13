@@ -40,6 +40,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizSectionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptFeedbackDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizFeedbackDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizUserFeedbackDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants.SegueServerLogType;
@@ -1285,11 +1286,11 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             IsaacQuizDTO quiz = quizManager.findQuiz(quizAttempt.getQuizId());
 
-            quizAttempt.setUserSummary(userManager.convertToUserSummaryObject(student));
-
             quizAttempt = quizQuestionManager.augmentFeedbackFor(quizAttempt, quiz, QuizFeedbackMode.DETAILED_FEEDBACK);
 
-            return Response.ok(quizAttempt)
+            QuizAttemptFeedbackDTO quizAttemptFeedback = new QuizAttemptFeedbackDTO(userManager.convertToUserSummaryObject(student), quizAttempt);
+
+            return Response.ok(quizAttemptFeedback)
                 .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
                 .build();
         } catch (NoUserLoggedInException e) {
