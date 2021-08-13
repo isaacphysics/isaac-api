@@ -695,6 +695,8 @@ CREATE TABLE public.users (
     school_id text,
     school_other text,
     exam_board text,
+    registered_contexts jsonb[] DEFAULT array[]::jsonb[] NOT NULL,
+    registered_contexts_last_confirmed timestamp without time zone;
     last_updated timestamp without time zone,
     email_verification_status character varying(255),
     last_seen timestamp without time zone,
