@@ -18,6 +18,6 @@ package uk.ac.cam.cl.dtg.segue.dos.users;
 /**
  * Enum of valid exam boards users may have.
  */
-public enum ExamBoard {
+public enum ExamBoard { // TODO MT AUDIENCE_CONTEXT_CLEANUP - this along with the DO/DTO/DB field
     AQA, OCR, OTHER
 }

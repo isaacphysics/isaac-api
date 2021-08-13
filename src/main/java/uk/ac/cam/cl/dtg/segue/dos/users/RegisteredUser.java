@@ -15,10 +15,11 @@
  */
 package uk.ac.cam.cl.dtg.segue.dos.users;
 
-import java.util.Date;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.util.Date;
+import java.util.List;
 
 /**
  * Data Object to represent a user of the system. This object will be persisted in the database.
@@ -37,6 +38,8 @@ public class RegisteredUser extends AbstractSegueUser {
     private String schoolId;
     private String schoolOther;
     private ExamBoard examBoard;
+    private List<UserContext> registeredContexts;
+    private Date registeredContextsLastConfirmed;
 
     private String emailVerificationToken;
     private String emailToVerify;
@@ -444,6 +447,22 @@ public class RegisteredUser extends AbstractSegueUser {
      */
     public void setSessionToken(final Integer sessionToken) {
         this.sessionToken = sessionToken;
+    }
+
+    public List<UserContext> getRegisteredContexts() {
+        return registeredContexts;
+    }
+
+    public void setRegisteredContexts(List<UserContext> registeredContexts) {
+        this.registeredContexts = registeredContexts;
+    }
+
+    public Date getRegisteredContextsLastConfirmed() {
+        return registeredContextsLastConfirmed;
+    }
+
+    public void setRegisteredContextsLastConfirmed(Date registeredContextsLastConfirmed) {
+        this.registeredContextsLastConfirmed = registeredContextsLastConfirmed;
     }
 
     @Override
