@@ -1,27 +1,27 @@
 package uk.ac.cam.cl.dtg.segue.dos.users;
 
 public class UserContext {
-    public enum STAGE {gcse, a_level, further_a, university, none}
-    public enum EXAM_BOARD {AQA, OCR, CIE, EDEXCEL, EDUCAS, WJEC, OTHER, NONE}
+    public enum Stage {gcse, a_level, further_a, university, none}
+    public enum ExamBoard {AQA, OCR, CIE, EDEXCEL, EDUCAS, WJEC, OTHER, NONE}
 
-    private STAGE stage;
-    private EXAM_BOARD examBoard;
+    private Stage stage;
+    private ExamBoard examBoard;
 
     public UserContext() {;}
 
-    public STAGE getStage() {
+    public Stage getStage() {
         return stage;
     }
 
-    public void setStage(STAGE stage) {
+    public void setStage(Stage stage) {
         this.stage = stage;
     }
 
-    public EXAM_BOARD getExamBoard() {
+    public ExamBoard getExamBoard() {
         return examBoard;
     }
 
-    public void setExamBoard(EXAM_BOARD examBoard) {
+    public void setExamBoard(ExamBoard examBoard) {
         this.examBoard = examBoard;
     }
 }
