@@ -53,8 +53,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SchoolInfoStatus;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * @author Stephen Cummins
