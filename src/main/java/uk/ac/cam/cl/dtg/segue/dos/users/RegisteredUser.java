@@ -335,7 +335,7 @@ public class RegisteredUser extends AbstractSegueUser {
         this.examBoard = examBoard;
     }
 
-    /**
+     /**
      * Gets the email.
      *
      * @return the email to verify
