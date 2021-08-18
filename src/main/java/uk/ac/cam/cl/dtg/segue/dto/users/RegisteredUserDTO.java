@@ -17,7 +17,6 @@ package uk.ac.cam.cl.dtg.segue.dto.users;
 
 import java.util.Date;
 
-import uk.ac.cam.cl.dtg.segue.dos.users.ProgrammingLanguage;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.ExamBoard;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
@@ -44,7 +43,6 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
     private String schoolId;
     private String schoolOther;
     private ExamBoard examBoard;
-    private ProgrammingLanguage programmingLanguage;
 
     private boolean firstLogin = false;
     private Date lastUpdated;
@@ -342,10 +340,6 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
     public void setExamBoard(final ExamBoard examBoard) {
         this.examBoard = examBoard;
     }
-
-    public ProgrammingLanguage getProgrammingLanguage() {return programmingLanguage;}
-
-    public void setProgrammingLanguage(final ProgrammingLanguage programmingLanguage){this.programmingLanguage = programmingLanguage;}
 
     /**
      * Gets the firstLogin.

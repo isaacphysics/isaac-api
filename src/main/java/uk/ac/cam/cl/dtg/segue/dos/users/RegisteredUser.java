@@ -37,7 +37,6 @@ public class RegisteredUser extends AbstractSegueUser {
     private String schoolId;
     private String schoolOther;
     private ExamBoard examBoard;
-    private ProgrammingLanguage programmingLanguage;
 
     private String emailVerificationToken;
     private String emailToVerify;
@@ -333,11 +332,7 @@ public class RegisteredUser extends AbstractSegueUser {
         this.examBoard = examBoard;
     }
 
-    public ProgrammingLanguage getProgrammingLanguage() { return programmingLanguage; }
-
-    public void setProgrammingLanguage(final ProgrammingLanguage programmingLanguage) { this.programmingLanguage = programmingLanguage; }
-
-    /**
+     /**
      * Gets the email.
      *
      * @return the email to verify
