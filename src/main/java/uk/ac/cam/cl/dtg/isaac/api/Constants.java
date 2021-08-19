@@ -176,7 +176,7 @@ public final class Constants {
     }};
 
     public enum IsaacUserPreferences {
-        SUBJECT_INTEREST, BETA_FEATURE, EXAM_BOARD
+        SUBJECT_INTEREST, BETA_FEATURE, EXAM_BOARD, PROGRAMMING_LANGUAGE
     }
 
     /**
