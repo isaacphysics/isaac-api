@@ -2,7 +2,7 @@ package uk.ac.cam.cl.dtg.segue.dos.users;
 
 public class UserContext {
     public enum Stage {gcse, a_level, further_a, university, none}
-    public enum ExamBoard {AQA, OCR, CIE, EDEXCEL, EDUCAS, WJEC, OTHER, NONE}
+    public enum ExamBoard {AQA, OCR, CIE, EDEXCEL, EDUQAS, WJEC, OTHER, NONE}
 
     private Stage stage;
     private ExamBoard examBoard;
