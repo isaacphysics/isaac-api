@@ -15,16 +15,16 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
-
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Sets;
 import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
 
 /**
  * DTO representation of a gameboard.
@@ -34,6 +34,7 @@ public class GameboardDTO implements EmailService.HasTitleOrId {
     private String id;
     private String title;
     private List<GameboardItem> questions;
+    private List<GameboardItem> contents;
     private IsaacWildcard wildCard;
     private Integer wildCardPosition;
     private Date creationDate;
@@ -69,6 +70,8 @@ public class GameboardDTO implements EmailService.HasTitleOrId {
      *            - optional title for gameboard.
      * @param questions
      *            - list of gameboard items (shallow questions).
+     * @param contents
+     *            - list of gameboard contents (can be questions or concepts).
      * @param wildCard
      *            - wildcard content object for advertising purposes.
      * @param wildcardPosition
@@ -83,12 +86,13 @@ public class GameboardDTO implements EmailService.HasTitleOrId {
      *            - Method used to construct this game board.
      */
     public GameboardDTO(final String id, final String title, final List<GameboardItem> questions,
-            final IsaacWildcard wildCard, final Integer wildcardPosition, final Date creationDate,
-            final GameFilter gameFilter, final Long ownerUserId, final GameboardCreationMethod creationMethod,
-            final Set<String> tags) {
+                        final List<GameboardItem> contents, final IsaacWildcard wildCard, final Integer wildcardPosition,
+                        final Date creationDate, final GameFilter gameFilter, final Long ownerUserId,
+                        final GameboardCreationMethod creationMethod, final Set<String> tags) {
         this.id = id;
         this.title = title;
         this.questions = questions;
+        this.contents = contents;
         this.wildCard = wildCard;
         this.wildCardPosition = wildcardPosition;
         this.creationDate = creationDate;
@@ -153,6 +157,14 @@ public class GameboardDTO implements EmailService.HasTitleOrId {
      */
     public void setQuestions(final List<GameboardItem> questions) {
         this.questions = questions;
+    }
+
+    public List<GameboardItem> getContents() {
+        return contents;
+    }
+
+    public void setContents(List<GameboardItem> contents) {
+        this.contents = contents;
     }
 
     /**
@@ -384,9 +396,9 @@ public class GameboardDTO implements EmailService.HasTitleOrId {
 
     @Override
     public String toString() {
-        return "GameboardDTO [id=" + id + ", title=" + title + ", questions=" + questions + ", wildCard=" + wildCard
-                + ", wildCardPosition=" + wildCardPosition + ", creationDate=" + creationDate + ", gameFilter="
-                + gameFilter + ", ownerUserId=" + ownerUserId + ", tags=" + tags + "]";
+        return "GameboardDTO [id=" + id + ", title=" + title + ", questions=" + questions + ", contents=" + contents
+                + ", wildCard=" + wildCard + ", wildCardPosition=" + wildCardPosition + ", creationDate=" + creationDate
+                + ", gameFilter=" + gameFilter + ", ownerUserId=" + ownerUserId + ", tags=" + tags + "]";
     }
 
     @Override
@@ -398,6 +410,7 @@ public class GameboardDTO implements EmailService.HasTitleOrId {
         result = prime * result + ((id == null) ? 0 : id.hashCode());
         result = prime * result + ((ownerUserId == null) ? 0 : ownerUserId.hashCode());
         result = prime * result + ((questions == null) ? 0 : questions.hashCode());
+        result = prime * result + ((contents == null) ? 0 : contents.hashCode());
         result = prime * result + ((wildCard == null) ? 0 : wildCard.hashCode());
         result = prime * result + ((wildCardPosition == null) ? 0 : wildCardPosition.hashCode());
         result = prime * result + ((tags == null) ? 0 : tags.hashCode());
@@ -449,6 +462,13 @@ public class GameboardDTO implements EmailService.HasTitleOrId {
                 return false;
             }
         } else if (!questions.equals(other.questions)) {
+            return false;
+        }
+        if (contents == null) {
+            if (other.contents != null) {
+                return false;
+            }
+        } else if (!contents.equals(other.contents)) {
             return false;
         }
         if (wildCard == null) {

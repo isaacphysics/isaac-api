@@ -167,7 +167,7 @@ public class GameManager {
             // filter game board ready questions to make up a decent gameboard.
             log.debug("Created gameboard " + uuid);
 
-            GameboardDTO gameboardDTO = new GameboardDTO(uuid, title, selectionOfGameboardQuestions,
+            GameboardDTO gameboardDTO = new GameboardDTO(uuid, title, selectionOfGameboardQuestions, selectionOfGameboardQuestions,
                     getRandomWildcard(mapper, subjects), generateRandomWildCardPosition(), new Date(), gameFilter,
                     boardOwnerId, GameboardCreationMethod.FILTER, Sets.newHashSet());
 

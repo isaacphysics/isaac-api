@@ -15,15 +15,14 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dos;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
-
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Sets;
 import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
 
 /**
  * This class is the Domain Object used to store gameboards in the segue CMS. The primary difference between this DO and
@@ -34,6 +33,7 @@ public class GameboardDO {
     private String id;
     private String title;
     private List<String> questions;
+    private List<GameboardContentDescriptor> contents;
     private IsaacWildcard wildCard;
     private Integer wildCardPosition;
     private Date creationDate;
@@ -51,6 +51,8 @@ public class GameboardDO {
      *            - optional title for gameboard.
      * @param questions
      *            - list of gameboard items (shallow questions).
+     * @param contents
+     *            - list of gameboard contents (can be questions or concepts).
      * @param wildCard
      *            - wildcard content object for advertising purposes.
      * @param wildcardPosition
@@ -64,11 +66,13 @@ public class GameboardDO {
      * @param creationMethod
      *            - Method used to construct this game board.
      */
-    public GameboardDO(final String id, final String title, final List<String> questions, final IsaacWildcard wildCard,
-            final Integer wildcardPosition, final Date creationDate, final GameFilter gameFilter,
-            final Long ownerUserId, final GameboardCreationMethod creationMethod, final Set<String> tags) {
+    public GameboardDO(final String id, final String title, final List<String> questions,
+                       final List<GameboardContentDescriptor> contents, final IsaacWildcard wildCard, final Integer wildcardPosition,
+                       final Date creationDate, final GameFilter gameFilter, final Long ownerUserId,
+                       final GameboardCreationMethod creationMethod, final Set<String> tags) {
         this.id = id;
         this.title = title;
+        this.contents = contents;
         this.questions = questions;
         this.wildCard = wildCard;
         this.wildCardPosition = wildcardPosition;
@@ -84,6 +88,7 @@ public class GameboardDO {
      */
     public GameboardDO() {
         this.questions = Lists.newArrayList();
+        this.contents = Lists.newArrayList();
         this.tags = Sets.newHashSet();
     }
 
@@ -277,10 +282,19 @@ public class GameboardDO {
         this.tags = tags;
     }
 
+    public List<GameboardContentDescriptor> getContents() {
+        return contents;
+    }
+
+    public void setContents(List<GameboardContentDescriptor> contents) {
+        this.contents = contents;
+    }
+
     @Override
     public String toString() {
-        return "GameboardDTO [id=" + id + ", title=" + title + ", questions=" + questions + ", wildCard=" + wildCard
-                + ", wildCardPosition=" + wildCardPosition + ", creationDate=" + creationDate + ", gameFilter="
-                + gameFilter + ", ownerUserId=" + ownerUserId + ", creationMethod=" + creationMethod + ", tags=" + tags + "]";
+        return "GameboardDTO [id=" + id + ", title=" + title + ", contents=" + contents + ", questions=" + questions
+                + ", wildCard=" + wildCard + ", wildCardPosition=" + wildCardPosition + ", creationDate=" + creationDate
+                + ", gameFilter=" + gameFilter + ", ownerUserId=" + ownerUserId + ", creationMethod=" + creationMethod
+                + ", tags=" + tags + "]";
     }
 }
