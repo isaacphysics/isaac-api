@@ -31,6 +31,7 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
+import uk.ac.cam.cl.dtg.isaac.dos.GameboardContentDescriptor;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardDO;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
@@ -65,10 +66,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.FAST_TRACK_QUESTION_TYPE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_TYPE;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * This class is responsible for managing and persisting user data.
@@ -557,14 +556,22 @@ public class GameboardPersistenceManager {
         try (Connection conn = database.getDatabaseConnection()) {
             pst = conn
                     .prepareStatement("INSERT INTO "
-                            + "gameboards(id, title, questions, wildcard, wildcard_position, "
+                            + "gameboards(id, title, questions, contents, wildcard, wildcard_position, "
                             + "game_filter, owner_user_id, creation_method, tags, creation_date)"
-                            + " VALUES (?, ?, ?, ?::text::jsonb, ?, ?::text::jsonb, ?, ?, ?::text::jsonb, ?);");
+                            + " VALUES (?, ?, ?, ?::text::jsonb[], ?::text::jsonb, ?, ?::text::jsonb, ?, ?,"
+                            + " ?::text::jsonb, ?);");
+
             Array questionIds = conn.createArrayOf("varchar", gameboardToSave.getQuestions().toArray());
+            List<String> contentsJsonb = Lists.newArrayList();
+            for (GameboardContentDescriptor content: gameboardToSave.getContents()) {
+                contentsJsonb.add(objectMapper.writeValueAsString(content));
+            }
+            Array contents = conn.createArrayOf("jsonb", contentsJsonb.toArray());
             
             pst.setObject(1, gameboardToSave.getId());
             pst.setString(2, gameboardToSave.getTitle());
             pst.setObject(3, questionIds);
+            pst.setArray(4, contents);
             pst.setString(4, objectMapper.writeValueAsString(gameboardToSave.getWildCard()));
             pst.setInt(5, gameboardToSave.getWildCardPosition());
             pst.setString(6, objectMapper.writeValueAsString(gameboardToSave.getGameFilter()));
@@ -851,6 +858,11 @@ public class GameboardPersistenceManager {
         gameboardDO.setId(results.getString("id"));
         gameboardDO.setTitle(results.getString("title"));
         gameboardDO.setQuestions(Arrays.asList((String[]) results.getArray("questions").getArray()));
+        List<GameboardContentDescriptor> contents = Lists.newArrayList();
+        for (String contentJson : (String[]) results.getArray("contents").getArray()) {
+            contents.add(objectMapper.readValue(contentJson, GameboardContentDescriptor.class));
+        }
+        gameboardDO.setContents(contents);
         gameboardDO.setWildCard(Objects.isNull(results.getObject("wildcard")) ? null : objectMapper.readValue(results.getObject("wildcard").toString(), IsaacWildcard.class));
         gameboardDO.setWildCardPosition(results.getInt("wildcard_position"));
         gameboardDO.setGameFilter(objectMapper
