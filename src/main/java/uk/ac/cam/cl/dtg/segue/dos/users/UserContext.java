@@ -1,9 +1,9 @@
 package uk.ac.cam.cl.dtg.segue.dos.users;
 
-public class UserContext {
-    public enum Stage {gcse, a_level, further_a, university, none}
-    public enum ExamBoard {AQA, OCR, CIE, EDEXCEL, EDUQAS, WJEC, OTHER, NONE}
+import uk.ac.cam.cl.dtg.segue.dos.ExamBoard;
+import uk.ac.cam.cl.dtg.segue.dos.Stage;
 
+public class UserContext {
     private Stage stage;
     private ExamBoard examBoard;
 
@@ -23,5 +23,13 @@ public class UserContext {
 
     public void setExamBoard(ExamBoard examBoard) {
         this.examBoard = examBoard;
+    }
+
+    @Override
+    public String toString() {
+        return "UserContext [" +
+                "stage=" + stage +
+                ", examBoard=" + examBoard +
+                ']';
     }
 }

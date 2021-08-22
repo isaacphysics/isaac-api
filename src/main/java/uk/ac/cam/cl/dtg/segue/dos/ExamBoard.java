@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.segue.dos.users;
+package uk.ac.cam.cl.dtg.segue.dos;
 
 /**
  * Enum of valid exam boards users may have.
  */
-public enum ExamBoard { // TODO MT AUDIENCE_CONTEXT_CLEANUP - this along with the DO/DTO/DB field
-    AQA, OCR, OTHER
+public enum ExamBoard {
+    AQA, OCR, CIE, EDEXCEL, EDUQAS, WJEC, OTHER, NONE
 }
