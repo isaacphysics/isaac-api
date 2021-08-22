@@ -70,7 +70,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
     /**
      * PgUsers.
      * @param ds - the postgres datasource to use
-     * @patam jsonMapper - a mapper for converting to and from JSON for postgres' jsonb type
+     * @param jsonMapper - a mapper for converting to and from JSON for postgres' jsonb type
      */
     @Inject
     public PgUsers(final PostgresSqlDb ds, final ObjectMapper jsonMapper) {

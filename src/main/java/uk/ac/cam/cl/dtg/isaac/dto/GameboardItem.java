@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 import com.google.common.collect.Lists;
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import uk.ac.cam.cl.dtg.isaac.dos.GameboardContentDescriptor;
 import uk.ac.cam.cl.dtg.segue.dos.AudienceContext;
 
 import javax.annotation.Nullable;
@@ -60,6 +61,21 @@ public class GameboardItem {
      * Generic constructor.
      */
     public GameboardItem() {}
+
+    /**
+     * Static factory method for constructing a minimal Gameboard Item from a GameboardContentDescriptor.
+     * Augmentation by mapping the content object to the instance will need to be done separately.
+     * @param contentDescriptor
+     *          a content descriptor to populate the gameboard item's fields.
+     * @return A Minimal gameboard item containing all of the information from the content descriptor.
+     */
+    public static GameboardItem fromContentDescriptorLight(final GameboardContentDescriptor contentDescriptor) {
+        return new GameboardItem() {{
+            this.setId(contentDescriptor.getId());
+            this.setContentType(contentDescriptor.getContentType());
+            this.setCreationContext(contentDescriptor.getContext());
+        }};
+    }
 
     /**
      * Creates a GameboardItem from (shallow) copying the passed in GameboardItem.

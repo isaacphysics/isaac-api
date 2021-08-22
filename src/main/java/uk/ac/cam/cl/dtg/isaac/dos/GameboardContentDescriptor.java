@@ -7,7 +7,14 @@ public class GameboardContentDescriptor {
     private String contentType;
     private AudienceContext context;
 
+    // Empty constructor necessary fot mappers
     public GameboardContentDescriptor() {
+    }
+
+    public GameboardContentDescriptor(String id, String contentType, AudienceContext context) {
+        this.id = id;
+        this.contentType = contentType;
+        this.context = context;
     }
 
     public String getId() {

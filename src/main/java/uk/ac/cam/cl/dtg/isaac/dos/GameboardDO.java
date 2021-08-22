@@ -32,7 +32,6 @@ public class GameboardDO {
     @JsonProperty("_id")
     private String id;
     private String title;
-    private List<String> questions;
     private List<GameboardContentDescriptor> contents;
     private IsaacWildcard wildCard;
     private Integer wildCardPosition;
@@ -49,8 +48,6 @@ public class GameboardDO {
      *            - unique id for the gameboard
      * @param title
      *            - optional title for gameboard.
-     * @param questions
-     *            - list of gameboard items (shallow questions).
      * @param contents
      *            - list of gameboard contents (can be questions or concepts).
      * @param wildCard
@@ -66,14 +63,13 @@ public class GameboardDO {
      * @param creationMethod
      *            - Method used to construct this game board.
      */
-    public GameboardDO(final String id, final String title, final List<String> questions,
-                       final List<GameboardContentDescriptor> contents, final IsaacWildcard wildCard, final Integer wildcardPosition,
-                       final Date creationDate, final GameFilter gameFilter, final Long ownerUserId,
+    public GameboardDO(final String id, final String title, final List<GameboardContentDescriptor> contents,
+                       final IsaacWildcard wildCard, final Integer wildcardPosition, final Date creationDate,
+                       final GameFilter gameFilter, final Long ownerUserId,
                        final GameboardCreationMethod creationMethod, final Set<String> tags) {
         this.id = id;
         this.title = title;
         this.contents = contents;
-        this.questions = questions;
         this.wildCard = wildCard;
         this.wildCardPosition = wildcardPosition;
         this.creationDate = creationDate;
@@ -87,7 +83,6 @@ public class GameboardDO {
      * Default constructor required for AutoMapping.
      */
     public GameboardDO() {
-        this.questions = Lists.newArrayList();
         this.contents = Lists.newArrayList();
         this.tags = Sets.newHashSet();
     }
@@ -128,25 +123,6 @@ public class GameboardDO {
      */
     public final void setTitle(final String title) {
         this.title = title;
-    }
-
-    /**
-     * Gets the gameboardItem ids.
-     * 
-     * @return the gameboardItems (ids)
-     */
-    public final List<String> getQuestions() {
-        return questions;
-    }
-
-    /**
-     * Sets the gameboardItem ids.
-     * 
-     * @param questions
-     *            the gameboardItems ids to set
-     */
-    public final void setQuestions(final List<String> questions) {
-        this.questions = questions;
     }
 
     /**
@@ -292,9 +268,17 @@ public class GameboardDO {
 
     @Override
     public String toString() {
-        return "GameboardDTO [id=" + id + ", title=" + title + ", contents=" + contents + ", questions=" + questions
-                + ", wildCard=" + wildCard + ", wildCardPosition=" + wildCardPosition + ", creationDate=" + creationDate
-                + ", gameFilter=" + gameFilter + ", ownerUserId=" + ownerUserId + ", creationMethod=" + creationMethod
-                + ", tags=" + tags + "]";
+        return "GameboardDO [" +
+                "id='" + id + '\'' +
+                ", title='" + title + '\'' +
+                ", contents=" + contents +
+                ", wildCard=" + wildCard +
+                ", wildCardPosition=" + wildCardPosition +
+                ", creationDate=" + creationDate +
+                ", gameFilter=" + gameFilter +
+                ", ownerUserId=" + ownerUserId +
+                ", creationMethod=" + creationMethod +
+                ", tags=" + tags +
+                ']';
     }
 }

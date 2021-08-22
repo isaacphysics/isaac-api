@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dos.GameboardContentDescriptor;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
@@ -42,6 +43,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dos.AudienceContext;
 import uk.ac.cam.cl.dtg.segue.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
@@ -53,7 +55,17 @@ import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import javax.validation.constraints.NotNull;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.google.common.collect.Maps.immutableEntry;
@@ -769,13 +781,17 @@ public class GameManager {
      *
      * @param questions list of questions.
      * @param userQuestionAttempts the user's question attempt history.
+     * @param gameFilter optional filter for deriving a context for viewing users.
      * @return list of augmented gameboard items.
      */
-    public List<GameboardItem> getGameboardItemProgress(List<ContentDTO> questions,
-                                                         final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts) {
+    public List<GameboardItem> getGameboardItemProgress(
+            @NotNull final List<ContentDTO> questions,
+            final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts,
+            @Nullable final GameFilter gameFilter) {
 
         return questions.stream()
-                .map(this.gameboardPersistenceManager::convertToGameboardItem)
+                .map(q -> this.gameboardPersistenceManager.convertToGameboardItem(
+                        q, new GameboardContentDescriptor(q.getId(), QUESTION_TYPE, AudienceContext.fromFilter(gameFilter))))
                 .map(questionItem -> {
                     try {
                         this.augmentGameItemWithAttemptInformation(questionItem, userQuestionAttempts);
@@ -981,7 +997,8 @@ public class GameManager {
                 }
             }
 
-            GameboardItem questionInfo = this.gameboardPersistenceManager.convertToGameboardItem(c);
+            GameboardItem questionInfo = this.gameboardPersistenceManager.convertToGameboardItem(
+                    c, new GameboardContentDescriptor(c.getId(), QUESTION_TYPE, AudienceContext.fromFilter(gameFilter)));
             selectionOfGameboardQuestions.add(questionInfo);
         }
 

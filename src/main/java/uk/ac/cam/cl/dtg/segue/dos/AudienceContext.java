@@ -1,13 +1,27 @@
 package uk.ac.cam.cl.dtg.segue.dos;
 
 import com.google.api.client.util.Lists;
+import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 
+import javax.annotation.Nullable;
+import javax.validation.constraints.Null;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class AudienceContext {
     private List<Stage> stage;
     private List<ExamBoard> examBoard;
     private List<Difficulty> difficulty;
+
+    @Nullable
+    public static AudienceContext fromFilter(@Nullable final GameFilter gameFilter) {
+        if (gameFilter == null) {return null;}
+        return new AudienceContext() {{
+            setStage(gameFilter.getStages().stream().map(Stage::valueOf).collect(Collectors.toList()));
+            setExamBoard(gameFilter.getExamBoards().stream().map(ExamBoard::valueOf).collect(Collectors.toList()));
+            setDifficulty(gameFilter.getStages().stream().map(Difficulty::valueOf).collect(Collectors.toList()));
+        }};
+    }
 
     public AudienceContext() {
         stage = Lists.newArrayList();
