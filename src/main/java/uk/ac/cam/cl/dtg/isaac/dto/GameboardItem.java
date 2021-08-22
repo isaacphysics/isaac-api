@@ -76,7 +76,7 @@ public class GameboardItem {
         this.setAudience(original.getAudience());
         this.setLevel(original.getLevel());
         this.setDifficulty(original.getDifficulty());
-        this.setUserContext(original.getUserContext());
+        this.setCreationContext(original.getCreationContext());
         this.setQuestionPartsCorrect(original.getQuestionPartsCorrect());
         this.setQuestionPartsIncorrect(original.getQuestionPartsIncorrect());
         this.setQuestionPartsNotAttempted(original.getQuestionPartsNotAttempted());
@@ -390,11 +390,11 @@ public class GameboardItem {
         this.audience = audience;
     }
 
-    public AudienceContext getUserContext() {
+    public AudienceContext getCreationContext() {
         return creationContext;
     }
 
-    public void setUserContext(AudienceContext creationContext) {
+    public void setCreationContext(AudienceContext creationContext) {
         this.creationContext = creationContext;
     }
 
