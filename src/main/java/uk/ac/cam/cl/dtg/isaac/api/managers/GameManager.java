@@ -179,7 +179,7 @@ public class GameManager {
             // filter game board ready questions to make up a decent gameboard.
             log.debug("Created gameboard " + uuid);
 
-            GameboardDTO gameboardDTO = new GameboardDTO(uuid, title, selectionOfGameboardQuestions, selectionOfGameboardQuestions,
+            GameboardDTO gameboardDTO = new GameboardDTO(uuid, title, selectionOfGameboardQuestions,
                     getRandomWildcard(mapper, subjects), generateRandomWildCardPosition(), new Date(), gameFilter,
                     boardOwnerId, GameboardCreationMethod.FILTER, Sets.newHashSet());
 
@@ -605,7 +605,7 @@ public class GameManager {
         List<ImmutablePair<RegisteredUserDTO, List<GameboardItem>>> result = Lists.newArrayList();
 
         List<String> questionPageIds =
-                gameboard.getQuestions().stream().map(GameboardItem::getId).collect(Collectors.toList());
+                gameboard.getContents().stream().map(GameboardItem::getId).collect(Collectors.toList());
 
         Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>>
                 questionAttemptsForAllUsersOfInterest =
@@ -614,7 +614,7 @@ public class GameManager {
         for (RegisteredUserDTO user : users) {
             List<GameboardItem> userGameItems = Lists.newArrayList();
 
-            for (GameboardItem observerGameItem : gameboard.getQuestions()) {
+            for (GameboardItem observerGameItem : gameboard.getContents()) {
                 GameboardItem userGameItem = new GameboardItem(observerGameItem);
                 this.augmentGameItemWithAttemptInformation(userGameItem,
                         questionAttemptsForAllUsersOfInterest.get(user.getId()));
@@ -744,12 +744,12 @@ public class GameManager {
             return null;
         }
 
-        if (null == questionAttemptsFromUser || gameboardDTO.getQuestions().size() == 0) {
+        if (null == questionAttemptsFromUser || gameboardDTO.getContents().size() == 0) {
             return gameboardDTO;
         }
 
         boolean gameboardStarted = false;
-        List<GameboardItem> questions = gameboardDTO.getQuestions();
+        List<GameboardItem> questions = gameboardDTO.getContents();
         int totalNumberOfQuestionsParts = 0;
         int totalNumberOfCorrectQuestionParts = 0;
         for (GameboardItem gameItem : questions) {
@@ -1367,7 +1367,7 @@ public class GameManager {
                     "Your gameboard must not contain illegal characters e.g. spaces");
         }
 
-        if (gameboardDTO.getQuestions().size() > Constants.GAME_BOARD_TARGET_SIZE) {
+        if (gameboardDTO.getContents().size() > Constants.GAME_BOARD_TARGET_SIZE) {
             throw new InvalidGameboardException(String.format("Your gameboard must not contain more than %s questions",
                     GAME_BOARD_TARGET_SIZE));
         }

@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto;
 
-import com.google.api.client.util.Lists;
 import com.google.api.client.util.Sets;
 import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
@@ -33,7 +32,6 @@ import java.util.Set;
 public class GameboardDTO implements EmailService.HasTitleOrId {
     private String id;
     private String title;
-    private List<GameboardItem> questions;
     private List<GameboardItem> contents;
     private IsaacWildcard wildCard;
     private Integer wildCardPosition;
@@ -57,7 +55,6 @@ public class GameboardDTO implements EmailService.HasTitleOrId {
      * Default Gameboard Constructor.
      */
     public GameboardDTO() {
-        this.questions = Lists.newArrayList();
         this.tags = Sets.newHashSet();
     }
 
@@ -68,8 +65,6 @@ public class GameboardDTO implements EmailService.HasTitleOrId {
      *            - unique id for the gameboard
      * @param title
      *            - optional title for gameboard.
-     * @param questions
-     *            - list of gameboard items (shallow questions).
      * @param contents
      *            - list of gameboard contents (can be questions or concepts).
      * @param wildCard
@@ -85,13 +80,12 @@ public class GameboardDTO implements EmailService.HasTitleOrId {
      * @param creationMethod
      *            - Method used to construct this game board.
      */
-    public GameboardDTO(final String id, final String title, final List<GameboardItem> questions,
-                        final List<GameboardItem> contents, final IsaacWildcard wildCard, final Integer wildcardPosition,
-                        final Date creationDate, final GameFilter gameFilter, final Long ownerUserId,
+    public GameboardDTO(final String id, final String title, final List<GameboardItem> contents,
+                        final IsaacWildcard wildCard, final Integer wildcardPosition, final Date creationDate,
+                        final GameFilter gameFilter, final Long ownerUserId,
                         final GameboardCreationMethod creationMethod, final Set<String> tags) {
         this.id = id;
         this.title = title;
-        this.questions = questions;
         this.contents = contents;
         this.wildCard = wildCard;
         this.wildCardPosition = wildcardPosition;
@@ -138,25 +132,6 @@ public class GameboardDTO implements EmailService.HasTitleOrId {
      */
     public void setTitle(final String title) {
         this.title = title;
-    }
-
-    /**
-     * Gets the gameboardItems.
-     * 
-     * @return the gameboardItems
-     */
-    public List<GameboardItem> getQuestions() {
-        return questions;
-    }
-
-    /**
-     * Sets the gameboardItems.
-     * 
-     * @param questions
-     *            the gameboardItems to set
-     */
-    public void setQuestions(final List<GameboardItem> questions) {
-        this.questions = questions;
     }
 
     public List<GameboardItem> getContents() {
@@ -396,9 +371,23 @@ public class GameboardDTO implements EmailService.HasTitleOrId {
 
     @Override
     public String toString() {
-        return "GameboardDTO [id=" + id + ", title=" + title + ", questions=" + questions + ", contents=" + contents
-                + ", wildCard=" + wildCard + ", wildCardPosition=" + wildCardPosition + ", creationDate=" + creationDate
-                + ", gameFilter=" + gameFilter + ", ownerUserId=" + ownerUserId + ", tags=" + tags + "]";
+        return "GameboardDTO [" +
+                "id='" + id + '\'' +
+                ", title='" + title + '\'' +
+                ", contents=" + contents +
+                ", wildCard=" + wildCard +
+                ", wildCardPosition=" + wildCardPosition +
+                ", creationDate=" + creationDate +
+                ", gameFilter=" + gameFilter +
+                ", ownerUserId=" + ownerUserId +
+                ", ownerUserInformation=" + ownerUserInformation +
+                ", tags=" + tags +
+                ", isSavedToCurrentUser=" + isSavedToCurrentUser +
+                ", creationMethod=" + creationMethod +
+                ", percentageCompleted=" + percentageCompleted +
+                ", lastVisited=" + lastVisited +
+                ", startedQuestion=" + startedQuestion +
+                ']';
     }
 
     @Override
@@ -409,7 +398,6 @@ public class GameboardDTO implements EmailService.HasTitleOrId {
         result = prime * result + ((gameFilter == null) ? 0 : gameFilter.hashCode());
         result = prime * result + ((id == null) ? 0 : id.hashCode());
         result = prime * result + ((ownerUserId == null) ? 0 : ownerUserId.hashCode());
-        result = prime * result + ((questions == null) ? 0 : questions.hashCode());
         result = prime * result + ((contents == null) ? 0 : contents.hashCode());
         result = prime * result + ((wildCard == null) ? 0 : wildCard.hashCode());
         result = prime * result + ((wildCardPosition == null) ? 0 : wildCardPosition.hashCode());
@@ -455,13 +443,6 @@ public class GameboardDTO implements EmailService.HasTitleOrId {
                 return false;
             }
         } else if (!ownerUserId.equals(other.ownerUserId)) {
-            return false;
-        }
-        if (questions == null) {
-            if (other.questions != null) {
-                return false;
-            }
-        } else if (!questions.equals(other.questions)) {
             return false;
         }
         if (contents == null) {

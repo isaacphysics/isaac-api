@@ -483,15 +483,15 @@ public class GameboardPersistenceManager {
 
 		for (GameboardDTO game : gameboards) {
 			// empty and re-populate the gameboard dto with fully augmented gameboard items.
-			game.setQuestions(new ArrayList<GameboardItem>());
-			for (String questionid : gameboardToQuestionsMap.get(game.getId())) {
+			game.setContents(new ArrayList<GameboardItem>());
+			for (String questionId : gameboardToQuestionsMap.get(game.getId())) {
 				// There is a possibility that the question cannot be found any more for some reason
 				// In this case we will simply pretend it isn't there.
-				GameboardItem item = gameboardReadyQuestions.get(questionid);
+				GameboardItem item = gameboardReadyQuestions.get(questionId);
 				if (item != null) {
-					game.getQuestions().add(item);	
+					game.getContents().add(item);
                 } else {
-                    log.warn("The gameboard: " + game.getId() + " has a reference to a question (" + questionid
+                    log.warn("The gameboard: " + game.getId() + " has a reference to a question (" + questionId
                             + ") that we cannot find. Removing it from the DTO.");
                 }
 			}
@@ -666,7 +666,7 @@ public class GameboardPersistenceManager {
 				GameboardItem gameboardItem = GameboardItem.fromContentDescriptorLight(contentDescriptor);
 				listOfSparseGameItems.add(gameboardItem);
 			}
-			gameboardDTO.setQuestions(listOfSparseGameItems);
+			gameboardDTO.setContents(listOfSparseGameItems);
 			return gameboardDTO;
 		}
 
@@ -674,13 +674,13 @@ public class GameboardPersistenceManager {
 		Map<String, GameboardItem> gameboardReadyQuestions = getGameboardItemMap(gameboardDO.getContents());
 
 		// empty and repopulate the gameboard dto.
-		gameboardDTO.setQuestions(Lists.newArrayList());
+		gameboardDTO.setContents(Lists.newArrayList());
 		for (GameboardContentDescriptor contentDescriptor : gameboardDO.getContents()) {
 			// There is a possibility that the question cannot be found any more for some reason
 			// In this case we will simply pretend it isn't there.
 			GameboardItem item = gameboardReadyQuestions.get(contentDescriptor.getId());
 			if (item != null) {
-				gameboardDTO.getQuestions().add(item);
+				gameboardDTO.getContents().add(item);
 			} else {
                 log.warn(String.format("The gameboard '%s' references an unavailable question '%s' - removing it from the DTO!",
                         gameboardDTO.getId(), contentDescriptor.getId()));
@@ -703,7 +703,7 @@ public class GameboardPersistenceManager {
 		gameboardDO.setContents(Lists.newArrayList());
 
 		// Map each question into an GameboardItem object
-		for (GameboardItem c : gameboardDTO.getQuestions()) {
+		for (GameboardItem c : gameboardDTO.getContents()) {
 			gameboardDO.getContents().add(
 			        new GameboardContentDescriptor(c.getId(), c.getContentType(), c.getCreationContext()));
 		}
@@ -905,11 +905,11 @@ public class GameboardPersistenceManager {
     private static List<GameboardContentDescriptor> getContentDescriptors(final GameboardDTO gameboardDTO) {
         List<GameboardContentDescriptor> listOfContentDescriptors = Lists.newArrayList();
 
-        if (gameboardDTO.getQuestions() == null || gameboardDTO.getQuestions().isEmpty()) {
+        if (gameboardDTO.getContents() == null || gameboardDTO.getContents().isEmpty()) {
             return listOfContentDescriptors;
         }
 
-        for (GameboardItem gameItem : gameboardDTO.getQuestions()) {
+        for (GameboardItem gameItem : gameboardDTO.getContents()) {
             if (gameItem.getId() == null || gameItem.getId().isEmpty()) {
                 continue;
             }
