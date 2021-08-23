@@ -17,9 +17,15 @@ public class AudienceContext {
     public static AudienceContext fromFilter(@Nullable final GameFilter gameFilter) {
         if (gameFilter == null) {return null;}
         return new AudienceContext() {{
-            setStage(gameFilter.getStages().stream().map(Stage::valueOf).collect(Collectors.toList()));
-            setExamBoard(gameFilter.getExamBoards().stream().map(ExamBoard::valueOf).collect(Collectors.toList()));
-            setDifficulty(gameFilter.getStages().stream().map(Difficulty::valueOf).collect(Collectors.toList()));
+            if (gameFilter.getStages() != null) {
+                setStage(gameFilter.getStages().stream().map(Stage::valueOf).collect(Collectors.toList()));
+            }
+            if (gameFilter.getExamBoards() != null) {
+                setExamBoard(gameFilter.getExamBoards().stream().map(ExamBoard::valueOf).collect(Collectors.toList()));
+            }
+            if (gameFilter.getDifficulties() != null) {
+                setDifficulty(gameFilter.getDifficulties().stream().map(Difficulty::valueOf).collect(Collectors.toList()));
+            }
         }};
     }
 
