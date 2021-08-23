@@ -15,10 +15,10 @@
  */
 package uk.ac.cam.cl.dtg.segue.dos.users;
 
-import java.util.Date;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.util.Date;
 
 /**
  * Data Object to represent a user of the system. This object will be persisted in the database.
@@ -332,7 +332,7 @@ public class RegisteredUser extends AbstractSegueUser {
         this.examBoard = examBoard;
     }
 
-    /**
+     /**
      * Gets the email.
      *
      * @return the email to verify
