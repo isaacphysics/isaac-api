@@ -1,11 +1,11 @@
 package uk.ac.cam.cl.dtg.segue.dos.users;
 
-import uk.ac.cam.cl.dtg.segue.dos.OldExamBoard;
+import uk.ac.cam.cl.dtg.segue.dos.ExamBoard;
 import uk.ac.cam.cl.dtg.segue.dos.Stage;
 
 public class UserContext {
     private Stage stage;
-    private OldExamBoard examBoard;
+    private ExamBoard examBoard;
 
     public UserContext() {;}
 
@@ -17,11 +17,11 @@ public class UserContext {
         this.stage = stage;
     }
 
-    public OldExamBoard getExamBoard() {
+    public ExamBoard getExamBoard() {
         return examBoard;
     }
 
-    public void setExamBoard(OldExamBoard examBoard) {
+    public void setExamBoard(ExamBoard examBoard) {
         this.examBoard = examBoard;
     }
 
