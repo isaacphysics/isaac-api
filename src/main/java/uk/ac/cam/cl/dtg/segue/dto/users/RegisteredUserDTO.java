@@ -18,7 +18,7 @@ package uk.ac.cam.cl.dtg.segue.dto.users;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
-import uk.ac.cam.cl.dtg.segue.dos.ExamBoard;
+import uk.ac.cam.cl.dtg.segue.dos.OldExamBoard;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.UserContext;
@@ -43,7 +43,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 
     private String schoolId;
     private String schoolOther;
-    private ExamBoard examBoard;
+    private OldExamBoard examBoard;
     private List<UserContext> registeredContexts;
     private Date registeredContextsLastConfirmed;
 
@@ -330,7 +330,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
      *
      * @return the examBoard
      */
-    public ExamBoard getExamBoard() {
+    public OldExamBoard getExamBoard() {
         return examBoard;
     }
 
@@ -340,7 +340,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
      * @param examBoard
      *            the examBoard to set
      */
-    public void setExamBoard(final ExamBoard examBoard) {
+    public void setExamBoard(final OldExamBoard examBoard) {
         this.examBoard = examBoard;
     }
 

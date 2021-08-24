@@ -1,17 +1,20 @@
 package uk.ac.cam.cl.dtg.segue.dos;
 
-import com.google.api.client.util.Lists;
 import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 
 import javax.annotation.Nullable;
-import javax.validation.constraints.Null;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ *  A class to specify a restricted and *validated* audience context which the user is allowed to specify when creating
+ *  a gameboard.
+ */
 public class AudienceContext {
     private List<Stage> stage;
     private List<ExamBoard> examBoard;
     private List<Difficulty> difficulty;
+    private List<RoleRequirement> role;
 
     @Nullable
     public static AudienceContext fromFilter(@Nullable final GameFilter gameFilter) {
@@ -29,11 +32,7 @@ public class AudienceContext {
         }};
     }
 
-    public AudienceContext() {
-        stage = Lists.newArrayList();
-        examBoard = Lists.newArrayList();
-        difficulty = Lists.newArrayList();
-    }
+    public AudienceContext() {}
 
     public List<Stage> getStage() {
         return stage;
@@ -57,5 +56,13 @@ public class AudienceContext {
 
     public void setDifficulty(List<Difficulty> difficulty) {
         this.difficulty = difficulty;
+    }
+
+    public List<RoleRequirement> getRole() {
+        return role;
+    }
+
+    public void setRole(List<RoleRequirement> role) {
+        this.role = role;
     }
 }

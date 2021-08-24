@@ -25,7 +25,7 @@ import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.dao.AbstractPgDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
-import uk.ac.cam.cl.dtg.segue.dos.ExamBoard;
+import uk.ac.cam.cl.dtg.segue.dos.OldExamBoard;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
@@ -878,7 +878,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
         }
         
         u.setSchoolOther(results.getString("school_other"));
-        u.setExamBoard(results.getString("exam_board") != null ? ExamBoard.valueOf(results.getString("exam_board")) : null);
+        u.setExamBoard(results.getString("exam_board") != null ? OldExamBoard.valueOf(results.getString("exam_board")) : null);
         Array registeredContextsArray = results.getArray("registered_contexts");
         if (registeredContextsArray != null) {
             List<UserContext> userContexts = Lists.newArrayList();

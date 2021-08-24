@@ -17,7 +17,7 @@ package uk.ac.cam.cl.dtg.segue.dos.users;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import uk.ac.cam.cl.dtg.segue.dos.ExamBoard;
+import uk.ac.cam.cl.dtg.segue.dos.OldExamBoard;
 
 import java.util.Date;
 import java.util.List;
@@ -38,7 +38,7 @@ public class RegisteredUser extends AbstractSegueUser {
     private Date registrationDate;
     private String schoolId;
     private String schoolOther;
-    private ExamBoard examBoard;
+    private OldExamBoard examBoard;
     private List<UserContext> registeredContexts;
     private Date registeredContextsLastConfirmed;
 
@@ -322,7 +322,7 @@ public class RegisteredUser extends AbstractSegueUser {
      *
      * @return the examBoard
      */
-    public ExamBoard getExamBoard() {
+    public OldExamBoard getExamBoard() {
         return examBoard;
     }
 
@@ -332,7 +332,7 @@ public class RegisteredUser extends AbstractSegueUser {
      * @param examBoard
      *            the examBoard to set
      */
-    public void setExamBoard(final ExamBoard examBoard) {
+    public void setExamBoard(final OldExamBoard examBoard) {
         this.examBoard = examBoard;
     }
 
