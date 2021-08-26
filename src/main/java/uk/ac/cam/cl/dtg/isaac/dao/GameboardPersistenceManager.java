@@ -64,7 +64,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -719,9 +718,10 @@ public class GameboardPersistenceManager {
 	 */
 	private Map<String, GameboardItem> getGameboardItemMap(final List<GameboardContentDescriptor> contentDescriptors) {
 	 	Map<String, GameboardItem> gameboardReadyQuestions = Maps.newHashMap();
-	 	Map<String, GameboardContentDescriptor> contentDescriptorsMap = contentDescriptors.stream().collect(
-	 	        Collectors.toMap(GameboardContentDescriptor::getId, Function.identity()));
-		// Batch the queries to the db to avoid the elasticsearch query clause limit of 1024
+	 	Map<String, GameboardContentDescriptor> contentDescriptorsMap = Maps.newHashMap();
+	 	contentDescriptors.forEach(cd -> contentDescriptorsMap.put(cd.getId(), cd));
+
+	 	// Batch the queries to the db to avoid the elasticsearch query clause limit of 1024
 		List<List<GameboardContentDescriptor>> contentDescriptorBatches =
                 Lists.partition(contentDescriptors, GAMEBOARD_ITEM_MAP_BATCH_SIZE);
 		for (List<GameboardContentDescriptor> contentDescriptorBatch : contentDescriptorBatches) {
