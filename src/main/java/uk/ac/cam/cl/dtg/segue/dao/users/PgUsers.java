@@ -705,7 +705,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
                             + "school_other, exam_board, last_updated, email_verification_status, "
                             + "last_seen, email_verification_token, email_to_verify, "
                             + "registered_contexts, registered_context_last_confirmed) "
-                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::text::jsonb[], ?);",
+                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
                             Statement.RETURN_GENERATED_KEYS);
 
             List<String> userContextsJsonb = Lists.newArrayList();
