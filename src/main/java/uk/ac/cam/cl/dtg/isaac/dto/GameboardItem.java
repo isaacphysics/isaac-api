@@ -69,7 +69,7 @@ public class GameboardItem {
      *          a content descriptor to populate the gameboard item's fields.
      * @return A Minimal gameboard item containing all of the information from the content descriptor.
      */
-    public static GameboardItem fromContentDescriptorLight(final GameboardContentDescriptor contentDescriptor) {
+    public static GameboardItem buildLightweightItemFromContentDescriptor(final GameboardContentDescriptor contentDescriptor) {
         return new GameboardItem() {{
             this.setId(contentDescriptor.getId());
             this.setContentType(contentDescriptor.getContentType());

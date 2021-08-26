@@ -662,7 +662,7 @@ public class GameboardPersistenceManager {
 			List<GameboardItem> listOfSparseGameItems = Lists.newArrayList();
 
 			for (GameboardContentDescriptor contentDescriptor : gameboardDO.getContents()) {
-				GameboardItem gameboardItem = GameboardItem.fromContentDescriptorLight(contentDescriptor);
+				GameboardItem gameboardItem = GameboardItem.buildLightweightItemFromContentDescriptor(contentDescriptor);
 				listOfSparseGameItems.add(gameboardItem);
 			}
 			gameboardDTO.setContents(listOfSparseGameItems);
