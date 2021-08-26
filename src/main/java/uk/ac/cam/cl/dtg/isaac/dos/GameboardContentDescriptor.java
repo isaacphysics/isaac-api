@@ -43,7 +43,7 @@ public class GameboardContentDescriptor {
 
     @Override
     public String toString() {
-        return "GameboardContentItem [" +
+        return "GameboardContentDescriptor[" +
                 "id='" + id + '\'' +
                 ", contentType='" + contentType + '\'' +
                 ", context=" + context +
