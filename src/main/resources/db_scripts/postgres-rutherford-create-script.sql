@@ -132,6 +132,7 @@ CREATE TABLE public.gameboards (
     id character varying NOT NULL,
     title text,
     questions character varying[],
+    contents jsonb[] DEFAULT array[]::jsonb[] NOT NULL,
     wildcard jsonb,
     wildcard_position integer,
     game_filter jsonb,

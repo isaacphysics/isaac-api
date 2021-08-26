@@ -25,8 +25,8 @@ import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.dao.AbstractPgDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
+import uk.ac.cam.cl.dtg.segue.dos.OldExamBoard;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
-import uk.ac.cam.cl.dtg.segue.dos.users.ExamBoard;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
@@ -70,7 +70,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
     /**
      * PgUsers.
      * @param ds - the postgres datasource to use
-     * @patam jsonMapper - a mapper for converting to and from JSON for postgres' jsonb type
+     * @param jsonMapper - a mapper for converting to and from JSON for postgres' jsonb type
      */
     @Inject
     public PgUsers(final PostgresSqlDb ds, final ObjectMapper jsonMapper) {
@@ -704,9 +704,15 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
                             + "date_of_birth, gender, registration_date, school_id, "
                             + "school_other, exam_board, last_updated, email_verification_status, "
                             + "last_seen, email_verification_token, email_to_verify, "
-                            + " registered_contexts, registered_context_last_confirmed) "
+                            + "registered_contexts, registered_context_last_confirmed) "
                     + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
                             Statement.RETURN_GENERATED_KEYS);
+
+            List<String> userContextsJsonb = Lists.newArrayList();
+            for (UserContext registeredContext: userToCreate.getRegisteredContexts()) {
+                userContextsJsonb.add(jsonMapper.writeValueAsString(registeredContext));
+            }
+            Array userContexts = conn.createArrayOf("jsonb", userContextsJsonb.toArray());
 
             // TODO: Change this to annotations or something to rely exclusively on the pojo.
             setValueHelper(pst, 1, userToCreate.getFamilyName());
@@ -724,11 +730,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             setValueHelper(pst, 13, userToCreate.getLastSeen());
             setValueHelper(pst, 14, userToCreate.getEmailVerificationToken());
             setValueHelper(pst, 15, userToCreate.getEmailToVerify());
-            List<String> userContextsJsonb = Lists.newArrayList();
-            for (UserContext registeredContext: userToCreate.getRegisteredContexts()) {
-                userContextsJsonb.add(jsonMapper.writeValueAsString(registeredContext));
-            }
-            pst.setArray(16, conn.createArrayOf("jsonb", userContextsJsonb.toArray()));
+            pst.setArray(16, userContexts);
             setValueHelper(pst, 17, userToCreate.getRegisteredContextsLastConfirmed());
 
             if (pst.executeUpdate() == 0) {
@@ -876,7 +878,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
         }
         
         u.setSchoolOther(results.getString("school_other"));
-        u.setExamBoard(results.getString("exam_board") != null ? ExamBoard.valueOf(results.getString("exam_board")) : null);
+        u.setExamBoard(results.getString("exam_board") != null ? OldExamBoard.valueOf(results.getString("exam_board")) : null);
         Array registeredContextsArray = results.getArray("registered_contexts");
         if (registeredContextsArray != null) {
             List<UserContext> userContexts = Lists.newArrayList();

@@ -15,13 +15,14 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto;
 
-import java.util.List;
-
-import javax.annotation.Nullable;
-
 import com.google.common.collect.Lists;
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
-import uk.ac.cam.cl.dtg.isaac.api.Constants.GameboardItemState;
+import uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import uk.ac.cam.cl.dtg.isaac.dos.GameboardContentDescriptor;
+import uk.ac.cam.cl.dtg.segue.dos.AudienceContext;
+
+import javax.annotation.Nullable;
+import java.util.List;
 
 /**
  * DTO that provides high level information for Isaac Questions.
@@ -30,13 +31,17 @@ import uk.ac.cam.cl.dtg.isaac.api.Constants.GameboardItemState;
  */
 public class GameboardItem {
     private String id;
+    private String contentType;
     private String title;
     private String description;
     private String uri;
     private List<String> tags;
+    private List<AudienceContext> audience;
+    private AudienceContext creationContext;
 
     private Integer level;
     private Integer difficulty;
+
     private Integer questionPartsCorrect;
     private Integer questionPartsIncorrect;
     private Integer questionPartsNotAttempted;
@@ -58,6 +63,21 @@ public class GameboardItem {
     public GameboardItem() {}
 
     /**
+     * Static factory method for constructing a minimal Gameboard Item from a GameboardContentDescriptor.
+     * Augmentation by mapping the content object to the instance will need to be done separately.
+     * @param contentDescriptor
+     *          a content descriptor to populate the gameboard item's fields.
+     * @return A Minimal gameboard item containing all of the information from the content descriptor.
+     */
+    public static GameboardItem buildLightweightItemFromContentDescriptor(final GameboardContentDescriptor contentDescriptor) {
+        return new GameboardItem() {{
+            this.setId(contentDescriptor.getId());
+            this.setContentType(contentDescriptor.getContentType());
+            this.setCreationContext(contentDescriptor.getContext());
+        }};
+    }
+
+    /**
      * Creates a GameboardItem from (shallow) copying the passed in GameboardItem.
      *
      * @param original
@@ -65,11 +85,14 @@ public class GameboardItem {
      */
     public GameboardItem(GameboardItem original) {
         this.setId(original.getId());
+        this.setContentType(original.getContentType());
         this.setTitle(original.getTitle());
         this.setDescription(original.getDescription());
         this.setUri(original.getUri());
+        this.setAudience(original.getAudience());
         this.setLevel(original.getLevel());
         this.setDifficulty(original.getDifficulty());
+        this.setCreationContext(original.getCreationContext());
         this.setQuestionPartsCorrect(original.getQuestionPartsCorrect());
         this.setQuestionPartsIncorrect(original.getQuestionPartsIncorrect());
         this.setQuestionPartsNotAttempted(original.getQuestionPartsNotAttempted());
@@ -365,6 +388,30 @@ public class GameboardItem {
      */
     public void setSupersededBy(final String supersededBy) {
         this.supersededBy = supersededBy;
+    }
+
+    public String getContentType() {
+        return contentType;
+    }
+
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
+    }
+
+    public List<AudienceContext> getAudience() {
+        return audience;
+    }
+
+    public void setAudience(List<AudienceContext> audience) {
+        this.audience = audience;
+    }
+
+    public AudienceContext getCreationContext() {
+        return creationContext;
+    }
+
+    public void setCreationContext(AudienceContext creationContext) {
+        this.creationContext = creationContext;
     }
 
     @Override
