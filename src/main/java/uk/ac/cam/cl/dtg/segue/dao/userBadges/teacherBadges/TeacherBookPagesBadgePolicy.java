@@ -42,7 +42,7 @@ public class TeacherBookPagesBadgePolicy extends TeacherAssignmentsBadgePolicy {
      */
     private Boolean isBookPage(AssignmentDTO assignment) throws SegueDatabaseException {
 
-        for (GameboardItem item : gameManager.getGameboard(assignment.getGameboardId()).getQuestions()) {
+        for (GameboardItem item : gameManager.getGameboard(assignment.getGameboardId()).getContents()) {
 
             if (null != item.getTags()) {
                 for (String tag : item.getTags()) {

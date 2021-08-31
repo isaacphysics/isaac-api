@@ -18,6 +18,9 @@ package uk.ac.cam.cl.dtg.segue.dto.users;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
+import uk.ac.cam.cl.dtg.segue.dos.users.UserContext;
+
+import java.util.List;
 
 /**
  * Minimal view of a User object.
@@ -29,7 +32,7 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
     private Role role;
     private boolean authorisedFullAccess;
     private EmailVerificationStatus emailVerificationStatus;
-    private String examBoard;
+    private List<UserContext> registeredContexts;
 
     /**
      * UserSummaryDTO.
@@ -152,40 +155,24 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
         this.emailVerificationStatus = emailVerificationStatus;
     }
 
-    /**
-     * Gets the examBoard.
-     *
-     * @return the examBoard
-     */
-    public String getExamBoard() {
-        return examBoard;
+    public List<UserContext> getRegisteredContexts() {
+        return registeredContexts;
     }
 
-    /**
-     * Sets the examBoard.
-     *
-     * @param examBoard
-     *            the examBoard to set
-     */
-    public void setExamBoard(final String examBoard) {
-        this.examBoard = examBoard;
+    public void setRegisteredContexts(List<UserContext> registeredContexts) {
+        this.registeredContexts = registeredContexts;
     }
+
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("UserSummaryDTO [databaseId=");
-        builder.append(id);
-        builder.append(", givenName=");
-        builder.append(givenName);
-        builder.append(", familyName=");
-        builder.append(familyName);
-        builder.append(", emailVerificationStatus=");
-        builder.append(emailVerificationStatus.name());
-        builder.append(", authorisedFullAccess=");
-        builder.append(authorisedFullAccess);
-        builder.append(", examBoard=");
-        builder.append(examBoard);
-        builder.append("]");
-        return builder.toString();
+        return "UserSummaryDTO [" +
+                "id=" + id +
+                ", givenName='" + givenName + '\'' +
+                ", familyName='" + familyName + '\'' +
+                ", role=" + role +
+                ", authorisedFullAccess=" + authorisedFullAccess +
+                ", emailVerificationStatus=" + emailVerificationStatus +
+                ", registeredContexts=" + registeredContexts +
+                ']';
     }
 }
