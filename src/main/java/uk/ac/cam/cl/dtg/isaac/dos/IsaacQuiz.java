@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.dos;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
+import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
@@ -35,7 +36,7 @@ import java.util.Set;
 public class IsaacQuiz extends SeguePage {
 
     private boolean visibleToStudents;
-    private String rubric;
+    private Content rubric;
 
     @JsonCreator
     public IsaacQuiz(
@@ -54,7 +55,7 @@ public class IsaacQuiz extends SeguePage {
             @JsonProperty("tags") Set<String> tags,
             @JsonProperty("level") Integer level,
             @JsonProperty("visibleToStudents") boolean visibleToStudents,
-            @JsonProperty("rubric") String rubric) {
+            @JsonProperty("rubric") Content rubric){
         super(id, title, subtitle, type, author, encoding,
                 canonicalSourceFile, layout, children, value, attribution,
                 relatedContent, published, tags, level);
@@ -78,7 +79,11 @@ public class IsaacQuiz extends SeguePage {
         this.visibleToStudents = visibleToStudents;
     }
 
-    public String getRubric() { return rubric; }
+    public Content getRubric() {
+        return rubric;
+    }
 
-    public void setRubric(String rubric) { this.rubric = rubric; }
+    public void setRubric(Content rubric){
+        this.rubric = rubric;
+    }
 }

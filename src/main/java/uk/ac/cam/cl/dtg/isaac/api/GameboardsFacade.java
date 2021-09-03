@@ -304,8 +304,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.NOT_FOUND, "Gameboard id not a valid FastTrack gameboard id.")
                         .toResponse();
             }
-
             AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(httpServletRequest);
+            GameboardDTO gameboard = this.gameManager.getGameboard(gameboardId);
 
             Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts =
                     this.questionManager.getQuestionAttemptsByUser(currentUser);
@@ -314,13 +314,13 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             if (upperQuestionId.isEmpty()) {
                 List<FASTTRACK_LEVEL> upperAndLower = Arrays.asList(FASTTRACK_LEVEL.ft_upper, FASTTRACK_LEVEL.ft_lower);
                 conceptQuestionsProgress.addAll(fastTrackManger.getConceptProgress(
-                        gameboardId, upperAndLower, currentConceptTitle, userQuestionAttempts));
+                        gameboard, upperAndLower, currentConceptTitle, userQuestionAttempts));
             } else {
                 String upperConceptTitle = fastTrackManger.getConceptFromQuestionId(upperQuestionId);
                 conceptQuestionsProgress.addAll(fastTrackManger.getConceptProgress(
-                        gameboardId, Collections.singletonList(FASTTRACK_LEVEL.ft_upper), upperConceptTitle, userQuestionAttempts));
+                        gameboard, Collections.singletonList(FASTTRACK_LEVEL.ft_upper), upperConceptTitle, userQuestionAttempts));
                 conceptQuestionsProgress.addAll(fastTrackManger.getConceptProgress(
-                        gameboardId, Collections.singletonList(FASTTRACK_LEVEL.ft_lower), currentConceptTitle, userQuestionAttempts));
+                        gameboard, Collections.singletonList(FASTTRACK_LEVEL.ft_lower), currentConceptTitle, userQuestionAttempts));
             }
 
             return Response.ok(conceptQuestionsProgress).build();

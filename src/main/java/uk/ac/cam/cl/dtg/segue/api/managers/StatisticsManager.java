@@ -165,6 +165,7 @@ public class StatisticsManager implements IStatisticsManager {
         rangedActiveUserStats.put("thirtyDays", userManager.getActiveRolesOverPrevious(THIRTY_DAYS));
         rangedActiveUserStats.put("ninetyDays", userManager.getActiveRolesOverPrevious(NINETY_DAYS));
         rangedActiveUserStats.put("sixMonths", userManager.getActiveRolesOverPrevious(SIX_MONTHS));
+        rangedActiveUserStats.put("twoYears", userManager.getActiveRolesOverPrevious(TWO_YEARS));
         result.put("activeUsersOverPrevious", rangedActiveUserStats);
 
         Map<String, Map<Role, Long>> rangedAnsweredQuestionStats = Maps.newHashMap();

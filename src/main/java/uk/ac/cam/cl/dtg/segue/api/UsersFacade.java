@@ -33,7 +33,8 @@ import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
-import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetRequestMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetByEmailMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetByIPMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.RegistrationMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
@@ -61,6 +62,7 @@ import uk.ac.cam.cl.dtg.segue.dos.UserPreference;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
+import uk.ac.cam.cl.dtg.segue.dos.users.UserContext;
 import uk.ac.cam.cl.dtg.segue.dos.users.UserSettings;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -238,11 +240,13 @@ public class UsersFacade extends AbstractSegueFacade {
         // Extract the user preferences, which are validated before saving by userPreferenceObjectToList(...).
         Map<String, Map<String, Boolean>> userPreferences = userSettingsObjectFromClient.getUserPreferences();
 
-        if (null != registeredUser.getId()) {
+        List<UserContext> registeredUserContexts = userSettingsObjectFromClient.getRegisteredUserContexts();
 
+        if (null != registeredUser.getId()) {
             try {
                 return this.updateUserObject(request, response, registeredUser,
-                        userSettingsObjectFromClient.getPasswordCurrent(), newPassword, userPreferences);
+                        userSettingsObjectFromClient.getPasswordCurrent(), newPassword,
+                        userPreferences, registeredUserContexts);
             } catch (IncorrectCredentialsProvidedException e) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "Incorrect credentials provided.", e)
                         .toResponse();
@@ -389,13 +393,15 @@ public class UsersFacade extends AbstractSegueFacade {
                   notes = "The email address must be provided as a RegisteredUserDTO object, although only the 'email' field is required.")
     public Response generatePasswordResetToken(final RegisteredUserDTO userObject,
                                                @Context final HttpServletRequest request) {
-        if (null == userObject) {
+        if (null == userObject || null == userObject.getEmail() || userObject.getEmail().isEmpty()) {
             log.debug("User is null");
-            return new SegueErrorResponse(Status.BAD_REQUEST, "No user settings provided.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "No account email address provided.").toResponse();
         }
 
         try {
-            misuseMonitor.notifyEvent(userObject.getEmail(), PasswordResetRequestMisuseHandler.class.getSimpleName());
+            String requestingIPAddress = RequestIPExtractor.getClientIpAddr(request);
+            misuseMonitor.notifyEvent(userObject.getEmail(), PasswordResetByEmailMisuseHandler.class.getSimpleName());
+            misuseMonitor.notifyEvent(requestingIPAddress, PasswordResetByIPMisuseHandler.class.getSimpleName());
             userManager.resetPasswordRequest(userObject);
 
             this.getLogManager()
@@ -420,7 +426,7 @@ public class UsersFacade extends AbstractSegueFacade {
         } catch (SegueResourceMisuseException e) {
             String message = "You have exceeded the number of requests allowed for this endpoint. "
                     + "Please try again later.";
-            log.error("Too many password resets requested by: (" + userObject.getEmail() + ")", e.toString());
+            log.error("Password reset request blocked for email: (" + userObject.getEmail() + ")", e.toString());
             return SegueErrorResponse.getRateThrottledResponse(message);
         }
     }
@@ -725,7 +731,8 @@ public class UsersFacade extends AbstractSegueFacade {
      */
     private Response updateUserObject(final HttpServletRequest request, final HttpServletResponse response,
                                       final RegisteredUser userObjectFromClient, final String passwordCurrent, final String newPassword,
-                                      final Map<String, Map<String, Boolean>> userPreferenceObject)
+                                      final Map<String, Map<String, Boolean>> userPreferenceObject,
+                                      final List<UserContext> registeredUserContexts)
             throws IncorrectCredentialsProvidedException, NoCredentialsAvailableException, InvalidKeySpecException,
             NoSuchAlgorithmException {
         Validate.notNull(userObjectFromClient.getId());
@@ -782,6 +789,18 @@ public class UsersFacade extends AbstractSegueFacade {
                     && !userObjectFromClient.getRole().equals(existingUserFromDb.getRole())) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to change a users role.")
                         .toResponse();
+            }
+
+            if (registeredUserContexts != null) {
+                // We always set the last confirmed date from code rather than trusting the client
+                userObjectFromClient.setRegisteredContexts(registeredUserContexts);
+                userObjectFromClient.setRegisteredContextsLastConfirmed(new Date());
+            } else {
+                // Registered contexts should only ever be set via the registeredUserContexts object, so that it is the
+                // server that sets the time that they last confirmed their user context values.
+                // To ensure this, we overwrite the fields with the values already set in the db if registeredUserContexts is null
+                userObjectFromClient.setRegisteredContexts(existingUserFromDb.getRegisteredContexts());
+                userObjectFromClient.setRegisteredContextsLastConfirmed(existingUserFromDb.getRegisteredContextsLastConfirmed());
             }
 
             RegisteredUserDTO updatedUser = userManager.updateUserObject(userObjectFromClient, newPassword);

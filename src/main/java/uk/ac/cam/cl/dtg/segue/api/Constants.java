@@ -132,19 +132,14 @@ public final class Constants {
 
     // HMAC stuff
     /**
-     * Constant representing the key for the date signed property - used in HMAC calculations.
-     */
-    public static final String DATE_SIGNED = "DATE_SIGNED";
-
-    /**
      * Constant representing the key for the expiry date property - used in HMAC calculations.
      */
-    public static final String DATE_EXPIRES = "DATE_EXPIRES";
+    public static final String DATE_EXPIRES = "expires";
 
     /**
      * Constant representing the key for the additional date property - used in HMAC calculations.
      */
-    public static final String PARTIAL_LOGIN_FLAG = "partialLogin";
+    public static final String PARTIAL_LOGIN_FLAG = "partial";
 
     /**
      * Constant representing the key for the HMAC property - used in HMAC calculations.
@@ -164,7 +159,7 @@ public final class Constants {
     /**
      * Constant representing the key for the SESSION USER ID - used in HMAC calculations.
      */
-    public static final String SESSION_USER_ID = "currentUserId";
+    public static final String SESSION_USER_ID = "id";
 
     /**
      * Constant representing the key for the SESSION TOKEN - used in HMAC calculations.
@@ -300,6 +295,7 @@ public final class Constants {
     public static final String POSTGRES_DB_PASSWORD = "POSTGRES_DB_PASSWORD";
 
     public enum TimeInterval {
+        TWO_YEARS(2, 0, 0, 0, 0, 0),
         SIX_MONTHS(0, 6, 0, 0, 0, 0),
         NINETY_DAYS(0, 0, 90, 0, 0, 0),
         THIRTY_DAYS(0, 0, 30, 0, 0, 0),
@@ -415,7 +411,6 @@ public final class Constants {
     public static final String[] ADDRESS_FIELDNAMES = {"addressLine1", "addressLine2", "town", "county", "postalCode"};
     public static final String SEARCHABLE_CONTENT_FIELDNAME = "searchableContent";
     public static final String VISIBLE_TO_STUDENTS_FIELDNAME = "visibleToStudents";
-    public static final String QUIZ_RUBRIC_FIELDNAME = "rubric";
 
     public static final String STAGE_FIELDNAME = "audience.stage";
     public static final String DIFFICULTY_FIELDNAME = "audience.difficulty";

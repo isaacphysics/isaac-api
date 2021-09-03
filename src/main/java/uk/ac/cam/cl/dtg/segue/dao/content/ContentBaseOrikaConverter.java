@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,15 +15,14 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.content;
 
+import ma.glasnost.orika.MappingContext;
+import ma.glasnost.orika.metadata.Type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
-import ma.glasnost.orika.CustomConverter;
-import ma.glasnost.orika.metadata.Type;
 
 /**
  * ContentBaseOrikaConverter A specialist converter class to work with the Orika automapper library.
@@ -31,7 +30,7 @@ import ma.glasnost.orika.metadata.Type;
  * Responsible for converting Content objects to their correct subtype.
  * 
  */
-public class ContentBaseOrikaConverter extends CustomConverter<ContentBase, ContentBaseDTO> {
+public class ContentBaseOrikaConverter extends AbstractPolymorphicConverter<ContentBase, ContentBaseDTO> {
     private static final Logger log = LoggerFactory.getLogger(ContentBaseOrikaConverter.class);
 
     private ContentMapper contentMapper;
@@ -47,7 +46,8 @@ public class ContentBaseOrikaConverter extends CustomConverter<ContentBase, Cont
     }
 
     @Override
-    public ContentBaseDTO convert(final ContentBase source, final Type<? extends ContentBaseDTO> destinationType) {
+    public ContentBaseDTO convert(final ContentBase source, final Type<? extends ContentBaseDTO> destinationType,
+                                  MappingContext _context) {
 
         if (null == source) {
             return null;

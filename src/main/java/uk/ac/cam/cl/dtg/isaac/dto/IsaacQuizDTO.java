@@ -21,6 +21,7 @@ import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
 
@@ -37,7 +38,7 @@ import java.util.Set;
 public class IsaacQuizDTO extends SeguePageDTO implements EmailService.HasTitleOrId {
     private boolean visibleToStudents;
     private QuizFeedbackMode defaultFeedbackMode;
-    private String rubric;
+    private ContentDTO rubric;
 
     // Properties for sending feedback
     private Integer total;
@@ -64,7 +65,7 @@ public class IsaacQuizDTO extends SeguePageDTO implements EmailService.HasTitleO
             @JsonProperty("level") Integer level,
             @JsonProperty("visibleToStudents") boolean visibleToStudents,
             @JsonProperty("defaultFeedbackMode") QuizFeedbackMode defaultFeedbackMode,
-            @JsonProperty("rubric") String rubric) {
+            @JsonProperty("rubric") ContentDTO rubric) {
         super(id, title, subtitle, type, author, encoding,
                 canonicalSourceFile, layout, children, value, attribution,
                 relatedContent, published, tags, level);
@@ -90,6 +91,16 @@ public class IsaacQuizDTO extends SeguePageDTO implements EmailService.HasTitleO
     }
 
     @Nullable
+    public ContentDTO getRubric() {
+        return rubric;
+    }
+
+    @Nullable
+    public void setRubric(ContentDTO rubric) {
+        this.rubric = rubric;
+    }
+
+    @Nullable
     public QuizFeedbackMode getDefaultFeedbackMode() {
         return defaultFeedbackMode;
     }
@@ -97,10 +108,6 @@ public class IsaacQuizDTO extends SeguePageDTO implements EmailService.HasTitleO
     public void setDefaultFeedbackMode(QuizFeedbackMode defaultFeedbackMode) {
         this.defaultFeedbackMode = defaultFeedbackMode;
     }
-
-    public String getRubric() { return rubric; }
-
-    public void setRubric(String rubric) { this.rubric = rubric; }
 
     @Nullable
     public Integer getTotal() {
