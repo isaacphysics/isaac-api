@@ -15,6 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.users;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
@@ -24,12 +26,13 @@ import uk.ac.cam.cl.dtg.segue.dao.AbstractPgDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
-import uk.ac.cam.cl.dtg.segue.dos.users.ExamBoard;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.UserAuthenticationSettings;
+import uk.ac.cam.cl.dtg.segue.dos.users.UserContext;
 
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -57,16 +60,21 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  */
 public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
     //private static final Logger log = LoggerFactory.getLogger(PgUsers.class);
-            
+    private static final String POSTGRES_EXCEPTION_MESSAGE = "Postgres exception";
+    private static final String JSONB_PROCESSING_ERROR_MESSAGE = "Postgres JSONb processing exception";
+
     private final PostgresSqlDb database;
-    
+    private final ObjectMapper jsonMapper;
+
     /**
      * PgUsers.
      * @param ds - the postgres datasource to use
+     * @param jsonMapper - a mapper for converting to and from JSON for postgres' jsonb type
      */
     @Inject
-    public PgUsers(final PostgresSqlDb ds) {
+    public PgUsers(final PostgresSqlDb ds, final ObjectMapper jsonMapper) {
         this.database = ds;
+        this.jsonMapper = jsonMapper;
     }
 
     @Override
@@ -96,7 +104,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             results.next();
             return results.getInt("TOTAL") != 0;
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         }     
     }
 
@@ -139,7 +147,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             }
             return authenticationProviders;
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         }
     }
 
@@ -173,7 +181,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
             return new UserAuthenticationSettings(userId, providersList, results.getBoolean("has_segue_account"), results.getBoolean("mfa_status"));
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         }
     }
 
@@ -207,7 +215,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             }
             return userCredentialsExistence;
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         }
     }
 
@@ -230,7 +238,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             
             return getById(results.getLong("user_id"));
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         }    
     }
 
@@ -257,7 +265,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             return true;
             
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         }
     }
 
@@ -279,7 +287,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             
             pst.execute();
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         }
     }
 
@@ -310,7 +318,9 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
             return this.findOneUser(results);
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
+        } catch (JsonProcessingException e) {
+            throw new SegueDatabaseException(JSONB_PROCESSING_ERROR_MESSAGE, e);
         }
     }
 
@@ -326,8 +336,10 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             
             return this.findOneUser(results);
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
-        }  
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
+        } catch (JsonProcessingException e) {
+            throw new SegueDatabaseException(JSONB_PROCESSING_ERROR_MESSAGE, e);
+        }
     }
 
     @Override
@@ -402,9 +414,10 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
             return this.findAllUsers(results);
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
-        }  
-        
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
+        } catch (JsonProcessingException e) {
+            throw new SegueDatabaseException(JSONB_PROCESSING_ERROR_MESSAGE, e);
+        }
     }
 
     @Override
@@ -432,8 +445,10 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             
             return this.findAllUsers(results);
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
-        }  
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
+        } catch (JsonProcessingException e) {
+            throw new SegueDatabaseException(JSONB_PROCESSING_ERROR_MESSAGE, e);
+        }
     }
 
     @Override
@@ -451,7 +466,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
             return resultToReturn;
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         }
     }
 
@@ -472,7 +487,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
             return resultToReturn;
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         }
     }
 
@@ -489,7 +504,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             }
             return resultsToReturn;
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         }
     }
 
@@ -511,7 +526,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             }
             return resultsToReturn;
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         }
     }
 
@@ -527,7 +542,9 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             
             return this.findOneUser(results);
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
+        } catch (JsonProcessingException e) {
+            throw new SegueDatabaseException(JSONB_PROCESSING_ERROR_MESSAGE, e);
         }
     }
 
@@ -583,14 +600,16 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
                 markUserAsDeleted.execute();
 
                 conn.commit();
-            } catch (SQLException e) {
+            } catch (SQLException | JsonProcessingException e) {
                 conn.rollback();
                 throw e;
             } finally {
                 conn.setAutoCommit(true);
             }
         } catch (SQLException e1) {
-            throw new SegueDatabaseException("Postgres exception", e1);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e1);
+        } catch (JsonProcessingException e1) {
+            throw new SegueDatabaseException(JSONB_PROCESSING_ERROR_MESSAGE, e1);
         }
     }
 
@@ -621,7 +640,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
                 conn.setAutoCommit(true);
             }
         } catch (SQLException e1) {
-            throw new SegueDatabaseException("Postgres exception", e1);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e1);
         }
     }
 
@@ -641,7 +660,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             pst.setLong(2, user.getId());
             pst.execute();
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         }
     }
 
@@ -655,7 +674,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             pst.setLong(1, user.getId());
             pst.execute();
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         }
     }
 
@@ -682,10 +701,19 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
                     .prepareStatement(
                             "INSERT INTO users(family_name, given_name, email, role, "
                             + "date_of_birth, gender, registration_date, school_id, "
-                            + "school_other, exam_board, last_updated, email_verification_status, "
-                            + "last_seen, email_verification_token, email_to_verify) "
-                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
+                            + "school_other, last_updated, email_verification_status, "
+                            + "last_seen, email_verification_token, email_to_verify, "
+                            + "registered_contexts, registered_contexts_last_confirmed) "
+                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
                             Statement.RETURN_GENERATED_KEYS);
+
+            List<String> userContextsJsonb = Lists.newArrayList();
+            if (userToCreate.getRegisteredContexts() != null) {
+                for (UserContext registeredContext : userToCreate.getRegisteredContexts()) {
+                    userContextsJsonb.add(jsonMapper.writeValueAsString(registeredContext));
+                }
+            }
+            Array userContexts = conn.createArrayOf("jsonb", userContextsJsonb.toArray());
 
             // TODO: Change this to annotations or something to rely exclusively on the pojo.
             setValueHelper(pst, 1, userToCreate.getFamilyName());
@@ -697,13 +725,14 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             setValueHelper(pst, 7, userToCreate.getRegistrationDate());
             setValueHelper(pst, 8, userToCreate.getSchoolId());
             setValueHelper(pst, 9, userToCreate.getSchoolOther());
-            setValueHelper(pst, 10, userToCreate.getExamBoard());
-            setValueHelper(pst, 11, userToCreate.getLastUpdated());
-            setValueHelper(pst, 12,  userToCreate.getEmailVerificationStatus());
-            setValueHelper(pst, 13, userToCreate.getLastSeen());
-            setValueHelper(pst, 14, userToCreate.getEmailVerificationToken());
-            setValueHelper(pst, 15, userToCreate.getEmailToVerify());
-            
+            setValueHelper(pst, 10, userToCreate.getLastUpdated());
+            setValueHelper(pst, 11, userToCreate.getEmailVerificationStatus());
+            setValueHelper(pst, 12, userToCreate.getLastSeen());
+            setValueHelper(pst, 13, userToCreate.getEmailVerificationToken());
+            setValueHelper(pst, 14, userToCreate.getEmailToVerify());
+            pst.setArray(15, userContexts);
+            setValueHelper(pst, 16, userToCreate.getRegisteredContextsLastConfirmed());
+
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save user.");
             }
@@ -719,7 +748,9 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             }
 
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
+        } catch (JsonProcessingException e) {
+            throw new SegueDatabaseException(JSONB_PROCESSING_ERROR_MESSAGE, e);
         }
     }
 
@@ -739,7 +770,9 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
         try (Connection conn = database.getDatabaseConnection()) {
             return this.updateUser(conn, userToCreate);
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
+        } catch (JsonProcessingException e) {
+            throw new SegueDatabaseException(JSONB_PROCESSING_ERROR_MESSAGE, e);
         }
     }
 
@@ -751,7 +784,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
      * @return the user as from the database
      * @throws SQLException - if there is a database problem
      */
-    private RegisteredUser updateUser(Connection conn, final RegisteredUser userToCreate) throws SegueDatabaseException, SQLException {
+    private RegisteredUser updateUser(Connection conn, final RegisteredUser userToCreate) throws SegueDatabaseException, SQLException, JsonProcessingException {
         RegisteredUser existingUserRecord = this.getById(userToCreate.getId());
         if (null == existingUserRecord) {
             throw new SegueDatabaseException("The user you have tried to update does not exist.");
@@ -761,8 +794,9 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
                 .prepareStatement(
                         "UPDATE users SET family_name = ?, given_name = ?, email = ?, role = ?, "
                         + "date_of_birth = ?, gender = ?, registration_date = ?, school_id = ?, "
-                        + "school_other = ?, exam_board = ?, last_updated = ?, email_verification_status = ?, "
-                        + "last_seen = ?, email_verification_token = ?, email_to_verify = ? "
+                        + "school_other = ?, last_updated = ?, email_verification_status = ?, "
+                        + "last_seen = ?, email_verification_token = ?, email_to_verify = ?, "
+                        + "registered_contexts = ?, registered_contexts_last_confirmed = ? "
                         + "WHERE id = ?;");
 
         // TODO: Change this to annotations or something to rely exclusively on the pojo.
@@ -775,13 +809,23 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
         setValueHelper(pst, 7, userToCreate.getRegistrationDate());
         setValueHelper(pst, 8, userToCreate.getSchoolId());
         setValueHelper(pst, 9, userToCreate.getSchoolOther());
-        setValueHelper(pst, 10, userToCreate.getExamBoard());
-        setValueHelper(pst, 11, userToCreate.getLastUpdated());
-        setValueHelper(pst, 12,  userToCreate.getEmailVerificationStatus());
-        setValueHelper(pst, 13, userToCreate.getLastSeen());
-        setValueHelper(pst, 14, userToCreate.getEmailVerificationToken());
-        setValueHelper(pst, 15, userToCreate.getEmailToVerify());
-        setValueHelper(pst, 16, userToCreate.getId());
+        setValueHelper(pst, 10, userToCreate.getLastUpdated());
+        setValueHelper(pst, 11,  userToCreate.getEmailVerificationStatus());
+        setValueHelper(pst, 12, userToCreate.getLastSeen());
+        setValueHelper(pst, 13, userToCreate.getEmailVerificationToken());
+        setValueHelper(pst, 14, userToCreate.getEmailToVerify());
+        List<String> userContextsJsonb = Lists.newArrayList();
+        if (userToCreate.getRegisteredContexts() != null) {
+            for (UserContext registeredContext : userToCreate.getRegisteredContexts()) {
+                userContextsJsonb.add(jsonMapper.writeValueAsString(registeredContext));
+            }
+        }
+        pst.setArray(15, conn.createArrayOf("jsonb", userContextsJsonb.toArray()));
+        setValueHelper(pst, 16, userToCreate.getRegisteredContextsLastConfirmed());
+
+        setValueHelper(pst, 17, userToCreate.getId());
+
+
 
         if (pst.executeUpdate() == 0) {
             throw new SegueDatabaseException("Unable to save user.");
@@ -801,7 +845,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
      * @throws SQLException
      *             - if an error occurs.
      */
-    private RegisteredUser buildRegisteredUser(final ResultSet results) throws SQLException {
+    private RegisteredUser buildRegisteredUser(final ResultSet results) throws SQLException, JsonProcessingException {
         if (null == results) {
             return null;
         }
@@ -833,7 +877,15 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
         }
         
         u.setSchoolOther(results.getString("school_other"));
-        u.setExamBoard(results.getString("exam_board") != null ? ExamBoard.valueOf(results.getString("exam_board")) : null);
+        Array registeredContextsArray = results.getArray("registered_contexts");
+        if (registeredContextsArray != null) {
+            List<UserContext> userContexts = Lists.newArrayList();
+            for (String registeredContextJson : (String[]) registeredContextsArray.getArray()) {
+                userContexts.add(jsonMapper.readValue(registeredContextJson, UserContext.class));
+            }
+            u.setRegisteredContexts(userContexts);
+        }
+        u.setRegisteredContextsLastConfirmed(results.getTimestamp("registered_contexts_last_confirmed"));
         u.setLastUpdated(results.getTimestamp("last_updated"));
         u.setLastSeen(results.getTimestamp("last_seen"));
         u.setEmailToVerify(results.getString("email_to_verify"));
@@ -856,7 +908,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
      * @throws SegueDatabaseException
      *             - if more than one result is returned
      */
-    private RegisteredUser findOneUser(final ResultSet results) throws SQLException, SegueDatabaseException {
+    private RegisteredUser findOneUser(final ResultSet results) throws SQLException, SegueDatabaseException, JsonProcessingException {
         // are there any results
         if (!results.isBeforeFirst()) {
             return null;
@@ -884,7 +936,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
      * @throws SQLException
      *             - if a db error occurs
      */
-    private List<RegisteredUser> findAllUsers(final ResultSet results) throws SQLException {
+    private List<RegisteredUser> findAllUsers(final ResultSet results) throws SQLException, JsonProcessingException {
         List<RegisteredUser> listOfResults = Lists.newArrayList();
         while (results.next()) {
             listOfResults.add(buildRegisteredUser(results));

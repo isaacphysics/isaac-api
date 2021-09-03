@@ -17,6 +17,7 @@ package uk.ac.cam.cl.dtg.segue.dto.content;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.api.client.util.Lists;
+import uk.ac.cam.cl.dtg.segue.dos.AudienceContext;
 
 import java.util.List;
 
@@ -38,6 +39,7 @@ public class ContentSummaryDTO {
     private List<String> questionPartIds;
     private String supersededBy;
     private String difficulty;
+    private List<AudienceContext> audience;
 
     /**
      * Private constructor required for Dozer.
@@ -249,5 +251,13 @@ public class ContentSummaryDTO {
      */
     public void setDifficulty(final String difficulty) {
         this.difficulty = difficulty;
+    }
+
+    public List<AudienceContext> getAudience() {
+        return audience;
+    }
+
+    public void setAudience(List<AudienceContext> audience) {
+        this.audience = audience;
     }
 }

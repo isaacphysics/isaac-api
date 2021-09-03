@@ -17,6 +17,7 @@ package uk.ac.cam.cl.dtg.segue.dos.content;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import uk.ac.cam.cl.dtg.segue.dao.TrimWhitespaceDeserializer;
+import uk.ac.cam.cl.dtg.segue.dos.AudienceContext;
 
 import java.util.List;
 import java.util.Map;
@@ -34,7 +35,7 @@ public abstract class ContentBase {
     protected Set<String> tags;
     protected String canonicalSourceFile;
     protected String version;
-    protected List<Map<String, List<String>>> audience;
+    protected List<AudienceContext> audience;
     protected Map<String, List<String>> display;
 
     public String getId() {
@@ -78,11 +79,11 @@ public abstract class ContentBase {
         this.version = version;
     }
 
-    public List<Map<String, List<String>>> getAudience() {
+    public List<AudienceContext> getAudience() {
         return audience;
     }
 
-    public void setAudience(List<Map<String, List<String>>> audience) {
+    public void setAudience(List<AudienceContext> audience) {
         this.audience = audience;
     }
 

@@ -1064,8 +1064,8 @@ public class QuizFacade extends AbstractIsaacFacade {
             IsaacQuizDTO quiz = quizManager.findQuiz(assignment.getQuizId());
 
             List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group).stream()
-                    .sorted(Comparator.comparing(RegisteredUserDTO::getFamilyName, String.CASE_INSENSITIVE_ORDER))
                     .sorted(Comparator.comparing(RegisteredUserDTO::getGivenName, String.CASE_INSENSITIVE_ORDER))
+                    .sorted(Comparator.comparing(RegisteredUserDTO::getFamilyName, String.CASE_INSENSITIVE_ORDER))
                     .collect(Collectors.toList());
 
             Map<RegisteredUserDTO, QuizFeedbackDTO> feedbackMap = quizQuestionManager.getAssignmentTeacherFeedback(quiz, assignment, groupMembers);
@@ -1137,8 +1137,8 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             IsaacQuizDTO quiz = quizManager.findQuiz(assignment.getQuizId());
             List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group).stream()
-                    .sorted(Comparator.comparing(RegisteredUserDTO::getFamilyName))
                     .sorted(Comparator.comparing(RegisteredUserDTO::getGivenName))
+                    .sorted(Comparator.comparing(RegisteredUserDTO::getFamilyName))
                     .collect(Collectors.toList());
 
             List<String[]> rows = Lists.newArrayList();
