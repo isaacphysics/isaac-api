@@ -1031,7 +1031,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Produces(MediaType.WILDCARD)
     @GZIP
     @ApiOperation(value = "Export quiz results as CSV.")
-    public final Response getQuizAssignmentCSV(@Context final HttpServletRequest httpServletRequest,
+    public final Response getQuizAssignmentWithAnswersCSV(@Context final HttpServletRequest httpServletRequest,
                                                @PathParam("quizAssignmentId") Long quizAssignmentId,
                                                @QueryParam("format") final String formatMode) {
         try {
