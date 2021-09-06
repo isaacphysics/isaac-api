@@ -12,6 +12,7 @@ import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.StatusCode;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
+import org.eclipse.jetty.websocket.api.annotations.OnWebSocketError;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import org.slf4j.Logger;
@@ -282,6 +283,23 @@ public class UserAlertsWebSocket implements IAlertListener {
         } else {
             log.debug("User " + connectedUserId + " closed a websocket. Total still open: " + numberOfUserSockets);
         }
+    }
+
+    /**
+     * Handles errors in WebSocket connections.
+     *
+     * TODO: should this also deal with the closing part?
+     * This for now is just to remove an error that Jetty outputs if no handler is configured.
+     *
+     * @param session
+     *         - contains information on the currently connected session, if any
+     * @param error
+     *         - the error raised
+     */
+    @OnWebSocketError
+    public void onError(final Session session, final Throwable error) {
+        long connectedUserId = connectedUser.getId();
+        log.warn(String.format("Error in WebSocket for user (%s): %s", connectedUserId, error));
     }
 
     /**

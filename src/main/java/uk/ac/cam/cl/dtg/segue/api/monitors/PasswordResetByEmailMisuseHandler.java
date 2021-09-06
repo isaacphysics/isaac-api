@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2015 Alistair Stead
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,9 +31,9 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_MINUTE;
  * @author Alistair Stead
  *
  */
-public class PasswordResetRequestMisuseHandler implements IMisuseHandler {
+public class PasswordResetByEmailMisuseHandler implements IMisuseHandler {
     
-    private static final Logger log = LoggerFactory.getLogger(PasswordResetRequestMisuseHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(PasswordResetByEmailMisuseHandler.class);
 
     private static final Integer SOFT_THRESHOLD = 2;
     private static final Integer HARD_THRESHOLD = 4;
@@ -43,7 +43,7 @@ public class PasswordResetRequestMisuseHandler implements IMisuseHandler {
      * 
      */
     @Inject
-    public PasswordResetRequestMisuseHandler() {
+    public PasswordResetByEmailMisuseHandler() {
 
     }
     

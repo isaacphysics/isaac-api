@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.content;
 
-import ma.glasnost.orika.converter.BidirectionalConverter;
+import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.metadata.Type;
 import uk.ac.cam.cl.dtg.segue.dos.content.ChemicalFormula;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
@@ -27,6 +27,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.LogicFormula;
 import uk.ac.cam.cl.dtg.segue.dos.content.ParsonsChoice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
 import uk.ac.cam.cl.dtg.segue.dos.content.StringChoice;
+import uk.ac.cam.cl.dtg.segue.dos.content.RegexPattern;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChemicalFormulaDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.FormulaDTO;
@@ -37,6 +38,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.LogicFormulaDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ParsonsChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuantityDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.StringChoiceDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.RegexPatternDTO;
 
 /**
  * ContentBaseOrikaConverter A specialist converter class to work with the Orika automapper library.
@@ -44,7 +46,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.StringChoiceDTO;
  * Responsible for converting Choice objects to their correct subtype.
  * 
  */
-public class ChoiceOrikaConverter extends BidirectionalConverter<Choice, ChoiceDTO> {
+public class ChoiceOrikaConverter extends AbstractPolymorphicBidirectionalConverter<Choice, ChoiceDTO> {
 
     /**
      * Constructs an Orika Converter specialises in selecting the correct subclass for choice objects.
@@ -55,7 +57,8 @@ public class ChoiceOrikaConverter extends BidirectionalConverter<Choice, ChoiceD
     }
 
     @Override
-    public ChoiceDTO convertTo(final Choice source, final Type<ChoiceDTO> destinationType) {
+    public ChoiceDTO convertTo(final Choice source, final Type<ChoiceDTO> destinationType,
+                               MappingContext _context) {
         if (null == source) {
             return null;
         }
@@ -72,6 +75,8 @@ public class ChoiceOrikaConverter extends BidirectionalConverter<Choice, ChoiceD
             return super.mapperFacade.map(source, GraphChoiceDTO.class);
         } else if (source instanceof StringChoice) {
             return super.mapperFacade.map(source, StringChoiceDTO.class);
+        } else if (source instanceof RegexPattern) {
+            return super.mapperFacade.map(source, RegexPatternDTO.class);
         } else if (source instanceof FreeTextRule) {
             return super.mapperFacade.map(source, FreeTextRuleDTO.class);
         } else if (source instanceof ParsonsChoice) {
@@ -88,7 +93,8 @@ public class ChoiceOrikaConverter extends BidirectionalConverter<Choice, ChoiceD
     }
 
     @Override
-    public Choice convertFrom(final ChoiceDTO source, final Type<Choice> destinationType) {
+    public Choice convertFrom(final ChoiceDTO source, final Type<Choice> destinationType,
+                              MappingContext _context) {
         if (null == source) {
             return null;
         }
@@ -105,6 +111,8 @@ public class ChoiceOrikaConverter extends BidirectionalConverter<Choice, ChoiceD
             return super.mapperFacade.map(source, GraphChoice.class);
         } else if (source instanceof StringChoiceDTO) {
             return super.mapperFacade.map(source, StringChoice.class);
+        } else if (source instanceof RegexPatternDTO) {
+            return super.mapperFacade.map(source, RegexPattern.class);
         } else if (source instanceof FreeTextRuleDTO) {
             return super.mapperFacade.map(source, FreeTextRule.class);
         } else if (source instanceof ParsonsChoiceDTO) {

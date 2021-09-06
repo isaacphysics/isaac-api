@@ -17,6 +17,7 @@ package uk.ac.cam.cl.dtg.segue.search;
 
 import com.carrotsearch.hppc.cursors.ObjectObjectCursor;
 import com.google.api.client.util.Lists;
+import com.google.api.client.util.Maps;
 import com.google.common.base.CaseFormat;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -69,7 +70,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.SEARCH_MAX_WINDOW_SIZE;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 
 
 /**
@@ -424,6 +425,7 @@ public class ElasticSearchProvider implements ISearchProvider {
      */
     private BoolQueryBuilder generateBoolMatchQuery(final List<IContentManager.BooleanSearchClause> fieldsToMatch) {
         BoolQueryBuilder masterQuery = QueryBuilders.boolQuery();
+        Map<String, BoolQueryBuilder> nestedQueriesByPath = Maps.newHashMap();
 
         for (IContentManager.BooleanSearchClause searchClause : fieldsToMatch) {
             // Each search clause is its own boolean query that gets added to the master query as a must match clause
@@ -450,10 +452,17 @@ public class ElasticSearchProvider implements ISearchProvider {
 
             if (!Constants.NESTED_FIELDS.contains(searchClause.getField())) {
                 masterQuery.must(query);
-            } else { // Nested fields need to use a nested query which specifies the path of the nested field
+            } else {
+                // Nested fields need to use a nested query which specifies the path of the nested field.
                 String nestedPath = searchClause.getField().split("\\.")[0];
-                masterQuery.must(QueryBuilders.nestedQuery(nestedPath, query, ScoreMode.Total));
+                nestedQueriesByPath.putIfAbsent(nestedPath, QueryBuilders.boolQuery());
+                nestedQueriesByPath.get(nestedPath).must(query);
             }
+        }
+
+        // Nested queries are grouped so that queries on the same nested path are not queried independently.
+        for (Entry<String, BoolQueryBuilder> entry : nestedQueriesByPath.entrySet()) {
+            masterQuery.must(QueryBuilders.nestedQuery(entry.getKey(), entry.getValue(), ScoreMode.Total));
         }
 
         return masterQuery;
