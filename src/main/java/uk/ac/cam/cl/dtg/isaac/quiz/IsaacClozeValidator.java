@@ -120,9 +120,7 @@ public class IsaacClozeValidator implements IValidator {
 
                 boolean itemTypeMismatch = false;
                 List<String> submittedItemIds = new ArrayList<>();
-                List<Integer> submittedItemIndentations = new ArrayList<>();
                 List<String> choiceItemIds = new ArrayList<>();
-                List<Integer> choiceItemIndentations = new ArrayList<>();
 
                 // Run through the submitted items:
                 for (Item item : submittedChoice.getItems()) {
@@ -147,7 +145,7 @@ public class IsaacClozeValidator implements IValidator {
                     continue;
                 }
 
-                if (choiceItemIds.equals(submittedItemIds) && choiceItemIndentations.equals(submittedItemIndentations)) {
+                if (choiceItemIds.equals(submittedItemIds)) {
                     responseCorrect = clozeChoice.isCorrect();
                     feedback = (Content) clozeChoice.getExplanation();
                     break;
