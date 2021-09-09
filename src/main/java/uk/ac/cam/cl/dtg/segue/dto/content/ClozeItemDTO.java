@@ -21,19 +21,9 @@ package uk.ac.cam.cl.dtg.segue.dto.content;
  */
 public class ClozeItemDTO extends ItemDTO {
 
-    private String replacementId;
-
     /**
      * Default constructor required for mapping.
      */
     public ClozeItemDTO() {
-    }
-
-    public String getReplacementId() {
-        return replacementId;
-    }
-
-    public void setReplacementId(final String replacementId) {
-        this.replacementId = replacementId;
     }
 }

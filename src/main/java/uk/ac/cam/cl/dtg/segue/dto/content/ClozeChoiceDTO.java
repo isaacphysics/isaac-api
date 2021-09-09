@@ -20,20 +20,9 @@ package uk.ac.cam.cl.dtg.segue.dto.content;
  *
  */
 public class ClozeChoiceDTO extends ItemChoiceDTO {
-
-    private Boolean updateItems;
-
     /**
      * Default constructor required for mapping.
      */
     public ClozeChoiceDTO() {
-    }
-
-    public Boolean getUpdateItems() {
-        return updateItems;
-    }
-
-    public void setUpdateItems(Boolean updateItems) {
-        this.updateItems = updateItems;
     }
 }

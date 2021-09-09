@@ -24,20 +24,9 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ClozeChoiceDTO;
 @DTOMapping(ClozeChoiceDTO.class)
 @JsonContentType("clozeChoice")
 public class ClozeChoice extends ItemChoice {
-
-    private Boolean updateItems;
-
     /**
      * Default constructor required for mapping.
      */
     public ClozeChoice() {
-    }
-
-    public Boolean getUpdateItems() {
-        return updateItems;
-    }
-
-    public void setUpdateItems(Boolean updateItems) {
-        this.updateItems = updateItems;
     }
 }

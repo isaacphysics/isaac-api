@@ -25,19 +25,9 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ClozeItemDTO;
 @JsonContentType("clozeItem")
 public class ClozeItem extends Item {
 
-    private String replacementId;
-
     /**
      * Default constructor required for mapping.
      */
     public ClozeItem() {
-    }
-
-    public String getReplacementId() {
-        return replacementId;
-    }
-
-    public void setReplacementId(final String replacementId) {
-        this.replacementId = replacementId;
     }
 }
