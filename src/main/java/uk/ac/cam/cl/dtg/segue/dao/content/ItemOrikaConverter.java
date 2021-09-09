@@ -17,10 +17,8 @@ package uk.ac.cam.cl.dtg.segue.dao.content;
 
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.metadata.Type;
-import uk.ac.cam.cl.dtg.segue.dos.content.ClozeItem;
 import uk.ac.cam.cl.dtg.segue.dos.content.Item;
 import uk.ac.cam.cl.dtg.segue.dos.content.ParsonsItem;
-import uk.ac.cam.cl.dtg.segue.dto.content.ClozeItemDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ItemDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ParsonsItemDTO;
 
@@ -46,8 +44,6 @@ public class ItemOrikaConverter extends AbstractPolymorphicBidirectionalConverte
 
         if (source instanceof ParsonsItem) {
             return super.mapperFacade.map(source, ParsonsItemDTO.class);
-        } else if (source instanceof ClozeItem) {
-            return super.mapperFacade.map(source, ClozeItemDTO.class);
         } else {
             // This looks like it should cause an infinite loop / stack overflow but apparently it does not.
             ItemDTO itemDTO = new ItemDTO();
@@ -64,8 +60,6 @@ public class ItemOrikaConverter extends AbstractPolymorphicBidirectionalConverte
 
         if (source instanceof ParsonsItemDTO) {
             return super.mapperFacade.map(source, ParsonsItem.class);
-        } else if (source instanceof ClozeItemDTO) {
-            return super.mapperFacade.map(source, ClozeItem.class);
         } else {
             // This looks like it should cause an infinite loop / stack overflow but apparently it does not.
             Item item = new Item();

@@ -28,7 +28,6 @@ import uk.ac.cam.cl.dtg.segue.dos.content.ParsonsChoice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
 import uk.ac.cam.cl.dtg.segue.dos.content.StringChoice;
 import uk.ac.cam.cl.dtg.segue.dos.content.RegexPattern;
-import uk.ac.cam.cl.dtg.segue.dos.content.ClozeChoice;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChemicalFormulaDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.FormulaDTO;
@@ -40,7 +39,6 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ParsonsChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuantityDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.StringChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.RegexPatternDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ClozeChoiceDTO;
 
 /**
  * ContentBaseOrikaConverter A specialist converter class to work with the Orika automapper library.
@@ -83,8 +81,6 @@ public class ChoiceOrikaConverter extends AbstractPolymorphicBidirectionalConver
             return super.mapperFacade.map(source, FreeTextRuleDTO.class);
         } else if (source instanceof ParsonsChoice) {
             return super.mapperFacade.map(source, ParsonsChoiceDTO.class);
-        } else if (source instanceof ClozeChoice) {
-            return super.mapperFacade.map(source, ClozeChoiceDTO.class);
         } else if (source instanceof ItemChoice) {
             return super.mapperFacade.map(source, ItemChoiceDTO.class);
         } else {
@@ -121,8 +117,6 @@ public class ChoiceOrikaConverter extends AbstractPolymorphicBidirectionalConver
             return super.mapperFacade.map(source, FreeTextRule.class);
         } else if (source instanceof ParsonsChoiceDTO) {
             return super.mapperFacade.map(source, ParsonsChoice.class);
-        } else if (source instanceof ClozeChoiceDTO) {
-            return super.mapperFacade.map(source, ClozeChoice.class);
         } else if (source instanceof ItemChoiceDTO) {
             return super.mapperFacade.map(source, ItemChoice.class);
         } else {

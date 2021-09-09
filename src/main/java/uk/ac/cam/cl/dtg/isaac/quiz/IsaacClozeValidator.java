@@ -45,9 +45,9 @@ public class IsaacClozeValidator implements IValidator {
                     "This validator only works with IsaacClozeQuestions (%s is not ClozeQuestion)", question.getId()));
         }
 
-        if (!(answer instanceof ClozeChoice)) {
+        if (!(answer instanceof ItemChoice)) {
             throw new IllegalArgumentException(String.format(
-                    "Expected ClozeChoice for IsaacClozeQuestion: %s. Received (%s) ", question.getId(), answer.getClass()));
+                    "Expected ItemChoice for IsaacClozeQuestions: %s. Received (%s) ", question.getId(), answer.getClass()));
         }
 
         // These variables store the important features of the response we'll send.
@@ -55,7 +55,7 @@ public class IsaacClozeValidator implements IValidator {
         boolean responseCorrect = false;                // Whether we're right or wrong
 
         IsaacClozeQuestion clozeQuestion = (IsaacClozeQuestion) question;
-        ClozeChoice submittedChoice = (ClozeChoice) answer;
+        ItemChoice submittedChoice = (ItemChoice) answer;
 
         // STEP 0: Is it even possible to answer this question?
 
@@ -66,7 +66,7 @@ public class IsaacClozeValidator implements IValidator {
         }
 
         if (null == clozeQuestion.getItems() || clozeQuestion.getItems().isEmpty()) {
-            log.error("ClozeQuestion does not have any items. " + question.getId() + " src: "
+            log.error("ItemQuestion does not have any items. " + question.getId() + " src: "
                     + question.getCanonicalSourceFile());
             feedback = new Content("This question does not have any items to choose from!");
         }
@@ -96,58 +96,45 @@ public class IsaacClozeValidator implements IValidator {
             // For all the choices on this question...
             for (Choice c : orderedChoices) {
 
-                // ... that are of the Formula type, ...
-                if (!(c instanceof ClozeChoice)) {
+                // ... that are ItemChoices ...
+                if (!(c instanceof ItemChoice)) {
                     log.error(String.format(
-                            "Validator for question (%s) expected there to be a ClozeChoice. Instead it found a %s.",
+                            "Validator for question (%s) expected there to be an ItemChoice. Instead it found a %s.",
                             clozeQuestion.getId(), c.getClass().toString()));
                     continue;
                 }
 
-                ClozeChoice clozeChoice = (ClozeChoice) c;
+                ItemChoice itemChoice = (ItemChoice) c;
 
-                // ... and that have a python expression ...
-                if (null == clozeChoice.getItems() || clozeChoice.getItems().isEmpty()) {
-                    log.error("Expected list of ClozeItems, but none found in choice for question id: "
+                // ... and that have items ...
+                if (null == itemChoice.getItems() || itemChoice.getItems().isEmpty()) {
+                    log.error("Expected list of Items, but none found in choice for question id: "
                             + clozeQuestion.getId());
                     continue;
                 }
 
                 // ... look for a match to the submitted answer.
-                if (clozeChoice.getItems().size() != submittedChoice.getItems().size()) {
+                if (itemChoice.getItems().size() != submittedChoice.getItems().size()) {
                     continue;
                 }
 
-                boolean itemTypeMismatch = false;
                 List<String> submittedItemIds = new ArrayList<>();
                 List<String> choiceItemIds = new ArrayList<>();
 
                 // Run through the submitted items:
                 for (Item item : submittedChoice.getItems()) {
-                    if (!(item instanceof ClozeItem)) {
-                        throw new IllegalArgumentException("Expected ClozeChoice to contain ClozeItems!");
-                    }
-                    ClozeItem clozeItem = (ClozeItem) item;
-                    submittedItemIds.add(clozeItem.getId());
+                    submittedItemIds.add(item.getId());
                 }
                 // Run through the items in the question:
-                for (Item item : clozeChoice.getItems()) {
-                    if (!(item instanceof ClozeItem)) {
-                        log.error("ClozeChoice contained non-ClozeItem. Skipping!");
-                        itemTypeMismatch = true;
-                        break;
-                    }
-                    ClozeItem clozeItem = (ClozeItem) item;
-                    choiceItemIds.add(clozeItem.getId());
-                }
-                if (itemTypeMismatch) {
-                    // A problem with the choice itself. Maybe another one will be a better match?
-                    continue;
+                for (Item item : itemChoice.getItems()) {
+                    choiceItemIds.add(item.getId());
                 }
 
+                // TODO match on positions and enable subset matching - this requires a ClozeItem with a position attribute
+                //  describing which drop-zone it is in/intended for
                 if (choiceItemIds.equals(submittedItemIds)) {
-                    responseCorrect = clozeChoice.isCorrect();
-                    feedback = (Content) clozeChoice.getExplanation();
+                    responseCorrect = itemChoice.isCorrect();
+                    feedback = (Content) itemChoice.getExplanation();
                     break;
                 }
             }

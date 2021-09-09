@@ -35,7 +35,6 @@ import uk.ac.cam.cl.dtg.segue.dos.content.ParsonsChoice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
 import uk.ac.cam.cl.dtg.segue.dos.content.StringChoice;
 import uk.ac.cam.cl.dtg.segue.dos.content.RegexPattern;
-import uk.ac.cam.cl.dtg.segue.dos.content.ClozeChoice;
 
 import java.io.IOException;
 
@@ -98,8 +97,6 @@ public class ChoiceDeserializer extends JsonDeserializer<Choice> {
                 return getSingletonChoiceMapper().readValue(root.toString(), FreeTextRule.class);
             case "parsonsChoice":
                 return getSingletonChoiceMapper().readValue(root.toString(), ParsonsChoice.class);
-            case "clozeChoice":
-                return getSingletonChoiceMapper().readValue(root.toString(), ClozeChoice.class);
             case "itemChoice":
                 return getSingletonChoiceMapper().readValue(root.toString(), ItemChoice.class);
             default:
