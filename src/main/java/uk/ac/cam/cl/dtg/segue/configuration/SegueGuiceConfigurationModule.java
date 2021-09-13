@@ -103,6 +103,7 @@ import uk.ac.cam.cl.dtg.segue.quiz.PgQuestionAttempts;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueScheduledDatabaseScriptJob;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueScheduledJob;
+import uk.ac.cam.cl.dtg.segue.scheduler.jobs.SegueScheduledSyncMailjetUsersJob;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -914,7 +915,13 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                     "SQL scheduled job that deletes expired reservations for the event booking system",
                     "0 0 7 * * ?", "db_scripts/scheduled/expired-reservations-clean-up.sql");
 
-            segueJobService = new SegueJobService(Arrays.asList(PIISQLJob, cleanUpOldAnonymousUsers, cleanUpExpiredReservations));
+            SegueScheduledJob syncMailjetUsers = new SegueScheduledSyncMailjetUsersJob(
+                    "syncMailjetUsersJob",
+                    "JavaJob",
+                    "Sync users to mailjet",
+                    "0 0 7,19 ? * * *");
+
+            segueJobService = new SegueJobService(Arrays.asList(PIISQLJob, cleanUpOldAnonymousUsers, cleanUpExpiredReservations, syncMailjetUsers));
             log.info("Created Segue Job Manager for scheduled jobs");
         }
 
