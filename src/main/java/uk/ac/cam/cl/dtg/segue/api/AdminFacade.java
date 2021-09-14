@@ -424,6 +424,8 @@ public class AdminFacade extends AbstractSegueFacade {
     @Path("/users/delivery_failed_notification")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Update a possible account email as delivery failed.",
+            notes = "This endpoint requires a valid HMAC from MailGun.")
     public Response notifySingleDeliveryFailure(@Context final HttpServletRequest request,
                                                 final Map<String, Object> webhookPayload) {
         try {
@@ -467,6 +469,8 @@ public class AdminFacade extends AbstractSegueFacade {
     @Path("/users/delivery_failed_notification/{providerToken}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Update a list of possible account emails as delivery failed.",
+            notes = "This endpoint expects the body to be in MailJet format.")
     public Response notifyExternalDeliveryFailure(@Context final HttpServletRequest request,
                                                 @PathParam("providerToken") final String providerToken,
                                                 final List<Map<String, Object>> eventDetailsList) {
@@ -519,6 +523,8 @@ public class AdminFacade extends AbstractSegueFacade {
     @Path("/users/unsubscription_notification/{providerToken}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Unsubscribe a list of possible account emails from an email type.",
+            notes = "This endpoint expects the body to be in MailJet format.")
     public Response notifyExternalUnsubscriptionEvent(@Context final HttpServletRequest request,
                                                 @PathParam("providerToken") final String providerToken,
                                                 final List<Map<String, Object>> eventDetailsList) {
