@@ -428,11 +428,16 @@ public class AdminFacade extends AbstractSegueFacade {
             notes = "This endpoint requires a valid HMAC from MailGun.")
     public Response notifySingleDeliveryFailure(@Context final HttpServletRequest request,
                                                 final Map<String, Object> webhookPayload) {
+
+        String trustedSigningKey = getProperties().getProperty(MAILGUN_SECRET_KEY);
+        if (null == trustedSigningKey || trustedSigningKey.isEmpty()) {
+            return SegueErrorResponse.getNotImplementedResponse();
+        }
         try {
             final String hmacAlgorithm = "HmacSHA256";
             Map<String, String> signatureJson = (Map<String, String>) webhookPayload.get("signature");
             String dataToSign = signatureJson.get("timestamp").concat(signatureJson.get("token"));
-            SecretKeySpec signingKey = new SecretKeySpec(getProperties().getProperty(MAILGUN_SECRET_KEY).getBytes(), hmacAlgorithm);
+            SecretKeySpec signingKey = new SecretKeySpec(trustedSigningKey.getBytes(), hmacAlgorithm);
             Mac mac = Mac.getInstance(hmacAlgorithm);
             mac.init(signingKey);
             byte[] rawHmac = mac.doFinal(dataToSign.getBytes());
