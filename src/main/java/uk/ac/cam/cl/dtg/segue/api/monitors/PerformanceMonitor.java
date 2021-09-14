@@ -15,51 +15,57 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.monitors;
 
-import java.io.IOException;
+import com.google.inject.Inject;
+import org.apache.commons.lang3.time.StopWatch;
+import org.jboss.resteasy.spi.HttpRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.segue.api.services.MonitorService;
 
+import javax.annotation.Priority;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.ext.Provider;
+import java.io.IOException;
 
-import org.apache.commons.lang3.time.StopWatch;
-import org.jboss.resteasy.spi.HttpRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.REQUEST_LATENCY_HISTOGRAM;
 
 /**
  * Allows us to log the performance of all requests.
  *
  */
+@Priority(0) // Setting the priority to 0 makes sure this filter is applied first on request and last on response
 @Provider
 public class PerformanceMonitor implements ContainerRequestFilter, ContainerResponseFilter {
     private static final Logger log = LoggerFactory.getLogger(PerformanceMonitor.class);
 
-    @Context
-    private HttpRequest request;
+    public static final long WARNING_THRESHOLD = 3000;
+    public static final long ERROR_THRESHOLD = 10000;
+    private static final long NUMBER_OF_MILLISECONDS_IN_A_SECOND = 1000;
 
-    public static final long WARNING_THRESHOLD = 5000;
-    public static final long ERROR_THRESHOLD = 20000;
+    @Context private HttpRequest request;
+    private final MonitorService monitorService;
 
     /**
      * PerformanceMonitor.
      */
-    public PerformanceMonitor() {
-
+    @Inject
+    public PerformanceMonitor(final MonitorService monitorService) {
+        this.monitorService = monitorService;
     }
 
     @Override
-    public void filter(final ContainerRequestContext requestContext) throws IOException {
+    public void filter(final ContainerRequestContext requestContext) {
         StopWatch timer = new StopWatch();
         timer.start();
         request.setAttribute("timer", timer);
     }
 
     @Override
-    public void filter(final ContainerRequestContext requestContext, final ContainerResponseContext responseContext)
-            throws IOException {
+    public void filter(final ContainerRequestContext requestContext, final ContainerResponseContext responseContext) {
         StopWatch timer = (StopWatch) request.getAttribute("timer");
         request.removeAttribute("timer");
         
@@ -74,13 +80,19 @@ public class PerformanceMonitor implements ContainerRequestFilter, ContainerResp
         if (timeInMs < WARNING_THRESHOLD) {
             log.debug(String.format("Request: %s %s took %dms",
                     requestContext.getMethod(), request.getUri().getPath(), timeInMs));
-        } else if (timeInMs > WARNING_THRESHOLD && timeInMs < ERROR_THRESHOLD) {
+        } else if (timeInMs < ERROR_THRESHOLD) {
             log.warn(String.format("Performance Warning: Request: %s %s took %dms and exceeded threshold of %d",
                     requestContext.getMethod(), request.getUri().getPath(), timeInMs, WARNING_THRESHOLD));
         } else {
             log.error(String.format("Performance Alert: Request: %s %s took %dms and exceeded threshold of %d",
                     requestContext.getMethod(), request.getUri().getPath(), timeInMs, ERROR_THRESHOLD));
         }
+
+        // Record for metrics
+        REQUEST_LATENCY_HISTOGRAM
+                .labels(requestContext.getMethod(), monitorService.getPathWithoutPathParamValues(request.getUri()))
+                .observe((double)timeInMs / NUMBER_OF_MILLISECONDS_IN_A_SECOND);
     }
+
 
 }

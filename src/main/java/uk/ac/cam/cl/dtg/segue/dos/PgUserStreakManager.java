@@ -6,7 +6,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.segue.api.userAlerts.IAlertListener;
 import uk.ac.cam.cl.dtg.segue.api.userAlerts.UserAlertsWebSocket;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -100,7 +99,7 @@ public class PgUserStreakManager implements IUserStreaksManager {
             PreparedStatement pst;
             pst = conn.prepareStatement("SELECT * FROM"
                     + " user_streaks_weekly_current_progress(?) LEFT JOIN user_streaks_weekly(?)"
-                    + " ON user_streaks_weekly_current_progress.currentweek - user_streaks_weekly.enddate <= 1"
+                    + " ON user_streaks_weekly_current_progress.currentweek - user_streaks_weekly.enddate <= 7"
                     + " AND user_streaks_weekly.startdate <= user_streaks_weekly_current_progress.currentweek");
 
             pst.setLong(1, user.getId());
@@ -147,7 +146,7 @@ public class PgUserStreakManager implements IUserStreaksManager {
         long userId = user.getId();
         try {
             IUserAlert alert = new PgUserAlert(null, userId,
-                    objectMapper.writeValueAsString(ImmutableMap.of("streakRecord", this.getCurrentStreakRecord(user))),
+                    objectMapper.writeValueAsString(ImmutableMap.of("dailyStreakRecord", this.getCurrentStreakRecord(user), "weeklyStreakRecord", this.getCurrentWeeklyStreakRecord(user))),
                     "progress", new Timestamp(System.currentTimeMillis()), null, null, null);
 
             UserAlertsWebSocket.notifyUserOfAlert(userId, alert);

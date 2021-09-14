@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
+import com.google.common.collect.ImmutableSet;
 import org.postgresql.util.PGInterval;
 
 import java.util.Arrays;
@@ -131,19 +132,14 @@ public final class Constants {
 
     // HMAC stuff
     /**
-     * Constant representing the key for the date signed property - used in HMAC calculations.
-     */
-    public static final String DATE_SIGNED = "DATE_SIGNED";
-
-    /**
      * Constant representing the key for the expiry date property - used in HMAC calculations.
      */
-    public static final String DATE_EXPIRES = "DATE_EXPIRES";
+    public static final String DATE_EXPIRES = "expires";
 
     /**
      * Constant representing the key for the additional date property - used in HMAC calculations.
      */
-    public static final String PARTIAL_LOGIN_FLAG = "partialLogin";
+    public static final String PARTIAL_LOGIN_FLAG = "partial";
 
     /**
      * Constant representing the key for the HMAC property - used in HMAC calculations.
@@ -163,7 +159,7 @@ public final class Constants {
     /**
      * Constant representing the key for the SESSION USER ID - used in HMAC calculations.
      */
-    public static final String SESSION_USER_ID = "currentUserId";
+    public static final String SESSION_USER_ID = "id";
 
     /**
      * Constant representing the key for the SESSION TOKEN - used in HMAC calculations.
@@ -186,6 +182,16 @@ public final class Constants {
     // Event management stuff:
     public static final String EVENT_ADMIN_EMAIL = "EVENT_ADMIN_EMAIL";
     public static final String EVENT_ICAL_UID_DOMAIN = "EVENT_ICAL_UID_DOMAIN";
+
+    // MailJet Stuff:
+    public static final String MAILJET_WEBHOOK_TOKEN = "MAILJET_WEBHOOK_TOKEN";
+    public static final String MAILJET_API_KEY = "MAILJET_API_KEY";
+    public static final String MAILJET_API_SECRET = "MAILJET_API_SECRET";
+    public static final String MAILJET_NEWS_LIST_ID = "MAILJET_NEWS_LIST_ID";
+    public static final String MAILJET_EVENTS_LIST_ID = "MAILJET_EVENTS_LIST_ID";
+
+    // MailGun Key
+    public static final String MAILGUN_SECRET_KEY = "MAILGUN_SECRET_KEY";
 
     /**
      * Suffix to append to raw fields (minus dot separator) - these are fields that the search engine should not do any
@@ -292,6 +298,7 @@ public final class Constants {
     public static final String POSTGRES_DB_PASSWORD = "POSTGRES_DB_PASSWORD";
 
     public enum TimeInterval {
+        TWO_YEARS(2, 0, 0, 0, 0, 0),
         SIX_MONTHS(0, 6, 0, 0, 0, 0),
         NINETY_DAYS(0, 0, 90, 0, 0, 0),
         THIRTY_DAYS(0, 0, 30, 0, 0, 0),
@@ -332,6 +339,7 @@ public final class Constants {
         ADMIN_EVENT_WAITING_LIST_PROMOTION,
         ADMIN_MERGE_USER,
         ANSWER_QUESTION,
+        ANSWER_QUIZ_QUESTION,
         CHANGE_USER_ROLE,
         CHANGE_GROUP_MEMBERSHIP_STATUS,
         CONTACT_US_FORM_USED,
@@ -373,9 +381,6 @@ public final class Constants {
     // IP Geocoding stuff
     public static final String IP_INFO_DB_API_KEY = "IP_INFO_DB_API_KEY";
 
-    // MailGun Key
-    public static final String MAILGUN_SECRET_KEY = "MAILGUN_SECRET_KEY";
-
     /*
      * Default values.
      */
@@ -383,10 +388,14 @@ public final class Constants {
     public static final String DEFAULT_START_INDEX_AS_STRING = "0";
     public static final String DEFAULT_TYPE_FILTER = "";
 
+    public static final Integer MAX_NOTE_CHAR_LENGTH = 500;
+
     public static final Integer DEFAULT_RESULTS_LIMIT = 10;
     public static final String DEFAULT_RESULTS_LIMIT_AS_STRING = "10";
 
     public static final String DEFAULT_SEARCH_RESULT_LIMIT_AS_STRING = "25";
+
+    public static final Integer SEARCH_TEXT_CHAR_LIMIT = 1000;
 
     public static final Integer NO_SEARCH_LIMIT = -1;
 
@@ -403,6 +412,13 @@ public final class Constants {
     public static final String[] ADDRESS_PATH_FIELDNAME = {"location", "address"};
     public static final String[] ADDRESS_FIELDNAMES = {"addressLine1", "addressLine2", "town", "county", "postalCode"};
     public static final String SEARCHABLE_CONTENT_FIELDNAME = "searchableContent";
+    public static final String VISIBLE_TO_STUDENTS_FIELDNAME = "visibleToStudents";
+
+    public static final String STAGE_FIELDNAME = "audience.stage";
+    public static final String DIFFICULTY_FIELDNAME = "audience.difficulty";
+    public static final String EXAM_BOARD_FIELDNAME = "audience.examBoard";
+    public static final Set<String> NESTED_FIELDS =
+            ImmutableSet.of(STAGE_FIELDNAME, DIFFICULTY_FIELDNAME, EXAM_BOARD_FIELDNAME);
 
     public static final String USER_ID_FKEY_FIELDNAME = "userId";
     public static final String OLD_USER_ID_FKEY_FIELDNAME = "oldUserId";
@@ -490,6 +506,7 @@ public final class Constants {
     public static final String REDIRECT_URL = "redirectUrl";
 
     public static final String SEGUE_AUTH_COOKIE = "SEGUE_AUTH_COOKIE";
+    public static final String JSESSION_COOOKIE = "JSESSIONID";
 
     public static final String DEFAULT_DATE_FORMAT = "EEE MMM dd HH:mm:ss Z yyyy";
 
@@ -499,11 +516,16 @@ public final class Constants {
     public static final String ASSIGNMENT_FK = "assignmentId";
     public static final String ASSIGNMENT_DUEDATE_FK = "dueDate";
 
+    public static final String QUIZ_ATTEMPT_FK = "quizAttemptId";
+    public static final String QUIZ_ASSIGNMENT_FK = "quizAssignmentId";
+
     public static final String EQUALITY_CHECKER_HOST = "EQUALITY_CHECKER_HOST";
     public static final String EQUALITY_CHECKER_PORT = "EQUALITY_CHECKER_PORT";
 
     public static final String CHEMISTRY_CHECKER_HOST = "CHEMISTRY_CHECKER_HOST";
     public static final String CHEMISTRY_CHECKER_PORT = "CHEMISTRY_CHECKER_PORT";
+
+    public static final String QUESTION_MISUSE_THRESHOLD_OVERRIDE = "QUESTION_MISUSE_THRESHOLD_OVERRIDE";
 
     // User Preferences:
     public enum SegueUserPreferences {

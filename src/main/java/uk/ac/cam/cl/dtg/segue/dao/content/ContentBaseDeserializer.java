@@ -62,7 +62,7 @@ public class ContentBaseDeserializer extends JsonDeserializer<Content> {
 
         ObjectMapper mapper = (ObjectMapper) jsonParser.getCodec();
         ObjectNode root = (ObjectNode) mapper.readTree(jsonParser);
-        Class<? extends Content> contentClass = null;
+        Class<? extends Content> contentClass;
 
         if (null == root.get("type")) {
             throw new JsonMappingException("Error: unable to parse content as there "

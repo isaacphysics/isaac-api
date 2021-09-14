@@ -25,8 +25,10 @@ import uk.ac.cam.cl.dtg.isaac.api.EventsFacade;
 import uk.ac.cam.cl.dtg.isaac.api.GameboardsFacade;
 import uk.ac.cam.cl.dtg.isaac.api.IsaacController;
 import uk.ac.cam.cl.dtg.isaac.api.PagesFacade;
+import uk.ac.cam.cl.dtg.isaac.api.QuizFacade;
 import uk.ac.cam.cl.dtg.segue.api.*;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
+import uk.ac.cam.cl.dtg.segue.api.monitors.AuditMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.PerformanceMonitor;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
@@ -37,8 +39,10 @@ import javax.ws.rs.core.Application;
 import java.util.HashSet;
 import java.util.Set;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.PROXY_PATH;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_APP_VERSION;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SERVER_ADMIN_ADDRESS;
 
 /**
  * This class registers the resteasy handlers. The name is important since it is used as a String in
@@ -108,6 +112,11 @@ public class IsaacApplicationRegister extends Application {
             this.singletons.add(injector.getInstance(NotificationFacade.class));
             this.singletons.add(injector.getInstance(EmailFacade.class));
             this.singletons.add(injector.getInstance(UserBadgeManager.class));
+            this.singletons.add(injector.getInstance(QuizFacade.class));
+
+            // initialise filters
+            this.singletons.add(injector.getInstance(PerformanceMonitor.class));
+            this.singletons.add(injector.getInstance(AuditMonitor.class));
         }
 
         return this.singletons;
@@ -115,11 +124,10 @@ public class IsaacApplicationRegister extends Application {
 
     @Override
     public final Set<Class<?>> getClasses() {
-        Set<Class<?>> result = new HashSet<Class<?>>();
+        Set<Class<?>> result = new HashSet<>();
         
         result.add(RestEasyJacksonConfiguration.class);
-        result.add(PerformanceMonitor.class);
-        
+
         result.add(io.swagger.jaxrs.listing.ApiListingResource.class);
         result.add(io.swagger.jaxrs.listing.SwaggerSerializers.class);
         

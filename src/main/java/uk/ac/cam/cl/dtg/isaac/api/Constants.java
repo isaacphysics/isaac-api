@@ -44,6 +44,7 @@ public final class Constants {
     public static final String QUESTIONS_PAGE_TYPE = "questionsPage";
     public static final String TOPIC_SUMMARY_PAGE_TYPE = "isaacTopicSummaryPage";
     public static final String EVENT_TYPE = "isaacEventPage";
+    public static final String QUIZ_TYPE = "isaacQuiz";
 
     public static final String SEARCHABLE_TAG = "search_result";
     public static final String HIDE_FROM_FILTER_TAG = "nofilter";
@@ -101,6 +102,9 @@ public final class Constants {
     public static final String GAMEBOARD_ID_FKEY = "gameboardId";
     public static final String GAMEBOARD_ID_FKEYS = "gameboardIds";
 
+    public static final String QUIZ_ID_FKEY = "quizId";
+    public static final String QUIZ_SECTION = "quizSection";
+
     public static final String DATE_FIELDNAME = "date";
     public static final String ENDDATE_FIELDNAME = "endDate";
 
@@ -128,6 +132,7 @@ public final class Constants {
         DOWNLOAD_GROUP_PROGRESS_CSV,
         GLOBAL_SITE_SEARCH,
         SET_NEW_ASSIGNMENT,
+        SET_NEW_QUIZ_ASSIGNMENT,
         VIEW_ASSIGNMENT_PROGRESS,
         VIEW_CONCEPT,
         VIEW_GROUPS_ASSIGNMENTS,
@@ -135,8 +140,9 @@ public final class Constants {
         VIEW_PAGE,
         VIEW_PAGE_FRAGMENT,
         VIEW_QUESTION,
+        VIEW_QUIZ_SECTION,
         VIEW_TOPIC_SUMMARY_PAGE,
-        VIEW_USER_PROGRESS
+        VIEW_USER_PROGRESS,
     }
     public static final Set<String> ISAAC_SERVER_LOG_TYPES = Arrays.stream(IsaacServerLogType.values()).map(IsaacServerLogType::name).collect(Collectors.toSet());
 
@@ -170,7 +176,7 @@ public final class Constants {
     }};
 
     public enum IsaacUserPreferences {
-        SUBJECT_INTEREST, BETA_FEATURE, EXAM_BOARD
+        SUBJECT_INTEREST, BETA_FEATURE, EXAM_BOARD, PROGRAMMING_LANGUAGE, BOOLEAN_NOTATION, DISPLAY_SETTING
     }
 
     /**

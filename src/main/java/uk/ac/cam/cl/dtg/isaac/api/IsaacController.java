@@ -18,15 +18,15 @@ package uk.ac.cam.cl.dtg.isaac.api;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.io.Files;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import ma.glasnost.orika.MapperFacade;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
+import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
 import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.IStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -42,7 +42,6 @@ import uk.ac.cam.cl.dtg.segue.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
@@ -61,15 +60,15 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import java.util.ArrayList;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacServerLogType;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.PROXY_PATH;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
@@ -87,15 +86,14 @@ public class IsaacController extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(IsaacController.class);
 
     private final SegueContentFacade api;
-    private final MapperFacade mapper;
     private final IStatisticsManager statsManager;
     private final UserAccountManager userManager;
     private final UserAssociationManager associationManager;
-    private final URIManager uriManager;
     private final String contentIndex;
     private final IContentManager contentManager;
     private final UserBadgeManager userBadgeManager;
     private final IUserStreaksManager userStreaksManager;
+    private final ContentSummarizerService contentSummarizerService;
 
     private static long lastQuestionCount = 0L;
 
@@ -129,8 +127,6 @@ public class IsaacController extends AbstractIsaacFacade {
      *            - Instance of properties Loader
      * @param logManager
      *            - Instance of Log Manager
-     * @param mapper
-     *            - Instance of Mapper facade.
      * @param statsManager
      *            - Instance of the Statistics Manager.
      * @param contentManager
@@ -139,28 +135,28 @@ public class IsaacController extends AbstractIsaacFacade {
      *            - So we can interrogate the user Manager.
      * @param associationManager
      *            - So we can check user permissions.
-     * @param uriManager
-     *            - URI manager so we can augment uris
+     * @param contentSummarizerService
+     *            - So we can summarize search results
      */
     @Inject
     public IsaacController(final SegueContentFacade api, final PropertiesLoader propertiesLoader,
-                           final ILogManager logManager, final MapperFacade mapper, final IStatisticsManager statsManager,
+                           final ILogManager logManager, final IStatisticsManager statsManager,
                            final UserAccountManager userManager, final IContentManager contentManager,
-                           final UserAssociationManager associationManager, final URIManager uriManager,
+                           final UserAssociationManager associationManager,
                            @Named(CONTENT_INDEX) final String contentIndex,
                            final IUserStreaksManager userStreaksManager,
-                           final UserBadgeManager userBadgeManager) {
+                           final UserBadgeManager userBadgeManager,
+                           final ContentSummarizerService contentSummarizerService) {
         super(propertiesLoader, logManager);
         this.api = api;
-        this.mapper = mapper;
         this.statsManager = statsManager;
         this.userManager = userManager;
         this.associationManager = associationManager;
-        this.uriManager = uriManager;
         this.contentIndex = contentIndex;
         this.contentManager = contentManager;
         this.userBadgeManager = userBadgeManager;
         this.userStreaksManager = userStreaksManager;
+        this.contentSummarizerService = contentSummarizerService;
     }
 
     /**
@@ -182,14 +178,20 @@ public class IsaacController extends AbstractIsaacFacade {
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("search/{searchString}")
+    @Path("/search")
     @GZIP
     @ApiOperation(value = "Search for content objects matching the provided criteria.")
     public final Response search(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
-            @PathParam("searchString") final String searchString,
+            @QueryParam("query") final String searchString,
             @DefaultValue(DEFAULT_TYPE_FILTER) @QueryParam("types") final String types,
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
             @DefaultValue(DEFAULT_SEARCH_RESULT_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
+
+        // Impose 1000 character search string limit internally
+        if (searchString.length() > SEARCH_TEXT_CHAR_LIMIT) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Search string exceeded " +
+                    SEARCH_TEXT_CHAR_LIMIT.toString() + " character limit.").toResponse();
+        }
 
         // Calculate the ETag on current live version of the content
         // NOTE: Assumes that the latest version of the content is being used.
@@ -219,8 +221,7 @@ public class IsaacController extends AbstractIsaacFacade {
             getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
                     IsaacServerLogType.GLOBAL_SITE_SEARCH, logMap);
 
-            ResultsWrapper results = this.extractContentSummaryFromResultsWrapper(
-                    searchResults, this.getProperties().getProperty(PROXY_PATH));
+            ResultsWrapper results = this.contentSummarizerService.extractContentSummaryFromResultsWrapper(searchResults);
             return Response.ok(results).tag(etag)
                     .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
                     .build();
@@ -254,9 +255,82 @@ public class IsaacController extends AbstractIsaacFacade {
     @GZIP
     @ApiOperation(value = "Get a binary object from the current content version.",
                   notes = "This can only be used to get images from the content database.")
-    public final Response getImageByPath(@Context final Request request, @PathParam("path") final String path) {
+    public final Response getImageByPath(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
+                                         @PathParam("path") final String path) {
         // entity tags etc are already added by segue
-        return api.getImageFileContent(request, this.contentIndex, path);
+
+        // This comes from SegueContentFacade::getImageFileContent -- no other method was calling it, so moving it here.
+        if (null == this.contentIndex || null == path || Files.getFileExtension(path).isEmpty()) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
+                    "Bad input to api call. Required parameter not provided.");
+            log.debug(error.getErrorMessage());
+            return error.toResponse();
+        }
+        // 'version' now points to an ElasticSearch index name (live or latest, probably)
+        // Go there and look up the git sha.
+        String sha = this.contentManager.getCurrentContentSHA();
+
+        // determine if we can use the cache if so return cached response.
+        EntityTag etag = new EntityTag(sha.hashCode() + path.hashCode() + "");
+        Response cachedResponse = generateCachedResponse(request, etag, NUMBER_SECONDS_IN_ONE_DAY);
+
+        if (cachedResponse != null) {
+            return cachedResponse;
+        }
+
+        ByteArrayOutputStream fileContent = null;
+        String mimeType = MediaType.WILDCARD;
+
+        switch (Files.getFileExtension(path).toLowerCase()) {
+            case "svg":
+                mimeType = "image/svg+xml";
+                break;
+
+            case "jpg":
+                mimeType = "image/jpeg";
+                break;
+
+            case "png":
+                mimeType = "image/png";
+                break;
+
+            case "gif":
+                mimeType = "image/gif";
+                break;
+
+            default:
+                // if it is an unknown type return an error as they shouldn't be
+                // using this endpoint.
+                SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
+                        "Invalid file extension requested");
+                log.debug(error.getErrorMessage());
+                return error.toResponse(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, false), etag);
+        }
+
+        try {
+            fileContent = this.contentManager.getFileBytes(sha, path);
+        } catch (IOException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Error reading from file repository", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        } catch (UnsupportedOperationException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Multiple files match the search path provided.", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        }
+
+        if (null == fileContent) {
+            String refererHeader = httpServletRequest.getHeader("Referer");
+            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the file: " + path);
+            log.warn(String.format("Unable to locate the file: (%s). Referer: (%s)", path, refererHeader));
+            return error.toResponse(getCacheControl(NUMBER_SECONDS_IN_TEN_MINUTES, false), etag);
+        }
+
+        return Response.ok(fileContent.toByteArray()).type(mimeType)
+                .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, true))
+                .tag(etag).build();
     }
 
     /**
@@ -280,6 +354,41 @@ public class IsaacController extends AbstractIsaacFacade {
         }
 
         return getUserProgressInformation(request, user.getId());
+    }
+
+    /**
+     * Get snapshot for the current user
+     *
+     * @param request
+     *            - so we can find the current user.
+     * @return a map containing the information.
+     */
+    @GET
+    @Path("users/current_user/snapshot")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @ApiOperation(value = "Get snapshot for the current user.")
+    public final Response getCurrentUserSnapshot(@Context final HttpServletRequest request) {
+        RegisteredUserDTO user;
+        try {
+            user = userManager.getCurrentRegisteredUser(request);
+        } catch (NoUserLoggedInException e1) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
+
+        Map<String, Object> dailyStreakRecord = userStreaksManager.getCurrentStreakRecord(user);
+        dailyStreakRecord.put("largestStreak", userStreaksManager.getLongestStreak(user));
+
+        Map<String, Object> weeklyStreakRecord = userStreaksManager.getCurrentWeeklyStreakRecord(user);
+        weeklyStreakRecord.put("largestStreak", userStreaksManager.getLongestWeeklyStreak(user));
+
+        Map<String, Object> userSnapshot = ImmutableMap.of(
+                "dailyStreakRecord", dailyStreakRecord,
+                "weeklyStreakRecord", weeklyStreakRecord,
+                "achievementsRecord", userBadgeManager.getAllUserBadges(user)
+        );
+
+        return Response.ok(userSnapshot).build();
     }
 
     /**
@@ -312,8 +421,7 @@ public class IsaacController extends AbstractIsaacFacade {
             userOfInterestSummary = userManager.convertToUserSummaryObject(userOfInterestFull);
 
             if (associationManager.hasPermission(user, userOfInterestSummary)) {
-                Map<String, Object> userProgressInformation = statsManager
-                        .getUserQuestionInformation(userOfInterestFull);
+                Map<String, Object> userProgressInformation = statsManager.getUserQuestionInformation(userOfInterestFull);
 
                 // augment details with user snapshot data (perhaps one day we will replace the entire endpoint with this call)
                 Map<String, Object> dailyStreakRecord = userStreaksManager.getCurrentStreakRecord(userOfInterestFull);
@@ -351,74 +459,5 @@ public class IsaacController extends AbstractIsaacFacade {
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         }
-    }
-
-    /**
-     * Statistics endpoint.
-     * 
-     * @param request
-     *            - to determine access.
-     * @return stats
-     */
-    @GET
-    @Path("stats/questions_answered/count")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @ApiOperation(value = "Get the total number of questions attempted on the platform.",
-                  notes = "For performance reasons, this number is cached server-side for 10 minutes.")
-    public Response getQuestionCount(@Context final HttpServletRequest request) {
-        // Update the question count if it's expired
-        questionCountCache.get();
-
-        // Return the old question count
-        return Response.ok(ImmutableMap.of("answeredQuestionCount", lastQuestionCount))
-                .cacheControl(getCacheControl(NUMBER_SECONDS_IN_MINUTE, false)).build();
-    }
-    
-    /**
-     * This method will extract basic information from a content object so the lighter ContentInfo object can be sent to
-     * the client instead.
-     * 
-     * @param content
-     *            - the content object to summarise
-     * @return ContentSummaryDTO.
-     */
-    private ContentSummaryDTO extractContentSummary(final ContentDTO content) {
-        if (null == content) {
-            return null;
-        }
-
-        // try auto-mapping
-        ContentSummaryDTO contentInfo = mapper.map(content, ContentSummaryDTO.class);
-        contentInfo.setUrl(uriManager.generateApiUrl(content));
-
-        return contentInfo;
-    }
-
-    /**
-     * Utility method to convert a ResultsWrapper of content objects into one with ContentSummaryDTO objects.
-     * 
-     * @param contentList
-     *            - the list of content to summarise.
-     * @param proxyPath
-     *            - the path used for augmentation of urls.
-     * @return list of shorter ContentSummaryDTO objects.
-     */
-    private ResultsWrapper<ContentSummaryDTO> extractContentSummaryFromResultsWrapper(
-            final ResultsWrapper<ContentDTO> contentList, final String proxyPath) {
-        if (null == contentList) {
-            return null;
-        }
-
-        ResultsWrapper<ContentSummaryDTO> contentSummaryResults = new ResultsWrapper<ContentSummaryDTO>(
-                new ArrayList<ContentSummaryDTO>(), contentList.getTotalResults());
-
-        for (ContentDTO content : contentList.getResults()) {
-            ContentSummaryDTO contentInfo = extractContentSummary(content);
-            if (null != contentInfo) {
-                contentSummaryResults.getResults().add(contentInfo);
-            }
-        }
-        return contentSummaryResults;
     }
 }

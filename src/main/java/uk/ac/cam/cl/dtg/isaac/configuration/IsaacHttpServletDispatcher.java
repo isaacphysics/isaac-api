@@ -15,9 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.isaac.configuration;
 
-import javax.servlet.annotation.WebInitParam;
-import javax.servlet.annotation.WebServlet;
-
 import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
 
 /**

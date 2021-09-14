@@ -35,17 +35,31 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.api.managers.ExternalAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.IExternalAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.IStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.ITransactionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.IUserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.PgTransactionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.StubExternalAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.*;
-import uk.ac.cam.cl.dtg.segue.auth.*;
+import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
+import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.ISecondFactorAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.ISegueHashingAlgorithm;
+import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v1;
+import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v2;
+import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v3;
+import uk.ac.cam.cl.dtg.segue.auth.SegueTOTPAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.TwitterAuthenticator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
@@ -62,7 +76,18 @@ import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.IUserBadgePersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.PgUserBadgePersistenceManager;
-import uk.ac.cam.cl.dtg.segue.dao.users.*;
+import uk.ac.cam.cl.dtg.segue.dao.users.IAnonymousUserDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.IExternalAccountDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.IPasswordDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.ITOTPDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupPersistenceManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.PgAnonymousUsers;
+import uk.ac.cam.cl.dtg.segue.dao.users.PgExternalAccountPersistenceManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.PgPasswordDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.PgTOTPDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.PgUserGroupPersistenceManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.PgUsers;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dos.AbstractUserPreferenceManager;
@@ -81,6 +106,7 @@ import uk.ac.cam.cl.dtg.segue.scheduler.SegueScheduledJob;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.email.MailJetApiClientWrapper;
 import uk.ac.cam.cl.dtg.util.locations.IPInfoDBLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.IPLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeIOLocationResolver;
@@ -91,13 +117,13 @@ import javax.servlet.ServletContextListener;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.UnknownHostException;
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType.*;
 
 /**
  * This class is responsible for injecting configuration values for persistence related classes.
@@ -129,6 +155,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static IUserAlerts userAlerts = null;
     private static IUserStreaksManager userStreaksManager = null;
     private static IUserBadgePersistenceManager userBadgePersitenceManager = null;
+    private static IExternalAccountManager externalAccountManager = null;
 
     private static Collection<Class<? extends ServletContextListener>> contextListeners;
     private static Map<String, Reflections> reflections = com.google.common.collect.Maps.newHashMap();
@@ -207,6 +234,21 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         this.bindConstantToProperty(CONTENT_INDEX, globalProperties);
 
         this.bindConstantToProperty(Constants.API_METRICS_EXPORT_PORT, globalProperties);
+
+        this.bind(String.class).toProvider(() -> {
+            // Any binding to String without a matching @Named annotation will always get the empty string
+            // which seems incredibly likely to cause errors and rarely to be intended behaviour,
+            // so throw an error early in DEV and log an error in PROD.
+            try {
+                throw new IllegalArgumentException("Binding a String without a matching @Named annotation");
+            } catch (IllegalArgumentException e) {
+                if (globalProperties.getProperty(SEGUE_APP_ENVIRONMENT).equals(DEV.name())) {
+                    throw e;
+                }
+                log.error("Binding a String without a matching @Named annotation", e);
+            }
+            return "";
+        });
     }
 
     /**
@@ -471,12 +513,15 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     private static SegueLocalAuthenticator getSegueLocalAuthenticator(final IUserDataManager database, final IPasswordDataManager passwordDataManager,
                                                                       final PropertiesLoader properties) {
-        ISegueHashingAlgorithm preferredAlgorithm = new SeguePBKDF2v2();
-        ISegueHashingAlgorithm oldAlgorithm = new SeguePBKDF2v1();
+        ISegueHashingAlgorithm preferredAlgorithm = new SeguePBKDF2v3();
+        ISegueHashingAlgorithm oldAlgorithm1 = new SeguePBKDF2v1();
+        ISegueHashingAlgorithm oldAlgorithm2 = new SeguePBKDF2v2();
 
-        Map<String, ISegueHashingAlgorithm> possibleAlgorithms
-                = ImmutableMap.of(preferredAlgorithm.hashingAlgorithmName(), preferredAlgorithm,
-                oldAlgorithm.hashingAlgorithmName(), oldAlgorithm);
+        Map<String, ISegueHashingAlgorithm> possibleAlgorithms = ImmutableMap.of(
+                        preferredAlgorithm.hashingAlgorithmName(), preferredAlgorithm,
+                        oldAlgorithm1.hashingAlgorithmName(), oldAlgorithm1,
+                        oldAlgorithm2.hashingAlgorithmName(), oldAlgorithm2
+        );
 
         return new SegueLocalAuthenticator(database, passwordDataManager, properties, possibleAlgorithms, preferredAlgorithm);
     }
@@ -517,6 +562,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                 properties.getProperty(HOST_NAME)));
         globalTokens.put("myAssignmentsURL", String.format("https://%s/assignments",
                 properties.getProperty(HOST_NAME)));
+        globalTokens.put("myQuizzesURL", String.format("https://%s/quizzes",
+            properties.getProperty(HOST_NAME)));
         globalTokens.put("myBookedEventsURL", String.format("https://%s/events?show_booked_only=true",
                 properties.getProperty(HOST_NAME)));
         globalTokens.put("contactUsURL", String.format("https://%s/contact",
@@ -546,8 +593,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *            - list of known providers.
      * @param emailQueue
      *            - so that we can send e-mails.
-     * @param mapperFacade
-     *            - for DO and DTO mapping.
      * @return Content version controller with associated dependencies.
      */
     @Inject
@@ -555,11 +600,10 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Singleton
     private UserAuthenticationManager getUserAuthenticationManager(final IUserDataManager database, final PropertiesLoader properties,
                                               final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
-                                              final EmailManager emailQueue, final MapperFacade mapperFacade) {
+                                              final EmailManager emailQueue) {
         if (null == userAuthenticationManager) {
-            userAuthenticationManager = new UserAuthenticationManager(database, properties, providersToRegister,
-                    mapperFacade, emailQueue);
-            log.info("Creating singleton of UserManager");
+            userAuthenticationManager = new UserAuthenticationManager(database, properties, providersToRegister, emailQueue);
+            log.info("Creating singleton of UserAuthenticationManager");
         }
 
         return userAuthenticationManager;
@@ -648,10 +692,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     private GroupManager getGroupManager(final IUserGroupPersistenceManager userGroupDataManager,
-                                         final UserAccountManager userManager, final MapperFacade dtoMapper) {
+                                         final UserAccountManager userManager, final GameManager gameManager,
+                                         final MapperFacade dtoMapper) {
 
         if (null == groupManager) {
-            groupManager = new GroupManager(userGroupDataManager, userManager, dtoMapper);
+            groupManager = new GroupManager(userGroupDataManager, userManager, gameManager, dtoMapper);
             log.info("Creating singleton of GroupManager");
         }
 
@@ -691,8 +736,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             misuseMonitor.registerHandler(EmailVerificationRequestMisuseHandler.class.getSimpleName(),
                     new EmailVerificationRequestMisuseHandler());
 
-            misuseMonitor.registerHandler(PasswordResetRequestMisuseHandler.class.getSimpleName(),
-                    new PasswordResetRequestMisuseHandler());
+            misuseMonitor.registerHandler(PasswordResetByEmailMisuseHandler.class.getSimpleName(),
+                    new PasswordResetByEmailMisuseHandler());
+
+            misuseMonitor.registerHandler(PasswordResetByIPMisuseHandler.class.getSimpleName(),
+                    new PasswordResetByIPMisuseHandler(emailManager, properties));
 
             misuseMonitor.registerHandler(TeacherPasswordResetMisuseHandler.class.getSimpleName(),
                     new TeacherPasswordResetMisuseHandler());
@@ -707,7 +755,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                     new LogEventMisuseHandler(emailManager, properties));
 
             misuseMonitor.registerHandler(QuestionAttemptMisuseHandler.class.getSimpleName(),
-                    new QuestionAttemptMisuseHandler(emailManager, properties));
+                    new QuestionAttemptMisuseHandler(properties));
 
             misuseMonitor.registerHandler(AnonQuestionAttemptMisuseHandler.class.getSimpleName(),
                     new AnonQuestionAttemptMisuseHandler());
@@ -756,23 +804,17 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      * @param password
      *            - the name of the database to configure the wrapper to use.
      * @return PostgresSqlDb db object preconfigured to work with the segue database.
-     * @throws SQLException
-     *             - If we cannot create the connection.
      */
     @Provides
     @Singleton
     @Inject
     private static PostgresSqlDb getPostgresDB(@Named(Constants.POSTGRES_DB_URL) final String databaseUrl,
                                                @Named(Constants.POSTGRES_DB_USER) final String username,
-                                               @Named(Constants.POSTGRES_DB_PASSWORD) final String password) throws SQLException {
+                                               @Named(Constants.POSTGRES_DB_PASSWORD) final String password) {
 
         if (null == postgresDB) {
-            try {
-                postgresDB = new PostgresSqlDb(databaseUrl, username, password);
-                log.info("Created Singleton of PostgresDb wrapper");
-            } catch (ClassNotFoundException e) {
-                log.error("Unable to locate postgres driver.", e);
-            }
+            postgresDB = new PostgresSqlDb(databaseUrl, username, password);
+            log.info("Created Singleton of PostgresDb wrapper");
         }
 
         return postgresDB;
@@ -831,8 +873,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *            - dependency
      * @param questionManager
      *            - dependency
-     * @param gameManager
-     *            - dependency
      * @return stats manager
      */
     @Provides
@@ -841,12 +881,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static StatisticsManager getStatsManager(final UserAccountManager userManager,
                                                      final ILogManager logManager, final SchoolListReader schoolManager,
                                                      final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final LocationManager locationHistoryManager,
-                                                     final GroupManager groupManager, final QuestionManager questionManager, final GameManager gameManager,
+                                                     final GroupManager groupManager, final QuestionManager questionManager,
                                                      final IUserStreaksManager userStreaksManager) {
 
         if (null == statsManager) {
             statsManager = new StatisticsManager(userManager, logManager, schoolManager, contentManager, contentIndex,
-                    locationHistoryManager, groupManager, questionManager, gameManager, userStreaksManager);
+                    locationHistoryManager, groupManager, questionManager, userStreaksManager);
             log.info("Created Singleton of Statistics Manager");
         }
 
@@ -884,6 +924,34 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     }
 
     /**
+     */
+    @Provides
+    @Singleton
+    @Inject
+    private static IExternalAccountManager getExternalAccountManager(final PropertiesLoader properties, final PostgresSqlDb database) {
+
+        if (null == externalAccountManager) {
+            String mailjetKey = properties.getProperty(MAILJET_API_KEY);
+            String mailjetSecret = properties.getProperty(MAILJET_API_SECRET);
+
+            if (null != mailjetKey && null != mailjetSecret && !mailjetKey.isEmpty() && !mailjetSecret.isEmpty()) {
+                // If MailJet is configured, initialise the sync:
+                IExternalAccountDataManager externalAccountDataManager = new PgExternalAccountPersistenceManager(database);
+                MailJetApiClientWrapper mailJetApiClientWrapper = new MailJetApiClientWrapper(mailjetKey, mailjetSecret,
+                        properties.getProperty(MAILJET_NEWS_LIST_ID), properties.getProperty(MAILJET_EVENTS_LIST_ID));
+
+                log.info("Created singleton of ExternalAccountManager.");
+                externalAccountManager = new ExternalAccountManager(mailJetApiClientWrapper, externalAccountDataManager);
+            } else {
+                // Else warn and initialise a placeholder that always throws an error if used:
+                log.warn("Created stub of ExternalAccountManager since external provider not configured.");
+                externalAccountManager = new StubExternalAccountManager();
+            }
+        }
+        return externalAccountManager;
+    }
+
+    /**
      * This provides a new instance of the location resolver.
      *
      * @param apiKey
@@ -915,7 +983,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      */
     public static Reflections getReflectionsClass(final String pkg) {
         if (!reflections.containsKey(pkg)) {
-            log.info("Caching reflections scan on uk.ac.cam.cl.dtg.segue....");
+            log.info(String.format("Caching reflections scan on '%s'", pkg));
             reflections.put(pkg, new Reflections(pkg));
         }
         return reflections.get(pkg);
@@ -960,11 +1028,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         elasticSearchClient.close();
         elasticSearchClient = null;
 
-        try {
-            postgresDB.close();
-            postgresDB = null;
-        } catch (IOException e) {
-            log.error("Unable to close external connection", e);
-        }
+        postgresDB.close();
+        postgresDB = null;
     }
 }

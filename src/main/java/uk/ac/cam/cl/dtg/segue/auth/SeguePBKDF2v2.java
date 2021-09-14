@@ -19,6 +19,7 @@ package uk.ac.cam.cl.dtg.segue.auth;
  * Represents an instance of a hashing scheme used in Segue.
  *
  */
+@Deprecated
 public class SeguePBKDF2v2 extends SeguePBKDF2 implements ISegueHashingAlgorithm {
     private static final String CRYPTO_ALGORITHM = "PBKDF2WithHmacSHA1";
     private static final String SALTING_ALGORITHM = "SHA1PRNG";

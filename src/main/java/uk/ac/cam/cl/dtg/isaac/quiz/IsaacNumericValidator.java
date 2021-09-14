@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
+import com.google.common.collect.ImmutableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
@@ -45,11 +46,16 @@ public class IsaacNumericValidator implements IValidator {
 
     private static final String DEFAULT_VALIDATION_RESPONSE = "Check your working.";
     private static final String DEFAULT_WRONG_UNIT_VALIDATION_RESPONSE = "Check your units.";
-    // Many users are getting answers wrong solely because we don't allow their (unambiguous) syntax for 10^x. Be nicer!
-    // Allow spaces either side of the times and allow * x X × and \times as multiplication!
-    // Also allow ^ or ** for powers. Allow e or E. Allow optional brackets around the powers of 10.
-    // Extract exponent as either group <exp1> or <exp2> (the other will become '').
-    private static final String NUMERIC_QUESTION_PARSE_REGEX = "[ ]?((\\*|x|X|×|\\\\times)[ ]?10(\\^|\\*\\*)|e|E)([({](?<exp1>-?[0-9]+)[)}]|(?<exp2>-?[0-9]+))";
+    /* Many users are getting answers wrong solely because we don't allow their (unambiguous) syntax for 10^x. Be nicer!
+       Allow spaces either side of the times and allow * x X × and \times as multiplication!
+       Also allow ^ or ** for powers. Allow e or E. Allow optional brackets around the powers of 10.
+       Extract exponent as either group <exp1> or <exp2> (the other will become '').
+
+       Inputs of style "1x10^3" and of style "10^3" must be dealt with separately, since for the latter we need
+       to add a "1" to the start so both can become "1e3" when replacing the 10 part.
+     */
+    private static final String PREFIXED_POWER_OF_TEN_REGEX = "[ ]?((\\*|x|X|×|\\\\times)[ ]?10(\\^|\\*\\*)|e|E)([({](?<exp1>-?[0-9]+)[)}]|(?<exp2>-?[0-9]+))";
+    private static final String BARE_POWER_OF_TEN_REGEX = "^(10(\\^|\\*\\*))([({](?<exp1>-?[0-9]+)[)}]|(?<exp2>-?[0-9]+))$";
     private static final String INVALID_NEGATIVE_STANDARD_FORM = ".*?10-([0-9]+).*?";
 
     /**
@@ -115,10 +121,18 @@ public class IsaacNumericValidator implements IValidator {
         }
 
         try {
+            // Should this answer include units?
+            boolean shouldValidateWithUnits = isaacNumericQuestion.getRequireUnits();
+            if (shouldValidateWithUnits && null != isaacNumericQuestion.getDisplayUnit() && !isaacNumericQuestion.getDisplayUnit().isEmpty()) {
+                log.warn(String.format("Question has inconsistent units settings, overriding requiresUnits: %s! src: %s",
+                        question.getId(), question.getCanonicalSourceFile()));
+                shouldValidateWithUnits = false;
+            }
+
             if (null == answerFromUser.getValue() || answerFromUser.getValue().isEmpty()) {
                 return new QuantityValidationResponse(question.getId(), answerFromUser, false, new Content(
                         "You did not provide an answer."), false, false, new Date());
-            } else if (null == answerFromUser.getUnits() && (isaacNumericQuestion.getRequireUnits())) {
+            } else if (null == answerFromUser.getUnits() && shouldValidateWithUnits) {
                 return new QuantityValidationResponse(question.getId(), answerFromUser, false, new Content(
                         "You did not provide any units."), null, false, new Date());
             }
@@ -132,11 +146,11 @@ public class IsaacNumericValidator implements IValidator {
             // Only return this if the answer is incorrect - as we don't know if the correct answers have always been
             // specified in the correct # of sig figs.
             if (bestResponse != null && !bestResponse.isCorrect()) {
-                return bestResponse;
+                return useDefaultFeedbackIfNecessary(isaacNumericQuestion, bestResponse);
             }
 
             // Step 2 - then do correct answer numeric equivalence checking.
-            if (isaacNumericQuestion.getRequireUnits()) {
+            if (shouldValidateWithUnits) {
                 bestResponse = this.validateWithUnits(isaacNumericQuestion, answerFromUser);
             } else {
                 bestResponse = this.validateWithoutUnits(isaacNumericQuestion, answerFromUser);
@@ -148,13 +162,12 @@ public class IsaacNumericValidator implements IValidator {
                     && !(DEFAULT_VALIDATION_RESPONSE.equals(bestResponse.getExplanation().getValue())
                     || DEFAULT_WRONG_UNIT_VALIDATION_RESPONSE
                     .equals(bestResponse.getExplanation().getValue()))) {
-                return bestResponse;
+                return useDefaultFeedbackIfNecessary(isaacNumericQuestion, bestResponse);
             }
 
             // Step 3 - then do sig fig checking:
-            if (!this.verifyCorrectNumberOfSignificantFigures(answerFromUser.getValue(),
-                    isaacNumericQuestion.getSignificantFiguresMin(), isaacNumericQuestion.getSignificantFiguresMax())) {
-                // Make sure that the answer is to the right number of sig figs before we proceed.
+            if (tooFewSignificantFigures(answerFromUser.getValue(), isaacNumericQuestion.getSignificantFiguresMin())) {
+                // If too few sig figs then give feedback about this.
 
                 // If we have unit information available put it in our response.
                 Boolean validUnits = null;
@@ -163,18 +176,32 @@ public class IsaacNumericValidator implements IValidator {
                     validUnits = bestResponse.getCorrectUnits();
                 }
                 // Our new bestResponse is about incorrect significant figures:
-                Content sigFigResponse = new Content(
-                        "Your <strong>Significant figures</strong> are incorrect, "
-                                + "read our "
-                                + "<strong><a target='_blank' href='/solving_problems#acc_solving_problems_sig_figs'>"
-                                + "sig fig guide</a></strong>.");
-                sigFigResponse.setTags(new HashSet<>(Collections.singletonList("sig_figs")));
+                Content sigFigResponse = new Content(DEFAULT_VALIDATION_RESPONSE);
+                sigFigResponse.setTags(new HashSet<>(ImmutableList.of("sig_figs", "sig_figs_too_few")));
                 bestResponse = new QuantityValidationResponse(question.getId(), answerFromUser, false, sigFigResponse,
                         false, validUnits, new Date());
             }
+            if (tooManySignificantFigures(answerFromUser.getValue(), isaacNumericQuestion.getSignificantFiguresMax())
+                    && bestResponse.isCorrect()) {
+                // If (and only if) _correct_, but to too many sig figs, give feedback about this.
+
+                // If we have unit information available put it in our response.
+                Boolean validUnits = null;
+                if (isaacNumericQuestion.getRequireUnits()) {
+                    // Whatever the current bestResponse is, it contains all we need to know about the units:
+                    validUnits = bestResponse.getCorrectUnits();
+                }
+                // Our new bestResponse is about incorrect significant figures:
+                Content sigFigResponse = new Content(DEFAULT_VALIDATION_RESPONSE);
+                sigFigResponse.setTags(new HashSet<>(ImmutableList.of("sig_figs", "sig_figs_too_many")));
+                bestResponse = new QuantityValidationResponse(question.getId(), answerFromUser, false, sigFigResponse,
+                        false, validUnits, new Date());
+            }
+
+            // And then return the bestResponse:
             log.debug("Finished validation: correct=" + bestResponse.isCorrect() + ", correctValue="
                     + bestResponse.getCorrectValue() + ", correctUnits=" + bestResponse.getCorrectUnits());
-            return bestResponse;
+            return useDefaultFeedbackIfNecessary(isaacNumericQuestion, bestResponse);
         } catch (NumberFormatException e) {
             log.debug("Validation failed for '" + answerFromUser.getValue() + " " + answerFromUser.getUnits() + "': "
                     + "cannot parse as number!");
@@ -308,11 +335,8 @@ public class IsaacNumericValidator implements IValidator {
         log.debug("\t[numericValuesMatch]");
         double trustedDouble, untrustedDouble;
 
-        // Replace "x10^(...)" with "e(...)", allowing many common unambiguous cases!
-        String untrustedParsedValue = untrustedValue.replace("−", "-");
-        untrustedParsedValue = untrustedParsedValue.replaceFirst(NUMERIC_QUESTION_PARSE_REGEX, "e${exp1}${exp2}");
-
-        String trustedParsedValue = trustedValue.replaceFirst(NUMERIC_QUESTION_PARSE_REGEX, "e${exp1}${exp2}");
+        String untrustedParsedValue = reformatNumberForParsing(untrustedValue);
+        String trustedParsedValue = reformatNumberForParsing(trustedValue);
 
         // Round to N s.f. for trusted value
         trustedDouble = roundStringValueToSigFigs(trustedParsedValue, significantFiguresRequired);
@@ -350,9 +374,7 @@ public class IsaacNumericValidator implements IValidator {
      */
     private SigFigResult extractSignificantFigures(final String valueToCheck) {
         log.debug("\t[extractSignificantFigures]");
-        // Replace "x10^(...)" with "e(...)", allowing many common unambiguous cases!
-        String untrustedParsedValue = valueToCheck.replace("−", "-");
-        untrustedParsedValue = untrustedParsedValue.replaceFirst(NUMERIC_QUESTION_PARSE_REGEX, "e${exp1}${exp2}");
+        String untrustedParsedValue = reformatNumberForParsing(valueToCheck);
 
         // Parse exactly into a BigDecimal:
         BigDecimal bd = new BigDecimal(untrustedParsedValue);
@@ -418,26 +440,33 @@ public class IsaacNumericValidator implements IValidator {
     }
 
     /**
-     * Helper method to verify if the answer given is to the correct number of significant figures.
+     * Helper method to verify if the answer given is to too few significant figures.
      *
      * @param valueToCheck      - the value as a string from the user to check.
      * @param minAllowedSigFigs - the minimum number of significant figures that is expected for the answer to be correct.
-     * @param maxAllowedSigFigs - the maximum number of significant figures that is expected for the answer to be correct.
-     * @return true if yes false if not.
+     * @return true if too few, false if not.
      */
-    private boolean verifyCorrectNumberOfSignificantFigures(final String valueToCheck, final int minAllowedSigFigs,
-                                                            final int maxAllowedSigFigs) {
-        log.debug("\t[verifyCorrectNumberOfSignificantFigures]");
+    private boolean tooFewSignificantFigures(final String valueToCheck, final int minAllowedSigFigs) {
+        log.debug("\t[tooFewSignificantFigures]");
 
         SigFigResult sigFigsFromUser = extractSignificantFigures(valueToCheck);
 
-        if (!sigFigsFromUser.isAmbiguous) {
-            int userSigFigs = sigFigsFromUser.sigFigsMin;  // If not ambiguous, min and max are guaranteed to be equal!
-            return userSigFigs <= maxAllowedSigFigs && userSigFigs >= minAllowedSigFigs;
-        } else {
-            // Must check that the two ranges have some overlap:
-            return sigFigsFromUser.sigFigsMin <= maxAllowedSigFigs && minAllowedSigFigs <= sigFigsFromUser.sigFigsMax;
-        }
+        return sigFigsFromUser.sigFigsMax < minAllowedSigFigs;
+    }
+
+    /**
+     * Helper method to verify if the answer given is to too many significant figures.
+     *
+     * @param valueToCheck      - the value as a string from the user to check.
+     * @param maxAllowedSigFigs - the maximum number of significant figures that is expected for the answer to be correct.
+     * @return true if too many, false if not.
+     */
+    private boolean tooManySignificantFigures(final String valueToCheck, final int maxAllowedSigFigs) {
+        log.debug("\t[tooManySignificantFigures]");
+
+        SigFigResult sigFigsFromUser = extractSignificantFigures(valueToCheck);
+
+        return sigFigsFromUser.sigFigsMin > maxAllowedSigFigs;
     }
 
     /**
@@ -482,5 +511,45 @@ public class IsaacNumericValidator implements IValidator {
             }
         }
         return null;
+    }
+
+    /**
+     * Format a number in string form such that Java BigDecimal can parse it.
+     *
+     * Replace "x10^(...)" with "e(...)", allowing many common unambiguous cases, and fix uses of Unicode minus signs,
+     * and allow bare powers of ten.
+     *
+     * @param numberToFormat - number in some unambiguous standard form.
+     * @return - number in engineering standard form e.g. "3.4e3"
+     */
+    private String reformatNumberForParsing(final String numberToFormat) {
+        String reformattedNumber = numberToFormat.replace("−", "-");
+        reformattedNumber = reformattedNumber.replaceFirst(PREFIXED_POWER_OF_TEN_REGEX, "e${exp1}${exp2}");
+        reformattedNumber = reformattedNumber.replaceFirst(BARE_POWER_OF_TEN_REGEX, "1e${exp1}${exp2}");
+        return reformattedNumber;
+    }
+
+    /**
+     *  Replace explanation of validation response if question has default feedback and existing feedback blank or generic.
+     *
+     *  This method could be void, since it modifies the object passed in by reference, but it makes for shorter and
+     *  simpler code when it is used if it just returns the same object it is passed.
+     *
+     * @param question - the question to use the default feedback of
+     * @param response - the response to modify if necessary
+     * @return the modified response object
+     */
+    private QuantityValidationResponse useDefaultFeedbackIfNecessary(final IsaacNumericQuestion question,
+                                                                     final QuantityValidationResponse response) {
+        Content feedback = response.getExplanation();
+        boolean feedbackEmptyOrGeneric = feedbackIsNullOrEmpty(feedback) || DEFAULT_VALIDATION_RESPONSE.equals(feedback.getValue())
+                || DEFAULT_WRONG_UNIT_VALIDATION_RESPONSE.equals(feedback.getValue());
+
+        if (null != question.getDefaultFeedback() && feedbackEmptyOrGeneric) {
+            log.debug("Replacing generic or blank explanation with default feedback from question.");
+            response.setExplanation(question.getDefaultFeedback());
+            // TODO - should this preserve the 'sig_figs' tag? If so, how to do it without modifying the referenced default feedback?
+        }
+        return response;
     }
 }

@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 9.6.12
--- Dumped by pg_dump version 9.6.12
+-- Dumped from database version 13rc1 (Debian 13~rc1-1.pgdg100+1)
+-- Dumped by pg_dump version 13rc1 (Debian 13~rc1-1.pgdg100+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -12,9 +12,9 @@ SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
 SET check_function_bodies = false;
+SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
-
 
 --
 -- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
@@ -31,7 +31,7 @@ COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
 
 SET default_tablespace = '';
 
-SET default_with_oids = false;
+SET default_table_access_method = heap;
 
 --
 -- Name: assignments; Type: TABLE; Schema: public; Owner: rutherford
@@ -42,6 +42,7 @@ CREATE TABLE public.assignments (
     gameboard_id character varying(255) NOT NULL,
     group_id integer NOT NULL,
     owner_user_id integer,
+    notes text,
     creation_date timestamp without time zone,
     due_date timestamp with time zone
 );
@@ -110,6 +111,20 @@ ALTER SEQUENCE public.event_bookings_id_seq OWNED BY public.event_bookings.id;
 
 
 --
+-- Name: external_accounts; Type: TABLE; Schema: public; Owner: rutherford
+--
+
+CREATE TABLE public.external_accounts (
+    user_id integer NOT NULL,
+    provider_name text NOT NULL,
+    provider_user_identifier text,
+    provider_last_updated timestamp without time zone
+);
+
+
+ALTER TABLE public.external_accounts OWNER TO rutherford;
+
+--
 -- Name: gameboards; Type: TABLE; Schema: public; Owner: rutherford
 --
 
@@ -117,6 +132,7 @@ CREATE TABLE public.gameboards (
     id character varying NOT NULL,
     title text,
     questions character varying[],
+    contents jsonb[] DEFAULT array[]::jsonb[] NOT NULL,
     wildcard jsonb,
     wildcard_position integer,
     game_filter jsonb,
@@ -333,6 +349,119 @@ ALTER TABLE public.question_attempts_id_seq OWNER TO rutherford;
 --
 
 ALTER SEQUENCE public.question_attempts_id_seq OWNED BY public.question_attempts.id;
+
+
+--
+-- Name: quiz_assignments; Type: TABLE; Schema: public; Owner: rutherford
+--
+
+CREATE TABLE public.quiz_assignments (
+    id integer NOT NULL,
+    quiz_id character varying(255) NOT NULL,
+    group_id integer NOT NULL,
+    owner_user_id integer,
+    creation_date timestamp without time zone,
+    due_date timestamp with time zone,
+    quiz_feedback_mode text NOT NULL,
+    deleted boolean DEFAULT false NOT NULL
+);
+
+
+ALTER TABLE public.quiz_assignments OWNER TO rutherford;
+
+--
+-- Name: quiz_assignments_id_seq; Type: SEQUENCE; Schema: public; Owner: rutherford
+--
+
+CREATE SEQUENCE public.quiz_assignments_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.quiz_assignments_id_seq OWNER TO rutherford;
+
+--
+-- Name: quiz_assignments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: rutherford
+--
+
+ALTER SEQUENCE public.quiz_assignments_id_seq OWNED BY public.quiz_assignments.id;
+
+
+--
+-- Name: quiz_attempts; Type: TABLE; Schema: public; Owner: rutherford
+--
+
+CREATE TABLE public.quiz_attempts (
+    id integer NOT NULL,
+    user_id integer NOT NULL,
+    quiz_id character varying(255) NOT NULL,
+    quiz_assignment_id integer,
+    start_date timestamp without time zone NOT NULL,
+    completed_date timestamp with time zone
+);
+
+
+ALTER TABLE public.quiz_attempts OWNER TO rutherford;
+
+--
+-- Name: quiz_attempts_id_seq; Type: SEQUENCE; Schema: public; Owner: rutherford
+--
+
+CREATE SEQUENCE public.quiz_attempts_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.quiz_attempts_id_seq OWNER TO rutherford;
+
+--
+-- Name: quiz_attempts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: rutherford
+--
+
+ALTER SEQUENCE public.quiz_attempts_id_seq OWNED BY public.quiz_attempts.id;
+
+
+--
+-- Name: quiz_question_attempts; Type: TABLE; Schema: public; Owner: rutherford
+--
+
+CREATE TABLE public.quiz_question_attempts (
+    id integer NOT NULL,
+    quiz_attempt_id integer NOT NULL,
+    question_id text NOT NULL,
+    question_attempt jsonb,
+    correct boolean,
+    "timestamp" timestamp without time zone
+);
+
+
+ALTER TABLE public.quiz_question_attempts OWNER TO rutherford;
+
+--
+-- Name: quiz_question_attempts_id_seq; Type: SEQUENCE; Schema: public; Owner: rutherford
+--
+
+CREATE SEQUENCE public.quiz_question_attempts_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.quiz_question_attempts_id_seq OWNER TO rutherford;
+
+--
+-- Name: quiz_question_attempts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: rutherford
+--
+
+ALTER SEQUENCE public.quiz_question_attempts_id_seq OWNED BY public.quiz_question_attempts.id;
 
 
 --
@@ -567,6 +696,8 @@ CREATE TABLE public.users (
     school_id text,
     school_other text,
     exam_board text,
+    registered_contexts jsonb[] DEFAULT array[]::jsonb[] NOT NULL,
+    registered_contexts_last_confirmed timestamp without time zone;
     last_updated timestamp without time zone,
     email_verification_status character varying(255),
     last_seen timestamp without time zone,
@@ -643,6 +774,27 @@ ALTER TABLE ONLY public.question_attempts ALTER COLUMN id SET DEFAULT nextval('p
 
 
 --
+-- Name: quiz_assignments id; Type: DEFAULT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY public.quiz_assignments ALTER COLUMN id SET DEFAULT nextval('public.quiz_assignments_id_seq'::regclass);
+
+
+--
+-- Name: quiz_attempts id; Type: DEFAULT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY public.quiz_attempts ALTER COLUMN id SET DEFAULT nextval('public.quiz_attempts_id_seq'::regclass);
+
+
+--
+-- Name: quiz_question_attempts id; Type: DEFAULT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY public.quiz_question_attempts ALTER COLUMN id SET DEFAULT nextval('public.quiz_question_attempts_id_seq'::regclass);
+
+
+--
 -- Name: users id; Type: DEFAULT; Schema: public; Owner: rutherford
 --
 
@@ -687,6 +839,14 @@ ALTER TABLE ONLY public.linked_accounts
 
 ALTER TABLE ONLY public.event_bookings
     ADD CONSTRAINT "eventbooking id pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: external_accounts external_accounts_pk; Type: CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY public.external_accounts
+    ADD CONSTRAINT external_accounts_pk PRIMARY KEY (user_id, provider_name);
 
 
 --
@@ -759,6 +919,30 @@ ALTER TABLE ONLY public.linked_accounts
 
 ALTER TABLE ONLY public.question_attempts
     ADD CONSTRAINT question_attempts_id PRIMARY KEY (id);
+
+
+--
+-- Name: quiz_assignments quiz_assignments_id; Type: CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY public.quiz_assignments
+    ADD CONSTRAINT quiz_assignments_id PRIMARY KEY (id);
+
+
+--
+-- Name: quiz_attempts quiz_attempts_id; Type: CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY public.quiz_attempts
+    ADD CONSTRAINT quiz_attempts_id PRIMARY KEY (id);
+
+
+--
+-- Name: quiz_question_attempts quiz_question_attempts_id; Type: CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY public.quiz_question_attempts
+    ADD CONSTRAINT quiz_question_attempts_id PRIMARY KEY (id);
 
 
 --
@@ -899,6 +1083,7 @@ CREATE INDEX gameboards_tags_gin_index ON public.gameboards USING gin (tags);
 
 CREATE INDEX group_additional_managers_group_id ON public.group_additional_managers USING btree (group_id);
 
+
 --
 -- Name: groups_owner_id; Type: INDEX; Schema: public; Owner: rutherford
 --
@@ -942,6 +1127,13 @@ CREATE INDEX logged_events_type_timestamp ON public.logged_events USING btree (e
 
 
 --
+-- Name: only_one_attempt_per_assignment_per_user; Type: INDEX; Schema: public; Owner: rutherford
+--
+
+CREATE UNIQUE INDEX only_one_attempt_per_assignment_per_user ON public.quiz_attempts USING btree (quiz_assignment_id, user_id) WHERE (quiz_assignment_id IS NOT NULL);
+
+
+--
 -- Name: question-attempts-by-user; Type: INDEX; Schema: public; Owner: rutherford
 --
 
@@ -967,6 +1159,20 @@ CREATE INDEX question_attempts_by_timestamp ON public.question_attempts USING bt
 --
 
 CREATE INDEX question_attempts_by_user_question ON public.question_attempts USING btree (user_id, question_id text_pattern_ops);
+
+
+--
+-- Name: quiz_attempts_index_by_quiz_id_and_user_id; Type: INDEX; Schema: public; Owner: rutherford
+--
+
+CREATE INDEX quiz_attempts_index_by_quiz_id_and_user_id ON public.quiz_attempts USING btree (quiz_id, user_id);
+
+
+--
+-- Name: quiz_question_attempts_by_quiz_attempt_id; Type: INDEX; Schema: public; Owner: rutherford
+--
+
+CREATE INDEX quiz_question_attempts_by_quiz_attempt_id ON public.quiz_question_attempts USING btree (quiz_attempt_id);
 
 
 --
@@ -1048,6 +1254,14 @@ ALTER TABLE ONLY public.event_bookings
 
 ALTER TABLE ONLY public.event_bookings
     ADD CONSTRAINT event_bookings_users_id_fk FOREIGN KEY (reserved_by) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: external_accounts external_accounts_fk; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY public.external_accounts
+    ADD CONSTRAINT external_accounts_fk FOREIGN KEY (user_id) REFERENCES public.users(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -1139,6 +1353,14 @@ ALTER TABLE ONLY public.groups
 
 
 --
+-- Name: quiz_question_attempts quiz_attempt_id_quiz_question_attempts_fkey; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY public.quiz_question_attempts
+    ADD CONSTRAINT quiz_attempt_id_quiz_question_attempts_fkey FOREIGN KEY (quiz_attempt_id) REFERENCES public.quiz_attempts(id) ON DELETE CASCADE;
+
+
+--
 -- Name: user_associations_tokens token_owner_user_id; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
 --
 
@@ -1195,6 +1417,14 @@ ALTER TABLE ONLY public.question_attempts
 
 
 --
+-- Name: quiz_attempts user_id_quiz_attempts_fkey; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY public.quiz_attempts
+    ADD CONSTRAINT user_id_quiz_attempts_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: user_preferences user_preference_user_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
 --
 
@@ -1224,13 +1454,6 @@ ALTER TABLE ONLY public.user_streak_freezes
 
 ALTER TABLE ONLY public.user_streak_targets
     ADD CONSTRAINT user_streak_targets_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
-
-
---
--- Name: SCHEMA public; Type: ACL; Schema: -; Owner: rutherford
---
-
-GRANT ALL ON SCHEMA public TO PUBLIC;
 
 
 --

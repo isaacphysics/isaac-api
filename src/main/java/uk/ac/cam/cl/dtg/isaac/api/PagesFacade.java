@@ -31,9 +31,9 @@ import uk.ac.cam.cl.dtg.isaac.dos.IsaacTopicSummaryPage;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacTopicSummaryPageDTO;
-import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -67,6 +67,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -83,7 +84,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class PagesFacade extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(PagesFacade.class);
 
-    private final SegueContentFacade api;
+    private final ContentService api;
     private final MapperFacade mapper;
     private final UserAccountManager userManager;
     private final URIManager uriManager;
@@ -97,7 +98,7 @@ public class PagesFacade extends AbstractIsaacFacade {
      * Creates an instance of the pages controller which provides the REST endpoints for accessing page content.
      * 
      * @param api
-     *            - Instance of segue Api
+     *            - Instance of ContentService
      * @param propertiesLoader
      *            - Instance of properties Loader
      * @param logManager
@@ -118,7 +119,7 @@ public class PagesFacade extends AbstractIsaacFacade {
      *            - Index for the content to serve
      */
     @Inject
-    public PagesFacade(final SegueContentFacade api, final PropertiesLoader propertiesLoader,
+    public PagesFacade(final ContentService api, final PropertiesLoader propertiesLoader,
                        final ILogManager logManager, final MapperFacade mapper, final IContentManager contentManager,
                        final UserAccountManager userManager, final URIManager uriManager, final QuestionManager questionManager,
                        final GameManager gameManager, @Named(CONTENT_INDEX) final String contentIndex) {
@@ -295,9 +296,12 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @ApiOperation(value = "List all question page objects matching the provided criteria.")
-    public final Response getQuestionList(@Context final Request request, @QueryParam("ids") final String ids,
-            @QueryParam("searchString") final String searchString, @QueryParam("tags") final String tags,
-            @QueryParam("levels") final String level, @DefaultValue("false") @QueryParam("fasttrack") final Boolean fasttrack,
+    public final Response getQuestionList(@Context final Request request,
+            @QueryParam("ids") final String ids, @QueryParam("searchString") final String searchString,
+            @QueryParam("tags") final String tags, @QueryParam("levels") final String level,
+            @QueryParam("stages") final String stages, @QueryParam("difficulties") final String difficulties,
+            @QueryParam("examBoards") final String examBoards,
+            @DefaultValue("false") @QueryParam("fasttrack") final Boolean fasttrack,
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
             @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
         StringBuilder etagCodeBuilder = new StringBuilder();
@@ -331,14 +335,20 @@ public class PagesFacade extends AbstractIsaacFacade {
             etagCodeBuilder.append(ids);
         }
 
-        if (tags != null && !tags.isEmpty()) {
-            fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
-            etagCodeBuilder.append(tags);
-        }
-
-        if (level != null && !level.isEmpty()) {
-            fieldsToMatch.put(LEVEL_FIELDNAME, Arrays.asList(level.split(",")));
-            etagCodeBuilder.append(level);
+        Map<String, String> fieldNameToValues = new HashMap<String, String>() {{
+            this.put(TAGS_FIELDNAME, tags);
+            this.put(LEVEL_FIELDNAME, level);
+            this.put(STAGE_FIELDNAME, stages);
+            this.put(DIFFICULTY_FIELDNAME, difficulties);
+            this.put(EXAM_BOARD_FIELDNAME, examBoards);
+        }};
+        for (Map.Entry<String, String> entry : fieldNameToValues.entrySet()) {
+            String fieldName = entry.getKey();
+            String queryStringValue = entry.getValue();
+            if (queryStringValue != null && !queryStringValue.isEmpty()) {
+                fieldsToMatch.put(fieldName, Arrays.asList(queryStringValue.split(",")));
+                etagCodeBuilder.append(queryStringValue);
+            }
         }
 
         // Calculate the ETag on last modified date of tags list
@@ -358,8 +368,7 @@ public class PagesFacade extends AbstractIsaacFacade {
             if (searchString != null && !searchString.isEmpty()) {
                 ResultsWrapper<ContentDTO> c;
 
-                c = api.segueSearch(searchString, this.contentIndex, fieldsToMatch, newStartIndex,
-                            newLimit);
+                c = api.segueSearch(searchString, this.contentIndex, fieldsToMatch, newStartIndex, newLimit);
 
                 ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
                         this.extractContentSummaryFromList(c.getResults()),
@@ -691,7 +700,7 @@ public class PagesFacade extends AbstractIsaacFacade {
             fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(subject));
 
             ResultsWrapper<ContentDTO> pods = api.findMatchingContent(this.contentIndex,
-                    SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch), 0, MAX_PODS_TO_RETURN);
+                    ContentService.generateDefaultFieldToMatch(fieldsToMatch), 0, MAX_PODS_TO_RETURN);
 
             return Response.ok(pods).cacheControl(getCacheControl(NUMBER_SECONDS_IN_TEN_MINUTES, true))
                     .tag(etag)
@@ -848,7 +857,7 @@ public class PagesFacade extends AbstractIsaacFacade {
                                       @Nullable final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
         try {
             ResultsWrapper<ContentDTO> resultList = api.findMatchingContent(this.contentIndex,
-                    SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch), null, null); // includes
+                    ContentService.generateDefaultFieldToMatch(fieldsToMatch), null, null); // includes
             // type
             // checking.
             ContentDTO c = null;
@@ -890,7 +899,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         ResultsWrapper<ContentDTO> c;
 
         c = api.findMatchingContent(this.contentIndex,
-                SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch), startIndex, limit);
+                ContentService.generateDefaultFieldToMatch(fieldsToMatch), startIndex, limit);
 
         ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
                 this.extractContentSummaryFromList(c.getResults()),

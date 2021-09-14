@@ -5,8 +5,6 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.ITransaction;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
-import java.sql.Connection;
-
 /**
  *  Interface defining structure of a user badge policy
  *  Specifies retrieval of badge level, initialisation of partial state, and update of partial state
@@ -39,7 +37,6 @@ public interface IUserBadgePolicy {
      * @param state the current state
      * @param event the triggering event description (should be unique)
      * @return an updated partial state
-     * @throws SegueDatabaseException
      */
-    JsonNode updateState(RegisteredUserDTO user, JsonNode state, String event) throws SegueDatabaseException;
+    JsonNode updateState(RegisteredUserDTO user, JsonNode state, String event);
 }

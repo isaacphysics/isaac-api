@@ -15,10 +15,13 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import io.prometheus.client.Histogram;
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.Validate;
 import org.joda.time.LocalDate;
@@ -30,6 +33,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.TestQuestion;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacItemQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
+import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dos.LightweightQuestionValidationResponse;
@@ -61,13 +65,15 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatorUnavailableException;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.stream.Collectors;
+
+import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.VALIDATOR_LATENCY_HISTOGRAM;
 
 /**
  * This class is responsible for validating correct answers using the ValidatesWith annotation when it is applied on to
@@ -115,11 +121,15 @@ public class QuestionManager {
 
         Choice answerFromUser = mapper.getAutoMapper().map(submittedAnswer, Choice.class);
         QuestionValidationResponse validateQuestionResponse;
+        Histogram.Timer validatorTimer =
+                VALIDATOR_LATENCY_HISTOGRAM.labels(validator.getClass().getSimpleName()).startTimer();
         try {
             validateQuestionResponse = validator.validateQuestionResponse(question, answerFromUser);
         } catch (ValidatorUnavailableException e) {
             return SegueErrorResponse.getServiceUnavailableResponse(e.getClass().getSimpleName() + ": "
                     + e.getMessage());
+        } finally {
+            validatorTimer.observeDuration();
         }
 
         return Response.ok(
@@ -211,8 +221,7 @@ public class QuestionManager {
     public SeguePageDTO augmentQuestionObjects(final SeguePageDTO page, final String userId,
             final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
 
-        List<QuestionDTO> questionsToAugment = QuestionManager.extractQuestionObjectsRecursively(page,
-                new ArrayList<>());
+        List<QuestionDTO> questionsToAugment = extractQuestionObjects(page);
 
         this.augmentQuestionObjectWithAttemptInformation(page, questionsToAugment, usersQuestionAttempts);
 
@@ -307,22 +316,19 @@ public class QuestionManager {
         QuestionValidationResponse questionResponseDO = this.mapper.getAutoMapper().map(questionResponse,
                 QuestionValidationResponse.class);
 
-        // We are operating with the convention that the first component of
-        // an id is the question page
-        // and that the id separator is |
-        String[] questionPageId = questionResponse.getQuestionId().split(Constants.ESCAPED_ID_SEPARATOR);
+        String questionPageId = extractPageIdFromQuestionId(questionResponse.getQuestionId());
         if (user instanceof RegisteredUserDTO) {
             RegisteredUserDTO registeredUser = (RegisteredUserDTO) user;
 
             this.questionAttemptPersistenceManager.registerQuestionAttempt(registeredUser.getId(),
-                    questionPageId[0], questionResponse.getQuestionId(), questionResponseDO);
+                questionPageId, questionResponse.getQuestionId(), questionResponseDO);
             log.debug("Question information recorded for user: " + registeredUser.getId());
 
         } else if (user instanceof AnonymousUserDTO) {
             AnonymousUserDTO anonymousUserDTO = (AnonymousUserDTO) user;
 
             this.questionAttemptPersistenceManager.registerAnonymousQuestionAttempt(anonymousUserDTO.getSessionId(),
-                    questionPageId[0], questionResponse.getQuestionId(), questionResponseDO);
+                questionPageId, questionResponse.getQuestionId(), questionResponseDO);
         } else {
             log.error("Unexpected user type. Unable to record question response");
         }
@@ -458,6 +464,18 @@ public class QuestionManager {
     }
 
     /**
+     * Extract all of the question objects, recursively, from some content.
+     *
+     * @param content
+     *            - The contentDTO which may have question objects as children.
+     * @return A list of QuestionDTO found in the content.
+     */
+    public static List<QuestionDTO> extractQuestionObjects(ContentDTO content) {
+        return QuestionManager.extractQuestionObjectsRecursively(content,
+            new ArrayList<>());
+    }
+
+    /**
      * Extract all of the questionObjectsRecursively.
      * 
      * @param toExtract
@@ -499,7 +517,7 @@ public class QuestionManager {
      * @param questions
      *            - questions which may have choices to shuffle.
      */
-    private void shuffleChoiceQuestionsChoices(final String seed, final List<QuestionDTO> questions) {
+    public void shuffleChoiceQuestionsChoices(final String seed, final List<QuestionDTO> questions) {
         if (null == questions) {
             return;
         }
@@ -552,7 +570,7 @@ public class QuestionManager {
         }
 
         Choice answerFromUser = mapper.getAutoMapper().map(answer, Choice.class);
-        String specification = null;
+        String specification;
         try {
             specification = specifier.createSpecification(answerFromUser);
         } catch (ValidatorUnavailableException e) {
@@ -564,5 +582,30 @@ public class QuestionManager {
 
         return Response.ok(
             mapper.getAutoMapper().map(results, ResultsWrapper.class)).build();
+    }
+
+    public static String extractPageIdFromQuestionId(String questionId) {
+        return questionId.split(Constants.ESCAPED_ID_SEPARATOR)[0];
+    }
+
+    public ChoiceDTO convertJsonAnswerToChoice(String jsonAnswer) throws ErrorResponseWrapper {
+        ChoiceDTO answerFromClientDTO;
+        try {
+            // convert submitted JSON into a Choice:
+            Choice answerFromClient = mapper.getSharedContentObjectMapper().readValue(jsonAnswer, Choice.class);
+            // convert to a DTO so that it strips out any untrusted data.
+            answerFromClientDTO = mapper.getAutoMapper().map(answerFromClient, ChoiceDTO.class);
+        } catch (JsonMappingException | JsonParseException e) {
+            log.info("Failed to map to any expected input...", e);
+            SegueErrorResponse error = new SegueErrorResponse(Response.Status.NOT_FOUND, "Unable to map response to a "
+                    + "Choice object so failing with an error", e);
+            throw new ErrorResponseWrapper(error);
+        } catch (IOException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Response.Status.NOT_FOUND, "Unable to map response to a "
+                    + "Choice object so failing with an error", e);
+            log.error(error.getErrorMessage(), e);
+            throw new ErrorResponseWrapper(error);
+        }
+        return answerFromClientDTO;
     }
 }

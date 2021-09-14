@@ -15,8 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
@@ -24,6 +22,7 @@ import io.swagger.annotations.ApiOperation;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuiz;
 import uk.ac.cam.cl.dtg.isaac.dos.TestCase;
 import uk.ac.cam.cl.dtg.isaac.dos.TestQuestion;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
@@ -43,7 +42,6 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dos.IUserStreaksManager;
-import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
@@ -76,6 +74,7 @@ import java.util.List;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueServerLogType;
+import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdFromQuestionId;
 
 /**
  * Question Facade
@@ -273,29 +272,30 @@ public class QuestionFacade extends AbstractSegueFacade {
             return error.toResponse();
         }
 
-        ChoiceDTO answerFromClientDTO;
-        try {
-            // convert submitted JSON into a Choice:
-            Choice answerFromClient = mapper.getSharedContentObjectMapper().readValue(jsonAnswer, Choice.class);
-            // convert to a DTO so that it strips out any untrusted data.
-            answerFromClientDTO = mapper.getAutoMapper().map(answerFromClient, ChoiceDTO.class);
-        } catch (JsonMappingException | JsonParseException e) {
-            log.info("Failed to map to any expected input...", e);
-            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to map response to a "
-                    + "Choice object so failing with an error", e);
-            return error.toResponse();
-        } catch (IOException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to map response to a "
-                    + "Choice object so failing with an error", e);
-            log.error(error.getErrorMessage(), e);
-            return error.toResponse();
+        if (this.getProperties().getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(Constants.EnvironmentType.DEV.name())) {
+            // FIXME: Currently this is in development only to as to not accidentally break live.
+            // Once quizzes roll out this needs to run in PROD too.
+
+            String questionPageId = extractPageIdFromQuestionId(questionId);
+            Content pageContent;
+            try {
+                pageContent = this.contentManager.getContentDOById(contentIndex, questionPageId);
+                if (pageContent instanceof IsaacQuiz) {
+                    return new SegueErrorResponse(Status.FORBIDDEN, "This question is part of a quiz").toResponse();
+                }
+            } catch (ContentManagerException e) {
+                // This doesn't make sense, so we'll log and continue.
+                SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Question without page found", e);
+                log.error(error.getErrorMessage(), e);
+            }
         }
 
-        // validate the answer.
-        Response response;
         try {
+            ChoiceDTO answerFromClientDTO = questionManager.convertJsonAnswerToChoice(jsonAnswer);
+
             AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(request);
-            response = this.questionManager.validateAnswer(question, answerFromClientDTO);
+
+            Response response = this.questionManager.validateAnswer(question, answerFromClientDTO);
 
             // After validating the answer, work out whether this is abuse of the endpoint. If so, record the attempt in
             // the log, but don't save it for the user. Also, return an error.
@@ -330,7 +330,7 @@ public class QuestionFacade extends AbstractSegueFacade {
                             IPQuestionAttemptMisuseHandler.class.getSimpleName());
                 } catch (SegueResourceMisuseException e) {
                     this.getLogManager().logEvent(currentUser, request, SegueServerLogType.QUESTION_ATTEMPT_RATE_LIMITED, response.getEntity());
-                    String message = "Too many question attempts! Please log in or try again later.";
+                    String message = "Too many question attempts! Please either create an account, log in, or try again later.";
                     return SegueErrorResponse.getRateThrottledResponse(message);
                 }
             }
@@ -358,6 +358,8 @@ public class QuestionFacade extends AbstractSegueFacade {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to save question attempt. Try again later!");
             log.error("Unable to to record question attempt.", e);
             return error.toResponse();
+        } catch (ErrorResponseWrapper responseWrapper) {
+            return responseWrapper.toResponse();
         }
     }
 
@@ -421,31 +423,16 @@ public class QuestionFacade extends AbstractSegueFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
 
-        ChoiceDTO answerFromClientDTO;
         try {
-            Choice answerFromClient = mapper.getSharedContentObjectMapper().readValue(jsonAnswer, Choice.class);
-            // convert to a DTO so that it strips out any untrusted data.
-            answerFromClientDTO = mapper.getAutoMapper().map(answerFromClient, ChoiceDTO.class);
-        } catch (JsonMappingException | JsonParseException e) {
-            log.info("Failed to map to any expected input...", e);
-            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to map response to a "
-                + "Choice object so failing with an error", e);
-            return error.toResponse();
-        } catch (IOException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to map response to a "
-                + "Choice object so failing with an error", e);
-            log.error(error.getErrorMessage(), e);
-            return error.toResponse();
-        }
+            ChoiceDTO answerFromClientDTO = questionManager.convertJsonAnswerToChoice(jsonAnswer);
 
-        Response response;
-        try {
-            response = this.questionManager.generateSpecification(answerFromClientDTO);
-            return response;
+            return questionManager.generateSpecification(answerFromClientDTO);
         } catch (IllegalArgumentException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Bad request - " + e.getMessage(), e);
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
+        } catch (ErrorResponseWrapper responseWrapper) {
+            return responseWrapper.toResponse();
         }
     }
 }

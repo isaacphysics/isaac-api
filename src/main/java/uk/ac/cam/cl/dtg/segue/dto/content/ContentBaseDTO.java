@@ -15,14 +15,15 @@
  */
 package uk.ac.cam.cl.dtg.segue.dto.content;
 
-import java.util.Set;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import uk.ac.cam.cl.dtg.segue.dao.TrimWhitespaceDeserializer;
-
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.api.client.util.Sets;
+import uk.ac.cam.cl.dtg.segue.dao.TrimWhitespaceDeserializer;
+import uk.ac.cam.cl.dtg.segue.dos.AudienceContext;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Represents any content related data that can be stored by the api.
@@ -37,6 +38,8 @@ public abstract class ContentBaseDTO {
     protected Set<String> tags;
     protected String canonicalSourceFile;
     protected String version;
+    protected List<AudienceContext> audience;
+    protected Map<String, List<String>> display;
 
     /**
      * Default constructor.
@@ -141,6 +144,22 @@ public abstract class ContentBaseDTO {
      */
     public void setVersion(final String version) {
         this.version = version;
+    }
+
+    public List<AudienceContext> getAudience() {
+        return audience;
+    }
+
+    public void setAudience(List<AudienceContext> audience) {
+        this.audience = audience;
+    }
+
+    public Map<String, List<String>> getDisplay() {
+        return display;
+    }
+
+    public void setDisplay(Map<String, List<String>> display) {
+        this.display = display;
     }
 
     @Override

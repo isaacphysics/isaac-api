@@ -434,6 +434,27 @@ public class PgEventBookings implements EventBookings {
         }
     }
 
+    @Override
+    public Iterable<EventBooking> findAllReservationsByUserId(final Long userId) throws SegueDatabaseException {
+        Validate.notNull(userId);
+
+        try (Connection conn = ds.getDatabaseConnection()) {
+            PreparedStatement pst;
+            pst = conn.prepareStatement("SELECT distinct on (event_id) * FROM event_bookings WHERE reserved_by = ? AND status != 'CANCELLED'");
+            pst.setLong(1, userId);
+            ResultSet results = pst.executeQuery();
+
+            List<EventBooking> returnResult = Lists.newArrayList();
+            while (results.next()) {
+                returnResult.add(buildPgEventBooking(results));
+
+            }
+            return returnResult;
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        }
+    }
+
     /**
      * Create a pgEventBooking from a results set.
      * 

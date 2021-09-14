@@ -119,7 +119,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     public static void sanitizeEmailParameters(final Map<Object, Object> emailParameters) {
         for (Map.Entry<Object, Object> entry : emailParameters.entrySet()) {
             String key = entry.getKey().toString();
-            if (!(key.startsWith("event.") || key.startsWith("assignmentsInfo"))) {
+            if (!(key.startsWith("event.") || key.startsWith("assignmentsInfo") || key.startsWith("studentsList"))) {
                 emailParameters.put(entry.getKey(), StringEscapeUtils.escapeHtml4(entry.getValue().toString()));
             }
         }
@@ -261,7 +261,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         ImmutableMap<String, Object> eventDetails = new ImmutableMap.Builder<String, Object>().put(USER_ID_LIST_FKEY_FIELDNAME, ids)
                 .put("contentObjectId", contentObjectId)
                 .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA())
-                .put("numberFiltered", numberOfFilteredUsers).build();
+                .put("numberFiltered", numberOfFilteredUsers)
+                .put("type", emailType).build();
 
         this.logManager.logInternalEvent(sendingUser, SegueServerLogType.SEND_MASS_EMAIL, eventDetails);
         log.info(String.format("Admin user (%s) added %d emails to the queue. %d were filtered.", sendingUser.getEmail(),
@@ -332,10 +333,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * 
      * @param email
      * 		- the email we want to send
-     * @throws SegueDatabaseException
-     *             - the content was of incorrect type
      */
-    public void addSystemEmailToQueue(final EmailCommunicationMessage email) throws SegueDatabaseException {
+    public void addSystemEmailToQueue(final EmailCommunicationMessage email) {
         addToQueue(email);
         log.info(String.format("Added system email to the queue with subject: %s", email.getSubject()));
     }
@@ -386,7 +385,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
             if (valueToStore != null) {
                 String existingValue = outputMap.get(keyPrefix + mapEntry.getKey());
-                if (existingValue != null && "".equals(existingValue) && !"".equals(valueToStore)) {
+                if ("".equals(existingValue) && !"".equals(valueToStore)) {
                     // we can safely replace it with a better value
                     outputMap.put(keyPrefix + mapEntry.getKey(), valueToStore);
                 }

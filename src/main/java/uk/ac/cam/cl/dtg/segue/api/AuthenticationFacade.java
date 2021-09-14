@@ -37,6 +37,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.MFARequiredButNotConfiguredException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
@@ -66,6 +67,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.net.URI;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Map;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -354,7 +357,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
                   notes = "Optionally, a rememberMe flag can be provided for a longer session duration.")
     public final Response authenticateWithCredentials(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response, @PathParam("provider") final String signinProvider,
-            final LocalAuthDTO localAuthDTO) {
+            final LocalAuthDTO localAuthDTO) throws InvalidKeySpecException, NoSuchAlgorithmException {
 
         
         // In this case we expect a username and password in the JSON request body:
@@ -404,6 +407,9 @@ public class AuthenticationFacade extends AbstractSegueFacade {
                 log.error(String.format("Segue Login Blocked for (%s). Rate limited - too many logins.", email));
                 return SegueErrorResponse.getRateThrottledResponse(rateThrottleMessage);
             }
+        } catch (MFARequiredButNotConfiguredException e) {
+            log.warn(String.format("Login blocked for ADMIN account (%s) which does not have 2FA configured.", email));
+            return new SegueErrorResponse(Status.UNAUTHORIZED, e.getMessage()).toResponse();
         } catch (SegueDatabaseException e) {
             String errorMsg = "Internal Database error has occurred during authentication.";
             log.error(errorMsg, e);

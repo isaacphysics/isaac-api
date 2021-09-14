@@ -214,6 +214,85 @@ public class IsaacStringMatchValidatorTest {
     }
 
     /*
+   Test that leading whitespace on multiple lines is removed before matching by default.
+*/
+    @Test
+    public final void isaacStringMatchValidator_LeadingSpacesMultiline_CorrectResponseShouldBeReturned() {
+        // Set up the question object:
+        IsaacStringMatchQuestion someStringMatchQuestion = new IsaacStringMatchQuestion();
+
+        List<Choice> answerList = Lists.newArrayList();
+        StringChoice someCorrectAnswer = new StringChoice();
+        someCorrectAnswer.setValue("THIS\nIS\nA\nTEST\nMULTILINE\nVALUE");
+        someCorrectAnswer.setCorrect(true);
+        someCorrectAnswer.setCaseInsensitive(true);
+        answerList.add(someCorrectAnswer);
+
+        someStringMatchQuestion.setChoices(answerList);
+
+        // Set up user answer, matches correct but with trailing spaces on each line:
+        StringChoice c = new StringChoice();
+        c.setValue("   THIS\n    IS\n    A\n    TEST\n    MULTILINE\n    VALUE");
+
+        // Test response:
+        QuestionValidationResponse response = validator.validateQuestionResponse(someStringMatchQuestion, c);
+        assertTrue(response.isCorrect());
+    }
+
+    /*
+       Test that leading whitespace on multiple lines is preserved when flag set.
+    */
+    @Test
+    public final void isaacStringMatchValidator_LeadingSpacesMultilinePreserved_IncorrectResponseShouldBeReturned() {
+        // Set up the question object:
+        IsaacStringMatchQuestion someStringMatchQuestion = new IsaacStringMatchQuestion();
+        someStringMatchQuestion.setPreserveLeadingWhitespace(true);
+
+        List<Choice> answerList = Lists.newArrayList();
+        StringChoice someCorrectAnswer = new StringChoice();
+        someCorrectAnswer.setValue("THIS\nIS\nA\nTEST\nMULTILINE\nVALUE");
+        someCorrectAnswer.setCorrect(true);
+        someCorrectAnswer.setCaseInsensitive(true);
+        answerList.add(someCorrectAnswer);
+
+        someStringMatchQuestion.setChoices(answerList);
+
+        // Set up user answer, matches correct but with trailing spaces on each line:
+        StringChoice c = new StringChoice();
+        c.setValue("    THIS\n    IS\n    A\n    TEST\n    MULTILINE\n    VALUE");
+
+        // Test response:
+        QuestionValidationResponse response = validator.validateQuestionResponse(someStringMatchQuestion, c);
+        assertFalse(response.isCorrect());
+    }
+
+    /*
+       Test that whitespace stripping does not remove newlines as well.
+    */
+    @Test
+    public final void isaacStringMatchValidator_TrailingSpacesNoNewlines_IncorrectResponseShouldBeReturned() {
+        // Set up the question object:
+        IsaacStringMatchQuestion someStringMatchQuestion = new IsaacStringMatchQuestion();
+
+        List<Choice> answerList = Lists.newArrayList();
+        StringChoice someCorrectAnswer = new StringChoice();
+        someCorrectAnswer.setValue("THIS\nIS\nA\nTEST\nMULTILINE\nVALUE");
+        someCorrectAnswer.setCorrect(true);
+        someCorrectAnswer.setCaseInsensitive(true);
+        answerList.add(someCorrectAnswer);
+
+        someStringMatchQuestion.setChoices(answerList);
+
+        // Set up user answer, matches correct but with trailing spaces on each line:
+        StringChoice c = new StringChoice();
+        c.setValue("THISISATESTMULTILINEVALUE");
+
+        // Test response:
+        QuestionValidationResponse response = validator.validateQuestionResponse(someStringMatchQuestion, c);
+        assertFalse(response.isCorrect());
+    }
+
+    /*
        Test that correct case-sensitive match takes priority over case-insensitive correct match.
     */
     @Test

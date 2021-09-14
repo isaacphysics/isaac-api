@@ -29,6 +29,7 @@ import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.EventStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.DetailedEventBookingDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.ITransactionManager;
@@ -56,7 +57,18 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.TimeZone;
 import java.util.stream.Stream;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_TIME_LOCALITY;
@@ -124,6 +136,17 @@ public class EventBookingManager {
     }
 
     /**
+     * This will get all reservations made by a given user.
+     *
+     * @param userId - user of interest.
+     * @return events
+     * @throws SegueDatabaseException - if an error occurs.
+     */
+    public List<DetailedEventBookingDTO> getAllEventReservationsForUser(final Long userId) throws SegueDatabaseException {
+        return this.bookingPersistenceManager.getEventReservationsByUserId(userId);
+    }
+
+    /**
      * @param bookingId - of interest
      * @return event booking
      * @throws SegueDatabaseException - if an error occurs.
@@ -147,12 +170,21 @@ public class EventBookingManager {
      * @return event bookings
      * @throws SegueDatabaseException - if an error occurs.
      */
-    public List<EventBookingDTO> getBookingsByEventId(final String eventId) throws SegueDatabaseException {
+    public List<DetailedEventBookingDTO> getBookingsByEventId(final String eventId) throws SegueDatabaseException {
         return this.bookingPersistenceManager.getBookingsByEventId(eventId);
     }
 
     public EventBookingDTO getBookingByEventIdAndUserId(final String eventId, final Long userId) throws SegueDatabaseException {
         return this.bookingPersistenceManager.getBookingByEventIdAndUserId(eventId, userId);
+    }
+
+    /**
+     * @param eventId - of interest
+     * @return event bookings
+     * @throws SegueDatabaseException - if an error occurs.
+     */
+    public List<DetailedEventBookingDTO> adminGetBookingsByEventId(final String eventId) throws SegueDatabaseException {
+        return this.bookingPersistenceManager.adminGetBookingsByEventId(eventId);
     }
 
     /**
@@ -166,7 +198,7 @@ public class EventBookingManager {
     public Long countNumberOfBookingsWithStatus(final String eventId, final BookingStatus status)
             throws SegueDatabaseException {
         long v = 0L;
-        for (EventBookingDTO eb : this.bookingPersistenceManager.getBookingsByEventId(eventId)) {
+        for (EventBookingDTO eb : this.bookingPersistenceManager.adminGetBookingsByEventId(eventId)) {
             if (status.equals(eb.getBookingStatus())) {
                 v++;
             }
@@ -407,7 +439,10 @@ public class EventBookingManager {
                         BookingStatus.CONFIRMED, additionalEventInformation);
             }
 
+            addUserToEventGroup(event, user);
+
             try {
+                // This should send a confirmation email in any case.
                 emailManager.sendTemplatedEmailToUser(user,
                         emailManager.getEmailTemplateDTO("email-event-booking-confirmed"),
                         new ImmutableMap.Builder<String, Object>()
@@ -424,8 +459,6 @@ public class EventBookingManager {
                 log.error(String.format("Unable to send event email (%s) to user (%s)", event.getId(), user
                         .getEmail()), e);
             }
-
-            addUserToEventGroup(event, user);
 
             return booking;
         } finally {
@@ -447,11 +480,16 @@ public class EventBookingManager {
      */
     public List<EventBookingDTO> requestReservations(final IsaacEventPageDTO event, final List<RegisteredUserDTO> users,
                                                      final RegisteredUserDTO reservingUser)
-    throws EventDeadlineException, EmailMustBeVerifiedException, DuplicateBookingException, EventIsFullException,
-           EventGroupReservationLimitException, SegueDatabaseException {
+    throws EventDeadlineException, DuplicateBookingException, EventIsFullException, EventGroupReservationLimitException,
+           SegueDatabaseException {
 
+        List<RegisteredUserDTO> unreservableUsers = new ArrayList<>();
         for (RegisteredUserDTO user : users) {
-            this.ensureValidEventAndUser(event, user, true);
+            try {
+                this.ensureValidEventAndUser(event, user, true);
+            } catch (EmailMustBeVerifiedException e) {
+                unreservableUsers.add(user);
+            }
         }
 
         List<EventBookingDTO> reservations = new ArrayList<>();
@@ -515,6 +553,7 @@ public class EventBookingManager {
             this.bookingPersistenceManager.releaseDistributedLock(event.getId());
         }
 
+        // Send email to individual reserved users
         for (EventBookingDTO reservation : reservations) {
             try {
                 UserSummaryDTO userSummary = reservation.getUserBooked();
@@ -540,6 +579,43 @@ public class EventBookingManager {
                 log.error(String.format("Unable to send event email (%s) to user (%s)",
                         event.getId(), reservation.getUserBooked().getId()), e);
             }
+        }
+
+        // Send recap email to reserving user
+        try {
+            StringBuilder htmlSB = new StringBuilder();
+            StringBuilder plainTextSB = new StringBuilder();
+            htmlSB.append("<ul>");
+            for (EventBookingDTO reservation : reservations) {
+                RegisteredUserDTO user = userAccountManager.getUserDTOById(reservation.getUserBooked().getId());
+                String userFullName = String.format("%s %s", user.getGivenName(), user.getFamilyName());
+                htmlSB.append(String.format("<li>%s</li>", userFullName));
+                plainTextSB.append(String.format("- %s\n", userFullName));
+            }
+            htmlSB.append("</ul>");
+            emailManager.sendTemplatedEmailToUser(reservingUser,
+                    emailManager.getEmailTemplateDTO("email-event-reservation-recap"),
+                    new ImmutableMap.Builder<String, Object>()
+                            .put("contactUsURL", generateEventContactUsURL(event))
+                            .put("eventURL", String.format("https://%s/events/%s", propertiesLoader.getProperty(HOST_NAME), event.getId()))
+                            .put("event", event)
+                            .put("studentsList", plainTextSB.toString())
+                            .put("studentsList_HTML", htmlSB.toString())
+                            .build(),
+                    EmailType.SYSTEM);
+        } catch (NoUserException e) {
+            // This should never really happen, though...
+            log.error(String.format("Unable to find reserved user while sending recap email for event (%s) to reserving user (%s)",
+                    event.getId(), reservingUser.getId()), e);
+        } catch (SegueDatabaseException | ContentManagerException e) {
+            log.error(String.format("Unable to send event reservation recap email (%s) to user (%s)",
+                    event.getId(), reservingUser.getId()), e);
+        }
+
+        // If the frontend prevents selection of unreservable users, then this email should never go out.
+        if (unreservableUsers.size() > 0) {
+            // Log that the reserving user tried to reserve invalid users.
+            log.error(String.format("User (%s) tried to request a reservation for invalid users on an event (%s). Users requested: %s", reservingUser.getId(), event.getId(), unreservableUsers));
         }
 
         return reservations;
@@ -642,7 +718,7 @@ public class EventBookingManager {
         try {
             this.bookingPersistenceManager.acquireDistributedLock(event.getId());
 
-            final EventBookingDTO eventBooking = this.bookingPersistenceManager.getBookingByEventIdAndUserId(
+            final DetailedEventBookingDTO eventBooking = this.bookingPersistenceManager.getBookingByEventIdAndUserId(
                     event.getId(), userDTO.getId());
             if (null == eventBooking) {
                 throw new EventBookingUpdateException("Unable to promote a booking that doesn't exist.");
@@ -708,11 +784,11 @@ public class EventBookingManager {
      * @throws SegueDatabaseException       - Database error.
      * @throws EventBookingUpdateException  - Unable to update the event booking.
      */
-    public EventBookingDTO recordAttendance(final IsaacEventPageDTO event, final RegisteredUserDTO
+    public DetailedEventBookingDTO recordAttendance(final IsaacEventPageDTO event, final RegisteredUserDTO
             userDTO, final boolean attended)
             throws SegueDatabaseException, EventBookingUpdateException {
 
-        final EventBookingDTO eventBooking = this.bookingPersistenceManager.getBookingByEventIdAndUserId(
+        final DetailedEventBookingDTO eventBooking = this.bookingPersistenceManager.getBookingByEventIdAndUserId(
                 event.getId(), userDTO.getId());
         if (null == eventBooking) {
             throw new EventBookingUpdateException("Unable to record attendance for booking that doesn't exist.");
@@ -723,7 +799,7 @@ public class EventBookingManager {
             throw new EventBookingUpdateException("Booking attendance is already registered.");
         }
 
-        EventBookingDTO updatedStatus = this.bookingPersistenceManager.updateBookingStatus(eventBooking.getEventId(),
+        DetailedEventBookingDTO updatedStatus = this.bookingPersistenceManager.updateBookingStatus(eventBooking.getEventId(),
                 userDTO.getId(), attendanceStatus, eventBooking.getAdditionalInformation());
 
         return updatedStatus;
@@ -1146,11 +1222,10 @@ public class EventBookingManager {
      * @param user                   user to book on to the event.
      * @param enforceBookingDeadline - whether or not to enforce the booking deadline of the event
      * @throws EmailMustBeVerifiedException - if this method requires a validated e-mail address.
-     * @throws DuplicateBookingException    - Duplicate booking, only unique bookings.
      * @throws EventDeadlineException       - The deadline for booking has passed.
      */
     private void ensureValidEventAndUser(final IsaacEventPageDTO event, final RegisteredUserDTO user, final boolean
-            enforceBookingDeadline) throws EmailMustBeVerifiedException, DuplicateBookingException, EventDeadlineException {
+            enforceBookingDeadline) throws EmailMustBeVerifiedException, EventDeadlineException {
         Date now = new Date();
 
         // check if if the end date has passed. Allowed to add to wait list after deadline.

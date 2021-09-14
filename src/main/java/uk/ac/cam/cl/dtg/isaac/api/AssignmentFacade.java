@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateAssignmentException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
+import uk.ac.cam.cl.dtg.isaac.api.services.AssignmentService;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
@@ -38,7 +39,6 @@ import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -84,6 +84,8 @@ import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdFromQuestionId;
+import static uk.ac.cam.cl.dtg.util.NameFormatter.getFilteredGroupNameFromGroup;
 
 /**
  * AssignmentFacade
@@ -100,11 +102,11 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     private final UserAccountManager userManager;
     private final GroupManager groupManager;
     private final GameManager gameManager;
-
     private final UserAssociationManager associationManager;
-
     private final QuestionManager questionManager;
     private final UserBadgeManager userBadgeManager;
+    private final AssignmentService assignmentService;
+
     private final List<String> bookTags = ImmutableList.of("phys_book_gcse", "physics_skills_14", "chemistry_16");
 
     private final String NOT_SHARING = "NOT_SHARING";
@@ -130,12 +132,15 @@ public class AssignmentFacade extends AbstractIsaacFacade {
      *            - So that we can determine what information is allowed to be seen by other users.
      * @param userBadgeManager
      *            - So that badges can be awarded to do with assignments
+     * @param assignmentService
+     *            - for augmenting assignments with assigner information
      */
     @Inject
     public AssignmentFacade(final AssignmentManager assignmentManager, final QuestionManager questionManager,
                             final UserAccountManager userManager, final GroupManager groupManager,
                             final PropertiesLoader propertiesLoader, final GameManager gameManager, final ILogManager logManager,
-                            final UserAssociationManager associationManager, final UserBadgeManager userBadgeManager) {
+                            final UserAssociationManager associationManager, final UserBadgeManager userBadgeManager,
+                            final AssignmentService assignmentService) {
         super(propertiesLoader, logManager);
         this.questionManager = questionManager;
         this.userManager = userManager;
@@ -144,6 +149,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
         this.assignmentManager = assignmentManager;
         this.associationManager = associationManager;
         this.userBadgeManager = userBadgeManager;
+        this.assignmentService = assignmentService;
     }
 
     /**
@@ -174,32 +180,22 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     .stream().collect(Collectors.toMap(GameboardDTO::getId, Function.identity()));
 
             // we want to populate gameboard details for the assignment DTO.
-            Map<Long, UserSummaryDTO> userSummaryCache = new HashMap<>();
             for (AssignmentDTO assignment : assignments) {
                 assignment.setGameboard(gameboardsMap.get(assignment.getGameboardId()));
-                Long ownerUserId = assignment.getOwnerUserId();
-                if (ownerUserId != null) {
-                    UserSummaryDTO userSummary = userSummaryCache.get(ownerUserId);
-                    if (userSummary == null) {
-                        try {
-                            RegisteredUserDTO user = userManager.getUserDTOById(ownerUserId);
-                            userSummary = userManager.convertToUserSummaryObject(user);
-                            userSummaryCache.put(ownerUserId, userSummary);
-                        } catch (NoUserException e) {
-                            log.warn("Assignment (" + assignment.getId() + ") exists with owner user ID ("
-                                    + assignment.getOwnerUserId() + ") that does not exist!");
-                        }
-                    }
-                    assignment.setAssignerSummary(userSummary);
-                }
+
+                // Augment with group name if allowed
+                UserGroupDTO group = groupManager.getGroupById(assignment.getGroupId());
+                assignment.setGroupName(getFilteredGroupNameFromGroup(group));
             }
+
+            this.assignmentService.augmentAssignerSummaries(assignments);
 
             // if they have filtered the list we should only send out the things they wanted.
             if (assignmentStatus != null) {
                 List<AssignmentDTO> newList = Lists.newArrayList();
                 // we want to populate gameboard details for the assignment DTO.
                 for (AssignmentDTO assignment : assignments) {
-                    if (assignment.getGameboard() == null || assignment.getGameboard().getQuestions().size() == 0) {
+                    if (assignment.getGameboard() == null || assignment.getGameboard().getContents().size() == 0) {
                         log.warn(String.format("Skipping broken gameboard '%s' for assignment (%s)!",
                                 assignment.getGameboardId(), assignment.getId()));
                         continue;
@@ -432,7 +428,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group);
 
             List<String> questionPageIds = Lists.newArrayList();
-            for (GameboardItem questionPage : gameboard.getQuestions()) {
+            for (GameboardItem questionPage : gameboard.getContents()) {
                 questionPageIds.add(questionPage.getId());
             }
             Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> questionAttempts;
@@ -463,7 +459,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             DecimalFormat percentageFormat = new DecimalFormat("###");
 
-            for (GameboardItem questionPage : gameboard.getQuestions()) {
+            for (GameboardItem questionPage : gameboard.getContents()) {
                 int index = 0;
 
                 for (QuestionDTO question : gameManager.getAllMarkableQuestionPartsDFSOrder(questionPage.getId())) {
@@ -663,7 +659,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 // Create an assignment -> gameboard mapping to avoid repeatedly querying the DB later on. All the efficiency!
                 assignmentGameboards.put(assignment, gameboard);
             }
-            List<GameboardItem> gameboardItems = gameboards.stream().map(GameboardDTO::getQuestions).flatMap(Collection::stream).collect(Collectors.toList());
+            List<GameboardItem> gameboardItems = gameboards.stream().map(GameboardDTO::getContents).flatMap(Collection::stream).collect(Collectors.toList());
             List<String> questionPageIds = gameboardItems.stream().map(GameboardItem::getId).collect(Collectors.toList());
             Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> questionAttempts;
             try {
@@ -748,7 +744,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             Map<GameboardDTO, List<String>> gameboardQuestionIds = Maps.newHashMap();
             for (AssignmentDTO assignment : assignments) {
                 GameboardDTO gameboard = assignmentGameboards.get(assignment);
-                for (GameboardItem questionPage : gameboard.getQuestions()) {
+                for (GameboardItem questionPage : gameboard.getContents()) {
                     int b = 1;
                     for (QuestionDTO question : gameManager.getAllMarkableQuestionPartsDFSOrder(questionPage.getId())) {
                         List<String> questionIds = gameboardQuestionIds.get(gameboard);
@@ -803,7 +799,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     int assignmentQPartsCorrect = 0;
                     int assignmentQPartsCount = 0;
                     List<String> questionIds = gameboardQuestionIds.get(gameboard);
-                    List<GameboardItem> questions = gameboard.getQuestions();
+                    List<GameboardItem> questions = gameboard.getContents();
                     Map<String, Integer> gameboardPartials = Maps.newHashMap();
                     for (GameboardItem question : questions) {
                         gameboardPartials.put(question.getId(), 0);
@@ -811,11 +807,11 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     HashMap<String, Integer> questionParts = new HashMap<>(gameboardPartials);
                     for (String s : questionIds) {
                         Integer mark = userAssignments.get(gameboard).get(s);
-                        String[] tokens = s.split("\\|");
-                        questionParts.put(tokens[0], questionParts.get(tokens[0]) + 1);
+                        String questionPageId = extractPageIdFromQuestionId(s);
+                        questionParts.put(questionPageId, questionParts.get(questionPageId) + 1);
                         marks.add(mark);
                         if (null != mark) {
-                            gameboardPartials.put(tokens[0], gameboardPartials.get(tokens[0]) + mark);
+                            gameboardPartials.put(questionPageId, gameboardPartials.get(questionPageId) + mark);
                         }
                     }
                     for (Entry<String, Integer> entry : gameboardPartials.entrySet()) {
@@ -961,6 +957,16 @@ public class AssignmentFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
             UserGroupDTO assigneeGroup = groupManager.getGroupById(assignmentDTOFromClient.getGroupId());
+
+            boolean userIsTeacherOrAbove = isUserTeacherOrAbove(userManager, currentlyLoggedInUser);
+            boolean userIsStaff = isUserStaff(userManager, currentlyLoggedInUser);
+            boolean notesIsNullOrEmpty = assignmentDTOFromClient.getNotes() == null || (assignmentDTOFromClient.getNotes() != null && assignmentDTOFromClient.getNotes().isEmpty());
+            boolean notesIsTooLong = assignmentDTOFromClient.getNotes() != null && assignmentDTOFromClient.getNotes().length() > MAX_NOTE_CHAR_LENGTH;
+
+            if (!userIsTeacherOrAbove) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You need a teacher account to create groups and set assignments!").toResponse();
+            }
+
             if (null == assigneeGroup) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "The group id specified does not exist.")
                         .toResponse();
@@ -970,6 +976,16 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     && !isUserAnAdmin(userManager, currentlyLoggedInUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only set assignments to groups you own or manage.").toResponse();
+            }
+
+            if (userIsStaff) {
+                if (notesIsTooLong) {
+                    return new SegueErrorResponse(Status.BAD_REQUEST, "Your assignment notes exceed the maximum allowed length of " +
+                            MAX_NOTE_CHAR_LENGTH.toString() + " characters.").toResponse();
+                }
+            } else if (!notesIsNullOrEmpty) {
+                // user is not staff but it is a teacher, if we got here unscathed
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You are not allowed to add assignment notes.").toResponse();
             }
 
             GameboardDTO gameboard = this.gameManager.getGameboard(assignmentDTOFromClient.getGameboardId());
@@ -998,7 +1014,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             tagsLoop:
             for (String tag : bookTags) {
 
-                for (GameboardItem item : gameboard.getQuestions()) {
+                for (GameboardItem item : gameboard.getContents()) {
                     if (item.getTags().contains(tag)) {
                         this.userBadgeManager.updateBadge(currentlyLoggedInUser,
                                 UserBadgeManager.Badge.TEACHER_BOOK_PAGES_SET, assignmentWithID.getId().toString());

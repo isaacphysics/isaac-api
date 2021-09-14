@@ -30,9 +30,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.StringChoice;
 import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class IsaacFreeTextValidator implements IValidator {
     private static final Logger log = LoggerFactory.getLogger(IsaacFreeTextValidator.class);
@@ -131,6 +129,12 @@ public class IsaacFreeTextValidator implements IValidator {
                 log.error("QuestionId: " + question.getId() + " contains a choice which is not a FreeTextRule.");
             }
         }
+
+        // If we still have no feedback to give, use the question's default feedback if any to use:
+        if (feedbackIsNullOrEmpty(feedback) && null != freeTextQuestion.getDefaultFeedback()) {
+            feedback = freeTextQuestion.getDefaultFeedback();
+        }
+
         return new QuestionValidationResponse(question.getId(), answer, isCorrectResponse, feedback, new Date());
     }
 }

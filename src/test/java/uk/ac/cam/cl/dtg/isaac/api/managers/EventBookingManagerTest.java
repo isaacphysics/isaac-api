@@ -10,6 +10,7 @@ import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.EventStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.DetailedEventBookingDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.ITransactionManager;
@@ -396,7 +397,7 @@ public class EventBookingManagerTest {
         firstUserFull.setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
         firstUserFull.setRole(Role.TEACHER);
 
-        EventBookingDTO firstBooking = new EventBookingDTO();
+        DetailedEventBookingDTO firstBooking = new DetailedEventBookingDTO();
         UserSummaryDTO firstUser = new UserSummaryDTO();
         firstUser.setId(firstUserFull.getId());
         firstUser.setRole(Role.TEACHER);
@@ -453,11 +454,11 @@ public class EventBookingManagerTest {
         testCase.event.setNumberOfPlaces(1);
 
         RegisteredUserDTO reservedStudent = testCase.student1;
-        EventBookingDTO reservedStudentBooking = new EventBookingDTO() {{
+        DetailedEventBookingDTO reservedStudentBooking = new DetailedEventBookingDTO() {{
             setEventId(testCase.event.getId()); setBookingStatus(BookingStatus.RESERVED);
             setUserBooked(new UserSummaryDTO() {{setId(reservedStudent.getId());}});
         }};
-        EventBookingDTO reservedStudentBookingAfterConfirmation = new EventBookingDTO() {{
+        DetailedEventBookingDTO reservedStudentBookingAfterConfirmation = new DetailedEventBookingDTO() {{
             setEventId(testCase.event.getId()); setBookingStatus(BookingStatus.CONFIRMED);
             setUserBooked(new UserSummaryDTO() {{setId(reservedStudent.getId());}});
         }};
@@ -504,7 +505,7 @@ public class EventBookingManagerTest {
         someUser.setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
         someUser.setRole(Role.TEACHER);
 
-        EventBookingDTO firstBooking = new EventBookingDTO();
+        DetailedEventBookingDTO firstBooking = new DetailedEventBookingDTO();
         UserSummaryDTO firstUser = new UserSummaryDTO();
         firstBooking.setEventId(testEvent.getId());
         firstUser.setId(6L);
@@ -513,7 +514,7 @@ public class EventBookingManagerTest {
         firstBooking.setBookingStatus(BookingStatus.WAITING_LIST);
         firstBooking.setAdditionalInformation(someAdditionalInformation);
 
-        EventBookingDTO secondBooking = new EventBookingDTO();
+        DetailedEventBookingDTO secondBooking = new DetailedEventBookingDTO();
         UserSummaryDTO secondUser = new UserSummaryDTO();
         secondUser.setId(2L);
         secondUser.setRole(Role.TEACHER);
@@ -572,7 +573,7 @@ public class EventBookingManagerTest {
         someUser.setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
         someUser.setRole(Role.TEACHER);
 
-        EventBookingDTO firstBooking = new EventBookingDTO();
+        DetailedEventBookingDTO firstBooking = new DetailedEventBookingDTO();
         UserSummaryDTO firstUser = new UserSummaryDTO();
         firstBooking.setEventId(testEvent.getId());
         firstUser.setId(6L);
@@ -580,7 +581,7 @@ public class EventBookingManagerTest {
         firstBooking.setUserBooked(firstUser);
         firstBooking.setBookingStatus(BookingStatus.WAITING_LIST);
 
-        EventBookingDTO secondBooking = new EventBookingDTO();
+        DetailedEventBookingDTO secondBooking = new DetailedEventBookingDTO();
         UserSummaryDTO secondUser = new UserSummaryDTO();
         secondUser.setId(2L);
         secondUser.setRole(Role.TEACHER);
@@ -841,7 +842,7 @@ public class EventBookingManagerTest {
         List<RegisteredUserDTO> students = ImmutableList.of(testCase.student1, testCase.student2);
 
         // Make student two have a cancelled booking
-        EventBookingDTO student2sCancelledBooking = new EventBookingDTO() {{
+        DetailedEventBookingDTO student2sCancelledBooking = new DetailedEventBookingDTO() {{
             setBookingStatus(BookingStatus.CANCELLED); setEventId(testCase.event.getId());
             setUserBooked(new UserSummaryDTO() {{setId(testCase.student2.getId());}});
         }};
@@ -880,13 +881,17 @@ public class EventBookingManagerTest {
 
         // Send Emails
         expect(dummyEmailManager.getEmailTemplateDTO(("email-event-reservation-requested"))).andReturn(testCase.reservationEmail).atLeastOnce();
+        expect(dummyEmailManager.getEmailTemplateDTO(("email-event-reservation-recap"))).andReturn(testCase.reservationEmail).atLeastOnce();
 
-        expect(dummyUserAccountManager.getUserDTOById(testCase.student1.getId())).andReturn(testCase.student1).once();
+        expect(dummyUserAccountManager.getUserDTOById(testCase.student1.getId())).andReturn(testCase.student1).times(2);
         dummyEmailManager.sendTemplatedEmailToUser(eq(testCase.student1), eq(testCase.reservationEmail), anyObject(), eq(EmailType.SYSTEM));
         expectLastCall().once();
 
-        expect(dummyUserAccountManager.getUserDTOById(testCase.student2.getId())).andReturn(testCase.student2).once();
+        expect(dummyUserAccountManager.getUserDTOById(testCase.student2.getId())).andReturn(testCase.student2).times(2);
         dummyEmailManager.sendTemplatedEmailToUser(eq(testCase.student2), eq(testCase.reservationEmail), anyObject(), eq(EmailType.SYSTEM));
+        expectLastCall().once();
+
+        dummyEmailManager.sendTemplatedEmailToUser(eq(testCase.teacher), eq(testCase.reservationEmail), anyObject(), eq(EmailType.SYSTEM));
         expectLastCall().once();
 
         // Run the test for a student event
@@ -942,7 +947,7 @@ public class EventBookingManagerTest {
         RegisteredUserDTO previouslyReservedStudent = testCase.student3;
         Map<BookingStatus, Map<Role, Long>> previousBookingCounts = generatePlacesAvailableMap();
         previousBookingCounts.put(BookingStatus.CONFIRMED, ImmutableMap.of(Role.STUDENT, 1L));
-        EventBookingDTO existingEventBooking = new EventBookingDTO() {{
+        DetailedEventBookingDTO existingEventBooking = new DetailedEventBookingDTO() {{
             setEventId(testCase.event.getId()); setBookingStatus(BookingStatus.CONFIRMED);
             setReservedById(testCase.teacher.getId());
             setUserBooked(new UserSummaryDTO() {{setId(previouslyReservedStudent.getId());}});
@@ -982,7 +987,7 @@ public class EventBookingManagerTest {
         List<RegisteredUserDTO> students = ImmutableList.of(testCase.student1);
 
         // Make student two have a cancelled booking
-        EventBookingDTO student2sCancelledReservation = new EventBookingDTO() {{
+        DetailedEventBookingDTO student2sCancelledReservation = new DetailedEventBookingDTO() {{
             setBookingStatus(BookingStatus.CANCELLED); setEventId(testCase.event.getId());
             setUserBooked(new UserSummaryDTO() {{setId(testCase.student2.getId());}});
             setReservedById(testCase.teacher.getId());
@@ -1019,10 +1024,13 @@ public class EventBookingManagerTest {
 
         // Send Emails
         expect(dummyEmailManager.getEmailTemplateDTO(("email-event-reservation-requested"))).andReturn(testCase.reservationEmail).atLeastOnce();
+        expect(dummyEmailManager.getEmailTemplateDTO(("email-event-reservation-recap"))).andReturn(testCase.reservationEmail).atLeastOnce();
 
-        expect(dummyUserAccountManager.getUserDTOById(testCase.student1.getId())).andReturn(testCase.student1).once();
+        expect(dummyUserAccountManager.getUserDTOById(testCase.student1.getId())).andReturn(testCase.student1).atLeastOnce();
         dummyEmailManager.sendTemplatedEmailToUser(eq(testCase.student1), eq(testCase.reservationEmail), anyObject(), eq(EmailType.SYSTEM));
         expectLastCall().once();
+        dummyEmailManager.sendTemplatedEmailToUser(eq(testCase.teacher), eq(testCase.reservationEmail), anyObject(), eq(EmailType.SYSTEM));
+        expectLastCall().atLeastOnce();
 
         // Run the test for a student event
         Object[] mockedObjects = {
@@ -1045,14 +1053,14 @@ public class EventBookingManagerTest {
         RegisteredUserDTO student1 = new RegisteredUserDTO() {{
             setId(1L); setEmail("student1"); setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
         }};
-        EventBookingDTO student1Booking = new EventBookingDTO() {{
+        DetailedEventBookingDTO student1Booking = new DetailedEventBookingDTO() {{
             setBookingStatus(BookingStatus.RESERVED); setEventId("SomeEventId");
             setUserBooked(new UserSummaryDTO() {{setId(1L); setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);}});
         }};
         RegisteredUserDTO student2 = new RegisteredUserDTO() {{
             setId(2L); setEmail("student2"); setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
         }};
-        EventBookingDTO student2Booking = new EventBookingDTO() {{
+        DetailedEventBookingDTO student2Booking = new DetailedEventBookingDTO() {{
             setBookingStatus(BookingStatus.RESERVED); setEventId("SomeEventId");
             setUserBooked(new UserSummaryDTO() {{setId(2L); setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);}});
         }};

@@ -30,6 +30,7 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 @ValidatesWith(IsaacStringMatchValidator.class)
 public class IsaacStringMatchQuestion extends IsaacQuestionBase {
     private Boolean multiLineEntry;
+    private Boolean preserveLeadingWhitespace;
     private Boolean preserveTrailingWhitespace;
 
     public Boolean getMultiLineEntry() {
@@ -46,5 +47,13 @@ public class IsaacStringMatchQuestion extends IsaacQuestionBase {
 
     public void setPreserveTrailingWhitespace(final Boolean preserveTrailingWhitespace) {
         this.preserveTrailingWhitespace = preserveTrailingWhitespace;
+    }
+
+    public Boolean getPreserveLeadingWhitespace() {
+        return preserveLeadingWhitespace;
+    }
+
+    public void setPreserveLeadingWhitespace(final Boolean preserveLeadingWhitespace) {
+        this.preserveLeadingWhitespace = preserveLeadingWhitespace;
     }
 }

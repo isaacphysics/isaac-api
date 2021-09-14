@@ -45,12 +45,12 @@ public class SchedulerClusterDataSource implements ConnectionProvider {
     }
 
     @Override
-    public void shutdown() throws SQLException {
+    public void shutdown() {
 
     }
 
     @Override
-    public void initialize() throws SQLException {
+    public void initialize() {
 
     }
 

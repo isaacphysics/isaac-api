@@ -107,12 +107,19 @@ public class GameboardsFacadeTest {
 		String levels = "2,3,4";
 		String concepts = "newtoni";
 		String title = "Newton";
+		String questionCategory = "problem_solving";
+		String stages = "a_level";
+		String difficulties = "practice_1";
+		String examBoards = "wjec";
 
 		expect(
-				dummyGameManager.generateRandomGameboard(EasyMock.<String> anyObject(),
+				dummyGameManager.generateRandomGameboard(
+						EasyMock.<String> anyObject(), EasyMock.<List<String>> anyObject(),
 						EasyMock.<List<String>> anyObject(), EasyMock.<List<String>> anyObject(),
-						EasyMock.<List<String>> anyObject(), EasyMock.<List<Integer>> anyObject(),
-						EasyMock.<List<String>> anyObject(), EasyMock.<AbstractSegueUserDTO> anyObject()))
+						EasyMock.<List<Integer>> anyObject(), EasyMock.<List<String>> anyObject(),
+						EasyMock.<List<String>> anyObject(), EasyMock.<List<String>> anyObject(),
+						EasyMock.<List<String>> anyObject(), EasyMock.<List<String>> anyObject(),
+						EasyMock.<AbstractSegueUserDTO> anyObject()))
 					.andReturn(null).atLeastOnce();
 
 		expect(userManager.getCurrentUser(dummyRequest)).andReturn(new AnonymousUserDTO("testID"))
@@ -121,7 +128,7 @@ public class GameboardsFacadeTest {
 		replay(dummyGameManager);
 
 		Response r = gameboardFacade.generateTemporaryGameboard(dummyRequest, title, subjects, fields, topics,
-				levels, concepts);
+				stages, difficulties, examBoards,levels, concepts, questionCategory);
 
 		assertTrue(r.getStatus() == Status.NO_CONTENT.getStatusCode());
 		verify(dummyGameManager);

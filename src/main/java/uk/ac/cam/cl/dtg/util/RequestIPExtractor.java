@@ -75,6 +75,10 @@ public final class RequestIPExtractor {
             // So if all else fails, use the impossible source address '0.0.0.0' to mark this.
             ip = "0.0.0.0";
         }
+        // Strip any IPv6 address bracketing:
+        if (ip.startsWith("[") && ip.endsWith("]")) {
+            ip = ip.substring(1, ip.length() - 1);
+        }
         return ip;
     }
 }

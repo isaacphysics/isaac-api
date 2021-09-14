@@ -24,7 +24,6 @@ import com.google.common.collect.ImmutableMap.Builder;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import com.opencsv.CSVWriter;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.apache.commons.codec.binary.Hex;
@@ -35,11 +34,11 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.jboss.resteasy.annotations.GZIP;
-import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
-import uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import uk.ac.cam.cl.dtg.segue.api.managers.ExternalAccountSynchronisationException;
+import uk.ac.cam.cl.dtg.segue.api.managers.IExternalAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -49,9 +48,9 @@ import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.api.monitors.UserSearchMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
+import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.LocationManager;
-import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
@@ -63,10 +62,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
-import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserIdMergeDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryForAdminUsersDTO;
@@ -74,7 +70,6 @@ import uk.ac.cam.cl.dtg.segue.etl.GithubPushEventPayload;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
-import uk.ac.cam.cl.dtg.util.locations.Location;
 import uk.ac.cam.cl.dtg.util.locations.LocationServerException;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeRadius;
 
@@ -82,10 +77,8 @@ import javax.annotation.Nullable;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
-import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
@@ -99,17 +92,11 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -142,6 +129,7 @@ public class AdminFacade extends AbstractSegueFacade {
     private final AbstractUserPreferenceManager userPreferenceManager;
     private final EventBookingManager eventBookingManager;
     private final UserAssociationManager associationManager;
+    private final IExternalAccountManager externalAccountManager;
     private final IMisuseMonitor misuseMonitor;
 
     /**
@@ -174,7 +162,7 @@ public class AdminFacade extends AbstractSegueFacade {
                        final StatisticsManager statsManager, final LocationManager locationManager,
                        final SchoolListReader schoolReader, final AbstractUserPreferenceManager userPreferenceManager,
                        final EventBookingManager eventBookingManager, final UserAssociationManager associationManager,
-                       final IMisuseMonitor misuseMonitor) {
+                       final IExternalAccountManager externalAccountManager, final IMisuseMonitor misuseMonitor) {
         super(properties, logManager);
         this.userManager = userManager;
         this.contentManager = contentManager;
@@ -185,6 +173,7 @@ public class AdminFacade extends AbstractSegueFacade {
         this.userPreferenceManager = userPreferenceManager;
         this.eventBookingManager = eventBookingManager;
         this.associationManager = associationManager;
+        this.externalAccountManager = externalAccountManager;
         this.misuseMonitor = misuseMonitor;
     }
 
@@ -215,153 +204,6 @@ public class AdminFacade extends AbstractSegueFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
     }
-
-    /**
-     * Statistics endpoint.
-     *
-     * @param request
-     *            - to determine access.
-     * @return stats
-     */
-    @GET
-    @Path("/stats/users")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    public Response countUsersByRole(@Context final HttpServletRequest request) {
-        try {
-            if (!isUserStaff(userManager, request)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin to access this endpoint.")
-                        .toResponse();
-            }
-
-            return Response.ok(ImmutableMap.of("role", userManager.getRoleCount()))
-                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_MINUTE, false)).build();
-        } catch (SegueDatabaseException e) {
-            log.error("Unable to load general statistics.", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        }
-    }
-
-    /**
-     * Locations stats.
-     * 
-     * @param request
-     *            - to determine access.
-     * @param requestForCaching
-     *            - to speed up access.
-     * @param fromDate
-     *            - date to start search
-     * @param toDate
-     *            - date to end search
-     * @return stats
-     */
-    @GET
-    @Path("/stats/users/last_locations")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    public Response getLastLocations(@Context final HttpServletRequest request,
-            @Context final Request requestForCaching, @QueryParam("from_date") final Long fromDate,
-                                     @QueryParam("to_date") final Long toDate) {
-        try {
-            if (!isUserStaff(userManager, request)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be a staff member to access this endpoint.")
-                        .toResponse();
-            }
-            if (null == fromDate || null == toDate) {
-                return new SegueErrorResponse(Status.BAD_REQUEST,
-                        "You must specify the from_date and to_date you are interested in.").toResponse();
-            }
-            if (toDate < fromDate) {
-                return new SegueErrorResponse(Status.BAD_REQUEST,
-                        "The from_date must be before the to_date.").toResponse();
-            }
-
-            Collection<Location> locationInformation = statsManager.getLocationInformation(new Date(fromDate), new Date(toDate));
-
-            return Response.ok(locationInformation).cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false))
-                    .build();
-        } catch (SegueDatabaseException e) {
-            log.error("Database error while trying to get last locations", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        }
-    }
-
-    /**
-     * Statistics endpoint.
-     * 
-     * @param request
-     *            - to determine access.
-     * @param requestForCache
-     *            - to determine caching.
-     * @return stats
-     */
-    @GET
-    @Path("/stats/schools")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    public Response getSchoolsStatistics(@Context final HttpServletRequest request,
-            @Context final Request requestForCache) {
-        try {
-            if (!isUserStaff(userManager, request)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
-                        .toResponse();
-            }
-
-            List<Map<String, Object>> schoolStatistics = statsManager.getSchoolStatistics();
-
-            // Calculate the ETag
-            EntityTag etag = new EntityTag(schoolStatistics.toString().hashCode() + "");
-
-            Response cachedResponse = generateCachedResponse(requestForCache, etag);
-            if (cachedResponse != null) {
-                return cachedResponse;
-            }
-
-            return Response.ok(schoolStatistics).tag(etag)
-                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false))
-                    .build();
-        } catch (UnableToIndexSchoolsException e) {
-            log.error("Unable to get school statistics", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Unable To Index SchoolIndexer Exception in admin facade", e).toResponse();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (SegueDatabaseException | SegueSearchException e1) {
-            log.error("Unable to get school statistics", e1);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error during user lookup")
-                    .toResponse();
-        }
-    }
-
-
-    /**
-     * Get user last seen information map.
-     * 
-     * @param request
-     *            - to determine access.
-     * @return stats
-     */
-    @GET
-    @Path("/stats/users/last_access")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    public Response getUserLastAccessInformation(@Context final HttpServletRequest request) {
-        try {
-            if (!isUserAnAdmin(userManager, request)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
-                        .toResponse();
-            }
-
-            return Response.ok(statsManager.getLastSeenUserMap()).build();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        }
-    }
-
 
     /**
      * This method will allow users to be mass-converted to a new role.
@@ -570,8 +412,7 @@ public class AdminFacade extends AbstractSegueFacade {
         return Response.ok().build();
     }
 
-
-     /* This method will allow users' email verification status to be changed en-mass.
+    /* This method will allow users' email verification status to be changed en-mass.
      *
      * @param request
      *            - to help determine access rights.
@@ -584,7 +425,7 @@ public class AdminFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response notifySingleDeliveryFailure(@Context final HttpServletRequest request,
-            final Map<String, Object> webhookPayload) {
+                                                final Map<String, Object> webhookPayload) {
         try {
             final String hmacAlgorithm = "HmacSHA256";
             Map<String, String> signatureJson = (Map<String, String>) webhookPayload.get("signature");
@@ -609,6 +450,117 @@ public class AdminFacade extends AbstractSegueFacade {
         }
     }
 
+    /** This method will allow users' email verification status to be changed en-mass.
+     *
+     * @param request
+     *            - to help determine access rights.
+     * @param providerToken
+     *            - a path parameter to restrict access
+     * @param eventDetailsList
+     *            - a list of objects in the MailJet JSON format
+     * @return Success shown by returning an ok response
+     */
+    @POST
+    @Path("/users/delivery_failed_notification/{providerToken}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response notifyExternalDeliveryFailure(@Context final HttpServletRequest request,
+                                                @PathParam("providerToken") final String providerToken,
+                                                final List<Map<String, Object>> eventDetailsList) {
+        try {
+            final String expectedProviderToken = getProperties().getProperty(MAILJET_WEBHOOK_TOKEN);
+            if (null == expectedProviderToken || expectedProviderToken.isEmpty()) {
+                return SegueErrorResponse.getNotImplementedResponse();
+            }
+            if (!expectedProviderToken.equals(providerToken)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
+            for (Map<String, Object> eventDetails: eventDetailsList) {
+                String recipientEmail = (String) eventDetails.get("email");
+                Object permanentFailureObject = eventDetails.get("hard_bounce");
+                String errorMessage = (String) eventDetails.get("error");
+
+                // Assume a hard failure unless told otherwise or message triggered by duplication issue:
+                boolean permanentFailure = !"duplicate in campaign".equals(errorMessage);
+                // The "hard_bounce" parameter might be null, a String, or a Boolean value:
+                if (permanentFailureObject instanceof Boolean) {
+                    permanentFailure = (boolean) permanentFailureObject;
+                } else if (permanentFailureObject instanceof String) {
+                    permanentFailure = Boolean.parseBoolean((String) permanentFailureObject);
+                }
+                // Update delivery failure status if necessary:
+                if (recipientEmail != null && !recipientEmail.isEmpty() && permanentFailure) {
+                    this.userManager.updateUserEmailVerificationStatus(recipientEmail, EmailVerificationStatus.DELIVERY_FAILED);
+                }
+            }
+            String remoteIpAddress = RequestIPExtractor.getClientIpAddr(request);
+            log.info(String.format("Request from (%s) updated the status of %s emails to DELIVERY_FAILED.", remoteIpAddress, eventDetailsList.size()));
+            return Response.ok().build();
+        } catch (SegueDatabaseException | ClassCastException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to process request.").toResponse();
+        }
+    }
+
+    /** This method will allow users' email preference status to be changed en-mass.
+     *
+     * @param request
+     *            - to help determine access rights.
+     * @param providerToken
+     *            - a path parameter to restrict access
+     * @param eventDetailsList
+     *            - the unsubscription event list, currently in MailJet format
+     * @return Success shown by returning an ok response
+     */
+    @POST
+    @Path("/users/unsubscription_notification/{providerToken}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response notifyExternalUnsubscriptionEvent(@Context final HttpServletRequest request,
+                                                @PathParam("providerToken") final String providerToken,
+                                                final List<Map<String, Object>> eventDetailsList) {
+        try {
+            final String expectedProviderToken = getProperties().getProperty(MAILJET_WEBHOOK_TOKEN);
+            if (null == expectedProviderToken || expectedProviderToken.isEmpty()) {
+                return SegueErrorResponse.getNotImplementedResponse();
+            }
+            if (!expectedProviderToken.equals(providerToken)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
+            List<UserPreference> userPreferencesToUpdate = Lists.newArrayList();
+
+            for (Map<String, Object> eventDetails: eventDetailsList) {
+                String recipientEmail = (String) eventDetails.get("email");
+                // TODO: this is very MailJet specific:
+                Integer mailjetListId = (Integer) eventDetails.get("mj_list_id");
+                EmailType unsubscribedEmailType = EmailType.NEWS_AND_UPDATES;
+                if (null != mailjetListId && getProperties().getProperty(MAILJET_NEWS_LIST_ID).equals(mailjetListId.toString())) {
+                    unsubscribedEmailType = EmailType.NEWS_AND_UPDATES;
+                } else if (null != mailjetListId && getProperties().getProperty(MAILJET_EVENTS_LIST_ID).equals(mailjetListId.toString())) {
+                    unsubscribedEmailType = EmailType.EVENTS;
+                } else {
+                    log.warn(String.format("User with email (%s) attempted to unsubscribe from unrecognised list (%s)!", recipientEmail, mailjetListId));
+                }
+                // Find and unsubscribe user:
+                if (recipientEmail != null && !recipientEmail.isEmpty()) {
+                    try {
+                        RegisteredUserDTO user = userManager.getUserDTOByEmail(recipientEmail);
+                        UserPreference preferenceToSave = new UserPreference(user.getId(), SegueUserPreferences.EMAIL_PREFERENCE.name(), unsubscribedEmailType.name(), false);
+                        userPreferencesToUpdate.add(preferenceToSave);
+                    } catch (NoUserException e) {
+                        log.warn(String.format("User with email (%s) attempted to unsubscribe, but no Isaac account found!", recipientEmail));
+                    }
+                }
+            }
+            userPreferenceManager.saveUserPreferences(userPreferencesToUpdate);
+            String remoteIpAddress = RequestIPExtractor.getClientIpAddr(request);
+            log.info(String.format("Request from (%s) unsubscribed %s emails from NEWS_AND_UPDATES emails.", remoteIpAddress, userPreferencesToUpdate.size()));
+            return Response.ok().build();
+        } catch (SegueDatabaseException | ClassCastException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to process request.").toResponse();
+        }
+    }
 
     /**
      * This method will delete all cached data from the CMS and any search indices.
@@ -892,6 +844,9 @@ public class AdminFacade extends AbstractSegueFacade {
                             School school = this.schoolReader.findSchoolById(userDTO.getSchoolId());
                             if (school != null) {
                                 String schoolPostCode = school.getPostcode();
+                                if (null == schoolPostCode || schoolPostCode.isEmpty()) {
+                                    continue;
+                                }
                                 List<Long> ids;
                                 if (postCodeAndUserIds.containsKey(schoolPostCode)) {
                                     ids = postCodeAndUserIds.get(schoolPostCode);
@@ -1130,356 +1085,6 @@ public class AdminFacade extends AbstractSegueFacade {
     }
 
     /**
-     * Get users by school id.
-     * 
-     * @param request
-     *            - to determine access.
-     * @param schoolId
-     *            - of the school of interest.
-     * @return stats
-     */
-    @GET
-    @Path("/users/schools/{school_id}")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    public Response getSchoolStatistics(@Context final HttpServletRequest request,
-            @PathParam("school_id") final String schoolId) {
-        try {
-            if (!isUserStaff(userManager, request)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
-                        .toResponse();
-            }
-
-            School school = schoolReader.findSchoolById(schoolId);
-            
-            Map<String, Object> result = ImmutableMap.of("school", school, "users",
-                    statsManager.getUsersBySchoolId(schoolId));
-            
-            return Response.ok(result).build();
-        } catch (UnableToIndexSchoolsException e) {
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Unable To Index SchoolIndexer Exception in admin facade", e).toResponse();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (ResourceNotFoundException e) {
-            return new SegueErrorResponse(Status.NOT_FOUND, "We cannot locate the school requested").toResponse();
-        } catch (SegueDatabaseException | SegueSearchException e) {
-            log.error("Error while trying to list users belonging to a school.", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error").toResponse();
-        } catch (NumberFormatException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "The school id provided is invalid.").toResponse();
-        } catch (JsonParseException | JsonMappingException e) {
-            log.error("Problem parsing school", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to read school").toResponse();
-        } catch (IOException e) {
-            log.error("Problem parsing school", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "IOException while trying to communicate with the school service.").toResponse();
-        }
-    }
-
-
-    /**
-     * Service method to fetch the event data for a specified user.
-     *
-     * @param request
-     *            - request information used authentication
-     * @param requestForCaching
-     *            - request information used for caching.
-     * @param httpServletRequest
-     *            - the request which may contain session information.
-     * @param fromDate
-     *            - date to start search
-     * @param toDate
-     *            - date to end search
-     * @param events
-     *            - comma separated list of events of interest.,
-     * @param bin
-     *            - Should we group data into the first day of the month? true or false.
-     * @return Returns a map of eventType to Map of dates to total number of events.
-     * @throws BadRequestException
-     *            - because the request is missing various essential parameters
-     * @throws ForbiddenException
-     *            - because the user is not an admin
-     * @throws NoUserLoggedInException
-     *            - because the user is not logged in
-     * @throws SegueDatabaseException
-     *            - because there has been some problem with database access
-     */
-    private Map<String, Map<LocalDate, Long>> fetchEventDataForAllUsers(@Context final Request request,
-             @Context final HttpServletRequest httpServletRequest, @Context final Request requestForCaching,
-             @QueryParam("from_date") final Long fromDate, @QueryParam("to_date") final Long toDate,
-             @QueryParam("events") final String events, @QueryParam("bin_data") final Boolean bin)
-            throws BadRequestException, ForbiddenException, NoUserLoggedInException, SegueDatabaseException {
-
-        final boolean binData = null != bin && bin;
-
-        if (null == events || events.isEmpty()) {
-            throw new BadRequestException("You must specify the events you are interested in.");
-        }
-
-        if (null == fromDate || null == toDate) {
-            throw new BadRequestException("You must specify the from_date and to_date you are interested in.");
-        }
-
-        if (!isUserStaff(userManager, httpServletRequest)) {
-            throw new ForbiddenException("You must be logged in as an admin to access this function.");
-        }
-
-        return this.statsManager.getEventLogsByDate(
-                Lists.newArrayList(events.split(",")), new Date(fromDate), new Date(toDate), binData);
-    }
-
-    /**
-     * Get the event data for a specified user.
-     * 
-     * @param request
-     *            - request information used authentication
-     * @param requestForCaching
-     *            - request information used for caching.
-     * @param httpServletRequest
-     *            - the request which may contain session information.
-     * @param fromDate
-     *            - date to start search
-     * @param toDate
-     *            - date to end search
-     * @param events
-     *            - comma separated list of events of interest.,
-     * @param bin
-     *            - Should we group data into the first day of the month? true or false.
-     * @return Returns a map of eventType to Map of dates to total number of events.
-     */
-    @GET
-    @Path("/users/event_data/over_time")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    public Response getEventDataForAllUsers(@Context final Request request,
-            @Context final HttpServletRequest httpServletRequest, @Context final Request requestForCaching,
-            @QueryParam("from_date") final Long fromDate, @QueryParam("to_date") final Long toDate,
-            @QueryParam("events") final String events, @QueryParam("bin_data") final Boolean bin) {
-
-        Map<String, Map<LocalDate, Long>> eventLogsByDate;
-        try {
-            eventLogsByDate = fetchEventDataForAllUsers(request, httpServletRequest, requestForCaching, fromDate,
-                    toDate, events, bin);
-        } catch (BadRequestException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
-        } catch (ForbiddenException e) {
-            return new SegueErrorResponse(Status.FORBIDDEN, e.getMessage()).toResponse();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (SegueDatabaseException e) {
-            log.error("Database error while getting event details for a user.", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to complete the request.").toResponse();
-        }
-
-        EntityTag etag = new EntityTag(eventLogsByDate.toString().hashCode() + "");
-
-        Response cachedResponse = generateCachedResponse(requestForCaching, etag);
-        if (cachedResponse != null) {
-            return cachedResponse;
-        }
-
-        return Response.ok(eventLogsByDate).tag(etag)
-                .cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false)).build();
-    }
-
-
-    /**
-     * Get the event data for a specified user, in CSV format.
-     *
-     * @param request
-     *            - request information used authentication
-     * @param requestForCaching
-     *            - request information used for caching.
-     * @param httpServletRequest
-     *            - the request which may contain session information.
-     * @param fromDate
-     *            - date to start search
-     * @param toDate
-     *            - date to end search
-     * @param events
-     *            - comma separated list of events of interest.,
-     * @param bin
-     *            - Should we group data into the first day of the month? true or false.
-     * @return Returns a map of eventType to Map of dates to total number of events.
-     */
-    @GET
-    @Path("/users/event_data/over_time/download")
-    @Produces("text/csv")
-    @GZIP
-    public Response getEventDataForAllUsersDownloadCSV(@Context final Request request,
-            @Context final HttpServletRequest httpServletRequest, @Context final Request requestForCaching,
-            @QueryParam("from_date") final Long fromDate, @QueryParam("to_date") final Long toDate,
-            @QueryParam("events") final String events, @QueryParam("bin_data") final Boolean bin) {
-
-        try {
-            Map<String, Map<LocalDate, Long>> eventLogsByDate;
-            eventLogsByDate = fetchEventDataForAllUsers(request, httpServletRequest, requestForCaching, fromDate,
-                    toDate, events, bin);
-
-            StringWriter stringWriter = new StringWriter();
-            CSVWriter csvWriter = new CSVWriter(stringWriter);
-            List<String[]> rows = Lists.newArrayList();
-            rows.add(new String[]{"event_type", "timestamp", "value"});
-
-            for(Map.Entry<String, Map<LocalDate, Long>> eventType : eventLogsByDate.entrySet()) {
-                String eventTypeKey = eventType.getKey();
-                for(Map.Entry<LocalDate, Long> record : eventType.getValue().entrySet()) {
-                    rows.add(new String[]{eventTypeKey, record.getKey().toString(), record.getValue().toString()});
-                }
-            }
-            csvWriter.writeAll(rows);
-            csvWriter.close();
-
-            EntityTag etag = new EntityTag(eventLogsByDate.toString().hashCode() + "");
-            Response cachedResponse = generateCachedResponse(requestForCaching, etag);
-            if (cachedResponse != null) {
-                return cachedResponse;
-            }
-
-            return Response.ok(stringWriter.toString()).tag(etag)
-                    .header("Content-Disposition", "attachment; filename=admin_stats.csv")
-                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false)).build();
-        } catch (BadRequestException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
-        } catch (ForbiddenException e) {
-            return new SegueErrorResponse(Status.FORBIDDEN, e.getMessage()).toResponse();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (SegueDatabaseException e) {
-            log.error("Database error while getting event details for a user.", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to complete the request.").toResponse();
-        } catch (IOException e) {
-            log.error("IO error while creating the CSV file.", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while creating the CSV file").toResponse();
-        }
-    }
-
-    /**
-     * Get the ip address location information.
-     * 
-     * @param request
-     *            - request information used for caching.
-     * @param httpServletRequest
-     *            - the request which may contain session information.
-     * @param ipaddress
-     *            - ip address to geocode.
-     * @return Returns a location from an ip address
-     */
-    @GET
-    @Path("/geocode_ip")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    public Response findIP(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
-            @QueryParam("ip") final String ipaddress) {
-
-        if (null == ipaddress) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "You must specify the ip address you are interested in.")
-                    .toResponse();
-        }
-
-        try {
-            if (!isUserStaff(userManager, httpServletRequest)) {
-                return new SegueErrorResponse(Status.FORBIDDEN,
-                        "You must be logged in as staff to access this function.").toResponse();
-            }
-
-            return Response.ok(locationManager.resolveAllLocationInformation(ipaddress)).build();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (IOException e) {
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Unable to contact server to resolve location information", e).toResponse();
-        } catch (LocationServerException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Problem resolving ip address", e).toResponse();
-        }
-    }
-
-    /**
-     * Get current perf log for analytics purposes.
-     * 
-     * @param request
-     *            - request information used for caching.
-     * @param httpServletRequest
-     *            - the request which may contain session information.
-     * @return Returns a location from an ip address
-     */
-    @GET
-    @Path("/view_perf_log")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    public Response viewPerfLog(@Context final Request request, @Context final HttpServletRequest httpServletRequest) {
-        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(System.getProperty("catalina.base")
-                + File.separator + "logs" + File.separator + "perf.log"))) {
-            if (!isUserAnAdmin(userManager, httpServletRequest)) {
-                return new SegueErrorResponse(Status.FORBIDDEN,
-                        "You must be logged in as staff to access this function.").toResponse();
-            }
-
-            StringBuilder output = new StringBuilder();
-            String line;
-            while ((line = bufferedReader.readLine()) != null) {
-                
-                if (line.contains("callback")) {
-                    // strip out query params that are provided on callback urls for security.
-                    output.append(line.substring(0, line.indexOf("?")));
-                } else {
-                    output.append(line);    
-                }
-                output.append("\n");
-            }
-            log.info(String.format("User (%s) has accessed the perf logs.",
-                    userManager.getCurrentRegisteredUser(httpServletRequest).getEmail()));
-            return Response.ok(output.toString()).build();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (IOException e) {
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Unable to read the log file requested", e).toResponse();
-        }
-    }
-
-    /**
-     * Get current questionMetaData for analytics purposes.
-     * 
-     * @param request
-     *            - request information used for caching.
-     * @param httpServletRequest
-     *            - the request which may contain session information.
-     * @return Returns a location from an ip address
-     */
-    @GET
-    @Path("/download_meta_data")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    public Response getMetaData(@Context final Request request, @Context final HttpServletRequest httpServletRequest) {
-        try {
-            if (!isUserStaff(userManager, httpServletRequest)) {
-                return new SegueErrorResponse(Status.FORBIDDEN,
-                        "You must be logged in as staff to access this function.").toResponse();
-            }
-
-            ResultsWrapper<ContentDTO> allByType = this.contentManager.getAllByTypeRegEx(
-                    this.contentIndex, ".*", 0, -1);
-            
-            List<ContentSummaryDTO> results = Lists.newArrayList();
-            for (ContentDTO c : allByType.getResults()) {
-                results.add(this.contentManager.extractContentSummary(c));
-            }
-
-            ResultsWrapper<ContentSummaryDTO> toReturn = new ResultsWrapper<>(results,
-                    allByType.getTotalResults());
-            return Response.ok(toReturn).build();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (ContentManagerException e) {
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to read the log file requested", e)
-                    .toResponse();
-        }
-    }
-
-    /**
      * This method will allow the live version served by the site to be changed.
      *
      * @param request
@@ -1654,6 +1259,31 @@ public class AdminFacade extends AbstractSegueFacade {
             }
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
+        }
+    }
+
+    /**
+     *  Manually trigger a sync for testing or debugging purposes. Minimal success or failure reporting.
+     */
+    @GET
+    @Path("/sync_external_accounts")
+    @ApiOperation(value = "Trigger an update for external providers where account details have changed.")
+    public Response syncExternalAccounts(@Context final HttpServletRequest httpServletRequest) {
+        //TODO - automate this with Quartz, then review if this is still necessary?
+        try {
+            RegisteredUserDTO user = userManager.getCurrentRegisteredUser(httpServletRequest);
+            if (!isUserAnAdmin(userManager, user)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
+            externalAccountManager.synchroniseChangedUsers();
+
+            return Response.ok().build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (ExternalAccountSynchronisationException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Fatal error while attempting to synchronise users!", e).toResponse();
         }
     }
 }

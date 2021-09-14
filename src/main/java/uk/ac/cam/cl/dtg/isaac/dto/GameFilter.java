@@ -28,7 +28,11 @@ public class GameFilter {
     private List<String> fields;
     private List<String> topics;
     private List<Integer> levels;
+    private List<String> stages;
+    private List<String> difficulties;
+    private List<String> examBoards;
     private List<String> concepts;
+    private List<String> questionCategories;
 
     /**
      * Create a default game filter object.
@@ -39,31 +43,41 @@ public class GameFilter {
         this.fields = Lists.newArrayList();
         this.topics = Lists.newArrayList();
         this.levels = Lists.newArrayList();
+        this.stages = Lists.newArrayList();
+        this.difficulties = Lists.newArrayList();
+        this.examBoards = Lists.newArrayList();
         this.concepts = Lists.newArrayList();
+        this.questionCategories = Lists.newArrayList();
     }
 
     /**
      * Constructor to fully populate the game filter object.
      * 
-     * @param subjectsList
+     * @param subjects
      *            - List of subjects used to get the gameboard
-     * @param fieldsList
+     * @param fields
      *            - List of fields used to get the gameboard
-     * @param topicsList
+     * @param topics
      *            - List of topics used to get the gameboard
-     * @param levelsList
+     * @param levels
      *            - List of levels used to get the gameboard
-     * @param conceptsList
+     * @param concepts
      *            - List of concepts used to get the gameboard
+     * @param questionCategories
+     *            - List of questionCategories to get the gameboard ('problem_solving', 'book', etc.)
      */
-    public GameFilter(final List<String> subjectsList, final List<String> fieldsList, final List<String> topicsList,
-            final List<Integer> levelsList, final List<String> conceptsList) {
-
-        this.subjects = subjectsList;
-        this.fields = fieldsList;
-        this.topics = topicsList;
-        this.levels = levelsList;
-        this.concepts = conceptsList;
+    public GameFilter(final List<String> subjects, final List<String> fields, final List<String> topics,
+            final List<Integer> levels, final List<String> concepts, final List<String> questionCategories,
+            final List<String> stages, final List<String> difficulties, final List<String> examBoards) {
+        this.subjects = subjects;
+        this.fields = fields;
+        this.topics = topics;
+        this.levels = levels;
+        this.stages = stages;
+        this.difficulties = difficulties;
+        this.examBoards = examBoards;
+        this.concepts = concepts;
+        this.questionCategories = questionCategories;
     }
 
     /**
@@ -103,12 +117,48 @@ public class GameFilter {
     }
 
     /**
+     * Gets the stagesList.
+     *
+     * @return the stagesList
+     */
+    public final List<String> getStages() {
+        return stages;
+    }
+
+    /**
+     * Gets the difficultiesList.
+     *
+     * @return the difficultiesList
+     */
+    public final List<String> getDifficulties() {
+        return difficulties;
+    }
+
+    /**
+     * Gets the examBoardsList.
+     *
+     * @return the examBoardsList
+     */
+    public final List<String> getExamBoards() {
+        return examBoards;
+    }
+
+    /**
      * Gets the conceptsList.
      * 
      * @return the conceptsList
      */
     public final List<String> getConcepts() {
         return concepts;
+    }
+
+    /**
+     * Gets the questionCategories.
+     *
+     * @return the questionCategories
+     */
+    public final List<String> getQuestionCategories() {
+        return questionCategories;
     }
 
     /**
@@ -152,8 +202,38 @@ public class GameFilter {
     }
 
     /**
+     * Sets the stages.
+     *
+     * @param stages
+     *            the stages to set
+     */
+    public final void setStages(final List<String> stages) {
+        this.stages = stages;
+    }
+
+    /**
+     * Sets the difficulties.
+     *
+     * @param difficulties
+     *            the difficulties to set
+     */
+    public final void setDifficulties(final List<String> difficulties) {
+        this.difficulties = difficulties;
+    }
+
+    /**
+     * Sets the exam boards.
+     *
+     * @param examBoards
+     *            the exam boards to set
+     */
+    public final void setExamBoards(final List<String> examBoards) {
+        this.examBoards = examBoards;
+    }
+
+    /**
      * Sets the concepts.
-     * 
+     *
      * @param concepts
      *            the concepts to set
      */
@@ -161,14 +241,25 @@ public class GameFilter {
         this.concepts = concepts;
     }
 
+    /**
+     * Sets the questionCategories.
+     *
+     * @param questionCategories
+     *            the question categories to set
+     */
+    public final void setQuestionCategories(final List<String> questionCategories) {
+        this.questionCategories = questionCategories;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("subjects: " + subjects);
-        sb.append("fields: " + fields);
-        sb.append("topics: " + topics);
-        sb.append("levels: " + levels);
-        sb.append("concepts: " + concepts);
+        sb.append("subjects: " + subjects + " ");
+        sb.append("fields: " + fields + " ");
+        sb.append("topics: " + topics + " ");
+        sb.append("levels: " + levels + " ");
+        sb.append("concepts: " + concepts + " ");
+        sb.append("questionCategories: " + questionCategories);
         return sb.toString();
     }
 
@@ -181,6 +272,7 @@ public class GameFilter {
         result = prime * result + ((levels == null) ? 0 : levels.hashCode());
         result = prime * result + ((subjects == null) ? 0 : subjects.hashCode());
         result = prime * result + ((topics == null) ? 0 : topics.hashCode());
+        result = prime * result + ((questionCategories == null) ? 0 : questionCategories.hashCode());
         return result;
     }
 
@@ -231,7 +323,11 @@ public class GameFilter {
         } else if (!topics.equals(other.topics)) {
             return false;
         }
-        return true;
+        if (questionCategories == null) {
+            return other.questionCategories == null;
+        } else {
+            return questionCategories.equals(other.questionCategories);
+        }
     }
 
 }

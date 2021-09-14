@@ -116,7 +116,7 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
             List<String> targetPostCodeList = Lists.newArrayList();
             targetPostCodeList.add(targetPostCode);
             List<PostCode> results = submitPostCodeRequest(targetPostCodeList);
-            if (results != null && results.size() == 1) {
+            if (results.size() == 1) {
                 targetPostCodeObject = results.get(0);
             } else {
                 throw new LocationServerException(
@@ -211,7 +211,7 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
 
         String requestJson = sb.toString();
 
-        HashMap<String, Object> response = new HashMap<String, Object>();
+        HashMap<String, Object> response;
 
         HttpClient httpclient = new DefaultHttpClient();
         HttpPost httppost = new HttpPost(url);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 James Sharkey
+ * Copyright 2021 Raspberry Pi Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.segue.dos.users;
+package uk.ac.cam.cl.dtg.isaac.dos;
 
-/**
- * Enum of valid exam boards users may have.
- */
-public enum ExamBoard {
-    AQA, OCR, OTHER
+public enum QuizFeedbackMode {
+    NONE,
+    OVERALL_MARK,
+    SECTION_MARKS,
+    DETAILED_FEEDBACK
 }

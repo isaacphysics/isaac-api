@@ -15,10 +15,11 @@
  */
 package uk.ac.cam.cl.dtg.segue.dos.users;
 
-import java.util.Map;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * A collection of user settings objects.
@@ -32,17 +33,24 @@ public class UserSettings {
 	private RegisteredUser registeredUser;
 	private String passwordCurrent;
 	private Map<String, Map<String, Boolean>> userPreferences;
+	private List<UserContext> registeredUserContexts;
 
     /**
      * A collection of user settings objects.
      * @param registeredUser - the user data
      * @param userPreferences - a list of email preferences
-     */
+     * @param registeredUserContexts -
+	 * a list of registered user contexts, i.e. {stage=a_level, exam_board=AQA}.
+	 * It is set separately from the user so that we can record the time it was last set or acknowledged on the server.
+	 */
     @JsonCreator
     public UserSettings(@JsonProperty("registeredUser") final RegisteredUser registeredUser,
-						@JsonProperty("userPreferences") final Map<String, Map<String, Boolean>> userPreferences) {
+						@JsonProperty("userPreferences") final Map<String, Map<String, Boolean>> userPreferences,
+						@JsonProperty("registeredUserContexts") final List<UserContext> registeredUserContexts
+	) {
         this.registeredUser = registeredUser;
 		this.userPreferences = userPreferences;
+		this.registeredUserContexts = registeredUserContexts;
     }
 
 	/**
@@ -90,5 +98,13 @@ public class UserSettings {
 		this.userPreferences = userPreferences;
 	}
 
+	@JsonProperty("registeredUserContexts")
+	public List<UserContext> getRegisteredUserContexts() {
+		return registeredUserContexts;
+	}
 
+	@JsonProperty("registeredUserContexts")
+	public void setRegisteredUserContexts(List<UserContext> registeredUserContexts) {
+		this.registeredUserContexts = registeredUserContexts;
+	}
 }

@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2016 James Sharkey
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,10 +19,6 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
-import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
-import uk.ac.cam.cl.dtg.segue.comm.EmailType;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 public class QuestionAttemptMisuseHandler implements IMisuseHandler {
@@ -33,20 +29,19 @@ public class QuestionAttemptMisuseHandler implements IMisuseHandler {
     private static final Integer HARD_THRESHOLD = 15;
     private static final Integer ACCOUNTING_INTERVAL = Constants.NUMBER_SECONDS_IN_FIFTEEN_MINUTES;
 
-    private PropertiesLoader properties;
-    private EmailManager emailManager;
+    private Integer overrideHardThreshold;
 
 
     /**
-     * @param emailManager
-     *            - so we can send e-mails if the threshold limits have been reached.
      * @param properties
      *            - so that we can look up properties set.
      */
     @Inject
-    public QuestionAttemptMisuseHandler(final EmailManager emailManager, final PropertiesLoader properties) {
-        this.properties = properties;
-        this.emailManager = emailManager;
+    public QuestionAttemptMisuseHandler(final PropertiesLoader properties) {
+        String overrideThresholdString = properties.getProperty(Constants.QUESTION_MISUSE_THRESHOLD_OVERRIDE);
+        if (null != overrideThresholdString) {
+            this.overrideHardThreshold = Integer.parseInt(overrideThresholdString);
+        }
     }
 
     @Override
@@ -56,6 +51,9 @@ public class QuestionAttemptMisuseHandler implements IMisuseHandler {
 
     @Override
     public Integer getHardThreshold() {
+        if (null != overrideHardThreshold) {
+            return overrideHardThreshold;
+        }
         return HARD_THRESHOLD;
     }
 
@@ -65,9 +63,7 @@ public class QuestionAttemptMisuseHandler implements IMisuseHandler {
     }
 
     @Override
-    public void executeSoftThresholdAction(final String message) {
-        log.warn("Soft threshold limit: " + message);
-    }
+    public void executeSoftThresholdAction(final String message) {}
 
     @Override
     public void executeHardThresholdAction(final String message) {
