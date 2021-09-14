@@ -444,6 +444,9 @@ public class AdminFacade extends AbstractSegueFacade {
 
             this.userManager.updateUserEmailVerificationStatus(recipientEmail, EmailVerificationStatus.DELIVERY_FAILED);
 
+            String remoteIpAddress = RequestIPExtractor.getClientIpAddr(request);
+            log.info(String.format("Request from (%s) updated the status of 1 email to DELIVERY_FAILED.", remoteIpAddress));
+
             return Response.ok().build();
         } catch (NoSuchAlgorithmException | InvalidKeyException | SegueDatabaseException | ClassCastException | NullPointerException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to process request.").toResponse();
