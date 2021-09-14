@@ -226,6 +226,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
         // IP address geocoding
         this.bindConstantToProperty(Constants.IP_INFO_DB_API_KEY, globalProperties);
+        // MailGun key
+        this.bindConstantToProperty(Constants.MAILGUN_SECRET_KEY, globalProperties);
 
         this.bindConstantToProperty(Constants.SCHOOL_CSV_LIST_PATH, globalProperties);
 
