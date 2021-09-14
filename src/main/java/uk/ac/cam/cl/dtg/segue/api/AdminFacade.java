@@ -445,8 +445,8 @@ public class AdminFacade extends AbstractSegueFacade {
             this.userManager.updateUserEmailVerificationStatus(recipientEmail, EmailVerificationStatus.DELIVERY_FAILED);
 
             return Response.ok().build();
-        } catch (NoSuchAlgorithmException | InvalidKeyException | SegueDatabaseException | ClassCastException e) {
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to process request.", e).toResponse();
+        } catch (NoSuchAlgorithmException | InvalidKeyException | SegueDatabaseException | ClassCastException | NullPointerException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to process request.").toResponse();
         }
     }
 
