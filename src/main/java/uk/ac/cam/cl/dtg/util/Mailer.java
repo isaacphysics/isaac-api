@@ -16,6 +16,8 @@
 package uk.ac.cam.cl.dtg.util;
 
 import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.comm.EmailAttachment;
 
 import javax.activation.DataHandler;
@@ -33,6 +35,8 @@ import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Mailer Class Utility Class for sending e-mails such as contact us forms or
@@ -41,9 +45,11 @@ import java.util.Properties;
  * @author Stephen Cummins
  */
 public class Mailer {
+    private static final Logger log = LoggerFactory.getLogger(Mailer.class);
 	private String smtpAddress;
 	private String mailAddress;
 	private String smtpPort;
+	private final ConcurrentMap<Integer, Session> sessionCache;
 
 	/**
 	 * Mailer Class.
@@ -58,6 +64,7 @@ public class Mailer {
 	public Mailer(final String smtpAddress, final String mailAddress) {
 		this.smtpAddress = smtpAddress;
 		this.mailAddress = mailAddress;
+		this.sessionCache = new ConcurrentHashMap<>();
 	}
 
     /**
@@ -240,8 +247,15 @@ public class Mailer {
         p.put("mail.smtp.from", envelopeFrom);  // Used for Return-Path
         p.put("mail.from", fromAddress.getAddress()); // Should only affect Message-ID, since From overridden below
 
+        // Create the javax.mail.Session object needed to send the email.
+        // These are expensive to create so cache them based on the properties
+        // they are configured with (using fact that hashcodes are equal only if objects equal):
+        Integer propertiesHash = p.hashCode();
+        Session s = sessionCache.computeIfAbsent(propertiesHash, k -> {
+            log.info(String.format("Creating new mail Session with properties: %s", p));
+            return Session.getInstance(p);
+        });
         // Create the message and set the recipients:
-        Session s = Session.getDefaultInstance(p);
         Message msg = new MimeMessage(s);
 
         InternetAddress[] receivers = new InternetAddress[recipient.length];
