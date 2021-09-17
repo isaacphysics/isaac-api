@@ -21,6 +21,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.QuizSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 
 import javax.annotation.Nullable;
@@ -392,6 +393,16 @@ public interface IContentManager {
      * @return summary of content
      */
     ContentSummaryDTO extractContentSummary(ContentDTO content);
+
+    /**
+     * Convenience method to convert quiz content into a summarised version.
+     *
+     * Note: This method does not attempt to generate the url property.
+     *
+     * @param content to convert
+     * @return summary of content
+     */
+    QuizSummaryDTO extractQuizSummary(ContentDTO content);
 
     /**
      * Get the SHA for the current content being presented.

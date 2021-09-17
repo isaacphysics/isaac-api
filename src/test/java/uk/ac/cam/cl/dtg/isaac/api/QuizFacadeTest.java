@@ -157,8 +157,8 @@ public class QuizFacadeTest extends AbstractFacadeTest {
 
         String currentSHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
         expect(contentManager.getCurrentContentSHA()).andStubReturn(currentSHA);
-        expect(contentManager.extractContentSummary(studentQuiz)).andStubReturn(studentQuizSummary);
-        expect(contentManager.extractContentSummary(teacherQuiz)).andStubReturn(teacherQuizSummary);
+        expect(contentManager.extractQuizSummary(studentQuiz)).andStubReturn(studentQuizSummary);
+        expect(contentManager.extractQuizSummary(teacherQuiz)).andStubReturn(teacherQuizSummary);
         expect(contentManager.getContentDOById(currentSHA, questionDO.getId())).andStubReturn(questionDO);
         expect(contentManager.getContentDOById(currentSHA, studentQuizDO.getId())).andStubReturn(studentQuizDO);
         expect(contentManager.getContentDOById(currentSHA, questionPageQuestionDO.getId())).andStubReturn(questionPageQuestionDO);
