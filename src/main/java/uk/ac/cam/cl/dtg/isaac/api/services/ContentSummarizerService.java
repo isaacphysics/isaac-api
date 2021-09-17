@@ -61,7 +61,7 @@ public class ContentSummarizerService {
      *
      * @param content
      *            - the content object to summarise
-     * @return ContentSummaryDTO.
+     * @return QuizSummaryDTO.
      */
     private QuizSummaryDTO extractQuizSummary(final ContentDTO content) {
         if (null == content) {
