@@ -40,6 +40,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.QuizSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.BooleanMatchInstruction;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
@@ -610,6 +611,16 @@ public class GitContentManager implements IContentManager {
 
         // try auto-mapping
         return mapper.getAutoMapper().map(content, ContentSummaryDTO.class);
+    }
+
+    @Override
+    public QuizSummaryDTO extractQuizSummary(final ContentDTO content) {
+        if (null == content) {
+            return null;
+        }
+
+        // try auto-mapping
+        return mapper.getAutoMapper().map(content, QuizSummaryDTO.class);
     }
 
     @Override

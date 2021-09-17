@@ -400,7 +400,7 @@ public interface IContentManager {
      * Note: This method does not attempt to generate the url property.
      *
      * @param content to convert
-     * @return summary of content
+     * @return quiz summary of content
      */
     QuizSummaryDTO extractQuizSummary(ContentDTO content);
 
