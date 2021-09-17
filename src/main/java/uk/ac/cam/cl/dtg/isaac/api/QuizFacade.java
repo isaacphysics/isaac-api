@@ -62,6 +62,7 @@ import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.QuizSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -211,7 +212,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             // FIXME: ** HARD-CODED DANGER AHEAD **
             // The limit parameter in the following call is hard-coded and should be returned to a more reasonable
             // number once we have a front-end pagination/load-more system in place.
-            ResultsWrapper<ContentSummaryDTO> summary = this.quizManager.getAvailableQuizzes(isStudent, startIndex, 9000);
+            ResultsWrapper<QuizSummaryDTO> summary = this.quizManager.getAvailableQuizzes(isStudent, startIndex, 9000);
 
             return ok(summary).tag(etag)
                 .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, isStudent))

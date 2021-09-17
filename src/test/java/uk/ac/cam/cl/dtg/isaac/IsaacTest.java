@@ -37,6 +37,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.QuizSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.GroupMembershipDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithEmailAddressDTO;
@@ -69,8 +70,8 @@ public class IsaacTest {
     protected IsaacQuizSectionDTO quizSection1;
     protected IsaacQuizSectionDTO quizSection2;
 
-    protected ContentSummaryDTO studentQuizSummary;
-    protected ContentSummaryDTO teacherQuizSummary;
+    protected QuizSummaryDTO studentQuizSummary;
+    protected QuizSummaryDTO teacherQuizSummary;
     protected RegisteredUserDTO student;
     protected RegisteredUserDTO teacher;
     protected RegisteredUserDTO secondTeacher;
@@ -121,8 +122,9 @@ public class IsaacTest {
 
     protected void initializeIsaacObjects() {
         long id = 0L;
-        studentQuizSummary = new ContentSummaryDTO();
-        teacherQuizSummary = new ContentSummaryDTO();
+        studentQuizSummary = new QuizSummaryDTO();
+        teacherQuizSummary = new QuizSummaryDTO()
+        ;
 
         questionPageQuestion = new IsaacQuestionBaseDTO();
         questionPageQuestion.setId("questionPage|question1");

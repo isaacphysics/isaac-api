@@ -21,6 +21,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.QuizSummaryDTO;
 
 import java.util.ArrayList;
 
@@ -55,6 +56,26 @@ public class ContentSummarizerService {
     }
 
     /**
+     * This method will extract basic information from a content object so the lighter ContentInfo object can be sent to
+     * the client instead.
+     *
+     * @param content
+     *            - the content object to summarise
+     * @return ContentSummaryDTO.
+     */
+    private QuizSummaryDTO extractQuizSummary(final ContentDTO content) {
+        if (null == content) {
+            return null;
+        }
+
+        // try auto-mapping
+        QuizSummaryDTO contentInfo = mapper.map(content, QuizSummaryDTO.class);
+        contentInfo.setUrl(uriManager.generateApiUrl(content));
+
+        return contentInfo;
+    }
+
+    /**
      * Utility method to convert a ResultsWrapper of content objects into one with ContentSummaryDTO objects.
      *
      * @param contentList
@@ -72,6 +93,31 @@ public class ContentSummarizerService {
 
         for (ContentDTO content : contentList.getResults()) {
             ContentSummaryDTO contentInfo = extractContentSummary(content);
+            if (null != contentInfo) {
+                contentSummaryResults.getResults().add(contentInfo);
+            }
+        }
+        return contentSummaryResults;
+    }
+
+    /**
+     * Utility method to convert a ResultsWrapper of content objects into one with QuizSummaryDTO objects.
+     *
+     * @param contentList
+     *            - the list of content to summarise.
+     * @return list of shorter QuizSummaryDTO objects.
+     */
+    public ResultsWrapper<QuizSummaryDTO> extractQuizSummaryFromResultsWrapper(
+            final ResultsWrapper<ContentDTO> contentList) {
+        if (null == contentList) {
+            return null;
+        }
+
+        ResultsWrapper<QuizSummaryDTO> contentSummaryResults = new ResultsWrapper<QuizSummaryDTO>(
+                new ArrayList<QuizSummaryDTO>(), contentList.getTotalResults());
+
+        for (ContentDTO content : contentList.getResults()) {
+            QuizSummaryDTO contentInfo = extractQuizSummary(content);
             if (null != contentInfo) {
                 contentSummaryResults.getResults().add(contentInfo);
             }

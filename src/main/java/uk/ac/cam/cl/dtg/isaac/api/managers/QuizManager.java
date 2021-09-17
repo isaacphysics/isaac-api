@@ -37,6 +37,7 @@ import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.QuizSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.annotation.Nullable;
@@ -94,7 +95,7 @@ public class QuizManager {
         this.mapper = mapper;
     }
 
-    public ResultsWrapper<ContentSummaryDTO> getAvailableQuizzes(boolean onlyVisibleToStudents, @Nullable Integer startIndex, @Nullable Integer limit) throws ContentManagerException {
+    public ResultsWrapper<QuizSummaryDTO> getAvailableQuizzes(boolean onlyVisibleToStudents, @Nullable Integer startIndex, @Nullable Integer limit) throws ContentManagerException {
 
         List<IContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
         fieldsToMatch.add(new IContentManager.BooleanSearchClause(
@@ -107,7 +108,7 @@ public class QuizManager {
 
         ResultsWrapper<ContentDTO> content = this.contentService.findMatchingContent(null, fieldsToMatch, startIndex, limit);
 
-        return this.contentSummarizerService.extractContentSummaryFromResultsWrapper(content);
+        return this.contentSummarizerService.extractQuizSummaryFromResultsWrapper(content);
     }
 
     /**
