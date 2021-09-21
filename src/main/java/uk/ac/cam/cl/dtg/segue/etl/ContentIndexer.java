@@ -389,6 +389,16 @@ public class ContentIndexer {
                 }
             }
 
+            if (question.getDefaultFeedback() != null) {
+                Content defaultFeedback = question.getDefaultFeedback();
+                if (defaultFeedback.getChildren() != null) {
+                    for (ContentBase cb : defaultFeedback.getChildren()) {
+                        Content c = (Content) cb;
+                        this.augmentChildContent(c, canonicalSourceFile, newParentId, parentPublished);
+                    }
+                }
+            }
+
             if (content instanceof ChoiceQuestion) {
                 ChoiceQuestion choiceQuestion = (ChoiceQuestion) content;
                 if (choiceQuestion.getChoices() != null) {
