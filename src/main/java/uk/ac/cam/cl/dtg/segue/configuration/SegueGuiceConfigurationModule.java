@@ -30,6 +30,7 @@ import com.google.inject.name.Names;
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.SystemUtils;
 import org.elasticsearch.client.Client;
+import org.quartz.SchedulerException;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -895,7 +896,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     @Inject
-    private static SegueJobService getSegueJobService(final PostgresSqlDb database) {
+    private static SegueJobService getSegueJobService(final PropertiesLoader properties, final PostgresSqlDb database) throws SchedulerException {
         if (null == segueJobService) {
             SegueScheduledJob PIISQLJob = new SegueScheduledDatabaseScriptJob(
                     "PIIDeleteScheduledJob",
@@ -922,6 +923,13 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                     "0 0 7,19 ? * * *");
 
             segueJobService = new SegueJobService(Arrays.asList(PIISQLJob, cleanUpOldAnonymousUsers, cleanUpExpiredReservations, syncMailjetUsers));
+            
+            String mailjetKey = properties.getProperty(MAILJET_API_KEY);
+            String mailjetSecret = properties.getProperty(MAILJET_API_SECRET);
+
+            if (mailjetKey == null && mailjetSecret == null) {
+                segueJobService.removeScheduleJob(syncMailjetUsers);
+            }
             log.info("Created Segue Job Manager for scheduled jobs");
         }
 
