@@ -26,6 +26,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAttemptManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizQuestionManager;
 import uk.ac.cam.cl.dtg.isaac.api.services.AssignmentService;
+import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
@@ -43,6 +44,7 @@ import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.QuizSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -96,6 +98,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
         PropertiesLoader properties = createMock(PropertiesLoader.class);
         logManager = createNiceMock(ILogManager.class); // Nice mock because we're not generally bothered about logging.
         IContentManager contentManager = createMock(IContentManager.class);
+        ContentSummarizerService contentSummarizerService = createMock(ContentSummarizerService.class);
         quizAssignmentManager = createMock(QuizAssignmentManager.class);
         quizAttemptManager = createMock(QuizAttemptManager.class);
         quizQuestionManager = createMock(QuizQuestionManager.class);
@@ -157,13 +160,13 @@ public class QuizFacadeTest extends AbstractFacadeTest {
 
         String currentSHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
         expect(contentManager.getCurrentContentSHA()).andStubReturn(currentSHA);
-        expect(contentManager.extractQuizSummary(studentQuiz)).andStubReturn(studentQuizSummary);
-        expect(contentManager.extractQuizSummary(teacherQuiz)).andStubReturn(teacherQuizSummary);
+        expect(contentSummarizerService.extractContentSummary(studentQuiz, QuizSummaryDTO.class)).andStubReturn(studentQuizSummary);
+        expect(contentSummarizerService.extractContentSummary(teacherQuiz, QuizSummaryDTO.class)).andStubReturn(teacherQuizSummary);
         expect(contentManager.getContentDOById(currentSHA, questionDO.getId())).andStubReturn(questionDO);
         expect(contentManager.getContentDOById(currentSHA, studentQuizDO.getId())).andStubReturn(studentQuizDO);
         expect(contentManager.getContentDOById(currentSHA, questionPageQuestionDO.getId())).andStubReturn(questionPageQuestionDO);
 
-        replay(requestForCaching, properties, logManager, contentManager, quizManager, groupManager, quizAssignmentManager,
+        replay(requestForCaching, properties, logManager, contentManager, contentSummarizerService, quizManager, groupManager, quizAssignmentManager,
             assignmentService, quizAttemptManager, quizQuestionManager, associationManager);
     }
 

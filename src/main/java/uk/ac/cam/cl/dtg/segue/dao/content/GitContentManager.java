@@ -604,26 +604,6 @@ public class GitContentManager implements IContentManager {
     }
 
     @Override
-    public ContentSummaryDTO extractContentSummary(final ContentDTO content) {
-        if (null == content) {
-            return null;
-        }
-
-        // try auto-mapping
-        return mapper.getAutoMapper().map(content, ContentSummaryDTO.class);
-    }
-
-    @Override
-    public QuizSummaryDTO extractQuizSummary(final ContentDTO content) {
-        if (null == content) {
-            return null;
-        }
-
-        // try auto-mapping
-        return mapper.getAutoMapper().map(content, QuizSummaryDTO.class);
-    }
-
-    @Override
     public String getCurrentContentSHA() {
         String contentIndex = globalProperties.getProperty(Constants.CONTENT_INDEX);
         GetResponse versionResponse = contentShaCache.getIfPresent(contentIndex);

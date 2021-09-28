@@ -17,6 +17,7 @@ package uk.ac.cam.cl.dtg.isaac.api;
 
 import org.junit.Before;
 import org.junit.Test;
+import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.QuestionFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
@@ -28,6 +29,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dos.IUserStreaksManager;
+import uk.ac.cam.cl.dtg.segue.dto.content.QuizSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.ws.rs.core.EntityTag;
@@ -72,8 +74,6 @@ public class QuestionFacadeTest extends AbstractFacadeTest {
             userManager, questionManager, logManager, misuseMonitor, userBadgeManager, userStreaksManager, userAssociationManager);
 
         expect(contentManager.getCurrentContentSHA()).andStubReturn(contentIndex);
-        expect(contentManager.extractQuizSummary(studentQuiz)).andStubReturn(studentQuizSummary);
-        expect(contentManager.extractQuizSummary(teacherQuiz)).andStubReturn(teacherQuizSummary);
         expect(contentManager.getContentDOById(contentIndex, questionDO.getId())).andStubReturn(questionDO);
         expect(contentManager.getContentDOById(contentIndex, studentQuizDO.getId())).andStubReturn(studentQuizDO);
         expect(contentManager.getContentDOById(contentIndex, questionPageQuestionDO.getId())).andStubReturn(questionPageQuestionDO);

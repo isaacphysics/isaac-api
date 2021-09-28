@@ -385,26 +385,6 @@ public interface IContentManager {
             throws ContentManagerException;
 
     /**
-     * Convenience method to convert content into a summarised version.
-     * 
-     * Note: This method does not attempt to generate the url property.
-     *  
-     * @param content to convert
-     * @return summary of content
-     */
-    ContentSummaryDTO extractContentSummary(ContentDTO content);
-
-    /**
-     * Convenience method to convert quiz content into a summarised version.
-     *
-     * Note: This method does not attempt to generate the url property.
-     *
-     * @param content to convert
-     * @return quiz summary of content
-     */
-    QuizSummaryDTO extractQuizSummary(ContentDTO content);
-
-    /**
      * Get the SHA for the current content being presented.
      * This will look up the underlying SHA that is returned for the alias used.
      *

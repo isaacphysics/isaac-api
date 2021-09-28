@@ -95,7 +95,7 @@ public class QuizManager {
         this.mapper = mapper;
     }
 
-    public ResultsWrapper<QuizSummaryDTO> getAvailableQuizzes(boolean onlyVisibleToStudents, @Nullable Integer startIndex, @Nullable Integer limit) throws ContentManagerException {
+    public ResultsWrapper<ContentSummaryDTO> getAvailableQuizzes(boolean onlyVisibleToStudents, @Nullable Integer startIndex, @Nullable Integer limit) throws ContentManagerException {
 
         List<IContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
         fieldsToMatch.add(new IContentManager.BooleanSearchClause(
@@ -108,7 +108,7 @@ public class QuizManager {
 
         ResultsWrapper<ContentDTO> content = this.contentService.findMatchingContent(null, fieldsToMatch, startIndex, limit);
 
-        return this.contentSummarizerService.extractQuizSummaryFromResultsWrapper(content);
+        return this.contentSummarizerService.extractContentSummaryFromResultsWrapper(content, QuizSummaryDTO.class);
     }
 
     /**
@@ -150,7 +150,7 @@ public class QuizManager {
             ContentSummaryDTO quiz = quizCache.get(quizId);
             if (quiz == null) {
                 try {
-                    quiz = this.contentManager.extractContentSummary(this.findQuiz(quizId));
+                    quiz = this.contentSummarizerService.extractContentSummary(this.findQuiz(quizId), QuizSummaryDTO.class);
                 } catch (ContentManagerException e) {
                     if (item instanceof QuizAttemptDTO) {
                         log.warn("Attempt (" + ((QuizAttemptDTO) item).getId() +  ") exists with quiz ID ("

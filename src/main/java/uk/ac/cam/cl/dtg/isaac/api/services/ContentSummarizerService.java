@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2021 Raspberry Pi Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,7 +21,6 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.QuizSummaryDTO;
 
 import java.util.ArrayList;
 
@@ -36,43 +35,33 @@ public class ContentSummarizerService {
     }
 
     /**
-     * This method will extract basic information from a content object so the lighter ContentInfo object can be sent to
-     * the client instead.
+     * Simplify a ContentDTO object to a smaller summary class to reduce the size of the response
      *
      * @param content
      *            - the content object to summarise
+     * @param summaryClass
+     *            - the subclass of ContentSummaryDTO to use for the summary object, to allow flexibility
      * @return ContentSummaryDTO.
      */
-    private ContentSummaryDTO extractContentSummary(final ContentDTO content) {
+    public ContentSummaryDTO extractContentSummary(final ContentDTO content, final Class <? extends ContentSummaryDTO> summaryClass) {
         if (null == content) {
             return null;
         }
 
         // try auto-mapping
-        ContentSummaryDTO contentInfo = mapper.map(content, ContentSummaryDTO.class);
+        ContentSummaryDTO contentInfo = mapper.map(content, summaryClass);
         contentInfo.setUrl(uriManager.generateApiUrl(content));
 
         return contentInfo;
     }
 
     /**
-     * This method will extract basic information from a content object so the lighter ContentInfo object can be sent to
-     * the client instead.
-     *
-     * @param content
-     *            - the content object to summarise
-     * @return QuizSummaryDTO.
+     * Helper method to simplify a ContentDTO object directly to ContentSummaryDTO
+     *  
+     * @see ContentSummarizerService#extractContentSummary(ContentDTO, Class)  
      */
-    private QuizSummaryDTO extractQuizSummary(final ContentDTO content) {
-        if (null == content) {
-            return null;
-        }
-
-        // try auto-mapping
-        QuizSummaryDTO contentInfo = mapper.map(content, QuizSummaryDTO.class);
-        contentInfo.setUrl(uriManager.generateApiUrl(content));
-
-        return contentInfo;
+    public ContentSummaryDTO extractContentSummary(final ContentDTO content) {
+        return extractContentSummary(content, ContentSummaryDTO.class);
     }
 
     /**
@@ -83,16 +72,15 @@ public class ContentSummarizerService {
      * @return list of shorter ContentSummaryDTO objects.
      */
     public ResultsWrapper<ContentSummaryDTO> extractContentSummaryFromResultsWrapper(
-        final ResultsWrapper<ContentDTO> contentList) {
+            final ResultsWrapper<ContentDTO> contentList, final Class <? extends ContentSummaryDTO> summaryClass) {
         if (null == contentList) {
             return null;
         }
 
-        ResultsWrapper<ContentSummaryDTO> contentSummaryResults = new ResultsWrapper<ContentSummaryDTO>(
-            new ArrayList<ContentSummaryDTO>(), contentList.getTotalResults());
+        ResultsWrapper<ContentSummaryDTO> contentSummaryResults = new ResultsWrapper<>(new ArrayList<>(), contentList.getTotalResults());
 
         for (ContentDTO content : contentList.getResults()) {
-            ContentSummaryDTO contentInfo = extractContentSummary(content);
+            ContentSummaryDTO contentInfo = extractContentSummary(content, summaryClass);
             if (null != contentInfo) {
                 contentSummaryResults.getResults().add(contentInfo);
             }
@@ -101,27 +89,11 @@ public class ContentSummarizerService {
     }
 
     /**
-     * Utility method to convert a ResultsWrapper of content objects into one with QuizSummaryDTO objects.
+     * Helper method to simplify a ResultsWrapper of ContentDTO objects directly to ContentSummaryDTOs
      *
-     * @param contentList
-     *            - the list of content to summarise.
-     * @return list of shorter QuizSummaryDTO objects.
+     * @see ContentSummarizerService#extractContentSummaryFromResultsWrapper(ResultsWrapper, Class) 
      */
-    public ResultsWrapper<QuizSummaryDTO> extractQuizSummaryFromResultsWrapper(
-            final ResultsWrapper<ContentDTO> contentList) {
-        if (null == contentList) {
-            return null;
-        }
-
-        ResultsWrapper<QuizSummaryDTO> contentSummaryResults = new ResultsWrapper<QuizSummaryDTO>(
-                new ArrayList<QuizSummaryDTO>(), contentList.getTotalResults());
-
-        for (ContentDTO content : contentList.getResults()) {
-            QuizSummaryDTO contentInfo = extractQuizSummary(content);
-            if (null != contentInfo) {
-                contentSummaryResults.getResults().add(contentInfo);
-            }
-        }
-        return contentSummaryResults;
+    public ResultsWrapper<ContentSummaryDTO> extractContentSummaryFromResultsWrapper(final ResultsWrapper<ContentDTO> contentList) {
+        return extractContentSummaryFromResultsWrapper(contentList, ContentSummaryDTO.class);
     }
 }
