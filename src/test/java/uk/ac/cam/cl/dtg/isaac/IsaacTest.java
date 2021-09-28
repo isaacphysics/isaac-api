@@ -122,8 +122,7 @@ public class IsaacTest {
     protected void initializeIsaacObjects() {
         long id = 0L;
         studentQuizSummary = new QuizSummaryDTO();
-        teacherQuizSummary = new QuizSummaryDTO()
-        ;
+        teacherQuizSummary = new QuizSummaryDTO();
 
         questionPageQuestion = new IsaacQuestionBaseDTO();
         questionPageQuestion.setId("questionPage|question1");
