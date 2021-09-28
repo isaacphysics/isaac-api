@@ -17,7 +17,6 @@ package uk.ac.cam.cl.dtg.isaac.api;
 
 import org.junit.Before;
 import org.junit.Test;
-import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.QuestionFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
@@ -29,7 +28,6 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dos.IUserStreaksManager;
-import uk.ac.cam.cl.dtg.segue.dto.content.QuizSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.ws.rs.core.EntityTag;

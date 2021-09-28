@@ -42,7 +42,6 @@ import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizFeedbackDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizUserFeedbackDTO;
-import uk.ac.cam.cl.dtg.segue.api.Constants.SegueServerLogType;
 import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -62,7 +61,6 @@ import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.QuizSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -96,14 +94,8 @@ import java.util.stream.Collectors;
 
 import static javax.ws.rs.core.Response.Status;
 import static javax.ws.rs.core.Response.ok;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUIZ_ID_FKEY;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUIZ_SECTION;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.ASSIGNMENT_DUEDATE_FK;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.GROUP_FK;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_HOUR;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.QUIZ_ASSIGNMENT_FK;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.QUIZ_ATTEMPT_FK;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdFromQuestionId;
 
 /**

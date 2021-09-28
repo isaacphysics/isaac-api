@@ -36,7 +36,6 @@ import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuizSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.GroupMembershipDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;

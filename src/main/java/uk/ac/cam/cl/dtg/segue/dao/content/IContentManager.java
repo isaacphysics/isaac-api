@@ -15,13 +15,10 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.content;
 
-import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
-import uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
+import uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.QuizSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 
 import javax.annotation.Nullable;

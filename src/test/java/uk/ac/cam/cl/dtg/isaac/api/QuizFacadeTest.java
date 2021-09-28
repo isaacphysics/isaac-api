@@ -70,7 +70,7 @@ import static org.powermock.api.easymock.PowerMock.createMock;
 import static org.powermock.api.easymock.PowerMock.createNiceMock;
 import static org.powermock.api.easymock.PowerMock.expectLastCall;
 import static org.powermock.api.easymock.PowerMock.replay;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUIZ_SECTION;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 
 public class QuizFacadeTest extends AbstractFacadeTest {
 

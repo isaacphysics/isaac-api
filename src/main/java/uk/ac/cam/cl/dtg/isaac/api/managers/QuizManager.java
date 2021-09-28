@@ -48,10 +48,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUIZ_TYPE;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.VISIBLE_TO_STUDENTS_FIELDNAME;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * This class will be responsible for managing quizzes.
