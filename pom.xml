@@ -14,7 +14,7 @@
         <log4j.version>2.13.3</log4j.version>
         <resteasy.version>4.7.0.Final</resteasy.version>
         <guice.version>4.2.3</guice.version>
-        <oauth-client.version>1.30.4</oauth-client.version>
+        <oauth-client.version>1.31.0</oauth-client.version>
         <jackson.version>2.12.1</jackson.version>
         <jackson-databind.version>2.12.1</jackson-databind.version>
         <powermock.version>2.0.4</powermock.version>
