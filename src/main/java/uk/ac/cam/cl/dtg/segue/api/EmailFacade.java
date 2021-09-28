@@ -194,6 +194,10 @@ public class EmailFacade extends AbstractSegueFacade {
 
             HashMap<String, String> previewMap = Maps.newHashMap();
             previewMap.put("subject", emailTemplateDTO.getSubject());
+            previewMap.put("from", emailTemplateDTO.getOverrideFromAddress());
+            previewMap.put("replyTo", emailTemplateDTO.getReplyToEmailAddress());
+            previewMap.put("replyToName", emailTemplateDTO.getReplyToName());
+            previewMap.put("sender", emailTemplateDTO.getOverrideEnvelopeFrom());
 			previewMap.put("html", ecm.getHTMLMessage());
 			previewMap.put("plainText", ecm.getPlainTextMessage());
 
