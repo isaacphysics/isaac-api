@@ -318,8 +318,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         try {
             UserPreference preference = userPreferenceManager.getUserPreference(SegueUserPreferences.EMAIL_PREFERENCE.name(), email.getEmailType().name(), userDTO.getId());
-            // If no preference is present, send the email. This is consistent with sendCustomEmail(...) above.
-            if (preference == null || preference.getPreferenceValue()) {
+            // If no preference is present, do not send the email.
+            if (preference != null && preference.getPreferenceValue()) {
                 logManager.logInternalEvent(userDTO, SegueServerLogType.SENT_EMAIL, eventDetails);
                 addToQueue(email);
                 return true;
