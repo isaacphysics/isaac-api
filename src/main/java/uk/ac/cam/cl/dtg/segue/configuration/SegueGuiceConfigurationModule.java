@@ -920,7 +920,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                     "syncMailjetUsersJob",
                     "JavaJob",
                     "Sync users to mailjet",
-                    "0 0 7,19 ? * * *");
+                    "0 0 0/4 ? * * *");
 
             segueJobService = new SegueJobService(Arrays.asList(PIISQLJob, cleanUpOldAnonymousUsers, cleanUpExpiredReservations, syncMailjetUsers));
             
