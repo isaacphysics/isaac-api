@@ -392,14 +392,14 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     /**
      * This provides a singleton of the elasticSearch client that can be used by Guice.
      *
-     * The client is threadsafe so we don't need to keep creating new ones.
+     * The client is threadsafe, so we don't need to keep creating new ones.
      *
      * @param clusterName
      *            - The name of the cluster to create.
      * @param address
      *            - address of the cluster to create.
      * @param port
-     *            - port of the custer to create.
+     *            - port of the cluster to create.
      * @return Client to be injected into ElasticSearch Provider.
      */
     @Inject
@@ -481,12 +481,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                                              final LocationManager lhm) {
 
         if (null == logManager) {
-            //logManager = new MongoLogManager(database, new ObjectMapper(), loggingEnabled, lhm);
-
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-            //logManager = new PgLogManager(database, objectMapper, loggingEnabled, lhm);
-
             logManager = new PgLogManagerEventListener(new PgLogManager(database, objectMapper, loggingEnabled, lhm));
 
             log.info("Creating singleton of LogManager");
@@ -552,8 +548,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *
      * Note: This has to be a singleton because it manages all emails sent using this JVM.
      *
-     * @param database
-     * 			- the database to access preferences
      * @param properties
      * 			- the properties so we can generate email
      * @param emailCommunicator
@@ -562,8 +556,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      * 			- the class providing email preferences
      * @param contentManager
      * 			- the content so we can access email templates
-     * @param authenticator
-     * 			- the authenticator
      * @param logManager
      * 			- the logManager to log email sent
      * @return an instance of the queue
@@ -603,7 +595,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     /**
      * This provides a singleton of the UserManager for various facades.
      *
-     * Note: This has to be a a singleton as the User Manager keeps a temporary cache of anonymous users.
+     * Note: This has to be a singleton as the User Manager keeps a temporary cache of anonymous users.
      *
      * @param database
      *            - the user persistence manager.
@@ -632,7 +624,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     /**
      * This provides a singleton of the UserManager for various facades.
      *
-     * Note: This has to be a a singleton as the User Manager keeps a temporary cache of anonymous users.
+     * Note: This has to be a singleton as the User Manager keeps a temporary cache of anonymous users.
      *
      * @param database
      *            - the user persistence manager.
