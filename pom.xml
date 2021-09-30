@@ -10,11 +10,11 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <segue.version>2.18.2-SNAPSHOT</segue.version>
+        <segue.version>2.18.5-SNAPSHOT</segue.version>
         <log4j.version>2.13.3</log4j.version>
         <resteasy.version>4.7.0.Final</resteasy.version>
         <guice.version>4.2.3</guice.version>
-        <oauth-client.version>1.30.4</oauth-client.version>
+        <oauth-client.version>1.31.0</oauth-client.version>
         <jackson.version>2.12.1</jackson.version>
         <jackson-databind.version>2.12.1</jackson-databind.version>
         <powermock.version>2.0.4</powermock.version>
@@ -380,7 +380,7 @@
         <dependency>
             <groupId>com.mailjet</groupId>
             <artifactId>mailjet-client</artifactId>
-            <version>5.1.1</version>
+            <version>5.2.0</version>
         </dependency>
 
         <!--Jetty JSR-356 Websocket server side dependency -->

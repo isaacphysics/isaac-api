@@ -190,6 +190,9 @@ public final class Constants {
     public static final String MAILJET_NEWS_LIST_ID = "MAILJET_NEWS_LIST_ID";
     public static final String MAILJET_EVENTS_LIST_ID = "MAILJET_EVENTS_LIST_ID";
 
+    // MailGun Key
+    public static final String MAILGUN_SECRET_KEY = "MAILGUN_SECRET_KEY";
+
     /**
      * Suffix to append to raw fields (minus dot separator) - these are fields that the search engine should not do any
      * processing on (e.g. no stemming)
@@ -377,7 +380,6 @@ public final class Constants {
 
     // IP Geocoding stuff
     public static final String IP_INFO_DB_API_KEY = "IP_INFO_DB_API_KEY";
-
 
     /*
      * Default values.
