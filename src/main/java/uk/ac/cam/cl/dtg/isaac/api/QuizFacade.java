@@ -1307,17 +1307,17 @@ public class QuizFacade extends AbstractIsaacFacade {
     /**
      * Allows a teacher to update a quiz assignment.
      *
-     * Only changes to the feedbackMode field are accepted. A bad request error will be thrown if any other fields are set.
+     * Only changes to the feedbackMode and dueDate fields are accepted. A bad request error will be thrown if any other fields are set.
      *
      * @param httpServletRequest so that we can extract user information.
      * @param quizAssignmentId the id of the assignment to update.
-     * @param clientQuizAssignment a partial object with new values for the quiz assignment (only feedbackMode may be set.)
+     * @param clientQuizAssignment a partial object with new values for the quiz assignment (only feedbackMode and dueDate may be set.)
      *
      * @return Confirmation or error.
      */
     @POST
     @Path("/assignment/{quizAssignmentId}")
-    @ApiOperation(value = "Update a quiz assignment (only feedbackMode may be updated).")
+    @ApiOperation(value = "Update a quiz assignment (only feedbackMode and dueDate may be updated).")
     public final Response updateQuizAssignment(@Context final HttpServletRequest httpServletRequest,
                                                @PathParam("quizAssignmentId") Long quizAssignmentId,
                                                final QuizAssignmentDTO clientQuizAssignment) {
