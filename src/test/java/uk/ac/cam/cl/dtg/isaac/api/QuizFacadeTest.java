@@ -349,7 +349,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
         QuizAssignmentDTO legalUpdate = new QuizAssignmentDTO();
         legalUpdate.setQuizFeedbackMode(QuizFeedbackMode.SECTION_MARKS);
         QuizAssignmentDTO illegalUpdate = new QuizAssignmentDTO();
-        illegalUpdate.setDueDate(new Date());
+        illegalUpdate.setCreationDate(new Date());
         forEndpoint((updates) -> () -> quizFacade.updateQuizAssignment(request, studentAssignment.getId(), updates),
             with(legalUpdate,
                 requiresLogin(),
