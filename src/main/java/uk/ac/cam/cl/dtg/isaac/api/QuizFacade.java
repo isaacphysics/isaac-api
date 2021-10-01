@@ -1330,10 +1330,9 @@ public class QuizFacade extends AbstractIsaacFacade {
             || clientQuizAssignment.getQuizId() != null
             || clientQuizAssignment.getGroupId() != null
             || clientQuizAssignment.getOwnerUserId() != null
-            || clientQuizAssignment.getCreationDate() != null
-            || clientQuizAssignment.getDueDate() != null)
+            || clientQuizAssignment.getCreationDate() != null)
         {
-            log.warn("Attempt to change fields for quiz assignment id {} that aren't feedbackMode: {}", quizAssignmentId, clientQuizAssignment);
+            log.warn("Attempt to change fields for quiz assignment id {} that aren't feedbackMode or dueDate: {}", quizAssignmentId, clientQuizAssignment);
             return new SegueErrorResponse(Status.BAD_REQUEST, "Those fields are not editable.").toResponse();
         }
 
@@ -1348,6 +1347,11 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             if (!canManageAssignment(assignment, user)) return new SegueErrorResponse(Status.FORBIDDEN,
                 "You can only updates assignments to groups you own or manage.").toResponse();
+
+            if (assignment.getDueDate() != null && clientQuizAssignment.getDueDate() != null && clientQuizAssignment.getDueDate().compareTo(assignment.getDueDate()) <= 0) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "You can only extend due dates into the future.").toResponse();
+            }
 
             quizAssignmentManager.updateAssignment(assignment, clientQuizAssignment);
 
