@@ -28,6 +28,7 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 public class IsaacPythonQuestionDTO extends IsaacQuestionBaseDTO {
     private String functionName;
     private String initCode;
+    private String setupCode;
     private String test;
 
     public String getFunctionName() {
@@ -44,6 +45,14 @@ public class IsaacPythonQuestionDTO extends IsaacQuestionBaseDTO {
 
     public void setInitCode(String initCode) {
         this.initCode = initCode;
+    }
+
+    public String getSetupCode() {
+        return setupCode;
+    }
+
+    public void setSetupCode(String setupCode) {
+        this.setupCode = setupCode;
     }
 
     public String getTest() {
