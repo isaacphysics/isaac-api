@@ -1308,37 +1308,49 @@ public class QuizFacade extends AbstractIsaacFacade {
                             questionResults.add("-");
                         }
                     } else {
-                        QuizFeedbackDTO.Mark overallMark = Objects.requireNonNull(userFeedback.get().getFeedback()).getOverallMark();
-                        if (overallMark != null) {
-                            quizTotals.add(String.format("%d/%d", overallMark.correct, overallMark.correct + overallMark.incorrect + overallMark.notAttempted));
+                        QuizFeedbackDTO feedback = userFeedback.get().getFeedback();
+                        if (feedback != null) {
+                            QuizFeedbackDTO.Mark overallMark = feedback.getOverallMark();
+                            if (overallMark != null) {
+                                quizTotals.add(String.format("%d/%d", overallMark.correct, overallMark.correct + overallMark.incorrect + overallMark.notAttempted));
+                            } else {
+                                quizTotals.add("");
+                            }
                         } else {
-                            quizTotals.add("");
+                            // The user has revoked access to their data
+                            quizTotals.add("REVOKED");
                         }
-                        Map<String, QuizFeedbackDTO.Mark> questionMarksByQuestionId = userFeedback.get().getFeedback().getQuestionMarks();
-                        if (questionMarksByQuestionId == null) {
-                            long questionCount = quiz.getChildren().stream()
-                                    .filter(c -> c instanceof IsaacQuizSectionDTO)
-                                    .map(s -> ((IsaacQuizSectionDTO) s).getChildren().stream().filter(t -> t instanceof IsaacQuestionBaseDTO).count())
-                                    .reduce(0L, Long::sum);
-                            for (long i = 0L; i < questionCount; ++i) {
-                                questionResults.add(""); // We should probably write something here to make debugging easier...
+                        if (feedback != null) {
+                            Map<String, QuizFeedbackDTO.Mark> questionMarksByQuestionId = userFeedback.get().getFeedback().getQuestionMarks();
+                            if (questionMarksByQuestionId == null) {
+                                long questionCount = quiz.getChildren().stream()
+                                        .filter(c -> c instanceof IsaacQuizSectionDTO)
+                                        .map(s -> ((IsaacQuizSectionDTO) s).getChildren().stream().filter(t -> t instanceof IsaacQuestionBaseDTO).count())
+                                        .reduce(0L, Long::sum);
+                                for (long i = 0L; i < questionCount; ++i) {
+                                    questionResults.add(""); // We should probably write something here to make debugging easier...
+                                }
+                            } else {
+                                for (String id : questionIds) {
+                                    QuizFeedbackDTO.Mark m = questionMarksByQuestionId.get(id);
+                                    if (m == null) {
+                                        questionResults.add(""); // We should probably write something here to make debugging easier...
+                                        continue;
+                                    }
+                                    if (m.notAttempted == 1) {
+                                        questionResults.add("Not Attempted");
+                                    } else if (m.incorrect == 1) {
+                                        questionResults.add("Incorrect");
+                                    } else if (m.correct == 1) {
+                                        questionResults.add("Correct");
+                                    } else {
+                                        questionResults.add(""); // We should probably write something here to make debugging easier...
+                                    }
+                                }
                             }
                         } else {
                             for (String id : questionIds) {
-                                QuizFeedbackDTO.Mark m = questionMarksByQuestionId.get(id);
-                                if (m == null) {
-                                    questionResults.add(""); // We should probably write something here to make debugging easier...
-                                    continue;
-                                }
-                                if (m.notAttempted == 1) {
-                                    questionResults.add("Not Attempted");
-                                } else if (m.incorrect == 1) {
-                                    questionResults.add("Incorrect");
-                                } else if (m.correct == 1) {
-                                    questionResults.add("Correct");
-                                } else {
-                                    questionResults.add(""); // We should probably write something here to make debugging easier...
-                                }
+                                questionResults.add("REVOKED");
                             }
                         }
                     }
