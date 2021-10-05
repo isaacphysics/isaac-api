@@ -79,7 +79,7 @@ public final class SegueMetrics {
 
     // Email Metrics
     public static final Counter QUEUED_EMAIL = Counter.build()
-            .name("segue_queued_email_total").help("All emails queued since process start").labelNames("type").register();
+            .name("segue_queued_email_total").help("All emails queued since process start").labelNames("type", "sender").register();
 
     // Log Event Metrics
     public static final Counter LOG_EVENT = Counter.build()
