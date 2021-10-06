@@ -59,7 +59,6 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  *
  */
 public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
-    //private static final Logger log = LoggerFactory.getLogger(PgUsers.class);
     private static final String POSTGRES_EXCEPTION_MESSAGE = "Postgres exception";
     private static final String JSONB_PROCESSING_ERROR_MESSAGE = "Postgres JSONb processing exception";
 

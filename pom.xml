@@ -6,7 +6,7 @@
     <packaging>war</packaging>
     <version>${segue.version}</version>
     <name>Isaac on a Segue</name>
-    <url>http://isaacphysics.org/</url>
+    <url>https://isaacphysics.org/</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

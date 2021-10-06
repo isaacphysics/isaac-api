@@ -29,7 +29,7 @@ import java.io.UnsupportedEncodingException;
  * @author nr378 and Alistair Stead
  */
 public class EmailCommunicator implements ICommunicator<EmailCommunicationMessage> {
-	private final Mailer mailer;
+	private static Mailer mailer;
 	private final String defaultFromAddress;
 	private final String mailName;
 
@@ -55,7 +55,9 @@ public class EmailCommunicator implements ICommunicator<EmailCommunicationMessag
 		this.mailName = mailName;
 
 		// Construct a new instance of the mailer object
-		this.mailer = new Mailer(smtpAddress, defaultFromAddress);
+        if (mailer == null) {
+            mailer = new Mailer(smtpAddress, defaultFromAddress);
+        }
 	}
 
     /**

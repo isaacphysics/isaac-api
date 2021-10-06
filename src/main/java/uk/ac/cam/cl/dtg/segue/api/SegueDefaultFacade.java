@@ -21,14 +21,9 @@ import io.swagger.annotations.ApiOperation;
 import org.jboss.resteasy.annotations.cache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
-import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
-import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -59,24 +54,12 @@ public class SegueDefaultFacade extends AbstractSegueFacade {
      * 
      * @param properties
      *            - the fully configured properties loader for the api.
-     * @param mapper
-     *            - The Content mapper object used for polymorphic mapping of content objects.
-     * @param segueConfigurationModule
-     *            - The Guice DI configuration module.
-     * @param userManager
-     *            - The manager object responsible for users.
-     * @param emailManager
-     *            - An implementation of ICommunicator for sending communiques
      * @param logManager
      *            - An instance of the log manager used for recording usage of the CMS.
 
      */
     @Inject
-    public SegueDefaultFacade(final PropertiesLoader properties, final ContentMapper mapper,
-            @Nullable final ISegueDTOConfigurationModule segueConfigurationModule,
-            final UserAccountManager userManager,
-            final EmailManager emailManager,
-            final ILogManager logManager) {
+    public SegueDefaultFacade(final PropertiesLoader properties, final ILogManager logManager) {
         super(properties, logManager);
     }
     
