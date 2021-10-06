@@ -109,8 +109,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     protected void addToQueue(final EmailCommunicationMessage email) {
         // Label metrics with sender address, but Prometheus label cannot be null so need the default value here too:
         String senderAddress = globalProperties.getProperty(MAIL_FROM_ADDRESS);
-        if (email.getOverrideFromAddress() != null && !email.getOverrideFromAddress().isEmpty()) {
-            senderAddress = email.getOverrideFromAddress();
+        if (email.getOverrideEnvelopeFrom() != null && !email.getOverrideEnvelopeFrom().isEmpty()) {
+            senderAddress = email.getOverrideEnvelopeFrom();
         }
         QUEUED_EMAIL.labels(email.getEmailType().name(), senderAddress).inc();
         super.addToQueue(email);
