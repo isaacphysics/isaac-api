@@ -206,7 +206,7 @@ public class IsaacNumericValidator implements IValidator {
             log.debug("Validation failed for '" + answerFromUser.getValue() + " " + answerFromUser.getUnits() + "': "
                     + "cannot parse as number!");
 
-            String feedback = "The answer you provided is not a valid number.";
+            String feedback = "Your answer is not in a format we recognise, please enter your answer as a decimal number.";
             if (answerFromUser.getValue().matches(INVALID_NEGATIVE_STANDARD_FORM)) {
                 feedback += "<br>When writing standard form, you must include a `^` between the 10 and the exponent.";
             }

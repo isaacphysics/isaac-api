@@ -107,7 +107,12 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
     @Override
     protected void addToQueue(final EmailCommunicationMessage email) {
-        QUEUED_EMAIL.labels(email.getEmailType().name()).inc();
+        // Label metrics with sender address, but Prometheus label cannot be null so need the default value here too:
+        String senderAddress = globalProperties.getProperty(MAIL_FROM_ADDRESS);
+        if (email.getOverrideEnvelopeFrom() != null && !email.getOverrideEnvelopeFrom().isEmpty()) {
+            senderAddress = email.getOverrideEnvelopeFrom();
+        }
+        QUEUED_EMAIL.labels(email.getEmailType().name(), senderAddress).inc();
         super.addToQueue(email);
     }
 
@@ -313,8 +318,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         try {
             UserPreference preference = userPreferenceManager.getUserPreference(SegueUserPreferences.EMAIL_PREFERENCE.name(), email.getEmailType().name(), userDTO.getId());
-            // If no preference is present, send the email. This is consistent with sendCustomEmail(...) above.
-            if (preference == null || preference.getPreferenceValue()) {
+            // If no preference is present, do not send the email.
+            if (preference != null && preference.getPreferenceValue()) {
                 logManager.logInternalEvent(userDTO, SegueServerLogType.SENT_EMAIL, eventDetails);
                 addToQueue(email);
                 return true;

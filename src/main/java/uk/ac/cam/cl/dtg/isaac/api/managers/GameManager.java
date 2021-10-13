@@ -917,8 +917,9 @@ public class GameManager {
                 if (questionState.equals(GameboardItemState.PASSED) 
                         || questionState.equals(GameboardItemState.PERFECT)) {
                     completedQuestions.add(gameboardItem);
+                } else {
+                    gameboardReadyQuestions.add(gameboardItem);
                 }
-                gameboardReadyQuestions.add(gameboardItem);
 
                 // stop inner loop if we have reached our target
                 if (gameboardReadyQuestions.size() == GAME_BOARD_TARGET_SIZE) {
