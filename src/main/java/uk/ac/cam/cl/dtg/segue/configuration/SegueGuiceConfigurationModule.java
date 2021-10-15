@@ -37,6 +37,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
+import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
 import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
 import uk.ac.cam.cl.dtg.isaac.api.services.GroupChangedService;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
@@ -872,11 +873,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                                                      final ILogManager logManager, final SchoolListReader schoolManager,
                                                      final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final LocationManager locationHistoryManager,
                                                      final GroupManager groupManager, final QuestionManager questionManager,
+                                                     final ContentSummarizerService contentSummarizerService,
                                                      final IUserStreaksManager userStreaksManager) {
 
         if (null == statsManager) {
             statsManager = new StatisticsManager(userManager, logManager, schoolManager, contentManager, contentIndex,
-                    locationHistoryManager, groupManager, questionManager, userStreaksManager);
+                    locationHistoryManager, groupManager, questionManager, contentSummarizerService, userStreaksManager);
             log.info("Created Singleton of Statistics Manager");
         }
 
