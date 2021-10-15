@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2021 Raspberry Pi Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,23 +35,33 @@ public class ContentSummarizerService {
     }
 
     /**
-     * This method will extract basic information from a content object so the lighter ContentInfo object can be sent to
-     * the client instead.
+     * Simplify a ContentDTO object to a smaller summary class to reduce the size of the response
      *
      * @param content
      *            - the content object to summarise
+     * @param summaryClass
+     *            - the subclass of ContentSummaryDTO to use for the summary object, to allow flexibility
      * @return ContentSummaryDTO.
      */
-    private ContentSummaryDTO extractContentSummary(final ContentDTO content) {
+    public ContentSummaryDTO extractContentSummary(final ContentDTO content, final Class <? extends ContentSummaryDTO> summaryClass) {
         if (null == content) {
             return null;
         }
 
         // try auto-mapping
-        ContentSummaryDTO contentInfo = mapper.map(content, ContentSummaryDTO.class);
+        ContentSummaryDTO contentInfo = mapper.map(content, summaryClass);
         contentInfo.setUrl(uriManager.generateApiUrl(content));
 
         return contentInfo;
+    }
+
+    /**
+     * Helper method to simplify a ContentDTO object directly to ContentSummaryDTO
+     *  
+     * @see ContentSummarizerService#extractContentSummary(ContentDTO, Class)  
+     */
+    public ContentSummaryDTO extractContentSummary(final ContentDTO content) {
+        return extractContentSummary(content, ContentSummaryDTO.class);
     }
 
     /**
@@ -62,20 +72,28 @@ public class ContentSummarizerService {
      * @return list of shorter ContentSummaryDTO objects.
      */
     public ResultsWrapper<ContentSummaryDTO> extractContentSummaryFromResultsWrapper(
-        final ResultsWrapper<ContentDTO> contentList) {
+            final ResultsWrapper<ContentDTO> contentList, final Class <? extends ContentSummaryDTO> summaryClass) {
         if (null == contentList) {
             return null;
         }
 
-        ResultsWrapper<ContentSummaryDTO> contentSummaryResults = new ResultsWrapper<ContentSummaryDTO>(
-            new ArrayList<ContentSummaryDTO>(), contentList.getTotalResults());
+        ResultsWrapper<ContentSummaryDTO> contentSummaryResults = new ResultsWrapper<>(new ArrayList<>(), contentList.getTotalResults());
 
         for (ContentDTO content : contentList.getResults()) {
-            ContentSummaryDTO contentInfo = extractContentSummary(content);
+            ContentSummaryDTO contentInfo = extractContentSummary(content, summaryClass);
             if (null != contentInfo) {
                 contentSummaryResults.getResults().add(contentInfo);
             }
         }
         return contentSummaryResults;
+    }
+
+    /**
+     * Helper method to simplify a ResultsWrapper of ContentDTO objects directly to ContentSummaryDTOs
+     *
+     * @see ContentSummarizerService#extractContentSummaryFromResultsWrapper(ResultsWrapper, Class) 
+     */
+    public ResultsWrapper<ContentSummaryDTO> extractContentSummaryFromResultsWrapper(final ResultsWrapper<ContentDTO> contentList) {
+        return extractContentSummaryFromResultsWrapper(contentList, ContentSummaryDTO.class);
     }
 }

@@ -65,13 +65,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.CONCEPT_TYPE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.EVENT_TYPE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.HIDE_FROM_FILTER_TAG;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.PAGE_TYPE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_TYPE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.SEARCHABLE_TAG;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.TOPIC_SUMMARY_PAGE_TYPE;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 
 /**
  * Implementation that specifically works with Content objects.
@@ -600,16 +594,6 @@ public class GitContentManager implements IContentManager {
         contentDTO.setRelatedContent(relatedContentDTOs);
 
         return contentDTO;
-    }
-
-    @Override
-    public ContentSummaryDTO extractContentSummary(final ContentDTO content) {
-        if (null == content) {
-            return null;
-        }
-
-        // try auto-mapping
-        return mapper.getAutoMapper().map(content, ContentSummaryDTO.class);
     }
 
     @Override

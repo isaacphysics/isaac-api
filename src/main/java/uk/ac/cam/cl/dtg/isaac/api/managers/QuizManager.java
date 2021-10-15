@@ -37,6 +37,7 @@ import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.QuizSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.annotation.Nullable;
@@ -47,10 +48,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUIZ_TYPE;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.VISIBLE_TO_STUDENTS_FIELDNAME;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * This class will be responsible for managing quizzes.
@@ -107,7 +106,7 @@ public class QuizManager {
 
         ResultsWrapper<ContentDTO> content = this.contentService.findMatchingContent(null, fieldsToMatch, startIndex, limit);
 
-        return this.contentSummarizerService.extractContentSummaryFromResultsWrapper(content);
+        return this.contentSummarizerService.extractContentSummaryFromResultsWrapper(content, QuizSummaryDTO.class);
     }
 
     /**
@@ -149,7 +148,7 @@ public class QuizManager {
             ContentSummaryDTO quiz = quizCache.get(quizId);
             if (quiz == null) {
                 try {
-                    quiz = this.contentManager.extractContentSummary(this.findQuiz(quizId));
+                    quiz = this.contentSummarizerService.extractContentSummary(this.findQuiz(quizId), QuizSummaryDTO.class);
                 } catch (ContentManagerException e) {
                     if (item instanceof QuizAttemptDTO) {
                         log.warn("Attempt (" + ((QuizAttemptDTO) item).getId() +  ") exists with quiz ID ("
