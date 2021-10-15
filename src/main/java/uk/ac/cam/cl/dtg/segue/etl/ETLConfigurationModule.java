@@ -11,7 +11,6 @@ import org.elasticsearch.client.Client;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.configuration.SegueConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
@@ -112,11 +111,8 @@ class ETLConfigurationModule extends AbstractModule {
     @Singleton
     private static ContentMapper getContentMapper() {
         if (null == mapper) {
-            Reflections r = new Reflections("uk.ac.cam.cl.dtg.segue");
+            Reflections r = new Reflections("uk.ac.cam.cl.dtg");
             mapper = new ContentMapper(r);
-
-            mapper.registerJsonTypes(new SegueConfigurationModule().getContentDataTransferObjectMap());
-
         }
         return mapper;
     }

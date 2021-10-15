@@ -22,12 +22,9 @@ import io.swagger.annotations.ApiOperation;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
-import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
@@ -49,10 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_DAY;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_HOUR;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Segue Content Facade
@@ -68,34 +62,25 @@ public class SegueContentFacade extends AbstractSegueFacade {
 
     private final IContentManager contentManager;
     private final String contentIndex;
-    private final UserAccountManager userManager;
     private final ContentService contentService;
 
     /**
      * @param properties
      *            - the fully configured properties loader for the api.
-     * @param mapper
-     *            - The Content mapper object used for polymorphic mapping of content objects.
-     * @param segueConfigurationModule
-     *            - The Guice DI configuration module.
      * @param contentManager
      *            - The content version controller used by the api.
-     * @param userManager
-     *            - The manager object responsible for users.
      * @param logManager
      *            - An instance of the log manager used for recording usage of the CMS.
 
      */
     @Inject
-    public SegueContentFacade(final PropertiesLoader properties, final ContentMapper mapper,
-                              @Nullable final ISegueDTOConfigurationModule segueConfigurationModule,
-                              final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final UserAccountManager userManager,
+    public SegueContentFacade(final PropertiesLoader properties, final IContentManager contentManager,
+                              @Named(CONTENT_INDEX) final String contentIndex,
                               final ILogManager logManager, final ContentService contentService) {
         super(properties, logManager);
 
         this.contentManager = contentManager;
         this.contentIndex = contentIndex;
-        this.userManager = userManager;
         this.contentService = contentService;
     }
 

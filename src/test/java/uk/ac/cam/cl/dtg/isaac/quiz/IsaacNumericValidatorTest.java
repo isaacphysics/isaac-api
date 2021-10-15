@@ -101,7 +101,7 @@ public class IsaacNumericValidatorTest {
         // Test response:
         QuestionValidationResponse response = validator.validateQuestionResponse(numericQuestionNoUnits, q);
         assertFalse(response.isCorrect());
-        assertTrue(response.getExplanation().getValue().contains("not a valid number"));
+        assertTrue(response.getExplanation().getValue().contains("not in a format we recognise"));
     }
 
     /*
