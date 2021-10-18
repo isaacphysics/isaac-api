@@ -1265,7 +1265,7 @@ public class GameManager {
         }
 
         // Handle the nested audience fields: stage, difficulty and examBoard
-        if (null != gameFilter.getStages()) {
+        if (null != gameFilter.getStages() && !gameFilter.getStages().contains(STAGE_EXAM_BOARD_ALL)) {
             fieldsToMatch.add(new IContentManager.BooleanSearchClause(
                     STAGE_FIELDNAME, BooleanOperator.OR, gameFilter.getStages()));
         }
@@ -1273,7 +1273,7 @@ public class GameManager {
             fieldsToMatch.add(new IContentManager.BooleanSearchClause(
                     DIFFICULTY_FIELDNAME, BooleanOperator.OR, gameFilter.getDifficulties()));
         }
-        if (null != gameFilter.getExamBoards()) {
+        if (null != gameFilter.getExamBoards() && !gameFilter.getExamBoards().contains(STAGE_EXAM_BOARD_ALL)) {
             fieldsToMatch.add(new IContentManager.BooleanSearchClause(
                     EXAM_BOARD_FIELDNAME, BooleanOperator.OR, gameFilter.getExamBoards()));
         }
