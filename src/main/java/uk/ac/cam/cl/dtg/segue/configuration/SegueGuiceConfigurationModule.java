@@ -21,7 +21,9 @@ import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
 import com.google.inject.Inject;
+import com.google.inject.Injector;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.MapBinder;
@@ -150,6 +152,8 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType.*;
  */
 public class SegueGuiceConfigurationModule extends AbstractModule implements ServletContextListener {
     private static final Logger log = LoggerFactory.getLogger(SegueGuiceConfigurationModule.class);
+
+    private static Injector injector = null;
 
     private static PropertiesLoader globalProperties = null;
 
@@ -1147,5 +1151,17 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
         postgresDB.close();
         postgresDB = null;
+    }
+
+    /**
+     * Factory method for providing a single Guice Injector class.
+     *
+     * @return a Guice Injector configured with this SegueGuiceConfigurationModule.
+     */
+    public static synchronized Injector getGuiceInjector() {
+        if (null == injector) {
+            injector = Guice.createInjector(new SegueGuiceConfigurationModule());
+        }
+        return injector;
     }
 }

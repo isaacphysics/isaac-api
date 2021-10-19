@@ -15,11 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.isaac.configuration;
 
-import com.google.inject.Guice;
 import com.google.inject.Injector;
 import io.swagger.jaxrs.config.BeanConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.AssignmentFacade;
 import uk.ac.cam.cl.dtg.isaac.api.EventsFacade;
 import uk.ac.cam.cl.dtg.isaac.api.GameboardsFacade;
@@ -59,9 +56,7 @@ public class IsaacApplicationRegister extends Application {
      */
     public IsaacApplicationRegister() {
         singletons = new HashSet<>();
-        SegueGuiceConfigurationModule segueGuiceConfigurationModule = new SegueGuiceConfigurationModule();
-        
-        injector = Guice.createInjector(segueGuiceConfigurationModule);
+        injector = SegueGuiceConfigurationModule.getGuiceInjector();
         
         setupSwaggerApiAdvertiser();
 

@@ -1,6 +1,5 @@
 package uk.ac.cam.cl.dtg.segue.api.userAlerts;
 
-import com.google.inject.Guice;
 import com.google.inject.Injector;
 import org.eclipse.jetty.websocket.servlet.WebSocketServlet;
 import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
@@ -17,7 +16,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collections;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.util.RequestIPExtractor.getClientIpAddr;
 
 /**
@@ -30,7 +29,7 @@ public class UserAlertsWebSocketServlet extends WebSocketServlet {
     private static final Logger log = LoggerFactory.getLogger(UserAlertsWebSocketServlet.class);
     private static final int BAD_REQUEST = 400;
     private static final int FORBIDDEN = 403;
-    private static Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
+    private static final Injector injector = SegueGuiceConfigurationModule.getGuiceInjector();
     private final String hostName = injector.getInstance(PropertiesLoader.class).getProperty(HOST_NAME);
 
     @Override
