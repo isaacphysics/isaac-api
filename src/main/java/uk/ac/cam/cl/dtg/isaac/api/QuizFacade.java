@@ -1542,6 +1542,27 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             quizAssignmentManager.updateAssignment(assignment, clientQuizAssignment);
 
+            if (assignment.getDueDate().compareTo(clientQuizAssignment.getDueDate()) != 0) {
+                Map<String, Object> eventDetails = ImmutableMap.of(
+                        QUIZ_ID_FKEY, clientQuizAssignment.getQuizId(),
+                        GROUP_FK, clientQuizAssignment.getGroupId(),
+                        QUIZ_ASSIGNMENT_FK, clientQuizAssignment.getId(),
+                        QUIZ_OLD_DUEDATE, assignment.getDueDate() == null ? "NO_DUE_DATE" : assignment.getDueDate(),
+                        ASSIGNMENT_DUEDATE_FK, clientQuizAssignment.getDueDate() == null ? "NO_DUE_DATE" : clientQuizAssignment.getDueDate()
+                );
+                this.getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.UPDATE_QUIZ_DEADLINE, eventDetails);
+            }
+            if (assignment.getQuizFeedbackMode().compareTo(clientQuizAssignment.getQuizFeedbackMode()) != 0) {
+                Map<String, Object> eventDetails = ImmutableMap.of(
+                        QUIZ_ID_FKEY, clientQuizAssignment.getQuizId(),
+                        GROUP_FK, clientQuizAssignment.getGroupId(),
+                        QUIZ_ASSIGNMENT_FK, clientQuizAssignment.getId(),
+                        QUIZ_OLD_FEEDBACK_MODE, assignment.getQuizFeedbackMode(),
+                        QUIZ_FEEDBACK_MODE, clientQuizAssignment.getQuizFeedbackMode()
+                );
+                this.getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.UPDATE_QUIZ_FEEDBACK_MODE, eventDetails);
+            }
+
             return Response.noContent().build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
