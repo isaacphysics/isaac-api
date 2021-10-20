@@ -6,11 +6,11 @@
     <packaging>war</packaging>
     <version>${segue.version}</version>
     <name>Isaac on a Segue</name>
-    <url>http://isaacphysics.org/</url>
+    <url>https://isaacphysics.org/</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <segue.version>2.18.6-SNAPSHOT</segue.version>
+        <segue.version>2.18.8-SNAPSHOT</segue.version>
         <log4j.version>2.13.3</log4j.version>
         <resteasy.version>4.7.0.Final</resteasy.version>
         <guice.version>4.2.3</guice.version>

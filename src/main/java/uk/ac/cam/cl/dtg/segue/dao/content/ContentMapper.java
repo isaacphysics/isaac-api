@@ -103,28 +103,6 @@ public class ContentMapper {
     }
 
     /**
-     * Creates a new content mapper initialized with a set of types.
-     * 
-     * @param additionalTypes
-     *            - types to add to our look up map.
-     * @param mapOfDOsToDTOs
-     *            - map of DOs To DTOs.
-     */
-    public ContentMapper(final Map<String, Class<? extends Content>> additionalTypes,
-            final Map<Class<? extends Content>, Class<? extends ContentDTO>> mapOfDOsToDTOs) {
-        Validate.notNull(additionalTypes);
-
-        this.jsonTypes = new ConcurrentHashMap<String, Class<? extends Content>>();
-        jsonTypes.putAll(additionalTypes);
-
-        this.mapOfDOsToDTOs = Maps.newConcurrentMap();
-
-        if (mapOfDOsToDTOs != null) {
-            this.mapOfDOsToDTOs.putAll(mapOfDOsToDTOs);
-        }
-    }
-
-    /**
      * This method will accept a json string and will return a Content object (or one of its subtypes).
      * 
      * @param docJson
@@ -143,43 +121,6 @@ public class ContentMapper {
         } else {
             return JsonLoader.load(docJson, Content.class);
         }
-    }
-
-    /**
-     * Register a new content type with the content mapper.
-     * 
-     * @param type
-     *            - String that should match the type field of the content object.
-     * @param cls
-     *            - Class implementing the deserialized DO.
-     */
-    public synchronized void registerJsonTypeToDO(final String type, final Class<? extends Content> cls) {
-        Validate.notEmpty(type, "Invalid type string entered. It cannot be empty.");
-        Validate.notNull(cls, "Class cannot be null.");
-
-        jsonTypes.put(type, cls);
-    }
-
-    /**
-     * Works the same as {@link #registerJsonTypeToDO(String, Class)}.
-     * 
-     * @see #registerJsonTypeToDO(String, Class)
-     * @param newTypes
-     *            a map of types to merge with the segue type map. The classes added to the map must contain jsonType
-     *            annotations and may contain DTOMapping annotations.
-     */
-    public synchronized void registerJsonTypes(final List<Class<? extends Content>> newTypes) {
-        Validate.notNull(newTypes, "New types map cannot be null");
-        StringBuilder sb = new StringBuilder();
-        sb.append("Adding new content Types to Segue: ");
-
-        for (Class<? extends Content> contentClass : newTypes) {
-            this.registerJsonTypeAndDTOMapping(contentClass);
-            sb.append(contentClass.toString());
-            sb.append(", ");
-        }
-
-        log.info(sb.toString());
     }
 
     /**

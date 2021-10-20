@@ -28,6 +28,7 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
+import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.LocationManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
@@ -86,6 +87,7 @@ public class StatisticsManager implements IStatisticsManager {
     private final String contentIndex;
     private GroupManager groupManager;
     private QuestionManager questionManager;
+    private ContentSummarizerService contentSummarizerService;
     private IUserStreaksManager userStreaksManager;
     
     private Cache<String, Object> longStatsCache;
@@ -117,13 +119,16 @@ public class StatisticsManager implements IStatisticsManager {
      *            - so that we can see how many groups we have site wide.
      * @param questionManager
      *            - so that we can see how many questions were answered.
+     * @param contentSummarizerService
+     *            - to produce content summary objects
      */
     @Inject
     public StatisticsManager(final UserAccountManager userManager, final ILogManager logManager,
                              final SchoolListReader schoolManager, final IContentManager contentManager,
                              @Named(CONTENT_INDEX) final String contentIndex,
                              final LocationManager locationHistoryManager, final GroupManager groupManager,
-                             final QuestionManager questionManager, final IUserStreaksManager userStreaksManager) {
+                             final QuestionManager questionManager, final ContentSummarizerService contentSummarizerService,
+                             final IUserStreaksManager userStreaksManager) {
         this.userManager = userManager;
         this.logManager = logManager;
         this.schoolManager = schoolManager;
@@ -134,6 +139,7 @@ public class StatisticsManager implements IStatisticsManager {
         this.locationHistoryManager = locationHistoryManager;
         this.groupManager = groupManager;
         this.questionManager = questionManager;
+        this.contentSummarizerService = contentSummarizerService;
         this.userStreaksManager = userStreaksManager;
 
         this.longStatsCache = CacheBuilder.newBuilder()
@@ -555,10 +561,10 @@ public class StatisticsManager implements IStatisticsManager {
         // Collate all the information into the JSON response as a Map:
         Map<String, Object> questionInfo = Maps.newHashMap();
         List<ContentSummaryDTO> mostRecentlyAttemptedQuestionsList = mostRecentlyAttemptedQuestionPages
-                .stream().map(contentManager::extractContentSummary).collect(Collectors.toList());
+                .stream().map(contentSummarizerService::extractContentSummary).collect(Collectors.toList());
         Collections.reverse(mostRecentlyAttemptedQuestionsList);  // We want most-recent first order and streams cannot reverse.
         List<ContentSummaryDTO> questionsNotCompleteList = questionPagesNotComplete
-                .stream().map(contentManager::extractContentSummary).collect(Collectors.toList());
+                .stream().map(contentSummarizerService::extractContentSummary).collect(Collectors.toList());
 
         questionInfo.put("totalQuestionsAttempted", attemptedQuestions);
         questionInfo.put("totalQuestionsCorrect", correctQuestions);
