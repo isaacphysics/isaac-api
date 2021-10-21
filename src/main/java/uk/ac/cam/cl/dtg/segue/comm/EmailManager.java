@@ -273,6 +273,74 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         log.info(String.format("Admin user (%s) added %d emails to the queue. %d were filtered.", sendingUser.getEmail(),
                 allSelectedUsers.size() - numberOfFilteredUsers, numberOfFilteredUsers));
     }
+
+
+    /**
+     * @param sendingUser
+     * 				- the user object for the user sending the email
+     * @param plaintextTemplate
+     * 				- the plainText of the email
+     * @param htmlTemplate
+     *              - the html of the email
+     * @param allSelectedUsers
+     * 				- the users to send email to
+     * @param emailSubject
+     *              - the subject of the email
+     * @param emailType
+     * 				- the type of email to send (affects who receives it)
+     * @throws SegueDatabaseException
+     * 				- a segue database exception
+     * @throws ContentManagerException
+     * 				- a content management exception
+     */
+    public void sendCustomContentEmail(final RegisteredUserDTO sendingUser, final String plaintextTemplate, final String htmlTemplate,
+                                final String emailSubject, final List<RegisteredUserDTO> allSelectedUsers, final EmailType emailType) throws SegueDatabaseException,
+            ContentManagerException {
+        Validate.notNull(allSelectedUsers);
+        Validate.notNull(plaintextTemplate);
+        Validate.notNull(htmlTemplate);
+        Validate.notNull(emailSubject);
+
+        EmailTemplateDTO emailContent = new EmailTemplateDTO();
+        emailContent.setSubject(emailSubject);
+        emailContent.setPlainTextContent(plaintextTemplate);
+        emailContent.setHtmlContent(htmlTemplate);
+
+
+        int numberOfFilteredUsers = 0;
+        for (RegisteredUserDTO user : allSelectedUsers) {
+            Properties p = new Properties();
+            p.putAll(this.globalStringTokens);
+
+            // Add all properties in the user DTO (preserving types) so they are available to email templates.
+            Map userPropertiesMap = new org.apache.commons.beanutils.BeanMap(user);
+            p.putAll(this.flattenTokenMap(userPropertiesMap, Maps.newHashMap(), ""));
+
+            sanitizeEmailParameters(p);
+
+            EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(), emailContent, p,
+                    emailType, null);
+
+            // add to the queue
+            boolean emailAddedToSendQueue = this.filterByPreferencesAndAddToQueue(user, e);
+            if (!emailAddedToSendQueue) {
+                numberOfFilteredUsers++;
+            }
+        }
+
+        List<Long> ids = Lists.newArrayList();
+        allSelectedUsers.stream().map(RegisteredUserDTO::getId).forEach(ids::add);
+
+        ImmutableMap<String, Object> eventDetails = new ImmutableMap.Builder<String, Object>().put(USER_ID_LIST_FKEY_FIELDNAME, ids)
+                .put("htmlTemplate", htmlTemplate)
+                .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA())
+                .put("numberFiltered", numberOfFilteredUsers)
+                .put("type", emailType).build();
+
+        this.logManager.logInternalEvent(sendingUser, SegueServerLogType.SEND_CUSTOM_MASS_EMAIL, eventDetails);
+        log.info(String.format("Admin user (%s) added %d emails to the queue. %d were filtered.", sendingUser.getEmail(),
+                allSelectedUsers.size() - numberOfFilteredUsers, numberOfFilteredUsers));
+    }
     
     
     /**
