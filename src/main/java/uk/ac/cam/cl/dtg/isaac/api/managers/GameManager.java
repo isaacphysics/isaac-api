@@ -1230,18 +1230,17 @@ public class GameManager {
 
                 // ok now we are allowed to look at the fields
                 if (null != gameFilter.getFields()) {
-                    // If multiple fields are chosen, don't filter by field at all, unless there are no topics
-                    if (gameFilter.getFields().size() == 1) {
-                        tagAnds.addAll(gameFilter.getFields());
-                    } else if (null == gameFilter.getTopics()) {
+                    if (gameFilter.getFields().size() > 1) {
                         tagOrs.addAll(gameFilter.getFields());
-                    }
-                    // Now we look at topics
-                    if (null != gameFilter.getTopics()) {
-                        if (gameFilter.getTopics().size() > 1) {
-                            tagOrs.addAll(gameFilter.getTopics());
-                        } else {
-                            tagAnds.addAll(gameFilter.getTopics());
+                    } else { // should be exactly 1
+                        tagAnds.addAll(gameFilter.getFields());
+
+                        if (null != gameFilter.getTopics()) {
+                            if (gameFilter.getTopics().size() > 1) {
+                                tagOrs.addAll(gameFilter.getTopics());
+                            } else {
+                                tagAnds.addAll(gameFilter.getTopics());
+                            }
                         }
                     }
                 }
@@ -1298,9 +1297,9 @@ public class GameManager {
      * 
      * @param gameFilter
      *            containing the following data: (1) subjects - multiple subjects are only ok if there are not any
-     *            fields or topics (2) fields - you can have multiple fields if there is precisely one subject.
-     *            (3) topics - you can have multiple topics if there is precisely one subject. (4) levels -
-     *            currently not used for validation (5) concepts - currently not used for validation
+     *            fields or topics (2) fields - multiple fields are only ok if there are not any topics. (3) topics -
+     *            You can have multiple fields only if there is precisely one subject and field. (4) levels - currently
+     *            not used for validation (5) concepts - currently not used for validation
      * @return true if the query adheres to the rules specified, false if not.
      */
     private static boolean validateFilterQuery(final GameFilter gameFilter) {
@@ -1332,11 +1331,22 @@ public class GameManager {
                 log.warn("Error validating query: multiple subjects and fields specified.");
                 return false;
             }
+
+            if (gameFilter.getFields().size() > 1) {
+                foundMultipleTerms = true;
+            }
         }
 
-        // We don't check topics since it no longer matters if multiple fields are specified (after CS question finder addition).
-        //  This doesn't change how the PHY question finder works, unless the user uses the URL to specify multiple fields
+        if (null != gameFilter.getTopics() && !gameFilter.getTopics().isEmpty()) {
+            if (foundMultipleTerms) {
+                log.warn("Error validating query: multiple fields and topics specified.");
+                return false;
+            }
 
+            if (gameFilter.getTopics().size() > 1) {
+                foundMultipleTerms = true;
+            }
+        }
         return true;
     }
 
