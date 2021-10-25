@@ -46,10 +46,8 @@ public class SegueETLApplicationRegister extends Application {
      * Default constructor.
      */
     public SegueETLApplicationRegister() {
-        singletons = new HashSet<Object>();
-        ETLConfigurationModule etlConfigurationModule = new ETLConfigurationModule();
-
-        injector = Guice.createInjector(etlConfigurationModule);
+        singletons = new HashSet<>();
+        injector = ETLConfigurationModule.getGuiceInjector();
 
         setupSwaggerApiAdvertiser();
 

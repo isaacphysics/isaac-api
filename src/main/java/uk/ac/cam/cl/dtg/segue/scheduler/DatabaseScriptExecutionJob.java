@@ -15,12 +15,10 @@
  */
 package uk.ac.cam.cl.dtg.segue.scheduler;
 
-import com.google.inject.Guice;
 import org.apache.commons.io.IOUtils;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
@@ -42,7 +40,7 @@ public class DatabaseScriptExecutionJob implements Job {
      */
     public DatabaseScriptExecutionJob() {
         // horrible dependency injection hack this job class needs to be able to independently access the database
-        ds = Guice.createInjector(new SegueGuiceConfigurationModule()).getInstance(PostgresSqlDb.class);
+        ds = SegueGuiceConfigurationModule.getGuiceInjector().getInstance(PostgresSqlDb.class);
     }
 
     @Override

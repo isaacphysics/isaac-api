@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.segue.scheduler;
 
-import com.google.inject.Guice;
 import com.google.inject.Injector;
 import org.quartz.utils.ConnectionProvider;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
@@ -35,7 +34,7 @@ public class SchedulerClusterDataSource implements ConnectionProvider {
 
     public SchedulerClusterDataSource() {
         // horrible dependency injection hack because quartz insists on initialising its own db connection class.
-        injector = Guice.createInjector(new SegueGuiceConfigurationModule());
+        injector = SegueGuiceConfigurationModule.getGuiceInjector();
         ds = injector.getInstance(PostgresSqlDb.class);
     }
 

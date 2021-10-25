@@ -1,7 +1,9 @@
 package uk.ac.cam.cl.dtg.segue.etl;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
 import com.google.inject.Inject;
+import com.google.inject.Injector;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
@@ -21,13 +23,14 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.UnknownHostException;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_LINUX_CONFIG_LOCATION;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Created by Ian on 21/10/2016.
  */
 class ETLConfigurationModule extends AbstractModule {
     private static final Logger log = LoggerFactory.getLogger(ETLConfigurationModule.class);
+    private static Injector injector = null;
     private static PropertiesLoader globalProperties = null;
     private static ContentMapper mapper = null;
     private static Client elasticSearchClient = null;
@@ -98,7 +101,6 @@ class ETLConfigurationModule extends AbstractModule {
 
 
     }
-
 
     /**
      * This provides a singleton of the contentVersionController for the segue facade.
@@ -178,5 +180,17 @@ class ETLConfigurationModule extends AbstractModule {
         }
 
         return schoolIndexer;
+    }
+
+    /**
+     * Factory method for providing a single Guice Injector class.
+     *
+     * @return a Guice Injector configured with this ETLConfigurationModule.
+     */
+    public static synchronized Injector getGuiceInjector() {
+        if (null == injector) {
+            injector = Guice.createInjector(new ETLConfigurationModule());
+        }
+        return injector;
     }
 }

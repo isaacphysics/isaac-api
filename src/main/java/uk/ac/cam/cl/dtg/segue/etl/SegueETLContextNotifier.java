@@ -1,13 +1,11 @@
 package uk.ac.cam.cl.dtg.segue.etl;
 
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
-
+import com.google.inject.Injector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
 
 /**
  * SegueContextListener
@@ -31,9 +29,7 @@ public class SegueETLContextNotifier implements ServletContextListener {
     @Override
     public void contextInitialized(final ServletContextEvent sce) {
         log.info("Segue Application Informed of server start up. Registering listeners.");
-        ETLConfigurationModule etlConfigurationModule = new ETLConfigurationModule();
-
-        Injector injector = Guice.createInjector(etlConfigurationModule);
+        Injector injector = ETLConfigurationModule.getGuiceInjector();
 
         // Make sure the ETLManager has been created, forcing latest content to be indexed.
         injector.getInstance(ETLManager.class);
