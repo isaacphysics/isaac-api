@@ -1542,21 +1542,33 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             quizAssignmentManager.updateAssignment(assignment, clientQuizAssignment);
 
-            if (assignment.getDueDate().compareTo(clientQuizAssignment.getDueDate()) != 0) {
+            if (assignment.getDueDate() != null && clientQuizAssignment.getDueDate() != null &&
+                assignment.getDueDate().compareTo(clientQuizAssignment.getDueDate()) != 0) {
                 Map<String, Object> eventDetails = ImmutableMap.of(
-                        QUIZ_ID_FKEY, clientQuizAssignment.getQuizId(),
-                        GROUP_FK, clientQuizAssignment.getGroupId(),
-                        QUIZ_ASSIGNMENT_FK, clientQuizAssignment.getId(),
-                        QUIZ_OLD_DUEDATE, assignment.getDueDate() == null ? "NO_DUE_DATE" : assignment.getDueDate(),
-                        ASSIGNMENT_DUEDATE_FK, clientQuizAssignment.getDueDate() == null ? "NO_DUE_DATE" : clientQuizAssignment.getDueDate()
+                        QUIZ_ID_FKEY, assignment.getQuizId(),
+                        GROUP_FK, assignment.getGroupId(),
+                        QUIZ_ASSIGNMENT_FK, assignment.getId(),
+                        QUIZ_OLD_DUEDATE, assignment.getDueDate(),
+                        ASSIGNMENT_DUEDATE_FK, clientQuizAssignment.getDueDate()
+                );
+                this.getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.UPDATE_QUIZ_DEADLINE, eventDetails);
+            } else if (assignment.getDueDate() == null && clientQuizAssignment.getDueDate() != null) {
+                Map<String, Object> eventDetails = ImmutableMap.of(
+                        QUIZ_ID_FKEY, assignment.getQuizId(),
+                        GROUP_FK, assignment.getGroupId(),
+                        QUIZ_ASSIGNMENT_FK, assignment.getId(),
+                        QUIZ_OLD_DUEDATE, "NO_DUE_DATE",
+                        ASSIGNMENT_DUEDATE_FK, clientQuizAssignment.getDueDate()
                 );
                 this.getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.UPDATE_QUIZ_DEADLINE, eventDetails);
             }
-            if (assignment.getQuizFeedbackMode().compareTo(clientQuizAssignment.getQuizFeedbackMode()) != 0) {
+
+            if (assignment.getQuizFeedbackMode() != null && clientQuizAssignment.getQuizFeedbackMode() != null &&
+                assignment.getQuizFeedbackMode().compareTo(clientQuizAssignment.getQuizFeedbackMode()) != 0) {
                 Map<String, Object> eventDetails = ImmutableMap.of(
-                        QUIZ_ID_FKEY, clientQuizAssignment.getQuizId(),
-                        GROUP_FK, clientQuizAssignment.getGroupId(),
-                        QUIZ_ASSIGNMENT_FK, clientQuizAssignment.getId(),
+                        QUIZ_ID_FKEY, assignment.getQuizId(),
+                        GROUP_FK, assignment.getGroupId(),
+                        QUIZ_ASSIGNMENT_FK, assignment.getId(),
                         QUIZ_OLD_FEEDBACK_MODE, assignment.getQuizFeedbackMode(),
                         QUIZ_FEEDBACK_MODE, clientQuizAssignment.getQuizFeedbackMode()
                 );
