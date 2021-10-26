@@ -1282,7 +1282,7 @@ public class GameManager {
         // handle concepts
         if (null != gameFilter.getConcepts()) {
             fieldsToMatch.add(new IContentManager.BooleanSearchClause(
-                    RELATED_CONTENT_FIELDNAME, BooleanOperator.AND, gameFilter.getConcepts()));
+                    RELATED_CONTENT_FIELDNAME, BooleanOperator.OR, gameFilter.getConcepts()));
         }
 
         // handle exclusions

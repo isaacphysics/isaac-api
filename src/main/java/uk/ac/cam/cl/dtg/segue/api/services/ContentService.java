@@ -32,6 +32,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ID_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NESTED_FIELDS;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TAGS_FIELDNAME;
 
 public class ContentService {
     private final IContentManager contentManager;
@@ -126,7 +127,7 @@ public class ContentService {
                 fieldsToMatchOutput.add(new IContentManager.BooleanSearchClause(
                         pair.getKey(), Constants.BooleanOperator.OR, pair.getValue()));
 
-            } else if (pair.getKey().equals(TYPE_FIELDNAME) && pair.getValue().size() > 1) {
+            } else if ((pair.getKey().equals(TYPE_FIELDNAME) || pair.getKey().equals(TAGS_FIELDNAME)) && pair.getValue().size() > 1) {
                 // special case of when you want to allow more than one
                 fieldsToMatchOutput.add(new IContentManager.BooleanSearchClause(
                         pair.getKey(), Constants.BooleanOperator.OR, pair.getValue()));
