@@ -1152,7 +1152,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                     List<ContentBaseDTO> quizQuestions = quizSection.getChildren().stream().filter(c -> c instanceof IsaacQuestionBaseDTO).collect(Collectors.toList());
                     for (int i = 0; i < quizQuestions.size(); ++i) {
                         questionTitles.add(String.format("\"%s - %s - Q%d\"", quiz.getTitle(), quizSection.getTitle(), i+1));
-                        questionIds.add(section.getId());
+                        questionIds.add(quizQuestions.get(i).getId());
                     }
                 }
             }
