@@ -1619,6 +1619,13 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             quizAssignmentManager.cancelAssignment(assignment);
 
+            Map<String, Object> eventDetails = ImmutableMap.of(
+                    QUIZ_ID_FKEY, assignment.getQuizId(),
+                    QUIZ_ASSIGNMENT_FK, assignment.getId().toString(),
+                    ASSIGNMENT_DUEDATE_FK, assignment.getDueDate() == null ? "NO_DUE_DATE" : assignment.getDueDate()
+            );
+            getLogManager().logEvent(user, httpServletRequest, Constants.IsaacServerLogType.DELETE_QUIZ_ASSIGNMENT, eventDetails);
+
             return Response.noContent().build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
