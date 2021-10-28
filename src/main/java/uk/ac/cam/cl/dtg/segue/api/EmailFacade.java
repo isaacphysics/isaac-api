@@ -528,6 +528,7 @@ public class EmailFacade extends AbstractSegueFacade {
         final String plaintextTemplate = emailTemplates.getPlaintextTemplate();
         final String htmlTemplate = emailTemplates.getHtmlTemplate();
         final String emailSubject = emailTemplates.getEmailSubject();
+        final String overrideFromAddress = emailTemplates.getOverrideFromAddress();
         final List<Long> userIds = emailTemplates.getUserIds();
 
         EmailType emailType;
@@ -568,7 +569,7 @@ public class EmailFacade extends AbstractSegueFacade {
                 return error.toResponse();
             }
 
-            emailManager.sendCustomContentEmail(sender, plaintextTemplate, htmlTemplate, emailSubject, new ArrayList<>(allSelectedUsers), emailType);
+            emailManager.sendCustomContentEmail(sender, plaintextTemplate, htmlTemplate, emailSubject, overrideFromAddress, new ArrayList<>(allSelectedUsers), emailType);
         } catch (SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "There was an error processing your request.");

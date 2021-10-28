@@ -7,6 +7,7 @@ public class ContentEmailDTO {
     private String plaintextTemplate;
     private String htmlTemplate;
     private String emailSubject;
+    private String overrideFromAddress;
 
     /**
      * Default constructor.
@@ -43,5 +44,13 @@ public class ContentEmailDTO {
 
     public void setEmailSubject(String emailSubject) {
         this.emailSubject = emailSubject;
+    }
+
+    public String getOverrideFromAddress() {
+        return overrideFromAddress;
+    }
+
+    public void setOverrideFromAddress(final String overrideFromAddress) {
+        this.overrideFromAddress = overrideFromAddress;
     }
 }
