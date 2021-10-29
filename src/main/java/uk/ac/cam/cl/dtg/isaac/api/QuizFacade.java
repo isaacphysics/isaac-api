@@ -42,7 +42,6 @@ import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizFeedbackDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizUserFeedbackDTO;
-import uk.ac.cam.cl.dtg.segue.api.Constants.SegueServerLogType;
 import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -50,6 +49,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
@@ -91,18 +91,14 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static javax.ws.rs.core.Response.Status;
 import static javax.ws.rs.core.Response.ok;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUIZ_ID_FKEY;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUIZ_SECTION;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.ASSIGNMENT_DUEDATE_FK;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.GROUP_FK;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_HOUR;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.QUIZ_ASSIGNMENT_FK;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.QUIZ_ATTEMPT_FK;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdFromQuestionId;
 
 /**
@@ -1155,7 +1151,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                     IsaacQuizSectionDTO quizSection = (IsaacQuizSectionDTO) section;
                     List<ContentBaseDTO> quizQuestions = quizSection.getChildren().stream().filter(c -> c instanceof IsaacQuestionBaseDTO).collect(Collectors.toList());
                     for (int i = 0; i < quizQuestions.size(); ++i) {
-                        questionTitles.add(String.format("\"%s - Q%d\"", quizSection.getTitle(), i+1));
+                        questionTitles.add(String.format("\"%s - %s - Q%d\"", quiz.getTitle(), quizSection.getTitle(), i+1));
                         questionIds.add(quizQuestions.get(i).getId());
                     }
                 }
@@ -1224,6 +1220,197 @@ public class QuizFacade extends AbstractIsaacFacade {
         } catch (IOException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while building the CSV file.").toResponse();
         }
+    }
+
+    @GET
+    @Path("/group/{groupId}/download")
+    @Produces("text/plain")
+    @GZIP
+    @ApiOperation(value = "Download a CSV with all the quiz results of a given group")
+    public final Response getQuizResultsForGroup(@Context final HttpServletRequest httpServletRequest,
+                                                 @PathParam("groupId") Long groupId,
+                                                 @QueryParam("format") final String formatMode) {
+        if (null == groupId) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid group id.").toResponse();
+        }
+
+        try {
+            RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
+            if (!(isUserTeacherOrAbove(userManager, user))) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
+            UserGroupDTO group = this.groupManager.getGroupById(groupId);
+
+            List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group).stream()
+                    .sorted(Comparator.comparing(RegisteredUserDTO::getFamilyName))
+                    .sorted(Comparator.comparing(RegisteredUserDTO::getGivenName))
+                    .collect(Collectors.toList());
+
+            if (!canManageGroup(user, group)) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "You can only retrieve results for groups you own or manage.").toResponse();
+            }
+
+            List<QuizAssignmentDTO> quizAssignments = this.quizAssignmentManager.getAssignmentsForGroups(Collections.singletonList(group));
+
+            List<List<String>> rows = new ArrayList<>();
+            StringWriter stringWriter = new StringWriter();
+            CSVWriter csvWriter = new CSVWriter(stringWriter);
+            StringBuilder headerBuilder = new StringBuilder();
+            if (null != formatMode && formatMode.toLowerCase().equals("excel")) {
+                headerBuilder.append("\uFEFF");  // UTF-8 Byte Order Marker
+            }
+            headerBuilder.append(String.format("Quiz results for group (%s): Downloaded on %s \nGenerated by: %s %s \n\n",
+                    group.getGroupName(), new Date(), user.getGivenName(), user.getFamilyName()));
+            headerBuilder.append(",,");
+
+            List<String> quizTitles = new ArrayList<>();
+            List<String> questionTitles = new ArrayList<>();
+
+            for (QuizAssignmentDTO assignment : quizAssignments) {
+                String quizId = assignment.getQuizId();
+                IsaacQuizDTO quiz = this.quizManager.findQuiz(quizId);
+                quizTitles.add(String.format("\"%s\"", quiz.getTitle()));
+                questionTitles.addAll(getQuizQuestionTitles(quiz));
+            }
+
+            for (RegisteredUserDTO groupMember : groupMembers) {
+                UserSummaryDTO groupMemberSummary = this.userManager.convertToUserSummaryObject(groupMember);
+                List<String> row = new ArrayList<>(Arrays.asList(groupMember.getGivenName(), groupMember.getFamilyName()));
+                List<String> quizTotals = new ArrayList<>();
+                List<String> questionResults = new ArrayList<>();
+
+                for (QuizAssignmentDTO quizAssignment : quizAssignments) {
+                    String quizId = quizAssignment.getQuizId();
+                    IsaacQuizDTO quiz = this.quizManager.findQuiz(quizId);
+                    List<String> questionIds = getQuizQuestionIds(quiz);
+                    Optional<QuizUserFeedbackDTO> userFeedback = getUserFeedback(user, quizAssignment, quiz, groupMembers).stream()
+                            .filter(f -> f.getUser().getId().equals(groupMember.getId())).findFirst();
+                    if (!userFeedback.isPresent()) {
+                        // This looks like it should work but I can't test it as I don't know how to retrieve a
+                        // non-present user feedback. If everything is set up correctly with retrieving user
+                        // feedback, this branch should never happen -- so maybe we might as well forcibly unwrap
+                        // and deal with the exception because something has gone very wrong somewhere anyway.
+                        quizTotals.add(""); // We should probably write something here to make debugging easier...
+                        long questionCount = quiz.getChildren().stream()
+                                .filter(c -> c instanceof IsaacQuizSectionDTO)
+                                .map(s -> ((IsaacQuizSectionDTO) s).getChildren().stream().filter(t -> t instanceof IsaacQuestionBaseDTO).count())
+                                .reduce(0L, Long::sum);
+                        for (long i = 0L; i < questionCount; ++i) {
+                            questionResults.add("-");
+                        }
+                    } else {
+                        QuizFeedbackDTO feedback = userFeedback.get().getFeedback();
+                        if (feedback != null) {
+                            QuizFeedbackDTO.Mark overallMark = feedback.getOverallMark();
+                            if (overallMark != null) {
+                                quizTotals.add(String.format("%d/%d", overallMark.correct, overallMark.correct + overallMark.incorrect + overallMark.notAttempted));
+                            } else {
+                                quizTotals.add("");
+                            }
+                        } else {
+                            // The user has revoked access to their data
+                            quizTotals.add("REVOKED");
+                        }
+                        if (feedback != null) {
+                            Map<String, QuizFeedbackDTO.Mark> questionMarksByQuestionId = userFeedback.get().getFeedback().getQuestionMarks();
+                            if (questionMarksByQuestionId == null) {
+                                long questionCount = quiz.getChildren().stream()
+                                        .filter(c -> c instanceof IsaacQuizSectionDTO)
+                                        .map(s -> ((IsaacQuizSectionDTO) s).getChildren().stream().filter(t -> t instanceof IsaacQuestionBaseDTO).count())
+                                        .reduce(0L, Long::sum);
+                                for (long i = 0L; i < questionCount; ++i) {
+                                    questionResults.add(""); // We should probably write something here to make debugging easier...
+                                }
+                            } else {
+                                for (String id : questionIds) {
+                                    QuizFeedbackDTO.Mark m = questionMarksByQuestionId.get(id);
+                                    if (m == null) {
+                                        questionResults.add(""); // We should probably write something here to make debugging easier...
+                                        continue;
+                                    }
+                                    if (m.notAttempted == 1) {
+                                        questionResults.add("Not Attempted");
+                                    } else if (m.incorrect == 1) {
+                                        questionResults.add("Incorrect");
+                                    } else if (m.correct == 1) {
+                                        questionResults.add("Correct");
+                                    } else {
+                                        questionResults.add(""); // We should probably write something here to make debugging easier...
+                                    }
+                                }
+                            }
+                        } else {
+                            for (String id : questionIds) {
+                                questionResults.add("REVOKED");
+                            }
+                        }
+                    }
+                }
+                row.addAll(quizTotals);
+                row.addAll(questionResults);
+
+                rows.add(row);
+            }
+
+            headerBuilder.append(String.join(",", quizTitles)).append(",");
+            headerBuilder.append(String.join(",", questionTitles));
+            headerBuilder.append("\n");
+
+            for (List<String> row : rows) {
+                csvWriter.writeNext(row.toArray(new String[0]));
+            }
+            csvWriter.close();
+
+            headerBuilder.append(stringWriter.toString());
+            return Response.ok(headerBuilder.toString())
+                    .header("Content-Disposition", "attachment; filename=quiz_results.csv")
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
+
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (ResourceNotFoundException e) {
+            return SegueErrorResponse.getResourceNotFoundResponse("Something went wrong with this request.");
+        } catch (SegueDatabaseException e) {
+            String message = "Database error whilst viewing quiz assignment";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        } catch (ContentManagerException e) {
+            log.error("Content error whilst retrieving a quiz", e);
+            return SegueErrorResponse.getResourceNotFoundResponse("This quiz has become unavailable.");
+        } catch (IOException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while building the CSV file.").toResponse();
+        }
+    }
+
+    private List<String> getQuizQuestionTitles(IsaacQuizDTO quiz) {
+        List<String> questionTitles = new ArrayList<>();
+        for (ContentBaseDTO section : quiz.getChildren().stream().filter(c -> c instanceof IsaacQuizSectionDTO).collect(Collectors.toList())) {
+            if (section instanceof IsaacQuizSectionDTO) {
+                IsaacQuizSectionDTO quizSection = (IsaacQuizSectionDTO) section;
+                List<ContentBaseDTO> quizQuestions = quizSection.getChildren().stream().filter(c -> c instanceof IsaacQuestionBaseDTO).collect(Collectors.toList());
+                for (int i = 0; i < quizQuestions.size(); ++i) {
+                    questionTitles.add(String.format("\"%s - %s - Q%d\"", quiz.getTitle(), quizSection.getTitle(), i+1));
+                }
+            }
+        }
+        return questionTitles;
+    }
+
+    private List<String> getQuizQuestionIds(IsaacQuizDTO quiz) {
+        List<String> questionIds = new ArrayList<>();
+        for (ContentBaseDTO section : quiz.getChildren().stream().filter(c -> c instanceof IsaacQuizSectionDTO).collect(Collectors.toList())) {
+            if (section instanceof IsaacQuizSectionDTO) {
+                IsaacQuizSectionDTO quizSection = (IsaacQuizSectionDTO) section;
+                List<String> ids = quizSection.getChildren().stream()
+                        .filter(c -> c instanceof IsaacQuestionBaseDTO)
+                        .map(c -> c.getId())
+                        .collect(Collectors.toList());
+                questionIds.addAll(ids);
+            }
+        }
+        return questionIds;
     }
 
     /**

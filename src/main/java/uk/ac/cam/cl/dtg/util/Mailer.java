@@ -49,7 +49,7 @@ public class Mailer {
 	private String smtpAddress;
 	private String mailAddress;
 	private String smtpPort;
-	private final ConcurrentMap<Integer, Session> sessionCache;
+	private final static ConcurrentMap<Integer, Session> sessionCache = new ConcurrentHashMap<>();
 
 	/**
 	 * Mailer Class.
@@ -64,7 +64,6 @@ public class Mailer {
 	public Mailer(final String smtpAddress, final String mailAddress) {
 		this.smtpAddress = smtpAddress;
 		this.mailAddress = mailAddress;
-		this.sessionCache = new ConcurrentHashMap<>();
 	}
 
     /**
