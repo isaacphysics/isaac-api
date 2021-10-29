@@ -46,7 +46,7 @@ public class SyncMailjetUsersJob implements Job {
      * jobdata context provided.
      */
     public SyncMailjetUsersJob() {
-        Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
+        Injector injector = SegueGuiceConfigurationModule.getGuiceInjector();
         emailManager = injector.getInstance(EmailManager.class);
         externalAccountManager = injector.getInstance(IExternalAccountManager.class);
         properties = injector.getInstance(PropertiesLoader.class);
