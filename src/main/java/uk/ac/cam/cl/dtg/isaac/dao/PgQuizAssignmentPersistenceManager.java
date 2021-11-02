@@ -208,10 +208,21 @@ public class PgQuizAssignmentPersistenceManager implements IQuizAssignmentPersis
     public void updateAssignment(Long quizAssignmentId, QuizAssignmentDTO updates) throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("UPDATE quiz_assignments SET quiz_feedback_mode = ? WHERE id = ?");
+            pst = conn.prepareStatement("UPDATE quiz_assignments SET quiz_feedback_mode = COALESCE(?, quiz_feedback_mode), due_date = COALESCE(?, due_date) WHERE id = ?");
 
-            pst.setString(1, updates.getQuizFeedbackMode().name());
-            pst.setLong(2, quizAssignmentId);
+            if (updates.getQuizFeedbackMode() != null) {
+                pst.setString(1, updates.getQuizFeedbackMode().name());
+            } else {
+                pst.setNull(1, Types.VARCHAR);
+            }
+
+            if (updates.getDueDate() != null) {
+                pst.setTimestamp(2, new java.sql.Timestamp(updates.getDueDate().getTime()));
+            } else {
+                pst.setNull(2, Types.TIMESTAMP);
+            }
+
+            pst.setLong(3, quizAssignmentId);
 
             pst.execute();
         } catch (SQLException e) {

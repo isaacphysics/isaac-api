@@ -349,18 +349,41 @@ public class QuizFacadeTest extends AbstractFacadeTest {
 
     @Test
     public void updateQuizAssignment() {
-        QuizAssignmentDTO legalUpdate = new QuizAssignmentDTO();
-        legalUpdate.setQuizFeedbackMode(QuizFeedbackMode.SECTION_MARKS);
+        QuizAssignmentDTO legalFeedbackUpdate = new QuizAssignmentDTO();
+        legalFeedbackUpdate.setQuizFeedbackMode(QuizFeedbackMode.SECTION_MARKS);
+
+        QuizAssignmentDTO legalDueDateUpdate = new QuizAssignmentDTO();
+        // Set a due date *later* than the current one
+        legalDueDateUpdate.setDueDate(new Date(studentAssignment.getDueDate().getTime() + 100000));
+
+        QuizAssignmentDTO illegalDueDateUpdate = new QuizAssignmentDTO();
+        // Set a due date *earlier* than the current one
+        illegalDueDateUpdate.setDueDate(new Date(studentAssignment.getDueDate().getTime() - 100000));
+
         QuizAssignmentDTO illegalUpdate = new QuizAssignmentDTO();
-        illegalUpdate.setDueDate(new Date());
+        illegalUpdate.setCreationDate(new Date());
         forEndpoint((updates) -> () -> quizFacade.updateQuizAssignment(request, studentAssignment.getId(), updates),
-            with(legalUpdate,
+            with(legalFeedbackUpdate,
                 requiresLogin(),
                 as(studentsTeachersOrAdmin(),
-                    prepare(quizAssignmentManager, m -> m.updateAssignment(studentAssignment, legalUpdate)),
+                    prepare(quizAssignmentManager, m -> m.updateAssignment(studentAssignment, legalFeedbackUpdate)),
                     succeeds()
                 ),
                 forbiddenForEveryoneElse()
+            ),
+            with(legalDueDateUpdate,
+                requiresLogin(),
+                as(studentsTeachersOrAdmin(),
+                    prepare(quizAssignmentManager, m -> m.updateAssignment(studentAssignment, legalDueDateUpdate)),
+                    succeeds()
+                ),
+                forbiddenForEveryoneElse()
+            ),
+            with(illegalDueDateUpdate,
+                requiresLogin(),
+                as(studentsTeachersOrAdmin(),
+                    failsWith(Status.FORBIDDEN)
+                )
             ),
             with(illegalUpdate,
                 beforeUserCheck(
