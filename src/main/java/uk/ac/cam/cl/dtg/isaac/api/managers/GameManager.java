@@ -1231,6 +1231,7 @@ public class GameManager {
                 // ok now we are allowed to look at the fields
                 if (null != gameFilter.getFields()) {
                     // If multiple fields are chosen, don't filter by field at all, unless there are no topics
+                    // /!\ This was changed for the CS question finder, and doesn't break the PHY question finder
                     if (gameFilter.getFields().size() == 1) {
                         tagAnds.addAll(gameFilter.getFields());
                     } else if (null == gameFilter.getTopics()) {
