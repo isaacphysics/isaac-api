@@ -77,7 +77,7 @@ public class FastTrackManger {
         fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(FAST_TRACK_QUESTION_TYPE));
         fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(questionId));
         ResultsWrapper<ContentDTO> resultsList = contentManager.findByFieldNames(contentIndex,
-                ContentService.generateDefaultFieldToMatch(fieldsToMatch), 0, DEFAULT_RESULTS_LIMIT);
+                ContentService.generateDefaultFieldToMatch(fieldsToMatch, null), 0, DEFAULT_RESULTS_LIMIT);
 
         String upperConceptTitle = "";
         if (resultsList.getTotalResults() == 1) {

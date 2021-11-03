@@ -32,6 +32,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ID_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NESTED_FIELDS;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TAGS_FIELDNAME;
 
 public class ContentService {
     private final IContentManager contentManager;
@@ -113,16 +114,26 @@ public class ContentService {
      * Helper method to generate field to match requirements for search queries.
      *
      * Assumes whether to filter by 'any' or 'all' on a field by field basis, with the default being 'all'.
+     * You can pass an optional map specifying particular kinds of matching for specific fields
      *
      * @param fieldsToMatch
      *            - expects a map of the form fieldname -> list of queries to match
+     * @param booleanOperatorOverrideMap
+     *            - an optional map of the form fieldname -> one of 'AND', 'OR' or 'NOT', to specify the
+     *              type of matching needed for that field. Overrides any other default matching behaviour
+     *              for the given fields
      * @return A list of boolean search clauses to be passed to a content provider
      */
-    public static List<IContentManager.BooleanSearchClause> generateDefaultFieldToMatch(final Map<String, List<String>> fieldsToMatch) {
+    public static List<IContentManager.BooleanSearchClause> generateDefaultFieldToMatch(final Map<String, List<String>> fieldsToMatch,
+                @Nullable final Map<String, Constants.BooleanOperator> booleanOperatorOverrideMap) {
         List<IContentManager.BooleanSearchClause> fieldsToMatchOutput = Lists.newArrayList();
 
         for (Map.Entry<String, List<String>> pair : fieldsToMatch.entrySet()) {
-            if (pair.getKey().equals(ID_FIELDNAME)) {
+            // First check if the field needs to be forced to a particular kind of matching
+            if (null != booleanOperatorOverrideMap && booleanOperatorOverrideMap.containsKey(pair.getKey())) {
+                fieldsToMatchOutput.add(new IContentManager.BooleanSearchClause(
+                        pair.getKey(), booleanOperatorOverrideMap.get(pair.getKey()), pair.getValue()));
+            } else if (pair.getKey().equals(ID_FIELDNAME)) {
                 fieldsToMatchOutput.add(new IContentManager.BooleanSearchClause(
                         pair.getKey(), Constants.BooleanOperator.OR, pair.getValue()));
 
@@ -137,32 +148,6 @@ public class ContentService {
                 fieldsToMatchOutput.add(new IContentManager.BooleanSearchClause(
                         pair.getKey(), Constants.BooleanOperator.AND, pair.getValue()));
             }
-        }
-
-        return fieldsToMatchOutput;
-    }
-
-    /**
-     * Helper method to generate field to match requirements for search queries.
-     *
-     * Requires a map from fieldname to boolean operator to decide 'any', 'all' or 'none of' for each field.
-     * Defaults to 'any' if <code>booleanOperatorMap</code> doesn't have an entry for a given field.
-     *
-     * @param fieldsToMatch
-     *            - expects a map of the form fieldname -> list of queries to match
-     * @param booleanOperatorMap
-     *            - expects a map of the form fieldname -> one of 'AND', 'OR' or 'NOT', to specify the
-     *              type of filtering needed for that field
-     * @return A list of boolean search clauses to be passed to a content provider
-     */
-    public static List<IContentManager.BooleanSearchClause> generateFieldToMatch(final Map<String, List<String>> fieldsToMatch, final Map<String, Constants.BooleanOperator> booleanOperatorMap) {
-        List<IContentManager.BooleanSearchClause> fieldsToMatchOutput = Lists.newArrayList();
-
-        for (Map.Entry<String, List<String>> pair : fieldsToMatch.entrySet()) {
-            fieldsToMatchOutput.add(new IContentManager.BooleanSearchClause(
-                    pair.getKey(),
-                    booleanOperatorMap.getOrDefault(pair.getKey(), Constants.BooleanOperator.AND),
-                    pair.getValue()));
         }
 
         return fieldsToMatchOutput;

@@ -184,9 +184,7 @@ public class PagesFacade extends AbstractIsaacFacade {
             fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
             etagCodeBuilder.append(tags);
         }
-        Map<String, BooleanOperator> fieldNameToBoolOperator = new HashMap<String, BooleanOperator>() {{
-            this.put(ID_FIELDNAME, BooleanOperator.OR);
-            this.put(TYPE_FIELDNAME, BooleanOperator.OR);
+        Map<String, BooleanOperator> booleanOperatorOverrideMap = new HashMap<String, BooleanOperator>() {{
             this.put(TAGS_FIELDNAME, BooleanOperator.OR);
         }};
 
@@ -202,7 +200,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         }
 
         try {
-            return listContentObjects(fieldsToMatch, fieldNameToBoolOperator, startIndex, newLimit).tag(etag)
+            return listContentObjects(fieldsToMatch, booleanOperatorOverrideMap, startIndex, newLimit).tag(etag)
                     .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
                     .build();
         } catch (ContentManagerException e1) {
@@ -355,11 +353,6 @@ public class PagesFacade extends AbstractIsaacFacade {
                 etagCodeBuilder.append(queryStringValue);
             }
         }
-        Map<String, BooleanOperator> fieldNameToBoolOperator = new HashMap<String, BooleanOperator>() {{
-            this.put(ID_FIELDNAME, BooleanOperator.OR);
-            this.put(TYPE_FIELDNAME, BooleanOperator.OR);
-            this.put(TAGS_FIELDNAME, BooleanOperator.AND);
-        }};
 
         // Calculate the ETag on last modified date of tags list
         // NOTE: Assumes that the latest version of the content is being used.
@@ -388,7 +381,7 @@ public class PagesFacade extends AbstractIsaacFacade {
                         .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
                         .build();
             } else {
-                return listContentObjects(fieldsToMatch, fieldNameToBoolOperator, newStartIndex, newLimit).tag(etag)
+                return listContentObjects(fieldsToMatch, null, newStartIndex, newLimit).tag(etag)
                         .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).build();
             }
         } catch (ContentManagerException e1) {
@@ -710,7 +703,7 @@ public class PagesFacade extends AbstractIsaacFacade {
             fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(subject));
 
             ResultsWrapper<ContentDTO> pods = api.findMatchingContent(this.contentIndex,
-                    ContentService.generateDefaultFieldToMatch(fieldsToMatch), 0, MAX_PODS_TO_RETURN);
+                    ContentService.generateDefaultFieldToMatch(fieldsToMatch, null), 0, MAX_PODS_TO_RETURN);
 
             return Response.ok(pods).cacheControl(getCacheControl(NUMBER_SECONDS_IN_TEN_MINUTES, true))
                     .tag(etag)
@@ -867,7 +860,7 @@ public class PagesFacade extends AbstractIsaacFacade {
                                       @Nullable final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
         try {
             ResultsWrapper<ContentDTO> resultList = api.findMatchingContent(this.contentIndex,
-                    ContentService.generateDefaultFieldToMatch(fieldsToMatch), null, null); // includes
+                    ContentService.generateDefaultFieldToMatch(fieldsToMatch, null), null, null); // includes
             // type
             // checking.
             ContentDTO c = null;
@@ -898,9 +891,10 @@ public class PagesFacade extends AbstractIsaacFacade {
      * 
      * @param fieldsToMatch
      *            - expects a map of the form fieldname -> list of queries to match
-     * @param booleanOperatorMap
-     *            - expects a map of the form fieldname -> one of 'AND', 'OR' or 'NOT', to specify the
-     *              type of filtering needed for that field
+     * @param booleanOperatorOverrideMap
+     *            - an optional map of the form fieldname -> one of 'AND', 'OR' or 'NOT', to specify the
+     *              type of matching needed for that field. Overrides any other default matching behaviour
+     *              for the given fields
      * @param startIndex
      *            - the initial index for the first result.
      * @param limit
@@ -908,11 +902,11 @@ public class PagesFacade extends AbstractIsaacFacade {
      * @return Response builder containing a list of content summary objects or containing a SegueErrorResponse
      */
     private Response.ResponseBuilder listContentObjects(final Map<String, List<String>> fieldsToMatch,
-            final Map<String, BooleanOperator> booleanOperatorMap, final Integer startIndex, final Integer limit) throws ContentManagerException {
+            @Nullable final Map<String, BooleanOperator> booleanOperatorOverrideMap, final Integer startIndex, final Integer limit) throws ContentManagerException {
         ResultsWrapper<ContentDTO> c;
 
         c = api.findMatchingContent(this.contentIndex,
-                ContentService.generateFieldToMatch(fieldsToMatch, booleanOperatorMap), startIndex, limit);
+                ContentService.generateDefaultFieldToMatch(fieldsToMatch, booleanOperatorOverrideMap), startIndex, limit);
 
         ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
                 this.extractContentSummaryFromList(c.getResults()),
