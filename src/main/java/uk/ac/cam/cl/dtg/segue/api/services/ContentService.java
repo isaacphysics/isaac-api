@@ -118,9 +118,7 @@ public class ContentService {
      *            - expects a map of the form fieldname -> list of queries to match
      * @return A list of boolean search clauses to be passed to a content provider
      */
-    public static List<IContentManager.BooleanSearchClause> generateDefaultFieldToMatch(
-            final Map<String, List<String>> fieldsToMatch
-    ) {
+    public static List<IContentManager.BooleanSearchClause> generateDefaultFieldToMatch(final Map<String, List<String>> fieldsToMatch) {
         return ContentService.generateDefaultFieldToMatch(fieldsToMatch, null);
     }
 
