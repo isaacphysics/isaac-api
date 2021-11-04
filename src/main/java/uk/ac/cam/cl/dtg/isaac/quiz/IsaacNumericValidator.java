@@ -134,7 +134,7 @@ public class IsaacNumericValidator implements IValidator {
                         "You did not provide an answer."), false, false, new Date());
             } else if (null == answerFromUser.getUnits() && shouldValidateWithUnits) {
                 return new QuantityValidationResponse(question.getId(), answerFromUser, false, new Content(
-                        "You did not provide any units."), null, false, new Date());
+                        "You did not choose any units. To give an answer with no units, select \"None\"."), null, false, new Date());
             }
 
             QuantityValidationResponse bestResponse;
