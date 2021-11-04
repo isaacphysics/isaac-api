@@ -282,7 +282,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                 }
             } else {
                 findByFieldNames = this.contentManager.findByFieldNames(
-                    this.contentIndex, ContentService.generateDefaultFieldToMatch(fieldsToMatch, null),
+                    this.contentIndex, ContentService.generateDefaultFieldToMatch(fieldsToMatch),
                     newStartIndex, newLimit, sortInstructions, filterInstructions);
 
                 // augment (maybe slow for large numbers of bookings)
@@ -1482,7 +1482,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             ResultsWrapper<ContentDTO> findByFieldNames = null;
 
             findByFieldNames = this.contentManager.findByFieldNames(
-                    this.contentIndex, ContentService.generateDefaultFieldToMatch(fieldsToMatch, null),
+                    this.contentIndex, ContentService.generateDefaultFieldToMatch(fieldsToMatch),
                     newStartIndex, newLimit, sortInstructions, filterInstructions);
 
             List<Map<String, Object>> resultList = Lists.newArrayList();
@@ -1598,7 +1598,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             ResultsWrapper<ContentDTO> findByFieldNames = null;
 
             findByFieldNames = this.contentManager.findByFieldNames(this.contentIndex,
-                    ContentService.generateDefaultFieldToMatch(fieldsToMatch, null),
+                    ContentService.generateDefaultFieldToMatch(fieldsToMatch),
                     newStartIndex, newLimit, sortInstructions, filterInstructions);
 
             List<Map<String, Object>> resultList = Lists.newArrayList();

@@ -184,9 +184,7 @@ public class PagesFacade extends AbstractIsaacFacade {
             fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
             etagCodeBuilder.append(tags);
         }
-        Map<String, BooleanOperator> booleanOperatorOverrideMap = new HashMap<String, BooleanOperator>() {{
-            this.put(TAGS_FIELDNAME, BooleanOperator.OR);
-        }};
+        Map<String, BooleanOperator> booleanOperatorOverrideMap = ImmutableMap.of(TAGS_FIELDNAME, BooleanOperator.OR);
 
         // Calculate the ETag on last modified date of tags list
         // NOTE: Assumes that the latest version of the content is being used.
@@ -703,7 +701,7 @@ public class PagesFacade extends AbstractIsaacFacade {
             fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(subject));
 
             ResultsWrapper<ContentDTO> pods = api.findMatchingContent(this.contentIndex,
-                    ContentService.generateDefaultFieldToMatch(fieldsToMatch, null), 0, MAX_PODS_TO_RETURN);
+                    ContentService.generateDefaultFieldToMatch(fieldsToMatch), 0, MAX_PODS_TO_RETURN);
 
             return Response.ok(pods).cacheControl(getCacheControl(NUMBER_SECONDS_IN_TEN_MINUTES, true))
                     .tag(etag)
@@ -860,7 +858,7 @@ public class PagesFacade extends AbstractIsaacFacade {
                                       @Nullable final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
         try {
             ResultsWrapper<ContentDTO> resultList = api.findMatchingContent(this.contentIndex,
-                    ContentService.generateDefaultFieldToMatch(fieldsToMatch, null), null, null); // includes
+                    ContentService.generateDefaultFieldToMatch(fieldsToMatch), null, null); // includes
             // type
             // checking.
             ContentDTO c = null;

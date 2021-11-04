@@ -112,6 +112,21 @@ public class ContentService {
     /**
      * Helper method to generate field to match requirements for search queries.
      *
+     * An overloaded version of the static method also exists which allows overloading default boolean operator values.
+     *
+     * @param fieldsToMatch
+     *            - expects a map of the form fieldname -> list of queries to match
+     * @return A list of boolean search clauses to be passed to a content provider
+     */
+    public static List<IContentManager.BooleanSearchClause> generateDefaultFieldToMatch(
+            final Map<String, List<String>> fieldsToMatch
+    ) {
+        return ContentService.generateDefaultFieldToMatch(fieldsToMatch, null);
+    }
+
+    /**
+     * Helper method to generate field to match requirements for search queries.
+     *
      * Assumes whether to filter by 'any' or 'all' on a field by field basis, with the default being 'all'.
      * You can pass an optional map specifying particular kinds of matching for specific fields
      *
@@ -135,7 +150,6 @@ public class ContentService {
             } else if (pair.getKey().equals(ID_FIELDNAME)) {
                 fieldsToMatchOutput.add(new IContentManager.BooleanSearchClause(
                         pair.getKey(), Constants.BooleanOperator.OR, pair.getValue()));
-
             } else if (pair.getKey().equals(TYPE_FIELDNAME) && pair.getValue().size() > 1) {
                 // special case of when you want to allow more than one
                 fieldsToMatchOutput.add(new IContentManager.BooleanSearchClause(
