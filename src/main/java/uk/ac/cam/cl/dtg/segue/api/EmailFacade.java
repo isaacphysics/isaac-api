@@ -547,6 +547,17 @@ public class EmailFacade extends AbstractSegueFacade {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
+            if (isUserAnEventManager(userManager, sender)) {
+                if (misuseMonitor.willHaveMisused(sender.getId().toString(),
+                        SendEmailMisuseHandler.class.getSimpleName(), userIds.size())) {
+                    return SegueErrorResponse
+                            .getRateThrottledResponse("You would have exceeded the number of emails you are allowed to send per day." +
+                                    " No emails have been sent.");
+                }
+                misuseMonitor.notifyEvent(sender.getId().toString(),
+                        SendEmailMisuseHandler.class.getSimpleName(), userIds.size());
+            }
+
             for (Long userId : userIds) {
                 try {
                     RegisteredUserDTO userDTO = this.userManager.getUserDTOById(userId);
@@ -585,6 +596,9 @@ public class EmailFacade extends AbstractSegueFacade {
             log.debug(error.getErrorMessage());
         } catch (NoUserLoggedInException e2) {
             return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueResourceMisuseException e) {
+            return SegueErrorResponse
+                    .getRateThrottledResponse("You have exceeded the number of emails you are allowed to send per day.");
         }
 
         return Response.ok().build();
