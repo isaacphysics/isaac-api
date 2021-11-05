@@ -140,6 +140,7 @@ import javax.servlet.ServletContextListener;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
@@ -896,6 +897,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     private static SegueJobService getSegueJobService(final PropertiesLoader properties, final PostgresSqlDb database) throws SchedulerException {
         if (null == segueJobService) {
+            String mailjetKey = properties.getProperty(MAILJET_API_KEY);
+            String mailjetSecret = properties.getProperty(MAILJET_API_SECRET);
+
             SegueScheduledJob PIISQLJob = new SegueScheduledDatabaseScriptJob(
                     "PIIDeleteScheduledJob",
                     "SQLMaintenance",
@@ -920,10 +924,13 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                     "Sync users to mailjet",
                     "0 0 0/4 ? * * *");
 
-            segueJobService = new SegueJobService(Arrays.asList(PIISQLJob, cleanUpOldAnonymousUsers, cleanUpExpiredReservations, syncMailjetUsers));
-            
-            String mailjetKey = properties.getProperty(MAILJET_API_KEY);
-            String mailjetSecret = properties.getProperty(MAILJET_API_SECRET);
+            Collection<SegueScheduledJob> configuredScheduledJobs = new ArrayList<>(Arrays.asList(PIISQLJob, cleanUpOldAnonymousUsers, cleanUpExpiredReservations));
+
+            if (mailjetKey != null && mailjetSecret != null) {
+                configuredScheduledJobs.add(syncMailjetUsers);
+            }
+
+            segueJobService = new SegueJobService(configuredScheduledJobs);
 
             if (mailjetKey == null && mailjetSecret == null) {
                 segueJobService.removeScheduleJob(syncMailjetUsers);
