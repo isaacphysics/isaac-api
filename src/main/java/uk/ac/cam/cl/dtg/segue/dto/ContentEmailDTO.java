@@ -1,13 +1,11 @@
 package uk.ac.cam.cl.dtg.segue.dto;
 
+import uk.ac.cam.cl.dtg.segue.dto.content.EmailTemplateDTO;
+
 import java.util.List;
 
-public class ContentEmailDTO {
+public class ContentEmailDTO extends EmailTemplateDTO {
     private List<Long> userIds;
-    private String plaintextTemplate;
-    private String htmlTemplate;
-    private String emailSubject;
-    private String overrideFromAddress;
 
     /**
      * Default constructor.
@@ -20,37 +18,5 @@ public class ContentEmailDTO {
 
     public void setUserIds(List<Long> userIds) {
         this.userIds = userIds;
-    }
-
-    public String getPlaintextTemplate() {
-        return plaintextTemplate;
-    }
-
-    public void setPlaintextTemplate(String plaintextTemplate) {
-        this.plaintextTemplate = plaintextTemplate;
-    }
-
-    public String getHtmlTemplate() {
-        return htmlTemplate;
-    }
-
-    public void setHtmlTemplate(String htmlTemplate) {
-        this.htmlTemplate = htmlTemplate;
-    }
-
-    public String getEmailSubject() {
-        return emailSubject;
-    }
-
-    public void setEmailSubject(String emailSubject) {
-        this.emailSubject = emailSubject;
-    }
-
-    public String getOverrideFromAddress() {
-        return overrideFromAddress;
-    }
-
-    public void setOverrideFromAddress(final String overrideFromAddress) {
-        this.overrideFromAddress = overrideFromAddress;
     }
 }

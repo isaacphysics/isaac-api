@@ -521,13 +521,13 @@ public class EmailFacade extends AbstractSegueFacade {
     public final Response sendContentEmailsToUserIds(@Context final HttpServletRequest request,
                                               @PathParam("emailtype") final String emailTypeString,
                                                      final ContentEmailDTO emailTemplates) {
-        if (Strings.isNullOrEmpty(emailTemplates.getPlaintextTemplate()) || Strings.isNullOrEmpty(emailTemplates.getHtmlTemplate()) || Strings.isNullOrEmpty(emailTemplates.getEmailSubject())) {
+        if (Strings.isNullOrEmpty(emailTemplates.getPlainTextContent()) || Strings.isNullOrEmpty(emailTemplates.getHtmlContent()) || Strings.isNullOrEmpty(emailTemplates.getSubject())) {
             return SegueErrorResponse.getBadRequestResponse("Response must include plaintextTemplate, htmlTemplate and emailSubject");
         }
 
-        final String plaintextTemplate = emailTemplates.getPlaintextTemplate();
-        final String htmlTemplate = emailTemplates.getHtmlTemplate();
-        final String emailSubject = emailTemplates.getEmailSubject();
+        final String plaintextTemplate = emailTemplates.getPlainTextContent();
+        final String htmlTemplate = emailTemplates.getHtmlContent();
+        final String emailSubject = emailTemplates.getSubject();
         final String overrideFromAddress = emailTemplates.getOverrideFromAddress();
         final List<Long> userIds = emailTemplates.getUserIds();
 
