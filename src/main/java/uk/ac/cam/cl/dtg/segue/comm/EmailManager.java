@@ -339,7 +339,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                 .put("type", emailType).build();
 
         this.logManager.logInternalEvent(sendingUser, SegueServerLogType.SEND_CUSTOM_MASS_EMAIL, eventDetails);
-        log.info(String.format("Admin user (%s) added %d emails to the queue. %d were filtered.", sendingUser.getEmail(),
+        log.info(String.format("User (%s) added %d emails to the queue. %d were filtered.", sendingUser.getEmail(),
                 allSelectedUsers.size() - numberOfFilteredUsers, numberOfFilteredUsers));
     }
     
