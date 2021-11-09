@@ -527,7 +527,7 @@ public class EmailFacade extends AbstractSegueFacade {
             return SegueErrorResponse.getBadRequestResponse("Response must include plaintextTemplate, htmlTemplate and emailSubject");
         }
 
-        final List<Long> UserIds = providedTemplate.getUserIds();
+        final List<Long> userIds = providedTemplate.getUserIds();
 
         EmailType emailType;
         Set<RegisteredUserDTO> allSelectedUsers = Sets.newHashSet();
@@ -547,16 +547,16 @@ public class EmailFacade extends AbstractSegueFacade {
 
             if (isUserAnEventManager(userManager, sender)) {
                 if (misuseMonitor.willHaveMisused(sender.getId().toString(),
-                        SendEmailMisuseHandler.class.getSimpleName(), UserIds.size())) {
+                        SendEmailMisuseHandler.class.getSimpleName(), userIds.size())) {
                     return SegueErrorResponse
                             .getRateThrottledResponse("You would have exceeded the number of emails you are allowed to send per day." +
                                     " No emails have been sent.");
                 }
                 misuseMonitor.notifyEvent(sender.getId().toString(),
-                        SendEmailMisuseHandler.class.getSimpleName(), UserIds.size());
+                        SendEmailMisuseHandler.class.getSimpleName(), userIds.size());
             }
 
-            for (Long userId : UserIds) {
+            for (Long userId : userIds) {
                 try {
                     RegisteredUserDTO userDTO = this.userManager.getUserDTOById(userId);
                     if (userDTO != null) {
