@@ -278,13 +278,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     /**
      * @param sendingUser
      * 				- the user object for the user sending the email
-     * @param plaintextTemplate
-     * 				- the plainText of the email
-     * @param htmlTemplate
-     *              - the html of the email
-     * @param allSelectedUsers
-     * 				- the users to send email to
-     * @param emailSubject
+     * @param emailTemplate
      *              - the subject of the email
      * @param emailType
      * 				- the type of email to send (affects who receives it)
@@ -293,19 +287,9 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * @throws ContentManagerException
      * 				- a content management exception
      */
-    public void sendCustomContentEmail(final RegisteredUserDTO sendingUser, final String plaintextTemplate, final String htmlTemplate,
-                                final String emailSubject, final String overrideFromAddress, final List<RegisteredUserDTO> allSelectedUsers, final EmailType emailType) throws SegueDatabaseException,
+    public void sendCustomContentEmail(final RegisteredUserDTO sendingUser, final EmailTemplateDTO emailTemplate, final List<RegisteredUserDTO> allSelectedUsers, final EmailType emailType) throws SegueDatabaseException,
             ContentManagerException {
         Validate.notNull(allSelectedUsers);
-        Validate.notNull(plaintextTemplate);
-        Validate.notNull(htmlTemplate);
-        Validate.notNull(emailSubject);
-
-        EmailTemplateDTO emailContent = new EmailTemplateDTO();
-        emailContent.setSubject(emailSubject);
-        emailContent.setPlainTextContent(plaintextTemplate);
-        emailContent.setHtmlContent(htmlTemplate);
-        emailContent.setOverrideFromAddress(overrideFromAddress);
 
 
         int numberOfFilteredUsers = 0;
@@ -319,7 +303,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
             sanitizeEmailParameters(p);
 
-            EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(), emailContent, p,
+            EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(), emailTemplate, p,
                     emailType, null);
 
             // add to the queue
@@ -333,7 +317,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         allSelectedUsers.stream().map(RegisteredUserDTO::getId).forEach(ids::add);
 
         ImmutableMap<String, Object> eventDetails = new ImmutableMap.Builder<String, Object>().put(USER_ID_LIST_FKEY_FIELDNAME, ids)
-                .put("htmlTemplate", htmlTemplate)
+                .put("htmlTemplate", emailTemplate.getHtmlContent())
                 .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA())
                 .put("numberFiltered", numberOfFilteredUsers)
                 .put("type", emailType).build();

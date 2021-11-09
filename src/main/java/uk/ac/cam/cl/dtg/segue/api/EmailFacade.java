@@ -508,28 +508,26 @@ public class EmailFacade extends AbstractSegueFacade {
      *            - so that we can allow only logged in users to view their own data.
      * @param emailTypeString
      *            - the type of e-mail that is being sent.
-     * @param emailTemplates
-     *            - map which must contain the plaintextTemplate and htmlTemplate
+     * @param providedTemplate
+     *            - map which must contain the userIds and an EmailTemplateDTO
      * @return Response object containing the serialized content object. (with no levels of recursion into the content)
      */
     @POST
-    @Path("/email/sendcontentemailwithuserids/{emailtype}")
+    @Path("/email/sendprovidedemailwithuserids/{emailtype}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @GZIP
     @ApiOperation(value = "Send an email to a list of user IDs.")
-    public final Response sendContentEmailsToUserIds(@Context final HttpServletRequest request,
+    public final Response sendProvidedEmailWithUserIds(@Context final HttpServletRequest request,
                                               @PathParam("emailtype") final String emailTypeString,
-                                                     final ContentEmailDTO emailTemplates) {
-        if (Strings.isNullOrEmpty(emailTemplates.getPlainTextContent()) || Strings.isNullOrEmpty(emailTemplates.getHtmlContent()) || Strings.isNullOrEmpty(emailTemplates.getSubject())) {
+                                              final ContentEmailDTO providedTemplate) {
+        final EmailTemplateDTO emailTemplate = providedTemplate.getEmailTemplate();
+
+        if (Strings.isNullOrEmpty(emailTemplate.getPlainTextContent()) || Strings.isNullOrEmpty(emailTemplate.getHtmlContent()) || Strings.isNullOrEmpty(emailTemplate.getSubject())) {
             return SegueErrorResponse.getBadRequestResponse("Response must include plaintextTemplate, htmlTemplate and emailSubject");
         }
 
-        final String plaintextTemplate = emailTemplates.getPlainTextContent();
-        final String htmlTemplate = emailTemplates.getHtmlContent();
-        final String emailSubject = emailTemplates.getSubject();
-        final String overrideFromAddress = emailTemplates.getOverrideFromAddress();
-        final List<Long> userIds = emailTemplates.getUserIds();
+        final List<Long> UserIds = providedTemplate.getUserIds();
 
         EmailType emailType;
         Set<RegisteredUserDTO> allSelectedUsers = Sets.newHashSet();
@@ -549,16 +547,16 @@ public class EmailFacade extends AbstractSegueFacade {
 
             if (isUserAnEventManager(userManager, sender)) {
                 if (misuseMonitor.willHaveMisused(sender.getId().toString(),
-                        SendEmailMisuseHandler.class.getSimpleName(), userIds.size())) {
+                        SendEmailMisuseHandler.class.getSimpleName(), UserIds.size())) {
                     return SegueErrorResponse
                             .getRateThrottledResponse("You would have exceeded the number of emails you are allowed to send per day." +
                                     " No emails have been sent.");
                 }
                 misuseMonitor.notifyEvent(sender.getId().toString(),
-                        SendEmailMisuseHandler.class.getSimpleName(), userIds.size());
+                        SendEmailMisuseHandler.class.getSimpleName(), UserIds.size());
             }
 
-            for (Long userId : userIds) {
+            for (Long userId : UserIds) {
                 try {
                     RegisteredUserDTO userDTO = this.userManager.getUserDTOById(userId);
                     if (userDTO != null) {
@@ -580,7 +578,7 @@ public class EmailFacade extends AbstractSegueFacade {
                 return error.toResponse();
             }
 
-            emailManager.sendCustomContentEmail(sender, plaintextTemplate, htmlTemplate, emailSubject, overrideFromAddress, new ArrayList<>(allSelectedUsers), emailType);
+            emailManager.sendCustomContentEmail(sender, emailTemplate, new ArrayList<>(allSelectedUsers), emailType);
         } catch (SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "There was an error processing your request.");

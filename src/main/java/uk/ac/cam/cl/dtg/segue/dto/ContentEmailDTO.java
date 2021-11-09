@@ -4,8 +4,9 @@ import uk.ac.cam.cl.dtg.segue.dto.content.EmailTemplateDTO;
 
 import java.util.List;
 
-public class ContentEmailDTO extends EmailTemplateDTO {
+public class ContentEmailDTO {
     private List<Long> userIds;
+    private EmailTemplateDTO emailTemplate;
 
     /**
      * Default constructor.
@@ -18,5 +19,13 @@ public class ContentEmailDTO extends EmailTemplateDTO {
 
     public void setUserIds(List<Long> userIds) {
         this.userIds = userIds;
+    }
+
+    public EmailTemplateDTO getEmailTemplate() {
+        return emailTemplate;
+    }
+
+    public void setEmailTemplate(EmailTemplateDTO emailTemplate) {
+        this.emailTemplate = emailTemplate;
     }
 }

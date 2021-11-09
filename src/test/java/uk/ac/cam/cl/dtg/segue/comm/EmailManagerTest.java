@@ -677,6 +677,11 @@ public class EmailManagerTest {
         String plainTextContent = "hi {{givenName}}\n\nThis is a test";
         String subject = "Test email";
 
+        EmailTemplateDTO emailTemplate = new EmailTemplateDTO();
+        emailTemplate.setHtmlContent(htmlContent);
+        emailTemplate.setPlainTextContent(plainTextContent);
+        emailTemplate.setSubject(subject);
+
         try {
 
             EasyMock.expect(mockContentManager.getContentById(CONTENT_VERSION, "email-template-html"))
@@ -694,7 +699,7 @@ public class EmailManagerTest {
         }
 
         try {
-            manager.sendCustomContentEmail(userDTOWithNulls, plainTextContent, htmlContent, subject, null, allSelectedUsers, EmailType.ASSIGNMENTS);
+            manager.sendCustomContentEmail(userDTOWithNulls, emailTemplate, allSelectedUsers, EmailType.ASSIGNMENTS);
         } catch (SegueDatabaseException e) {
             Assert.fail();
         } catch (ContentManagerException e) {
