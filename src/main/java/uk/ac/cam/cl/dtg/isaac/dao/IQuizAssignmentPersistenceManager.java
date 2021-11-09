@@ -81,7 +81,7 @@ public interface IQuizAssignmentPersistenceManager {
      * Update a quiz assignment.
      *
      * @param quizAssignmentId The ID of the quiz assignment to update.
-     * @param updates The values to update (ony feedbackMode is considered).
+     * @param updates The values to update (only feedbackMode and dueDate are considered)
      */
     void updateAssignment(Long quizAssignmentId, QuizAssignmentDTO updates) throws SegueDatabaseException;
 }

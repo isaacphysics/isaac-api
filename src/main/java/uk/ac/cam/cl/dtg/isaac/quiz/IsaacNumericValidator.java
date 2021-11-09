@@ -44,8 +44,10 @@ import static java.lang.Math.min;
 public class IsaacNumericValidator implements IValidator {
     private static final Logger log = LoggerFactory.getLogger(IsaacNumericValidator.class);
 
-    private static final String DEFAULT_VALIDATION_RESPONSE = "Check your working.";
-    private static final String DEFAULT_WRONG_UNIT_VALIDATION_RESPONSE = "Check your units.";
+    protected static final String DEFAULT_VALIDATION_RESPONSE = "Check your working.";
+    protected static final String DEFAULT_WRONG_UNIT_VALIDATION_RESPONSE = "Check your units.";
+    protected static final String DEFAULT_NO_ANSWER_VALIDATION_RESPONSE = "You did not provide an answer.";
+    protected static final String DEFAULT_NO_UNIT_VALIDATION_RESPONSE = "You did not choose any units. To give an answer with no units, select \"None\".";
     /* Many users are getting answers wrong solely because we don't allow their (unambiguous) syntax for 10^x. Be nicer!
        Allow spaces either side of the times and allow * x X × and \times as multiplication!
        Also allow ^ or ** for powers. Allow e or E. Allow optional brackets around the powers of 10.
@@ -130,11 +132,11 @@ public class IsaacNumericValidator implements IValidator {
             }
 
             if (null == answerFromUser.getValue() || answerFromUser.getValue().isEmpty()) {
-                return new QuantityValidationResponse(question.getId(), answerFromUser, false, new Content(
-                        "You did not provide an answer."), false, false, new Date());
+                return new QuantityValidationResponse(question.getId(), answerFromUser, false,
+                        new Content(DEFAULT_NO_ANSWER_VALIDATION_RESPONSE), false, false, new Date());
             } else if (null == answerFromUser.getUnits() && shouldValidateWithUnits) {
-                return new QuantityValidationResponse(question.getId(), answerFromUser, false, new Content(
-                        "You did not provide any units."), null, false, new Date());
+                return new QuantityValidationResponse(question.getId(), answerFromUser, false,
+                        new Content(DEFAULT_NO_UNIT_VALIDATION_RESPONSE), null, false, new Date());
             }
 
             QuantityValidationResponse bestResponse;

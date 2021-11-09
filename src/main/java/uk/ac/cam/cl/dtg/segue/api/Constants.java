@@ -518,6 +518,9 @@ public final class Constants {
 
     public static final String QUIZ_ATTEMPT_FK = "quizAttemptId";
     public static final String QUIZ_ASSIGNMENT_FK = "quizAssignmentId";
+    public static final String QUIZ_FEEDBACK_MODE = "quizFeedbackMode";
+    public static final String QUIZ_OLD_DUEDATE = "oldDueDate";
+    public static final String QUIZ_OLD_FEEDBACK_MODE = "oldQuizFeedbackMode";
 
     public static final String EQUALITY_CHECKER_HOST = "EQUALITY_CHECKER_HOST";
     public static final String EQUALITY_CHECKER_PORT = "EQUALITY_CHECKER_PORT";
