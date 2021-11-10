@@ -288,9 +288,9 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                         int counter = 0;
                         // FIXME: Nuclear Equations and Expressions don't have 'sameCoefficient' property?!
                         // So ignore this for now!
-//                        if (response.get("sameCoefficient").equals(true)) {
-//                            counter++;
-//                        }
+                        // if (response.get("sameCoefficient").equals(true)) {
+                        //     counter++;
+                        // }
 
                         matchType = MatchType.valueOf("WEAK" + counter);
 
@@ -399,6 +399,10 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
             }
         }
 
+        // STEP 5: If we still have no feedback to give, use the question's default feedback if any to use:
+        if (feedbackIsNullOrEmpty(feedback) && null != chemistryQuestion.getDefaultFeedback()) {
+            feedback = chemistryQuestion.getDefaultFeedback();
+        }
         return new QuestionValidationResponse(chemistryQuestion.getId(), answer, responseCorrect, feedback, new Date());
     }
 

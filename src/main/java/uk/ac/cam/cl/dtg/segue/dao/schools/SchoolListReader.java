@@ -154,10 +154,8 @@ public class SchoolListReader {
      * Ensure School List has been generated.
      * 
      * @return true if we have an index or false if not. If false we cannot guarantee a response.
-     * @throws UnableToIndexSchoolsException
-     *             - If there is a problem indexing.
      */
-    private boolean ensureSchoolList() throws UnableToIndexSchoolsException {
+    private boolean ensureSchoolList() {
         return searchProvider.hasIndex(SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString());
     }
 

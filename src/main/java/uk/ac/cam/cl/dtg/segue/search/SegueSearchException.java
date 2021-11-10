@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.segue.search;
 
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 
 /**

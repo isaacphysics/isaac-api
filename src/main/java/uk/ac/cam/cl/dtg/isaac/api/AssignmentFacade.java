@@ -45,7 +45,6 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
-import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
@@ -196,7 +195,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 List<AssignmentDTO> newList = Lists.newArrayList();
                 // we want to populate gameboard details for the assignment DTO.
                 for (AssignmentDTO assignment : assignments) {
-                    if (assignment.getGameboard() == null || assignment.getGameboard().getQuestions().size() == 0) {
+                    if (assignment.getGameboard() == null || assignment.getGameboard().getContents().size() == 0) {
                         log.warn(String.format("Skipping broken gameboard '%s' for assignment (%s)!",
                                 assignment.getGameboardId(), assignment.getId()));
                         continue;
@@ -429,7 +428,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group);
 
             List<String> questionPageIds = Lists.newArrayList();
-            for (GameboardItem questionPage : gameboard.getQuestions()) {
+            for (GameboardItem questionPage : gameboard.getContents()) {
                 questionPageIds.add(questionPage.getId());
             }
             Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> questionAttempts;
@@ -460,7 +459,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             DecimalFormat percentageFormat = new DecimalFormat("###");
 
-            for (GameboardItem questionPage : gameboard.getQuestions()) {
+            for (GameboardItem questionPage : gameboard.getContents()) {
                 int index = 0;
 
                 for (QuestionDTO question : gameManager.getAllMarkableQuestionPartsDFSOrder(questionPage.getId())) {
@@ -660,7 +659,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 // Create an assignment -> gameboard mapping to avoid repeatedly querying the DB later on. All the efficiency!
                 assignmentGameboards.put(assignment, gameboard);
             }
-            List<GameboardItem> gameboardItems = gameboards.stream().map(GameboardDTO::getQuestions).flatMap(Collection::stream).collect(Collectors.toList());
+            List<GameboardItem> gameboardItems = gameboards.stream().map(GameboardDTO::getContents).flatMap(Collection::stream).collect(Collectors.toList());
             List<String> questionPageIds = gameboardItems.stream().map(GameboardItem::getId).collect(Collectors.toList());
             Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> questionAttempts;
             try {
@@ -745,7 +744,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             Map<GameboardDTO, List<String>> gameboardQuestionIds = Maps.newHashMap();
             for (AssignmentDTO assignment : assignments) {
                 GameboardDTO gameboard = assignmentGameboards.get(assignment);
-                for (GameboardItem questionPage : gameboard.getQuestions()) {
+                for (GameboardItem questionPage : gameboard.getContents()) {
                     int b = 1;
                     for (QuestionDTO question : gameManager.getAllMarkableQuestionPartsDFSOrder(questionPage.getId())) {
                         List<String> questionIds = gameboardQuestionIds.get(gameboard);
@@ -800,7 +799,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     int assignmentQPartsCorrect = 0;
                     int assignmentQPartsCount = 0;
                     List<String> questionIds = gameboardQuestionIds.get(gameboard);
-                    List<GameboardItem> questions = gameboard.getQuestions();
+                    List<GameboardItem> questions = gameboard.getContents();
                     Map<String, Integer> gameboardPartials = Maps.newHashMap();
                     for (GameboardItem question : questions) {
                         gameboardPartials.put(question.getId(), 0);
@@ -1015,7 +1014,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             tagsLoop:
             for (String tag : bookTags) {
 
-                for (GameboardItem item : gameboard.getQuestions()) {
+                for (GameboardItem item : gameboard.getContents()) {
                     if (item.getTags().contains(tag)) {
                         this.userBadgeManager.updateBadge(currentlyLoggedInUser,
                                 UserBadgeManager.Badge.TEACHER_BOOK_PAGES_SET, assignmentWithID.getId().toString());

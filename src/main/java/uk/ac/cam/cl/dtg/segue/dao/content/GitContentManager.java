@@ -65,13 +65,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.CONCEPT_TYPE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.EVENT_TYPE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.HIDE_FROM_FILTER_TAG;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.PAGE_TYPE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_TYPE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.SEARCHABLE_TAG;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.TOPIC_SUMMARY_PAGE_TYPE;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 
 /**
  * Implementation that specifically works with Content objects.
@@ -348,27 +342,27 @@ public class GitContentManager implements IContentManager {
     }
 
     @Override
-    public final ResultsWrapper<ContentDTO> findByFieldNames(final String version,
-            final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
-            final Integer startIndex, final Integer limit) throws ContentManagerException {
-
+    public final ResultsWrapper<ContentDTO> findByFieldNames(
+            final String version, final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex,
+            final Integer limit
+    ) throws ContentManagerException {
         return this.findByFieldNames(version, fieldsToMatch, startIndex, limit, null);
     }
 
     @Override
-    public final ResultsWrapper<ContentDTO> findByFieldNames(final String version,
-            final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
-            final Integer startIndex, final Integer limit,
-            @Nullable final Map<String, Constants.SortOrder> sortInstructions) throws ContentManagerException {
+    public final ResultsWrapper<ContentDTO> findByFieldNames(
+            final String version, final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex,
+            final Integer limit, @Nullable final Map<String, Constants.SortOrder> sortInstructions
+    ) throws ContentManagerException {
         return this.findByFieldNames(version, fieldsToMatch, startIndex, limit, sortInstructions, null);
     }
 
     @Override
-    public final ResultsWrapper<ContentDTO> findByFieldNames(final String version,
-            final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
-            final Integer startIndex, final Integer limit,
-            @Nullable final Map<String, Constants.SortOrder> sortInstructions,
-            @Nullable final Map<String, AbstractFilterInstruction> filterInstructions) throws ContentManagerException {
+    public final ResultsWrapper<ContentDTO> findByFieldNames(
+            final String version, final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex,
+            final Integer limit, @Nullable final Map<String, Constants.SortOrder> sortInstructions,
+            @Nullable final Map<String, AbstractFilterInstruction> filterInstructions
+    ) throws ContentManagerException {
         ResultsWrapper<ContentDTO> finalResults;
 
         final Map<String, Constants.SortOrder> newSortInstructions;
@@ -404,16 +398,18 @@ public class GitContentManager implements IContentManager {
     }
 
     @Override
-    public final ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(final String version,
-            final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
-            final Integer startIndex, final Integer limit) throws ContentManagerException {
+    public final ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(
+            final String version, final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex,
+            final Integer limit
+    ) throws ContentManagerException {
         return this.findByFieldNamesRandomOrder(version, fieldsToMatch, startIndex, limit, null);
     }
 
     @Override
-    public final ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(final String version,
-            final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
-            final Integer startIndex, final Integer limit, final Long randomSeed) throws ContentManagerException {
+    public final ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(
+            final String version, final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex,
+            final Integer limit, final Long randomSeed
+    ) throws ContentManagerException {
         ResultsWrapper<ContentDTO> finalResults;
 
         ResultsWrapper<String> searchHits;
@@ -494,7 +490,7 @@ public class GitContentManager implements IContentManager {
     }
 
     @Override
-    public final Set<String> getTagsList(final String version) throws ContentManagerException {
+    public final Set<String> getTagsList(final String version) {
         Validate.notBlank(version);
 
         List<Object> tagObjects = (List<Object>) searchProvider.getById(
@@ -504,7 +500,7 @@ public class GitContentManager implements IContentManager {
     }
 
     @Override
-    public final Collection<String> getAllUnits(final String version) throws ContentManagerException {
+    public final Collection<String> getAllUnits(final String version) {
         Validate.notBlank(version);
 
         String unitType = Constants.CONTENT_INDEX_TYPE.UNIT.toString();
@@ -564,17 +560,16 @@ public class GitContentManager implements IContentManager {
         }
 
         // build query the db to get full content information
-        Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap
-            = new HashMap<>();
+        List<BooleanSearchClause> fieldsToMap = Lists.newArrayList();
 
         List<String> relatedContentIds = Lists.newArrayList();
         for (ContentSummaryDTO summary : contentDTO.getRelatedContent()) {
             relatedContentIds.add(summary.getId());
         }
 
-        fieldsToMap.put(
-                Maps.immutableEntry(Constants.BooleanOperator.OR, Constants.ID_FIELDNAME + '.'
-                        + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX), relatedContentIds);
+        fieldsToMap.add(new BooleanSearchClause(
+                Constants.ID_FIELDNAME + '.' + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
+                Constants.BooleanOperator.OR, relatedContentIds));
 
         ResultsWrapper<ContentDTO> results = this.findByFieldNames(version, fieldsToMap, 0, relatedContentIds.size());
 
@@ -599,16 +594,6 @@ public class GitContentManager implements IContentManager {
         contentDTO.setRelatedContent(relatedContentDTOs);
 
         return contentDTO;
-    }
-
-    @Override
-    public ContentSummaryDTO extractContentSummary(final ContentDTO content) {
-        if (null == content) {
-            return null;
-        }
-
-        // try auto-mapping
-        return mapper.getAutoMapper().map(content, ContentSummaryDTO.class);
     }
 
     @Override

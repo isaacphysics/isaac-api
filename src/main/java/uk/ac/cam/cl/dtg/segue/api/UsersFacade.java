@@ -18,10 +18,7 @@ package uk.ac.cam.cl.dtg.segue.api;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Maps;
-import com.google.api.client.util.Sets;
 import com.google.common.base.Strings;
-import com.google.common.base.Supplier;
-import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -30,15 +27,14 @@ import io.swagger.annotations.ApiOperation;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.Validate;
 import org.jboss.resteasy.annotations.GZIP;
-import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
-import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
-import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetRequestMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetByEmailMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetByIPMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.RegistrationMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
@@ -66,6 +62,7 @@ import uk.ac.cam.cl.dtg.segue.dos.UserPreference;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
+import uk.ac.cam.cl.dtg.segue.dos.users.UserContext;
 import uk.ac.cam.cl.dtg.segue.dos.users.UserSettings;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -100,8 +97,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
@@ -118,12 +113,10 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class UsersFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(UsersFacade.class);
     private final UserAccountManager userManager;
-    private final StatisticsManager statsManager;
     private final UserAssociationManager userAssociationManager;
     private final IMisuseMonitor misuseMonitor;
     private final AbstractUserPreferenceManager userPreferenceManager;
     private final SchoolListReader schoolListReader;
-    private final Supplier<Set<School>> schoolOtherSupplier;
 
     /**
      * Construct an instance of the UsersFacade.
@@ -134,8 +127,6 @@ public class UsersFacade extends AbstractSegueFacade {
      *            - user manager for the application
      * @param logManager
      *            - so we can log interesting events.
-     * @param statsManager
-     *            - so we can view stats on interesting events.
      * @param userAssociationManager
      *            - so we can check permissions..
      * @param misuseMonitor
@@ -147,40 +138,15 @@ public class UsersFacade extends AbstractSegueFacade {
      */
     @Inject
     public UsersFacade(final PropertiesLoader properties, final UserAccountManager userManager,
-                       final ILogManager logManager, final StatisticsManager statsManager,
-                       final UserAssociationManager userAssociationManager, final IMisuseMonitor misuseMonitor,
-                       final AbstractUserPreferenceManager userPreferenceManager, final SchoolListReader schoolListReader) {
+                       final ILogManager logManager, final UserAssociationManager userAssociationManager,
+                       final IMisuseMonitor misuseMonitor, final AbstractUserPreferenceManager userPreferenceManager,
+                       final SchoolListReader schoolListReader) {
         super(properties, logManager);
         this.userManager = userManager;
-        this.statsManager = statsManager;
         this.userAssociationManager = userAssociationManager;
         this.misuseMonitor = misuseMonitor;
         this.userPreferenceManager = userPreferenceManager;
         this.schoolListReader = schoolListReader;
-
-        this.schoolOtherSupplier = Suppliers.memoizeWithExpiration(new Supplier<Set<School>>() {
-            @Override
-            public Set<School> get() {
-                try {
-                    List<RegisteredUserDTO> users = userManager.findUsers(new RegisteredUserDTO());
-
-                    Set<School> schoolOthers = Sets.newHashSet();
-
-                    for (RegisteredUserDTO user : users) {
-                        if (user.getSchoolOther() != null) {
-                            School pseudoSchool = new School();
-                            pseudoSchool.setUrn(Integer.toString(user.getSchoolOther().hashCode()));
-                            pseudoSchool.setName(user.getSchoolOther());
-                            pseudoSchool.setDataSource(School.SchoolDataSource.USER_ENTERED);
-                            schoolOthers.add(pseudoSchool);
-                        }
-                    }
-                    return schoolOthers;
-                } catch (SegueDatabaseException e) {
-                    return null;
-                }
-            }
-        }, 1, TimeUnit.DAYS);
     }
 
     /**
@@ -247,7 +213,7 @@ public class UsersFacade extends AbstractSegueFacade {
     @ApiOperation(value = "Create a new user or update an existing user.")
     public Response createOrUpdateUserSettings(@Context final HttpServletRequest request,
                                                @Context final HttpServletResponse response,
-                                               final String userObjectString) {
+                                               final String userObjectString) throws InvalidKeySpecException, NoSuchAlgorithmException {
 
         UserSettings userSettingsObjectFromClient;
         String newPassword;
@@ -274,11 +240,13 @@ public class UsersFacade extends AbstractSegueFacade {
         // Extract the user preferences, which are validated before saving by userPreferenceObjectToList(...).
         Map<String, Map<String, Boolean>> userPreferences = userSettingsObjectFromClient.getUserPreferences();
 
-        if (null != registeredUser.getId()) {
+        List<UserContext> registeredUserContexts = userSettingsObjectFromClient.getRegisteredUserContexts();
 
+        if (null != registeredUser.getId()) {
             try {
                 return this.updateUserObject(request, response, registeredUser,
-                        userSettingsObjectFromClient.getPasswordCurrent(), newPassword, userPreferences);
+                        userSettingsObjectFromClient.getPasswordCurrent(), newPassword,
+                        userPreferences, registeredUserContexts);
             } catch (IncorrectCredentialsProvidedException e) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "Incorrect credentials provided.", e)
                         .toResponse();
@@ -425,13 +393,15 @@ public class UsersFacade extends AbstractSegueFacade {
                   notes = "The email address must be provided as a RegisteredUserDTO object, although only the 'email' field is required.")
     public Response generatePasswordResetToken(final RegisteredUserDTO userObject,
                                                @Context final HttpServletRequest request) {
-        if (null == userObject) {
+        if (null == userObject || null == userObject.getEmail() || userObject.getEmail().isEmpty()) {
             log.debug("User is null");
-            return new SegueErrorResponse(Status.BAD_REQUEST, "No user settings provided.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "No account email address provided.").toResponse();
         }
 
         try {
-            misuseMonitor.notifyEvent(userObject.getEmail(), PasswordResetRequestMisuseHandler.class.getSimpleName());
+            String requestingIPAddress = RequestIPExtractor.getClientIpAddr(request);
+            misuseMonitor.notifyEvent(userObject.getEmail(), PasswordResetByEmailMisuseHandler.class.getSimpleName());
+            misuseMonitor.notifyEvent(requestingIPAddress, PasswordResetByIPMisuseHandler.class.getSimpleName());
             userManager.resetPasswordRequest(userObject);
 
             this.getLogManager()
@@ -456,7 +426,7 @@ public class UsersFacade extends AbstractSegueFacade {
         } catch (SegueResourceMisuseException e) {
             String message = "You have exceeded the number of requests allowed for this endpoint. "
                     + "Please try again later.";
-            log.error("Too many password resets requested by: (" + userObject.getEmail() + ")", e.toString());
+            log.error("Password reset request blocked for email: (" + userObject.getEmail() + ")", e.toString());
             return SegueErrorResponse.getRateThrottledResponse(message);
         }
     }
@@ -510,7 +480,8 @@ public class UsersFacade extends AbstractSegueFacade {
     @ApiOperation(value = "Reset an account password using a reset token.",
                   notes = "The 'token' should be generated using one of the endpoints for requesting a password reset.")
     public Response resetPassword(@PathParam("token") final String token, final Map<String, String> clientResponse,
-                                  @Context final HttpServletRequest request) {
+                                  @Context final HttpServletRequest request)
+            throws InvalidKeySpecException, NoSuchAlgorithmException {
         try {
             String newPassword = clientResponse.get("password");
             RegisteredUserDTO userDTO = userManager.resetPassword(token, newPassword);
@@ -670,101 +641,6 @@ public class UsersFacade extends AbstractSegueFacade {
     }
 
     /**
-     * Get the event data for a specified user.
-     *
-     * @param request
-     *            - request information used for caching.
-     * @param httpServletRequest
-     *            - the request which may contain session information.
-     * @param userIdOfInterest
-     *            - userId of interest - currently only supports looking at own data.
-     * @param fromDate
-     *            - date to start search
-     * @param toDate
-     *            - date to end search
-     * @param events
-     *            - comma separated list of events of interest.
-     * @param bin
-     *            - Should we group data into the first day of the month? true or false.
-     * @return Returns a map of eventType to Map of dates to total number of events.
-     */
-    @GET
-    @Path("users/{user_id}/event_data/over_time")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @ApiOperation(value = "Get log data counts for a specific user.")
-    public Response getEventDataForUser(@Context final Request request,
-                                        @Context final HttpServletRequest httpServletRequest, @PathParam("user_id") final Long userIdOfInterest,
-                                        @QueryParam("from_date") final Long fromDate, @QueryParam("to_date") final Long toDate,
-                                        @QueryParam("events") final String events, @QueryParam("bin_data") final Boolean bin) {
-        final boolean binData;
-        if (null == bin || !bin) {
-            binData = false;
-        } else {
-            binData = true;
-        }
-
-        if (null == events) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "You must specify the events you are interested in.")
-                    .toResponse();
-        }
-
-        if (null == fromDate || null == toDate) {
-            return new SegueErrorResponse(Status.BAD_REQUEST,
-                    "You must specify the from_date and to_date you are interested in.").toResponse();
-        }
-
-        if (fromDate > toDate) {
-            return new SegueErrorResponse(Status.BAD_REQUEST,
-                    "The from_date must be before the to_date!").toResponse();
-        }
-
-        try {
-            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
-
-            RegisteredUserDTO userOfInterest = userManager.getUserDTOById(userIdOfInterest);
-            if (userOfInterest == null) {
-                throw new NoUserException("No user found with this ID.");
-            }
-
-            UserSummaryDTO userOfInterestSummaryObject = userManager.convertToUserSummaryObject(userOfInterest);
-
-            if (!events.equals(SegueServerLogType.ANSWER_QUESTION.name()) && !isUserAnAdmin(userManager, currentUser)) {
-                // Non-admins should not be able to choose random log events.
-                return SegueErrorResponse.getIncorrectRoleResponse();
-            }
-
-            // decide if the user is allowed to view this data.
-            if (!currentUser.getId().equals(userIdOfInterest)
-                    && !userAssociationManager.hasPermission(currentUser, userOfInterestSummaryObject)) {
-                return SegueErrorResponse.getIncorrectRoleResponse();
-            }
-
-            // No point looking for stats from before the user registered (except for merged logs at registration and
-            // these will only be ANONYMOUS_SESSION_DURATION_IN_MINUTES before registration anyway: less than 1 month):
-            Date fromDateObject = new Date(fromDate);
-            if (fromDateObject.before(userOfInterest.getRegistrationDate())) {
-                fromDateObject = userOfInterest.getRegistrationDate();
-            }
-
-            Map<String, Map<LocalDate, Long>> eventLogsByDate = this.statsManager.getEventLogsByDateAndUserList(
-                    Lists.newArrayList(events.split(",")), fromDateObject, new Date(toDate),
-                    Arrays.asList(userOfInterest), binData);
-
-            return Response.ok(eventLogsByDate).build();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (NoUserException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to find user with the id provided.").toResponse();
-        } catch (SegueDatabaseException e) {
-            log.error("Unable to look up user event history for user " + userIdOfInterest, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while looking up event information")
-                    .toResponse();
-        }
-    }
-
-
-    /**
      * This method allows the requester to provide a list of user ids and get back a mapping of the user
      * id to the school information. This is useful for building up tables of users school information.
      *
@@ -832,42 +708,6 @@ public class UsersFacade extends AbstractSegueFacade {
         }
     }
 
-
-    /**
-     * Get a Set of all schools reported by users in the school other field.
-     *
-     * @param request
-     *            for caching purposes.
-     * @return list of strings.
-     */
-    @GET
-    @Path("users/schools_other")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @ApiOperation(value = "Get a list of all custom provided schools.",
-                  notes = "This data only contains schools listed in the 'School (Other)' field on user accounts.")
-    public Response getAllSchoolOtherResponses(@Context final Request request) {
-
-        Set<School> schoolOthers = schoolOtherSupplier.get();
-        if (null != schoolOthers) {
-            EntityTag etag = new EntityTag(schoolOthers.toString().hashCode() + "");
-            Response cachedResponse = generateCachedResponse(request, etag, Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK);
-            if (cachedResponse != null) {
-                return cachedResponse;
-            }
-
-            return Response.ok(schoolOthers).tag(etag)
-                    .cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
-
-        } else {
-            log.error("Unable to get school list");
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while looking up schools")
-                    .toResponse();
-        }
-    }
-
-
-
     /**
      * Update a user object.
      *
@@ -891,8 +731,10 @@ public class UsersFacade extends AbstractSegueFacade {
      */
     private Response updateUserObject(final HttpServletRequest request, final HttpServletResponse response,
                                       final RegisteredUser userObjectFromClient, final String passwordCurrent, final String newPassword,
-                                      final Map<String, Map<String, Boolean>> userPreferenceObject)
-                                throws IncorrectCredentialsProvidedException, NoCredentialsAvailableException {
+                                      final Map<String, Map<String, Boolean>> userPreferenceObject,
+                                      final List<UserContext> registeredUserContexts)
+            throws IncorrectCredentialsProvidedException, NoCredentialsAvailableException, InvalidKeySpecException,
+            NoSuchAlgorithmException {
         Validate.notNull(userObjectFromClient.getId());
 
         // this is an update as the user has an id
@@ -949,6 +791,18 @@ public class UsersFacade extends AbstractSegueFacade {
                         .toResponse();
             }
 
+            if (registeredUserContexts != null) {
+                // We always set the last confirmed date from code rather than trusting the client
+                userObjectFromClient.setRegisteredContexts(registeredUserContexts);
+                userObjectFromClient.setRegisteredContextsLastConfirmed(new Date());
+            } else {
+                // Registered contexts should only ever be set via the registeredUserContexts object, so that it is the
+                // server that sets the time that they last confirmed their user context values.
+                // To ensure this, we overwrite the fields with the values already set in the db if registeredUserContexts is null
+                userObjectFromClient.setRegisteredContexts(existingUserFromDb.getRegisteredContexts());
+                userObjectFromClient.setRegisteredContextsLastConfirmed(existingUserFromDb.getRegisteredContextsLastConfirmed());
+            }
+
             RegisteredUserDTO updatedUser = userManager.updateUserObject(userObjectFromClient, newPassword);
 
             // If the user's role has changed, record it. Check this using Objects.equals() to be null safe!
@@ -992,9 +846,6 @@ public class UsersFacade extends AbstractSegueFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (NoUserException e) {
             return new SegueErrorResponse(Status.NOT_FOUND, "The user specified does not exist.").toResponse();
-        } catch (DuplicateAccountException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST,
-                    "An account already exists with the e-mail address specified.").toResponse();
         } catch (SegueDatabaseException e) {
             log.error("Unable to modify user", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while modifying the user").toResponse();
@@ -1029,7 +880,8 @@ public class UsersFacade extends AbstractSegueFacade {
     private Response createUserObjectAndLogIn(final HttpServletRequest request, final HttpServletResponse response,
                                               final RegisteredUser userObjectFromClient, final String newPassword,
                                               final Map<String, Map<String, Boolean>> userPreferenceObject,
-                                              final boolean rememberMe) {
+                                              final boolean rememberMe)
+            throws InvalidKeySpecException, NoSuchAlgorithmException {
         try {
             RegisteredUserDTO savedUser = userManager.createUserObjectAndSession(request, response,
                     userObjectFromClient, newPassword, rememberMe);
@@ -1051,17 +903,12 @@ public class UsersFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST, "You are missing a required field. "
                     + "Please make sure you have specified all mandatory fields in your response.").toResponse();
         } catch (DuplicateAccountException e) {
-            log.warn(String.format("Duplicated account registration attempt with email '%s'. ", userObjectFromClient.getEmail()));
-            return new SegueErrorResponse(Status.BAD_REQUEST,
-                    "An account already exists with the e-mail address specified.").toResponse();
+            log.warn(String.format("Duplicate account registration attempt for (%s)", userObjectFromClient.getEmail()));
+            return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
         } catch (SegueDatabaseException e) {
             String errorMsg = "Unable to set a password, due to an internal database error.";
             log.error(errorMsg, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
-        } catch (AuthenticationProviderMappingException e) {
-            log.warn("Unable to map to a known authenticator during registration. The provider is unknown!");
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Unable to map to a known authenticator. The provider: is unknown").toResponse();
         } catch (EmailMustBeVerifiedException e) {
             log.warn("Someone attempted to register with an Isaac email address: " + userObjectFromClient.getEmail());
             return new SegueErrorResponse(Status.BAD_REQUEST,

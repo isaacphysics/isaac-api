@@ -37,7 +37,6 @@ import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -68,7 +67,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import static com.google.common.collect.Maps.immutableEntry;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
@@ -91,6 +89,14 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     private final FastTrackManger fastTrackManger;
 
     private static final String VALID_GAMEBOARD_ID_REGEX = "^[a-z0-9_-]+$";
+
+    private static List<String> splitCsvStringQueryParam(final String queryParamCsv) {
+        if (null != queryParamCsv && !queryParamCsv.isEmpty()) {
+            return Arrays.asList(queryParamCsv.split(","));
+        } else {
+            return null;
+        }
+    }
 
     /**
      * GamesFacade. For management of gameboards etc.
@@ -154,26 +160,18 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     public final Response generateTemporaryGameboard(@Context final HttpServletRequest request,
             @QueryParam("title") final String title, @QueryParam("subjects") final String subjects,
             @QueryParam("fields") final String fields, @QueryParam("topics") final String topics,
-            @QueryParam("levels") final String levels, @QueryParam("concepts") final String concepts,
-            @QueryParam("questionCategories") final String questionCategories) {
-        List<String> subjectsList = null;
-        List<String> fieldsList = null;
-        List<String> topicsList = null;
+            @QueryParam("stages") final String stages, @QueryParam("difficulties") final String difficulties,
+            @QueryParam("examBoards") final String examBoards, @QueryParam("levels") final String levels,
+            @QueryParam("concepts") final String concepts, @QueryParam("questionCategories") final String questionCategories) {
+        List<String> subjectsList = splitCsvStringQueryParam(subjects);
+        List<String> fieldsList = splitCsvStringQueryParam(fields);
+        List<String> topicsList = splitCsvStringQueryParam(topics);
         List<Integer> levelsList = null;
-        List<String> conceptsList = null;
-        List<String> questionCategoriesList = null;
-
-        if (null != subjects && !subjects.isEmpty()) {
-            subjectsList = Arrays.asList(subjects.split(","));
-        }
-
-        if (null != fields && !fields.isEmpty()) {
-            fieldsList = Arrays.asList(fields.split(","));
-        }
-
-        if (null != topics && !topics.isEmpty()) {
-            topicsList = Arrays.asList(topics.split(","));
-        }
+        List<String> stagesList = splitCsvStringQueryParam(stages);
+        List<String> difficultiesList = splitCsvStringQueryParam(difficulties);
+        List<String> examBoardsList = splitCsvStringQueryParam(examBoards);
+        List<String> conceptsList = splitCsvStringQueryParam(concepts);
+        List<String> questionCategoriesList = splitCsvStringQueryParam(questionCategories);
 
         if (null != levels && !levels.isEmpty()) {
             String[] levelsAsString = levels.split(",");
@@ -189,20 +187,12 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             }
         }
 
-        if (null != concepts && !concepts.isEmpty()) {
-            conceptsList = Arrays.asList(concepts.split(","));
-        }
-
-        if (null != questionCategories && !questionCategories.isEmpty()) {
-            questionCategoriesList = Arrays.asList(questionCategories.split(","));
-        }
-
         try {
             AbstractSegueUserDTO boardOwner = this.userManager.getCurrentUser(request);
             GameboardDTO gameboard;
 
             gameboard = gameManager.generateRandomGameboard(title, subjectsList, fieldsList, topicsList, levelsList,
-                    conceptsList, questionCategoriesList, boardOwner);
+                    conceptsList, questionCategoriesList, stagesList, difficultiesList, examBoardsList,boardOwner);
 
             if (null == gameboard) {
                 return new SegueErrorResponse(Status.NO_CONTENT,
@@ -314,8 +304,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.NOT_FOUND, "Gameboard id not a valid FastTrack gameboard id.")
                         .toResponse();
             }
-
             AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(httpServletRequest);
+            GameboardDTO gameboard = this.gameManager.getGameboard(gameboardId);
 
             Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts =
                     this.questionManager.getQuestionAttemptsByUser(currentUser);
@@ -324,13 +314,13 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             if (upperQuestionId.isEmpty()) {
                 List<FASTTRACK_LEVEL> upperAndLower = Arrays.asList(FASTTRACK_LEVEL.ft_upper, FASTTRACK_LEVEL.ft_lower);
                 conceptQuestionsProgress.addAll(fastTrackManger.getConceptProgress(
-                        gameboardId, upperAndLower, currentConceptTitle, userQuestionAttempts));
+                        gameboard, upperAndLower, currentConceptTitle, userQuestionAttempts));
             } else {
                 String upperConceptTitle = fastTrackManger.getConceptFromQuestionId(upperQuestionId);
                 conceptQuestionsProgress.addAll(fastTrackManger.getConceptProgress(
-                        gameboardId, Collections.singletonList(FASTTRACK_LEVEL.ft_upper), upperConceptTitle, userQuestionAttempts));
+                        gameboard, Collections.singletonList(FASTTRACK_LEVEL.ft_upper), upperConceptTitle, userQuestionAttempts));
                 conceptQuestionsProgress.addAll(fastTrackManger.getConceptProgress(
-                        gameboardId, Collections.singletonList(FASTTRACK_LEVEL.ft_lower), currentConceptTitle, userQuestionAttempts));
+                        gameboard, Collections.singletonList(FASTTRACK_LEVEL.ft_lower), currentConceptTitle, userQuestionAttempts));
             }
 
             return Response.ok(conceptQuestionsProgress).build();
@@ -344,77 +334,6 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                     Status.NOT_FOUND, "Error locating the version requested", e1);
             log.error(error.getErrorMessage(), e1);
             return error.toResponse();
-        }
-    }
-
-    /**
-     * getBoardPopularityList.
-     * 
-     * @param request
-     *            for checking if the user is authorised to use this endpoint
-     * @return list of popular boards.
-     */
-    @GET
-    @Path("gameboards/popular")
-    @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Get a temporary board of questions matching provided constraints.")
-    public Response getBoardPopularityList(@Context final HttpServletRequest request) {
-        final String connections = "connections";
-        try {
-            RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(request);
-
-            if (!isUserStaff(userManager, currentUser)) {
-                return SegueErrorResponse.getIncorrectRoleResponse();
-            }
-
-            Map<String, Integer> numberOfConnectedUsersByGameboard = this.gameManager
-                    .getNumberOfConnectedUsersByGameboard();
-
-            List<Map<String, Object>> resultList = Lists.newArrayList();
-
-            for (Entry<String, Integer> e : numberOfConnectedUsersByGameboard.entrySet()) {
-                if (e.getValue() > 1) {
-                    GameboardDTO liteGameboard = this.gameManager.getLiteGameboard(e.getKey());
-
-                    if (liteGameboard.getOwnerUserId() != null) {
-                        RegisteredUserDTO ownerUser = userManager.getUserDTOById(liteGameboard.getOwnerUserId());
-                        liteGameboard.setOwnerUserInformation(associationManager.enforceAuthorisationPrivacy(
-                                currentUser, userManager.convertToUserSummaryObject(ownerUser)));
-                    }
-
-                    resultList.add(ImmutableMap.of("gameboard", liteGameboard, "connections", e.getValue()));
-                }
-            }
-
-            resultList.sort((o1, o2) -> {
-                // Descending numerical order
-                if ((Integer) o1.get(connections) < (Integer) o2.get(connections)) {
-                    return 1;
-                }
-                if ((Integer) o1.get(connections) > (Integer) o2.get(connections)) {
-                    return -1;
-                }
-                return 0;
-            });
-
-            int sharedBoards = 0;
-
-            for (Map<String, Object> e : resultList) {
-                if ((Integer) e.get(connections) > 1) {
-                    sharedBoards++;
-                }
-            }
-
-            ImmutableMap<String, Object> resultMap = ImmutableMap.of("boardList", resultList, "sharedBoards",
-                    sharedBoards);
-
-            return Response.ok(resultMap).build();
-        } catch (SegueDatabaseException | NoUserException e) {
-            String message = "Error whilst trying to get the gameboard popularity list.";
-            log.error(message, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
-        } catch (NoUserLoggedInException e1) {
-            return SegueErrorResponse.getNotLoggedInResponse();
         }
     }
 
@@ -705,10 +624,6 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                     e1);
             log.error(error.getErrorMessage(), e1);
             return error.toResponse();
-        }
-
-        if (null == gameboards) {
-            return Response.noContent().build();
         }
 
         getLogManager().logEvent(

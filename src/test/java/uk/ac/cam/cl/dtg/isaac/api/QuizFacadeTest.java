@@ -26,6 +26,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAttemptManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizQuestionManager;
 import uk.ac.cam.cl.dtg.isaac.api.services.AssignmentService;
+import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
@@ -43,6 +44,7 @@ import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.QuizSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -68,7 +70,7 @@ import static org.powermock.api.easymock.PowerMock.createMock;
 import static org.powermock.api.easymock.PowerMock.createNiceMock;
 import static org.powermock.api.easymock.PowerMock.expectLastCall;
 import static org.powermock.api.easymock.PowerMock.replay;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUIZ_SECTION;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 
 public class QuizFacadeTest extends AbstractFacadeTest {
 
@@ -96,6 +98,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
         PropertiesLoader properties = createMock(PropertiesLoader.class);
         logManager = createNiceMock(ILogManager.class); // Nice mock because we're not generally bothered about logging.
         IContentManager contentManager = createMock(IContentManager.class);
+        ContentSummarizerService contentSummarizerService = createMock(ContentSummarizerService.class);
         quizAssignmentManager = createMock(QuizAssignmentManager.class);
         quizAttemptManager = createMock(QuizAttemptManager.class);
         quizQuestionManager = createMock(QuizQuestionManager.class);
@@ -157,13 +160,13 @@ public class QuizFacadeTest extends AbstractFacadeTest {
 
         String currentSHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
         expect(contentManager.getCurrentContentSHA()).andStubReturn(currentSHA);
-        expect(contentManager.extractContentSummary(studentQuiz)).andStubReturn(studentQuizSummary);
-        expect(contentManager.extractContentSummary(teacherQuiz)).andStubReturn(teacherQuizSummary);
+        expect(contentSummarizerService.extractContentSummary(studentQuiz, QuizSummaryDTO.class)).andStubReturn(studentQuizSummary);
+        expect(contentSummarizerService.extractContentSummary(teacherQuiz, QuizSummaryDTO.class)).andStubReturn(teacherQuizSummary);
         expect(contentManager.getContentDOById(currentSHA, questionDO.getId())).andStubReturn(questionDO);
         expect(contentManager.getContentDOById(currentSHA, studentQuizDO.getId())).andStubReturn(studentQuizDO);
         expect(contentManager.getContentDOById(currentSHA, questionPageQuestionDO.getId())).andStubReturn(questionPageQuestionDO);
 
-        replay(requestForCaching, properties, logManager, contentManager, quizManager, groupManager, quizAssignmentManager,
+        replay(requestForCaching, properties, logManager, contentManager, contentSummarizerService, quizManager, groupManager, quizAssignmentManager,
             assignmentService, quizAttemptManager, quizQuestionManager, associationManager);
     }
 
@@ -222,31 +225,31 @@ public class QuizFacadeTest extends AbstractFacadeTest {
             requiresLogin(),
             as(studentsTeachersOrAdmin(),
                 prepare(quizAssignmentManager, m -> expect(m.getGroupForAssignment(studentAssignment)).andReturn(studentGroup)),
-                prepare(quizQuestionManager, m -> expect(m.getAssignmentFeedback(studentQuiz, studentAssignment, ImmutableList.of(student, secondStudent)))
-                    .andReturn(ImmutableMap.of(student, studentFeedback, secondStudent, otherStudentFeedback))),
+                prepare(quizQuestionManager, m -> expect(m.getAssignmentTeacherFeedback(studentQuiz, studentAssignment, ImmutableList.of(secondStudent, student)))
+                    .andReturn(ImmutableMap.of(secondStudent, otherStudentFeedback, student, studentFeedback))),
                 prepare(associationManager, m -> {
-                    expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(student))).andAnswer(grantAccess(true));
                     expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(secondStudent))).andAnswer(grantAccess(true));
+                    expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(student))).andAnswer(grantAccess(true));
                 }),
                 prepare(assignmentService, m -> m.augmentAssignerSummaries(Collections.singletonList(studentAssignment))),
                 check(response -> {
-                    assertEquals(studentFeedback, getFeedbackFor(student));
                     assertEquals(otherStudentFeedback, getFeedbackFor(secondStudent));
+                    assertEquals(studentFeedback, getFeedbackFor(student));
                 })
             ),
             forbiddenForEveryoneElse(),
             as(studentsTeachersOrAdmin(),
                 prepare(quizAssignmentManager, m -> expect(m.getGroupForAssignment(studentAssignment)).andReturn(studentGroup)),
-                prepare(quizQuestionManager, m -> expect(m.getAssignmentFeedback(studentQuiz, studentAssignment, ImmutableList.of(student, secondStudent)))
-                    .andReturn(ImmutableMap.of(student, studentFeedback, secondStudent, otherStudentFeedback))),
+                prepare(quizQuestionManager, m -> expect(m.getAssignmentTeacherFeedback(studentQuiz, studentAssignment, ImmutableList.of(secondStudent, student)))
+                    .andReturn(ImmutableMap.of(secondStudent, otherStudentFeedback, student, studentFeedback))),
                 prepare(associationManager, m -> {
-                    expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(student))).andAnswer(grantAccess(true));
                     expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(secondStudent))).andAnswer(grantAccess(false));
+                    expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(student))).andAnswer(grantAccess(true));
                 }),
                 prepare(assignmentService, m -> m.augmentAssignerSummaries(Collections.singletonList(studentAssignment))),
                 check(response -> {
-                    assertEquals(studentFeedback, getFeedbackFor(student));
                     assertNull(getFeedbackFor(secondStudent));
+                    assertEquals(studentFeedback, getFeedbackFor(student));
                 })
             )
         );
@@ -346,18 +349,41 @@ public class QuizFacadeTest extends AbstractFacadeTest {
 
     @Test
     public void updateQuizAssignment() {
-        QuizAssignmentDTO legalUpdate = new QuizAssignmentDTO();
-        legalUpdate.setQuizFeedbackMode(QuizFeedbackMode.SECTION_MARKS);
+        QuizAssignmentDTO legalFeedbackUpdate = new QuizAssignmentDTO();
+        legalFeedbackUpdate.setQuizFeedbackMode(QuizFeedbackMode.SECTION_MARKS);
+
+        QuizAssignmentDTO legalDueDateUpdate = new QuizAssignmentDTO();
+        // Set a due date *later* than the current one
+        legalDueDateUpdate.setDueDate(new Date(studentAssignment.getDueDate().getTime() + 100000));
+
+        QuizAssignmentDTO illegalDueDateUpdate = new QuizAssignmentDTO();
+        // Set a due date *earlier* than the current one
+        illegalDueDateUpdate.setDueDate(new Date(studentAssignment.getDueDate().getTime() - 100000));
+
         QuizAssignmentDTO illegalUpdate = new QuizAssignmentDTO();
-        illegalUpdate.setDueDate(new Date());
+        illegalUpdate.setCreationDate(new Date());
         forEndpoint((updates) -> () -> quizFacade.updateQuizAssignment(request, studentAssignment.getId(), updates),
-            with(legalUpdate,
+            with(legalFeedbackUpdate,
                 requiresLogin(),
                 as(studentsTeachersOrAdmin(),
-                    prepare(quizAssignmentManager, m -> m.updateAssignment(studentAssignment, legalUpdate)),
+                    prepare(quizAssignmentManager, m -> m.updateAssignment(studentAssignment, legalFeedbackUpdate)),
                     succeeds()
                 ),
                 forbiddenForEveryoneElse()
+            ),
+            with(legalDueDateUpdate,
+                requiresLogin(),
+                as(studentsTeachersOrAdmin(),
+                    prepare(quizAssignmentManager, m -> m.updateAssignment(studentAssignment, legalDueDateUpdate)),
+                    succeeds()
+                ),
+                forbiddenForEveryoneElse()
+            ),
+            with(illegalDueDateUpdate,
+                requiresLogin(),
+                as(studentsTeachersOrAdmin(),
+                    failsWith(Status.FORBIDDEN)
+                )
             ),
             with(illegalUpdate,
                 beforeUserCheck(
@@ -485,7 +511,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
             ),
             with(completedAttempt,
                 as(student,
-                    prepare(quizQuestionManager, m -> expect(m.augmentFeedbackFor(completedAttempt, studentQuiz, QuizFeedbackMode.OVERALL_MARK)).andReturn(augmentedAttempt)),
+                    prepare(quizQuestionManager, m -> expect(m.augmentFeedbackFor(completedAttempt, studentQuiz, QuizFeedbackMode.DETAILED_FEEDBACK)).andReturn(augmentedAttempt)),
                     prepare(assignmentService, m -> {
                         m.augmentAssignerSummaries(Collections.singletonList(studentAssignment));
                         expectLastCall();

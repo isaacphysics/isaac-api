@@ -15,11 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.isaac.configuration;
 
-import com.google.inject.Guice;
 import com.google.inject.Injector;
 import io.swagger.jaxrs.config.BeanConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.AssignmentFacade;
 import uk.ac.cam.cl.dtg.isaac.api.EventsFacade;
 import uk.ac.cam.cl.dtg.isaac.api.GameboardsFacade;
@@ -27,11 +24,11 @@ import uk.ac.cam.cl.dtg.isaac.api.IsaacController;
 import uk.ac.cam.cl.dtg.isaac.api.PagesFacade;
 import uk.ac.cam.cl.dtg.isaac.api.QuizFacade;
 import uk.ac.cam.cl.dtg.segue.api.*;
+import uk.ac.cam.cl.dtg.segue.api.managers.IGroupObserver;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.AuditMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.PerformanceMonitor;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
@@ -39,10 +36,8 @@ import javax.ws.rs.core.Application;
 import java.util.HashSet;
 import java.util.Set;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.PROXY_PATH;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_APP_VERSION;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SERVER_ADMIN_ADDRESS;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * This class registers the resteasy handlers. The name is important since it is used as a String in
@@ -52,8 +47,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.SERVER_ADMIN_ADDRESS;
  * 
  */
 public class IsaacApplicationRegister extends Application {
-    private static final Logger log = LoggerFactory.getLogger(IsaacApplicationRegister.class);
-    private Set<Object> singletons;
+    private final Set<Object> singletons;
     
     public static Injector injector;
     
@@ -61,19 +55,8 @@ public class IsaacApplicationRegister extends Application {
      * Default constructor.
      */
     public IsaacApplicationRegister() {
-        singletons = new HashSet<Object>();
-        SegueGuiceConfigurationModule segueGuiceConfigurationModule = new SegueGuiceConfigurationModule();
-        IsaacGuiceConfigurationModule isaacGuiceConfigurationModule = new IsaacGuiceConfigurationModule();
-        
-        injector = Guice.createInjector(isaacGuiceConfigurationModule, segueGuiceConfigurationModule);
-        
-        SegueConfigurationModule segueConfigurationModule = injector.getInstance(SegueConfigurationModule.class);
-        ContentMapper mapper = injector.getInstance(ContentMapper.class);
-        if (segueConfigurationModule != null) {
-            // register the isaac specific data types.
-            log.info("Registering isaac specific datatypes with the segue content mapper.");
-            mapper.registerJsonTypes(segueConfigurationModule.getContentDataTransferObjectMap());
-        }
+        singletons = new HashSet<>();
+        injector = SegueGuiceConfigurationModule.getGuiceInjector();
         
         setupSwaggerApiAdvertiser();
 
@@ -117,6 +100,9 @@ public class IsaacApplicationRegister extends Application {
             // initialise filters
             this.singletons.add(injector.getInstance(PerformanceMonitor.class));
             this.singletons.add(injector.getInstance(AuditMonitor.class));
+
+            // initialise observers
+            this.singletons.add(injector.getInstance(IGroupObserver.class));
         }
 
         return this.singletons;

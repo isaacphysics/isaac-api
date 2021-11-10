@@ -85,10 +85,8 @@ public abstract class AbstractCommunicationQueue<T extends ICommunicationMessage
 
     /**
      * @return an object from the head of the queue
-     * @throws InterruptedException
-     *             if object cannot be retrieved
      */
-    private T getLatestQueueItem() throws InterruptedException {
+    private T getLatestQueueItem() {
         return messageSenderRunnableQueue.poll();
     }
     
@@ -116,9 +114,7 @@ public abstract class AbstractCommunicationQueue<T extends ICommunicationMessage
                 log.info("Sent message. Current size: " + messageSenderRunnableQueue.size());
             } catch (CommunicationException e) {
                 log.warn("Communication Exception:" + e.getMessage());
-            } catch (InterruptedException e) {
-                log.warn("Interrupted Exception:" + e.getMessage());
-			} catch (Exception e) {
+            } catch (Exception e) {
                 log.warn("Generic Exception:" + e.getMessage());
                 e.printStackTrace();
 			}

@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
+import com.google.common.collect.ImmutableSet;
 import org.postgresql.util.PGInterval;
 
 import java.util.Arrays;
@@ -131,19 +132,14 @@ public final class Constants {
 
     // HMAC stuff
     /**
-     * Constant representing the key for the date signed property - used in HMAC calculations.
-     */
-    public static final String DATE_SIGNED = "DATE_SIGNED";
-
-    /**
      * Constant representing the key for the expiry date property - used in HMAC calculations.
      */
-    public static final String DATE_EXPIRES = "DATE_EXPIRES";
+    public static final String DATE_EXPIRES = "expires";
 
     /**
      * Constant representing the key for the additional date property - used in HMAC calculations.
      */
-    public static final String PARTIAL_LOGIN_FLAG = "partialLogin";
+    public static final String PARTIAL_LOGIN_FLAG = "partial";
 
     /**
      * Constant representing the key for the HMAC property - used in HMAC calculations.
@@ -163,7 +159,7 @@ public final class Constants {
     /**
      * Constant representing the key for the SESSION USER ID - used in HMAC calculations.
      */
-    public static final String SESSION_USER_ID = "currentUserId";
+    public static final String SESSION_USER_ID = "id";
 
     /**
      * Constant representing the key for the SESSION TOKEN - used in HMAC calculations.
@@ -193,6 +189,9 @@ public final class Constants {
     public static final String MAILJET_API_SECRET = "MAILJET_API_SECRET";
     public static final String MAILJET_NEWS_LIST_ID = "MAILJET_NEWS_LIST_ID";
     public static final String MAILJET_EVENTS_LIST_ID = "MAILJET_EVENTS_LIST_ID";
+
+    // MailGun Key
+    public static final String MAILGUN_SECRET_KEY = "MAILGUN_SECRET_KEY";
 
     /**
      * Suffix to append to raw fields (minus dot separator) - these are fields that the search engine should not do any
@@ -299,6 +298,7 @@ public final class Constants {
     public static final String POSTGRES_DB_PASSWORD = "POSTGRES_DB_PASSWORD";
 
     public enum TimeInterval {
+        TWO_YEARS(2, 0, 0, 0, 0, 0),
         SIX_MONTHS(0, 6, 0, 0, 0, 0),
         NINETY_DAYS(0, 0, 90, 0, 0, 0),
         THIRTY_DAYS(0, 0, 30, 0, 0, 0),
@@ -381,7 +381,6 @@ public final class Constants {
     // IP Geocoding stuff
     public static final String IP_INFO_DB_API_KEY = "IP_INFO_DB_API_KEY";
 
-
     /*
      * Default values.
      */
@@ -414,6 +413,12 @@ public final class Constants {
     public static final String[] ADDRESS_FIELDNAMES = {"addressLine1", "addressLine2", "town", "county", "postalCode"};
     public static final String SEARCHABLE_CONTENT_FIELDNAME = "searchableContent";
     public static final String VISIBLE_TO_STUDENTS_FIELDNAME = "visibleToStudents";
+
+    public static final String STAGE_FIELDNAME = "audience.stage";
+    public static final String DIFFICULTY_FIELDNAME = "audience.difficulty";
+    public static final String EXAM_BOARD_FIELDNAME = "audience.examBoard";
+    public static final Set<String> NESTED_FIELDS =
+            ImmutableSet.of(STAGE_FIELDNAME, DIFFICULTY_FIELDNAME, EXAM_BOARD_FIELDNAME);
 
     public static final String USER_ID_FKEY_FIELDNAME = "userId";
     public static final String OLD_USER_ID_FKEY_FIELDNAME = "oldUserId";
@@ -513,6 +518,9 @@ public final class Constants {
 
     public static final String QUIZ_ATTEMPT_FK = "quizAttemptId";
     public static final String QUIZ_ASSIGNMENT_FK = "quizAssignmentId";
+    public static final String QUIZ_FEEDBACK_MODE = "quizFeedbackMode";
+    public static final String QUIZ_OLD_DUEDATE = "oldDueDate";
+    public static final String QUIZ_OLD_FEEDBACK_MODE = "oldQuizFeedbackMode";
 
     public static final String EQUALITY_CHECKER_HOST = "EQUALITY_CHECKER_HOST";
     public static final String EQUALITY_CHECKER_PORT = "EQUALITY_CHECKER_PORT";

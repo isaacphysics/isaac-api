@@ -121,10 +121,9 @@ public class EmailManagerTest {
 
         mockPropertiesLoader = EasyMock.createMock(PropertiesLoader.class);
         EasyMock.expect(mockPropertiesLoader.getProperty("HOST_NAME")).andReturn("dev.isaacphysics.org").anyTimes();
-        EasyMock.expect(mockPropertiesLoader.getProperty("REPLY_TO_ADDRESS")).andReturn("test-reply@test.com")
-                .anyTimes();
-        EasyMock.expect(mockPropertiesLoader.getProperty("MAIL_NAME")).andReturn("Isaac Physics")
-                .anyTimes();
+        EasyMock.expect(mockPropertiesLoader.getProperty("REPLY_TO_ADDRESS")).andReturn("test-reply@test.com").anyTimes();
+        EasyMock.expect(mockPropertiesLoader.getProperty("MAIL_FROM_ADDRESS")).andReturn("no-reply@isaacphysics.org").anyTimes();
+        EasyMock.expect(mockPropertiesLoader.getProperty("MAIL_NAME")).andReturn("Isaac Physics").anyTimes();
 
         EasyMock.replay(mockPropertiesLoader);
 

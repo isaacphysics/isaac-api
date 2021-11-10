@@ -101,9 +101,9 @@ public class QuizAssignmentManager implements IAssignmentLike.Details<QuizAssign
 
         if (existingQuizAssignments.size() != 0) {
             if (existingQuizAssignments.stream().anyMatch(qa -> qa.getDueDate() == null || qa.getDueDate().after(now))) {
-                log.error(String.format("Duplicated Quiz Assignment Exception - cannot assign the same work %s to a group %s when due date not passed",
+                log.error(String.format("Duplicated Test Assignment Exception - cannot assign the same work %s to a group %s when due date not passed",
                     newAssignment.getQuizId(), newAssignment.getGroupId()));
-                throw new DuplicateAssignmentException("You cannot reassign a quiz until the due date has passed.");
+                throw new DuplicateAssignmentException("You cannot reassign a test until the due date has passed.");
             }
         }
 

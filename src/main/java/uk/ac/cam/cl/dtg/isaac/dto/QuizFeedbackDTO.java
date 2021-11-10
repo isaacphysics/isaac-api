@@ -62,9 +62,13 @@ public class QuizFeedbackDTO {
     @Nullable
     private Map<String, Mark> sectionMarks;
 
-    public QuizFeedbackDTO(Mark overallMark, Map<String, Mark> sectionMarks) {
+    @Nullable
+    private Map<String, Mark> questionMarks;
+
+    public QuizFeedbackDTO(Mark overallMark, Map<String, Mark> sectionMarks, Map<String, Mark> questionMarks) {
         this.overallMark = overallMark;
         this.sectionMarks = sectionMarks;
+        this.questionMarks = questionMarks;
         this.complete = true;
     }
 
@@ -81,6 +85,9 @@ public class QuizFeedbackDTO {
     public Map<String, Mark> getSectionMarks() {
         return sectionMarks;
     }
+
+    @Nullable
+    public Map<String, Mark> getQuestionMarks() { return questionMarks; }
 
     @Nullable
     public Boolean isComplete() {

@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,11 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.segue.etl;
 
-import java.util.HashSet;
-import java.util.Set;
-
-import javax.ws.rs.core.Application;
-
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import io.swagger.jaxrs.config.BeanConfig;
@@ -27,9 +22,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.PROXY_PATH;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_APP_VERSION;
+import javax.ws.rs.core.Application;
+import java.util.HashSet;
+import java.util.Set;
+
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * This class registers the resteasy handlers. The name is important since it is used as a String in
@@ -48,10 +46,8 @@ public class SegueETLApplicationRegister extends Application {
      * Default constructor.
      */
     public SegueETLApplicationRegister() {
-        singletons = new HashSet<Object>();
-        ETLConfigurationModule etlConfigurationModule = new ETLConfigurationModule();
-
-        injector = Guice.createInjector(etlConfigurationModule);
+        singletons = new HashSet<>();
+        injector = ETLConfigurationModule.getGuiceInjector();
 
         setupSwaggerApiAdvertiser();
 

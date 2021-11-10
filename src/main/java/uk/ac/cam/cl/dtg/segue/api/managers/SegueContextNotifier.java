@@ -1,21 +1,16 @@
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
-import java.util.Collection;
-import java.util.List;
-
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
-import javax.servlet.annotation.WebListener;
-
+import com.google.api.client.util.Lists;
+import com.google.inject.Injector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMetricsExporter;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 
-import com.google.api.client.util.Lists;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * SegueContextListener
@@ -38,7 +33,7 @@ public class SegueContextNotifier implements ServletContextListener {
      * of any context messages.
      */
     public SegueContextNotifier() {
-        injector = Guice.createInjector(new SegueGuiceConfigurationModule());
+        injector = SegueGuiceConfigurationModule.getGuiceInjector();
 
         // Instantiate metrics exporter on process startup
         metricsExporter = injector.getInstance(IMetricsExporter.class);

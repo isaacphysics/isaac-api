@@ -42,6 +42,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
+import javax.annotation.Nullable;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.util.Collection;
@@ -191,7 +192,7 @@ public class QuizQuestionManager {
      * @param users
      *            - the users to get feedback for.
      */
-    public Map<RegisteredUserDTO, QuizFeedbackDTO> getAssignmentFeedback(IsaacQuizDTO quiz, QuizAssignmentDTO assignment, List<RegisteredUserDTO> users) throws ContentManagerException, SegueDatabaseException {
+    public Map<RegisteredUserDTO, QuizFeedbackDTO> getAssignmentTeacherFeedback(IsaacQuizDTO quiz, QuizAssignmentDTO assignment, List<RegisteredUserDTO> users) throws ContentManagerException, SegueDatabaseException {
         Collection<QuestionDTO> questionsToAugment = GameManager.getAllMarkableQuestionPartsDFSOrder(quiz);
         List<IsaacQuizSectionDTO> sections = quizManager.extractSectionObjects(quiz);
         augmentQuizTotals(quiz, questionsToAugment);
@@ -211,12 +212,12 @@ public class QuizQuestionManager {
                 Map<String, QuizFeedbackDTO.Mark> sectionMarks = sections.stream().collect(Collectors.toMap(
                     s -> s.getId(),
                     s -> QuizFeedbackDTO.Mark.notAttempted(quiz.getSectionTotals().get(s.getId()))));
-                return new QuizFeedbackDTO(QuizFeedbackDTO.Mark.notAttempted(quiz.getTotal()), sectionMarks);
+                return new QuizFeedbackDTO(QuizFeedbackDTO.Mark.notAttempted(quiz.getTotal()), sectionMarks, null);
             }
 
             // Calculate the scores.
             Map<QuestionDTO, QuestionValidationResponse> answerMap = extractAnswers(questionsToAugment, answers.get(user.getId()));
-            return getIndividualQuizFeedback(sections, QuizFeedbackMode.SECTION_MARKS, questionsToAugment, answerMap);
+            return getIndividualQuizFeedback(sections, QuizFeedbackMode.DETAILED_FEEDBACK, questionsToAugment, answerMap);
         }));
     }
 
@@ -323,6 +324,7 @@ public class QuizQuestionManager {
      * @param answerMap The individual's answers.
      * @return The quiz feedback.
      */
+    @Nullable
     private QuizFeedbackDTO getIndividualQuizFeedback(List<IsaacQuizSectionDTO> sections, QuizFeedbackMode feedbackMode, Collection<QuestionDTO> questionsToAugment, Map<QuestionDTO, QuestionValidationResponse> answerMap) {
         if (feedbackMode == QuizFeedbackMode.NONE) {
             return null;
@@ -330,24 +332,29 @@ public class QuizQuestionManager {
 
         // Make a score table
         Map<String, QuizFeedbackDTO.Mark> sectionMarks = sections.stream().collect(Collectors.toMap(s -> s.getId(), s -> new QuizFeedbackDTO.Mark()));
+        Map<String, QuizFeedbackDTO.Mark> questionMarks = questionsToAugment.stream().collect(Collectors.toMap(s -> s.getId(), s -> new QuizFeedbackDTO.Mark()));
 
         // Calculate the scores
         for (QuestionDTO question: questionsToAugment) {
             String sectionId = extractSectionIdFromQuizQuestionId(question.getId());
-            QuizFeedbackDTO.Mark mark = sectionMarks.get(sectionId);
-            if (mark == null) {
-                log.error("Missing quiz section id: " + sectionId + " in question " + question + " but not in section map " + sections);
+            QuizFeedbackDTO.Mark sectionMark = sectionMarks.get(sectionId);
+            QuizFeedbackDTO.Mark questionMark = questionMarks.get(question.getId());
+            if (sectionMark == null) {
+                log.error("Missing test section id: " + sectionId + " in question " + question + " but not in section map " + sections);
                 continue;
             }
             QuestionValidationResponse response = answerMap.get(question);
             if (response != null) {
                 if (response.isCorrect()) {
-                    mark.correct++;
+                    sectionMark.correct++;
+                    questionMark.correct = 1;
                 } else {
-                    mark.incorrect++;
+                    sectionMark.incorrect++;
+                    questionMark.incorrect = 1;
                 }
             } else {
-                mark.notAttempted++;
+                sectionMark.notAttempted++;
+                questionMark.notAttempted = 1;
             }
         }
 
@@ -356,11 +363,13 @@ public class QuizQuestionManager {
         QuizFeedbackDTO feedback;
         switch (feedbackMode) {
             case OVERALL_MARK:
-                feedback = new QuizFeedbackDTO(overall, null);
+                feedback = new QuizFeedbackDTO(overall, null, null);
                 break;
             case SECTION_MARKS:
+                feedback = new QuizFeedbackDTO(overall, sectionMarks, null);
+                break;
             case DETAILED_FEEDBACK:
-                feedback = new QuizFeedbackDTO(overall, sectionMarks);
+                feedback = new QuizFeedbackDTO(overall, sectionMarks, questionMarks);
                 break;
             default:
                 log.error("Non-exhaustive switch on feedbackMode");

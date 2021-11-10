@@ -15,19 +15,9 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
-import static com.google.common.collect.Maps.immutableEntry;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
-
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
-
 import com.google.inject.name.Named;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
@@ -35,14 +25,23 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
-import uk.ac.cam.cl.dtg.segue.dos.PgUserNotifications;
 import uk.ac.cam.cl.dtg.segue.dos.IUserNotification;
 import uk.ac.cam.cl.dtg.segue.dos.IUserNotification.NotificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.IUserNotifications;
+import uk.ac.cam.cl.dtg.segue.dos.PgUserNotifications;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.NotificationDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
 
 /**
  * This class is responsible for selecting notifications from various sources so that users can be told about them.
@@ -81,12 +80,9 @@ public class NotificationPicker {
     public List<ContentDTO> getAvailableNotificationsForUser(final RegisteredUserDTO user)
             throws ContentManagerException, SegueDatabaseException {
         // get users notification record
-        Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch = Maps.newHashMap();
-        List<String> newArrayList = Lists.newArrayList();
-
-        newArrayList.add("notification");
-
-        fieldsToMatch.put(immutableEntry(BooleanOperator.AND, Constants.TYPE_FIELDNAME), newArrayList);
+        List<IContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
+        fieldsToMatch.add(new IContentManager.BooleanSearchClause(
+                TYPE_FIELDNAME, BooleanOperator.AND, Collections.singletonList("notification")));
 
         ResultsWrapper<ContentDTO> allContentNotifications = this.contentManager
                 .findByFieldNames(this.contentIndex, fieldsToMatch, 0, -1);

@@ -105,17 +105,17 @@ public class UserAccountManager implements IUserAccountManager {
      * @param questionDb
      *            - allows this class to instruct the questionDB to merge an anonymous user with a registered user.
      * @param properties
- *            - A property loader
+     *            - A property loader
      * @param providersToRegister
-*            - A map of known authentication providers.
+     *            - A map of known authentication providers.
      * @param dtoMapper
-*            - the preconfigured DO to DTO object mapper for user objects.
+     *            - the preconfigured DO to DTO object mapper for user objects.
      * @param emailQueue
-*            - the preconfigured communicator manager for sending e-mails.
+     *            - the preconfigured communicator manager for sending e-mails.
      * @param temporaryUserCache
-*            - temporary user cache for anonymous users
+     *            - temporary user cache for anonymous users
      * @param logManager
-*            - so that we can log events for users.
+     *            - so that we can log events for users.
      * @param userAuthenticationManager
      * @param secondFactorManager
      */
@@ -325,7 +325,7 @@ public class UserAccountManager implements IUserAccountManager {
     public final RegisteredUserDTO authenticateWithCredentials(final HttpServletRequest request,
             final HttpServletResponse response, final String provider, final String email, final String password, final boolean rememberMe)
             throws AuthenticationProviderMappingException, IncorrectCredentialsProvidedException, NoUserException,
-            NoCredentialsAvailableException, SegueDatabaseException, AdditionalAuthenticationRequiredException, MFARequiredButNotConfiguredException {
+            NoCredentialsAvailableException, SegueDatabaseException, AdditionalAuthenticationRequiredException, MFARequiredButNotConfiguredException, InvalidKeySpecException, NoSuchAlgorithmException {
         Validate.notBlank(email);
         Validate.notBlank(password);
 
@@ -412,7 +412,7 @@ public class UserAccountManager implements IUserAccountManager {
      */
     public void ensureCorrectPassword(final String provider, final String email, final String password)
             throws AuthenticationProviderMappingException, IncorrectCredentialsProvidedException, NoUserException,
-            NoCredentialsAvailableException, SegueDatabaseException {
+            NoCredentialsAvailableException, SegueDatabaseException, InvalidKeySpecException, NoSuchAlgorithmException {
 
         // this method will throw an error if the credentials are incorrect.
         this.userAuthenticationManager.getSegueUserFromCredentials(provider, email, password);
@@ -470,7 +470,8 @@ public class UserAccountManager implements IUserAccountManager {
      * @throws NoUserLoggedInException
      *             - if there is no registered user logged in.
      */
-    public final boolean checkUserRole(final RegisteredUserDTO user, final Collection<Role> validRoles) throws NoUserLoggedInException {
+    public final boolean checkUserRole(final RegisteredUserDTO user, final Collection<Role> validRoles)
+            throws NoUserLoggedInException {
         if (null == user) {
             throw new NoUserLoggedInException();
         }
@@ -627,7 +628,8 @@ public class UserAccountManager implements IUserAccountManager {
      * @throws SegueDatabaseException
      *             - If there is another database error
      */
-    public final RegisteredUserDTO getUserDTOById(final Long id, final boolean includeDeleted) throws NoUserException, SegueDatabaseException {
+    public final RegisteredUserDTO getUserDTOById(final Long id, final boolean includeDeleted) throws NoUserException,
+            SegueDatabaseException {
         RegisteredUser user;
         if (includeDeleted) {
             user = this.database.getById(id, true);
@@ -717,9 +719,6 @@ public class UserAccountManager implements IUserAccountManager {
      * @return the user object as was saved.
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
-     * @throws AuthenticationProviderMappingException
-     *             - if there is a problem locating the authentication provider. This only applies for changing a
-     *             password.
      * @throws EmailMustBeVerifiedException
      *             - if a user attempts to sign up with an email that must be verified before it can be used
      *             (i.e. an @isaacphysics.org or @isaacchemistry.org address).
@@ -727,8 +726,8 @@ public class UserAccountManager implements IUserAccountManager {
     public RegisteredUserDTO createUserObjectAndSession(final HttpServletRequest request,
             final HttpServletResponse response, final RegisteredUser user, final String newPassword,
                                                         final boolean rememberMe) throws InvalidPasswordException,
-            MissingRequiredFieldException, SegueDatabaseException, AuthenticationProviderMappingException,
-            EmailMustBeVerifiedException {
+            MissingRequiredFieldException, SegueDatabaseException,
+            EmailMustBeVerifiedException, InvalidKeySpecException, NoSuchAlgorithmException {
         Validate.isTrue(user.getId() == null,
                 "When creating a new user the user id must not be set.");
 
@@ -743,7 +742,7 @@ public class UserAccountManager implements IUserAccountManager {
             throw new EmailMustBeVerifiedException("You cannot register with an Isaac email address.");
         }
 
-        RegisteredUser userToSave = null;
+        RegisteredUser userToSave;
         MapperFacade mapper = this.dtoMapper;
 
         // We want to map to DTO first to make sure that the user cannot
@@ -767,11 +766,7 @@ public class UserAccountManager implements IUserAccountManager {
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
                 .get(AuthenticationProvider.SEGUE);
 
-        try {
-            authenticator.createEmailVerificationTokenForUser(userToSave, userToSave.getEmail());
-        } catch (NoSuchAlgorithmException | InvalidKeySpecException e1) {
-            log.error("Creation of email verification token failed: " + e1.getMessage());
-        }
+        authenticator.createEmailVerificationTokenForUser(userToSave, userToSave.getEmail());
 
         // FIXME: Before creating the user object, ensure password is valid. This should really be in a transaction.
         authenticator.ensureValidPassword(newPassword);
@@ -823,12 +818,10 @@ public class UserAccountManager implements IUserAccountManager {
      * @return the user object as was saved.
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
-     * @throws AuthenticationProviderMappingException
-     *             - if there is a problem locating the authentication provider. This only applies for changing a
-     *             password.
      */
-    public RegisteredUserDTO updateUserObject(final RegisteredUser updatedUser, final String newPassword) throws InvalidPasswordException,
-            MissingRequiredFieldException, SegueDatabaseException, AuthenticationProviderMappingException {
+    public RegisteredUserDTO updateUserObject(final RegisteredUser updatedUser, final String newPassword)
+            throws InvalidPasswordException, MissingRequiredFieldException, SegueDatabaseException,
+            InvalidKeySpecException, NoSuchAlgorithmException {
         Validate.notNull(updatedUser.getId());
 
         // We want to map to DTO first to make sure that the user cannot
@@ -916,8 +909,6 @@ public class UserAccountManager implements IUserAccountManager {
 
             } catch (ContentManagerException | NoUserException e) {
                 log.error("ContentManagerException during sendEmailVerificationChange " + e.getMessage());
-            } catch (NoSuchAlgorithmException | InvalidKeySpecException e1) {
-                log.error("Creation of email verification token failed: " + e1.getMessage());
             }
 
             userToSave.setEmail(existingUser.getEmail());
@@ -993,6 +984,7 @@ public class UserAccountManager implements IUserAccountManager {
             return;
         }
         userToSave.setEmailVerificationStatus(requestedEmailVerificationStatus);
+        userToSave.setLastUpdated(new Date());
         this.database.createOrUpdateUser(userToSave);
     }
 
@@ -1028,7 +1020,8 @@ public class UserAccountManager implements IUserAccountManager {
      * @throws SegueDatabaseException
      *             if an error occurs
      */
-    public void mergeUserAccounts(final RegisteredUserDTO target, final RegisteredUserDTO source) throws SegueDatabaseException {
+    public void mergeUserAccounts(final RegisteredUserDTO target, final RegisteredUserDTO source)
+            throws SegueDatabaseException {
         // check the users exist
         if (null == target) {
             throw new SegueDatabaseException("Merge users target is null");
@@ -1080,17 +1073,11 @@ public class UserAccountManager implements IUserAccountManager {
      *            - so we can look up the registered user object.
      * @param email
      *            - The email the user wants to verify.
-     * @throws NoSuchAlgorithmException
-     *             - if the configured algorithm is not valid.
-     * @throws InvalidKeySpecException
-     *             - if the preconfigured key spec is invalid.
-     * @throws CommunicationException
-     *             - if a fault occurred whilst sending the communique
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
      */
     public final void emailVerificationRequest(final HttpServletRequest request, final String email)
-            throws InvalidKeySpecException, NoSuchAlgorithmException, CommunicationException, SegueDatabaseException {
+            throws SegueDatabaseException {
 
         try {
             RegisteredUserDTO userDTO = getCurrentRegisteredUser(request);
@@ -1172,7 +1159,7 @@ public class UserAccountManager implements IUserAccountManager {
         }
 
         EmailVerificationStatus evStatus = user.getEmailVerificationStatus();
-        if (evStatus != null && evStatus == EmailVerificationStatus.VERIFIED
+        if (evStatus == EmailVerificationStatus.VERIFIED
                 && user.getEmail().equals(user.getEmailToVerify())) {
             log.warn(String.format("Received a duplicate email verification request for (%s) - already verified",
                     user.getEmail()));
@@ -1213,7 +1200,8 @@ public class UserAccountManager implements IUserAccountManager {
      *             - If there is an internal database error.
      */
     public RegisteredUserDTO resetPassword(final String token, final String newPassword)
-            throws InvalidTokenException, InvalidPasswordException, SegueDatabaseException {
+            throws InvalidTokenException, InvalidPasswordException, SegueDatabaseException, InvalidKeySpecException,
+            NoSuchAlgorithmException {
         return this.convertUserDOToUserDTO(this.userAuthenticationManager.resetPassword(token, newPassword));
     }
 
@@ -1527,18 +1515,13 @@ public class UserAccountManager implements IUserAccountManager {
      * @param userFromProvider
      *            - the user object returned by the auth provider.
      * @return a Segue UserDO that exists in the segue database.
-     * @throws AuthenticatorSecurityException
-     *             - error with authenticator.
      * @throws NoUserException
      *             - If we are unable to locate the user id based on the lookup reference provided.
-     * @throws IOException
-     *             - if there is an io error.
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
      */
     private RegisteredUser registerUserWithFederatedProvider(final AuthenticationProvider federatedAuthenticator,
-            final UserFromAuthProvider userFromProvider) throws AuthenticatorSecurityException, NoUserException,
-            IOException, SegueDatabaseException {
+            final UserFromAuthProvider userFromProvider) throws NoUserException, SegueDatabaseException {
 
         log.debug(String.format("New registration (%s) as user does not already exist.", federatedAuthenticator));
 
@@ -1662,10 +1645,11 @@ public class UserAccountManager implements IUserAccountManager {
 
         // no session exists so create one.
         if (request.getSession().getAttribute(ANONYMOUS_USER) == null) {
-            user = new AnonymousUser(request.getSession().getId());
+            String anonymousUserId = getAnonymousUserIdFromRequest(request);
+            user = new AnonymousUser(anonymousUserId);
             user.setDateCreated(new Date());
             // add the user reference to the session
-            request.getSession().setAttribute(ANONYMOUS_USER, user.getSessionId());
+            request.getSession().setAttribute(ANONYMOUS_USER, anonymousUserId);
             this.temporaryUserCache.storeAnonymousUser(user);
 
         } else {
@@ -1688,6 +1672,16 @@ public class UserAccountManager implements IUserAccountManager {
             }
         }
         return user;
+    }
+
+    /**
+     * Hide the Jetty internals of session IDs and return an anonymous user ID.
+     * @param request - to extract the Jetty session ID
+     * @return - a String suitable for use as an anonymous identifier
+     */
+    private String getAnonymousUserIdFromRequest(final HttpServletRequest request) {
+        // TODO - could prepend with API segue version?
+        return request.getSession().getId().replace("node0", "");
     }
 
     /**

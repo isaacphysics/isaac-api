@@ -49,7 +49,7 @@ public class TeacherAssignmentsBadgePolicy implements IUserBadgePolicy {
     }
 
     @Override
-    public JsonNode updateState(RegisteredUserDTO user, JsonNode state, String event) throws SegueDatabaseException {
+    public JsonNode updateState(RegisteredUserDTO user, JsonNode state, String event) {
 
         Iterator<JsonNode> iter = ((ArrayNode) state.get("assignments")).elements();
 

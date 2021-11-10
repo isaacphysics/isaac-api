@@ -41,12 +41,9 @@ public class PostgresSqlDb implements Closeable {
      *            - the username to connect with
      * @param password
      *            - the password to use
-     * @throws ClassNotFoundException
-     *             - if the driver is not available.
      */
     @Inject
-    public PostgresSqlDb(final String databaseUrl, final String username, final String password)
-            throws ClassNotFoundException {
+    public PostgresSqlDb(final String databaseUrl, final String username, final String password) {
 
         dataSource = new BasicDataSource();
         dataSource.setDriverClassName("org.postgresql.Driver");
@@ -80,7 +77,7 @@ public class PostgresSqlDb implements Closeable {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
 
         try {
             this.dataSource.close();

@@ -23,10 +23,12 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
+import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.LocationManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
@@ -41,6 +43,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
@@ -52,24 +55,25 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.google.common.collect.Maps.immutableEntry;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.FAST_TRACK_QUESTION_TYPE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacServerLogType;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_TYPE;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.ID_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueServerLogType;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval.NINETY_DAYS;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval.SEVEN_DAYS;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval.SIX_MONTHS;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval.THIRTY_DAYS;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval.*;
 
 /**
  * StatisticsManager.
@@ -83,7 +87,7 @@ public class StatisticsManager implements IStatisticsManager {
     private final String contentIndex;
     private GroupManager groupManager;
     private QuestionManager questionManager;
-    private GameManager gameManager;
+    private ContentSummarizerService contentSummarizerService;
     private IUserStreaksManager userStreaksManager;
     
     private Cache<String, Object> longStatsCache;
@@ -95,6 +99,7 @@ public class StatisticsManager implements IStatisticsManager {
     private static final String LOCATION_STATS = "LOCATION_STATS";
     private static final int LONG_STATS_EVICTION_INTERVAL_MINUTES = 720; // 12 hours
     private static final long LONG_STATS_MAX_ITEMS = 20;
+    private static final int PROGRESS_MAX_RECENT_QUESTIONS = 5;
 
     
     /**
@@ -114,13 +119,15 @@ public class StatisticsManager implements IStatisticsManager {
      *            - so that we can see how many groups we have site wide.
      * @param questionManager
      *            - so that we can see how many questions were answered.
+     * @param contentSummarizerService
+     *            - to produce content summary objects
      */
     @Inject
     public StatisticsManager(final UserAccountManager userManager, final ILogManager logManager,
                              final SchoolListReader schoolManager, final IContentManager contentManager,
                              @Named(CONTENT_INDEX) final String contentIndex,
                              final LocationManager locationHistoryManager, final GroupManager groupManager,
-                             final QuestionManager questionManager, final GameManager gameManager,
+                             final QuestionManager questionManager, final ContentSummarizerService contentSummarizerService,
                              final IUserStreaksManager userStreaksManager) {
         this.userManager = userManager;
         this.logManager = logManager;
@@ -132,7 +139,7 @@ public class StatisticsManager implements IStatisticsManager {
         this.locationHistoryManager = locationHistoryManager;
         this.groupManager = groupManager;
         this.questionManager = questionManager;
-        this.gameManager = gameManager;
+        this.contentSummarizerService = contentSummarizerService;
         this.userStreaksManager = userStreaksManager;
 
         this.longStatsCache = CacheBuilder.newBuilder()
@@ -164,6 +171,7 @@ public class StatisticsManager implements IStatisticsManager {
         rangedActiveUserStats.put("thirtyDays", userManager.getActiveRolesOverPrevious(THIRTY_DAYS));
         rangedActiveUserStats.put("ninetyDays", userManager.getActiveRolesOverPrevious(NINETY_DAYS));
         rangedActiveUserStats.put("sixMonths", userManager.getActiveRolesOverPrevious(SIX_MONTHS));
+        rangedActiveUserStats.put("twoYears", userManager.getActiveRolesOverPrevious(TWO_YEARS));
         result.put("activeUsersOverPrevious", rangedActiveUserStats);
 
         Map<String, Map<Role, Long>> rangedAnsweredQuestionStats = Maps.newHashMap();
@@ -196,11 +204,9 @@ public class StatisticsManager implements IStatisticsManager {
      * 
      * @throws UnableToIndexSchoolsException
      *             - if there is a problem getting school details.
-     * @throws SegueDatabaseException
-     *             - if there is a database exception.
      */
     public List<Map<String, Object>> getSchoolStatistics() 
-            throws UnableToIndexSchoolsException, SegueDatabaseException, SegueSearchException {
+            throws UnableToIndexSchoolsException, SegueSearchException {
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> cachedOutput = (List<Map<String, Object>>) this.longStatsCache
                 .getIfPresent(SCHOOL_STATS);
@@ -410,6 +416,8 @@ public class StatisticsManager implements IStatisticsManager {
         Map<String, Integer> questionsCorrectByLevelStats = Maps.newHashMap();
         Map<String, Integer> questionAttemptsByTypeStats = Maps.newHashMap();
         Map<String, Integer> questionsCorrectByTypeStats = Maps.newHashMap();
+        List<ContentDTO> questionPagesNotComplete = Lists.newArrayList();
+        Queue<ContentDTO> mostRecentlyAttemptedQuestionPages = new CircularFifoQueue<>(PROGRESS_MAX_RECENT_QUESTIONS);
 
         LocalDate now = LocalDate.now();
         LocalDate endOfAugustThisYear = LocalDate.of(now.getYear(), Month.AUGUST, 31);
@@ -422,15 +430,21 @@ public class StatisticsManager implements IStatisticsManager {
 
         // Loop through each Question attempted:
         for (Entry<String, Map<String, List<QuestionValidationResponse>>> question : questionAttemptsByUser.entrySet()) {
-            attemptedQuestions++;
+            ContentDTO questionContentDTO = questionMap.get(question.getKey());
+            if (null == questionContentDTO) {
+                log.warn(String.format("Excluding missing question (%s) from user progress statistics for user (%s)!",
+                        question.getKey(), userOfInterest.getId()));
+                // We no longer have any information on this question, so we won't count it towards statistics!
+                continue;
+            }
 
+            mostRecentlyAttemptedQuestionPages.add(questionContentDTO);  // Assumes questionAttemptsByUser is sorted!
+            attemptedQuestions++;
             boolean questionIsCorrect = true;  // Are all Parts of the Question correct?
             LocalDate mostRecentCorrectQuestionPart = null;
             LocalDate mostRecentAttemptAtQuestion = null;
             // Loop through each Part of the Question:
-            // TODO - We might be able to avoid using a GameManager here!
-            // The question page content object is questionMap.get(question.getKey()) and we could search this instead!
-            for (QuestionDTO questionPart : gameManager.getAllMarkableQuestionPartsDFSOrder(question.getKey())) {
+            for (QuestionDTO questionPart : GameManager.getAllMarkableQuestionPartsDFSOrder(questionContentDTO)) {
 
                 boolean questionPartIsCorrect = false;  // Is this Part of the Question correct?
                 // Has the user attempted this part of the question at all?
@@ -491,12 +505,6 @@ public class StatisticsManager implements IStatisticsManager {
                 questionIsCorrect = questionIsCorrect && questionPartIsCorrect;
             }
 
-            ContentDTO questionContentDTO = questionMap.get(question.getKey());
-            if (null == questionContentDTO) {
-                // We no longer have any information on this question!
-                continue;
-            }
-
             // Tag Stats - Loop through the Question's tags:
             for (String tag : questionContentDTO.getTags()) {
                 // Count the attempt at the Question:
@@ -545,10 +553,18 @@ public class StatisticsManager implements IStatisticsManager {
                 } else {
                     questionsCorrectByLevelStats.put(questionLevel, 1);
                 }
+            } else if (questionPagesNotComplete.size() < PROGRESS_MAX_RECENT_QUESTIONS) {
+                questionPagesNotComplete.add(questionContentDTO);
             }
         }
 
+        // Collate all the information into the JSON response as a Map:
         Map<String, Object> questionInfo = Maps.newHashMap();
+        List<ContentSummaryDTO> mostRecentlyAttemptedQuestionsList = mostRecentlyAttemptedQuestionPages
+                .stream().map(contentSummarizerService::extractContentSummary).collect(Collectors.toList());
+        Collections.reverse(mostRecentlyAttemptedQuestionsList);  // We want most-recent first order and streams cannot reverse.
+        List<ContentSummaryDTO> questionsNotCompleteList = questionPagesNotComplete
+                .stream().map(contentSummarizerService::extractContentSummary).collect(Collectors.toList());
 
         questionInfo.put("totalQuestionsAttempted", attemptedQuestions);
         questionInfo.put("totalQuestionsCorrect", correctQuestions);
@@ -564,6 +580,8 @@ public class StatisticsManager implements IStatisticsManager {
         questionInfo.put("correctByLevel", questionsCorrectByLevelStats);
         questionInfo.put("attemptsByType", questionAttemptsByTypeStats);
         questionInfo.put("correctByType", questionsCorrectByTypeStats);
+        questionInfo.put("oldestIncompleteQuestions", questionsNotCompleteList);
+        questionInfo.put("mostRecentQuestions", mostRecentlyAttemptedQuestionsList);
         questionInfo.put("userDetails", this.userManager.convertToUserSummaryObject(userOfInterest));
 
         return questionInfo;

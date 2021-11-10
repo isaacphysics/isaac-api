@@ -37,7 +37,6 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
-import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
@@ -64,8 +63,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -89,7 +86,6 @@ public class EmailFacade extends AbstractSegueFacade {
     private final EmailManager emailManager;
     private final UserAccountManager userManager;
     private final IContentManager contentManager;
-    private final String contentIndex;
     private final IMisuseMonitor misuseMonitor;
 
     /**
@@ -111,42 +107,13 @@ public class EmailFacade extends AbstractSegueFacade {
     @Inject
     public EmailFacade(final PropertiesLoader properties, final ILogManager logManager,
             final EmailManager emailManager, final UserAccountManager userManager,
-                       final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex,
-                       final IMisuseMonitor misuseMonitor) {
+                       final IContentManager contentManager, final IMisuseMonitor misuseMonitor) {
 		super(properties, logManager);
         this.contentManager = contentManager;
-        this.contentIndex = contentIndex;
 		this.emailManager = emailManager;
 		this.userManager = userManager;
         this.misuseMonitor = misuseMonitor;
 	}
-    
-    
-    /**
-     * Get the number of emails left on the queue.
-     * 
-     * This method will return the current number of emails left on the email queue
-     *
-     * @param request
-     * 			- the request 
-     * @return the size of the queue
-     */
-    @GET
-    @Path("/email/queuesize")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    public final Response getEmailQueueSize(@Context final HttpServletRequest request) {
-        try {
-            if (!isUserAnAdmin(userManager, request)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin to access this endpoint.").toResponse();
-            }
-
-            ImmutableMap<String, Integer> response = ImmutableMap.of("length", this.emailManager.getQueueLength());
-            return Response.ok(response).build();
-        } catch (NoUserLoggedInException e2) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        }
-    }
     
     /**
      * GetEmailInBrowserById from the database.
@@ -227,6 +194,11 @@ public class EmailFacade extends AbstractSegueFacade {
 
             HashMap<String, String> previewMap = Maps.newHashMap();
             previewMap.put("subject", emailTemplateDTO.getSubject());
+            previewMap.put("from", emailTemplateDTO.getOverrideFromAddress());
+            previewMap.put("fromName", emailTemplateDTO.getOverrideFromName());
+            previewMap.put("replyTo", emailTemplateDTO.getReplyToEmailAddress());
+            previewMap.put("replyToName", emailTemplateDTO.getReplyToName());
+            previewMap.put("sender", emailTemplateDTO.getOverrideEnvelopeFrom());
 			previewMap.put("html", ecm.getHTMLMessage());
 			previewMap.put("plainText", ecm.getPlainTextMessage());
 
@@ -247,34 +219,6 @@ public class EmailFacade extends AbstractSegueFacade {
 	        log.info(error.getErrorMessage());
 	        return error.toResponse();
 		}
-    }
-    
-    /**
-     * GetEmailTypes returns the valid email preferences.
-     * 
-     * This method will returnserialised html that displays an email object
-     * 
-     * @param request
-     *            - so that we can allow only logged in users to view their own data. 
-     * @return Response object containing the serialized content object. (with no levels of recursion into the content)
-     */
-    @GET
-    @Path("/email/preferences")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @ApiOperation(value = "List the valid email preference types.")
-    public final Response getEmailTypes(@Context final HttpServletRequest request) {
-    	EmailType [] types = EmailType.values();
-    	List<Map<String, Object>> resultList = Lists.newArrayList();
-    	for (EmailType type : types) {
-    		if (type.isValidEmailPreference()) {
-    			HashMap<String, Object> map = new HashMap<>();
-    			map.put("name", type.toString());
-    			resultList.add(map);
-    		}
-    	}    	
-    	
-		return Response.ok(resultList).build();
     }
     
     /**
@@ -349,7 +293,7 @@ public class EmailFacade extends AbstractSegueFacade {
 
             return Response.ok().build();
 
-        } catch (CommunicationException | NoSuchAlgorithmException | InvalidKeySpecException | SegueDatabaseException e) {
+        } catch (SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Error sending verification message.", e);
             log.error(error.getErrorMessage(), e);
@@ -410,7 +354,7 @@ public class EmailFacade extends AbstractSegueFacade {
 
     		for (String key : roles.keySet()) {
 				RegisteredUserDTO prototype = new RegisteredUserDTO();
-				List<RegisteredUserDTO> selectedUsers = Lists.newArrayList();
+				List<RegisteredUserDTO> selectedUsers;
     			
                 Role inferredRole = Role.valueOf(key);
                 Boolean userGroupSelected = roles.get(key);

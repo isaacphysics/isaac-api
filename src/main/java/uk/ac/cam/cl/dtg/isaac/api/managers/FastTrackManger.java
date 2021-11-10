@@ -1,10 +1,12 @@
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
+import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
@@ -23,19 +25,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.google.common.collect.Maps.immutableEntry;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.FAST_TRACK_QUESTION_TYPE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_TYPE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.SEARCH_MAX_WINDOW_SIZE;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.ID_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TAGS_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TITLE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.FASTTRACK_GAMEBOARD_WHITELIST;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.FASTTRACK_LEVEL;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 public class FastTrackManger {
     private static final Logger log = LoggerFactory.getLogger(FastTrackManger.class);
@@ -98,19 +89,20 @@ public class FastTrackManger {
     /**
      * Retrieve fasttrack concept progress
      *
-     * @param gameboardId to look up.
+     * @param gameboard which holds the "top ten" questions and a filter for context.
      * @param conceptTitle concept title.
      * @param userQuestionAttempts - the map of user's question attempts.
      * @return list of gameboard items.
      * @throws ContentManagerException if there is a problem retrieving the content.
      */
     public final List<GameboardItem> getConceptProgress(
-            final String gameboardId, final List<FASTTRACK_LEVEL> levelFilters, final String conceptTitle,
-            final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts
+            final GameboardDTO gameboard, final List<FASTTRACK_LEVEL> levelFilters,
+            final String conceptTitle, final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts
     ) throws ContentManagerException {
         List<ContentDTO> fastTrackAssociatedQuestions =
-                this.getFastTrackConceptQuestions(gameboardId, levelFilters, conceptTitle);
-        return gameboardManager.getGameboardItemProgress(fastTrackAssociatedQuestions, userQuestionAttempts);
+                this.getFastTrackConceptQuestions(gameboard.getId(), levelFilters, conceptTitle);
+        return gameboardManager.getGameboardItemProgress(
+                fastTrackAssociatedQuestions, userQuestionAttempts, gameboard.getGameFilter());
     }
 
     /**
@@ -127,15 +119,15 @@ public class FastTrackManger {
     ) throws ContentManagerException {
         List<String> stringLevelFilters = levelFilters.stream().map(FASTTRACK_LEVEL::name).collect(Collectors.toList());
 
-        Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
-        fieldsToMap.put(immutableEntry(
-                Constants.BooleanOperator.OR, TYPE_FIELDNAME), Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
-        fieldsToMap.put(immutableEntry(
-                Constants.BooleanOperator.AND, TITLE_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX), Collections.singletonList(conceptTitle));
-        fieldsToMap.put(immutableEntry(
-                Constants.BooleanOperator.AND, TAGS_FIELDNAME), Collections.singletonList(boardTag));
-        fieldsToMap.put(immutableEntry(
-                Constants.BooleanOperator.OR, TAGS_FIELDNAME), stringLevelFilters);
+        List<IContentManager.BooleanSearchClause> fieldsToMap = Lists.newArrayList();
+        fieldsToMap.add(new IContentManager.BooleanSearchClause(
+                TYPE_FIELDNAME, Constants.BooleanOperator.OR, Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE)));
+        fieldsToMap.add(new IContentManager.BooleanSearchClause(
+                TITLE_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Constants.BooleanOperator.AND, Collections.singletonList(conceptTitle)));
+        fieldsToMap.add(new IContentManager.BooleanSearchClause(
+                TAGS_FIELDNAME, Constants.BooleanOperator.AND, Collections.singletonList(boardTag)));
+        fieldsToMap.add(new IContentManager.BooleanSearchClause(
+                TAGS_FIELDNAME, Constants.BooleanOperator.OR, stringLevelFilters));
 
         Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
         sortInstructions.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Constants.SortOrder.ASC);

@@ -220,7 +220,7 @@ public class Content extends ContentBase {
 
     @Override
     public boolean equals(Object o) {
-        if (null == o || !(o instanceof Content))
+        if (!(o instanceof Content))
             return false;
 
         Content c = (Content) o;

@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -25,7 +24,6 @@ import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.LogEventMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
@@ -36,17 +34,12 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import java.util.Collection;
 import java.util.Map;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
@@ -153,49 +146,5 @@ public class LogEventFacade extends AbstractSegueFacade {
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         }
-    }
-
-    /**
-     * Lists all existing log event types in the database.
-     *
-     * FIXME - this will run slowly and should be removed or cached!
-     *
-     * @param request
-     *            - request information used for caching.
-     * @param httpServletRequest
-     *            - the request which may contain session information.
-     * @return segue version as a string wrapped in a response.
-     */
-    @GET
-    @Path("event_types")
-    @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "List all existing log event types in the database.",
-                  notes = "This method is only available to staff members.")
-    public final Response getLogEventTypes(@Context final Request request, @Context final HttpServletRequest httpServletRequest) {
-
-        ImmutableMap<String, Collection<String>> result;
-        try {
-            if (!isUserStaff(this.userManager, httpServletRequest)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be a staff member to access this endpoint.")
-                        .toResponse();
-            }
-
-            result = new ImmutableMap.Builder<String, Collection<String>>().put("results",
-                    getLogManager().getAllEventTypes()).build();
-        } catch (SegueDatabaseException e) {
-            log.error("Database error has occurred", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "A database error has occurred.").toResponse();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        }
-
-        EntityTag etag = new EntityTag(result.toString().hashCode() + "");
-        Response cachedResponse = generateCachedResponse(request, etag, NUMBER_SECONDS_IN_ONE_DAY);
-        if (cachedResponse != null) {
-            return cachedResponse;
-        }
-
-        return Response.ok(result).tag(etag).cacheControl(this.getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, false))
-                .build();
     }
 }

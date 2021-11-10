@@ -15,15 +15,15 @@
  */
 package uk.ac.cam.cl.dtg.segue.dto.users;
 
-import java.util.Date;
-
-import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
-import uk.ac.cam.cl.dtg.segue.dos.users.ExamBoard;
-import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
-import uk.ac.cam.cl.dtg.segue.dos.users.Role;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
+import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
+import uk.ac.cam.cl.dtg.segue.dos.users.Role;
+import uk.ac.cam.cl.dtg.segue.dos.users.UserContext;
+
+import java.util.Date;
+import java.util.List;
 
 /**
  * Data Transfer Object to represent a user of the system. This object will be persisted in the database.
@@ -42,7 +42,8 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 
     private String schoolId;
     private String schoolOther;
-    private ExamBoard examBoard;
+    private List<UserContext> registeredContexts;
+    private Date registeredContextsLastConfirmed;
 
     private boolean firstLogin = false;
     private Date lastUpdated;
@@ -323,25 +324,6 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
     }
 
     /**
-     * Gets the examBoard.
-     *
-     * @return the examBoard
-     */
-    public ExamBoard getExamBoard() {
-        return examBoard;
-    }
-
-    /**
-     * Sets the examBoard.
-     *
-     * @param examBoard
-     *            the examBoard to set
-     */
-    public void setExamBoard(final ExamBoard examBoard) {
-        this.examBoard = examBoard;
-    }
-
-    /**
      * Gets the firstLogin.
      * 
      * @return the firstLogin
@@ -396,6 +378,22 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
      */
     public void setLastSeen(final Date lastSeen) {
         this.lastSeen = lastSeen;
+    }
+
+    public List<UserContext> getRegisteredContexts() {
+        return registeredContexts;
+    }
+
+    public void setRegisteredContexts(List<UserContext> registeredContexts) {
+        this.registeredContexts = registeredContexts;
+    }
+
+    public Date getRegisteredContextsLastConfirmed() {
+        return registeredContextsLastConfirmed;
+    }
+
+    public void setRegisteredContextsLastConfirmed(Date registeredContextsLastConfirmed) {
+        this.registeredContextsLastConfirmed = registeredContextsLastConfirmed;
     }
 
     @Override

@@ -42,7 +42,7 @@ public class PostCode {
         if (postCode != null) {
             this.postCode = postCode.replace(" ", "");
         } else {
-            this.postCode = postCode;
+            this.postCode = null;
         }
 
         this.lat = lat;

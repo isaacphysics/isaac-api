@@ -20,6 +20,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacEventPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuiz;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuizSection;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicChemistryQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicQuestion;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
@@ -180,7 +182,7 @@ public class ContentIndexer {
                 // module. Required to deal with type polymorphism
                 ObjectMapper objectMapper = mapper.getSharedContentObjectMapper();
 
-                Content content = null;
+                Content content;
                 try {
                     content = (Content) objectMapper.readValue(out.toString(), ContentBase.class);
 
@@ -203,6 +205,22 @@ public class ContentIndexer {
                         for (Content flattenedContent : this.flattenContentObjects(content)) {
                             if (flattenedContent.getId() == null) {
                                 continue;
+                            }
+
+                            // Prevents ETL indexing of quizzes that contain anything that is not an IsaacQuizSection
+                            // in the top-level children array.
+                            // NOTE: I'm not sure this is the right place for this but I couldn't find a better one.
+                            // This also seems to be the only time we can prevent a file from being indexed entirely.
+                            if (flattenedContent instanceof IsaacQuiz) {
+                                List<ContentBase> children = flattenedContent.getChildren();
+                                if (children.stream().anyMatch(c -> !(c instanceof IsaacQuizSection))) {
+                                    log.debug("IsaacQuiz (" + flattenedContent.getId()
+                                           + ") contains top-level non-quiz sections. Skipping.");
+                                    this.registerContentProblem(flattenedContent, "Index failure - Invalid "
+                                           + "content type among quiz sections. Quizzes can only contain quiz sections "
+                                           + "in the top-level children array.", indexProblemCache);
+                                    continue;
+                                }
                             }
 
                             if (flattenedContent.getId().length() > 512) {
@@ -321,7 +339,7 @@ public class ContentIndexer {
         }
 
         // Try to figure out the parent ids.
-        String newParentId = null;
+        String newParentId;
         if (null == parentId && content.getId() != null) {
             newParentId = content.getId();
         } else {
@@ -365,6 +383,16 @@ public class ContentIndexer {
                 Content answer = (Content) question.getAnswer();
                 if (answer.getChildren() != null) {
                     for (ContentBase cb : answer.getChildren()) {
+                        Content c = (Content) cb;
+                        this.augmentChildContent(c, canonicalSourceFile, newParentId, parentPublished);
+                    }
+                }
+            }
+
+            if (question.getDefaultFeedback() != null) {
+                Content defaultFeedback = question.getDefaultFeedback();
+                if (defaultFeedback.getChildren() != null) {
+                    for (ContentBase cb : defaultFeedback.getChildren()) {
                         Content c = (Content) cb;
                         this.augmentChildContent(c, canonicalSourceFile, newParentId, parentPublished);
                     }
@@ -727,8 +755,11 @@ public class ContentIndexer {
 
                 // check that there is some alt text.
                 if (f.getAltText() == null || f.getAltText().isEmpty()) {
-                    this.registerContentProblem(c, "No altText attribute set for media element: " + f.getSrc()
-                            + " in Git source file " + c.getCanonicalSourceFile(), indexProblemCache);
+                    if (!(f instanceof Video)) {
+                        // Videos probably don't need alt text unless there is a good reason.
+                        this.registerContentProblem(c, "No altText attribute set for media element: " + f.getSrc()
+                                + " in Git source file " + c.getCanonicalSourceFile(), indexProblemCache);
+                    }
                 }
             }
             if (c instanceof Question && c.getId() == null) {
@@ -783,6 +814,7 @@ public class ContentIndexer {
                     if (choice instanceof Quantity) {
                         Quantity quantity = (Quantity) choice;
 
+                        // Check valid number:
                         try {
                             //noinspection ResultOfMethodCallIgnored
                             Double.parseDouble(quantity.getValue());
@@ -792,10 +824,21 @@ public class ContentIndexer {
                                             + ")  with value that cannot be interpreted as a number. "
                                             + "Users will never be able to match this answer.", indexProblemCache);
                         }
-                    } else if (q.getRequireUnits()) {
+
+                        if (!q.getRequireUnits() && (null != quantity.getUnits() && !quantity.getUnits().isEmpty())) {
+                            this.registerContentProblem(c, "Numeric Question: " + q.getId() +
+                                    " has a Quantity with units but does not require units!", indexProblemCache);
+                        }
+
+
+                    } else {
                         this.registerContentProblem(c, "Numeric Question: " + q.getId() + " has non-Quantity Choice ("
                                 + choice.getValue() + "). It must be deleted and a new Quantity Choice created.", indexProblemCache);
                     }
+                }
+                if (q.getRequireUnits() && (null != q.getDisplayUnit() && !q.getDisplayUnit().isEmpty())) {
+                    this.registerContentProblem(c, "Numeric Question: " + q.getId() + " has a displayUnit set but also requiresUnits!"
+                                    + " Units will be ignored for this question!", indexProblemCache);
                 }
 
             }

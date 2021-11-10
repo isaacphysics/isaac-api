@@ -37,7 +37,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.QuizSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.GroupMembershipDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithEmailAddressDTO;
@@ -70,8 +70,8 @@ public class IsaacTest extends AbstractModule {
     protected IsaacQuizSectionDTO quizSection1;
     protected IsaacQuizSectionDTO quizSection2;
 
-    protected ContentSummaryDTO studentQuizSummary;
-    protected ContentSummaryDTO teacherQuizSummary;
+    protected QuizSummaryDTO studentQuizSummary;
+    protected QuizSummaryDTO teacherQuizSummary;
     protected RegisteredUserDTO student;
     protected RegisteredUserDTO teacher;
     protected RegisteredUserDTO secondTeacher;
@@ -122,8 +122,8 @@ public class IsaacTest extends AbstractModule {
 
     protected void initializeIsaacObjects() {
         long id = 0L;
-        studentQuizSummary = new ContentSummaryDTO();
-        teacherQuizSummary = new ContentSummaryDTO();
+        studentQuizSummary = new QuizSummaryDTO();
+        teacherQuizSummary = new QuizSummaryDTO();
 
         questionPageQuestion = new IsaacQuestionBaseDTO();
         questionPageQuestion.setId("questionPage|question1");
@@ -150,12 +150,12 @@ public class IsaacTest extends AbstractModule {
         quizSection2.setId("studentQuiz|section2");
         quizSection2.setChildren(ImmutableList.of(question2, question3));
 
-        studentQuiz = new IsaacQuizDTO("studentQuiz", null, null, null, null, null, null, null, ImmutableList.of(quizSection1, quizSection2), null, null, null, false, null, null, true, QuizFeedbackMode.OVERALL_MARK);
-        teacherQuiz = new IsaacQuizDTO("teacherQuiz", null, null, null, null, null, null, null, null, null, null, null, false, null, null, false, null);
-        otherQuiz = new IsaacQuizDTO("otherQuiz", null, null, null, null, null, null, null, Collections.singletonList(quizSection1), null, null, null, false, null, null, true, QuizFeedbackMode.DETAILED_FEEDBACK);
+        studentQuiz = new IsaacQuizDTO("studentQuiz", null, null, null, null, null, null, null, ImmutableList.of(quizSection1, quizSection2), null, null, null, false, null, null, true, QuizFeedbackMode.OVERALL_MARK, null);
+        teacherQuiz = new IsaacQuizDTO("teacherQuiz", null, null, null, null, null, null, null, null, null, null, null, false, null, null, false, null, null);
+        otherQuiz = new IsaacQuizDTO("otherQuiz", null, null, null, null, null, null, null, Collections.singletonList(quizSection1), null, null, null, false, null, null, true, QuizFeedbackMode.DETAILED_FEEDBACK, null);
 
         // A bit scrappy, but hopefully sufficient.
-        studentQuizDO = new IsaacQuiz("studentQuiz", null, null, null, null, null, null, null, null, null, null, null, false, null, null, true);
+        studentQuizDO = new IsaacQuiz("studentQuiz", null, null, null, null, null, null, null, null, null, null, null, false, null, null, true, null);
 
         student = new RegisteredUserDTO("Some", "Student", "test-student@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, "");
         student.setRole(Role.STUDENT);
@@ -207,7 +207,7 @@ public class IsaacTest extends AbstractModule {
         studentGroups = ImmutableList.of(studentGroup.getId(), studentInactiveGroup.getId());
 
         completedAssignment = new QuizAssignmentDTO(++id, studentQuiz.getId(), teacher.getId(), studentGroup.getId(), someFurtherPastDate, somePastDate, QuizFeedbackMode.OVERALL_MARK);
-        studentAssignment = new QuizAssignmentDTO(++id, studentQuiz.getId(), teacher.getId(), studentGroup.getId(), somePastDate, someFutureDate, QuizFeedbackMode.OVERALL_MARK);
+        studentAssignment = new QuizAssignmentDTO(++id, studentQuiz.getId(), teacher.getId(), studentGroup.getId(), somePastDate, someFutureDate, QuizFeedbackMode.DETAILED_FEEDBACK);
         overdueAssignment = new QuizAssignmentDTO(++id, studentQuiz.getId(), teacher.getId(), studentGroup.getId(), someFurtherPastDate, somePastDate, QuizFeedbackMode.SECTION_MARKS);
         otherAssignment = new QuizAssignmentDTO(++id, teacherQuiz.getId(), teacher.getId(), studentGroup.getId(), somePastDate, someFutureDate, QuizFeedbackMode.OVERALL_MARK);
 
@@ -235,8 +235,8 @@ public class IsaacTest extends AbstractModule {
         quizManager = createMock(QuizManager.class);
 
         registerDefaultsFor(quizManager, m -> {
-            expect(m.getAvailableQuizzes(true, null, null)).andStubReturn(wrap(studentQuizSummary));
-            expect(m.getAvailableQuizzes(false, null, null)).andStubReturn(wrap(studentQuizSummary, teacherQuizSummary));
+            expect(m.getAvailableQuizzes(true, 0, 9000)).andStubReturn(wrap(studentQuizSummary));
+            expect(m.getAvailableQuizzes(false, 0, 9000)).andStubReturn(wrap(studentQuizSummary, teacherQuizSummary));
             expect(m.findQuiz(studentQuiz.getId())).andStubReturn(studentQuiz);
             expect(m.findQuiz(teacherQuiz.getId())).andStubReturn(teacherQuiz);
             expect(m.findQuiz(otherQuiz.getId())).andStubReturn(otherQuiz);

@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import ma.glasnost.orika.MapperFacade;
+import org.apache.commons.codec.binary.Base64;
 import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
@@ -700,16 +701,14 @@ public class UserManagerTest {
     }
     
     private UserAuthenticationManager buildTestAuthenticationManager() {
-        return new UserAuthenticationManager(dummyDatabase, dummyPropertiesLoader, dummyProvidersMap, dummyMapper,
-                dummyQueue);
+        return new UserAuthenticationManager(dummyDatabase, dummyPropertiesLoader, dummyProvidersMap, dummyQueue);
     }
     
     private UserAuthenticationManager buildTestAuthenticationManager(AuthenticationProvider provider, IAuthenticator authenticator) {
         HashMap<AuthenticationProvider, IAuthenticator> providerMap = new HashMap<AuthenticationProvider, IAuthenticator>();
         providerMap.put(provider, authenticator);
         providerMap.put(AuthenticationProvider.SEGUE, dummyLocalAuth);
-        return new UserAuthenticationManager(dummyDatabase, dummyPropertiesLoader, providerMap, dummyMapper,
-                dummyQueue);
+        return new UserAuthenticationManager(dummyDatabase, dummyPropertiesLoader, providerMap, dummyQueue);
     }
 
     private Map<String, String> getSessionInformationAsAMap(UserAuthenticationManager userAuthManager, String userId, String dateExpires, Integer sessionToken)
@@ -723,7 +722,7 @@ public class UserManagerTest {
     private Cookie[] getCookieArray(Map<String, String> sessionInformation) throws JsonProcessingException {
         ObjectMapper om = new ObjectMapper();
         Cookie[] cookieWithSessionInfo = { new Cookie(Constants.SEGUE_AUTH_COOKIE,
-                om.writeValueAsString(sessionInformation)) };
+                Base64.encodeBase64String(om.writeValueAsString(sessionInformation).getBytes())) };
         return cookieWithSessionInfo;
     }
 }
