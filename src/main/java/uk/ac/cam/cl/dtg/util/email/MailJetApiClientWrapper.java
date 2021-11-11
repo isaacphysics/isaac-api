@@ -33,6 +33,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.segue.api.managers.ExternalAccountSynchronisationException;
 
 import javax.ws.rs.core.Response;
 
@@ -77,6 +78,11 @@ public class MailJetApiClientWrapper {
         }
         MailjetRequest request = new MailjetRequest(Contact.resource, mailjetIdOrEmail);
         MailjetResponse response = mailjetClient.get(request);
+        int responseStatus = response.getStatus();
+        if (responseStatus != Response.Status.OK.getStatusCode()) {
+            log.error("Failed to talk to MailJet!");
+            throw new MailjetException(String.format("Failed to successfully get user, status code: %s", responseStatus));
+        }
         JSONArray responseData = response.getData();
         if (response.getTotal() == 1) {
             return responseData.getJSONObject(0);
@@ -117,6 +123,11 @@ public class MailJetApiClientWrapper {
         try {
             MailjetRequest request = new MailjetRequest(Contact.resource).property(Contact.EMAIL, email);
             MailjetResponse response = mailjetClient.post(request);
+            int responseStatus = response.getStatus();
+            if (responseStatus != Response.Status.OK.getStatusCode()) {
+                log.error("Failed to talk to MailJet!");
+                throw new MailjetException(String.format("Failed to successfully get user, status code: %s", responseStatus));
+            }
             // Get MailJet ID out:
             JSONObject responseData = response.getData().getJSONObject(0);
             return Integer.toString(responseData.getInt("ID"));
@@ -151,6 +162,11 @@ public class MailJetApiClientWrapper {
                         .put(new JSONObject().put("Name", "verification_status").put("value", email_verification_status))
                 );
         MailjetResponse response = mailjetClient.put(request);
+        int responseStatus = response.getStatus();
+        if (responseStatus != Response.Status.OK.getStatusCode()) {
+            log.error("Failed to talk to MailJet!");
+            throw new MailjetException(String.format("Failed to successfully get user, status code: %s", responseStatus));
+        }
         if (response.getTotal() != 1) {
             // TODO: Do we want to get any of the data from this request?
             throw new MailjetException("Failed to update user!" + response.getTotal());
@@ -176,6 +192,11 @@ public class MailJetApiClientWrapper {
                                 .put(ContactslistImportList.ACTION, eventsEmails.value))
                 );
         MailjetResponse response = mailjetClient.post(request);
+        int responseStatus = response.getStatus();
+        if (responseStatus != Response.Status.OK.getStatusCode()) {
+            log.error("Failed to talk to MailJet!");
+            throw new MailjetException(String.format("Failed to successfully get user, status code: %s", responseStatus));
+        }
         if (response.getTotal() != 1) {
             // TODO: Do we want to get any of the data from this request?
             throw new MailjetException("Failed to update user subscriptions!" + response.getTotal());
