@@ -40,6 +40,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizSectionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptFeedbackDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizFeedbackDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizUserFeedbackDTO;
 import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
@@ -1470,9 +1471,13 @@ public class QuizFacade extends AbstractIsaacFacade {
                     "That student has not completed this test assignment.").toResponse();
             }
 
-            quizAttempt = augmentAttempt(quizAttempt, assignment, true);
+            IsaacQuizDTO quiz = quizManager.findQuiz(quizAttempt.getQuizId());
 
-            return Response.ok(quizAttempt)
+            quizAttempt = quizQuestionManager.augmentFeedbackFor(quizAttempt, quiz, QuizFeedbackMode.DETAILED_FEEDBACK);
+
+            QuizAttemptFeedbackDTO quizAttemptFeedback = new QuizAttemptFeedbackDTO(userManager.convertToUserSummaryObject(student), quizAttempt);
+
+            return Response.ok(quizAttemptFeedback)
                 .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
                 .build();
         } catch (NoUserLoggedInException e) {

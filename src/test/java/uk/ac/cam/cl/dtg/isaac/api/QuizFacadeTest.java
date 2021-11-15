@@ -31,6 +31,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptFeedbackDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizFeedbackDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizUserFeedbackDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
@@ -269,7 +270,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
 
     @Test
     public void getQuizAssignmentAttempt() {
-        IsaacQuizDTO augmentedQuiz = new IsaacQuizDTO();
+        QuizAttemptDTO augmentedQuiz = new QuizAttemptDTO();
         forEndpoint(() -> quizFacade.getQuizAssignmentAttempt(request, studentAssignment.getId(), student.getId()),
             requiresLogin(),
             as(studentsTeachersOrAdmin(),
@@ -293,13 +294,9 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                 prepare(quizAssignmentManager, m -> expect(m.getGroupForAssignment(studentAssignment)).andReturn(studentGroup)),
                 prepare(associationManager, m -> expect(m.hasPermission(currentUser(), student)).andReturn(true)),
                 prepare(quizAttemptManager, m -> expect(m.getByQuizAssignmentAndUser(studentAssignment, student)).andReturn(completedAttempt)),
-                prepare(quizQuestionManager, m -> expect(m.augmentQuestionsForUser(studentQuiz, completedAttempt, true)).andReturn(augmentedQuiz)),
-                prepare(assignmentService, m -> {
-                    m.augmentAssignerSummaries(Collections.singletonList(studentAssignment));
-                    expectLastCall();
-                }),
+                prepare(quizQuestionManager, m -> expect(m.augmentFeedbackFor(completedAttempt, studentQuiz, QuizFeedbackMode.DETAILED_FEEDBACK)).andReturn(augmentedQuiz)),
                 succeeds(),
-                check(response -> assertEquals(((QuizAttemptDTO) response.getEntity()).getQuiz(), augmentedQuiz))
+                check(response -> assertEquals(((QuizAttemptFeedbackDTO) response.getEntity()).getAttempt().getQuiz(), augmentedQuiz.getQuiz()))
             ),
             forbiddenForEveryoneElse()
         );
