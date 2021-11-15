@@ -63,7 +63,7 @@ public class EmailTemplateDTO extends ContentDTO {
             final Set<String> tags, final Integer level) {
         super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
                 attribution, relatedContent, published, deprecated, tags, level);
-    } // TODO CP REMOVE THIS AND TEST
+    }
 
     /**
      * @param value
