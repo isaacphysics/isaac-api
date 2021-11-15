@@ -37,11 +37,11 @@ public class SeguePageDTO extends ContentDTO {
             @JsonProperty("layout") String layout, @JsonProperty("children") List<ContentBaseDTO> children,
             @JsonProperty("value") String value, @JsonProperty("attribution") String attribution,
             @JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
-            @JsonProperty("published") Boolean published, @JsonProperty("tags") Set<String> tags,
-            @JsonProperty("level") Integer level) {
+            @JsonProperty("published") Boolean published, @JsonProperty("deprecated") Boolean deprecated,
+            @JsonProperty("tags") Set<String> tags, @JsonProperty("level") Integer level) {
 
         super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
-                attribution, relatedContent, published, tags, level);
+                attribution, relatedContent, published, deprecated, tags, level);
 
     }
 

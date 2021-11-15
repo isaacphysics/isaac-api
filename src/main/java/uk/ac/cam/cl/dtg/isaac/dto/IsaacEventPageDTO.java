@@ -110,6 +110,7 @@ public class IsaacEventPageDTO extends ContentDTO {
                              @JsonProperty("children") List<ContentBaseDTO> children,
                              @JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
                              @JsonProperty("version") boolean published,
+                             @JsonProperty("deprecated") Boolean deprecated,
                              @JsonProperty("tags") Set<String> tags,
                              @JsonProperty("date") Date date,
                              @JsonProperty("end_date") Date end_date,
@@ -124,7 +125,7 @@ public class IsaacEventPageDTO extends ContentDTO {
                              @JsonProperty("groupReservationLimit") Integer groupReservationLimit,
                              @JsonProperty("allowGroupReservations") Boolean allowGroupReservations) {
         super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, null, null,
-                relatedContent, published, tags, null);
+                relatedContent, published, deprecated, tags, null);
 
         this.date = date;
         this.end_date = end_date;

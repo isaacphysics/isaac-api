@@ -52,13 +52,14 @@ public class IsaacQuiz extends SeguePage {
             @JsonProperty("attribution") String attribution,
             @JsonProperty("relatedContent") List<String> relatedContent,
             @JsonProperty("version") boolean published,
+            @JsonProperty("deprecated") Boolean deprecated,
             @JsonProperty("tags") Set<String> tags,
             @JsonProperty("level") Integer level,
             @JsonProperty("visibleToStudents") boolean visibleToStudents,
             @JsonProperty("rubric") Content rubric){
         super(id, title, subtitle, type, author, encoding,
                 canonicalSourceFile, layout, children, value, attribution,
-                relatedContent, published, tags, level);
+                relatedContent, published, deprecated, tags, level);
 
         this.visibleToStudents = visibleToStudents;
         this.rubric = rubric;

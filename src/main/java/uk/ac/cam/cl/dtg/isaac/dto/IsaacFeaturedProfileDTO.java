@@ -46,11 +46,12 @@ public class IsaacFeaturedProfileDTO extends ContentDTO {
             @JsonProperty("value") String value, @JsonProperty("attribution") String attribution,
             @JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
             @JsonProperty("version") boolean published, @JsonProperty("tags") Set<String> tags,
+            @JsonProperty("deprecated") Boolean deprecated,
             @JsonProperty("level") Integer level, @JsonProperty("src") String src,
             @JsonProperty("altText") String altText, @JsonProperty("emailAddress") String emailAddress,
             @JsonProperty("image") ImageDTO image, @JsonProperty("homepage") String homepage) {
         super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
-                attribution, relatedContent, published, tags, level);
+                attribution, relatedContent, published, deprecated, tags, level);
 
         this.emailAddress = emailAddress;
         this.image = image;

@@ -46,11 +46,12 @@ public class IsaacQuestionPage extends SeguePage {
             @JsonProperty("layout") String layout, @JsonProperty("children") List<ContentBase> children,
             @JsonProperty("value") String value, @JsonProperty("attribution") String attribution,
             @JsonProperty("relatedContent") List<String> relatedContent, @JsonProperty("published") boolean published,
+            @JsonProperty("deprecated") Boolean deprecated,
             @JsonProperty("tags") Set<String> tags, @JsonProperty("level") Integer level,
             @JsonProperty("difficulty") Integer difficulty, @JsonProperty("passMark") Float passMark,
             @JsonProperty("supersededBy") String supersededBy) {
         super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
-                attribution, relatedContent, published, tags, level);
+                attribution, relatedContent, published, deprecated, tags, level);
 
         this.passMark = passMark;
         this.supersededBy = supersededBy;
