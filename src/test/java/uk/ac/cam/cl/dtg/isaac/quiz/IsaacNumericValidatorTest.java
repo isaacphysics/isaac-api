@@ -101,7 +101,7 @@ public class IsaacNumericValidatorTest {
         // Test response:
         QuestionValidationResponse response = validator.validateQuestionResponse(numericQuestionNoUnits, q);
         assertFalse(response.isCorrect());
-        assertTrue(response.getExplanation().getValue().contains("not a valid number"));
+        assertTrue(response.getExplanation().getValue().contains("not in a format we recognise"));
     }
 
     /*
@@ -225,7 +225,7 @@ public class IsaacNumericValidatorTest {
         assertFalse(response.isCorrect());
         assertFalse(response.getCorrectUnits());
         // Check feedback contains correct warning:
-        assertTrue(response.getExplanation().getValue().contains("did not provide any units"));
+        assertEquals(IsaacNumericValidator.DEFAULT_NO_UNIT_VALIDATION_RESPONSE, response.getExplanation().getValue());
     }
 
     /*
@@ -243,7 +243,7 @@ public class IsaacNumericValidatorTest {
         assertFalse(response.isCorrect());
         assertFalse(response.getCorrectValue());
         // Check feedback contains correct warning:
-        assertTrue(response.getExplanation().getValue().contains("did not provide an answer"));
+        assertEquals(IsaacNumericValidator.DEFAULT_NO_ANSWER_VALIDATION_RESPONSE, response.getExplanation().getValue());
     }
 
     /*

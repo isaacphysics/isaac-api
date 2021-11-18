@@ -20,6 +20,4 @@ scrape_configs:
   - job_name: 'isaac_api_exporter'
     metrics_path: '/metrics'
     static_configs:
-      # Use one of the names/addresses returned by:
-      # python -c 'import socket;print(socket.gethostbyname_ex(socket.gethostname()))'
-      - targets: ['YOUR_IP_ADDRESS:9966']
+      - targets: ['host.docker.internal:9966']

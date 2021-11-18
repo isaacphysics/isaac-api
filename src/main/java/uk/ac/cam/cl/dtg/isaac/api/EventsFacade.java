@@ -738,9 +738,9 @@ public class EventsFacade extends AbstractIsaacFacade {
                 resultRow.add(resultAdditionalInformation.get("yearGroup"));
                 resultRow.add(resultAdditionalInformation.get("jobTitle"));
                 resultRow.add(String.join(" ", resultUser.getRegisteredContexts().stream()
-                        .map(uc -> uc.getStage().name()).collect(Collectors.toSet())));
+                        .map(uc -> uc.getStage() != null ? uc.getStage().name() : "").collect(Collectors.toSet())));
                 resultRow.add(String.join(" ", resultUser.getRegisteredContexts().stream()
-                        .map(uc -> uc.getExamBoard().name()).collect(Collectors.toSet())));
+                        .map(uc -> uc.getExamBoard() != null ? uc.getExamBoard().name() : "").collect(Collectors.toSet())));
                 resultRow.add(resultAdditionalInformation.get("experienceLevel"));
                 resultRow.add(resultAdditionalInformation.get("medicalRequirements"));
                 resultRow.add(resultAdditionalInformation.get("accessibilityRequirements"));

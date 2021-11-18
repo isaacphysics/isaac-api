@@ -40,9 +40,9 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizSectionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptFeedbackDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizFeedbackDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizUserFeedbackDTO;
-import uk.ac.cam.cl.dtg.segue.api.Constants.SegueServerLogType;
 import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -50,6 +50,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
@@ -91,18 +92,14 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static javax.ws.rs.core.Response.Status;
 import static javax.ws.rs.core.Response.ok;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUIZ_ID_FKEY;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUIZ_SECTION;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.ASSIGNMENT_DUEDATE_FK;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.GROUP_FK;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_HOUR;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.QUIZ_ASSIGNMENT_FK;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.QUIZ_ATTEMPT_FK;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdFromQuestionId;
 
 /**
@@ -180,7 +177,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @GET
     @Path("/available")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Get quizzes visible to this user, from index 0.")
+    @ApiOperation(value = "Get tests visible to this user, from index 0.")
     public final Response getAvailableQuizzes(@Context final HttpServletRequest request) {
         return getAvailableQuizzes(request, 0);
     }
@@ -198,7 +195,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/available/{startIndex}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Get quizzes visible to this user, from the specified index.")
+    @ApiOperation(value = "Get tests visible to this user, from the specified index.")
     public final Response getAvailableQuizzes(@Context final HttpServletRequest request,
                                               @PathParam("startIndex") final Integer startIndex) {
         try {
@@ -217,7 +214,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                 .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, isStudent))
                 .build();
         } catch (ContentManagerException e) {
-            String message = "ContentManagerException whilst getting available quizzes";
+            String message = "ContentManagerException whilst getting available tests";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (NoUserLoggedInException e) {
@@ -237,7 +234,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/assignments")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Get quizzes assigned to this user.")
+    @ApiOperation(value = "Get tests assigned to this user.")
     public final Response getAssignedQuizzes(@Context final HttpServletRequest request) {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(request);
@@ -253,7 +250,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             return Response.ok(assignments)
                 .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (SegueDatabaseException e) {
-            String message = "SegueDatabaseException whilst getting available quizzes";
+            String message = "SegueDatabaseException whilst getting available tests";
             log.error(message, e);
             return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (NoUserLoggedInException e) {
@@ -272,7 +269,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/free_attempts")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Get quizzes freely attempted by this user.")
+    @ApiOperation(value = "Get tests freely attempted by this user.")
     public final Response getFreeAttempts(@Context final HttpServletRequest request) {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(request);
@@ -284,7 +281,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             return Response.ok(attempts)
                 .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (SegueDatabaseException e) {
-            String message = "SegueDatabaseException whilst getting available quizzes";
+            String message = "SegueDatabaseException whilst getting available tests";
             log.error(message, e);
             return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (NoUserLoggedInException e) {
@@ -307,7 +304,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/{quizId}/preview")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Preview an individual quiz.")
+    @ApiOperation(value = "Preview an individual test.")
     public final Response previewQuiz(@Context final Request request,
                                       @Context final HttpServletRequest httpServletRequest,
                                       @PathParam("quizId") final String quizId) {
@@ -319,7 +316,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             }
 
             if (null == quizId || quizId.isEmpty()) {
-                return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid quiz id.").toResponse();
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid test id.").toResponse();
             }
 
             EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + quizId.hashCode() + "");
@@ -334,8 +331,8 @@ public class QuizFacade extends AbstractIsaacFacade {
             return ok(quiz)
                 .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, false)).tag(etag).build();
         } catch (ContentManagerException e) {
-            log.error("Content error whilst previewing a quiz", e);
-            return SegueErrorResponse.getResourceNotFoundResponse("This quiz has become unavailable.");
+            log.error("Content error whilst previewing a test", e);
+            return SegueErrorResponse.getResourceNotFoundResponse("This test has become unavailable.");
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
@@ -360,7 +357,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/assignment/{quizAssignmentId}/attempt")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Start a quiz attempt.")
+    @ApiOperation(value = "Start a test attempt.")
     public final Response startQuizAttempt(@Context final Request request,
                                            @Context final HttpServletRequest httpServletRequest,
                                            @PathParam("quizAssignmentId") final Long quizAssignmentId) {
@@ -368,7 +365,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
             if (null == quizAssignmentId) {
-                return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid quiz assignment id.").toResponse();
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid test assignment id.").toResponse();
             }
 
             // Get the quiz assignment
@@ -377,12 +374,12 @@ public class QuizFacade extends AbstractIsaacFacade {
             // Check the user is an active member of the relevant group
             UserGroupDTO group = quizAssignmentManager.getGroupForAssignment(quizAssignment);
             if (!groupManager.isUserInGroup(user, group)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You are not a member of a group to which this quiz is assigned.").toResponse();
+                return new SegueErrorResponse(Status.FORBIDDEN, "You are not a member of a group to which this test is assigned.").toResponse();
             }
 
             // Check the due date hasn't passed
             if (quizAssignment.getDueDate() != null && new Date().after(quizAssignment.getDueDate())) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "The due date for this quiz has passed.").toResponse();
+                return new SegueErrorResponse(Status.FORBIDDEN, "The due date for this test has passed.").toResponse();
             }
 
             // Create a quiz attempt
@@ -396,16 +393,16 @@ public class QuizFacade extends AbstractIsaacFacade {
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
-            String message = "SegueDatabaseException whilst starting a quiz attempt";
+            String message = "SegueDatabaseException whilst starting a test attempt";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (AttemptCompletedException e) {
-            return new SegueErrorResponse(Status.FORBIDDEN, "You have already completed your attempt for this quiz.").toResponse();
+            return new SegueErrorResponse(Status.FORBIDDEN, "You have already completed your attempt for this test.").toResponse();
         } catch (AssignmentCancelledException e) {
-            return new SegueErrorResponse(Status.GONE, "This quiz assignment has been cancelled.").toResponse();
+            return new SegueErrorResponse(Status.GONE, "This test assignment has been cancelled.").toResponse();
         } catch (ContentManagerException e) {
-            log.error("Content error whilst starting a quiz attempt", e);
-            return SegueErrorResponse.getResourceNotFoundResponse("This quiz has become unavailable.");
+            log.error("Content error whilst starting a test attempt", e);
+            return SegueErrorResponse.getResourceNotFoundResponse("This test has become unavailable.");
         }
     }
 
@@ -426,7 +423,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/{quizId}/attempt")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Start a free quiz attempt.")
+    @ApiOperation(value = "Start a free test attempt.")
     public final Response startFreeQuizAttempt(@Context final Request request,
                                                @Context final HttpServletRequest httpServletRequest,
                                                @PathParam("quizId") final String quizId) {
@@ -434,7 +431,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
             if (null == quizId || quizId.isEmpty()) {
-                return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid quiz id.").toResponse();
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid test id.").toResponse();
             }
 
             // Get the quiz
@@ -442,14 +439,14 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             // Check it is visibleToStudents
             if (!quiz.getVisibleToStudents()) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "Free attempts are not available for this quiz.").toResponse();
+                return new SegueErrorResponse(Status.FORBIDDEN, "Free attempts are not available for test quiz.").toResponse();
             }
 
             // Check if there is an active assignment of this quiz
             List<QuizAssignmentDTO> activeQuizAssignments = this.quizAssignmentManager.getActiveQuizAssignments(quiz, user);
 
             if (!activeQuizAssignments.isEmpty()) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You are currently set this quiz. You must complete your assignment before you can attempt this quiz freely.").toResponse();
+                return new SegueErrorResponse(Status.FORBIDDEN, "This test is currently assigned to you. You must complete your assignment before you can attempt this test freely.").toResponse();
             }
 
             // Create a quiz attempt
@@ -463,12 +460,12 @@ public class QuizFacade extends AbstractIsaacFacade {
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
-            String message = "SegueDatabaseException whilst starting a free quiz attempt";
+            String message = "SegueDatabaseException whilst starting a free test attempt";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (ContentManagerException e) {
-            log.error("Content error whilst starting a free quiz attempt", e);
-            return SegueErrorResponse.getResourceNotFoundResponse("This quiz has become unavailable.");
+            log.error("Content error whilst starting a free test attempt", e);
+            return SegueErrorResponse.getResourceNotFoundResponse("This test has become unavailable.");
         }
     }
 
@@ -485,7 +482,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/attempt/{quizAttemptId}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Get the QuizDTO for a quiz attempt.")
+    @ApiOperation(value = "Get the QuizDTO for a test attempt.")
     public final Response getQuizAttempt(@Context final HttpServletRequest httpServletRequest,
                                          @PathParam("quizAttemptId") final Long quizAttemptId) {
         try {
@@ -503,14 +500,14 @@ public class QuizFacade extends AbstractIsaacFacade {
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
-            String message = "SegueDatabaseException whilst getting quiz attempt";
+            String message = "SegueDatabaseException whilst getting test attempt";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (AssignmentCancelledException e) {
-            return new SegueErrorResponse(Status.FORBIDDEN, "This quiz assignment has been cancelled.").toResponse();
+            return new SegueErrorResponse(Status.FORBIDDEN, "This test assignment has been cancelled.").toResponse();
         } catch (ContentManagerException e) {
-            log.error("Content error whilst getting quiz attempt", e);
-            return SegueErrorResponse.getResourceNotFoundResponse("This quiz has become unavailable.");
+            log.error("Content error whilst getting test attempt", e);
+            return SegueErrorResponse.getResourceNotFoundResponse("This test has become unavailable.");
         } catch (ErrorResponseWrapper responseWrapper) {
             return responseWrapper.toResponse();
         }
@@ -531,7 +528,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/attempt/{quizAttemptId}/feedback")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Get the feedback for a quiz attempt.")
+    @ApiOperation(value = "Get the feedback for a test attempt.")
     public final Response getQuizAttemptFeedback(@Context final HttpServletRequest httpServletRequest,
                                                  @PathParam("quizAttemptId") final Long quizAttemptId) {
         try {
@@ -565,14 +562,14 @@ public class QuizFacade extends AbstractIsaacFacade {
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
-            String message = "SegueDatabaseException whilst getting quiz attempt";
+            String message = "SegueDatabaseException whilst getting test attempt";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (AssignmentCancelledException e) {
-            return new SegueErrorResponse(Status.FORBIDDEN, "This quiz assignment has been cancelled.").toResponse();
+            return new SegueErrorResponse(Status.FORBIDDEN, "This test assignment has been cancelled.").toResponse();
         } catch (ContentManagerException e) {
-            log.error("Content error whilst getting quiz attempt", e);
-            return SegueErrorResponse.getResourceNotFoundResponse("This quiz has become unavailable.");
+            log.error("Content error whilst getting test attempt", e);
+            return SegueErrorResponse.getResourceNotFoundResponse("This test has become unavailable.");
         } catch (ErrorResponseWrapper responseWrapper) {
             return responseWrapper.toResponse();
         }
@@ -602,11 +599,11 @@ public class QuizFacade extends AbstractIsaacFacade {
             QuizAttemptDTO quizAttempt = getQuizAttempt(quizAttemptId);
 
             if (!quizAttempt.getUserId().equals(user.getId())) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You cannot complete someone else's quiz.").toResponse();
+                return new SegueErrorResponse(Status.FORBIDDEN, "You cannot complete someone else's test.").toResponse();
             }
 
             if ((quizAttempt.getCompletedDate() != null)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "That quiz is already complete.").toResponse();
+                return new SegueErrorResponse(Status.FORBIDDEN, "That test is already complete.").toResponse();
             }
 
             quizAttempt = quizAttemptManager.updateAttemptCompletionStatus(quizAttempt, true);
@@ -615,7 +612,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
-            String message = "SegueDatabaseException whilst marking quiz attempt complete";
+            String message = "SegueDatabaseException whilst marking test attempt complete";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (ErrorResponseWrapper responseWrapper) {
@@ -666,7 +663,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             }
 
             if (assignment.getDueDate() != null && assignment.getDueDate().before(new Date())) {
-                return new SegueErrorResponse(Status.BAD_REQUEST, "You cannot mark a quiz attempt as incomplete while it is still due.").toResponse();
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You cannot mark a test attempt as incomplete while it is still due.").toResponse();
             }
 
             RegisteredUserDTO student = userManager.getUserDTOById(userId);
@@ -677,7 +674,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             QuizAttemptDTO quizAttempt = quizAttemptManager.getByQuizAssignmentAndUser(assignment, student);
 
             if (quizAttempt == null || quizAttempt.getCompletedDate() == null) {
-                return new SegueErrorResponse(Status.BAD_REQUEST, "That quiz is already incomplete.").toResponse();
+                return new SegueErrorResponse(Status.BAD_REQUEST, "That test is already incomplete.").toResponse();
             }
 
             quizAttemptManager.updateAttemptCompletionStatus(quizAttempt, false);
@@ -693,11 +690,11 @@ public class QuizFacade extends AbstractIsaacFacade {
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
-            String message = "SegueDatabaseException whilst marking quiz attempt incomplete";
+            String message = "SegueDatabaseException whilst marking test attempt incomplete";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (AssignmentCancelledException e) {
-            return new SegueErrorResponse(Status.FORBIDDEN, "This quiz assignment has been cancelled.").toResponse();
+            return new SegueErrorResponse(Status.FORBIDDEN, "This test assignment has been cancelled.").toResponse();
         } catch (NoUserException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "No such user.").toResponse();
         }
@@ -718,7 +715,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/attempt/{quizAttemptId}/log")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Get the QuizDTO for a quiz attempt.")
+    @ApiOperation(value = "Get the QuizDTO for a test attempt.")
     public Response logQuizSectionView(@Context final HttpServletRequest httpServletRequest,
                                        @PathParam("quizAttemptId") final Long quizAttemptId,
                                        @FormParam("sectionNumber") Integer sectionNumber) {
@@ -746,9 +743,9 @@ public class QuizFacade extends AbstractIsaacFacade {
         } catch (ErrorResponseWrapper responseWrapper) {
             return responseWrapper.toResponse();
         } catch (AssignmentCancelledException e) {
-            return new SegueErrorResponse(Status.FORBIDDEN, "This quiz assignment has been cancelled.").toResponse();
+            return new SegueErrorResponse(Status.FORBIDDEN, "This test assignment has been cancelled.").toResponse();
         } catch (SegueDatabaseException e) {
-            String message = "SegueDatabaseException whilst logging quiz section view";
+            String message = "SegueDatabaseException whilst logging test section view";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (NoUserLoggedInException e) {
@@ -816,7 +813,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             // Check the quiz this question is from is valid for this attempt.
             if (!quizId.equals(quizAttempt.getQuizId())) {
-                return new SegueErrorResponse(Status.BAD_REQUEST, "This question is part of another quiz.").toResponse();
+                return new SegueErrorResponse(Status.BAD_REQUEST, "This question is part of another test.").toResponse();
             }
 
             ChoiceDTO answerFromClientDTO = quizQuestionManager.convertJsonAnswerToChoice(jsonAnswer);
@@ -831,11 +828,11 @@ public class QuizFacade extends AbstractIsaacFacade {
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
-            String message = "SegueDatabaseException whilst submitting quiz answer";
+            String message = "SegueDatabaseException whilst submitting test answer";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (AssignmentCancelledException e) {
-            return new SegueErrorResponse(Status.FORBIDDEN, "This quiz assignment has been cancelled.").toResponse();
+            return new SegueErrorResponse(Status.FORBIDDEN, "This test assignment has been cancelled.").toResponse();
         } catch (ErrorResponseWrapper responseWrapper) {
             return responseWrapper.toResponse();
         }
@@ -854,28 +851,28 @@ public class QuizFacade extends AbstractIsaacFacade {
      */
     @DELETE
     @Path("/attempt/{quizAttemptId}")
-    @ApiOperation(value = "Abandon a started free quiz attempt.")
+    @ApiOperation(value = "Abandon a started free test attempt.")
     public final Response abandonQuizAttempt(@Context final HttpServletRequest httpServletRequest,
                                              @PathParam("quizAttemptId") final Long quizAttemptId) {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
             if (null == quizAttemptId) {
-                return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid quiz attempt id.").toResponse();
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid test attempt id.").toResponse();
             }
 
             QuizAttemptDTO quizAttempt = this.quizAttemptManager.getById(quizAttemptId);
 
             if (!quizAttempt.getUserId().equals(user.getId())) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You cannot cancel a quiz attempt for someone else.").toResponse();
+                return new SegueErrorResponse(Status.FORBIDDEN, "You cannot cancel a test attempt for someone else.").toResponse();
             }
 
             if (quizAttempt.getQuizAssignmentId() != null) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You can only cancel attempts on quizzes you chose to take.").toResponse();
+                return new SegueErrorResponse(Status.FORBIDDEN, "You can only cancel attempts on tests you chose to take.").toResponse();
             }
 
             if (quizAttempt.getCompletedDate() != null) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You cannot cancel completed quiz attempts.").toResponse();
+                return new SegueErrorResponse(Status.FORBIDDEN, "You cannot cancel completed test attempts.").toResponse();
             }
 
             this.quizAttemptManager.deleteAttempt(quizAttempt);
@@ -884,7 +881,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
-            String message = "SegueDatabaseException whilst deleting a free quiz attempt";
+            String message = "SegueDatabaseException whilst deleting a free test attempt";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         }
@@ -905,14 +902,14 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/assignment")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Set a quiz to a group, with an optional due date.")
+    @ApiOperation(value = "Set a test to a group, with an optional due date.")
     public final Response createQuizAssignment(@Context final HttpServletRequest request,
                                                final QuizAssignmentDTO clientQuizAssignment) {
 
         if (   clientQuizAssignment.getQuizId() == null
             || clientQuizAssignment.getGroupId() == null
             || clientQuizAssignment.getQuizFeedbackMode() == null) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "A required field was missing. Must provide group and quiz ids and a quiz feedback mode.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "A required field was missing. Must provide group and test ids and a test feedback mode.").toResponse();
         }
 
         try {
@@ -928,7 +925,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             IsaacQuizDTO quiz = this.quizManager.findQuiz(clientQuizAssignment.getQuizId());
             if (null == quiz) {
-                return new SegueErrorResponse(Status.BAD_REQUEST, "The quiz id specified does not exist.")
+                return new SegueErrorResponse(Status.BAD_REQUEST, "The test id specified does not exist.")
                     .toResponse();
             }
 
@@ -961,8 +958,8 @@ public class QuizFacade extends AbstractIsaacFacade {
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (ContentManagerException e) {
-            log.error("Content error whilst setting quiz", e);
-            return SegueErrorResponse.getResourceNotFoundResponse("This quiz has become unavailable.");
+            log.error("Content error whilst setting test", e);
+            return SegueErrorResponse.getResourceNotFoundResponse("This test has become unavailable.");
         }
     }
 
@@ -978,7 +975,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/assigned")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Get quizzes assigned by this user.")
+    @ApiOperation(value = "Get tests assigned by this user.")
     public Response getQuizAssignments(@Context HttpServletRequest request,
                                        @QueryParam("groupId") Long groupIdOfInterest) {
         try {
@@ -1014,7 +1011,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
-            String message = "Database error whilst getting assigned quizzes";
+            String message = "Database error whilst getting assigned tests";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         }
@@ -1032,12 +1029,12 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/assignment/{quizAssignmentId}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "View a quiz assignment.")
+    @ApiOperation(value = "View a test assignment.")
     public final Response getQuizAssignment(@Context final HttpServletRequest httpServletRequest,
                                             @PathParam("quizAssignmentId") Long quizAssignmentId) {
 
         if (null == quizAssignmentId) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid quiz assignment id.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid test assignment id.").toResponse();
         }
 
         try {
@@ -1088,12 +1085,12 @@ public class QuizFacade extends AbstractIsaacFacade {
         } catch (AssignmentCancelledException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "This assignment has been cancelled.").toResponse();
         } catch (SegueDatabaseException e) {
-            String message = "Database error whilst viewing quiz assignment";
+            String message = "Database error whilst viewing test assignment";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (ContentManagerException e) {
-            log.error("Content error whilst viewing quiz assignment", e);
-            return SegueErrorResponse.getResourceNotFoundResponse("This quiz has become unavailable.");
+            log.error("Content error whilst viewing test assignment", e);
+            return SegueErrorResponse.getResourceNotFoundResponse("This test has become unavailable.");
         }
     }
 
@@ -1110,13 +1107,13 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/assignment/{quizAssignmentId}/download")
     @Produces("text/plain")
     @GZIP
-    @ApiOperation(value = "Download a quiz assignment as a CSV.")
+    @ApiOperation(value = "Download a test assignment as a CSV.")
     public final Response getQuizAssignmentCSV(@Context final HttpServletRequest httpServletRequest,
                                                @PathParam("quizAssignmentId") Long quizAssignmentId,
                                                @QueryParam("format") final String formatMode) {
 
         if (null == quizAssignmentId) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid quiz assignment id.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid test assignment id.").toResponse();
         }
 
         try {
@@ -1145,7 +1142,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             if (null != formatMode && formatMode.toLowerCase().equals("excel")) {
                 headerBuilder.append("\uFEFF");  // UTF-8 Byte Order Marker
             }
-            headerBuilder.append(String.format("Quiz (%s) Results: Downloaded on %s \nGenerated by: %s %s \n\n",
+            headerBuilder.append(String.format("Test (%s) Results: Downloaded on %s \nGenerated by: %s %s \n\n",
                     quiz.getTitle(), new Date(), user.getGivenName(), user.getFamilyName()));
             headerBuilder.append(",,\"Completed\",\"Correct\",\"Incorrect\",\"Not Attempted\",");
             List<String> questionTitles = new ArrayList<>();
@@ -1155,7 +1152,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                     IsaacQuizSectionDTO quizSection = (IsaacQuizSectionDTO) section;
                     List<ContentBaseDTO> quizQuestions = quizSection.getChildren().stream().filter(c -> c instanceof IsaacQuestionBaseDTO).collect(Collectors.toList());
                     for (int i = 0; i < quizQuestions.size(); ++i) {
-                        questionTitles.add(String.format("\"%s - Q%d\"", quizSection.getTitle(), i+1));
+                        questionTitles.add(String.format("\"%s - %s - Q%d\"", quiz.getTitle(), quizSection.getTitle(), i+1));
                         questionIds.add(quizQuestions.get(i).getId());
                     }
                 }
@@ -1215,15 +1212,206 @@ public class QuizFacade extends AbstractIsaacFacade {
         } catch (AssignmentCancelledException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "This assignment has been cancelled.").toResponse();
         } catch (SegueDatabaseException e) {
+            String message = "Database error whilst viewing test assignment";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        } catch (ContentManagerException e) {
+            log.error("Content error whilst viewing test assignment", e);
+            return SegueErrorResponse.getResourceNotFoundResponse("This test has become unavailable.");
+        } catch (IOException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while building the CSV file.").toResponse();
+        }
+    }
+
+    @GET
+    @Path("/group/{groupId}/download")
+    @Produces("text/plain")
+    @GZIP
+    @ApiOperation(value = "Download a CSV with all the quiz results of a given group")
+    public final Response getQuizResultsForGroup(@Context final HttpServletRequest httpServletRequest,
+                                                 @PathParam("groupId") Long groupId,
+                                                 @QueryParam("format") final String formatMode) {
+        if (null == groupId) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid group id.").toResponse();
+        }
+
+        try {
+            RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
+            if (!(isUserTeacherOrAbove(userManager, user))) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
+            UserGroupDTO group = this.groupManager.getGroupById(groupId);
+
+            List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group).stream()
+                    .sorted(Comparator.comparing(RegisteredUserDTO::getFamilyName))
+                    .sorted(Comparator.comparing(RegisteredUserDTO::getGivenName))
+                    .collect(Collectors.toList());
+
+            if (!canManageGroup(user, group)) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "You can only retrieve results for groups you own or manage.").toResponse();
+            }
+
+            List<QuizAssignmentDTO> quizAssignments = this.quizAssignmentManager.getAssignmentsForGroups(Collections.singletonList(group));
+
+            List<List<String>> rows = new ArrayList<>();
+            StringWriter stringWriter = new StringWriter();
+            CSVWriter csvWriter = new CSVWriter(stringWriter);
+            StringBuilder headerBuilder = new StringBuilder();
+            if (null != formatMode && formatMode.toLowerCase().equals("excel")) {
+                headerBuilder.append("\uFEFF");  // UTF-8 Byte Order Marker
+            }
+            headerBuilder.append(String.format("Quiz results for group (%s): Downloaded on %s \nGenerated by: %s %s \n\n",
+                    group.getGroupName(), new Date(), user.getGivenName(), user.getFamilyName()));
+            headerBuilder.append(",,");
+
+            List<String> quizTitles = new ArrayList<>();
+            List<String> questionTitles = new ArrayList<>();
+
+            for (QuizAssignmentDTO assignment : quizAssignments) {
+                String quizId = assignment.getQuizId();
+                IsaacQuizDTO quiz = this.quizManager.findQuiz(quizId);
+                quizTitles.add(String.format("\"%s\"", quiz.getTitle()));
+                questionTitles.addAll(getQuizQuestionTitles(quiz));
+            }
+
+            for (RegisteredUserDTO groupMember : groupMembers) {
+                UserSummaryDTO groupMemberSummary = this.userManager.convertToUserSummaryObject(groupMember);
+                List<String> row = new ArrayList<>(Arrays.asList(groupMember.getGivenName(), groupMember.getFamilyName()));
+                List<String> quizTotals = new ArrayList<>();
+                List<String> questionResults = new ArrayList<>();
+
+                for (QuizAssignmentDTO quizAssignment : quizAssignments) {
+                    String quizId = quizAssignment.getQuizId();
+                    IsaacQuizDTO quiz = this.quizManager.findQuiz(quizId);
+                    List<String> questionIds = getQuizQuestionIds(quiz);
+                    Optional<QuizUserFeedbackDTO> userFeedback = getUserFeedback(user, quizAssignment, quiz, groupMembers).stream()
+                            .filter(f -> f.getUser().getId().equals(groupMember.getId())).findFirst();
+                    if (!userFeedback.isPresent()) {
+                        // This looks like it should work but I can't test it as I don't know how to retrieve a
+                        // non-present user feedback. If everything is set up correctly with retrieving user
+                        // feedback, this branch should never happen -- so maybe we might as well forcibly unwrap
+                        // and deal with the exception because something has gone very wrong somewhere anyway.
+                        quizTotals.add(""); // We should probably write something here to make debugging easier...
+                        long questionCount = quiz.getChildren().stream()
+                                .filter(c -> c instanceof IsaacQuizSectionDTO)
+                                .map(s -> ((IsaacQuizSectionDTO) s).getChildren().stream().filter(t -> t instanceof IsaacQuestionBaseDTO).count())
+                                .reduce(0L, Long::sum);
+                        for (long i = 0L; i < questionCount; ++i) {
+                            questionResults.add("-");
+                        }
+                    } else {
+                        QuizFeedbackDTO feedback = userFeedback.get().getFeedback();
+                        if (feedback != null) {
+                            QuizFeedbackDTO.Mark overallMark = feedback.getOverallMark();
+                            if (overallMark != null) {
+                                quizTotals.add(String.format("%d/%d", overallMark.correct, overallMark.correct + overallMark.incorrect + overallMark.notAttempted));
+                            } else {
+                                quizTotals.add("");
+                            }
+                        } else {
+                            // The user has revoked access to their data
+                            quizTotals.add("REVOKED");
+                        }
+                        if (feedback != null) {
+                            Map<String, QuizFeedbackDTO.Mark> questionMarksByQuestionId = userFeedback.get().getFeedback().getQuestionMarks();
+                            if (questionMarksByQuestionId == null) {
+                                long questionCount = quiz.getChildren().stream()
+                                        .filter(c -> c instanceof IsaacQuizSectionDTO)
+                                        .map(s -> ((IsaacQuizSectionDTO) s).getChildren().stream().filter(t -> t instanceof IsaacQuestionBaseDTO).count())
+                                        .reduce(0L, Long::sum);
+                                for (long i = 0L; i < questionCount; ++i) {
+                                    questionResults.add(""); // We should probably write something here to make debugging easier...
+                                }
+                            } else {
+                                for (String id : questionIds) {
+                                    QuizFeedbackDTO.Mark m = questionMarksByQuestionId.get(id);
+                                    if (m == null) {
+                                        questionResults.add(""); // We should probably write something here to make debugging easier...
+                                        continue;
+                                    }
+                                    if (m.notAttempted == 1) {
+                                        questionResults.add("Not Attempted");
+                                    } else if (m.incorrect == 1) {
+                                        questionResults.add("Incorrect");
+                                    } else if (m.correct == 1) {
+                                        questionResults.add("Correct");
+                                    } else {
+                                        questionResults.add(""); // We should probably write something here to make debugging easier...
+                                    }
+                                }
+                            }
+                        } else {
+                            for (String id : questionIds) {
+                                questionResults.add("REVOKED");
+                            }
+                        }
+                    }
+                }
+                row.addAll(quizTotals);
+                row.addAll(questionResults);
+
+                rows.add(row);
+            }
+
+            headerBuilder.append(String.join(",", quizTitles)).append(",");
+            headerBuilder.append(String.join(",", questionTitles));
+            headerBuilder.append("\n");
+
+            for (List<String> row : rows) {
+                csvWriter.writeNext(row.toArray(new String[0]));
+            }
+            csvWriter.close();
+
+            headerBuilder.append(stringWriter.toString());
+            return Response.ok(headerBuilder.toString())
+                    .header("Content-Disposition", "attachment; filename=quiz_results.csv")
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
+
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (ResourceNotFoundException e) {
+            return SegueErrorResponse.getResourceNotFoundResponse("Something went wrong with this request.");
+        } catch (SegueDatabaseException e) {
             String message = "Database error whilst viewing quiz assignment";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (ContentManagerException e) {
-            log.error("Content error whilst viewing quiz assignment", e);
+            log.error("Content error whilst retrieving a quiz", e);
             return SegueErrorResponse.getResourceNotFoundResponse("This quiz has become unavailable.");
         } catch (IOException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while building the CSV file.").toResponse();
         }
+    }
+
+    private List<String> getQuizQuestionTitles(IsaacQuizDTO quiz) {
+        List<String> questionTitles = new ArrayList<>();
+        for (ContentBaseDTO section : quiz.getChildren().stream().filter(c -> c instanceof IsaacQuizSectionDTO).collect(Collectors.toList())) {
+            if (section instanceof IsaacQuizSectionDTO) {
+                IsaacQuizSectionDTO quizSection = (IsaacQuizSectionDTO) section;
+                List<ContentBaseDTO> quizQuestions = quizSection.getChildren().stream().filter(c -> c instanceof IsaacQuestionBaseDTO).collect(Collectors.toList());
+                for (int i = 0; i < quizQuestions.size(); ++i) {
+                    questionTitles.add(String.format("\"%s - %s - Q%d\"", quiz.getTitle(), quizSection.getTitle(), i+1));
+                }
+            }
+        }
+        return questionTitles;
+    }
+
+    private List<String> getQuizQuestionIds(IsaacQuizDTO quiz) {
+        List<String> questionIds = new ArrayList<>();
+        for (ContentBaseDTO section : quiz.getChildren().stream().filter(c -> c instanceof IsaacQuizSectionDTO).collect(Collectors.toList())) {
+            if (section instanceof IsaacQuizSectionDTO) {
+                IsaacQuizSectionDTO quizSection = (IsaacQuizSectionDTO) section;
+                List<String> ids = quizSection.getChildren().stream()
+                        .filter(c -> c instanceof IsaacQuestionBaseDTO)
+                        .map(c -> c.getId())
+                        .collect(Collectors.toList());
+                questionIds.addAll(ids);
+            }
+        }
+        return questionIds;
     }
 
     /**
@@ -1239,13 +1427,13 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/assignment/{quizAssignmentId}/attempt/{userId}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "View a quiz assignment attempt.")
+    @ApiOperation(value = "View a test assignment attempt.")
     public final Response getQuizAssignmentAttempt(@Context final HttpServletRequest httpServletRequest,
                                                    @PathParam("quizAssignmentId") Long quizAssignmentId,
                                                    @PathParam("userId") Long userId) {
 
         if (null == quizAssignmentId || null == userId) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid quiz assignment and user id id.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid test assignment and user id id.").toResponse();
         }
 
         try {
@@ -1268,7 +1456,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             if (!groupManager.isUserInGroup(student, group)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
-                    "That student is not in the group that was assigned this quiz.").toResponse();
+                    "That student is not in the group that was assigned this test.").toResponse();
             }
 
             if (!associationManager.hasPermission(user, student)) {
@@ -1280,12 +1468,16 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             if (quizAttempt == null || quizAttempt.getCompletedDate() == null) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
-                    "That student has not completed this quiz assignment.").toResponse();
+                    "That student has not completed this test assignment.").toResponse();
             }
 
-            quizAttempt = augmentAttempt(quizAttempt, assignment, true);
+            IsaacQuizDTO quiz = quizManager.findQuiz(quizAttempt.getQuizId());
 
-            return Response.ok(quizAttempt)
+            quizAttempt = quizQuestionManager.augmentFeedbackFor(quizAttempt, quiz, QuizFeedbackMode.DETAILED_FEEDBACK);
+
+            QuizAttemptFeedbackDTO quizAttemptFeedback = new QuizAttemptFeedbackDTO(userManager.convertToUserSummaryObject(student), quizAttempt);
+
+            return Response.ok(quizAttemptFeedback)
                 .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
                 .build();
         } catch (NoUserLoggedInException e) {
@@ -1293,12 +1485,12 @@ public class QuizFacade extends AbstractIsaacFacade {
         } catch (AssignmentCancelledException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "This assignment has been cancelled.").toResponse();
         } catch (SegueDatabaseException e) {
-            String message = "Database error whilst viewing quiz assignment attempt";
+            String message = "Database error whilst viewing test assignment attempt";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (ContentManagerException e) {
             log.error("Content error whilst viewing quiz assignment attempt", e);
-            return SegueErrorResponse.getResourceNotFoundResponse("This quiz has become unavailable.");
+            return SegueErrorResponse.getResourceNotFoundResponse("This test has become unavailable.");
         } catch (NoUserException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "That user does not exist.").toResponse();
         }
@@ -1307,33 +1499,32 @@ public class QuizFacade extends AbstractIsaacFacade {
     /**
      * Allows a teacher to update a quiz assignment.
      *
-     * Only changes to the feedbackMode field are accepted. A bad request error will be thrown if any other fields are set.
+     * Only changes to the feedbackMode and dueDate fields are accepted. A bad request error will be thrown if any other fields are set.
      *
      * @param httpServletRequest so that we can extract user information.
      * @param quizAssignmentId the id of the assignment to update.
-     * @param clientQuizAssignment a partial object with new values for the quiz assignment (only feedbackMode may be set.)
+     * @param clientQuizAssignment a partial object with new values for the quiz assignment (only feedbackMode and dueDate may be set.)
      *
      * @return Confirmation or error.
      */
     @POST
     @Path("/assignment/{quizAssignmentId}")
-    @ApiOperation(value = "Update a quiz assignment (only feedbackMode may be updated).")
+    @ApiOperation(value = "Update a test assignment (only feedbackMode and dueDate may be updated).")
     public final Response updateQuizAssignment(@Context final HttpServletRequest httpServletRequest,
                                                @PathParam("quizAssignmentId") Long quizAssignmentId,
                                                final QuizAssignmentDTO clientQuizAssignment) {
 
         if (null == quizAssignmentId) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid quiz assignment id.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid test assignment id.").toResponse();
         }
 
         if (   clientQuizAssignment.getId() != null
             || clientQuizAssignment.getQuizId() != null
             || clientQuizAssignment.getGroupId() != null
             || clientQuizAssignment.getOwnerUserId() != null
-            || clientQuizAssignment.getCreationDate() != null
-            || clientQuizAssignment.getDueDate() != null)
+            || clientQuizAssignment.getCreationDate() != null)
         {
-            log.warn("Attempt to change fields for quiz assignment id {} that aren't feedbackMode: {}", quizAssignmentId, clientQuizAssignment);
+            log.warn("Attempt to change fields for test assignment id {} that aren't feedbackMode or dueDate: {}", quizAssignmentId, clientQuizAssignment);
             return new SegueErrorResponse(Status.BAD_REQUEST, "Those fields are not editable.").toResponse();
         }
 
@@ -1349,7 +1540,45 @@ public class QuizFacade extends AbstractIsaacFacade {
             if (!canManageAssignment(assignment, user)) return new SegueErrorResponse(Status.FORBIDDEN,
                 "You can only updates assignments to groups you own or manage.").toResponse();
 
+            if (assignment.getDueDate() != null && clientQuizAssignment.getDueDate() != null && clientQuizAssignment.getDueDate().compareTo(assignment.getDueDate()) <= 0) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "You can only extend due dates into the future.").toResponse();
+            }
+
             quizAssignmentManager.updateAssignment(assignment, clientQuizAssignment);
+
+            if (assignment.getDueDate() != null && clientQuizAssignment.getDueDate() != null &&
+                assignment.getDueDate().compareTo(clientQuizAssignment.getDueDate()) != 0) {
+                Map<String, Object> eventDetails = ImmutableMap.of(
+                        QUIZ_ID_FKEY, assignment.getQuizId(),
+                        GROUP_FK, assignment.getGroupId(),
+                        QUIZ_ASSIGNMENT_FK, assignment.getId(),
+                        QUIZ_OLD_DUEDATE, assignment.getDueDate(),
+                        ASSIGNMENT_DUEDATE_FK, clientQuizAssignment.getDueDate()
+                );
+                this.getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.UPDATE_QUIZ_DEADLINE, eventDetails);
+            } else if (assignment.getDueDate() == null && clientQuizAssignment.getDueDate() != null) {
+                Map<String, Object> eventDetails = ImmutableMap.of(
+                        QUIZ_ID_FKEY, assignment.getQuizId(),
+                        GROUP_FK, assignment.getGroupId(),
+                        QUIZ_ASSIGNMENT_FK, assignment.getId(),
+                        QUIZ_OLD_DUEDATE, "NO_DUE_DATE",
+                        ASSIGNMENT_DUEDATE_FK, clientQuizAssignment.getDueDate()
+                );
+                this.getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.UPDATE_QUIZ_DEADLINE, eventDetails);
+            }
+
+            if (assignment.getQuizFeedbackMode() != null && clientQuizAssignment.getQuizFeedbackMode() != null &&
+                assignment.getQuizFeedbackMode().compareTo(clientQuizAssignment.getQuizFeedbackMode()) != 0) {
+                Map<String, Object> eventDetails = ImmutableMap.of(
+                        QUIZ_ID_FKEY, assignment.getQuizId(),
+                        GROUP_FK, assignment.getGroupId(),
+                        QUIZ_ASSIGNMENT_FK, assignment.getId(),
+                        QUIZ_OLD_FEEDBACK_MODE, assignment.getQuizFeedbackMode(),
+                        QUIZ_FEEDBACK_MODE, clientQuizAssignment.getQuizFeedbackMode()
+                );
+                this.getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.UPDATE_QUIZ_FEEDBACK_MODE, eventDetails);
+            }
 
             return Response.noContent().build();
         } catch (NoUserLoggedInException e) {
@@ -1357,7 +1586,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         } catch (AssignmentCancelledException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "This assignment is already cancelled.").toResponse();
         } catch (SegueDatabaseException e) {
-            String message = "Database error whilst updating quiz assignment";
+            String message = "Database error whilst updating test assignment";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         }
@@ -1373,12 +1602,12 @@ public class QuizFacade extends AbstractIsaacFacade {
      */
     @DELETE
     @Path("/assignment/{quizAssignmentId}")
-    @ApiOperation(value = "Cancel a quiz assignment.")
+    @ApiOperation(value = "Cancel a test assignment.")
     public final Response cancelQuizAssignment(@Context final HttpServletRequest httpServletRequest,
                                                @PathParam("quizAssignmentId") Long quizAssignmentId) {
 
         if (null == quizAssignmentId) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid quiz assignment id.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid test assignment id.").toResponse();
         }
 
         try {
@@ -1395,13 +1624,20 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             quizAssignmentManager.cancelAssignment(assignment);
 
+            Map<String, Object> eventDetails = ImmutableMap.of(
+                    QUIZ_ID_FKEY, assignment.getQuizId(),
+                    QUIZ_ASSIGNMENT_FK, assignment.getId().toString(),
+                    ASSIGNMENT_DUEDATE_FK, assignment.getDueDate() == null ? "NO_DUE_DATE" : assignment.getDueDate()
+            );
+            getLogManager().logEvent(user, httpServletRequest, Constants.IsaacServerLogType.DELETE_QUIZ_ASSIGNMENT, eventDetails);
+
             return Response.noContent().build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (AssignmentCancelledException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "This assignment is already cancelled.").toResponse();
         } catch (SegueDatabaseException e) {
-            String message = "Database error whilst cancelling quiz assignment";
+            String message = "Database error whilst cancelling test assignment";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         }
@@ -1413,7 +1649,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         QuizAssignmentDTO quizAssignment = getQuizAssignment(quizAttempt);
 
         if (quizAssignment != null && quizAssignment.getDueDate() != null && quizAssignment.getDueDate().before(new Date())) {
-            throw new ErrorResponseWrapper(new SegueErrorResponse(Status.FORBIDDEN, "The due date for this quiz has passed."));
+            throw new ErrorResponseWrapper(new SegueErrorResponse(Status.FORBIDDEN, "The due date for this test has passed."));
         }
 
         return quizAssignment;
@@ -1432,7 +1668,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         QuizAttemptDTO quizAttempt = getQuizAttemptForUser(quizAttemptId, user);
 
         if (quizAttempt.getCompletedDate() != null) {
-            throw new ErrorResponseWrapper(new SegueErrorResponse(Status.FORBIDDEN, "You have completed this quiz."));
+            throw new ErrorResponseWrapper(new SegueErrorResponse(Status.FORBIDDEN, "You have completed this test."));
         }
         return quizAttempt;
     }
@@ -1442,7 +1678,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         QuizAttemptDTO quizAttempt = getQuizAttemptForUser(quizAttemptId, user);
 
         if (quizAttempt.getCompletedDate() == null) {
-            throw new ErrorResponseWrapper(new SegueErrorResponse(Status.FORBIDDEN, "You have not completed this quiz."));
+            throw new ErrorResponseWrapper(new SegueErrorResponse(Status.FORBIDDEN, "You have not completed this test."));
         }
         return quizAttempt;
     }
@@ -1453,14 +1689,14 @@ public class QuizFacade extends AbstractIsaacFacade {
         QuizAttemptDTO quizAttempt = this.getQuizAttempt(quizAttemptId);
 
         if (!quizAttempt.getUserId().equals(user.getId())) {
-            throw new ErrorResponseWrapper(new SegueErrorResponse(Status.FORBIDDEN, "This is not your quiz attempt."));
+            throw new ErrorResponseWrapper(new SegueErrorResponse(Status.FORBIDDEN, "This is not your test attempt."));
         }
         return quizAttempt;
     }
 
     private QuizAttemptDTO getQuizAttempt(Long quizAttemptId) throws ErrorResponseWrapper, SegueDatabaseException {
         if (null == quizAttemptId) {
-            throw new ErrorResponseWrapper(new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid quiz attempt id."));
+            throw new ErrorResponseWrapper(new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid test attempt id."));
         }
 
         return this.quizAttemptManager.getById(quizAttemptId);

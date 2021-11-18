@@ -21,7 +21,9 @@ import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
 import com.google.inject.Inject;
+import com.google.inject.Injector;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.MapBinder;
@@ -30,14 +32,34 @@ import com.google.inject.name.Names;
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.SystemUtils;
 import org.elasticsearch.client.Client;
+import org.quartz.SchedulerException;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAssignmentManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
+import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
+import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
+import uk.ac.cam.cl.dtg.isaac.api.services.GroupChangedService;
+import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.IAssignmentPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.IQuizAssignmentPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.IQuizAttemptPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.IQuizQuestionAttemptPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.PgAssignmentPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.PgQuizAssignmentPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.PgQuizAttemptPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.PgQuizQuestionAttemptPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicChemistryValidator;
+import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicLogicValidator;
+import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicValidator;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.ExternalAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.IExternalAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.IGroupObserver;
 import uk.ac.cam.cl.dtg.segue.api.managers.IStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.ITransactionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.IUserAccountManager;
@@ -103,6 +125,7 @@ import uk.ac.cam.cl.dtg.segue.quiz.PgQuestionAttempts;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueScheduledDatabaseScriptJob;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueScheduledJob;
+import uk.ac.cam.cl.dtg.segue.scheduler.jobs.SegueScheduledSyncMailjetUsersJob;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -117,6 +140,7 @@ import javax.servlet.ServletContextListener;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
@@ -132,6 +156,8 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType.*;
 public class SegueGuiceConfigurationModule extends AbstractModule implements ServletContextListener {
     private static final Logger log = LoggerFactory.getLogger(SegueGuiceConfigurationModule.class);
 
+    private static Injector injector = null;
+
     private static PropertiesLoader globalProperties = null;
 
     // Singletons - we only ever want there to be one instance of each of these.
@@ -144,21 +170,20 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static IQuestionAttemptManager questionPersistenceManager = null;
     private static SegueJobService segueJobService = null;
 
-    //private static ILogManager logManager;
     private static LogManagerEventPublisher logManager;
     private static EmailManager emailCommunicationQueue = null;
     private static IMisuseMonitor misuseMonitor = null;
     private static IMetricsExporter metricsExporter = null;
     private static StatisticsManager statsManager = null;
-    //private static IStatisticsManager statsManager = null;
     private static GroupManager groupManager = null;
-    private static IUserAlerts userAlerts = null;
-    private static IUserStreaksManager userStreaksManager = null;
-    private static IUserBadgePersistenceManager userBadgePersitenceManager = null;
     private static IExternalAccountManager externalAccountManager = null;
+    private static GameboardPersistenceManager gameboardPersistenceManager = null;
+    private static SchoolListReader schoolListReader = null;
+    private static AssignmentManager assignmentManager = null;
+    private static IGroupObserver groupObserver = null;
 
     private static Collection<Class<? extends ServletContextListener>> contextListeners;
-    private static Map<String, Reflections> reflections = com.google.common.collect.Maps.newHashMap();
+    private static final Map<String, Reflections> reflections = com.google.common.collect.Maps.newHashMap();
 
     /**
      * Create a SegueGuiceConfigurationModule.
@@ -270,8 +295,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                         .getProperty(Constants.REMOTE_GIT_SSH_KEY_PATH)));
 
         bind(IUserGroupPersistenceManager.class).to(PgUserGroupPersistenceManager.class);
-
         bind(IAssociationDataManager.class).to(PgAssociationDataManager.class);
+        bind(IAssignmentPersistenceManager.class).to(PgAssignmentPersistenceManager.class);
+        bind(IQuizAssignmentPersistenceManager.class).to(PgQuizAssignmentPersistenceManager.class);
+        bind(IQuizAttemptPersistenceManager.class).to(PgQuizAttemptPersistenceManager.class);
+        bind(IQuizQuestionAttemptPersistenceManager.class).to(PgQuizQuestionAttemptPersistenceManager.class);
+        bind(IUserBadgePersistenceManager.class).to(PgUserBadgePersistenceManager.class);
     }
 
     /**
@@ -337,6 +366,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
         bind(IUserAlerts.class).to(PgUserAlerts.class);
 
+        bind(IUserStreaksManager.class).to(PgUserStreakManager.class);
+
         bind(IStatisticsManager.class).to(StatisticsManager.class);
 
         bind(ITransactionManager.class).to(PgTransactionManager.class);
@@ -369,14 +400,14 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     /**
      * This provides a singleton of the elasticSearch client that can be used by Guice.
      *
-     * The client is threadsafe so we don't need to keep creating new ones.
+     * The client is threadsafe, so we don't need to keep creating new ones.
      *
      * @param clusterName
      *            - The name of the cluster to create.
      * @param address
      *            - address of the cluster to create.
      * @param port
-     *            - port of the custer to create.
+     *            - port of the cluster to create.
      * @return Client to be injected into ElasticSearch Provider.
      */
     @Inject
@@ -458,12 +489,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                                              final LocationManager lhm) {
 
         if (null == logManager) {
-            //logManager = new MongoLogManager(database, new ObjectMapper(), loggingEnabled, lhm);
-
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-            //logManager = new PgLogManager(database, objectMapper, loggingEnabled, lhm);
-
             logManager = new PgLogManagerEventListener(new PgLogManager(database, objectMapper, loggingEnabled, lhm));
 
             log.info("Creating singleton of LogManager");
@@ -488,7 +515,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Singleton
     private static ContentMapper getContentMapper() {
         if (null == mapper) {
-            mapper = new ContentMapper(getReflectionsClass("uk.ac.cam.cl.dtg.segue"));
+            mapper = new ContentMapper(getReflectionsClass("uk.ac.cam.cl.dtg"));
             log.info("Creating Singleton of the Content Mapper");
         }
 
@@ -529,8 +556,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *
      * Note: This has to be a singleton because it manages all emails sent using this JVM.
      *
-     * @param database
-     * 			- the database to access preferences
      * @param properties
      * 			- the properties so we can generate email
      * @param emailCommunicator
@@ -539,8 +564,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      * 			- the class providing email preferences
      * @param contentManager
      * 			- the content so we can access email templates
-     * @param authenticator
-     * 			- the authenticator
      * @param logManager
      * 			- the logManager to log email sent
      * @return an instance of the queue
@@ -548,10 +571,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     @Singleton
-    private static EmailManager getMessageCommunicationQueue(final IUserDataManager database,
-                                                             final PropertiesLoader properties, final EmailCommunicator emailCommunicator,
+    private static EmailManager getMessageCommunicationQueue(final PropertiesLoader properties, final EmailCommunicator emailCommunicator,
                                                              final AbstractUserPreferenceManager userPreferenceManager,
-                                                             final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final SegueLocalAuthenticator authenticator,
+                                                             final IContentManager contentManager,
                                                              final ILogManager logManager) {
 
         Map<String, String> globalTokens = Maps.newHashMap();
@@ -581,7 +603,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     /**
      * This provides a singleton of the UserManager for various facades.
      *
-     * Note: This has to be a a singleton as the User Manager keeps a temporary cache of anonymous users.
+     * Note: This has to be a singleton as the User Manager keeps a temporary cache of anonymous users.
      *
      * @param database
      *            - the user persistence manager.
@@ -610,7 +632,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     /**
      * This provides a singleton of the UserManager for various facades.
      *
-     * Note: This has to be a a singleton as the User Manager keeps a temporary cache of anonymous users.
+     * Note: This has to be a singleton as the User Manager keeps a temporary cache of anonymous users.
      *
      * @param database
      *            - the user persistence manager.
@@ -699,6 +721,19 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         }
 
         return groupManager;
+    }
+
+
+    @Inject
+    @Provides
+    @Singleton
+    private IGroupObserver getGroupObserver(EmailManager emailManager, GroupManager groupManager, UserAccountManager userManager,
+                                            AssignmentManager assignmentManager, QuizAssignmentManager quizAssignmentManager) {
+        if (null == groupObserver) {
+            groupObserver = new GroupChangedService(emailManager, groupManager, userManager, assignmentManager, quizAssignmentManager);
+            log.info("Creating singleton of GroupObserver");
+        }
+        return groupObserver;
     }
 
     /**
@@ -819,41 +854,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     }
 
     /**
-     * Gets instance of user badge database liason manager
-     *
-     * @param postgresDB database
-     * @return concrete instance of IUserBadgePersistenceManager
-     */
-    @Provides
-    @Singleton
-    @Inject
-    private static IUserBadgePersistenceManager getUserBadgePersistenceManager(final PostgresSqlDb postgresDB) {
-
-        if (null == userBadgePersitenceManager) {
-            userBadgePersitenceManager = new PgUserBadgePersistenceManager(postgresDB);
-        }
-        return userBadgePersitenceManager;
-    }
-
-
-    /**
-     * Gets instance of the user streaks manager
-     *
-     * @param postgresDB database
-     * @return concrete instance of IUserStreaksManager
-     */
-    @Provides
-    @Singleton
-    @Inject
-    private static IUserStreaksManager getUserStreaksManager(final PostgresSqlDb postgresDB) {
-
-        if (null == userStreaksManager) {
-            userStreaksManager = new PgUserStreakManager(postgresDB);
-        }
-        return userStreaksManager;
-    }
-
-    /**
      * Gets the instance of the StatisticsManager. Note: this class is a hack and needs to be refactored.... It is
      * currently only a singleton as it keeps a cache.
      *
@@ -880,11 +880,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                                                      final ILogManager logManager, final SchoolListReader schoolManager,
                                                      final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final LocationManager locationHistoryManager,
                                                      final GroupManager groupManager, final QuestionManager questionManager,
+                                                     final ContentSummarizerService contentSummarizerService,
                                                      final IUserStreaksManager userStreaksManager) {
 
         if (null == statsManager) {
             statsManager = new StatisticsManager(userManager, logManager, schoolManager, contentManager, contentIndex,
-                    locationHistoryManager, groupManager, questionManager, userStreaksManager);
+                    locationHistoryManager, groupManager, questionManager, contentSummarizerService, userStreaksManager);
             log.info("Created Singleton of Statistics Manager");
         }
 
@@ -894,8 +895,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     @Inject
-    private static SegueJobService getSegueJobService(final PostgresSqlDb database) {
+    private static SegueJobService getSegueJobService(final PropertiesLoader properties, final PostgresSqlDb database) throws SchedulerException {
         if (null == segueJobService) {
+            String mailjetKey = properties.getProperty(MAILJET_API_KEY);
+            String mailjetSecret = properties.getProperty(MAILJET_API_SECRET);
+
             SegueScheduledJob PIISQLJob = new SegueScheduledDatabaseScriptJob(
                     "PIIDeleteScheduledJob",
                     "SQLMaintenance",
@@ -914,7 +918,23 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                     "SQL scheduled job that deletes expired reservations for the event booking system",
                     "0 0 7 * * ?", "db_scripts/scheduled/expired-reservations-clean-up.sql");
 
-            segueJobService = new SegueJobService(Arrays.asList(PIISQLJob, cleanUpOldAnonymousUsers, cleanUpExpiredReservations));
+            SegueScheduledJob syncMailjetUsers = new SegueScheduledSyncMailjetUsersJob(
+                    "syncMailjetUsersJob",
+                    "JavaJob",
+                    "Sync users to mailjet",
+                    "0 0 0/4 ? * * *");
+
+            Collection<SegueScheduledJob> configuredScheduledJobs = new ArrayList<>(Arrays.asList(PIISQLJob, cleanUpOldAnonymousUsers, cleanUpExpiredReservations));
+
+            if (mailjetKey != null && mailjetSecret != null) {
+                configuredScheduledJobs.add(syncMailjetUsers);
+            }
+
+            segueJobService = new SegueJobService(configuredScheduledJobs);
+
+            if (mailjetKey == null && mailjetSecret == null) {
+                segueJobService.removeScheduleJob(syncMailjetUsers);
+            }
             log.info("Created Segue Job Manager for scheduled jobs");
         }
 
@@ -960,6 +980,131 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     private IPLocationResolver getIPLocator(@Named(Constants.IP_INFO_DB_API_KEY) final String apiKey) {
         return new IPInfoDBLocationResolver(apiKey);
+    }
+
+    /**
+     * Gets a Game persistence manager.
+     *
+     * This needs to be a singleton as it maintains temporary boards in memory.
+     *
+     * @param database
+     *            - the database that persists gameboards.
+     * @param contentManager
+     *            - api that the game manager can use for content resolution.
+     * @param mapper
+     *            - an instance of an auto mapper for translating gameboard DOs and DTOs efficiently.
+     * @param objectMapper
+     *            - a mapper to allow content to be resolved.
+     * @param uriManager
+     *            - so that the we can create content that is aware of its own location
+     * @return Game persistence manager object.
+     */
+    @Inject
+    @Provides
+    @Singleton
+    private static GameboardPersistenceManager getGameboardPersistenceManager(final PostgresSqlDb database,
+                                                                              final IContentManager contentManager, final MapperFacade mapper, final ObjectMapper objectMapper,
+                                                                              final URIManager uriManager, @Named(CONTENT_INDEX) final String contentIndex) {
+        if (null == gameboardPersistenceManager) {
+            gameboardPersistenceManager = new GameboardPersistenceManager(database, contentManager, mapper,
+                    objectMapper, uriManager, contentIndex);
+            log.info("Creating Singleton of GameboardPersistenceManager");
+        }
+
+        return gameboardPersistenceManager;
+    }
+
+    /**
+     * Gets an assignment manager.
+     *
+     * This needs to be a singleton because operations like emailing are run for each IGroupObserver, the
+     * assignment manager should only be one observer.
+     *
+     * @param assignmentPersistenceManager
+     *            - to save assignments
+     * @param groupManager
+     *            - to allow communication with the group manager.
+     * @param emailService
+     *            - email service
+     * @param gameManager
+     *            - the game manager object
+     * @param properties
+     *            - properties loader for the service's hostname
+     * @return Assignment manager object.
+     */
+    @Inject
+    @Provides
+    @Singleton
+    private static AssignmentManager getAssignmentManager(
+            final IAssignmentPersistenceManager assignmentPersistenceManager, final GroupManager groupManager,
+            final EmailService emailService, final GameManager gameManager, final PropertiesLoader properties) {
+        if (null == assignmentManager) {
+            assignmentManager =  new AssignmentManager(assignmentPersistenceManager, groupManager, emailService, gameManager, properties);
+            log.info("Creating Singleton AssignmentManager");
+        }
+        return assignmentManager;
+    }
+
+    /**
+     * Gets an instance of the symbolic question validator.
+     *
+     * @return IsaacSymbolicValidator preconfigured to work with the specified checker.
+     */
+    @Provides
+    @Singleton
+    @Inject
+    private static IsaacSymbolicValidator getSymbolicValidator(PropertiesLoader properties) {
+
+        return new IsaacSymbolicValidator(properties.getProperty(Constants.EQUALITY_CHECKER_HOST),
+                properties.getProperty(Constants.EQUALITY_CHECKER_PORT));
+    }
+
+    /**
+     * Gets an instance of the chemistry question validator.
+     *
+     * @return IsaacSymbolicChemistryValidator preconfigured to work with the specified checker.
+     */
+    @Provides
+    @Singleton
+    @Inject
+    private static IsaacSymbolicChemistryValidator getSymbolicChemistryValidator(PropertiesLoader properties) {
+
+        return new IsaacSymbolicChemistryValidator(properties.getProperty(Constants.CHEMISTRY_CHECKER_HOST),
+                properties.getProperty(Constants.CHEMISTRY_CHECKER_PORT));
+    }
+
+    /**
+     * Gets an instance of the symbolic logic question validator.
+     *
+     * @return IsaacSymbolicLogicValidator preconfigured to work with the specified checker.
+     */
+    @Provides
+    @Singleton
+    @Inject
+    private static IsaacSymbolicLogicValidator getSymbolicLogicValidator(PropertiesLoader properties) {
+
+        return new IsaacSymbolicLogicValidator(properties.getProperty(Constants.EQUALITY_CHECKER_HOST),
+                properties.getProperty(Constants.EQUALITY_CHECKER_PORT));
+    }
+
+    /**
+     * This provides a singleton of the SchoolListReader for use by segue backed applications..
+     *
+     * We want this to be a singleton as otherwise it may not be threadsafe for loading into same SearchProvider.
+     *
+     * @param provider
+     *            - The search provider.
+     * @return schoolList reader
+     */
+    @Inject
+    @Provides
+    @Singleton
+    private SchoolListReader getSchoolListReader(final ISearchProvider provider) {
+        if (null == schoolListReader) {
+            schoolListReader = new SchoolListReader(provider);
+            log.info("Creating singleton of SchoolListReader");
+        }
+        return schoolListReader;
     }
 
     /**
@@ -1028,5 +1173,17 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
         postgresDB.close();
         postgresDB = null;
+    }
+
+    /**
+     * Factory method for providing a single Guice Injector class.
+     *
+     * @return a Guice Injector configured with this SegueGuiceConfigurationModule.
+     */
+    public static synchronized Injector getGuiceInjector() {
+        if (null == injector) {
+            injector = Guice.createInjector(new SegueGuiceConfigurationModule());
+        }
+        return injector;
     }
 }

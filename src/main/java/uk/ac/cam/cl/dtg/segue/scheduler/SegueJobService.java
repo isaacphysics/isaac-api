@@ -20,6 +20,7 @@ import org.quartz.CronTrigger;
 import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
+import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.TriggerBuilder;
@@ -79,6 +80,21 @@ public class SegueJobService implements ServletContextListener {
         for (SegueScheduledJob s : allJobs) {
             this.registerScheduleJob(s);
         }
+    }
+
+    public void removeScheduleJob(final SegueScheduledJob jobToRemove) throws SchedulerException {
+        JobDetail job = JobBuilder.newJob(jobToRemove.getExecutableTask().getClass())
+                .withIdentity(jobToRemove.getJobKey(),jobToRemove.getJobGroupName())
+                .setJobData(new JobDataMap(jobToRemove.getExecutionContext()))
+                .withDescription(jobToRemove.getJobDescription()).build();
+
+        scheduler.getContext().remove(jobToRemove.getExecutableTask().getClass().getName(), jobToRemove.getExecutionContext());
+
+        scheduler.deleteJob(job.getKey());
+
+        localRegisteredJobs.remove(jobToRemove);
+
+        log.info(String.format("Fully removed job: %s", jobToRemove.getJobKey()));
     }
 
     /**

@@ -26,6 +26,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -33,11 +34,9 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.jboss.resteasy.annotations.GZIP;
-import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
-import uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import uk.ac.cam.cl.dtg.segue.api.managers.ExternalAccountSynchronisationException;
 import uk.ac.cam.cl.dtg.segue.api.managers.IExternalAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
@@ -75,11 +74,11 @@ import uk.ac.cam.cl.dtg.util.locations.LocationServerException;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeRadius;
 
 import javax.annotation.Nullable;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
-import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
@@ -94,9 +93,10 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.io.IOException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -293,7 +293,7 @@ public class AdminFacade extends AbstractSegueFacade {
 
     /**
      * This method will allow users' email verification status to be changed en-mass.
-     * 
+     *
      * @param request
      *            - to help determine access rights.
      * @param emailVerificationStatus
@@ -412,6 +412,54 @@ public class AdminFacade extends AbstractSegueFacade {
         return Response.ok().build();
     }
 
+    /* This method will allow users' email verification status to be changed en-mass.
+     *
+     * @param request
+     *            - to help determine access rights.
+     * @param webhookPayload
+     *            - a list of user webhookPayload that need to be changed
+     * @return Success shown by returning an ok response
+     */
+    @POST
+    @Path("/users/delivery_failed_notification")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Update a possible account email as delivery failed.",
+            notes = "This endpoint requires a valid HMAC from MailGun.")
+    public Response notifySingleDeliveryFailure(@Context final HttpServletRequest request,
+                                                final Map<String, Object> webhookPayload) {
+
+        String trustedSigningKey = getProperties().getProperty(MAILGUN_SECRET_KEY);
+        if (null == trustedSigningKey || trustedSigningKey.isEmpty()) {
+            return SegueErrorResponse.getNotImplementedResponse();
+        }
+        try {
+            final String hmacAlgorithm = "HmacSHA256";
+            Map<String, String> signatureJson = (Map<String, String>) webhookPayload.get("signature");
+            String dataToSign = signatureJson.get("timestamp").concat(signatureJson.get("token"));
+            SecretKeySpec signingKey = new SecretKeySpec(trustedSigningKey.getBytes(), hmacAlgorithm);
+            Mac mac = Mac.getInstance(hmacAlgorithm);
+            mac.init(signingKey);
+            byte[] rawHmac = mac.doFinal(dataToSign.getBytes());
+            String result = Hex.encodeHexString(rawHmac);
+            if (!result.equals(signatureJson.get("signature"))) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "Validation failed.").toResponse();
+            }
+            Map <String, Object> eventDetails = (Map<String, Object>) webhookPayload.get("event-data");
+
+            String recipientEmail = (String) eventDetails.get("recipient");
+
+            this.userManager.updateUserEmailVerificationStatus(recipientEmail, EmailVerificationStatus.DELIVERY_FAILED);
+
+            String remoteIpAddress = RequestIPExtractor.getClientIpAddr(request);
+            log.info(String.format("Request from (%s) updated the status of 1 email to DELIVERY_FAILED.", remoteIpAddress));
+
+            return Response.ok().build();
+        } catch (NoSuchAlgorithmException | InvalidKeyException | SegueDatabaseException | ClassCastException | NullPointerException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to process request.").toResponse();
+        }
+    }
+
     /** This method will allow users' email verification status to be changed en-mass.
      *
      * @param request
@@ -426,6 +474,8 @@ public class AdminFacade extends AbstractSegueFacade {
     @Path("/users/delivery_failed_notification/{providerToken}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Update a list of possible account emails as delivery failed.",
+            notes = "This endpoint expects the body to be in MailJet format.")
     public Response notifyExternalDeliveryFailure(@Context final HttpServletRequest request,
                                                 @PathParam("providerToken") final String providerToken,
                                                 final List<Map<String, Object>> eventDetailsList) {
@@ -478,6 +528,8 @@ public class AdminFacade extends AbstractSegueFacade {
     @Path("/users/unsubscription_notification/{providerToken}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Unsubscribe a list of possible account emails from an email type.",
+            notes = "This endpoint expects the body to be in MailJet format.")
     public Response notifyExternalUnsubscriptionEvent(@Context final HttpServletRequest request,
                                                 @PathParam("providerToken") final String providerToken,
                                                 final List<Map<String, Object>> eventDetailsList) {

@@ -37,6 +37,7 @@ import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.QuizSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.annotation.Nullable;
@@ -47,10 +48,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUIZ_TYPE;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.VISIBLE_TO_STUDENTS_FIELDNAME;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * This class will be responsible for managing quizzes.
@@ -107,7 +106,7 @@ public class QuizManager {
 
         ResultsWrapper<ContentDTO> content = this.contentService.findMatchingContent(null, fieldsToMatch, startIndex, limit);
 
-        return this.contentSummarizerService.extractContentSummaryFromResultsWrapper(content);
+        return this.contentSummarizerService.extractContentSummaryFromResultsWrapper(content, QuizSummaryDTO.class);
     }
 
     /**
@@ -121,7 +120,7 @@ public class QuizManager {
         Content cachedContent = contentManager.getContentDOById(this.contentManager.getCurrentContentSHA(), quizId);
 
         if (cachedContent == null) {
-            throw new ContentManagerException("Couldn't find quiz with id " + quizId);
+            throw new ContentManagerException("Couldn't find test with id " + quizId);
         }
 
         if (cachedContent instanceof IsaacQuiz) {
@@ -149,13 +148,13 @@ public class QuizManager {
             ContentSummaryDTO quiz = quizCache.get(quizId);
             if (quiz == null) {
                 try {
-                    quiz = this.contentManager.extractContentSummary(this.findQuiz(quizId));
+                    quiz = this.contentSummarizerService.extractContentSummary(this.findQuiz(quizId), QuizSummaryDTO.class);
                 } catch (ContentManagerException e) {
                     if (item instanceof QuizAttemptDTO) {
-                        log.warn("Attempt (" + ((QuizAttemptDTO) item).getId() +  ") exists with quiz ID ("
+                        log.warn("Attempt (" + ((QuizAttemptDTO) item).getId() +  ") exists with test ID ("
                             + item.getQuizId() + ") that does not exist!");
                     } else if (item instanceof QuizAssignmentDTO) {
-                        log.warn("Assignment (" + ((QuizAssignmentDTO) item).getId() +  ") exists with quiz ID ("
+                        log.warn("Assignment (" + ((QuizAssignmentDTO) item).getId() +  ") exists with test ID ("
                             + item.getQuizId() + ") that does not exist!");
                     }
                 }
@@ -178,7 +177,7 @@ public class QuizManager {
         if (properties.getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(Constants.EnvironmentType.DEV.name())) {
             for (ContentBaseDTO content : quiz.getChildren()) {
                 if (!(content instanceof IsaacQuizSectionDTO)) {
-                    throw new ContentManagerException("Quiz id " + quiz.getId() + " contains top-level non-section: " + content);
+                    throw new ContentManagerException("Test id " + quiz.getId() + " contains top-level non-section: " + content);
                 }
             }
             return quiz.getChildren().stream().map(c -> ((IsaacQuizSectionDTO) c)).collect(Collectors.toList());
@@ -187,7 +186,7 @@ public class QuizManager {
                 if (c instanceof IsaacQuizSectionDTO) {
                     return Stream.of((IsaacQuizSectionDTO) c);
                 } else {
-                    log.warn("Quiz id " + quiz.getId() + " contains top-level non-section with id " + c.getId());
+                    log.warn("Test id " + quiz.getId() + " contains top-level non-section with id " + c.getId());
                     return Stream.empty();
                 }
             }).collect(Collectors.toList());
