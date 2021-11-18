@@ -287,8 +287,9 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * @throws ContentManagerException
      * 				- a content management exception
      */
-    public void sendCustomContentEmail(final RegisteredUserDTO sendingUser, final EmailTemplateDTO emailTemplate, final List<RegisteredUserDTO> allSelectedUsers, final EmailType emailType) throws SegueDatabaseException,
-            ContentManagerException {
+    public void sendCustomContentEmail(final RegisteredUserDTO sendingUser, final EmailTemplateDTO emailTemplate,
+                                       final List<RegisteredUserDTO> allSelectedUsers,
+                                       final EmailType emailType) throws SegueDatabaseException, ContentManagerException {
         Validate.notNull(allSelectedUsers);
 
 

@@ -502,15 +502,15 @@ public class EmailFacade extends AbstractSegueFacade {
     /**
      * sendemailwithuserids allows sending an email to a given list of userids.
      *
-     * This method will return serialised html that displays an email object
+     * This method will return 200 ok
      *
      * @param request
      *            - so that we can allow only logged in users to view their own data.
      * @param emailTypeString
      *            - the type of e-mail that is being sent.
      * @param providedTemplate
-     *            - map which must contain the userIds and an EmailTemplateDTO
-     * @return Response object containing the serialized content object. (with no levels of recursion into the content)
+     *            - ContentEmailDTO as Json.
+     * @return 200 ok response
      */
     @POST
     @Path("/email/sendprovidedemailwithuserids/{emailtype}")
