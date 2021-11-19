@@ -30,6 +30,7 @@ import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -62,7 +63,7 @@ public class SegueJobService implements ServletContextListener {
             } else {
                 log.warn("Segue Job Service: Not starting due to readonly database.");
             }
-        } catch (SchedulerException e) {
+        } catch (SchedulerException | SQLException e) {
             throw new RuntimeException("Segue Job Service: Failed to schedule quartz jobs or start scheduler! Aborting!", e);
         }
     }
