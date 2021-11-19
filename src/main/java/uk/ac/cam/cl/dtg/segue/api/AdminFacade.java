@@ -34,6 +34,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.jboss.resteasy.annotations.GZIP;
+import org.quartz.SchedulerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
@@ -42,7 +43,6 @@ import uk.ac.cam.cl.dtg.segue.api.managers.IExternalAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.api.monitors.UserSearchMisuseHandler;
@@ -67,6 +67,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserIdMergeDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryForAdminUsersDTO;
 import uk.ac.cam.cl.dtg.segue.etl.GithubPushEventPayload;
+import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
@@ -128,9 +129,9 @@ public class AdminFacade extends AbstractSegueFacade {
 
     private final AbstractUserPreferenceManager userPreferenceManager;
     private final EventBookingManager eventBookingManager;
-    private final UserAssociationManager associationManager;
     private final IExternalAccountManager externalAccountManager;
     private final IMisuseMonitor misuseMonitor;
+    private final SegueJobService segueJobService;
 
     /**
      * Create an instance of the administrators facade.
@@ -151,8 +152,6 @@ public class AdminFacade extends AbstractSegueFacade {
      *            - for looking up school information
      * @param eventBookingManager
      *            - for using the event booking system
-     * @param associationManager
-     *            - so that we can create associations.
      * @param misuseMonitor
      *            - misuse monitor.
      */
@@ -161,7 +160,7 @@ public class AdminFacade extends AbstractSegueFacade {
                        final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final ILogManager logManager,
                        final StatisticsManager statsManager, final LocationManager locationManager,
                        final SchoolListReader schoolReader, final AbstractUserPreferenceManager userPreferenceManager,
-                       final EventBookingManager eventBookingManager, final UserAssociationManager associationManager,
+                       final EventBookingManager eventBookingManager, final SegueJobService segueJobService,
                        final IExternalAccountManager externalAccountManager, final IMisuseMonitor misuseMonitor) {
         super(properties, logManager);
         this.userManager = userManager;
@@ -172,9 +171,9 @@ public class AdminFacade extends AbstractSegueFacade {
         this.schoolReader = schoolReader;
         this.userPreferenceManager = userPreferenceManager;
         this.eventBookingManager = eventBookingManager;
-        this.associationManager = associationManager;
         this.externalAccountManager = externalAccountManager;
         this.misuseMonitor = misuseMonitor;
+        this.segueJobService = segueJobService;
     }
 
     /**
@@ -1249,7 +1248,7 @@ public class AdminFacade extends AbstractSegueFacade {
      *            - the misuse monitor eventLabel, i.e. what type of misuse monitor
      * @param agentIdentifier
      *            - the misuse monitor agentIdentifier, i.e. which user to reset the count for
-     * @return Confirmtation of success, or error message on incorrect role.
+     * @return Confirmation of success, or error message on incorrect role.
      */
     @POST
     @Path("/reset_misuse_monitor/{event_label}")
@@ -1298,6 +1297,30 @@ public class AdminFacade extends AbstractSegueFacade {
         } catch (ExternalAccountSynchronisationException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Fatal error while attempting to synchronise users!", e).toResponse();
+        }
+    }
+
+    @POST
+    @Path("/start_quartz")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Start the Quartz Job Scheduler service if not already started.")
+    public Response resetMisuseMonitor(@Context final HttpServletRequest request) {
+        try {
+            RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+            if (!isUserAnAdmin(userManager, user)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+            if (!segueJobService.isStarted()) {
+                segueJobService.initialiseService();
+                log.info(String.format("Admin user (%s) started Quartz scheduler successfully.", user.getEmail()));
+                return Response.ok(ImmutableMap.of("status", "Started successfully!")).build();
+            } else {
+                return Response.ok(ImmutableMap.of("status", "Already running.")).build();
+            }
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SchedulerException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, e.getMessage()).toResponse();
         }
     }
 }

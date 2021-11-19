@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.ws.rs.GET;
@@ -58,7 +59,7 @@ public class InfoFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(InfoFacade.class);
 
     private final IContentManager contentManager;
-    private final String contentIndex;
+    private final SegueJobService segueJobService;
 
     /**
      * @param properties
@@ -69,11 +70,12 @@ public class InfoFacade extends AbstractSegueFacade {
      *            - for logging events using the logging api.
      */
     @Inject
-    public InfoFacade(final PropertiesLoader properties, final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex,
+    public InfoFacade(final PropertiesLoader properties, final IContentManager contentManager,
+                      final SegueJobService segueJobService,
                       final ILogManager logManager) {
         super(properties, logManager);
         this.contentManager = contentManager;
-        this.contentIndex = contentIndex;
+        this.segueJobService = segueJobService;
     }
 
     /**
@@ -270,5 +272,22 @@ public class InfoFacade extends AbstractSegueFacade {
             return Response.ok(ImmutableMap.of("success", false)).build();
         }
 
+    }
+
+    /**
+     * This method checks the status of the Quartz job service.
+     *
+     * @return json success true or false
+     */
+    @GET
+    @Path("quartz/ping")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Check whether Quartz job scheduler is running.")
+    public Response pingQuartzScheduler() {
+        if (segueJobService.isStarted()) {
+            return Response.ok(ImmutableMap.of("success", true)).build();
+        } else {
+            return Response.ok(ImmutableMap.of("success", false)).build();
+        }
     }
 }
