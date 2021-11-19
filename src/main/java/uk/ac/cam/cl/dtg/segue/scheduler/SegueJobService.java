@@ -135,7 +135,7 @@ public class SegueJobService implements ServletContextListener {
     /**
      *  Attempt to register all known jobs and start the scheduler service.
      */
-    public void initialiseService() throws SchedulerException {
+    public synchronized void initialiseService() throws SchedulerException {
         if (!isStarted()) {
             this.registerScheduledJobs(allKnownJobs);
             scheduler.start();
