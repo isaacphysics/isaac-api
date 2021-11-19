@@ -1304,7 +1304,7 @@ public class AdminFacade extends AbstractSegueFacade {
     @Path("/start_quartz")
     @Produces(MediaType.APPLICATION_JSON)
     @ApiOperation(value = "Start the Quartz Job Scheduler service if not already started.")
-    public Response resetMisuseMonitor(@Context final HttpServletRequest request) {
+    public Response startQuartzJobService(@Context final HttpServletRequest request) {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
             if (!isUserAnAdmin(userManager, user)) {
