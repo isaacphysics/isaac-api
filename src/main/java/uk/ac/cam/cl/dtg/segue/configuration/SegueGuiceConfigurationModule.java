@@ -925,7 +925,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                     "Sync users to mailjet",
                     "0 0 0/4 ? * * *");
 
-            List<SegueScheduledJob> configuredScheduledJobs = new ArrayList<>(Arrays.asList(PIISQLJob, cleanUpOldAnonymousUsers, cleanUpExpiredReservations));
+            List<SegueScheduledJob> configuredScheduledJobs = Arrays.asList(PIISQLJob, cleanUpOldAnonymousUsers, cleanUpExpiredReservations);
 
             if (mailjetKey != null && mailjetSecret != null) {
                 configuredScheduledJobs.add(syncMailjetUsers);
