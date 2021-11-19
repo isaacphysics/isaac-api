@@ -143,6 +143,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -924,18 +925,17 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                     "Sync users to mailjet",
                     "0 0 0/4 ? * * *");
 
-            Collection<SegueScheduledJob> configuredScheduledJobs = new ArrayList<>(Arrays.asList(PIISQLJob, cleanUpOldAnonymousUsers, cleanUpExpiredReservations));
+            List<SegueScheduledJob> configuredScheduledJobs = Arrays.asList(PIISQLJob, cleanUpOldAnonymousUsers, cleanUpExpiredReservations);
 
             if (mailjetKey != null && mailjetSecret != null) {
                 configuredScheduledJobs.add(syncMailjetUsers);
             }
 
-            segueJobService = new SegueJobService(configuredScheduledJobs);
+            segueJobService = new SegueJobService(configuredScheduledJobs, database);
 
             if (mailjetKey == null && mailjetSecret == null) {
                 segueJobService.removeScheduleJob(syncMailjetUsers);
             }
-            log.info("Created Segue Job Manager for scheduled jobs");
         }
 
         return segueJobService;

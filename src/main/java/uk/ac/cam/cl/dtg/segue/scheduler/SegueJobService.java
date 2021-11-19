@@ -20,16 +20,17 @@ import org.quartz.CronTrigger;
 import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
-import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.TriggerBuilder;
 import org.quartz.impl.StdSchedulerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -40,34 +41,30 @@ public class SegueJobService implements ServletContextListener {
 
     private final Scheduler scheduler;
 
+    private final List<SegueScheduledJob> allKnownJobs;
     private final List<SegueScheduledJob> localRegisteredJobs;
 
     private static final Logger log = LoggerFactory.getLogger(SegueJobService.class);
 
     /**
      * A job manager that can execute jobs on a schedule or by trigger.
-     * @param staticallyConfiguredScheduledJobs Collection of statically configured jobs
+     * @param allKnownJobs Collection of jobs to register
      */
     @Inject
-    public SegueJobService(Collection<SegueScheduledJob> staticallyConfiguredScheduledJobs) {
+    public SegueJobService(List<SegueScheduledJob> allKnownJobs, PostgresSqlDb database) {
+        this.allKnownJobs = allKnownJobs;
         this.localRegisteredJobs = new ArrayList<>();
         StdSchedulerFactory stdSchedulerFactory = new StdSchedulerFactory();
 
         try {
             scheduler = stdSchedulerFactory.getScheduler();
-
-        } catch (SchedulerException e) {
-            throw new RuntimeException("Unable to initialise the scheduler", e);
-        }
-
-        // try to schedule / reschedule jobs
-        try {
-            // register statically configured jobs
-            this.registerScheduledJobs(staticallyConfiguredScheduledJobs);
-
-            scheduler.start();
-        } catch (SchedulerException e) {
-            log.error("Scheduler ERROR - Unable to to schedule quartz jobs or start scheduler on this API instance. Aborting...", e);
+            if (!database.isReadOnlyReplica()) {
+                initialiseService();
+            } else {
+                log.warn("Segue Job Service: Not starting due to readonly database.");
+            }
+        } catch (SchedulerException | SQLException e) {
+            throw new RuntimeException("Segue Job Service: Failed to schedule quartz jobs or start scheduler! Aborting!", e);
         }
     }
 
@@ -127,15 +124,33 @@ public class SegueJobService implements ServletContextListener {
         localRegisteredJobs.add(jobToRegister);
     }
 
+    public boolean isStarted() {
+        try {
+            return scheduler.isStarted();
+        } catch (SchedulerException e) {
+            return false;
+        }
+    }
+
+    /**
+     *  Attempt to register all known jobs and start the scheduler service.
+     */
+    public synchronized void initialiseService() throws SchedulerException {
+        if (!isStarted()) {
+            this.registerScheduledJobs(allKnownJobs);
+            scheduler.start();
+            log.info("Segue Job Service started.");
+        }
+    }
+
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent) {
-        log.info("Segue Job Service Initialised");
     }
 
     @Override
     public void contextDestroyed(ServletContextEvent servletContextEvent) {
         try {
-            log.info("Shutting down segue scheduler");
+            log.info("Shutting down Segue Job Service");
             this.scheduler.shutdown(true);
         } catch (SchedulerException e) {
             log.error("Error while attempting to shutdown Segue Scheduler.", e);

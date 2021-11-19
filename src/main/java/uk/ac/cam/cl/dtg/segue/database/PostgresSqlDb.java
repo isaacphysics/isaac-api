@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,14 +15,14 @@
  */
 package uk.ac.cam.cl.dtg.segue.database;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.SQLException;
-
+import com.google.inject.Inject;
 import org.apache.commons.dbcp2.BasicDataSource;
 
-import com.google.inject.Inject;
+import java.io.Closeable;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 /**
  * PostgresSqlDb adapter.
@@ -85,5 +85,19 @@ public class PostgresSqlDb implements Closeable {
             e.printStackTrace();
         }
 
+    }
+
+    /**
+     * Check whether the database is a read only replica or not.
+     * @return whether the database is read only.
+     */
+    public boolean isReadOnlyReplica() throws SQLException {
+        try (Connection conn = getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement("SELECT pg_is_in_recovery()");
+             ResultSet results = pst.executeQuery();
+        ) {
+            results.next();
+            return results.getBoolean(1);
+        }
     }
 }
