@@ -364,6 +364,7 @@ public final class Constants {
         RELEASE_USER_ASSOCIATION,
         REMOVE_USER_FROM_GROUP,
         REVOKE_USER_ASSOCIATION,
+        SEND_CUSTOM_MASS_EMAIL,
         SEND_MASS_EMAIL,
         SENT_EMAIL,
         USER_REGISTRATION,

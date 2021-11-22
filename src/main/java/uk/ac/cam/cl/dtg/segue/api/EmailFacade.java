@@ -17,6 +17,7 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -46,6 +47,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
+import uk.ac.cam.cl.dtg.segue.dto.ContentEmailDTO;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.EmailTemplateDTO;
@@ -474,6 +476,109 @@ public class EmailFacade extends AbstractSegueFacade {
             }
 
             emailManager.sendCustomEmail(sender, contentId, new ArrayList<>(allSelectedUsers), emailType);
+        } catch (SegueDatabaseException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "There was an error processing your request.");
+            log.error(error.getErrorMessage());
+            return error.toResponse();
+        } catch (IllegalArgumentException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
+                    "An unknown type of user was supplied.");
+            log.debug(error.getErrorMessage());
+        } catch (ContentManagerException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "There was an error retrieving content.");
+            log.debug(error.getErrorMessage());
+        } catch (NoUserLoggedInException e2) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueResourceMisuseException e) {
+            return SegueErrorResponse
+                    .getRateThrottledResponse("You have exceeded the number of emails you are allowed to send per day.");
+        }
+
+        return Response.ok().build();
+    }
+
+    /**
+     * sendemailwithuserids allows sending an email to a given list of userids.
+     *
+     * This method will return 200 ok
+     *
+     * @param request
+     *            - so that we can allow only logged in users to view their own data.
+     * @param emailTypeString
+     *            - the type of e-mail that is being sent.
+     * @param providedTemplate
+     *            - ContentEmailDTO as Json.
+     * @return 200 ok response
+     */
+    @POST
+    @Path("/email/sendprovidedemailwithuserids/{emailtype}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @GZIP
+    @ApiOperation(value = "Send an email to a list of user IDs.")
+    public final Response sendProvidedEmailWithUserIds(@Context final HttpServletRequest request,
+                                              @PathParam("emailtype") final String emailTypeString,
+                                              final ContentEmailDTO providedTemplate) {
+        final EmailTemplateDTO emailTemplate = providedTemplate.getEmailTemplate();
+
+        if (Strings.isNullOrEmpty(emailTemplate.getPlainTextContent()) || Strings.isNullOrEmpty(emailTemplate.getHtmlContent()) || Strings.isNullOrEmpty(emailTemplate.getSubject())) {
+            return SegueErrorResponse.getBadRequestResponse("Response must include plaintextTemplate, htmlTemplate and emailSubject");
+        }
+
+        final List<Long> userIds = providedTemplate.getUserIds();
+
+        EmailType emailType;
+        Set<RegisteredUserDTO> allSelectedUsers = Sets.newHashSet();
+
+        if (EnumUtils.isValidEnum(EmailType.class, emailTypeString)) {
+            emailType = EmailType.valueOf(emailTypeString);
+        } else {
+            log.warn("Unknown email type '" + emailTypeString + "' provided to admin endpoint!");
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Unknown email type!").toResponse();
+        }
+
+        try {
+            RegisteredUserDTO sender = this.userManager.getCurrentRegisteredUser(request);
+            if (!isUserAnAdminOrEventManager(userManager, sender)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
+            if (isUserAnEventManager(userManager, sender)) {
+                if (misuseMonitor.willHaveMisused(sender.getId().toString(),
+                        SendEmailMisuseHandler.class.getSimpleName(), userIds.size())) {
+                    return SegueErrorResponse
+                            .getRateThrottledResponse("You would have exceeded the number of emails you are allowed to send per day." +
+                                    " No emails have been sent.");
+                }
+                misuseMonitor.notifyEvent(sender.getId().toString(),
+                        SendEmailMisuseHandler.class.getSimpleName(), userIds.size());
+            }
+
+            for (Long userId : userIds) {
+                try {
+                    RegisteredUserDTO userDTO = this.userManager.getUserDTOById(userId);
+                    if (userDTO != null) {
+                        allSelectedUsers.add(userDTO);
+                    } else {
+                        // This should never be possible, since getUserDTOById throws rather than returning null.
+                        throw new NoUserException("No user found with this ID!");
+                    }
+                } catch (NoUserException e) {
+                    // Skip missing users rather than failing hard!
+                    log.error(String.format("Skipping email to non-existent user (%s)!", userId));
+                }
+            }
+
+            if (allSelectedUsers.size() == 0) {
+                SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
+                        "There are no users in the groups you have selected!.");
+                log.error(error.getErrorMessage());
+                return error.toResponse();
+            }
+
+            emailManager.sendCustomContentEmail(sender, emailTemplate, new ArrayList<>(allSelectedUsers), emailType);
         } catch (SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "There was an error processing your request.");

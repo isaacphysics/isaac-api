@@ -650,6 +650,65 @@ public class EmailManagerTest {
     }
 
     /**
+     * Check we don't send custom content emails to users with null / preference
+     */
+    @Test
+    public void sendCustomContentEmail_checkNullProperties_replacedWithEmptyString() {
+
+        EmailManager manager = new EmailManager(emailCommunicator, userPreferenceManager, mockPropertiesLoader,
+                mockContentManager, logManager, generateGlobalTokenMap());
+
+        List<RegisteredUserDTO> allSelectedUsers = Lists.newArrayList();
+        allSelectedUsers.add(userDTOWithNulls);
+        allSelectedUsers.add(userDTOWithNulls);
+
+        UserPreference userPreference = new UserPreference(userDTOWithNulls.getId(), SegueUserPreferences.EMAIL_PREFERENCE.name(), "ASSIGNMENTS", false);
+        try {
+            EasyMock.expect(userPreferenceManager.getUserPreference(SegueUserPreferences.EMAIL_PREFERENCE.name(), "ASSIGNMENTS", userDTOWithNulls.getId())).andReturn(userPreference);
+            EasyMock.expect(userPreferenceManager.getUserPreference(SegueUserPreferences.EMAIL_PREFERENCE.name(), "ASSIGNMENTS", userDTOWithNulls.getId())).andReturn(userPreference);
+        } catch (SegueDatabaseException e1) {
+            e1.printStackTrace();
+            Assert.fail();
+        }
+        EasyMock.replay(userPreferenceManager);
+
+        ContentDTO htmlTemplate = createDummyContentTemplate("{{content}}");
+        String htmlContent = "hi {{givenName}}<br><br>This is a test";
+        String plainTextContent = "hi {{givenName}}\n\nThis is a test";
+        String subject = "Test email";
+
+        EmailTemplateDTO emailTemplate = new EmailTemplateDTO();
+        emailTemplate.setHtmlContent(htmlContent);
+        emailTemplate.setPlainTextContent(plainTextContent);
+        emailTemplate.setSubject(subject);
+
+        try {
+
+            EasyMock.expect(mockContentManager.getContentById(CONTENT_VERSION, "email-template-html"))
+                    .andReturn(htmlTemplate).times(allSelectedUsers.size());
+
+            EasyMock.expect(mockContentManager.getContentById(CONTENT_VERSION, "email-template-ascii"))
+                    .andReturn(htmlTemplate).times(allSelectedUsers.size());
+
+            EasyMock.expect(mockContentManager.getCurrentContentSHA()).andReturn(CONTENT_VERSION).atLeastOnce();
+
+            EasyMock.replay(mockContentManager);
+        } catch (ContentManagerException e) {
+            e.printStackTrace();
+            Assert.fail();
+        }
+
+        try {
+            manager.sendCustomContentEmail(userDTOWithNulls, emailTemplate, allSelectedUsers, EmailType.ASSIGNMENTS);
+        } catch (SegueDatabaseException e) {
+            Assert.fail();
+        } catch (ContentManagerException e) {
+            Assert.fail();
+        }
+
+    }
+
+    /**
      * Make sure that when the templates are published:false, that the method reacts appropriately.
      */
     @Test
