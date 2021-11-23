@@ -25,6 +25,8 @@ import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
  */
 @JsonContentType("isaacQuestion")
 public class IsaacQuickQuestionDTO extends IsaacQuestionBaseDTO {
+    private Boolean showConfidence;
+
     /**
      * Unignores getting the answer as it is
      * required to be shown in a quick question
@@ -34,5 +36,24 @@ public class IsaacQuickQuestionDTO extends IsaacQuestionBaseDTO {
     @JsonIgnore(false)
     public ContentBaseDTO getAnswer() {
         return super.getAnswer();
+    }
+
+    /**
+     * Gets the showConfidence
+     *
+     * @return the showConfidence
+     */
+    public final Boolean getShowConfidence() {
+        return showConfidence;
+    }
+
+    /**
+     * Sets the showConfidence
+     *
+     * @param showConfidence
+     *              the showConfidence to set
+     */
+    public final void setShowConfidence(final Boolean showConfidence) {
+        this.showConfidence = showConfidence;
     }
 }
