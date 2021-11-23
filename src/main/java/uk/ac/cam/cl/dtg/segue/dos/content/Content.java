@@ -206,10 +206,6 @@ public class Content extends ContentBase {
     }
 
     public Boolean getDeprecated() {
-        if (null == deprecated) {
-            return false;
-        }
-
         return deprecated;
     }
 
