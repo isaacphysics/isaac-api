@@ -25,5 +25,24 @@ import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 @DTOMapping(IsaacQuickQuestionDTO.class)
 @JsonContentType("isaacQuestion")
 public class IsaacQuickQuestion extends IsaacQuestionBase {
+    private Boolean showConfidence;
 
+    /**
+     * Gets the showConfidence
+     *
+     * @return the showConfidence
+     */
+    public final Boolean getShowConfidence() {
+        return showConfidence;
+    }
+
+    /**
+     * Sets the showConfidence
+     *
+     * @param showConfidence
+     *              the showConfidence to set
+     */
+    public final void setShowConfidence(final Boolean showConfidence) {
+        this.showConfidence = showConfidence;
+    }
 }
