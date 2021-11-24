@@ -1105,7 +1105,7 @@ public class QuizFacade extends AbstractIsaacFacade {
      */
     @GET
     @Path("/assignment/{quizAssignmentId}/download")
-    @Produces("text/plain")
+    @Produces("text/csv")
     @GZIP
     @ApiOperation(value = "Download a test assignment as a CSV.")
     public final Response getQuizAssignmentCSV(@Context final HttpServletRequest httpServletRequest,
@@ -1225,7 +1225,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
     @GET
     @Path("/group/{groupId}/download")
-    @Produces("text/plain")
+    @Produces("text/csv")
     @GZIP
     @ApiOperation(value = "Download a CSV with all the quiz results of a given group")
     public final Response getQuizResultsForGroup(@Context final HttpServletRequest httpServletRequest,
