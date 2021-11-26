@@ -48,6 +48,7 @@ public class Content extends ContentBase {
     protected String attribution;
     protected List<String> relatedContent;
     protected Boolean published;
+    protected Boolean deprecated;
     protected Integer level;
     protected String searchableContent;
 
@@ -59,7 +60,8 @@ public class Content extends ContentBase {
             @JsonProperty("children") List<ContentBase> children, @JsonProperty("value") String value,
             @JsonProperty("attribution") String attribution,
             @JsonProperty("relatedContent") List<String> relatedContent, @JsonProperty("published") Boolean published,
-            @JsonProperty("tags") Set<String> tags, @JsonProperty("level") Integer level) {
+            @JsonProperty("deprecated") Boolean deprecated, @JsonProperty("tags") Set<String> tags,
+            @JsonProperty("level") Integer level) {
         this.id = id;
         this.title = title;
         this.subtitle = subtitle;
@@ -72,6 +74,7 @@ public class Content extends ContentBase {
         this.attribution = attribution;
         this.relatedContent = relatedContent;
         this.published = published;
+        this.deprecated = deprecated;
         this.children = children;
         this.tags = tags;
         this.level = level;
@@ -200,6 +203,14 @@ public class Content extends ContentBase {
      */
     public final void setChildren(List<ContentBase> children) {
         this.children = children;
+    }
+
+    public Boolean getDeprecated() {
+        return deprecated;
+    }
+
+    public void setDeprecated(Boolean deprecated) {
+        this.deprecated = deprecated;
     }
 
     public Integer getLevel() {

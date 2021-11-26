@@ -44,6 +44,7 @@ public class ContentDTO extends ContentBaseDTO {
     protected String attribution;
     protected List<ContentSummaryDTO> relatedContent;
     protected Boolean published;
+    protected Boolean deprecated;
     protected Integer level;
 
     @JsonCreator
@@ -54,8 +55,8 @@ public class ContentDTO extends ContentBaseDTO {
             @JsonProperty("layout") String layout, @JsonProperty("children") List<ContentBaseDTO> children,
             @JsonProperty("value") String value, @JsonProperty("attribution") String attribution,
             @JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
-            @JsonProperty("published") Boolean published, @JsonProperty("tags") Set<String> tags,
-            @JsonProperty("level") Integer level) {
+            @JsonProperty("published") Boolean published, @JsonProperty("deprecated") Boolean deprecated,
+            @JsonProperty("tags") Set<String> tags, @JsonProperty("level") Integer level) {
         this.id = id;
         this.title = title;
         this.subtitle = subtitle;
@@ -68,6 +69,7 @@ public class ContentDTO extends ContentBaseDTO {
         this.attribution = attribution;
         this.relatedContent = relatedContent;
         this.published = published;
+        this.deprecated = deprecated;
         this.children = children;
         this.tags = tags;
         this.level = level;
@@ -202,6 +204,14 @@ public class ContentDTO extends ContentBaseDTO {
      */
     public void setPublished(final Boolean published) {
         this.published = published;
+    }
+
+    public Boolean getDeprecated() {
+        return deprecated;
+    }
+
+    public void setDeprecated(Boolean deprecated) {
+        this.deprecated = deprecated;
     }
 
     public Integer getLevel() {

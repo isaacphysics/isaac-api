@@ -50,13 +50,14 @@ public class IsaacPodDTO extends ContentDTO {
 			@JsonProperty("attribution") String attribution,
 			@JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
 			@JsonProperty("version") boolean published,
+			@JsonProperty("deprecated") Boolean deprecated,
 			@JsonProperty("tags") Set<String> tags,
 			@JsonProperty("level") Integer level,
 			@JsonProperty("image") ImageDTO image,
 			@JsonProperty("url") String url) {
 		super(id, title, subtitle, type, author, encoding,
 				canonicalSourceFile, layout, children, value, attribution,
-				relatedContent, published, tags, level);
+				relatedContent, published, deprecated, tags, level);
 
 		this.url = url;
 		this.image = image;

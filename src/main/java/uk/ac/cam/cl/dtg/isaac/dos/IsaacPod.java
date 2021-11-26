@@ -40,7 +40,8 @@ public class IsaacPod extends Content {
 
 	@JsonCreator
 	public IsaacPod(
-			@JsonProperty("id") String id, @JsonProperty("title") String title,
+			@JsonProperty("id") String id,
+			@JsonProperty("title") String title,
 			@JsonProperty("subtitle") String subtitle,
 			@JsonProperty("type") String type,
 			@JsonProperty("author") String author,
@@ -52,6 +53,7 @@ public class IsaacPod extends Content {
 			@JsonProperty("attribution") String attribution,
 			@JsonProperty("relatedContent") List<String> relatedContent,
 			@JsonProperty("version") boolean published,
+			@JsonProperty("deprecated") Boolean deprecated,
 			@JsonProperty("tags") Set<String> tags,
 			@JsonProperty("level") Integer level,
 			@JsonProperty("emailAddress") String emailAddress,
@@ -59,7 +61,7 @@ public class IsaacPod extends Content {
 			@JsonProperty("url") String url) {
 		super(id, title, subtitle, type, author, encoding,
 				canonicalSourceFile, layout, children, value, attribution,
-				relatedContent, published, tags, level);
+				relatedContent, published, deprecated, tags, level);
 
 		this.url = url;
 		this.image = image;
