@@ -78,11 +78,11 @@ public class EventsFacadeTest extends AbstractFacadeTest {
         elasticsearch.start();
 
         String configLocation = SystemUtils.IS_OS_LINUX ? DEFAULT_LINUX_CONFIG_LOCATION : null;
-        if (System.getProperty("config.location") != null) {
-            configLocation = System.getProperty("config.location");
+        if (System.getProperty("test.config.location") != null) {
+            configLocation = System.getProperty("test.config.location");
         }
-        if (System.getenv("SEGUE_CONFIG_LOCATION") != null){
-            configLocation = System.getenv("SEGUE_CONFIG_LOCATION");
+        if (System.getenv("SEGUE_TEST_CONFIG_LOCATION") != null){
+            configLocation = System.getenv("SEGUE_TEST_CONFIG_LOCATION");
         }
 
         PropertiesLoader mockedProperties = new PropertiesLoader(configLocation) {
