@@ -19,8 +19,6 @@ import org.testcontainers.utility.DockerImageName;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.services.GroupChangedService;
-import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
-import uk.ac.cam.cl.dtg.isaac.configuration.SegueConfigurationModule;
 import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.PgTransactionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
@@ -103,7 +101,7 @@ public class EventsFacadeTest extends AbstractFacadeTest {
             "somerandompassword")
             ; // user/pass are irrelevant because POSTGRES_HOST_AUTH_METHOD is set to "trust"
         
-        PgUsers pgUsers = new PgUsers(postgresSqlDb);
+        PgUsers pgUsers = new PgUsers(postgresSqlDb, null); // FIXME: This null thing.
         PgAnonymousUsers pgAnonymousUsers = new PgAnonymousUsers(postgresSqlDb);
         QuestionManager questionDb = createMock(QuestionManager.class);
 
@@ -114,7 +112,7 @@ public class EventsFacadeTest extends AbstractFacadeTest {
         EmailManager emailManager = createMock(EmailManager.class);
         ILogManager logManager = createMock(ILogManager.class);
         UserAuthenticationManager userAuthenticationManager = new UserAuthenticationManager(pgUsers, mockedProperties,
-                providersToRegister, dtoMapper, emailManager);
+                providersToRegister, emailManager);
         ISecondFactorAuthenticator secondFactorManager = createMock(SegueTOTPAuthenticator.class);
 
         UserAccountManager userAccountManager =
@@ -144,7 +142,7 @@ public class EventsFacadeTest extends AbstractFacadeTest {
 
         // Create Mocked Injector
         SegueGuiceConfigurationModule.setGlobalPropertiesIfNotSet(mockedProperties);
-        Module productionModule = Modules.combine(new IsaacGuiceConfigurationModule(), new SegueGuiceConfigurationModule());
+        Module productionModule = new SegueGuiceConfigurationModule();
         Module testModule = Modules.override(productionModule).with(new AbstractModule() {
             @Override protected void configure() {
                 // ... register mocks
@@ -155,9 +153,9 @@ public class EventsFacadeTest extends AbstractFacadeTest {
         });
         Injector injector = Guice.createInjector(testModule);
         // Register DTOs to json mapper
-        SegueConfigurationModule segueConfigurationModule = injector.getInstance(SegueConfigurationModule.class);
+//        SegueConfigurationModule segueConfigurationModule = injector.getInstance(SegueConfigurationModule.class);
         ContentMapper mapper = injector.getInstance(ContentMapper.class);
-        mapper.registerJsonTypes(segueConfigurationModule.getContentDataTransferObjectMap());
+//        mapper.registerJsonTypes(segueConfigurationModule.getContentDataTransferObjectMap());
         // Get instance of class to test
         eventsFacade = injector.getInstance(EventsFacade.class);
     }

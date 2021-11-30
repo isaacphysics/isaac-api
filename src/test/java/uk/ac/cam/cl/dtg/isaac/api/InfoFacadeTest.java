@@ -17,8 +17,6 @@ import org.testcontainers.utility.DockerImageName;
 import uk.ac.cam.cl.dtg.isaac.IsaacTest;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.services.GroupChangedService;
-import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
-import uk.ac.cam.cl.dtg.isaac.configuration.SegueConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.api.InfoFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
@@ -89,7 +87,7 @@ public class InfoFacadeTest extends IsaacTest {
 
         // Create Mocked Injector
         SegueGuiceConfigurationModule.setGlobalPropertiesIfNotSet(mockedProperties);
-        Module productionModule = Modules.combine(new IsaacGuiceConfigurationModule(), new SegueGuiceConfigurationModule());
+        Module productionModule = new SegueGuiceConfigurationModule();
         Module testModule = Modules.override(productionModule).with(new AbstractModule() {
             @Override protected void configure() {
                 // ... register mocks
@@ -98,11 +96,11 @@ public class InfoFacadeTest extends IsaacTest {
                 bind(GroupChangedService.class).toInstance(groupChangedService);
             }
         });
-        Injector injector = Guice.createInjector(testModule);
         // Register DTOs to json mapper
-        SegueConfigurationModule segueConfigurationModule = injector.getInstance(SegueConfigurationModule.class);
+//        SegueConfigurationModule segueConfigurationModule = injector.getInstance(SegueConfigurationModule.class);
+        Injector injector = Guice.createInjector(testModule);
         ContentMapper mapper = injector.getInstance(ContentMapper.class);
-        mapper.registerJsonTypes(segueConfigurationModule.getContentDataTransferObjectMap());
+//        mapper.registerJsonTypes(segueConfigurationModule.getContentDataTransferObjectMap());
         // Get instance of class to test
         infoFacade = injector.getInstance(InfoFacade.class);
     }
