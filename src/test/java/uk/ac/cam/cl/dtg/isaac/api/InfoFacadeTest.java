@@ -97,10 +97,8 @@ public class InfoFacadeTest extends IsaacTest {
             }
         });
         // Register DTOs to json mapper
-//        SegueConfigurationModule segueConfigurationModule = injector.getInstance(SegueConfigurationModule.class);
         Injector injector = Guice.createInjector(testModule);
         ContentMapper mapper = injector.getInstance(ContentMapper.class);
-//        mapper.registerJsonTypes(segueConfigurationModule.getContentDataTransferObjectMap());
         // Get instance of class to test
         infoFacade = injector.getInstance(InfoFacade.class);
     }

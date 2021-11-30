@@ -153,9 +153,7 @@ public class EventsFacadeTest extends AbstractFacadeTest {
         });
         Injector injector = Guice.createInjector(testModule);
         // Register DTOs to json mapper
-//        SegueConfigurationModule segueConfigurationModule = injector.getInstance(SegueConfigurationModule.class);
         ContentMapper mapper = injector.getInstance(ContentMapper.class);
-//        mapper.registerJsonTypes(segueConfigurationModule.getContentDataTransferObjectMap());
         // Get instance of class to test
         eventsFacade = injector.getInstance(EventsFacade.class);
     }
