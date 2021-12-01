@@ -26,16 +26,21 @@ public class InteractiveCodeSnippetDTO extends CodeSnippetDTO {
 
     protected String setupCode;
     protected String testCode;
+    protected String testInput;
+    protected String outputRegex;
     protected String expectedResult;
 
     @JsonCreator
     public InteractiveCodeSnippetDTO(@JsonProperty("language") String language, @JsonProperty("code") String code,
                                      @JsonProperty("disableHighlighting") Boolean disableHighlighting, @JsonProperty("url") String url,
                                      @JsonProperty("setupCode") String setupCode, @JsonProperty("testCode") String testCode,
+                                     @JsonProperty("testInput") String testInput, @JsonProperty("outputRegex") String outputRegex,
                                      @JsonProperty("expectedResult") String expectedResult) {
         super(language, code, disableHighlighting, url);
         this.setupCode = setupCode;
         this.testCode = testCode;
+        this.testInput = testInput;
+        this.outputRegex = outputRegex;
         this.expectedResult = expectedResult;
     }
 
@@ -53,6 +58,22 @@ public class InteractiveCodeSnippetDTO extends CodeSnippetDTO {
 
     public void setTestCode(String testCode) {
         this.testCode = testCode;
+    }
+
+    public String getTestInput() {
+        return testInput;
+    }
+
+    public void setTestInput(String testInput) {
+        this.testInput = testInput;
+    }
+
+    public String getOutputRegex() {
+        return outputRegex;
+    }
+
+    public void setOutputRegex(String outputRegex) {
+        this.outputRegex = outputRegex;
     }
 
     public String getExpectedResult() {

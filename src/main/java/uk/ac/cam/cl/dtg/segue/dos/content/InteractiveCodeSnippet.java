@@ -27,6 +27,8 @@ public class InteractiveCodeSnippet extends CodeSnippet {
 
     protected String setupCode;
     protected String testCode;
+    protected String testInput;
+    protected String outputRegex;
     protected String expectedResult;
 
     /**
@@ -50,6 +52,22 @@ public class InteractiveCodeSnippet extends CodeSnippet {
 
     public void setTestCode(String testCode) {
         this.testCode = testCode;
+    }
+
+    public String getTestInput() {
+        return testInput;
+    }
+
+    public void setTestInput(String testInput) {
+        this.testInput = testInput;
+    }
+
+    public String getOutputRegex() {
+        return outputRegex;
+    }
+
+    public void setOutputRegex(String outputRegex) {
+        this.outputRegex = outputRegex;
     }
 
     public String getExpectedResult() {
