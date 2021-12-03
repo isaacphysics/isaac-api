@@ -649,11 +649,11 @@ public class GameboardsFacade extends AbstractIsaacFacade {
      * @return a Response containing a list of gameboard objects or containing a SegueErrorResponse.
      */
     @POST
-    @Path("gameboards/user_gameboards/{gameboard_id}")
+    @Path("gameboards/user_gameboards/{gameboard_id}/{gameboard_title}")
     @ApiOperation(value = "Link a gameboard to the current user.",
                   notes = "This will save a persistent copy of the gameboard if it was a temporary board.")
     public final Response linkUserToGameboard(@Context final HttpServletRequest request,
-            @PathParam("gameboard_id") final String gameboardId) {
+            @PathParam("gameboard_id") final String gameboardId, @PathParam("gameboard_title") final String gameboardTitle) {
 
         RegisteredUserDTO user;
         try {
@@ -672,6 +672,11 @@ public class GameboardsFacade extends AbstractIsaacFacade {
         GameboardDTO existingGameboard;
         try {
             existingGameboard = gameManager.getGameboard(gameboardId);
+
+            // If a new title was supplied, set it as the gameboard title
+            if (null != gameboardTitle) {
+                existingGameboard.setTitle(gameboardTitle);
+            }
 
             if (null == existingGameboard) {
                 return new SegueErrorResponse(Status.NOT_FOUND, "No gameboard found for that id.").toResponse();
