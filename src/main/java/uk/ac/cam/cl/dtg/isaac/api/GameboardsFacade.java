@@ -646,6 +646,9 @@ public class GameboardsFacade extends AbstractIsaacFacade {
      *            - so that we can find out the currently logged in user
      * @param gameboardId
      *            - So that we can look up an existing gameboard to modify.
+     * @param gameboardTitle
+     *            - So that the gameboard can ebe persisted to the user account with a custom
+     *              title (used by the CS question finder to name temporary gameboards)
      * @return a Response containing a list of gameboard objects or containing a SegueErrorResponse.
      */
     @POST
