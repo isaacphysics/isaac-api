@@ -29,19 +29,24 @@ public class InteractiveCodeSnippetDTO extends CodeSnippetDTO {
     protected String testInput;
     protected String outputRegex;
     protected String expectedResult;
+    protected Boolean useAllTestInputs;
+    protected Boolean wrapCodeInMain;
 
     @JsonCreator
     public InteractiveCodeSnippetDTO(@JsonProperty("language") String language, @JsonProperty("code") String code,
                                      @JsonProperty("disableHighlighting") Boolean disableHighlighting, @JsonProperty("url") String url,
                                      @JsonProperty("setupCode") String setupCode, @JsonProperty("testCode") String testCode,
                                      @JsonProperty("testInput") String testInput, @JsonProperty("outputRegex") String outputRegex,
-                                     @JsonProperty("expectedResult") String expectedResult) {
+                                     @JsonProperty("expectedResult") String expectedResult, @JsonProperty("useAllTestInputs") Boolean useAllTestInputs,
+                                     @JsonProperty("wrapCodeInMain") Boolean wrapCodeInMain) {
         super(language, code, disableHighlighting, url);
         this.setupCode = setupCode;
         this.testCode = testCode;
         this.testInput = testInput;
         this.outputRegex = outputRegex;
         this.expectedResult = expectedResult;
+        this.useAllTestInputs = useAllTestInputs;
+        this.wrapCodeInMain = wrapCodeInMain;
     }
 
     public String getSetupCode() {
@@ -82,6 +87,22 @@ public class InteractiveCodeSnippetDTO extends CodeSnippetDTO {
 
     public void setExpectedResult(String expectedResult) {
         this.expectedResult = expectedResult;
+    }
+
+    public Boolean getUseAllTestInputs() {
+        return useAllTestInputs;
+    }
+
+    public void setUseAllTestInputs(Boolean useAllTestInputs) {
+        this.useAllTestInputs = useAllTestInputs;
+    }
+
+    public Boolean getWrapCodeInMain() {
+        return wrapCodeInMain;
+    }
+
+    public void setWrapCodeInMain(Boolean wrapCodeInMain) {
+        this.wrapCodeInMain = wrapCodeInMain;
     }
 }
 

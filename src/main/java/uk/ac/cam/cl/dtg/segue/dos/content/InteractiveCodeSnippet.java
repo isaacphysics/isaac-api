@@ -30,6 +30,8 @@ public class InteractiveCodeSnippet extends CodeSnippet {
     protected String testInput;
     protected String outputRegex;
     protected String expectedResult;
+    protected Boolean useAllTestInputs;
+    protected Boolean wrapCodeInMain;
 
     /**
      * Default constructor, required for mappers.
@@ -76,5 +78,21 @@ public class InteractiveCodeSnippet extends CodeSnippet {
 
     public void setExpectedResult(String expectedResult) {
         this.expectedResult = expectedResult;
+    }
+
+    public Boolean getUseAllTestInputs() {
+        return useAllTestInputs;
+    }
+
+    public void setUseAllTestInputs(Boolean useAllTestInputs) {
+        this.useAllTestInputs = useAllTestInputs;
+    }
+
+    public Boolean getWrapCodeInMain() {
+        return wrapCodeInMain;
+    }
+
+    public void setWrapCodeInMain(Boolean wrapCodeInMain) {
+        this.wrapCodeInMain = wrapCodeInMain;
     }
 }
