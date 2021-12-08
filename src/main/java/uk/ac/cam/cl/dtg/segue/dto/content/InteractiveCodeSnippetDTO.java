@@ -36,16 +36,11 @@ public class InteractiveCodeSnippetDTO extends CodeSnippetDTO {
     public InteractiveCodeSnippetDTO(@JsonProperty("language") String language, @JsonProperty("code") String code,
                                      @JsonProperty("disableHighlighting") Boolean disableHighlighting, @JsonProperty("url") String url,
                                      @JsonProperty("setupCode") String setupCode, @JsonProperty("testCode") String testCode,
-                                     @JsonProperty("testInput") String testInput, @JsonProperty("outputRegex") String outputRegex,
-                                     @JsonProperty("expectedResult") String expectedResult, @JsonProperty("useAllTestInputs") Boolean useAllTestInputs,
-                                     @JsonProperty("wrapCodeInMain") Boolean wrapCodeInMain) {
+                                     @JsonProperty("expectedResult") String expectedResult, @JsonProperty("wrapCodeInMain") Boolean wrapCodeInMain) {
         super(language, code, disableHighlighting, url);
         this.setupCode = setupCode;
         this.testCode = testCode;
-        this.testInput = testInput;
-        this.outputRegex = outputRegex;
         this.expectedResult = expectedResult;
-        this.useAllTestInputs = useAllTestInputs;
         this.wrapCodeInMain = wrapCodeInMain;
     }
 
@@ -65,36 +60,12 @@ public class InteractiveCodeSnippetDTO extends CodeSnippetDTO {
         this.testCode = testCode;
     }
 
-    public String getTestInput() {
-        return testInput;
-    }
-
-    public void setTestInput(String testInput) {
-        this.testInput = testInput;
-    }
-
-    public String getOutputRegex() {
-        return outputRegex;
-    }
-
-    public void setOutputRegex(String outputRegex) {
-        this.outputRegex = outputRegex;
-    }
-
     public String getExpectedResult() {
         return expectedResult;
     }
 
     public void setExpectedResult(String expectedResult) {
         this.expectedResult = expectedResult;
-    }
-
-    public Boolean getUseAllTestInputs() {
-        return useAllTestInputs;
-    }
-
-    public void setUseAllTestInputs(Boolean useAllTestInputs) {
-        this.useAllTestInputs = useAllTestInputs;
     }
 
     public Boolean getWrapCodeInMain() {

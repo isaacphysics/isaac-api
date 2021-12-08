@@ -27,10 +27,7 @@ public class InteractiveCodeSnippet extends CodeSnippet {
 
     protected String setupCode;
     protected String testCode;
-    protected String testInput;
-    protected String outputRegex;
     protected String expectedResult;
-    protected Boolean useAllTestInputs;
     protected Boolean wrapCodeInMain;
 
     /**
@@ -56,36 +53,12 @@ public class InteractiveCodeSnippet extends CodeSnippet {
         this.testCode = testCode;
     }
 
-    public String getTestInput() {
-        return testInput;
-    }
-
-    public void setTestInput(String testInput) {
-        this.testInput = testInput;
-    }
-
-    public String getOutputRegex() {
-        return outputRegex;
-    }
-
-    public void setOutputRegex(String outputRegex) {
-        this.outputRegex = outputRegex;
-    }
-
     public String getExpectedResult() {
         return expectedResult;
     }
 
     public void setExpectedResult(String expectedResult) {
         this.expectedResult = expectedResult;
-    }
-
-    public Boolean getUseAllTestInputs() {
-        return useAllTestInputs;
-    }
-
-    public void setUseAllTestInputs(Boolean useAllTestInputs) {
-        this.useAllTestInputs = useAllTestInputs;
     }
 
     public Boolean getWrapCodeInMain() {
