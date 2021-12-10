@@ -727,7 +727,7 @@ public class ContentIndexer {
                         + " found with both children and a value. "
                         + "Content objects are only allowed to have one or the other.", indexProblemCache);
 
-                log.error("Invalid content item detected: The object with ID (" + id
+                log.error("Invalid content item detected: The object with ID (" + c.getCanonicalSourceFile()
                         + ") has both children and a value.");
             }
 

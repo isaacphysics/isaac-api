@@ -315,7 +315,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
         } catch (AuthenticationCodeException | CrossSiteRequestForgeryException | AuthenticatorSecurityException
                 | CodeExchangeException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.UNAUTHORIZED, e.getMessage());
-            log.info("Error detected during authentication: " + e.getClass().toString(), e);
+            log.info("Error detected during authentication: " + e.getClass().toString());
             return error.toResponse();
         } catch (DuplicateAccountException e) {
             log.debug("Duplicate user already exists in the database.", e);
