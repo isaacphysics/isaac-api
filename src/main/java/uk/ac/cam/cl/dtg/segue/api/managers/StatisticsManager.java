@@ -37,8 +37,11 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
+import uk.ac.cam.cl.dtg.segue.dos.AudienceContext;
+import uk.ac.cam.cl.dtg.segue.dos.Difficulty;
 import uk.ac.cam.cl.dtg.segue.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.segue.dos.Stage;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
@@ -62,6 +65,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -412,6 +416,8 @@ public class StatisticsManager implements IStatisticsManager {
         int attemptedQuestionPartsThisAcademicYear = 0;
         Map<String, Integer> questionAttemptsByTagStats = Maps.newHashMap();
         Map<String, Integer> questionsCorrectByTagStats = Maps.newHashMap();
+        Map<Stage, Map<Difficulty, Integer>> questionAttemptsByStageAndDifficultyStats = Maps.newHashMap();
+        Map<Stage, Map<Difficulty, Integer>> questionsCorrectByStageAndDifficultyStats = Maps.newHashMap();
         Map<String, Integer> questionAttemptsByLevelStats = Maps.newHashMap();
         Map<String, Integer> questionsCorrectByLevelStats = Maps.newHashMap();
         Map<String, Integer> questionAttemptsByTypeStats = Maps.newHashMap();
@@ -523,6 +529,52 @@ public class StatisticsManager implements IStatisticsManager {
                 }
             }
 
+            // Stage and difficulty Stats
+            // This is hideous, sorry
+            if (questionContentDTO.getAudience() != null) {
+                for (AudienceContext audience : questionContentDTO.getAudience()) {
+                    // Check the question has both a stage and a difficulty
+                    if (audience.getStage() != null && audience.getDifficulty() != null) {
+                        // Count the attempt at the question
+                        if (questionAttemptsByStageAndDifficultyStats.containsKey(audience.getStage().get(0))) {
+                            if (questionAttemptsByStageAndDifficultyStats.get(audience.getStage().get(0)).containsKey(audience.getDifficulty().get(0))) {
+                                questionAttemptsByStageAndDifficultyStats.get(
+                                        audience.getStage().get(0)).put(
+                                                audience.getDifficulty().get(0),
+                                                questionAttemptsByStageAndDifficultyStats.get(
+                                                        audience.getStage().get(0)).get(
+                                                                audience.getDifficulty().get(0)) + 1);
+                            } else {
+                                questionAttemptsByStageAndDifficultyStats.get(audience.getStage().get(0)).put(audience.getDifficulty().get(0), 1);
+                            }
+                        } else {
+                            questionAttemptsByStageAndDifficultyStats.put(audience.getStage().get(0), new HashMap() {{
+                                put(audience.getDifficulty().get(0), 1);
+                            }});
+                        }
+
+                        // If correct, count this too:
+                        if (questionIsCorrect) {
+                            if (questionsCorrectByStageAndDifficultyStats.containsKey(audience.getStage().get(0))) {
+                                if (questionsCorrectByStageAndDifficultyStats.get(audience.getStage().get(0)).containsKey(audience.getDifficulty().get(0))) {
+                                    questionsCorrectByStageAndDifficultyStats.get(
+                                            audience.getStage().get(0)).put(
+                                                    audience.getDifficulty().get(0),
+                                                    questionsCorrectByStageAndDifficultyStats.get(
+                                                            audience.getStage().get(0)).get(audience.getDifficulty().get(0)) + 1);
+                                } else {
+                                    questionsCorrectByStageAndDifficultyStats.get(audience.getStage().get(0)).put(audience.getDifficulty().get(0), 1);
+                                }
+                            } else {
+                                questionsCorrectByStageAndDifficultyStats.put(audience.getStage().get(0), new HashMap() {{
+                                    put(audience.getDifficulty().get(0), 1);
+                                }});
+                            }
+                        }
+                    }
+                }
+            }
+
             // Level Stats:
             Integer questionLevelInteger = questionContentDTO.getLevel();
             String questionLevel;
@@ -576,6 +628,8 @@ public class StatisticsManager implements IStatisticsManager {
         questionInfo.put("totalQuestionPartsAttemptedThisAcademicYear", attemptedQuestionPartsThisAcademicYear);
         questionInfo.put("attemptsByTag", questionAttemptsByTagStats);
         questionInfo.put("correctByTag", questionsCorrectByTagStats);
+        questionInfo.put("attemptsByStageAndDifficulty", questionAttemptsByStageAndDifficultyStats);
+        questionInfo.put("correctByStageAndDifficulty", questionsCorrectByStageAndDifficultyStats);
         questionInfo.put("attemptsByLevel", questionAttemptsByLevelStats);
         questionInfo.put("correctByLevel", questionsCorrectByLevelStats);
         questionInfo.put("attemptsByType", questionAttemptsByTypeStats);
