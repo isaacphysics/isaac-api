@@ -169,8 +169,6 @@ public class QuizFacade extends AbstractIsaacFacade {
      * Get quizzes visible to this user, starting from index 0.
      *
      * Anonymous users can't see quizzes.
-     * Students can see quizzes with the visibleToStudents flag set.
-     * Teachers and higher can see all quizzes.
      *
      * @return a Response containing a list of ContentSummaryDTO for the visible quizzes.
      */
@@ -186,8 +184,6 @@ public class QuizFacade extends AbstractIsaacFacade {
      * Get quizzes visible to this user, starting from the specified index.
      *
      * Anonymous users can't see quizzes.
-     * Students can see quizzes with the visibleToStudents flag set.
-     * Teachers and higher can see all quizzes.
      *
      * @return a Response containing a list of ContentSummaryDTO for the visible quizzes.
      */
@@ -202,16 +198,17 @@ public class QuizFacade extends AbstractIsaacFacade {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(request);
 
             boolean isStudent = !isUserTeacherOrAbove(userManager, user);
+            String userRoleString = user.getRole().name();
 
             EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + "");
 
             // FIXME: ** HARD-CODED DANGER AHEAD **
             // The limit parameter in the following call is hard-coded and should be returned to a more reasonable
             // number once we have a front-end pagination/load-more system in place.
-            ResultsWrapper<ContentSummaryDTO> summary = this.quizManager.getAvailableQuizzes(isStudent, startIndex, 9000);
+            ResultsWrapper<ContentSummaryDTO> summary = this.quizManager.getAvailableQuizzes(isStudent, userRoleString, startIndex, 9000);
 
             return ok(summary).tag(etag)
-                .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, isStudent))
+                .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, false))
                 .build();
         } catch (ContentManagerException e) {
             String message = "ContentManagerException whilst getting available tests";
@@ -328,6 +325,11 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             IsaacQuizDTO quiz = this.quizManager.findQuiz(quizId);
 
+            // Check this user is actually allowed to preview this quiz:
+            if (null != quiz.getHiddenFromRoles() && quiz.getHiddenFromRoles().contains(user.getRole().name())) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
             return ok(quiz)
                 .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, false)).tag(etag).build();
         } catch (ContentManagerException e) {
@@ -437,8 +439,12 @@ public class QuizFacade extends AbstractIsaacFacade {
             // Get the quiz
             IsaacQuizDTO quiz = quizManager.findQuiz(quizId);
 
-            // Check it is visibleToStudents
+            // TODO: Remove this deprecated check:
             if (!quiz.getVisibleToStudents()) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "Free attempts are not available for test quiz.").toResponse();
+            }
+            // Check it is visible to this user's role:
+            if (null != quiz.getHiddenFromRoles() && quiz.getHiddenFromRoles().contains(user.getRole().name())) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "Free attempts are not available for test quiz.").toResponse();
             }
 

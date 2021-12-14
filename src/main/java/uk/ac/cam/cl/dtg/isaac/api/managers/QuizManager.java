@@ -77,15 +77,12 @@ public class QuizManager {
      *            - so we can summarize content with links
      * @param mapper
      *            - so we can convert cached content DOs to DTOs.
-     * @param contentIndex
-     *            - the current version of content to use.
      */
     @Inject
     public QuizManager(final PropertiesLoader properties, final ContentService contentService,
                        final IContentManager contentManager,
                        final ContentSummarizerService contentSummarizerService,
-                       final ContentMapper mapper,
-                       @Named(CONTENT_INDEX) final String contentIndex) {
+                       final ContentMapper mapper) {
         this.properties = properties;
         this.contentService = contentService;
         this.contentManager = contentManager;
@@ -93,15 +90,20 @@ public class QuizManager {
         this.mapper = mapper;
     }
 
-    public ResultsWrapper<ContentSummaryDTO> getAvailableQuizzes(boolean onlyVisibleToStudents, @Nullable Integer startIndex, @Nullable Integer limit) throws ContentManagerException {
+    public ResultsWrapper<ContentSummaryDTO> getAvailableQuizzes(boolean onlyVisibleToStudents, String visibleToRole, @Nullable Integer startIndex, @Nullable Integer limit) throws ContentManagerException {
 
         List<IContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
         fieldsToMatch.add(new IContentManager.BooleanSearchClause(
                 TYPE_FIELDNAME, Constants.BooleanOperator.AND, Collections.singletonList(QUIZ_TYPE)));
 
+        // TODO: remove deprecated onlyVisibleToStudents check and argument!
         if (onlyVisibleToStudents) {
             fieldsToMatch.add(new IContentManager.BooleanSearchClause(
                     VISIBLE_TO_STUDENTS_FIELDNAME, Constants.BooleanOperator.AND, Collections.singletonList(Boolean.toString(true))));
+        }
+        if (null != visibleToRole) {
+            fieldsToMatch.add(new IContentManager.BooleanSearchClause(HIDDEN_FROM_ROLES_FIELDNAME,
+                    BooleanOperator.NOT, Collections.singletonList(visibleToRole)));
         }
 
         ResultsWrapper<ContentDTO> content = this.contentService.findMatchingContent(null, fieldsToMatch, startIndex, limit);
