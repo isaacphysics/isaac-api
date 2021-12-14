@@ -676,13 +676,13 @@ public class GameboardsFacade extends AbstractIsaacFacade {
         try {
             existingGameboard = gameManager.getGameboard(gameboardId);
 
-            if (null == existingGameboard) {
-                return new SegueErrorResponse(Status.NOT_FOUND, "No gameboard found for that id.").toResponse();
-            }
-
             // If a new title was supplied, set it as the gameboard title
             if (null != gameboardTitle) {
                 existingGameboard.setTitle(gameboardTitle);
+            }
+
+            if (null == existingGameboard) {
+                return new SegueErrorResponse(Status.NOT_FOUND, "No gameboard found for that id.").toResponse();
             }
 
             // go ahead and persist the gameboard (if it is only temporary) / link it to the users my boards account
