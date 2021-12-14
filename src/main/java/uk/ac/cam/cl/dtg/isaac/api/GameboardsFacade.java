@@ -430,13 +430,13 @@ public class GameboardsFacade extends AbstractIsaacFacade {
      * @return a Response containing a list of gameboard objects or containing a SegueErrorResponse.
      */
     @POST
-    @Path("gameboards/{id}/{title}")
+    @Path("gameboards/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @ApiOperation(value = "Change a gameboards title and link the current user to it.",
                   notes = "It is only possible to change the name of a gameboard.")
     public final Response renameAndSaveGameboard(@Context final HttpServletRequest request,
-            @PathParam("id") final String gameboardId, @PathParam("title") final String newGameboardTitle) {
+            @PathParam("id") final String gameboardId, @QueryParam("title") final String newGameboardTitle) {
 
         RegisteredUserDTO user;
         try {
