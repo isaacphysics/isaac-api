@@ -30,7 +30,7 @@ public final class SegueMetrics {
     // Request Response Time Metrics
     public static final Histogram REQUEST_LATENCY_HISTOGRAM = Histogram.build()
             .name("isaac_api_requests")
-            .labelNames("method", "path")
+            .labelNames("method", "path", "status")
             .help("Request latency in seconds.").register();
 
     // WebSocket Response Time Metrics

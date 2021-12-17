@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2015 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,7 +29,6 @@ import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.ext.Provider;
-import java.io.IOException;
 
 import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.REQUEST_LATENCY_HISTOGRAM;
 
@@ -90,8 +89,11 @@ public class PerformanceMonitor implements ContainerRequestFilter, ContainerResp
 
         // Record for metrics
         REQUEST_LATENCY_HISTOGRAM
-                .labels(requestContext.getMethod(), monitorService.getPathWithoutPathParamValues(request.getUri()))
-                .observe((double)timeInMs / NUMBER_OF_MILLISECONDS_IN_A_SECOND);
+                .labels(
+                        requestContext.getMethod(),
+                        monitorService.getPathWithoutPathParamValues(request.getUri()),
+                        String.valueOf(responseContext.getStatus())
+                ).observe((double)timeInMs / NUMBER_OF_MILLISECONDS_IN_A_SECOND);
     }
 
 
