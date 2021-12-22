@@ -425,18 +425,18 @@ public class GameboardsFacade extends AbstractIsaacFacade {
      *            - so that we can find out the currently logged in user
      * @param gameboardId
      *            - So that we can look up an existing gameboard to modify.
-     * @param newGameboardObject
-     *            - as a GameboardDTO this should contain all of the updates.
+     * @param newGameboardTitle
+     *            - a string containing the new title to save the gameboard with
      * @return a Response containing a list of gameboard objects or containing a SegueErrorResponse.
      */
     @POST
     @Path("gameboards/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Create or update a gameboard and link the current user to it.",
+    @GZIP
+    @ApiOperation(value = "Change a gameboards title and link the current user to it.",
                   notes = "It is only possible to change the name of a gameboard.")
-    public final Response updateGameboard(@Context final HttpServletRequest request,
-            @PathParam("id") final String gameboardId, final GameboardDTO newGameboardObject) {
+    public final Response renameAndSaveGameboard(@Context final HttpServletRequest request,
+            @PathParam("id") final String gameboardId, @QueryParam("title") final String newGameboardTitle) {
 
         RegisteredUserDTO user;
         try {
@@ -445,35 +445,22 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
 
-        if (null == newGameboardObject || null == gameboardId || newGameboardObject.getId() == null) {
-            // Gameboard object must be there and have an id.
+        if (null == newGameboardTitle || null == gameboardId) {
+            // Gameboard title and id must be there
             return new SegueErrorResponse(Status.BAD_REQUEST,
-                    "You must provide a gameboard object with updates and the "
-                            + "id of the gameboard object in both the object and the endpoint").toResponse();
+                    "You must provide a new gameboard title and the "
+                            + "id of the gameboard object in the endpoint path.").toResponse();
         }
 
-        // The id in the path param should match the id of the gameboard object you send me.
-        if (!newGameboardObject.getId().equals(gameboardId)) {
-            // user not logged in return not authorized
-            return new SegueErrorResponse(Status.BAD_REQUEST,
-                    "The gameboard ID sent in the request body does not match the end point you used.").toResponse();
-        }
-
-        // find what the existing gameboard looks like.
+        // Find the existing gameboard with the id given
         GameboardDTO existingGameboard;
         try {
             existingGameboard = gameManager.getGameboard(gameboardId);
-
             if (null == existingGameboard) {
-                // this is not an edit and is a create request operation.
-                return this.createGameboard(request, newGameboardObject);
-            } else if (!existingGameboard.equals(newGameboardObject)) {
-                // The only editable field of a game board is its title.
-                // If you are trying to change anything else this should fail.
-                return new SegueErrorResponse(Status.BAD_REQUEST, "A different game board with that id already exists.")
-                        .toResponse();
+                // there is no gameboard to persist (the id does not belong to an existing gameboard)
+                return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                        "A gameboard with that id was not found.").toResponse();
             }
-
             // go ahead and persist the gameboard (if it is only temporary) / link it to the users my boards account
             gameManager.linkUserToGameboard(existingGameboard, user);
             getLogManager().logEvent(user, request, IsaacServerLogType.ADD_BOARD_TO_PROFILE,
@@ -484,24 +471,24 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                     "Error whilst trying to access the gameboard database.", e).toResponse();
         }
 
-        // Now determine if the user is trying to change the title and if they have permission.
-        if (!(existingGameboard.getTitle() == null ? newGameboardObject.getTitle() == null : existingGameboard
-                .getTitle().equals(newGameboardObject.getTitle()))) {
+        // Now check if the current title is either null, or not equal to the new title. If so, we want to change it
+        if (null == existingGameboard.getTitle() || !existingGameboard.getTitle().equals(newGameboardTitle)) {
 
             // do they have permission?
-            if (existingGameboard.getOwnerUserId() != null 
+            if (null != existingGameboard.getOwnerUserId()
                     && !existingGameboard.getOwnerUserId().equals(user.getId())) {
                 // user not logged in return not authorized
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You are not allowed to change another user's gameboard.").toResponse();
             }
 
-            // ok so now we can change the title
+            // We can now change the title, and persist this change to the database
             GameboardDTO updatedGameboard;
             try {
-                updatedGameboard = gameManager.updateGameboardTitle(newGameboardObject);
+                existingGameboard.setTitle(newGameboardTitle);
+                updatedGameboard = gameManager.updateGameboardTitle(existingGameboard);
             } catch (SegueDatabaseException e) {
-                String message = "Error whilst trying to update the gameboard.";
+                String message = "Error whilst trying to change the gameboards title.";
                 log.error(message, e);
                 return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
             } catch (InvalidGameboardException e) {
@@ -510,7 +497,6 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             }
             return Response.ok(updatedGameboard).build();
         }
-
         return Response.ok(existingGameboard).build();
     }
 
