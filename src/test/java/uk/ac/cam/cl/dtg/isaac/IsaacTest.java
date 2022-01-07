@@ -149,12 +149,12 @@ public class IsaacTest {
         quizSection2.setId("studentQuiz|section2");
         quizSection2.setChildren(ImmutableList.of(question2, question3));
 
-        studentQuiz = new IsaacQuizDTO("studentQuiz", null, null, null, null, null, null, null, ImmutableList.of(quizSection1, quizSection2), null, null, null, false, false, null, null, true, QuizFeedbackMode.OVERALL_MARK, null);
-        teacherQuiz = new IsaacQuizDTO("teacherQuiz", null, null, null, null, null, null, null, null, null, null, null, false, false, null, null, false, null, null);
-        otherQuiz = new IsaacQuizDTO("otherQuiz", null, null, null, null, null, null, null, Collections.singletonList(quizSection1), null, null, null, false, false, null, null, true, QuizFeedbackMode.DETAILED_FEEDBACK, null);
+        studentQuiz = new IsaacQuizDTO("studentQuiz", null, null, null, null, null, null, null, ImmutableList.of(quizSection1, quizSection2), null, null, null, false, null, null, null, true, null, QuizFeedbackMode.OVERALL_MARK, null);
+        teacherQuiz = new IsaacQuizDTO("teacherQuiz", null, null, null, null, null, null, null, null, null, null, null, false, null, null, null, false, ImmutableList.of("STUDENT"), null, null);
+        otherQuiz = new IsaacQuizDTO("otherQuiz", null, null, null, null, null, null, null, Collections.singletonList(quizSection1), null, null, null, false, null, null, null, true, null, QuizFeedbackMode.DETAILED_FEEDBACK, null);
 
         // A bit scrappy, but hopefully sufficient.
-        studentQuizDO = new IsaacQuiz("studentQuiz", null, null, null, null, null, null, null, null, null, null, null, false, false, null, null, true, null);
+        studentQuizDO = new IsaacQuiz("studentQuiz", null, null, null, null, null, null, null, null, null, null, null, false, null, null, null, true, null, null);
 
         student = new RegisteredUserDTO("Some", "Student", "test-student@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, "");
         student.setRole(Role.STUDENT);
@@ -234,8 +234,8 @@ public class IsaacTest {
         quizManager = createMock(QuizManager.class);
 
         registerDefaultsFor(quizManager, m -> {
-            expect(m.getAvailableQuizzes(true, 0, 9000)).andStubReturn(wrap(studentQuizSummary));
-            expect(m.getAvailableQuizzes(false, 0, 9000)).andStubReturn(wrap(studentQuizSummary, teacherQuizSummary));
+            expect(m.getAvailableQuizzes(true,"STUDENT", 0, 9000)).andStubReturn(wrap(studentQuizSummary));
+            expect(m.getAvailableQuizzes(false,"TEACHER", 0, 9000)).andStubReturn(wrap(studentQuizSummary, teacherQuizSummary));
             expect(m.findQuiz(studentQuiz.getId())).andStubReturn(studentQuiz);
             expect(m.findQuiz(teacherQuiz.getId())).andStubReturn(teacherQuiz);
             expect(m.findQuiz(otherQuiz.getId())).andStubReturn(otherQuiz);
