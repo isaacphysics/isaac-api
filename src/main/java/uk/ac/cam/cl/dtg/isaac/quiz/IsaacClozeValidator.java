@@ -133,8 +133,8 @@ public class IsaacClozeValidator implements IValidator {
                     choiceItemIds.add(item.getId());
                 }
 
-                // Do not allow subset matching by default
-                boolean allowSubsetMatch = (null != itemChoice.isAllowSubsetMatch() && itemChoice.isAllowSubsetMatch());
+                // Do not allow subset matching by default, and only allow if the cloze question does not have replacement/item duplication enabled
+                boolean allowSubsetMatch = (null != itemChoice.isAllowSubsetMatch() && itemChoice.isAllowSubsetMatch()) && (null != clozeQuestion.getWithReplacement() && !clozeQuestion.getWithReplacement());
 
                 Set<String> choiceItemIdSet = new HashSet<>(choiceItemIds);
                 /* If the intersection of the submitted and choice ids is equal to the choice ones, then
