@@ -139,7 +139,7 @@ public class IsaacClozeValidator implements IValidator {
                 Set<String> choiceItemIdSet = new HashSet<>(choiceItemIds);
                 /* If the intersection of the submitted and choice ids is equal to the choice ones, then
                    this means that:
-                    - choiceItemIds.size() <= submittedItemIds.size()
+                    - choiceItemIdSet.size() <= submittedItemIds.size()
                     - All choice ids are within the set of submitted ids
                  */
                 if (allowSubsetMatch && Sets.intersection(submittedItemIdSet, choiceItemIdSet).equals(choiceItemIdSet)) {
