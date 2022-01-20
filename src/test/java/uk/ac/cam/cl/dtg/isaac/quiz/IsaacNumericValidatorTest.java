@@ -478,6 +478,41 @@ public class IsaacNumericValidatorTest {
         assertEquals(response.getExplanation(), defaultFeedback);
     }
 
+    /*
+        Test that correct units are noted even when matching a known incorrect choice.
+
+        (There is no way to record that only the value is wrong, but we can use other choices
+         to decide if the units are correct or not).
+    */
+    @Test
+    public final void isaacNumericValidator_CheckCorrectUnitsIncorrectChoiceMatch_CorrectUnitsResponseShouldHappen() {
+        // Set up the question object:
+        IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
+        someNumericQuestion.setRequireUnits(true);
+        someNumericQuestion.setSignificantFiguresMin(2);
+        someNumericQuestion.setSignificantFiguresMax(3);
+
+        List<Choice> answerList = Lists.newArrayList();
+        Quantity someCorrectAnswer = new Quantity("31.4", "m");
+        someCorrectAnswer.setCorrect(true);
+        answerList.add(someCorrectAnswer);
+        Quantity someIncorrectAnswer = new Quantity("20.0", "m");
+        someIncorrectAnswer.setCorrect(false);
+        answerList.add(someIncorrectAnswer);
+
+        someNumericQuestion.setChoices(answerList);
+
+        // Set up user answer:
+        Quantity q = new Quantity("20", "m");
+
+        // Test response:
+        QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
+        QuantityValidationResponse quantityValidationResponse = (QuantityValidationResponse) response;
+
+        assertFalse(response.isCorrect());
+        assertTrue(quantityValidationResponse.getCorrectUnits());
+    }
+
     //  ---------- Tests from here test invalid questions themselves ----------
 
     /*

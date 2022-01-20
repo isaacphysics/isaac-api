@@ -251,10 +251,11 @@ public class IsaacNumericValidator implements IValidator {
 
                 // What sort of match do we have:
                 if (numericValuesMatched && unitsFromUser.equals(unitsFromChoice)) {
-                    // Exact match: nothing else can do better.
+                    // Exact match: nothing else can do better, but previous match may tell us if units are also correct:
+                    Boolean unitsCorrect = (null != bestResponse && bestResponse.getCorrectUnits()) || quantityFromQuestion.isCorrect();
                     bestResponse = new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
                             quantityFromQuestion.isCorrect(), (Content) quantityFromQuestion.getExplanation(),
-                            quantityFromQuestion.isCorrect(), quantityFromQuestion.isCorrect(), new Date());
+                            quantityFromQuestion.isCorrect(), unitsCorrect, new Date());
                     break;
                 } else if (numericValuesMatched && !unitsFromUser.equals(unitsFromChoice) && quantityFromQuestion.isCorrect()) {
                     // Matches value but not units of a correct choice.
