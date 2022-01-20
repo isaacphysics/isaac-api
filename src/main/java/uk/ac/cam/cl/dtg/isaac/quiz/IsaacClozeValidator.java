@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
@@ -164,45 +163,7 @@ public class IsaacClozeValidator implements IValidator {
 
     @Override
     public List<Choice> getOrderedChoices(final List<Choice> choices) {
-        List<Choice> orderedChoices = Lists.newArrayList(choices);
-
-        /* First sort by whether subset matching is allowed or not - 'strict' match
-           item choices will appear before subset match ones.
-           Any Choices that are not ItemChoices will be ordered after 'strict' match
-           item choices.
-           Choices without a null value for allowSubsetMatch are considered 'strict'
-           for the ordering.
-         */
-        orderedChoices.sort((o1, o2) -> {
-            int o1Val = 1;
-            int o2Val = 1;
-            Boolean subsetMatch;
-            if (o1 instanceof ItemChoice) {
-                subsetMatch = ((ItemChoice) o1).isAllowSubsetMatch();
-                o1Val = (null != subsetMatch && subsetMatch) ? 1 : 0;
-            }
-            if (o2 instanceof ItemChoice) {
-                subsetMatch = ((ItemChoice) o2).isAllowSubsetMatch();
-                o2Val = (null != subsetMatch && subsetMatch) ? 1 : 0;
-            }
-            return o1Val - o2Val;
-        });
-
-        // Then sort in order of correctness
-        orderedChoices.sort((o1, o2) -> {
-            int o1Val = o1.isCorrect() ? 0 : 1;
-            int o2Val = o2.isCorrect() ? 0 : 1;
-            return o1Val - o2Val;
-        });
-
-        /* This should leave us with the following ordering:
-            0 Correct strict
-            1 Incorrect strict
-            2 Correct subset match
-            3 Incorrect subset match
-         */
-
-        return orderedChoices;
+        return IsaacItemQuestionValidator.getOrderedChoicesWithSubsets(choices);
     }
 
 }
