@@ -535,39 +535,41 @@ public class StatisticsManager implements IStatisticsManager {
                 for (AudienceContext audience : questionContentDTO.getAudience()) {
                     // Check the question has both a stage and a difficulty
                     if (audience.getStage() != null && audience.getDifficulty() != null) {
+                        Stage currentStage = audience.getStage().get(0);
+                        Difficulty currentDifficulty = audience.getDifficulty().get(0);
                         // Count the attempt at the question
-                        if (questionAttemptsByStageAndDifficultyStats.containsKey(audience.getStage().get(0))) {
-                            if (questionAttemptsByStageAndDifficultyStats.get(audience.getStage().get(0)).containsKey(audience.getDifficulty().get(0))) {
+                        if (questionAttemptsByStageAndDifficultyStats.containsKey(currentStage)) {
+                            if (questionAttemptsByStageAndDifficultyStats.get(currentStage).containsKey(currentDifficulty)) {
                                 questionAttemptsByStageAndDifficultyStats.get(
-                                        audience.getStage().get(0)).put(
-                                                audience.getDifficulty().get(0),
+                                        currentStage).put(
+                                        currentDifficulty,
                                                 questionAttemptsByStageAndDifficultyStats.get(
-                                                        audience.getStage().get(0)).get(
-                                                                audience.getDifficulty().get(0)) + 1);
+                                                        currentStage).get(
+                                                        currentDifficulty) + 1);
                             } else {
-                                questionAttemptsByStageAndDifficultyStats.get(audience.getStage().get(0)).put(audience.getDifficulty().get(0), 1);
+                                questionAttemptsByStageAndDifficultyStats.get(currentStage).put(currentDifficulty, 1);
                             }
                         } else {
-                            questionAttemptsByStageAndDifficultyStats.put(audience.getStage().get(0), new HashMap() {{
-                                put(audience.getDifficulty().get(0), 1);
+                            questionAttemptsByStageAndDifficultyStats.put(currentStage, new HashMap() {{
+                                put(currentDifficulty, 1);
                             }});
                         }
 
                         // If correct, count this too:
                         if (questionIsCorrect) {
-                            if (questionsCorrectByStageAndDifficultyStats.containsKey(audience.getStage().get(0))) {
-                                if (questionsCorrectByStageAndDifficultyStats.get(audience.getStage().get(0)).containsKey(audience.getDifficulty().get(0))) {
+                            if (questionsCorrectByStageAndDifficultyStats.containsKey(currentStage)) {
+                                if (questionsCorrectByStageAndDifficultyStats.get(currentStage).containsKey(currentDifficulty)) {
                                     questionsCorrectByStageAndDifficultyStats.get(
-                                            audience.getStage().get(0)).put(
-                                                    audience.getDifficulty().get(0),
+                                            currentStage).put(
+                                            currentDifficulty,
                                                     questionsCorrectByStageAndDifficultyStats.get(
-                                                            audience.getStage().get(0)).get(audience.getDifficulty().get(0)) + 1);
+                                                            currentStage).get(currentDifficulty) + 1);
                                 } else {
-                                    questionsCorrectByStageAndDifficultyStats.get(audience.getStage().get(0)).put(audience.getDifficulty().get(0), 1);
+                                    questionsCorrectByStageAndDifficultyStats.get(currentStage).put(currentDifficulty, 1);
                                 }
                             } else {
-                                questionsCorrectByStageAndDifficultyStats.put(audience.getStage().get(0), new HashMap() {{
-                                    put(audience.getDifficulty().get(0), 1);
+                                questionsCorrectByStageAndDifficultyStats.put(currentStage, new HashMap() {{
+                                    put(currentDifficulty, 1);
                                 }});
                             }
                         }
