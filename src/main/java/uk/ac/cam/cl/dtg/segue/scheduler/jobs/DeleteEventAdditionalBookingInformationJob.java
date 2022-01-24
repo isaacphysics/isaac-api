@@ -88,9 +88,8 @@ public class DeleteEventAdditionalBookingInformationJob implements Job {
                     if ((page.getEndDate() != null && page.getEndDate().toInstant().isBefore(thirtyDaysAgo.toInstant())) || (page.getDate().toInstant().isBefore(thirtyDaysAgo.toInstant()))) {
                         try (Connection conn = database.getDatabaseConnection()) {
                             PreparedStatement pst;
-                            // Check for additional info that needs removing, check if accessibilityRequirements and
-                            // medicalRequirements are present and set to removed, only students necessarily have an
-                            // emergency contact, if so don't re-update this row.
+                            // Check for additional info that needs removing, check if any of the additional fields
+                            // are already removed, if so, don't re-remove
                             pst = conn
                                     .prepareStatement("UPDATE event_bookings SET additional_booking_information=jsonb_set(jsonb_set(jsonb_set(jsonb_set(" +
                                             "additional_booking_information," +
@@ -100,8 +99,10 @@ public class DeleteEventAdditionalBookingInformationJob implements Job {
                                             " '{medicalRequirements}', '\"[REMOVED]\"'::JSONB, FALSE)" +
                                             " WHERE event_id = ?" +
                                             " AND additional_booking_information ??| array['emergencyName', 'emergencyNumber', 'accessibilityRequirements', 'medicalRequirements']" +
-                                            " AND NOT (event_bookings.additional_booking_information @> '{\"accessibilityRequirements\": \"[REMOVED]\"}'::JSONB" +
-                                            " AND event_bookings.additional_booking_information @> '{\"medicalRequirements\": \"[REMOVED]\"}'::JSONB);");
+                                            " AND NOT (event_bookings.additional_booking_information @> '{\"emergencyName\": \"[REMOVED]\"}'::JSONB" +
+                                            " OR event_bookings.additional_booking_information @> '{\"emergencyNumber\": \"[REMOVED]\"}'::JSONB" +
+                                            " OR event_bookings.additional_booking_information @> '{\"accessibilityRequirements\": \"[REMOVED]\"}'::JSONB" +
+                                            " OR event_bookings.additional_booking_information @> '{\"medicalRequirements\": \"[REMOVED]\"}'::JSONB);");
                             pst.setString(1, page.getId());
 
                             int affectedRows = pst.executeUpdate();
