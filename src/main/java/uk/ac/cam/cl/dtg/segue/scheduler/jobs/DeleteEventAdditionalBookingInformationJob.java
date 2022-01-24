@@ -88,6 +88,9 @@ public class DeleteEventAdditionalBookingInformationJob implements Job {
                     if ((page.getEndDate() != null && page.getEndDate().toInstant().isBefore(thirtyDaysAgo.toInstant())) || (page.getDate().toInstant().isBefore(thirtyDaysAgo.toInstant()))) {
                         try (Connection conn = database.getDatabaseConnection()) {
                             PreparedStatement pst;
+                            // Check for additional info that needs removing, check if accessibilityRequirements and
+                            // medicalRequirements are present and set to removed, only students necessarily have an
+                            // emergency contact, if so don't re-update this row.
                             pst = conn
                                     .prepareStatement("UPDATE event_bookings SET additional_booking_information=jsonb_set(jsonb_set(jsonb_set(jsonb_set(" +
                                             "additional_booking_information," +
@@ -96,7 +99,9 @@ public class DeleteEventAdditionalBookingInformationJob implements Job {
                                             " '{accessibilityRequirements}', '\"[REMOVED]\"'::JSONB, FALSE)," +
                                             " '{medicalRequirements}', '\"[REMOVED]\"'::JSONB, FALSE)" +
                                             " WHERE event_id = ?" +
-                                            " AND additional_booking_information ??| array['emergencyName', 'emergencyNumber', 'accessibilityRequirements', 'medicalRequirements'];");
+                                            " AND additional_booking_information ??| array['emergencyName', 'emergencyNumber', 'accessibilityRequirements', 'medicalRequirements']" +
+                                            " AND NOT (event_bookings.additional_booking_information @> '{\"accessibilityRequirements\": \"[REMOVED]\"}'::JSONB" +
+                                            " AND event_bookings.additional_booking_information @> '{\"medicalRequirements\": \"[REMOVED]\"}'::JSONB);");
                             pst.setString(1, page.getId());
 
                             int affectedRows = pst.executeUpdate();
@@ -108,19 +113,15 @@ public class DeleteEventAdditionalBookingInformationJob implements Job {
                 }
             }
             log.info("Ran DeleteEventAdditionalBookingInformationJob");
-        } catch (ContentManagerException e) {
-            log.error("Failed to delete event additional booking information");
-            e.printStackTrace();
         } catch (SQLException e) {
             try {
                 throw new SegueDatabaseException("Postgres exception", e);
             } catch (SegueDatabaseException ex) {
                 ex.printStackTrace();
             }
-        } catch (Error e) {
+        } catch (ContentManagerException e) {
             log.error("Failed to delete event additional booking information");
             e.printStackTrace();
         }
-
     }
 }
