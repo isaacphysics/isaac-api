@@ -546,9 +546,9 @@ public class StatisticsManager implements IStatisticsManager {
                                 questionAttemptsByStageAndDifficultyStats.get(currentStage).put(currentDifficulty, 1);
                             }
                         } else {
-                            questionAttemptsByStageAndDifficultyStats.put(currentStage, new HashMap() {{
-                                put(currentDifficulty, 1);
-                            }});
+                            Map<Difficulty, Integer> newDifficultyMap = Maps.newHashMap();
+                            newDifficultyMap.put(currentDifficulty, 1);
+                            questionAttemptsByStageAndDifficultyStats.put(currentStage, newDifficultyMap);
                         }
 
                         // If correct, count this too:
@@ -561,9 +561,9 @@ public class StatisticsManager implements IStatisticsManager {
                                     questionsCorrectByStageAndDifficultyStats.get(currentStage).put(currentDifficulty, 1);
                                 }
                             } else {
-                                questionsCorrectByStageAndDifficultyStats.put(currentStage, new HashMap() {{
-                                    put(currentDifficulty, 1);
-                                }});
+                                Map<Difficulty, Integer> newDifficultyMap = Maps.newHashMap();
+                                newDifficultyMap.put(currentDifficulty, 1);
+                                questionsCorrectByStageAndDifficultyStats.put(currentStage, newDifficultyMap);
                             }
                         }
                     }
