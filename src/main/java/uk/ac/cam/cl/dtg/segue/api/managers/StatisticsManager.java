@@ -540,12 +540,8 @@ public class StatisticsManager implements IStatisticsManager {
                         // Count the attempt at the question
                         if (questionAttemptsByStageAndDifficultyStats.containsKey(currentStage)) {
                             if (questionAttemptsByStageAndDifficultyStats.get(currentStage).containsKey(currentDifficulty)) {
-                                questionAttemptsByStageAndDifficultyStats.get(
-                                        currentStage).put(
-                                        currentDifficulty,
-                                                questionAttemptsByStageAndDifficultyStats.get(
-                                                        currentStage).get(
-                                                        currentDifficulty) + 1);
+                                questionAttemptsByStageAndDifficultyStats.get(currentStage)
+                                .put(currentDifficulty, questionAttemptsByStageAndDifficultyStats.get(currentStage).get(currentDifficulty) + 1);
                             } else {
                                 questionAttemptsByStageAndDifficultyStats.get(currentStage).put(currentDifficulty, 1);
                             }
@@ -559,11 +555,8 @@ public class StatisticsManager implements IStatisticsManager {
                         if (questionIsCorrect) {
                             if (questionsCorrectByStageAndDifficultyStats.containsKey(currentStage)) {
                                 if (questionsCorrectByStageAndDifficultyStats.get(currentStage).containsKey(currentDifficulty)) {
-                                    questionsCorrectByStageAndDifficultyStats.get(
-                                            currentStage).put(
-                                            currentDifficulty,
-                                                    questionsCorrectByStageAndDifficultyStats.get(
-                                                            currentStage).get(currentDifficulty) + 1);
+                                    questionsCorrectByStageAndDifficultyStats.get(currentStage)
+                                    .put(currentDifficulty, questionsCorrectByStageAndDifficultyStats.get(currentStage).get(currentDifficulty) + 1);
                                 } else {
                                     questionsCorrectByStageAndDifficultyStats.get(currentStage).put(currentDifficulty, 1);
                                 }
