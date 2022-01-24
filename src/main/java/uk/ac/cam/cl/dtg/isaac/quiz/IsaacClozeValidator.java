@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
+import com.google.common.collect.Sets;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.stream.Collectors;
 
 /**
@@ -130,9 +132,20 @@ public class IsaacClozeValidator implements IValidator {
                     choiceItemIds.add(item.getId());
                 }
 
-                // TODO match on positions and enable subset matching - this requires a ClozeItem with a position attribute
-                //  describing which drop-zone it is in/intended for
-                if (choiceItemIds.equals(submittedItemIds)) {
+                // Do not allow subset matching by default, and only allow if the cloze question does not have replacement/item duplication enabled
+                boolean allowSubsetMatch = (null != itemChoice.isAllowSubsetMatch() && itemChoice.isAllowSubsetMatch()) && (null != clozeQuestion.getWithReplacement() && !clozeQuestion.getWithReplacement());
+
+                Set<String> choiceItemIdSet = new HashSet<>(choiceItemIds);
+                /* If the intersection of the submitted and choice ids is equal to the choice ones, then
+                   this means that:
+                    - choiceItemIdSet.size() <= submittedItemIds.size()
+                    - All choice ids are within the set of submitted ids
+                 */
+                if (allowSubsetMatch && Sets.intersection(submittedItemIdSet, choiceItemIdSet).equals(choiceItemIdSet)) {
+                    responseCorrect = itemChoice.isCorrect();
+                    feedback = (Content) itemChoice.getExplanation();
+                    break;
+                } else if (choiceItemIds.equals(submittedItemIds)) {
                     responseCorrect = itemChoice.isCorrect();
                     feedback = (Content) itemChoice.getExplanation();
                     break;
@@ -146,6 +159,11 @@ public class IsaacClozeValidator implements IValidator {
         }
 
         return new QuestionValidationResponse(question.getId(), answer, responseCorrect, feedback, new Date());
+    }
+
+    @Override
+    public List<Choice> getOrderedChoices(final List<Choice> choices) {
+        return IsaacItemQuestionValidator.getOrderedChoicesWithSubsets(choices);
     }
 
 }
