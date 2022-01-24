@@ -924,7 +924,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                   "deleteEventAdditionalBookingInformation",
                   "JavaJob",
                   "Delete event additional booking information a given period after an event has taken place",
-                  "0 * * ? * * *"
+                  "0 0 7 * * ?"
             );
 
             SegueScheduledJob syncMailjetUsers = new SegueScheduledSyncMailjetUsersJob(
