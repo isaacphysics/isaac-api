@@ -58,6 +58,7 @@ public class DeleteEventAdditionalBookingInformationJob implements Job {
 
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
+        // Magic number
         Integer limit = 10000;
         Integer startIndex = 0;
         Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
