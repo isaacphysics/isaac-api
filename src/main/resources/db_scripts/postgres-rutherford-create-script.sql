@@ -83,7 +83,8 @@ CREATE TABLE public.event_bookings (
     reserved_by integer DEFAULT NULL,
     status text DEFAULT 'CONFIRMED'::text NOT NULL,
     updated timestamp without time zone,
-    additional_booking_information jsonb
+    additional_booking_information jsonb,
+    pii_removed timestamp without time zone
 );
 
 

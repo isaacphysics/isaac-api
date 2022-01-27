@@ -24,6 +24,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.Date;
@@ -81,21 +82,20 @@ public class DeleteEventAdditionalBookingInformationJob implements Job {
                     if ((page.getEndDate() != null && page.getEndDate().toInstant().isBefore(thirtyDaysAgo.toInstant())) || (page.getDate().toInstant().isBefore(thirtyDaysAgo.toInstant()))) {
                         try (Connection conn = database.getDatabaseConnection()) {
                             PreparedStatement pst;
-                            // Check for additional info that needs removing, check if any of the additional fields
-                            // are already removed, if so, don't re-remove
+                            // Check for additional info that needs removing, check if pii has already been removed, if
+                            // so, don't re-remove
                             pst = conn.prepareStatement(
                                     "UPDATE event_bookings SET additional_booking_information=jsonb_set(jsonb_set(jsonb_set(jsonb_set(additional_booking_information," +
                                     " '{emergencyName}', '\"[REMOVED]\"'::JSONB, FALSE)," +
                                     " '{emergencyNumber}', '\"[REMOVED]\"'::JSONB, FALSE)," +
                                     " '{accessibilityRequirements}', '\"[REMOVED]\"'::JSONB, FALSE)," +
-                                    " '{medicalRequirements}', '\"[REMOVED]\"'::JSONB, FALSE)" +
+                                    " '{medicalRequirements}', '\"[REMOVED]\"'::JSONB, FALSE)," +
+                                    " pii_removed=? " +
                                     " WHERE event_id = ?" +
                                     " AND additional_booking_information ??| array['emergencyName', 'emergencyNumber', 'accessibilityRequirements', 'medicalRequirements']" +
-                                    " AND NOT (event_bookings.additional_booking_information @> '{\"emergencyName\": \"[REMOVED]\"}'::JSONB" +
-                                    " OR event_bookings.additional_booking_information @> '{\"emergencyNumber\": \"[REMOVED]\"}'::JSONB" +
-                                    " OR event_bookings.additional_booking_information @> '{\"accessibilityRequirements\": \"[REMOVED]\"}'::JSONB" +
-                                    " OR event_bookings.additional_booking_information @> '{\"medicalRequirements\": \"[REMOVED]\"}'::JSONB);");
-                            pst.setString(1, page.getId());
+                                    " AND pii_removed IS NULL");
+                            pst.setTimestamp(1, new Timestamp(new Date().getTime()));
+                            pst.setString(2, page.getId());
 
                             int affectedRows = pst.executeUpdate();
                             if (affectedRows > 0) {
