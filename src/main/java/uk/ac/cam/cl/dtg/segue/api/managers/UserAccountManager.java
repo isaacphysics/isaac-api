@@ -774,7 +774,7 @@ public class UserAccountManager implements IUserAccountManager {
         }
 
         if (!this.isUserNameValid(user.getFamilyName())) {
-            throw new InvalidNameException("The given name provided is too long or contains illegal characters.");
+            throw new InvalidNameException("The family name provided is too long or contains illegal characters.");
         }
 
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
