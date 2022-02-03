@@ -50,6 +50,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidNameException;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
@@ -857,6 +858,9 @@ public class UsersFacade extends AbstractSegueFacade {
         } catch (AuthenticationProviderMappingException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Unable to map to a known authenticator. The provider: is unknown").toResponse();
+        } catch (InvalidNameException e) {
+            log.warn("Invalid name provided during registration.");
+            return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
         }
     }
 
@@ -913,6 +917,9 @@ public class UsersFacade extends AbstractSegueFacade {
             log.warn("Someone attempted to register with an Isaac email address: " + userObjectFromClient.getEmail());
             return new SegueErrorResponse(Status.BAD_REQUEST,
                     "You cannot register with an Isaac email address.").toResponse();
+        } catch (InvalidNameException e) {
+            log.warn("Invalid name provided during registration.");
+            return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
         }
     }
 
