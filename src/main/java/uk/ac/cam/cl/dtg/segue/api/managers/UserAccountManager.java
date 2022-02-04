@@ -770,11 +770,11 @@ public class UserAccountManager implements IUserAccountManager {
 
         // validate names
         if (!this.isUserNameValid(user.getGivenName())) {
-            throw new InvalidNameException("The given name provided is too long or contains illegal characters.");
+            throw new InvalidNameException("The given name provided is an invalid length or contains illegal characters.");
         }
 
         if (!this.isUserNameValid(user.getFamilyName())) {
-            throw new InvalidNameException("The family name provided is too long or contains illegal characters.");
+            throw new InvalidNameException("The family name provided is an invalid length or contains illegal characters.");
         }
 
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
@@ -857,11 +857,11 @@ public class UserAccountManager implements IUserAccountManager {
 
         // validate names
         if (!this.isUserNameValid(updatedUser.getGivenName())) {
-            throw new InvalidNameException("The given name provided is too long or contains illegal characters.");
+            throw new InvalidNameException("The given name provided is an invalid length or contains illegal characters.");
         }
 
         if (!this.isUserNameValid(updatedUser.getFamilyName())) {
-            throw new InvalidNameException("The family name provided is too long or contains illegal characters.");
+            throw new InvalidNameException("The family name provided is an invalid length or contains illegal characters.");
         }
 
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
@@ -1591,14 +1591,11 @@ public class UserAccountManager implements IUserAccountManager {
      * @return true if it meets the internal storage requirements, false if not.
      */
     private boolean isUserValid(final RegisteredUser userToValidate) {
-        boolean isValid = true;
-
         if (userToValidate.getEmail() == null || userToValidate.getEmail().isEmpty()
                 || !userToValidate.getEmail().matches(".*(@.+\\.[^.]+|-(facebook|google|twitter)$)")) {
-            isValid = false;
+            return false;
         }
-        
-        return isValid;
+        return true;
     }
 
     /**
@@ -1608,15 +1605,12 @@ public class UserAccountManager implements IUserAccountManager {
      *            - the name to validate.
      * @return true if the name is valid, false otherwise.
      */
-    public boolean isUserNameValid(final String name){
-        boolean isValid = true;
-
+    public final boolean isUserNameValid(final String name){
         Pattern illegalCharacters = Pattern.compile(USER_NAME_ILLEGAL_CHARS_REGEX);
-        if (name.length() > USER_NAME_MAX_LENGTH || illegalCharacters.matcher(name).find()) {
-            isValid = false;
+        if (name.length() > USER_NAME_MAX_LENGTH || illegalCharacters.matcher(name).find() || name.isEmpty()) {
+           return false;
         }
-
-        return isValid;
+        return true;
     }
 
     /**

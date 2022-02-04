@@ -859,7 +859,7 @@ public class UsersFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Unable to map to a known authenticator. The provider: is unknown").toResponse();
         } catch (InvalidNameException e) {
-            log.warn("Invalid name provided during registration.");
+            log.warn("Invalid name provided during user update.");
             return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
         }
     }

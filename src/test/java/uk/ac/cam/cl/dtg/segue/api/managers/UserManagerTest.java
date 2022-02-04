@@ -727,6 +727,23 @@ public class UserManagerTest {
     }
 
     /**
+     * Ensure isUserNameValid returns false when an empty name is provided.
+     *
+     */
+    @Test
+    public final void isUserNameValid_emptyNameProvided_returnsFalse()  {
+        // Arrange
+        UserAccountManager userManager = buildTestUserManager();
+        String name = "";
+
+        // Act
+        boolean valid = userManager.isUserNameValid(name);
+
+        // Assert
+        assertFalse(valid);
+    }
+
+    /**
      * Helper method to construct a UserManager with the default TEST provider.
      * 
      * @return A new UserManager instance
