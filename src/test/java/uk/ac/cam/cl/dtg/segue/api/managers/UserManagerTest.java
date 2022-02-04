@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.StringUtils;
 import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
@@ -36,6 +37,7 @@ import uk.ac.cam.cl.dtg.segue.auth.ISecondFactorAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidNameException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -671,6 +673,74 @@ public class UserManagerTest {
         // Assert
         verify(dummyQuestionDatabase, dummySession, request);
         assertTrue(!valid);
+    }
+
+    /**
+     * Ensure isUserNameValid returns false when an excessively long name is provided.
+     *
+     */
+    @Test
+    public final void isUserNameValid_longNameProvided_returnsFalse()  {
+        // Arrange
+        UserAccountManager userManager = buildTestUserManager();
+        String name = StringUtils.repeat("a", 256);
+
+        // Act
+        boolean valid = userManager.isUserNameValid(name);
+
+        // Assert
+        assertFalse(valid);
+    }
+
+    /**
+     * Ensure isUserNameValid returns true when a name of acceptable length and no illegal characters is provided.
+     *
+     */
+    @Test
+    public final void isUserNameValid_acceptableNameProvided_returnsTrue()  {
+        // Arrange
+        UserAccountManager userManager = buildTestUserManager();
+        String name = StringUtils.repeat("a", 255);
+
+        // Act
+        boolean valid = userManager.isUserNameValid(name);
+
+        // Assert
+        assertTrue(valid);
+    }
+
+    /**
+     * Ensure isUserNameValid returns false when a name with illegal characters is provided.
+     *
+     */
+    @Test
+    public final void isUserNameValid_nameWithIllegalCharactersProvided_returnsFalse()  {
+        // Arrange
+        UserAccountManager userManager = buildTestUserManager();
+        String name = "Matthew*";
+
+        // Act
+        boolean valid = userManager.isUserNameValid(name);
+
+        // Assert
+        assertFalse(valid);
+    }
+
+    /**
+     * Ensure isUserNameValid returns false when an empty name is provided.
+     *
+     */
+    @Test
+    public final void isUserNameValid_emptyNameProvided_returnsFalse()  {
+        // Arrange
+        UserAccountManager userManager = buildTestUserManager();
+        String name = "";
+
+        // Act
+        boolean valid = userManager.isUserNameValid(name);
+
+        // Assert
+        assertFalse(valid);
     }
 
     /**
