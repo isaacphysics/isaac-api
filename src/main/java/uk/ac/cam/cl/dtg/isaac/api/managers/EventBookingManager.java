@@ -241,6 +241,8 @@ public class EventBookingManager {
                 }
             } catch (InvalidUserAssociationTokenException e) {
                 log.error("Event {} has an invalid user association token - ignoring", event.getId());
+            } catch (ResourceNotFoundException ignored) {
+                // The group for this event has been deleted or does not exist. Since deletion is common, fail silently.
             }
         }
         return false;
