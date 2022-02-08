@@ -75,17 +75,17 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  */
 public class GameboardPersistenceManager {
 
-	private static final Logger log = LoggerFactory.getLogger(GameboardPersistenceManager.class);
-	private static final Long GAMEBOARD_TTL_MINUTES = 30L;
-	private static final int GAMEBOARD_ITEM_MAP_BATCH_SIZE = 1000;
+    private static final Logger log = LoggerFactory.getLogger(GameboardPersistenceManager.class);
+    private static final Long GAMEBOARD_TTL_MINUTES = 30L;
+    private static final int GAMEBOARD_ITEM_MAP_BATCH_SIZE = 1000;
 
-	private final PostgresSqlDb database;
+    private final PostgresSqlDb database;
     private final Cache<String, GameboardDO> gameboardNonPersistentStorage;
     
-	private final MapperFacade mapper; // used for content object mapping.
-	private final ObjectMapper objectMapper; // used for json serialisation
-	
-	private final IContentManager contentManager;
+    private final MapperFacade mapper; // used for content object mapping.
+    private final ObjectMapper objectMapper; // used for json serialisation
+
+    private final IContentManager contentManager;
     private final String contentIndex;
 
     private final URIManager uriManager;
@@ -105,20 +105,20 @@ public class GameboardPersistenceManager {
      * @param uriManager
      *            - so we can generate appropriate content URIs.
      */
-	@Inject
+    @Inject
     public GameboardPersistenceManager(final PostgresSqlDb database, final IContentManager contentManager,
                                        final MapperFacade mapper, final ObjectMapper objectMapper, final URIManager uriManager, @Named(CONTENT_INDEX) final String contentIndex) {
-		this.database = database;
-		this.mapper = mapper;
-		this.contentManager = contentManager;
+        this.database = database;
+        this.mapper = mapper;
+        this.contentManager = contentManager;
         this.contentIndex = contentIndex;
         this.objectMapper = objectMapper;
         this.uriManager = uriManager;		
         this.gameboardNonPersistentStorage = CacheBuilder.newBuilder()
                 .expireAfterAccess(GAMEBOARD_TTL_MINUTES, TimeUnit.MINUTES).<String, GameboardDO> build();
-	}
+    }
 
-	/**
+    /**
      * Find a gameboard by id.
      * 
      * @param gameboardId
@@ -156,8 +156,8 @@ public class GameboardPersistenceManager {
     public GameboardDTO getLiteGameboardById(final String gameboardId) throws SegueDatabaseException {
         return getGameboardById(gameboardId, false);
     }
-	
-	/**
+
+    /**
      * Keep generated gameboard in non-persistent storage.
      * 
      * This will be removed if the gameboard is saved to persistent storage.
@@ -171,47 +171,47 @@ public class GameboardPersistenceManager {
 
         return gameboard.getId();
     }
-	
-	/**
-	 * Save a gameboard to persistent storage.
-	 * 
-	 * @param gameboard
-	 *            - gameboard to save
-	 * @return internal database id for the saved gameboard.
-	 * @throws SegueDatabaseException
-	 *             - if there is a problem saving the gameboard in the database.
-	 * @throws JsonProcessingException 
-	 */
-	public String saveGameboardToPermanentStorage(final GameboardDTO gameboard)
-		throws SegueDatabaseException {
-		GameboardDO gameboardToSave = mapper.map(gameboard, GameboardDO.class);
-		// the mapping operation won't work for the list so we should just
-		// create a new one.
-		gameboardToSave.setContents(Lists.newArrayList());
 
-		// Map each question into an IsaacQuestionInfo object
-		for (GameboardItem c : gameboard.getContents()) {
-			gameboardToSave.getContents().add(
-			        new GameboardContentDescriptor(c.getId(), c.getContentType(), c.getCreationContext()));
-		}
+    /**
+     * Save a gameboard to persistent storage.
+     *
+     * @param gameboard
+     *            - gameboard to save
+     * @return internal database id for the saved gameboard.
+     * @throws SegueDatabaseException
+     *             - if there is a problem saving the gameboard in the database.
+     * @throws JsonProcessingException
+     */
+    public String saveGameboardToPermanentStorage(final GameboardDTO gameboard)
+        throws SegueDatabaseException {
+        GameboardDO gameboardToSave = mapper.map(gameboard, GameboardDO.class);
+        // the mapping operation won't work for the list so we should just
+        // create a new one.
+        gameboardToSave.setContents(Lists.newArrayList());
 
-		// This operation may not be atomic due to underlying DB. Gameboard create first then link to user view second.
-		try {
+        // Map each question into an IsaacQuestionInfo object
+        for (GameboardItem c : gameboard.getContents()) {
+            gameboardToSave.getContents().add(
+                    new GameboardContentDescriptor(c.getId(), c.getContentType(), c.getCreationContext()));
+        }
+
+        // This operation may not be atomic due to underlying DB. Gameboard create first then link to user view second.
+        try {
             this.saveGameboard(gameboardToSave);
         } catch (JsonProcessingException e) {
             throw new SegueDatabaseException("Unable to process json while saving gameboard.", e);
         }
-		
-		// add the gameboard to the users myboards list.
-		this.createOrUpdateUserLinkToGameboard(gameboardToSave.getOwnerUserId(), gameboardToSave.getId());
 
-		// make sure that it is not still in temporary storage
-		this.gameboardNonPersistentStorage.invalidate(gameboard.getId());
+        // add the gameboard to the users myboards list.
+        this.createOrUpdateUserLinkToGameboard(gameboardToSave.getOwnerUserId(), gameboardToSave.getId());
 
-		return gameboardToSave.getId();
-	}
+        // make sure that it is not still in temporary storage
+        this.gameboardNonPersistentStorage.invalidate(gameboard.getId());
 
-	/**
+        return gameboardToSave.getId();
+    }
+
+    /**
      * Allows a gameboard title to be updated. (assumes persistently stored)
      * 
      * @param gameboard
@@ -239,8 +239,8 @@ public class GameboardPersistenceManager {
 
         return gameboard;
     }
-	
-	/**
+
+    /**
      * Determine if the gameboard only exists in temporary storage.
      * 
      * @param gameboardIdToTest - the gameboard to check the existence of.
@@ -253,7 +253,7 @@ public class GameboardPersistenceManager {
         
         return isAPersistentBoard && !isAtemporaryBoard;
     }
-	
+
     /**
      * Determines whether a given game board is already in a users my boards list. Only boards in persistent storage
      * should be linked to a user.
@@ -266,7 +266,7 @@ public class GameboardPersistenceManager {
      * @throws SegueDatabaseException
      *             if there is a database error
      */
-	public boolean isBoardLinkedToUser(final Long userId, final String gameboardId) throws SegueDatabaseException {
+    public boolean isBoardLinkedToUser(final Long userId, final String gameboardId) throws SegueDatabaseException {
         if (userId == null || gameboardId == null) {
             return false;
         }
@@ -285,20 +285,20 @@ public class GameboardPersistenceManager {
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
-	}
-	
-	/**
-	 * Create a link between a user and a gameboard or update the last visited date.
-	 * 
-	 * @param userId
-	 *            - userId to link
-	 * @param gameboardId
-	 *            - gameboard to link
-	 * @throws SegueDatabaseException
-	 *             - if there is a problem persisting the link in the database.
-	 */
-	public void createOrUpdateUserLinkToGameboard(final Long userId, final String gameboardId)
-		throws SegueDatabaseException {	        
+    }
+
+    /**
+     * Create a link between a user and a gameboard or update the last visited date.
+     *
+     * @param userId
+     *            - userId to link
+     * @param gameboardId
+     *            - gameboard to link
+     * @throws SegueDatabaseException
+     *             - if there is a problem persisting the link in the database.
+     */
+    public void createOrUpdateUserLinkToGameboard(final Long userId, final String gameboardId)
+        throws SegueDatabaseException {
 
         // Connect user to gameboard, Postgres UPSERT syntax on insert conflict:
         String query = "INSERT INTO user_gameboards(user_id, gameboard_id, created, last_visited) VALUES (?, ?, ?, ?)"
@@ -320,16 +320,16 @@ public class GameboardPersistenceManager {
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
-	}	
-	
-	/**
-	 * Allows a link between users and a gameboard to be destroyed.
-	 * 
-	 * @param userId - users id.
-	 * @param gameboardId - gameboard ids
-	 * @throws SegueDatabaseException - if there is an error during the delete operation.
-	 */
-	public void removeUserLinkToGameboard(final Long userId, final Collection<String> gameboardId) throws SegueDatabaseException {
+    }
+
+    /**
+     * Allows a link between users and a gameboard to be destroyed.
+     *
+     * @param userId - users id.
+     * @param gameboardId - gameboard ids
+     * @throws SegueDatabaseException - if there is an error during the delete operation.
+     */
+    public void removeUserLinkToGameboard(final Long userId, final Collection<String> gameboardId) throws SegueDatabaseException {
         StringBuilder params = new StringBuilder();
         params.append("?");
         for (int i = 1; i < gameboardId.size(); i++) {
@@ -352,28 +352,28 @@ public class GameboardPersistenceManager {
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
-	}
+    }
 
-	/**
-	 * Retrieve all gameboards (without underlying Gameboard Items) for a given
-	 * user.
-	 * 
-	 * @param user
-	 *            - to search for
-	 * @return gameboards as a list - note these gameboards will not have the
-	 *         questions fully populated as it is expected only summary objects
-	 *         are required.
-	 * @throws SegueDatabaseException
-	 *             - if there is an error when accessing the database.
-	 */
-	public List<GameboardDTO> getGameboardsByUserId(final RegisteredUserDTO user) throws SegueDatabaseException {
-		// find all gameboards related to this user.
-	    List<GameboardDO> listOfResults = Lists.newArrayList();
-	    Map<String, Date> lastVisitedDate = Maps.newHashMap();
+    /**
+     * Retrieve all gameboards (without underlying Gameboard Items) for a given
+     * user.
+     *
+     * @param user
+     *            - to search for
+     * @return gameboards as a list - note these gameboards will not have the
+     *         questions fully populated as it is expected only summary objects
+     *         are required.
+     * @throws SegueDatabaseException
+     *             - if there is an error when accessing the database.
+     */
+    public List<GameboardDTO> getGameboardsByUserId(final RegisteredUserDTO user) throws SegueDatabaseException {
+        // find all gameboards related to this user.
+        List<GameboardDO> listOfResults = Lists.newArrayList();
+        Map<String, Date> lastVisitedDate = Maps.newHashMap();
 
-	    String query = "SELECT * FROM gameboards INNER JOIN user_gameboards" +
+        String query = "SELECT * FROM gameboards INNER JOIN user_gameboards" +
                 " ON gameboards.id = user_gameboards.gameboard_id WHERE user_gameboards.user_id = ?";
-	    try (Connection conn = database.getDatabaseConnection();
+        try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
         ) {
             pst.setLong(1, user.getId());
@@ -389,25 +389,25 @@ public class GameboardPersistenceManager {
             throw new SegueDatabaseException("Unable to find assignment by id", e);
         }
 
-		List<GameboardDTO> gameboardDTOs = this.convertToGameboardDTOs(listOfResults, false);
+        List<GameboardDTO> gameboardDTOs = this.convertToGameboardDTOs(listOfResults, false);
 
-		// we need to augment each gameboard with its visited date.
-		for (GameboardDTO gameboardDTO : gameboardDTOs) {
-			gameboardDTO.setLastVisited(lastVisitedDate.get(gameboardDTO.getId()));
-		}
+        // we need to augment each gameboard with its visited date.
+        for (GameboardDTO gameboardDTO : gameboardDTOs) {
+            gameboardDTO.setLastVisited(lastVisitedDate.get(gameboardDTO.getId()));
+        }
 
-		return gameboardDTOs;
-	}
-	
-	/**
-	 * Find the list of invalid question ids.
-	 * @param gameboardDTO - to check
-	 * @return a List containing the ideas of any invalid or inaccessible questions - the list will be empty if none.
-	 */
-	public List<String> getInvalidQuestionIdsFromGameboard(final GameboardDTO gameboardDTO) {
-		GameboardDO gameboardDO = this.convertToGameboardDO(gameboardDTO);
-		
-		// build query the db to get full question information
+        return gameboardDTOs;
+    }
+
+    /**
+     * Find the list of invalid question ids.
+     * @param gameboardDTO - to check
+     * @return a List containing the ideas of any invalid or inaccessible questions - the list will be empty if none.
+     */
+    public List<String> getInvalidQuestionIdsFromGameboard(final GameboardDTO gameboardDTO) {
+        GameboardDO gameboardDO = this.convertToGameboardDO(gameboardDTO);
+
+        // build query the db to get full question information
         List<IContentManager.BooleanSearchClause> fieldsToMap = Lists.newArrayList();
 
         fieldsToMap.add(new IContentManager.BooleanSearchClause(
@@ -427,77 +427,77 @@ public class GameboardPersistenceManager {
             log.error("Unable to select questions for gameboard.", e);
         }
         
-		List<ContentDTO> questionsForGameboard = results.getResults();
+        List<ContentDTO> questionsForGameboard = results.getResults();
 
-		// Map each Content object into an GameboardItem object
-		Map<String, GameboardItem> gameboardReadyQuestions = Maps.newHashMap();
+        // Map each Content object into an GameboardItem object
+        Map<String, GameboardItem> gameboardReadyQuestions = Maps.newHashMap();
 
-		for (ContentDTO c : questionsForGameboard) {
-			GameboardItem questionInfo = mapper.map(c, GameboardItem.class);
-			questionInfo.setUri(uriManager.generateApiUrl(c));
-			gameboardReadyQuestions.put(c.getId(), questionInfo);
-		}
-		
-		List<String> errors = Lists.newArrayList();
-		
-		for (GameboardContentDescriptor contentDescriptor : gameboardDO.getContents()) {
-			// There is a possibility that the question cannot be found any more for some reason
-			// In this case we will simply pretend it isn't there.
-			GameboardItem item = gameboardReadyQuestions.get(contentDescriptor.getId());
-			if (null == item) {
-				errors.add(contentDescriptor.getId());
-			}
-		}
-		
-		return errors;
-	}
-	
-	/**
-	 * Attempt to improve performance of getting gameboard items in a batch.
-	 * 
-	 * This method will attempt to ensure that all gameboards provided have their associated
-	 * gameboard items populated with meaningful titles.
-	 * 
-	 * @param gameboards - list of gameboards to fully augment.
-	 * @return augmented gameboards as per inputted list.
-	 */
-	public List<GameboardDTO> augmentGameboardItems(final List<GameboardDTO> gameboards) {
-		Set<GameboardContentDescriptor> contentDescriptors = Sets.newHashSet();
-		Map<String, List<String>> gameboardToQuestionsMap = Maps.newHashMap();
+        for (ContentDTO c : questionsForGameboard) {
+            GameboardItem questionInfo = mapper.map(c, GameboardItem.class);
+            questionInfo.setUri(uriManager.generateApiUrl(c));
+            gameboardReadyQuestions.put(c.getId(), questionInfo);
+        }
 
-		// go through all game boards working out the set of question ids.
-		for (GameboardDTO game : gameboards) {
-			List<GameboardContentDescriptor> gameboardContentDescriptors = getContentDescriptors(game);
-			contentDescriptors.addAll(gameboardContentDescriptors);
-			gameboardToQuestionsMap.put(game.getId(), gameboardContentDescriptors.stream()
+        List<String> errors = Lists.newArrayList();
+
+        for (GameboardContentDescriptor contentDescriptor : gameboardDO.getContents()) {
+            // There is a possibility that the question cannot be found any more for some reason
+            // In this case we will simply pretend it isn't there.
+            GameboardItem item = gameboardReadyQuestions.get(contentDescriptor.getId());
+            if (null == item) {
+                errors.add(contentDescriptor.getId());
+            }
+        }
+
+        return errors;
+    }
+
+    /**
+     * Attempt to improve performance of getting gameboard items in a batch.
+     *
+     * This method will attempt to ensure that all gameboards provided have their associated
+     * gameboard items populated with meaningful titles.
+     *
+     * @param gameboards - list of gameboards to fully augment.
+     * @return augmented gameboards as per inputted list.
+     */
+    public List<GameboardDTO> augmentGameboardItems(final List<GameboardDTO> gameboards) {
+        Set<GameboardContentDescriptor> contentDescriptors = Sets.newHashSet();
+        Map<String, List<String>> gameboardToQuestionsMap = Maps.newHashMap();
+
+        // go through all game boards working out the set of question ids.
+        for (GameboardDTO game : gameboards) {
+            List<GameboardContentDescriptor> gameboardContentDescriptors = getContentDescriptors(game);
+            contentDescriptors.addAll(gameboardContentDescriptors);
+            gameboardToQuestionsMap.put(game.getId(), gameboardContentDescriptors.stream()
                     .map(GameboardContentDescriptor::getId).collect(Collectors.toList()));
-		}
-		
-		if (contentDescriptors.isEmpty()) {
-			log.info("No question ids found; returning original gameboard without augmenting.");
-			return gameboards;
-		}
+        }
 
-		Map<String, GameboardItem> gameboardReadyQuestions = getGameboardItemMap(Lists.newArrayList(contentDescriptors));
+        if (contentDescriptors.isEmpty()) {
+            log.info("No question ids found; returning original gameboard without augmenting.");
+            return gameboards;
+        }
 
-		for (GameboardDTO game : gameboards) {
-			// empty and re-populate the gameboard dto with fully augmented gameboard items.
-			game.setContents(new ArrayList<GameboardItem>());
-			for (String questionId : gameboardToQuestionsMap.get(game.getId())) {
-				// There is a possibility that the question cannot be found any more for some reason
-				// In this case we will simply pretend it isn't there.
-				GameboardItem item = gameboardReadyQuestions.get(questionId);
-				if (item != null) {
-					game.getContents().add(item);
+        Map<String, GameboardItem> gameboardReadyQuestions = getGameboardItemMap(Lists.newArrayList(contentDescriptors));
+
+        for (GameboardDTO game : gameboards) {
+            // empty and re-populate the gameboard dto with fully augmented gameboard items.
+            game.setContents(new ArrayList<GameboardItem>());
+            for (String questionId : gameboardToQuestionsMap.get(game.getId())) {
+                // There is a possibility that the question cannot be found any more for some reason
+                // In this case we will simply pretend it isn't there.
+                GameboardItem item = gameboardReadyQuestions.get(questionId);
+                if (item != null) {
+                    game.getContents().add(item);
                 } else {
                     log.warn("The gameboard: " + game.getId() + " has a reference to a question (" + questionId
                             + ") that we cannot find. Removing it from the DTO.");
                 }
-			}
-		}	
-		return gameboards;
-	}
-	
+            }
+        }
+        return gameboards;
+    }
+
     /**
      * Utility method to get a map of gameboard id to list of users who are connected to it.
      * 
@@ -532,7 +532,7 @@ public class GameboardPersistenceManager {
 
         return results;
     }
-	
+
     /**
      * Utility function to create a gameboard item from a content DTO (Should be a question page).
      * 
@@ -602,155 +602,155 @@ public class GameboardPersistenceManager {
         }        
     }
     
-	/**
-	 * Convert form a list of gameboard DOs to a list of Gameboard DTOs.
-	 * 
-	 * @param gameboardDOs
-	 *            to convert
-	 * @param populateGameboardItems
-	 *            - true if we should fully populate the gameboard DTO with
-	 *            gameboard items false if a summary is ok do? i.e. should game board items have titles etc.
-	 * @return gameboard DTO
-	 */
-	private List<GameboardDTO> convertToGameboardDTOs(final List<GameboardDO> gameboardDOs,
+    /**
+     * Convert form a list of gameboard DOs to a list of Gameboard DTOs.
+     *
+     * @param gameboardDOs
+     *            to convert
+     * @param populateGameboardItems
+     *            - true if we should fully populate the gameboard DTO with
+     *            gameboard items false if a summary is ok do? i.e. should game board items have titles etc.
+     * @return gameboard DTO
+     */
+    private List<GameboardDTO> convertToGameboardDTOs(final List<GameboardDO> gameboardDOs,
             final boolean populateGameboardItems) {
-		Validate.notNull(gameboardDOs);
+        Validate.notNull(gameboardDOs);
 
-		List<GameboardDTO> gameboardDTOs = Lists.newArrayList();
+        List<GameboardDTO> gameboardDTOs = Lists.newArrayList();
 
-		for (GameboardDO gameboardDO : gameboardDOs) {
-			gameboardDTOs.add(this.convertToGameboardDTO(gameboardDO, populateGameboardItems));
-		}
+        for (GameboardDO gameboardDO : gameboardDOs) {
+            gameboardDTOs.add(this.convertToGameboardDTO(gameboardDO, populateGameboardItems));
+        }
 
-		return gameboardDTOs;
-	}
+        return gameboardDTOs;
+    }
 
-	/**
-	 * Convert form a gameboard DO to a Gameboard DTO.
-	 * 
-	 * This method relies on the api to fully resolve questions.
-	 * 
-	 * @param gameboardDO
-	 *            - to convert
-	 * @return gameboard DTO
-	 */
-	private GameboardDTO convertToGameboardDTO(final GameboardDO gameboardDO) {
-		return this.convertToGameboardDTO(gameboardDO, true);
-	}
+    /**
+     * Convert form a gameboard DO to a Gameboard DTO.
+     *
+     * This method relies on the api to fully resolve questions.
+     *
+     * @param gameboardDO
+     *            - to convert
+     * @return gameboard DTO
+     */
+    private GameboardDTO convertToGameboardDTO(final GameboardDO gameboardDO) {
+        return this.convertToGameboardDTO(gameboardDO, true);
+    }
 
-	/**
-	 * Convert form a gameboard DO to a Gameboard DTO.
-	 * 
-	 * This method relies on the api to fully resolve questions.
-	 * 
-	 * @param gameboardDO
-	 *            - to convert
-	 * @param populateGameboardItems
-	 *            - true if we should fully populate the gameboard DTO with
-	 *            gameboard items false if just the question ids will do?
-	 * @return gameboard DTO
-	 */
+    /**
+     * Convert form a gameboard DO to a Gameboard DTO.
+     *
+     * This method relies on the api to fully resolve questions.
+     *
+     * @param gameboardDO
+     *            - to convert
+     * @param populateGameboardItems
+     *            - true if we should fully populate the gameboard DTO with
+     *            gameboard items false if just the question ids will do?
+     * @return gameboard DTO
+     */
     private GameboardDTO convertToGameboardDTO(final GameboardDO gameboardDO, final boolean populateGameboardItems) {
-		GameboardDTO gameboardDTO = mapper.map(gameboardDO, GameboardDTO.class);
+        GameboardDTO gameboardDTO = mapper.map(gameboardDO, GameboardDTO.class);
 
-		if (!populateGameboardItems) {
-			List<GameboardItem> listOfSparseGameItems = Lists.newArrayList();
+        if (!populateGameboardItems) {
+            List<GameboardItem> listOfSparseGameItems = Lists.newArrayList();
 
-			for (GameboardContentDescriptor contentDescriptor : gameboardDO.getContents()) {
-				GameboardItem gameboardItem = GameboardItem.buildLightweightItemFromContentDescriptor(contentDescriptor);
-				listOfSparseGameItems.add(gameboardItem);
-			}
-			gameboardDTO.setContents(listOfSparseGameItems);
-			return gameboardDTO;
-		}
+            for (GameboardContentDescriptor contentDescriptor : gameboardDO.getContents()) {
+                GameboardItem gameboardItem = GameboardItem.buildLightweightItemFromContentDescriptor(contentDescriptor);
+                listOfSparseGameItems.add(gameboardItem);
+            }
+            gameboardDTO.setContents(listOfSparseGameItems);
+            return gameboardDTO;
+        }
 
-		// Map each Content object into an GameboardItem object
-		Map<String, GameboardItem> gameboardReadyQuestions = getGameboardItemMap(gameboardDO.getContents());
+        // Map each Content object into an GameboardItem object
+        Map<String, GameboardItem> gameboardReadyQuestions = getGameboardItemMap(gameboardDO.getContents());
 
-		// empty and repopulate the gameboard dto.
-		gameboardDTO.setContents(Lists.newArrayList());
-		for (GameboardContentDescriptor contentDescriptor : gameboardDO.getContents()) {
-			// There is a possibility that the question cannot be found any more for some reason
-			// In this case we will simply pretend it isn't there.
-			GameboardItem item = gameboardReadyQuestions.get(contentDescriptor.getId());
-			if (item != null) {
-				gameboardDTO.getContents().add(item);
-			} else {
+        // empty and repopulate the gameboard dto.
+        gameboardDTO.setContents(Lists.newArrayList());
+        for (GameboardContentDescriptor contentDescriptor : gameboardDO.getContents()) {
+            // There is a possibility that the question cannot be found any more for some reason
+            // In this case we will simply pretend it isn't there.
+            GameboardItem item = gameboardReadyQuestions.get(contentDescriptor.getId());
+            if (item != null) {
+                gameboardDTO.getContents().add(item);
+            } else {
                 log.warn(String.format("The gameboard '%s' references an unavailable question '%s' - removing it from the DTO!",
                         gameboardDTO.getId(), contentDescriptor.getId()));
-			}
-		}
-		return gameboardDTO;
-	}
+            }
+        }
+        return gameboardDTO;
+    }
 
-	/**
-	 * Convert from a gameboard DTO to a gameboard DO.
-	 * 
-	 * @param gameboardDTO
-	 *            - DTO to convert.
-	 * @return GameboardDO.
-	 */
-	private GameboardDO convertToGameboardDO(final GameboardDTO gameboardDTO) {
-		GameboardDO gameboardDO = mapper.map(gameboardDTO, GameboardDO.class);
-		// the mapping operation won't work for the list so we should just
-		// create a new one.
-		gameboardDO.setContents(Lists.newArrayList());
+    /**
+     * Convert from a gameboard DTO to a gameboard DO.
+     *
+     * @param gameboardDTO
+     *            - DTO to convert.
+     * @return GameboardDO.
+     */
+    private GameboardDO convertToGameboardDO(final GameboardDTO gameboardDTO) {
+        GameboardDO gameboardDO = mapper.map(gameboardDTO, GameboardDO.class);
+        // the mapping operation won't work for the list so we should just
+        // create a new one.
+        gameboardDO.setContents(Lists.newArrayList());
 
-		// Map each question into an GameboardItem object
-		for (GameboardItem c : gameboardDTO.getContents()) {
-			gameboardDO.getContents().add(
-			        new GameboardContentDescriptor(c.getId(), c.getContentType(), c.getCreationContext()));
-		}
+        // Map each question into an GameboardItem object
+        for (GameboardItem c : gameboardDTO.getContents()) {
+            gameboardDO.getContents().add(
+                    new GameboardContentDescriptor(c.getId(), c.getContentType(), c.getCreationContext()));
+        }
 
-		return gameboardDO;
-	}
+        return gameboardDO;
+    }
 
-	/**
-	 * Utility method to allow all gameboard related questions to be retrieved in one big batch.
-	 * 
-	 * @param contentDescriptors to query for.
-	 * @return a map of question id to fully populated gameboard item.
-	 */
-	private Map<String, GameboardItem> getGameboardItemMap(final List<GameboardContentDescriptor> contentDescriptors) {
-	 	Map<String, GameboardItem> gameboardReadyQuestions = Maps.newHashMap();
-	 	Map<String, GameboardContentDescriptor> contentDescriptorsMap = Maps.newHashMap();
-	 	contentDescriptors.forEach(cd -> contentDescriptorsMap.put(cd.getId(), cd));
+    /**
+     * Utility method to allow all gameboard related questions to be retrieved in one big batch.
+     *
+     * @param contentDescriptors to query for.
+     * @return a map of question id to fully populated gameboard item.
+     */
+    private Map<String, GameboardItem> getGameboardItemMap(final List<GameboardContentDescriptor> contentDescriptors) {
+        Map<String, GameboardItem> gameboardReadyQuestions = Maps.newHashMap();
+        Map<String, GameboardContentDescriptor> contentDescriptorsMap = Maps.newHashMap();
+        contentDescriptors.forEach(cd -> contentDescriptorsMap.put(cd.getId(), cd));
 
-	 	// Batch the queries to the db to avoid the elasticsearch query clause limit of 1024
-		List<List<GameboardContentDescriptor>> contentDescriptorBatches =
+        // Batch the queries to the db to avoid the elasticsearch query clause limit of 1024
+        List<List<GameboardContentDescriptor>> contentDescriptorBatches =
                 Lists.partition(contentDescriptors, GAMEBOARD_ITEM_MAP_BATCH_SIZE);
-		for (List<GameboardContentDescriptor> contentDescriptorBatch : contentDescriptorBatches) {
-		    List<String> questionsIds =
+        for (List<GameboardContentDescriptor> contentDescriptorBatch : contentDescriptorBatches) {
+            List<String> questionsIds =
                     contentDescriptorBatch.stream().map(GameboardContentDescriptor::getId).collect(Collectors.toList());
-		    // build query the db to get full question information
+            // build query the db to get full question information
             List<IContentManager.BooleanSearchClause> fieldsToMap = Lists.newArrayList();
             fieldsToMap.add(new IContentManager.BooleanSearchClause(
                     Constants.ID_FIELDNAME + '.' + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
                     Constants.BooleanOperator.OR, questionsIds));
 
-			fieldsToMap.add(new IContentManager.BooleanSearchClause(
-			        TYPE_FIELDNAME, Constants.BooleanOperator.OR, Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE)));
+            fieldsToMap.add(new IContentManager.BooleanSearchClause(
+                    TYPE_FIELDNAME, Constants.BooleanOperator.OR, Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE)));
 
-			// Search for questions that match the ids.
-			ResultsWrapper<ContentDTO> results;
-			try {
-				results = this.contentManager.findByFieldNames(
-				        this.contentIndex, fieldsToMap, 0, contentDescriptorBatch.size());
-			} catch (ContentManagerException e) {
-				results = new ResultsWrapper<ContentDTO>();
-				log.error("Unable to locate questions for gameboard. Using empty results", e);
-			}
+            // Search for questions that match the ids.
+            ResultsWrapper<ContentDTO> results;
+            try {
+                results = this.contentManager.findByFieldNames(
+                        this.contentIndex, fieldsToMap, 0, contentDescriptorBatch.size());
+            } catch (ContentManagerException e) {
+                results = new ResultsWrapper<ContentDTO>();
+                log.error("Unable to locate questions for gameboard. Using empty results", e);
+            }
 
-			// Map each Content object into an GameboardItem object
-			List<ContentDTO> questionsForGameboard = results.getResults();
-			for (ContentDTO c : questionsForGameboard) {
-				GameboardItem contentInfo = this.convertToGameboardItem(c, contentDescriptorsMap.get(c.getId()));
-				gameboardReadyQuestions.put(c.getId(), contentInfo);
-			}
-		}
-		return gameboardReadyQuestions;
-	}
-	
+            // Map each Content object into an GameboardItem object
+            List<ContentDTO> questionsForGameboard = results.getResults();
+            for (ContentDTO c : questionsForGameboard) {
+                GameboardItem contentInfo = this.convertToGameboardItem(c, contentDescriptorsMap.get(c.getId()));
+                gameboardReadyQuestions.put(c.getId(), contentInfo);
+            }
+        }
+        return gameboardReadyQuestions;
+    }
+
     /**
      * Utility method to allow us to retrieve a gameboard either from temporary storage or permanent.
      * 
