@@ -51,9 +51,10 @@ public class PgTOTPDataManager extends AbstractPgDataManager implements ITOTPDat
             return null;
         }
 
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM user_totp WHERE user_id = ?");
+        String query = "SELECT * FROM user_totp WHERE user_id = ?";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setLong(1, userId);
 
             ResultSet results = pst.executeQuery();
@@ -88,14 +89,10 @@ public class PgTOTPDataManager extends AbstractPgDataManager implements ITOTPDat
      * @throws SegueDatabaseException - if we can't save the entry for some reason
      */
     private TOTPSharedSecret createCredentials(final TOTPSharedSecret credsToSave) throws SegueDatabaseException {
-        PreparedStatement pst;
-        try (Connection conn = database.getDatabaseConnection()) {
-            pst = conn
-                    .prepareStatement(
-                            "INSERT INTO user_totp(user_id, shared_secret, created, last_updated) "
-                                    + "VALUES (?, ?, ?,?);",
-                            Statement.RETURN_GENERATED_KEYS);
-
+        String query = "INSERT INTO user_totp(user_id, shared_secret, created, last_updated) VALUES (?, ?, ?,?);";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+        ) {
             setValueHelper(pst, 1, credsToSave.getUserId());
             setValueHelper(pst, 2, credsToSave.getSharedSecret());
             setValueHelper(pst, 3, credsToSave.getCreated());
@@ -124,14 +121,10 @@ public class PgTOTPDataManager extends AbstractPgDataManager implements ITOTPDat
             throw new SegueDatabaseException("The credentials you have tried to update do not exist.");
         }
 
-        PreparedStatement pst;
-        try (Connection conn = database.getDatabaseConnection()) {
-            pst = conn
-                    .prepareStatement(
-                            "UPDATE user_totp SET shared_secret = ?, last_updated = ?"
-                                    + "WHERE user_id = ?;");
-
-
+        String query = "UPDATE user_totp SET shared_secret = ?, last_updated = ? WHERE user_id = ?;";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             setValueHelper(pst, 1, credsToSave.getSharedSecret());
             setValueHelper(pst, 2, credsToSave.getLastUpdated());
             setValueHelper(pst, 3, credsToSave.getUserId());
@@ -155,13 +148,10 @@ public class PgTOTPDataManager extends AbstractPgDataManager implements ITOTPDat
     @Override
     public void delete2FACredentials(final Long userId) throws SegueDatabaseException {
 
-        PreparedStatement pst;
-        try (Connection conn = database.getDatabaseConnection()) {
-            pst = conn
-                    .prepareStatement(
-                            "DELETE FROM user_totp "
-                                    + "WHERE user_id = ?;");
-
+        String query = "DELETE FROM user_totp WHERE user_id = ?;";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             setValueHelper(pst, 1, userId);
 
             pst.executeUpdate();
