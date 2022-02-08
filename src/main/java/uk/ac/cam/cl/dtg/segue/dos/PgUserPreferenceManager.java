@@ -62,24 +62,22 @@ public class PgUserPreferenceManager extends AbstractUserPreferenceManager {
         Validate.notBlank(preferenceType);
         Validate.notBlank(preferenceName);
 
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM user_preferences WHERE user_id=? AND preference_type=? AND preference_name=?;");
-
+        String query = "SELECT * FROM user_preferences WHERE user_id=? AND preference_type=? AND preference_name=?;";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setLong(1, userId);
             pst.setString(2, preferenceType);
             pst.setString(3, preferenceName);
             pst.setMaxRows(1); // There is a primary key to ensure uniqueness!
 
-            ResultSet results = pst.executeQuery();
-
-            if (results.next()) {
-                return userPreferenceFromResultSet(results);
+            try (ResultSet results = pst.executeQuery()) {
+                if (results.next()) {
+                    return userPreferenceFromResultSet(results);
+                }
+                // We must not have found anything:
+                return null;
             }
-
-            // We must not have found anything:
-            return null;
-
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
@@ -100,29 +98,29 @@ public class PgUserPreferenceManager extends AbstractUserPreferenceManager {
         while (fromIndex < toIndex) {
 
             List<RegisteredUserDTO> pagedUsers = users.subList(fromIndex, toIndex);
-            try (Connection conn = database.getDatabaseConnection()) {
-                PreparedStatement pst;
-                StringBuilder sb = new StringBuilder();
-                sb.append("SELECT * FROM user_preferences WHERE user_id IN (");
+            StringBuilder sb = new StringBuilder();
+            sb.append("SELECT * FROM user_preferences WHERE user_id IN (");
+            for (int i = 0; i < pagedUsers.size(); i++) {
+                sb.append("?").append(i < pagedUsers.size() - 1 ? ", " : "");
+            }
+            sb.append(") AND preference_type=? AND preference_name=? ORDER BY user_id ASC;");
 
-                for (int i = 0; i < pagedUsers.size(); i++) {
-                    sb.append("?").append(i < pagedUsers.size() - 1 ? ", " : "");
-                }
-                sb.append(") AND preference_type=? AND preference_name=? ORDER BY user_id ASC;");
-
-                pst = conn.prepareStatement(sb.toString());
+            try (Connection conn = database.getDatabaseConnection();
+                 PreparedStatement pst = conn.prepareStatement(sb.toString());
+            ) {
                 for (int i = 1; i <= pagedUsers.size(); i++) {
                     pst.setLong(i, pagedUsers.get(i - 1).getId());
                 }
                 pst.setString(pagedUsers.size() + 1, preferenceType);
                 pst.setString(pagedUsers.size() + 2, preferenceName);
 
-                ResultSet results = pst.executeQuery();
+                try (ResultSet results = pst.executeQuery()) {
 
-                while (results.next()) {
-                    Long userId = results.getLong("user_id");
-                    UserPreference pref = userPreferenceFromResultSet(results);
-                    usersPreferenceMap.put(userId, pref);
+                    while (results.next()) {
+                        Long userId = results.getLong("user_id");
+                        UserPreference pref = userPreferenceFromResultSet(results);
+                        usersPreferenceMap.put(userId, pref);
+                    }
                 }
 
                 fromIndex = toIndex;
@@ -139,24 +137,23 @@ public class PgUserPreferenceManager extends AbstractUserPreferenceManager {
     public List<UserPreference> getUserPreferences(String preferenceType, long userId) throws SegueDatabaseException {
         Validate.notBlank(preferenceType);
 
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM user_preferences WHERE user_id=? AND preference_type=?;");
-
+        String query = "SELECT * FROM user_preferences WHERE user_id=? AND preference_type=?;";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setLong(1, userId);
             pst.setString(2, preferenceType);
 
-            ResultSet results = pst.executeQuery();
+            try (ResultSet results = pst.executeQuery()) {
+                List<UserPreference> userPreferences = Lists.newArrayList();
 
-            List<UserPreference> userPreferences = Lists.newArrayList();
+                while (results.next()) {
+                    UserPreference pref = userPreferenceFromResultSet(results);
+                    userPreferences.add(pref);
+                }
 
-            while (results.next()) {
-                UserPreference pref = userPreferenceFromResultSet(results);
-                userPreferences.add(pref);
+                return userPreferences;
             }
-
-            return userPreferences;
-
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
@@ -165,23 +162,23 @@ public class PgUserPreferenceManager extends AbstractUserPreferenceManager {
     @Override
     public List<UserPreference> getAllUserPreferences(long userId) throws SegueDatabaseException {
 
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM user_preferences WHERE user_id=?;");
-
+        String query = "SELECT * FROM user_preferences WHERE user_id=?;";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setLong(1, userId);
 
-            ResultSet results = pst.executeQuery();
+            try (ResultSet results = pst.executeQuery()) {
 
-            List<UserPreference> userPreferences = Lists.newArrayList();
+                List<UserPreference> userPreferences = Lists.newArrayList();
 
-            while (results.next()) {
-                UserPreference pref = userPreferenceFromResultSet(results);
-                userPreferences.add(pref);
+                while (results.next()) {
+                    UserPreference pref = userPreferenceFromResultSet(results);
+                    userPreferences.add(pref);
+                }
+
+                return userPreferences;
             }
-
-            return userPreferences;
-
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
@@ -201,35 +198,36 @@ public class PgUserPreferenceManager extends AbstractUserPreferenceManager {
         while (fromIndex < toIndex) {
 
             List<RegisteredUserDTO> pagedUsers = users.subList(fromIndex, toIndex);
-            try (Connection conn = database.getDatabaseConnection()) {
-                PreparedStatement pst;
-                StringBuilder sb = new StringBuilder();
-                sb.append("SELECT * FROM user_preferences WHERE user_id IN (");
+            StringBuilder sb = new StringBuilder();
+            sb.append("SELECT * FROM user_preferences WHERE user_id IN (");
 
-                for (int i = 0; i < pagedUsers.size(); i++) {
-                    sb.append("?").append(i < pagedUsers.size() - 1 ? ", " : "");
-                }
-                sb.append(") AND preference_type=? ORDER BY user_id ASC, preference_name ASC;");
+            for (int i = 0; i < pagedUsers.size(); i++) {
+                sb.append("?").append(i < pagedUsers.size() - 1 ? ", " : "");
+            }
+            sb.append(") AND preference_type=? ORDER BY user_id ASC, preference_name ASC;");
 
-                pst = conn.prepareStatement(sb.toString());
+            try (Connection conn = database.getDatabaseConnection();
+                 PreparedStatement pst = conn.prepareStatement(sb.toString());
+            ) {
                 for (int i = 1; i <= pagedUsers.size(); i++) {
                     pst.setLong(i, pagedUsers.get(i - 1).getId());
                 }
                 pst.setString(pagedUsers.size() + 1, preferenceType);
 
-                ResultSet results = pst.executeQuery();
+                try (ResultSet results = pst.executeQuery()) {
 
-                while (results.next()) {
-                    Long userId = results.getLong("user_id");
-                    UserPreference pref = userPreferenceFromResultSet(results);
-                    List<UserPreference> values;
-                    if (usersPreferencesMap.containsKey(userId) && usersPreferencesMap.get(userId) != null) {
-                        values = usersPreferencesMap.get(userId);
-                    } else {
-                        values = Lists.newArrayList();
-                        usersPreferencesMap.put(userId, values);
+                    while (results.next()) {
+                        Long userId = results.getLong("user_id");
+                        UserPreference pref = userPreferenceFromResultSet(results);
+                        List<UserPreference> values;
+                        if (usersPreferencesMap.containsKey(userId) && usersPreferencesMap.get(userId) != null) {
+                            values = usersPreferencesMap.get(userId);
+                        } else {
+                            values = Lists.newArrayList();
+                            usersPreferencesMap.put(userId, values);
+                        }
+                        values.add(pref);
                     }
-                    values.add(pref);
                 }
 
                 fromIndex = toIndex;
@@ -244,24 +242,24 @@ public class PgUserPreferenceManager extends AbstractUserPreferenceManager {
 
     @Override
     public void saveUserPreferences(List<UserPreference> userPreferences) throws SegueDatabaseException {
-
-        PreparedStatement pst;
+        // Upsert the value in, using Postgres 9.5 syntax 'ON CONFLICT DO UPDATE ...'
+        // Only update a conflicting row if value has changed, to ensure the last_updated date remains accurate:
+        String query = "INSERT INTO user_preferences(user_id, preference_type, preference_name, preference_value, last_updated) "
+                + " VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)"
+                + " ON CONFLICT (user_id, preference_type, preference_name) DO UPDATE"
+                + " SET preference_value=excluded.preference_value, last_updated=excluded.last_updated"
+                + " WHERE user_preferences.preference_value!=excluded.preference_value;";
         try (Connection conn = database.getDatabaseConnection()) {
             conn.setAutoCommit(false);
             for (UserPreference preference : userPreferences) {
-                // Upsert the value in, using Postgres 9.5 syntax 'ON CONFLICT DO UPDATE ...'
-                // Only update a conflicting row if value has changed, to ensure the last_updated date remains accurate:
-                pst = conn.prepareStatement("INSERT INTO user_preferences(user_id, preference_type, preference_name, preference_value, last_updated) "
-                        + " VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)"
-                        + " ON CONFLICT (user_id, preference_type, preference_name) DO UPDATE"
-                        + " SET preference_value=excluded.preference_value, last_updated=excluded.last_updated"
-                        + " WHERE user_preferences.preference_value!=excluded.preference_value;");
-                pst.setLong(1, preference.getUserId());
-                pst.setString(2, preference.getPreferenceType());
-                pst.setString(3, preference.getPreferenceName());
-                pst.setBoolean(4, preference.getPreferenceValue());
+                try (PreparedStatement pst = conn.prepareStatement(query)) {
+                    pst.setLong(1, preference.getUserId());
+                    pst.setString(2, preference.getPreferenceType());
+                    pst.setString(3, preference.getPreferenceName());
+                    pst.setBoolean(4, preference.getPreferenceValue());
 
-                pst.executeUpdate();
+                    pst.executeUpdate();
+                }
             }
             conn.commit();
             conn.setAutoCommit(true);

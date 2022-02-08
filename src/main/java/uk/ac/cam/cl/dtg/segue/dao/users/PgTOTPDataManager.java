@@ -57,9 +57,9 @@ public class PgTOTPDataManager extends AbstractPgDataManager implements ITOTPDat
         ) {
             pst.setLong(1, userId);
 
-            ResultSet results = pst.executeQuery();
-
-            return this.findOne(results);
+            try (ResultSet results = pst.executeQuery()) {
+                return this.findOne(results);
+            }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }

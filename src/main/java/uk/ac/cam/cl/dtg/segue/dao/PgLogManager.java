@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;
+import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.apache.commons.lang3.Validate;
 import org.joda.time.LocalDate;
@@ -78,6 +79,7 @@ public class PgLogManager implements ILogManager {
      * @param locationManager
      *            - Helps identify a rough location for an ip address.
      */
+    @Inject
     public PgLogManager(final PostgresSqlDb database, final ObjectMapper objectMapper,
             @Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled,
             final LocationManager locationManager) {
@@ -148,11 +150,10 @@ public class PgLogManager implements ILogManager {
 
     @Override
     public void transferLogEventsToRegisteredUser(final String oldUserId, final String newUserId) {
-        PreparedStatement pst;
-        try (Connection conn = database.getDatabaseConnection()) {
-            pst = conn.prepareStatement("UPDATE logged_events SET user_id = ?, anonymous_user = TRUE"
-                    + " WHERE user_id = ?;");
-
+        String query = "UPDATE logged_events SET user_id = ?, anonymous_user = TRUE WHERE user_id = ?;";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setString(1, newUserId);
             pst.setString(2, oldUserId);
 
@@ -171,14 +172,16 @@ public class PgLogManager implements ILogManager {
 
     @Override
     public Long getLogCountByType(final String type) throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT COUNT(*) AS TOTAL FROM logged_events WHERE event_type = ?");
+        String query = "SELECT COUNT(*) AS TOTAL FROM logged_events WHERE event_type = ?";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setString(1, type);
 
-            ResultSet results = pst.executeQuery();
-            results.next();
-            return results.getLong("TOTAL");
+            try (ResultSet results = pst.executeQuery()) {
+                results.next();
+                return results.getLong("TOTAL");
+            }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception: Unable to count log events by type", e);
         }
@@ -237,12 +240,11 @@ public class PgLogManager implements ILogManager {
     @Override
     public Set<String> getAllIpAddresses() {
         Set<String> ipAddresses = Sets.newHashSet();
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT DISTINCT ip_address FROM logged_events");
-
-            ResultSet results = pst.executeQuery();
-
+        String query = "SELECT DISTINCT ip_address FROM logged_events";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+             ResultSet results = pst.executeQuery();
+        ) {
             while (results.next()) {
                 ipAddresses.add(results.getString("ip_address"));
             }
@@ -258,20 +260,21 @@ public class PgLogManager implements ILogManager {
     @Override
     public Map<String, Date> getLastLogDateForAllUsers(final String qualifyingLogEventType)
             throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT DISTINCT ON (user_id) user_id, \"timestamp\" "
-                    + "FROM logged_events WHERE event_type = ? " + "ORDER BY user_id, id DESC;");
+        String query = "SELECT DISTINCT ON (user_id) user_id, \"timestamp\" FROM logged_events WHERE event_type = ? ORDER BY user_id, id DESC;";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setString(1, qualifyingLogEventType);
 
-            ResultSet results = pst.executeQuery();
-            Map<String, Date> resultToReturn = Maps.newHashMap();
+            try (ResultSet results = pst.executeQuery()) {
+                Map<String, Date> resultToReturn = Maps.newHashMap();
 
-            while (results.next()) {
-                resultToReturn.put(results.getString("user_id"), results.getDate("timestamp"));
+                while (results.next()) {
+                    resultToReturn.put(results.getString("user_id"), results.getDate("timestamp"));
+                }
+
+                return resultToReturn;
             }
-
-            return resultToReturn;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Unable to find last log for all users", e);
         }
@@ -279,11 +282,11 @@ public class PgLogManager implements ILogManager {
 
     @Override
     public Set<String> getAllEventTypes() throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT event_type" + " FROM logged_events GROUP BY event_type");
-
-            ResultSet results = pst.executeQuery();
+        String query = "SELECT event_type FROM logged_events GROUP BY event_type";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+             ResultSet results = pst.executeQuery();
+        ) {
             Set<String> eventTypesRecorded = Sets.newHashSet();
  
             while (results.next()) {
@@ -355,10 +358,9 @@ public class PgLogManager implements ILogManager {
         queryToBuild.append(" LEFT OUTER JOIN filtered_logs ON ( date_trunc('month', \"timestamp\") = date_trunc('month', gen_month) )");
         queryToBuild.append(" GROUP BY gen_month ORDER BY gen_month ASC;");
 
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement(queryToBuild.toString());
-
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(queryToBuild.toString());
+        ) {
             pst.setString(1, type);
 
             int index = 2;
@@ -370,15 +372,16 @@ public class PgLogManager implements ILogManager {
             pst.setTimestamp(index++, new java.sql.Timestamp(fromDate.getTime()));
             pst.setTimestamp(index++, new java.sql.Timestamp(toDate.getTime()));
 
-            ResultSet results = pst.executeQuery();
-            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+            try (ResultSet results = pst.executeQuery()) {
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 
-            Map<Date, Long> mapToReturn = Maps.newHashMap();
-            while (results.next()) {
-                mapToReturn.put(formatter.parse(results.getString("to_char")), results.getLong("count"));
+                Map<Date, Long> mapToReturn = Maps.newHashMap();
+                while (results.next()) {
+                    mapToReturn.put(formatter.parse(results.getString("to_char")), results.getLong("count"));
+                }
+
+                return mapToReturn;
             }
-
-            return mapToReturn;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         } catch (ParseException e) {
@@ -428,9 +431,9 @@ public class PgLogManager implements ILogManager {
 
         }
 
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement(query);
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setString(1, type);
 
             int index = 2;
@@ -448,14 +451,15 @@ public class PgLogManager implements ILogManager {
                 }
             }
 
-            ResultSet results = pst.executeQuery();
+            try (ResultSet results = pst.executeQuery()) {
 
-            List<LogEvent> returnResult = Lists.newArrayList();
-            while (results.next()) {
-                returnResult.add(buildPgLogEventFromPgResult(results));
+                List<LogEvent> returnResult = Lists.newArrayList();
+                while (results.next()) {
+                    returnResult.add(buildPgLogEventFromPgResult(results));
+                }
+
+                return returnResult;
             }
-
-            return returnResult;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
@@ -492,13 +496,11 @@ public class PgLogManager implements ILogManager {
             LOG_EVENT.labels(eventType).inc();
         }
 
-        PreparedStatement pst;
-        try (Connection conn = database.getDatabaseConnection()) {
-            pst = conn.prepareStatement("INSERT INTO logged_events"
-                    + "(user_id, anonymous_user, event_type, event_details_type, event_details, "
-                    + "ip_address, timestamp) " + "VALUES (?, ?, ?, ?, ?::text::jsonb, ?::inet, ?);",
-                    Statement.RETURN_GENERATED_KEYS);
-
+        String query = "INSERT INTO logged_events(user_id, anonymous_user, event_type, event_details_type," +
+                " event_details, ip_address, timestamp) VALUES (?, ?, ?, ?, ?::text::jsonb, ?::inet, ?);";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+        ) {
             pst.setString(1, logEvent.getUserId());
             pst.setBoolean(2, logEvent.isAnonymousUser());
             pst.setString(3, logEvent.getEventType());

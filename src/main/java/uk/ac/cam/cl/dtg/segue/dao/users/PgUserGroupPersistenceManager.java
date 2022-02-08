@@ -65,13 +65,11 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
 
     @Override
     public UserGroup createGroup(final UserGroup group) throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn
-                    .prepareStatement(
-                            "INSERT INTO groups(group_name, owner_id, group_status, created, last_updated)"
-                            + " VALUES (?, ?, ?, ?, ?);",
-                            Statement.RETURN_GENERATED_KEYS);
+        String query = "INSERT INTO groups(group_name, owner_id, group_status, created, last_updated)" +
+                " VALUES (?, ?, ?, ?, ?);";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+        ) {
             pst.setString(1, group.getGroupName());
             pst.setLong(2, group.getOwnerId());
 
@@ -115,11 +113,10 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
             group.setStatus(GroupStatus.ACTIVE);
         }
 
-        PreparedStatement pst;
-        try (Connection conn = database.getDatabaseConnection()) {
-            pst = conn.prepareStatement(
-                    "UPDATE groups SET group_name=?, owner_id=?, created=?, archived=?, group_status=?, last_updated=? WHERE id = ?;");
-
+        String query = "UPDATE groups SET group_name=?, owner_id=?, created=?, archived=?, group_status=?, last_updated=? WHERE id = ?;";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setString(1, group.getGroupName());
             pst.setLong(2, group.getOwnerId());
             pst.setTimestamp(3, new Timestamp(group.getCreated().getTime()));
@@ -127,8 +124,6 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
             pst.setString(5, group.getStatus().name());
             pst.setTimestamp(6, new Timestamp(group.getLastUpdated().getTime()));
             pst.setLong(7, group.getId());
-            
-            log.debug(pst.toString());
             
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save group.");
@@ -148,11 +143,10 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
             return;
         }
 
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst = conn
-                    .prepareStatement(
-                            "INSERT INTO group_memberships(group_id, user_id, status, created, updated) VALUES (?, ?, ?, ?, ?);",
-                            Statement.RETURN_GENERATED_KEYS);
+        String query = "INSERT INTO group_memberships(group_id, user_id, status, created, updated) VALUES (?, ?, ?, ?, ?);";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+        ) {
             pst.setLong(1, groupId);
             pst.setLong(2, userId);
             pst.setString(3, GroupMembershipStatus.ACTIVE.name());
@@ -172,10 +166,10 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
 
     @Override
     public void setUsersGroupMembershipStatus(final Long userId, final Long groupId, final GroupMembershipStatus newStatus) throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn
-                    .prepareStatement("UPDATE group_memberships SET status=? ,updated=? WHERE user_id = ? AND group_id = ?");
+        String query = "UPDATE group_memberships SET status=? ,updated=? WHERE user_id = ? AND group_id = ?";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setString(1, newStatus.name());
             pst.setTimestamp(2, new Timestamp(new Date().getTime()));
             pst.setLong(3, userId);
@@ -235,17 +229,17 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
 
     @Override
     public Long getGroupCount() throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            // we don't want to count 'deleted' groups.
-            pst = conn.prepareStatement("SELECT COUNT(1) AS TOTAL FROM groups " +
-                    "WHERE group_status <> ?");
-
+        // We don't want to count 'deleted' groups:
+        String query = "SELECT COUNT(1) AS TOTAL FROM groups WHERE group_status <> ?";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setString(1, GroupStatus.DELETED.name());
 
-            ResultSet results = pst.executeQuery();
-            results.next();
-            return results.getLong("TOTAL");
+            try (ResultSet results = pst.executeQuery()) {
+                results.next();
+                return results.getLong("TOTAL");
+            }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception: Unable to count groups", e);
         }
@@ -258,6 +252,7 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
 
     @Override
     public UserGroup findGroupById(final Long groupId, boolean includeDeletedGroups) throws SegueDatabaseException {
+        // FIXME: try-with-resources!
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
             if (includeDeletedGroups) {
@@ -269,18 +264,17 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
 
             pst.setLong(1, groupId);
 
-            ResultSet results = pst.executeQuery();
-
-            if (results.next()) {
-                if (!results.isLast()) {
-                    throw new SegueDatabaseException("Expected a single object and found more than one.");
+            try (ResultSet results = pst.executeQuery()) {
+                if (results.next()) {
+                    if (!results.isLast()) {
+                        throw new SegueDatabaseException("Expected a single object and found more than one.");
+                    }
+                    return this.buildGroup(results);
+                } else {
+                    // Lots of places that call this function expect null if no group was found, i.e. was probably deleted.
+                    return null;
                 }
-                return this.buildGroup(results);
-            } else {
-                // Lots of places that call this function expect null if no group was found, i.e. was probably deleted.
-                return null;
             }
-
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
@@ -297,6 +291,7 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
             throw new SegueDatabaseException("Unable to locate the group requested to delete.");
         }
 
+        // FIXME: try-with-resources!
         try (Connection conn = database.getDatabaseConnection()) {
                 PreparedStatement pst;
                 if (markAsDeleted) {
@@ -326,24 +321,22 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
 
     @Override
     public Map<Long, GroupMembership> getGroupMembershipMap(final Long groupId) throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-
-            pst = conn.prepareStatement("SELECT * FROM group_memberships INNER JOIN groups ON " +
-                    "groups.id = group_memberships.group_id WHERE group_id = ? AND status <> ? AND group_status <> ?");
-
+        String query = "SELECT * FROM group_memberships INNER JOIN groups ON " +
+                "groups.id = group_memberships.group_id WHERE group_id = ? AND status <> ? AND group_status <> ?";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setLong(1, groupId);
             pst.setString(2, GroupMembershipStatus.DELETED.name());
             pst.setString(3, GroupStatus.DELETED.name());
 
-            ResultSet results = pst.executeQuery();
-
-            Map<Long, GroupMembership> mapOfResults = Maps.newHashMap();
-            while (results.next()) {
-                mapOfResults.put(results.getLong("user_id"), this.buildMembershipRecord(results));
+            try (ResultSet results = pst.executeQuery()) {
+                Map<Long, GroupMembership> mapOfResults = Maps.newHashMap();
+                while (results.next()) {
+                    mapOfResults.put(results.getLong("user_id"), this.buildMembershipRecord(results));
+                }
+                return mapOfResults;
             }
-
-            return mapOfResults;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
@@ -357,15 +350,17 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
      * @throws SegueDatabaseException - if there is db error.
      */
     private boolean hasMembershipForGroup(final Long userId, final Long groupId) throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-
-            pst = conn.prepareStatement("SELECT COUNT(1) AS TOTAL FROM group_memberships WHERE group_id = ? AND user_id = ?");
+        String query = "SELECT COUNT(1) AS TOTAL FROM group_memberships WHERE group_id = ? AND user_id = ?";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setLong(1, groupId);
             pst.setLong(2, userId);
-            ResultSet results = pst.executeQuery();
-            results.next();
-            return results.getLong("TOTAL") == 1;
+
+            try (ResultSet results = pst.executeQuery()) {
+                results.next();
+                return results.getLong("TOTAL") == 1;
+            }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception: Unable to count groups", e);
         }
@@ -374,23 +369,22 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
 
     @Override
     public Collection<UserGroup> getGroupMembershipList(final Long userId) throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn
-                    .prepareStatement("SELECT * FROM groups INNER JOIN group_memberships"
-                            + " ON groups.id = group_memberships.group_id"
-                            + " WHERE user_id = ? AND status <> ? AND group_status <> ?");
+        String query = "SELECT * FROM groups INNER JOIN group_memberships ON groups.id = group_memberships.group_id" +
+                " WHERE user_id = ? AND status <> ? AND group_status <> ?";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setLong(1, userId);
             pst.setString(2, GroupMembershipStatus.DELETED.name());
             pst.setString(3, GroupStatus.DELETED.name());
-            ResultSet results = pst.executeQuery();
-            
-            List<UserGroup> listOfResults = Lists.newArrayList();
-            while (results.next()) {
-                listOfResults.add(this.buildGroup(results));
+
+            try (ResultSet results = pst.executeQuery()) {
+                List<UserGroup> listOfResults = Lists.newArrayList();
+                while (results.next()) {
+                    listOfResults.add(this.buildGroup(results));
+                }
+                return listOfResults;
             }
-            
-            return listOfResults;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
@@ -398,23 +392,21 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
 
     @Override
     public Set<Long> getAdditionalManagerSetByGroupId(final Long groupId) throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn
-                    .prepareStatement("SELECT * FROM group_additional_managers"
-                            + " WHERE group_id = ?");
+        String query = "SELECT * FROM group_additional_managers WHERE group_id = ?";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setLong(1, groupId);
 
             // on this occasion we do not care if the group is deleted.
 
-            ResultSet results = pst.executeQuery();
-
-            Set<Long> listOfResults = Sets.newHashSet();
-            while (results.next()) {
-                listOfResults.add(results.getLong("user_id"));
+            try (ResultSet results = pst.executeQuery()) {
+                Set<Long> listOfResults = Sets.newHashSet();
+                while (results.next()) {
+                    listOfResults.add(results.getLong("user_id"));
+                }
+                return listOfResults;
             }
-
-            return listOfResults;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
@@ -422,12 +414,10 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
 
     @Override
     public void addUserAdditionalManagerList(final Long userId, final Long groupId) throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn
-                    .prepareStatement(
-                            "INSERT INTO group_additional_managers(group_id, user_id, created) VALUES (?, ?, ?);",
-                            Statement.RETURN_GENERATED_KEYS);
+        String query = "INSERT INTO group_additional_managers(group_id, user_id, created) VALUES (?, ?, ?);";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+        ) {
             pst.setLong(1, groupId);
             pst.setLong(2, userId);
             pst.setTimestamp(3, new Timestamp(new Date().getTime()));
@@ -445,9 +435,10 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
 
     @Override
     public void removeUserFromAdditionalManagerList(final Long userId, final Long groupId) throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("DELETE FROM group_additional_managers WHERE group_id = ? AND user_id = ?");
+        String query = "DELETE FROM group_additional_managers WHERE group_id = ? AND user_id = ?";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setLong(1, groupId);
             pst.setLong(2, userId);
 
@@ -477,22 +468,23 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
     }
 
     private List<UserGroup> getGroupsBySQLPst(final String pstString, final Long userId, @Nullable final Boolean archivedGroupsOnly) throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement(pstString);
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(pstString);
+        ) {
             pst.setLong(1, userId);
 
             if (archivedGroupsOnly != null) {
                 pst.setBoolean(2, archivedGroupsOnly);
             }
 
-            ResultSet results = pst.executeQuery();
-            List<UserGroup> listOfResults = Lists.newArrayList();
-            while (results.next()) {
-                listOfResults.add(this.buildGroup(results));
-            }
+            try (ResultSet results = pst.executeQuery()) {
+                List<UserGroup> listOfResults = Lists.newArrayList();
+                while (results.next()) {
+                    listOfResults.add(this.buildGroup(results));
+                }
 
-            return listOfResults;
+                return listOfResults;
+            }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }

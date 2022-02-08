@@ -221,8 +221,10 @@ public class GameboardPersistenceManager {
      */
     public GameboardDTO updateGameboardTitle(final GameboardDTO gameboard) throws SegueDatabaseException {      
         // create a new user to gameboard connection.
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst = conn.prepareStatement("UPDATE gameboards SET title = ? WHERE id = ?;");
+        String query = "UPDATE gameboards SET title = ? WHERE id = ?;";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setString(1, gameboard.getTitle());
             pst.setString(2, gameboard.getId());
 
@@ -269,17 +271,17 @@ public class GameboardPersistenceManager {
             return false;
         }
 
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn
-                    .prepareStatement("SELECT COUNT(*) AS TOTAL "
-                            + "FROM user_gameboards WHERE user_id = ? AND gameboard_id = ?;");
+        String query = "SELECT COUNT(*) AS TOTAL FROM user_gameboards WHERE user_id = ? AND gameboard_id = ?;";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setLong(1, userId);
             pst.setObject(2, gameboardId);
 
-            ResultSet results = pst.executeQuery();
-            results.next();
-            return results.getInt("TOTAL") == 1;
+            try (ResultSet results = pst.executeQuery()) {
+                results.next();
+                return results.getInt("TOTAL") == 1;
+            }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
@@ -297,15 +299,14 @@ public class GameboardPersistenceManager {
 	 */
 	public void createOrUpdateUserLinkToGameboard(final Long userId, final String gameboardId)
 		throws SegueDatabaseException {	        
-	        
-	    // create a new user to gameboard connection.	    
-        try (Connection conn = database.getDatabaseConnection()) {
-            // Use Postgres UPSERT syntax on insert conflict:
-            PreparedStatement pst = conn.prepareStatement(
-            "INSERT INTO user_gameboards(user_id, gameboard_id, created, last_visited) VALUES (?, ?, ?, ?)"
-                    + " ON CONFLICT ON CONSTRAINT user_gameboard_composite_key"
-                    + " DO UPDATE SET last_visited=EXCLUDED.last_visited;");
 
+        // Connect user to gameboard, Postgres UPSERT syntax on insert conflict:
+        String query = "INSERT INTO user_gameboards(user_id, gameboard_id, created, last_visited) VALUES (?, ?, ?, ?)"
+                 + " ON CONFLICT ON CONSTRAINT user_gameboard_composite_key"
+                 + " DO UPDATE SET last_visited=EXCLUDED.last_visited;";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setLong(1, userId);
             pst.setString(2, gameboardId);
             pst.setTimestamp(3, new Timestamp(new Date().getTime()));
@@ -329,16 +330,16 @@ public class GameboardPersistenceManager {
 	 * @throws SegueDatabaseException - if there is an error during the delete operation.
 	 */
 	public void removeUserLinkToGameboard(final Long userId, final Collection<String> gameboardId) throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
+        StringBuilder params = new StringBuilder();
+        params.append("?");
+        for (int i = 1; i < gameboardId.size(); i++) {
+            params.append(",?");
+        }
+        String query = String.format("DELETE FROM user_gameboards WHERE user_id = ? AND gameboard_id IN (%s)", params);
 
-            StringBuilder params = new StringBuilder();
-            params.append("?");
-            for (int i = 1; i < gameboardId.size(); i++) {
-                params.append(",?");
-            }
-
-            pst = conn.prepareStatement( String.format("DELETE FROM user_gameboards WHERE user_id = ? AND gameboard_id IN (%s)", params));
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setLong(1, userId);
 
             int index = 2;
@@ -369,22 +370,21 @@ public class GameboardPersistenceManager {
 		// find all gameboards related to this user.
 	    List<GameboardDO> listOfResults = Lists.newArrayList();
 	    Map<String, Date> lastVisitedDate = Maps.newHashMap();
-	    
-	    try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM gameboards INNER JOIN user_gameboards"
-                    + " ON gameboards.id = user_gameboards.gameboard_id WHERE user_gameboards.user_id = ?");
 
+	    String query = "SELECT * FROM gameboards INNER JOIN user_gameboards" +
+                " ON gameboards.id = user_gameboards.gameboard_id WHERE user_gameboards.user_id = ?";
+	    try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setLong(1, user.getId());
             
-            ResultSet results = pst.executeQuery();
-
-            while (results.next()) {
-                GameboardDO gameboard = this.convertFromSQLToGameboardDO(results);
-                listOfResults.add(gameboard);
-                lastVisitedDate.put(gameboard.getId(), results.getTimestamp("last_visited"));
+            try (ResultSet results = pst.executeQuery()) {
+                while (results.next()) {
+                    GameboardDO gameboard = this.convertFromSQLToGameboardDO(results);
+                    listOfResults.add(gameboard);
+                    lastVisitedDate.put(gameboard.getId(), results.getTimestamp("last_visited"));
+                }
             }
-
         } catch (SQLException | IOException e) {
             throw new SegueDatabaseException("Unable to find assignment by id", e);
         }
@@ -508,12 +508,11 @@ public class GameboardPersistenceManager {
     public Map<String, List<String>> getBoardToUserIdMapping() throws SegueDatabaseException {
         Map<String, List<String>> results = Maps.newHashMap();
 
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT gameboard_id, user_id FROM user_gameboards;");
-
-            ResultSet sqlResults = pst.executeQuery();
-
+        String query = "SELECT gameboard_id, user_id FROM user_gameboards;";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+             ResultSet sqlResults = pst.executeQuery();
+        ) {
             while (sqlResults.next()) {
                 String gameboardId = sqlResults.getString("gameboard_id");
                 String userId = sqlResults.getString("user_id");
@@ -559,17 +558,13 @@ public class GameboardPersistenceManager {
      * @throws JsonProcessingException
      * @throws SegueDatabaseException
      */
-    private GameboardDO saveGameboard(final GameboardDO gameboardToSave) 
-            throws JsonProcessingException, SegueDatabaseException {
-        PreparedStatement pst;
-        try (Connection conn = database.getDatabaseConnection()) {
-            pst = conn
-                    .prepareStatement("INSERT INTO "
-                            + "gameboards(id, title, questions, contents, wildcard, wildcard_position, "
-                            + "game_filter, owner_user_id, creation_method, tags, creation_date)"
-                            + " VALUES (?, ?, ?, ?::text::jsonb[], ?::text::jsonb, ?, ?::text::jsonb, ?, ?,"
-                            + " ?::text::jsonb, ?);");
-
+    private GameboardDO saveGameboard(final GameboardDO gameboardToSave) throws JsonProcessingException, SegueDatabaseException {
+        String query = "INSERT INTO gameboards(id, title, questions, contents, wildcard, wildcard_position, "
+                + "game_filter, owner_user_id, creation_method, tags, creation_date)"
+                + " VALUES (?, ?, ?, ?::text::jsonb[], ?::text::jsonb, ?, ?::text::jsonb, ?, ?, ?::text::jsonb, ?);";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             List<String> contentsJsonb = Lists.newArrayList();
             for (GameboardContentDescriptor content: gameboardToSave.getContents()) {
                 contentsJsonb.add(objectMapper.writeValueAsString(content));
@@ -778,30 +773,30 @@ public class GameboardPersistenceManager {
             return this.convertToGameboardDTO(this.gameboardNonPersistentStorage.getIfPresent(gameboardId));
         }
 
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM gameboards WHERE id = ?;");
-
+        String query = "SELECT * FROM gameboards WHERE id = ?;";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setString(1, gameboardId);
             
-            ResultSet results = pst.executeQuery();
- 
-            List<GameboardDO> listOfResults = Lists.newArrayList();
-            while (results.next()) {
-                listOfResults.add(this.convertFromSQLToGameboardDO(results));
+            try (ResultSet results = pst.executeQuery()) {
+
+                List<GameboardDO> listOfResults = Lists.newArrayList();
+                while (results.next()) {
+                    listOfResults.add(this.convertFromSQLToGameboardDO(results));
+                }
+
+                if (listOfResults.size() == 0) {
+                    return null;
+                }
+
+                if (listOfResults.size() > 1) {
+                    throw new SegueDatabaseException("Ambiguous result, expected single result and found more than one"
+                            + listOfResults);
+                }
+
+                return this.convertToGameboardDTO(listOfResults.get(0), fullyPopulate);
             }
-
-            if (listOfResults.size() == 0) {
-                return null;
-            }
-            
-            if (listOfResults.size() > 1) {
-                throw new SegueDatabaseException("Ambiguous result, expected single result and found more than one"
-                        + listOfResults);
-            }          
-
-            return this.convertToGameboardDTO(listOfResults.get(0), fullyPopulate);
-
         } catch (SQLException | IOException e) {
             throw new SegueDatabaseException("Unable to find assignment by id", e);
         }      
@@ -837,25 +832,27 @@ public class GameboardPersistenceManager {
         }
 
         // Then, go for the database
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM gameboards WHERE id = ANY (?);");
+        String query = "SELECT * FROM gameboards WHERE id = ANY (?);";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             Array gameboardIdsPreparedArray = conn.createArrayOf("varchar", gameboardIdsForQuery.toArray());
             pst.setArray(1, gameboardIdsPreparedArray);
 
-            ResultSet results = pst.executeQuery();
-            List<GameboardDO> listOfResults = new ArrayList<>();
-            while (results.next()) {
-                listOfResults.add(this.convertFromSQLToGameboardDO(results));
+            try (ResultSet results = pst.executeQuery()) {
+                List<GameboardDO> listOfResults = new ArrayList<>();
+                while (results.next()) {
+                    listOfResults.add(this.convertFromSQLToGameboardDO(results));
+                }
+
+                if (listOfResults.size() == 0) {
+                    return null;
+                }
+
+                List<GameboardDTO> databaseGameboards = listOfResults.stream().map(r -> this.convertToGameboardDTO(r, fullyPopulate)).collect(Collectors.toList());
+
+                return Stream.of(cachedGameboards, databaseGameboards).flatMap(Collection::stream).collect(Collectors.toList());
             }
-
-            if (listOfResults.size() == 0) {
-                return null;
-            }
-
-            List<GameboardDTO> databaseGameboards = listOfResults.stream().map(r -> this.convertToGameboardDTO(r, fullyPopulate)).collect(Collectors.toList());
-
-            return Stream.of(cachedGameboards, databaseGameboards).flatMap(Collection::stream).collect(Collectors.toList());
         } catch (SQLException | IOException e) {
             throw new SegueDatabaseException("Unable to find assignments by ids", e);
         }

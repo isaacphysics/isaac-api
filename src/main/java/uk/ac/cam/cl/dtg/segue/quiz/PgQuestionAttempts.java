@@ -73,8 +73,6 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
     public void registerAnonymousQuestionAttempt(final String userId, final String questionPageId,
             final String fullQuestionId, final QuestionValidationResponse questionAttempt)
             throws SegueDatabaseException {
-
-        PreparedStatement pst;
         try (Connection conn = database.getDatabaseConnection()) {
             Map<String, Map<String, List<QuestionValidationResponse>>> userAttempts = this.getAnonymousQuestionAttempts(userId);
 
@@ -88,17 +86,17 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
 
             userAttempts.get(questionPageId).get(fullQuestionId).add(questionAttempt);
 
-            // TODO: This might be able to be simplified by using json_insert
-            pst = conn.prepareStatement("UPDATE temporary_user_store " +
-                    "SET temporary_app_data = jsonb_set(temporary_app_data, " +
-                    "?::text[], ?::text::jsonb) WHERE id = ?;");
-            pst.setString(1, "{questionAttempts}");
-            pst.setString(2, objectMapper.writeValueAsString(userAttempts));
-            pst.setString(3, userId);
+            String query = "UPDATE temporary_user_store SET temporary_app_data = " +
+                    "jsonb_set(temporary_app_data, ?::text[], ?::text::jsonb) WHERE id = ?;";
+            try (PreparedStatement pst = conn.prepareStatement(query)) {
+                pst.setString(1, "{questionAttempts}");
+                pst.setString(2, objectMapper.writeValueAsString(userAttempts));
+                pst.setString(3, userId);
 
-            log.debug(pst.toString());
-            if (pst.executeUpdate() == 0) {
-                throw new SegueDatabaseException("Unable to save question attempt.");
+                log.debug(pst.toString());
+                if (pst.executeUpdate() == 0) {
+                    throw new SegueDatabaseException("Unable to save question attempt.");
+                }
             }
 
         } catch (SQLException e) {
@@ -117,43 +115,40 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
     @Override
     public Map<String, Map<String, List<QuestionValidationResponse>>> getAnonymousQuestionAttempts(
             final String anonymousId) throws SegueDatabaseException {
-        PreparedStatement pst;
-        try (Connection conn = database.getDatabaseConnection()) {
-            pst = conn.prepareStatement("SELECT temporary_app_data->'questionAttempts' AS question_attempts from temporary_user_store where id = ?;"
-                    , Statement.RETURN_GENERATED_KEYS);
-
+        String query = "SELECT temporary_app_data->'questionAttempts' AS question_attempts from temporary_user_store where id = ?;";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+        ) {
             pst.setString(1, anonymousId);
 
-            ResultSet resultSet = pst.executeQuery();
-            // are there any results
-            if (!resultSet.isBeforeFirst()) {
-                return Maps.newHashMap();
-            }
-
-            resultSet.next();
-
-            // We need to try and generate QuestionValidationResponses in the correct object structure - Apologies for the hideousness
-            Map<String, Map<String, List<Object>>> questionAttemptsFromDB
-                    = objectMapper.readValue(resultSet.getString("question_attempts"), Map.class);
-            Map<String, Map<String, List<QuestionValidationResponse>>> result = Maps.newHashMap();
-
-            for (Map.Entry<String, Map<String, List<Object>>> questionAttemptsForPage : questionAttemptsFromDB.entrySet()){
-
-                Map<String, List<QuestionValidationResponse>> questionAttemptsForQuestion = Maps.newHashMap();
-                for (Map.Entry<String, List<Object>> submap : questionAttemptsForPage.getValue().entrySet()){
-                    List<QuestionValidationResponse> listOfuestionValidationResponses = Lists.newArrayList();
-                    questionAttemptsForQuestion.put(submap.getKey(), listOfuestionValidationResponses);
-
-                    for (Object o : submap.getValue()) {
-                        listOfuestionValidationResponses
-                                .add(objectMapper.convertValue(o, QuestionValidationResponse.class));
-                    }
+            try (ResultSet resultSet = pst.executeQuery()) {
+                // are there any results
+                if (!resultSet.isBeforeFirst()) {
+                    return Maps.newHashMap();
                 }
+                resultSet.next();
 
-                result.put(questionAttemptsForPage.getKey(), questionAttemptsForQuestion);
+                // We need to try and generate QuestionValidationResponses in the correct object structure - Apologies for the hideousness
+                Map<String, Map<String, List<Object>>> questionAttemptsFromDB
+                        = objectMapper.readValue(resultSet.getString("question_attempts"), Map.class);
+                Map<String, Map<String, List<QuestionValidationResponse>>> result = Maps.newHashMap();
+
+                for (Map.Entry<String, Map<String, List<Object>>> questionAttemptsForPage : questionAttemptsFromDB.entrySet()) {
+
+                    Map<String, List<QuestionValidationResponse>> questionAttemptsForQuestion = Maps.newHashMap();
+                    for (Map.Entry<String, List<Object>> submap : questionAttemptsForPage.getValue().entrySet()) {
+                        List<QuestionValidationResponse> listOfuestionValidationResponses = Lists.newArrayList();
+                        questionAttemptsForQuestion.put(submap.getKey(), listOfuestionValidationResponses);
+
+                        for (Object o : submap.getValue()) {
+                            listOfuestionValidationResponses
+                                    .add(objectMapper.convertValue(o, QuestionValidationResponse.class));
+                        }
+                    }
+                    result.put(questionAttemptsForPage.getKey(), questionAttemptsForQuestion);
+                }
+                return result;
             }
-
-            return result;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         } catch (IOException e) {
@@ -165,12 +160,11 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
     public void registerQuestionAttempt(final Long userId, final String questionPageId, final String fullQuestionId,
             final QuestionValidationResponse questionAttempt) throws SegueDatabaseException {
 
-        PreparedStatement pst;
-        try (Connection conn = database.getDatabaseConnection()) {
-            pst = conn.prepareStatement("INSERT INTO question_attempts(user_id, "
-                    + "question_id, question_attempt, correct, \"timestamp\")"
-                    + " VALUES (?, ?, ?::text::jsonb, ?, ?);", Statement.RETURN_GENERATED_KEYS);
-
+        String query = "INSERT INTO question_attempts(user_id, question_id, question_attempt, correct, \"timestamp\")" +
+                " VALUES (?, ?, ?::text::jsonb, ?, ?);";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+        ) {
             pst.setLong(1, userId);
             pst.setString(2, fullQuestionId);
             pst.setString(3, objectMapper.writeValueAsString(questionAttempt));
@@ -196,41 +190,41 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
     @Override
     public Map<String, Map<String, List<QuestionValidationResponse>>> getQuestionAttempts(final Long userId)
             throws SegueDatabaseException {
-        PreparedStatement pst;
-        try (Connection conn = database.getDatabaseConnection()) {
-            pst = conn.prepareStatement("SELECT * FROM question_attempts WHERE user_id = ? ORDER BY \"timestamp\" ASC");
+        String query = "SELECT * FROM question_attempts WHERE user_id = ? ORDER BY \"timestamp\" ASC";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setLong(1, userId);
 
-            ResultSet results = pst.executeQuery();
+            try (ResultSet results = pst.executeQuery()) {
+                // Since we go to the effort of sorting the attempts in Postgres, use LinkedHashMap which is ordered:
+                Map<String, Map<String, List<QuestionValidationResponse>>> mapOfQuestionAttemptsByPage = Maps.newLinkedHashMap();
 
-            // Since we go to the effort of sorting the attempts in Postgres, use LinkedHashMap which is ordered:
-            Map<String, Map<String, List<QuestionValidationResponse>>> mapOfQuestionAttemptsByPage = Maps.newLinkedHashMap();
+                while (results.next()) {
+                    QuestionValidationResponse questionAttempt = objectMapper.readValue(
+                            results.getString("question_attempt"), QuestionValidationResponse.class);
+                    String questionPageId = extractPageIdFromQuestionId(questionAttempt.getQuestionId());
+                    String questionId = questionAttempt.getQuestionId();
 
-            while (results.next()) {
-                QuestionValidationResponse questionAttempt = objectMapper.readValue(
-                        results.getString("question_attempt"), QuestionValidationResponse.class);
-                String questionPageId = extractPageIdFromQuestionId(questionAttempt.getQuestionId());
-                String questionId = questionAttempt.getQuestionId();
 
-                
-                Map<String, List<QuestionValidationResponse>> attemptsForThisQuestionPage = mapOfQuestionAttemptsByPage
-                        .get(questionPageId);
-                
-                if (null == attemptsForThisQuestionPage) {
-                    attemptsForThisQuestionPage = Maps.newLinkedHashMap();
-                    mapOfQuestionAttemptsByPage.put(questionPageId, attemptsForThisQuestionPage);
+                    Map<String, List<QuestionValidationResponse>> attemptsForThisQuestionPage = mapOfQuestionAttemptsByPage
+                            .get(questionPageId);
+
+                    if (null == attemptsForThisQuestionPage) {
+                        attemptsForThisQuestionPage = Maps.newLinkedHashMap();
+                        mapOfQuestionAttemptsByPage.put(questionPageId, attemptsForThisQuestionPage);
+                    }
+
+                    List<QuestionValidationResponse> listOfResponses = attemptsForThisQuestionPage.get(questionId);
+                    if (null == listOfResponses) {
+                        listOfResponses = Lists.newArrayList();
+                        attemptsForThisQuestionPage.put(questionId, listOfResponses);
+                    }
+
+                    listOfResponses.add(questionAttempt);
                 }
-                
-                List<QuestionValidationResponse> listOfResponses = attemptsForThisQuestionPage.get(questionId);
-                if (null == listOfResponses) {
-                    listOfResponses = Lists.newArrayList();
-                    attemptsForThisQuestionPage.put(questionId, listOfResponses);
-                }
-
-                listOfResponses.add(questionAttempt);
+                return mapOfQuestionAttemptsByPage;
             }
-            
-            return mapOfQuestionAttemptsByPage;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         } catch (IOException e) {
@@ -247,8 +241,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
         if (userIds.isEmpty()) {
             return Maps.newHashMap();
         }
-        
-        PreparedStatement pst;
+
         try (Connection conn = database.getDatabaseConnection()) {
             StringBuilder query = new StringBuilder();
             query.append("SELECT id, user_id, question_id, correct, timestamp FROM question_attempts WHERE");
@@ -280,53 +273,53 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             
             query.append(" ORDER BY \"timestamp\" ASC");
             
-            pst = conn.prepareStatement(query.toString());
-            
-            Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> mapToReturn
-                = Maps.newHashMap();
-           
-            int index = 1;
-            for (int i = 0; i < userIds.size(); i++) {
-                pst.setLong(index++, userIds.get(i));
-                mapToReturn.put(userIds.get(i),
-                        new HashMap<>());
-            }
+            try (PreparedStatement pst = conn.prepareStatement(query.toString())) {
 
-            pst.setString(index++, questionIdsSB.toString());
-            
-            ResultSet results = pst.executeQuery();
-            while (results.next()) {
-                LightweightQuestionValidationResponse partialQuestionAttempt = new QuestionValidationResponse();
+                Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> mapToReturn
+                        = Maps.newHashMap();
 
-                partialQuestionAttempt.setCorrect(results.getBoolean("correct"));
-                partialQuestionAttempt.setQuestionId(results.getString("question_id"));
-                partialQuestionAttempt.setDateAttempted(results.getTimestamp("timestamp"));
-
-                String questionPageId = extractPageIdFromQuestionId(partialQuestionAttempt.getQuestionId());
-                String questionId = partialQuestionAttempt.getQuestionId();
-                
-                Map<String, Map<String, List<LightweightQuestionValidationResponse>>> mapOfQuestionAttemptsByPage
-                    = mapToReturn.get(results.getLong("user_id"));
-
-                Map<String, List<LightweightQuestionValidationResponse>> attemptsForThisQuestionPage =
-                        mapOfQuestionAttemptsByPage.get(questionPageId);
-                
-                if (null == attemptsForThisQuestionPage) {
-                    attemptsForThisQuestionPage = Maps.newHashMap();
-                    mapOfQuestionAttemptsByPage.put(questionPageId, attemptsForThisQuestionPage);
-                }
-                
-                List<LightweightQuestionValidationResponse> listOfResponses =
-                        attemptsForThisQuestionPage.get(questionId);
-                if (null == listOfResponses) {
-                    listOfResponses = Lists.newArrayList();
-                    attemptsForThisQuestionPage.put(questionId, listOfResponses);
+                int index = 1;
+                for (Long userId : userIds) {
+                    pst.setLong(index++, userId);
+                    mapToReturn.put(userId, new HashMap<>());
                 }
 
-                listOfResponses.add(partialQuestionAttempt);
+                pst.setString(index++, questionIdsSB.toString());
+
+                try (ResultSet results = pst.executeQuery()) {
+                    while (results.next()) {
+                        LightweightQuestionValidationResponse partialQuestionAttempt = new QuestionValidationResponse();
+
+                        partialQuestionAttempt.setCorrect(results.getBoolean("correct"));
+                        partialQuestionAttempt.setQuestionId(results.getString("question_id"));
+                        partialQuestionAttempt.setDateAttempted(results.getTimestamp("timestamp"));
+
+                        String questionPageId = extractPageIdFromQuestionId(partialQuestionAttempt.getQuestionId());
+                        String questionId = partialQuestionAttempt.getQuestionId();
+
+                        Map<String, Map<String, List<LightweightQuestionValidationResponse>>> mapOfQuestionAttemptsByPage
+                                = mapToReturn.get(results.getLong("user_id"));
+
+                        Map<String, List<LightweightQuestionValidationResponse>> attemptsForThisQuestionPage =
+                                mapOfQuestionAttemptsByPage.get(questionPageId);
+
+                        if (null == attemptsForThisQuestionPage) {
+                            attemptsForThisQuestionPage = Maps.newHashMap();
+                            mapOfQuestionAttemptsByPage.put(questionPageId, attemptsForThisQuestionPage);
+                        }
+
+                        List<LightweightQuestionValidationResponse> listOfResponses =
+                                attemptsForThisQuestionPage.get(questionId);
+                        if (null == listOfResponses) {
+                            listOfResponses = Lists.newArrayList();
+                            attemptsForThisQuestionPage.put(questionId, listOfResponses);
+                        }
+
+                        listOfResponses.add(partialQuestionAttempt);
+                    }
+                    return mapToReturn;
+                }
             }
-            
-            return mapToReturn;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
@@ -371,20 +364,21 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
     }
 
     @Override
-    public Map<Role, Long> getAnsweredQuestionRolesOverPrevious(TimeInterval timeInterval) throws
-            SegueDatabaseException {
-        PreparedStatement pst;
-        try (Connection conn = database.getDatabaseConnection()) {
-            pst = conn.prepareStatement("SELECT role, count(DISTINCT users.id) FROM question_attempts" +
-                    " JOIN users ON user_id=users.id AND NOT deleted WHERE timestamp > now() - ? GROUP BY role");
+    public Map<Role, Long> getAnsweredQuestionRolesOverPrevious(TimeInterval timeInterval) throws SegueDatabaseException {
+        String query = "SELECT role, count(DISTINCT users.id) FROM question_attempts" +
+                " JOIN users ON user_id=users.id AND NOT deleted WHERE timestamp > now() - ? GROUP BY role";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setObject(1, timeInterval.getPGInterval());
-            ResultSet results = pst.executeQuery();
 
-            Map<Role, Long> resultsToReturn = Maps.newHashMap();
-            while (results.next()) {
-                resultsToReturn.put(Role.valueOf(results.getString("role")), results.getLong("count"));
+            try (ResultSet results = pst.executeQuery()) {
+                Map<Role, Long> resultsToReturn = Maps.newHashMap();
+                while (results.next()) {
+                    resultsToReturn.put(Role.valueOf(results.getString("role")), results.getLong("count"));
+                }
+                return resultsToReturn;
             }
-            return resultsToReturn;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
@@ -412,22 +406,22 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
         }
         queryToBuild.append(" GROUP BY gen_date ORDER BY gen_date ASC;");
 
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement(queryToBuild.toString());
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(queryToBuild.toString());
+        ) {
             pst.setLong(1, userId);
             pst.setTimestamp(2, new java.sql.Timestamp(fromDate.getTime()));
             pst.setTimestamp(3, new java.sql.Timestamp(toDate.getTime()));
 
-            ResultSet results = pst.executeQuery();
-            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+            try (ResultSet results = pst.executeQuery()) {
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 
-            Map<Date, Long> mapToReturn = Maps.newHashMap();
-            while (results.next()) {
-                mapToReturn.put(formatter.parse(results.getString("to_char")), results.getLong("count"));
+                Map<Date, Long> mapToReturn = Maps.newHashMap();
+                while (results.next()) {
+                    mapToReturn.put(formatter.parse(results.getString("to_char")), results.getLong("count"));
+                }
+                return mapToReturn;
             }
-
-            return mapToReturn;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         } catch (ParseException e) {
