@@ -47,6 +47,7 @@ public class PgEventBookingsTest {
         expect(dummyConnection.prepareStatement(anyString())).andReturn(dummyPreparedStatement).once();
         dummyPreparedStatement.setString(anyInt(), anyString());
         expect(dummyPreparedStatement.executeQuery()).andReturn(dummyResultSet);
+        dummyPreparedStatement.close();
 
         // Mock db result
         expect(dummyResultSet.next()).andReturn(true).once();
@@ -70,6 +71,7 @@ public class PgEventBookingsTest {
         expect(dummyResultSet.getLong("count")).andReturn(2L).once();
 
         expect(dummyResultSet.next()).andReturn(false).once();
+        dummyResultSet.close();
         dummyConnection.close();
 
         // Create expected status count

@@ -59,6 +59,8 @@ public class PostCodeLocationResolverTest {
 
         ResultSet mockResultSet = EasyMock.createMock(ResultSet.class);
         EasyMock.expect(mockResultSet.next()).andReturn(false).anyTimes();
+        mockResultSet.close();
+        EasyMock.expectLastCall().atLeastOnce(); // It seems close is called many times?
         EasyMock.replay(mockResultSet);
 
         PreparedStatement mockPst = EasyMock.createNiceMock(PreparedStatement.class);
@@ -68,6 +70,7 @@ public class PostCodeLocationResolverTest {
         mockPst.setDouble(EasyMock.anyInt(), EasyMock.anyDouble());
         EasyMock.expectLastCall().anyTimes();
         EasyMock.expect(mockPst.executeUpdate()).andReturn(1).anyTimes();
+        mockPst.close();
         EasyMock.replay(mockPst);
 
         Connection mockConnection = EasyMock.createNiceMock(Connection.class);
