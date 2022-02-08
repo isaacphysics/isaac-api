@@ -103,6 +103,7 @@ public class IsaacNumericValidator implements IValidator {
         log.debug("Starting validation of '" + answerFromUser.getValue() + " " + answerFromUser.getUnits() + "' for '"
                 + isaacNumericQuestion.getId() + "'");
 
+        // check there are no obvious issues with the question (e.g. no correct answers, nonsensical sig fig requirements)
         if (null == isaacNumericQuestion.getChoices() || isaacNumericQuestion.getChoices().isEmpty()) {
             log.error("Question does not have any answers. " + question.getId() + " src: "
                     + question.getCanonicalSourceFile());
@@ -167,37 +168,39 @@ public class IsaacNumericValidator implements IValidator {
                 return useDefaultFeedbackIfNecessary(isaacNumericQuestion, bestResponse);
             }
 
-            // Step 3 - then do sig fig checking:
-            if (tooFewSignificantFigures(answerFromUser.getValue(), isaacNumericQuestion.getSignificantFiguresMin())) {
-                // If too few sig figs then give feedback about this.
+            // Step 3 - do sig fig checking (unless specified otherwise by question):
+            if (!isaacNumericQuestion.getDisregardSignificantFigures()) {
+                if (tooFewSignificantFigures(answerFromUser.getValue(), isaacNumericQuestion.getSignificantFiguresMin())) {
+                    // If too few sig figs then give feedback about this.
 
-                // If we have unit information available put it in our response.
-                Boolean validUnits = null;
-                if (isaacNumericQuestion.getRequireUnits()) {
-                    // Whatever the current bestResponse is, it contains all we need to know about the units:
-                    validUnits = bestResponse.getCorrectUnits();
+                    // If we have unit information available put it in our response.
+                    Boolean validUnits = null;
+                    if (isaacNumericQuestion.getRequireUnits()) {
+                        // Whatever the current bestResponse is, it contains all we need to know about the units:
+                        validUnits = bestResponse.getCorrectUnits();
+                    }
+                    // Our new bestResponse is about incorrect significant figures:
+                    Content sigFigResponse = new Content(DEFAULT_VALIDATION_RESPONSE);
+                    sigFigResponse.setTags(new HashSet<>(ImmutableList.of("sig_figs", "sig_figs_too_few")));
+                    bestResponse = new QuantityValidationResponse(question.getId(), answerFromUser, false, sigFigResponse,
+                            false, validUnits, new Date());
                 }
-                // Our new bestResponse is about incorrect significant figures:
-                Content sigFigResponse = new Content(DEFAULT_VALIDATION_RESPONSE);
-                sigFigResponse.setTags(new HashSet<>(ImmutableList.of("sig_figs", "sig_figs_too_few")));
-                bestResponse = new QuantityValidationResponse(question.getId(), answerFromUser, false, sigFigResponse,
-                        false, validUnits, new Date());
-            }
-            if (tooManySignificantFigures(answerFromUser.getValue(), isaacNumericQuestion.getSignificantFiguresMax())
-                    && bestResponse.isCorrect()) {
-                // If (and only if) _correct_, but to too many sig figs, give feedback about this.
+                if (tooManySignificantFigures(answerFromUser.getValue(), isaacNumericQuestion.getSignificantFiguresMax())
+                        && bestResponse.isCorrect()) {
+                    // If (and only if) _correct_, but to too many sig figs, give feedback about this.
 
-                // If we have unit information available put it in our response.
-                Boolean validUnits = null;
-                if (isaacNumericQuestion.getRequireUnits()) {
-                    // Whatever the current bestResponse is, it contains all we need to know about the units:
-                    validUnits = bestResponse.getCorrectUnits();
+                    // If we have unit information available put it in our response.
+                    Boolean validUnits = null;
+                    if (isaacNumericQuestion.getRequireUnits()) {
+                        // Whatever the current bestResponse is, it contains all we need to know about the units:
+                        validUnits = bestResponse.getCorrectUnits();
+                    }
+                    // Our new bestResponse is about incorrect significant figures:
+                    Content sigFigResponse = new Content(DEFAULT_VALIDATION_RESPONSE);
+                    sigFigResponse.setTags(new HashSet<>(ImmutableList.of("sig_figs", "sig_figs_too_many")));
+                    bestResponse = new QuantityValidationResponse(question.getId(), answerFromUser, false, sigFigResponse,
+                            false, validUnits, new Date());
                 }
-                // Our new bestResponse is about incorrect significant figures:
-                Content sigFigResponse = new Content(DEFAULT_VALIDATION_RESPONSE);
-                sigFigResponse.setTags(new HashSet<>(ImmutableList.of("sig_figs", "sig_figs_too_many")));
-                bestResponse = new QuantityValidationResponse(question.getId(), answerFromUser, false, sigFigResponse,
-                        false, validUnits, new Date());
             }
 
             // And then return the bestResponse:
