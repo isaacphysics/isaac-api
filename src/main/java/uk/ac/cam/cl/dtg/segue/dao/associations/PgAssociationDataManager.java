@@ -98,23 +98,9 @@ public class PgAssociationDataManager implements IAssociationDataManager {
     public void createAssociation(final AssociationToken token, final Long userIdGrantingAccess)
             throws SegueDatabaseException {
         Validate.notNull(token);
+        Long userIdReceivingAccess = token.getOwnerUserId();
 
-        String query = "INSERT INTO user_associations(user_id_granting_permission, user_id_receiving_permission," +
-                " created) VALUES (?, ?, ?);";
-        try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(query);
-        ) {
-            pst.setLong(1, userIdGrantingAccess);
-            pst.setLong(2, token.getOwnerUserId());
-            pst.setTimestamp(3, new Timestamp(new Date().getTime()));
-            
-            if (pst.executeUpdate() == 0) {
-                throw new SegueDatabaseException("Unable to create association.");
-            }
-            
-        } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
-        }
+        createAssociation(userIdReceivingAccess, userIdGrantingAccess);
     }
 
     @Override
