@@ -125,7 +125,7 @@ import uk.ac.cam.cl.dtg.segue.quiz.PgQuestionAttempts;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueScheduledDatabaseScriptJob;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueScheduledJob;
-import uk.ac.cam.cl.dtg.segue.scheduler.jobs.SegueScheduledDeleteEventAdditionalBookingInformationJob;
+import uk.ac.cam.cl.dtg.segue.scheduler.jobs.DeleteEventAdditionalBookingInformationJob;
 import uk.ac.cam.cl.dtg.segue.scheduler.jobs.SegueScheduledSyncMailjetUsersJob;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
@@ -920,11 +920,13 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                     "SQL scheduled job that deletes expired reservations for the event booking system",
                     "0 0 7 * * ?", "db_scripts/scheduled/expired-reservations-clean-up.sql");
 
-            SegueScheduledJob deleteEventAdditionalBookingInformation = new SegueScheduledDeleteEventAdditionalBookingInformationJob(
+            SegueScheduledJob deleteEventAdditionalBookingInformation = SegueScheduledJob.createCustomJob(
                   "deleteEventAdditionalBookingInformation",
                   "JavaJob",
                   "Delete event additional booking information a given period after an event has taken place",
-                  "0 0 7 * * ?"
+                  "0 0 7 * * ?",
+                  Maps.newHashMap(),
+                  new DeleteEventAdditionalBookingInformationJob()
             );
 
             SegueScheduledJob syncMailjetUsers = new SegueScheduledSyncMailjetUsersJob(

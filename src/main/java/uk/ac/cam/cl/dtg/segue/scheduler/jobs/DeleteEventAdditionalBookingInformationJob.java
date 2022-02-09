@@ -25,6 +25,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.Date;
@@ -79,7 +80,9 @@ public class DeleteEventAdditionalBookingInformationJob implements Job {
                 if (contentResult instanceof IsaacEventPageDTO) {
                     IsaacEventPageDTO page = (IsaacEventPageDTO) contentResult;
                     // Event end date (if present) > 30 days ago, else event date > 30 days ago
-                    if ((page.getEndDate() != null && page.getEndDate().toInstant().isBefore(thirtyDaysAgo.toInstant())) || (page.getDate().toInstant().isBefore(thirtyDaysAgo.toInstant()))) {
+                    boolean endDate30DaysAgo = page.getEndDate() != null && page.getEndDate().toInstant().isBefore(thirtyDaysAgo.toInstant());
+                    boolean noEndDateAndStartDate30DaysAgo = page.getEndDate() == null && page.getDate().toInstant().isBefore(thirtyDaysAgo.toInstant());
+                    if (endDate30DaysAgo || noEndDateAndStartDate30DaysAgo) {
                         try (Connection conn = database.getDatabaseConnection()) {
                             PreparedStatement pst;
                             // Check for additional info that needs removing, check if pii has already been removed, if
@@ -94,7 +97,7 @@ public class DeleteEventAdditionalBookingInformationJob implements Job {
                                     " WHERE event_id = ?" +
                                     " AND additional_booking_information ??| array['emergencyName', 'emergencyNumber', 'accessibilityRequirements', 'medicalRequirements']" +
                                     " AND pii_removed IS NULL");
-                            pst.setTimestamp(1, new Timestamp(new Date().getTime()));
+                            pst.setTimestamp(1, new Timestamp(Instant.now().toEpochMilli()));
                             pst.setString(2, page.getId());
 
                             int affectedRows = pst.executeUpdate();
@@ -107,11 +110,7 @@ public class DeleteEventAdditionalBookingInformationJob implements Job {
             }
             log.info("Ran DeleteEventAdditionalBookingInformationJob");
         } catch (SQLException e) {
-            try {
-                throw new SegueDatabaseException("Postgres exception", e);
-            } catch (SegueDatabaseException ex) {
-                ex.printStackTrace();
-            }
+            new SegueDatabaseException("Postgres exception", e).printStackTrace();
         } catch (ContentManagerException e) {
             log.error("Failed to delete event additional booking information");
             e.printStackTrace();
