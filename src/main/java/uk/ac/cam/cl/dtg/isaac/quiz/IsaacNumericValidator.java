@@ -231,8 +231,12 @@ public class IsaacNumericValidator implements IValidator {
                                                          final Quantity answerFromUser) {
         log.debug("\t[validateWithUnits]");
         QuantityValidationResponse bestResponse = null;
-        int sigFigsToValidateWith = numberOfSignificantFiguresToValidateWith(answerFromUser.getValue(),
-                isaacNumericQuestion.getSignificantFiguresMin(), isaacNumericQuestion.getSignificantFiguresMax());
+        Integer sigFigsToValidateWith = null;
+
+        if (!isaacNumericQuestion.getDisregardSignificantFigures()){
+            sigFigsToValidateWith = numberOfSignificantFiguresToValidateWith(answerFromUser.getValue(),
+                    isaacNumericQuestion.getSignificantFiguresMin(), isaacNumericQuestion.getSignificantFiguresMax());
+        }
 
         String unitsFromUser = answerFromUser.getUnits().trim();
 
@@ -295,8 +299,12 @@ public class IsaacNumericValidator implements IValidator {
                                                             final Quantity answerFromUser) {
         log.debug("\t[validateWithoutUnits]");
         QuantityValidationResponse bestResponse = null;
-        int sigFigsToValidateWith = numberOfSignificantFiguresToValidateWith(answerFromUser.getValue(),
-                isaacNumericQuestion.getSignificantFiguresMin(), isaacNumericQuestion.getSignificantFiguresMax());
+        Integer sigFigsToValidateWith = null;
+
+        if (!isaacNumericQuestion.getDisregardSignificantFigures()){
+            sigFigsToValidateWith = numberOfSignificantFiguresToValidateWith(answerFromUser.getValue(),
+                    isaacNumericQuestion.getSignificantFiguresMin(), isaacNumericQuestion.getSignificantFiguresMax());
+        }
 
         List<Choice> orderedChoices = getOrderedChoices(isaacNumericQuestion.getChoices());
 
@@ -332,21 +340,29 @@ public class IsaacNumericValidator implements IValidator {
      *
      * @param trustedValue               - first number
      * @param untrustedValue             - second number
-     * @param significantFiguresRequired - the number of significant figures to perform comparisons to
+     * @param significantFiguresRequired - the number of significant figures to perform comparisons to (can be null,
+     *                                   to skip significant figure checks)
      * @return true when the numbers match
      * @throws NumberFormatException - when one of the values cannot be parsed
      */
     private boolean numericValuesMatch(final String trustedValue, final String untrustedValue,
-                                       final int significantFiguresRequired) throws NumberFormatException {
+                                       final Integer significantFiguresRequired) throws NumberFormatException {
         log.debug("\t[numericValuesMatch]");
         double trustedDouble, untrustedDouble;
 
         String untrustedParsedValue = reformatNumberForParsing(untrustedValue);
         String trustedParsedValue = reformatNumberForParsing(trustedValue);
 
-        // Round to N s.f. for trusted value
-        trustedDouble = roundStringValueToSigFigs(trustedParsedValue, significantFiguresRequired);
-        untrustedDouble = roundStringValueToSigFigs(untrustedParsedValue, significantFiguresRequired);
+        if (significantFiguresRequired == null){
+            trustedDouble = stringValueToDouble(trustedParsedValue);
+            untrustedDouble = stringValueToDouble(untrustedParsedValue);
+        }
+        else {
+            // Round to N s.f.
+            trustedDouble = roundStringValueToSigFigs(trustedParsedValue, significantFiguresRequired);
+            untrustedDouble = roundStringValueToSigFigs(untrustedParsedValue, significantFiguresRequired);
+        }
+
         final double epsilon = 1e-50;
 
         return Math.abs(trustedDouble - untrustedDouble) < max(epsilon * max(trustedDouble, untrustedDouble), epsilon);
@@ -369,6 +385,16 @@ public class IsaacNumericValidator implements IValidator {
 
         return rounded.doubleValue();
 
+    }
+
+    /**
+     * Return a double equivalent to value.
+     *
+     * @param value - number, as String, to convert to double
+     * @return the converted number.
+     */
+    private double stringValueToDouble(final String value) {
+        return new BigDecimal(value).doubleValue();
     }
 
     /**

@@ -808,6 +808,32 @@ public class IsaacNumericValidatorTest {
         assertFalse(response.isCorrect());
     }
 
+    /*
+    Test that the validator returns an incorrect response when a question's disregard sig figs flag is enabled, and
+    the user submitted answer is incorrect at a significant figure the correct answer is not specified to.
+    */
+    @Test
+    public final void isaacNumericValidator_DisregardSigFigsEnabledAndAnswerIncorrectAt3SF_ResponseIsIncorrect() {
+        // Arrange
+        IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
+        someNumericQuestion.setDisregardSignificantFigures(true);
+
+        List<Choice> answerList = Lists.newArrayList();
+        Quantity someCorrectAnswer = new Quantity("2.1", "None");
+        someCorrectAnswer.setCorrect(true);
+
+        answerList.add(someCorrectAnswer);
+        someNumericQuestion.setChoices(answerList);
+
+        // Act
+        Quantity userSubmittedAnswer = new Quantity("2.11", "None");
+        QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion,
+                userSubmittedAnswer);
+
+        // Assert
+        assertFalse(response.isCorrect());
+    }
+
     //  ---------- Helper methods to test internal functionality of the validator class ----------
 
     private void testSigFigRoundingWorks(String inputValue, int sigFigToRoundTo, double expectedResult) throws Exception {
