@@ -126,6 +126,7 @@ import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueScheduledDatabaseScriptJob;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueScheduledJob;
 import uk.ac.cam.cl.dtg.segue.scheduler.jobs.DeleteEventAdditionalBookingInformationJob;
+import uk.ac.cam.cl.dtg.segue.scheduler.jobs.DeleteEventAdditionalBookingInformationOneYearJob;
 import uk.ac.cam.cl.dtg.segue.scheduler.jobs.SegueScheduledSyncMailjetUsersJob;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
@@ -929,13 +930,22 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                   new DeleteEventAdditionalBookingInformationJob()
             );
 
+            SegueScheduledJob DeleteEventAdditionalBookingInformationOneYearJob = SegueScheduledJob.createCustomJob(
+                    "deleteEventAdditionalBookingInformationOneYear",
+                    "JavaJob",
+                    "Delete event additional booking information a year after an event has taken place if not already removed",
+                    "0 0 7 * * ?",
+                    Maps.newHashMap(),
+                    new DeleteEventAdditionalBookingInformationOneYearJob()
+            );
+
             SegueScheduledJob syncMailjetUsers = new SegueScheduledSyncMailjetUsersJob(
                     "syncMailjetUsersJob",
                     "JavaJob",
                     "Sync users to mailjet",
                     "0 0 0/4 ? * * *");
 
-            List<SegueScheduledJob> configuredScheduledJobs = new ArrayList<>(Arrays.asList(PIISQLJob, cleanUpOldAnonymousUsers, cleanUpExpiredReservations, deleteEventAdditionalBookingInformation));
+            List<SegueScheduledJob> configuredScheduledJobs = new ArrayList<>(Arrays.asList(PIISQLJob, cleanUpOldAnonymousUsers, cleanUpExpiredReservations, deleteEventAdditionalBookingInformation, DeleteEventAdditionalBookingInformationOneYearJob));
 
             if (mailjetKey != null && mailjetSecret != null) {
                 configuredScheduledJobs.add(syncMailjetUsers);

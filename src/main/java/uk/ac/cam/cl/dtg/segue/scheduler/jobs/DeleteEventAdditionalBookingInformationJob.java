@@ -25,7 +25,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.Date;
@@ -97,7 +96,7 @@ public class DeleteEventAdditionalBookingInformationJob implements Job {
                                     " WHERE event_id = ?" +
                                     " AND additional_booking_information ??| array['emergencyName', 'emergencyNumber', 'accessibilityRequirements', 'medicalRequirements']" +
                                     " AND pii_removed IS NULL");
-                            pst.setTimestamp(1, new Timestamp(Instant.now().toEpochMilli()));
+                            pst.setTimestamp(1, Timestamp.valueOf(now.toLocalDateTime()));
                             pst.setString(2, page.getId());
 
                             int affectedRows = pst.executeUpdate();
