@@ -55,12 +55,11 @@ public class PgUserBadgePersistenceManager implements IUserBadgePersistenceManag
             pst.setLong(3, user.getId());
             pst.setString(4, badgeName.name());
 
-            ResultSet results = pst.executeQuery();
-            results.next();
-
-            return new UserBadge(user.getId(), badgeName, (results.getString("state") != null) ?
-                    mapper.readTree(results.getString("state")) : null);
-
+            try (ResultSet results = pst.executeQuery()) {
+                results.next();
+                return new UserBadge(user.getId(), badgeName, (results.getString("state") != null) ?
+                        mapper.readTree(results.getString("state")) : null);
+            }
         } catch (SQLException | IOException e) {
             throw new SegueDatabaseException("Unable to get badge definition from database: " + e);
         }

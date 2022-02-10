@@ -56,10 +56,10 @@ public class DatabaseScriptExecutionJob implements Job {
             log.info(String.format("Scheduled SQL job (%s) started", SQLFile));
             // JDBC cannot cope with the Postgres ? JSONB operator in PreparedStatements. Since we pass no parameters,
             // and run infrequently, a plain Statement is safe:
-            Statement sss = conn.createStatement();
-            sss.execute(sqlFileContents);
-            log.info(String.format("Scheduled SQL job (%s) completed", SQLFile));
-
+            try (Statement sss = conn.createStatement()) {
+                sss.execute(sqlFileContents);
+                log.info(String.format("Scheduled SQL job (%s) completed", SQLFile));
+            }
         } catch (IOException | SQLException e) {
             log.error(String.format("Error while trying to execute scheduled job (%s)", SQLFile), e);
         }
