@@ -10,6 +10,9 @@
 -->
 <module name="Checker">
   <property name="severity" value="warning"/>
+  <module name="LineLength">
+    <property name="max" value="120"/>
+  </module>
   <module name="TreeWalker">
     <property name="tabWidth" value="4"/>
     <module name="JavadocMethod">
@@ -38,9 +41,6 @@
     <module name="IllegalImport"/>
     <module name="RedundantImport"/>
     <module name="UnusedImports"/>
-    <module name="LineLength">
-      <property name="max" value="120"/>
-    </module>
     <module name="MethodLength"/>
     <module name="ParameterNumber">
       <property name="tokens" value="METHOD_DEF"/>
