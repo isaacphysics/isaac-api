@@ -100,7 +100,7 @@ public class UserAccountManager implements IUserAccountManager {
     private final ISecondFactorAuthenticator secondFactorManager;
 
     private final int USER_NAME_MAX_LENGTH = 255;
-    private final Pattern USER_NAME_FORBIDDEN_CHARS_REGEX = Pattern.compile("[*<>]");
+    private static final Pattern USER_NAME_FORBIDDEN_CHARS_REGEX = Pattern.compile("[*<>]");
 
 
     /**
