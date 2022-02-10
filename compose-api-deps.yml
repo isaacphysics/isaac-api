@@ -17,7 +17,7 @@ services:
     image: ucamcldtg/chemistry-checker
     restart: unless-stopped
 
-  phy-elasticsearch-live:
+  phy-elastic-live:
     # container configuration https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html
     container_name: phy-elastic-live
     image: docker.elastic.co/elasticsearch/elasticsearch:7.14.2
@@ -41,7 +41,7 @@ services:
         ipv4_address: "${LOCAL_PHY_ELASTIC_IP}"
     restart: unless-stopped
 
-  cs-elasticsearch-live:
+  cs-elastic-live:
     # container configuration https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html
     container_name: cs-elastic-live
     image: docker.elastic.co/elasticsearch/elasticsearch:7.14.2
