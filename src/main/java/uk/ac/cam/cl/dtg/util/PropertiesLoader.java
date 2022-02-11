@@ -129,10 +129,10 @@ public class PropertiesLoader {
         // check to see if this a resource or a file somewhere else
         if (getClass().getClassLoader().getResourceAsStream(this.propertiesFile) == null) {
             File file = new File(this.propertiesFile);
-            FileInputStream ioStream = new FileInputStream(file);
-
-            // then we have to look further a field
-            loadedProperties.load(ioStream);
+            try (FileInputStream ioStream = new FileInputStream(file)) {
+                // then we have to look further afield
+                loadedProperties.load(ioStream);
+            }
         } else {
             loadedProperties.load(getClass().getClassLoader().getResourceAsStream(this.propertiesFile));
         }

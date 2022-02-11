@@ -14,6 +14,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -101,8 +102,11 @@ class SchoolIndexer {
         // otherwise we need to generate it.
         List<School> schools = com.google.api.client.util.Lists.newArrayList();
 
-        try {
-            CSVReader reader = new CSVReader(new InputStreamReader(new FileInputStream(schoolsListPath), "UTF-8"));
+        try (FileInputStream fs = new FileInputStream(schoolsListPath);
+             InputStreamReader is = new InputStreamReader(fs, StandardCharsets.UTF_8);
+             CSVReader reader = new CSVReader(is);
+        ) {
+
 
             // use first line to determine field names.
             String[] columns = reader.readNext();
