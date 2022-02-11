@@ -439,10 +439,6 @@ public class EmailFacade extends AbstractSegueFacade {
             }
 
             if (isUserAnEventManager(userManager, sender)) {
-                if (!emailType.equals(EmailType.EVENTS)) {
-                    return new SegueErrorResponse(Status.FORBIDDEN,
-                            "Event managers can only send event emails.").toResponse();
-                }
                 if (misuseMonitor.willHaveMisused(sender.getId().toString(),
                         SendEmailMisuseHandler.class.getSimpleName(), userIds.size())) {
                     return SegueErrorResponse

@@ -46,14 +46,15 @@ public class PgPasswordDataManager extends AbstractPgDataManager implements IPas
             return null;
         }
 
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM user_credentials WHERE user_id = ?");
+        String query = "SELECT * FROM user_credentials WHERE user_id = ?";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setLong(1, userId);
 
-            ResultSet results = pst.executeQuery();
-
-            return this.findOne(results);
+            try (ResultSet results = pst.executeQuery()) {
+                return this.findOne(results);
+            }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
@@ -61,14 +62,15 @@ public class PgPasswordDataManager extends AbstractPgDataManager implements IPas
 
     @Override
     public LocalUserCredential getLocalUserCredentialByResetToken(final String token) throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM user_credentials WHERE reset_token = ?");
+        String query = "SELECT * FROM user_credentials WHERE reset_token = ?";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setString(1, token);
 
-            ResultSet results = pst.executeQuery();
-
-            return this.findOne(results);
+            try (ResultSet results = pst.executeQuery()) {
+                return this.findOne(results);
+            }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception while retrieving by reset token", e);
         }
@@ -91,17 +93,11 @@ public class PgPasswordDataManager extends AbstractPgDataManager implements IPas
     }
 
     private LocalUserCredential createCredentials(LocalUserCredential credsToSave) throws SegueDatabaseException {
-
-        PreparedStatement pst;
-        try (Connection conn = database.getDatabaseConnection()) {
-            pst = conn
-                    .prepareStatement(
-                            "INSERT INTO user_credentials(user_id, password, security_scheme, secure_salt, reset_token, "
-                                    + "reset_expiry, last_updated) "
-                                    + "VALUES (?, ?, ?, ?, ?, ?, ?);",
-                            Statement.RETURN_GENERATED_KEYS);
-
-
+        String query = "INSERT INTO user_credentials(user_id, password, security_scheme, secure_salt, reset_token, reset_expiry, last_updated)" +
+                " VALUES (?, ?, ?, ?, ?, ?, ?);";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+        ) {
             setValueHelper(pst, 1, credsToSave.getUserId());
             setValueHelper(pst, 2, credsToSave.getPassword());
             setValueHelper(pst, 3, credsToSave.getSecurityScheme());
@@ -115,7 +111,6 @@ public class PgPasswordDataManager extends AbstractPgDataManager implements IPas
             }
 
             return credsToSave;
-
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
@@ -127,15 +122,11 @@ public class PgPasswordDataManager extends AbstractPgDataManager implements IPas
             throw new SegueDatabaseException("The credentials you have tried to update do not exist.");
         }
 
-        PreparedStatement pst;
-        try (Connection conn = database.getDatabaseConnection()) {
-            pst = conn
-                    .prepareStatement(
-                            "UPDATE user_credentials SET password = ?, security_scheme = ?, secure_salt = ?, reset_token = ?, "
-                                    + "reset_expiry = ?, last_updated = ? "
-                                    + "WHERE user_id = ?;");
-
-
+        String query = "UPDATE user_credentials SET password = ?, security_scheme = ?, secure_salt = ?," +
+                " reset_token = ?, reset_expiry = ?, last_updated = ? WHERE user_id = ?;";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             setValueHelper(pst, 1, credsToSave.getPassword());
             setValueHelper(pst, 2, credsToSave.getSecurityScheme());
             setValueHelper(pst, 3, credsToSave.getSecureSalt());

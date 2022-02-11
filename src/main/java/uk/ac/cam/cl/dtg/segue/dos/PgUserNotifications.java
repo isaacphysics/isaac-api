@@ -52,17 +52,19 @@ public class PgUserNotifications implements IUserNotifications {
 
     @Override
     public List<IUserNotification> getUserNotifications(final Long userId) throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM user_notifications WHERE user_id = ? ORDER BY created ASC");
+        String query = "SELECT * FROM user_notifications WHERE user_id = ? ORDER BY created ASC";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setLong(1, userId);
 
-            ResultSet results = pst.executeQuery();
-            List<IUserNotification> returnResult = Lists.newArrayList();
-            while (results.next()) {
-                returnResult.add(buildPgUserNotifications(results));
+            try (ResultSet results = pst.executeQuery()) {
+                List<IUserNotification> returnResult = Lists.newArrayList();
+                while (results.next()) {
+                    returnResult.add(buildPgUserNotifications(results));
+                }
+                return returnResult;
             }
-            return returnResult;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
@@ -118,14 +120,10 @@ public class PgUserNotifications implements IUserNotifications {
      * @throws SegueDatabaseException - if it fails.
      */
     private void insertNewNotificationRecord(final IUserNotification notification) throws SegueDatabaseException {
-        PreparedStatement pst;
-        try (Connection conn = database.getDatabaseConnection()) {
-
-            pst = conn
-                    .prepareStatement("INSERT INTO user_notifications "
-                            + "(user_id, notification_id, status, created) "
-                            + "VALUES (?, ?, ?, ?)");
-
+        String query = "INSERT INTO user_notifications (user_id, notification_id, status, created) VALUES (?, ?, ?, ?)";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setLong(1, notification.getUserId());
             pst.setString(2, notification.getContentNotificationId());
             pst.setString(3, notification.getStatus().name());
@@ -145,14 +143,10 @@ public class PgUserNotifications implements IUserNotifications {
      * @throws SegueDatabaseException - if it fails.
      */
     private void updateNotificationRecord(final IUserNotification notification) throws SegueDatabaseException {
-        PreparedStatement pst;
-        try (Connection conn = database.getDatabaseConnection()) {
-
-            pst = conn
-                    .prepareStatement("UPDATE user_notifications "
-                            + "SET status = ?, created=? "
-                            + "WHERE user_id = ? AND notification_id = ?");
-
+        String query = "UPDATE user_notifications SET status = ?, created=? WHERE user_id = ? AND notification_id = ?";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setString(1, notification.getStatus().name());
             pst.setTimestamp(2, new java.sql.Timestamp(notification.getCreated().getTime()));
             pst.setLong(3, notification.getUserId());
@@ -175,24 +169,26 @@ public class PgUserNotifications implements IUserNotifications {
      */
     private IUserNotification getNotificationRecord(final Long userId, final String contentId)
             throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM user_notifications WHERE user_id = ? AND notification_id = ?");
+        String query = "SELECT * FROM user_notifications WHERE user_id = ? AND notification_id = ?";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setLong(1, userId);
             pst.setString(2, contentId);
 
-            ResultSet results = pst.executeQuery();
-            List<IUserNotification> listOfResults = Lists.newArrayList();
-            while (results.next()) {
-                listOfResults.add(buildPgUserNotifications(results));
-            }
+            try (ResultSet results = pst.executeQuery()) {
+                List<IUserNotification> listOfResults = Lists.newArrayList();
+                while (results.next()) {
+                    listOfResults.add(buildPgUserNotifications(results));
+                }
 
-            if (listOfResults.size() == 0) {
-                return null;
-            }
+                if (listOfResults.size() == 0) {
+                    return null;
+                }
 
-            // don't need to check other cases as the keys being looked up are composite in the database definition.
-            return listOfResults.get(0);
+                // don't need to check other cases as the keys being looked up are composite in the database definition.
+                return listOfResults.get(0);
+            }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }

@@ -150,6 +150,7 @@ public class PgEventBooking implements EventBooking {
             return;
         }
 
+        // FIXME: try-with-resources!
         try (Connection conn = ds.getDatabaseConnection()) {
             PreparedStatement pst;
             if (bookingId != null) {
