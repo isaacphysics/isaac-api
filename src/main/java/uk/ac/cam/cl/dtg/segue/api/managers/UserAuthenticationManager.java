@@ -514,7 +514,7 @@ public class UserAuthenticationManager {
             logoutCookie.setSecure(setSecureCookies);
             // TODO - set sameSite=Lax at minimum when Jetty supports this (9.4.x)
 
-            response.addCookie(logoutCookie);
+            response.addCookie(logoutCookie);  // lgtm [java/insecure-cookie]  false positive due to conditional above!
         } catch (IllegalStateException e) {
             log.info("The session has already been invalidated. " + "Unable to logout again...", e);
         }
@@ -936,7 +936,7 @@ public class UserAuthenticationManager {
 
             log.debug(String.format("Creating AuthCookie for user (%s) with value %s", userId, authCookie.getValue()));
 
-            response.addCookie(authCookie);
+            response.addCookie(authCookie);  // lgtm [java/insecure-cookie]  false positive due to conditional above!
             
         } catch (JsonProcessingException e1) {
             log.error("Unable to save cookie.", e1);
