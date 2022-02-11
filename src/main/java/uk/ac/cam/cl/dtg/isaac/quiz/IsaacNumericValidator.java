@@ -233,7 +233,7 @@ public class IsaacNumericValidator implements IValidator {
         QuantityValidationResponse bestResponse = null;
         Integer sigFigsToValidateWith = null;
 
-        if (!isaacNumericQuestion.getDisregardSignificantFigures()){
+        if (!isaacNumericQuestion.getDisregardSignificantFigures()) {
             sigFigsToValidateWith = numberOfSignificantFiguresToValidateWith(answerFromUser.getValue(),
                     isaacNumericQuestion.getSignificantFiguresMin(), isaacNumericQuestion.getSignificantFiguresMax());
         }
@@ -301,7 +301,7 @@ public class IsaacNumericValidator implements IValidator {
         QuantityValidationResponse bestResponse = null;
         Integer sigFigsToValidateWith = null;
 
-        if (!isaacNumericQuestion.getDisregardSignificantFigures()){
+        if (!isaacNumericQuestion.getDisregardSignificantFigures()) {
             sigFigsToValidateWith = numberOfSignificantFiguresToValidateWith(answerFromUser.getValue(),
                     isaacNumericQuestion.getSignificantFiguresMin(), isaacNumericQuestion.getSignificantFiguresMax());
         }
@@ -340,8 +340,8 @@ public class IsaacNumericValidator implements IValidator {
      *
      * @param trustedValue               - first number
      * @param untrustedValue             - second number
-     * @param significantFiguresRequired - the number of significant figures to perform comparisons to (can be null,
-     *                                   to skip significant figure checks)
+     * @param significantFiguresRequired - the number of significant figures to perform comparisons to (can be null, in
+     *                                   which case exact comparison is performed)
      * @return true when the numbers match
      * @throws NumberFormatException - when one of the values cannot be parsed
      */
@@ -353,11 +353,10 @@ public class IsaacNumericValidator implements IValidator {
         String untrustedParsedValue = reformatNumberForParsing(untrustedValue);
         String trustedParsedValue = reformatNumberForParsing(trustedValue);
 
-        if (significantFiguresRequired == null){
+        if (null == significantFiguresRequired) {
             trustedDouble = stringValueToDouble(trustedParsedValue);
             untrustedDouble = stringValueToDouble(untrustedParsedValue);
-        }
-        else {
+        } else {
             // Round to N s.f.
             trustedDouble = roundStringValueToSigFigs(trustedParsedValue, significantFiguresRequired);
             untrustedDouble = roundStringValueToSigFigs(untrustedParsedValue, significantFiguresRequired);
@@ -394,6 +393,8 @@ public class IsaacNumericValidator implements IValidator {
      * @return the converted number.
      */
     private double stringValueToDouble(final String value) {
+        log.debug("\t[stringValueToDouble]");
+
         return new BigDecimal(value).doubleValue();
     }
 
