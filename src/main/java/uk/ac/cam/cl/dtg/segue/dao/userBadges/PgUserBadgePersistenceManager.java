@@ -12,6 +12,7 @@ import uk.ac.cam.cl.dtg.segue.dos.UserBadge;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -43,13 +44,12 @@ public class PgUserBadgePersistenceManager implements IUserBadgePersistenceManag
             throw new SegueDatabaseException("Unable to get badge definition from database.");
         }
 
-        try {
+        String query = "INSERT INTO user_badges (user_id, badge) VALUES (?, ?)"
+                + " ON CONFLICT (user_id, badge) DO UPDATE SET user_id = excluded.user_id"
+                + " WHERE user_badges.user_id = ? AND user_badges.badge = ? RETURNING *";
 
-            PreparedStatement pst;
-            pst = ((PgTransaction)transaction).getConnection().prepareStatement("INSERT INTO user_badges (user_id, badge)" +
-                    " VALUES (?, ?) ON CONFLICT (user_id, badge) DO UPDATE SET user_id = excluded.user_id " +
-                    "WHERE user_badges.user_id = ? AND user_badges.badge = ? RETURNING *");
-
+        Connection conn = ((PgTransaction) transaction).getConnection();
+        try (PreparedStatement pst = conn.prepareStatement(query)) {
             pst.setLong(1, user.getId());
             pst.setString(2, badgeName.name());
             pst.setLong(3, user.getId());
@@ -72,11 +72,10 @@ public class PgUserBadgePersistenceManager implements IUserBadgePersistenceManag
             throw new SegueDatabaseException("Unable to update database badge.");
         }
 
-        try {
+        String query = "UPDATE user_badges SET state = ?::jsonb WHERE user_id = ? and badge = ?";
 
-            PreparedStatement pst;
-            pst = ((PgTransaction)transaction).getConnection()
-                    .prepareStatement("UPDATE user_badges SET state = ?::jsonb WHERE user_id = ? and badge = ?");
+        Connection conn = ((PgTransaction) transaction).getConnection();
+        try (PreparedStatement pst = conn.prepareStatement(query)) {
             pst.setString(1, mapper.writeValueAsString(badge.getState()));
             pst.setLong(2, badge.getUserId());
             pst.setString(3, badge.getBadgeName().name());
