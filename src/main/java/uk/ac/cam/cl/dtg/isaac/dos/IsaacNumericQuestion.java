@@ -141,7 +141,7 @@ public class IsaacNumericQuestion extends IsaacQuestionBase {
      *
      * @param disregardSignificantFigures - whether to accept values equal to the answer without considering sig figs.
      */
-    public final void setDisregardSignificantFigures(final boolean disregardSignificantFigures){
+    public final void setDisregardSignificantFigures(final boolean disregardSignificantFigures) {
         this.disregardSignificantFigures = disregardSignificantFigures;
     }
 
@@ -150,7 +150,7 @@ public class IsaacNumericQuestion extends IsaacQuestionBase {
      *
      * @return whether to accept values equal to the answer without considering sig figs.
      */
-    public final Boolean getDisregardSignificantFigures(){
+    public final Boolean getDisregardSignificantFigures() {
         if (this.disregardSignificantFigures == null) {
             return false;
         }
