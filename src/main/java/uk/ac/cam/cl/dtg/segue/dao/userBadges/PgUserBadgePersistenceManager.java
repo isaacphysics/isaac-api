@@ -2,10 +2,8 @@ package uk.ac.cam.cl.dtg.segue.dao.userBadges;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.inject.Inject;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dos.ITransaction;
 import uk.ac.cam.cl.dtg.segue.dos.PgTransaction;
 import uk.ac.cam.cl.dtg.segue.dos.UserBadge;
@@ -22,23 +20,18 @@ import java.sql.SQLException;
  */
 public class PgUserBadgePersistenceManager implements IUserBadgePersistenceManager {
 
-    private PostgresSqlDb postgresSqlDb;
-    private ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = new ObjectMapper();
 
 
     /**
-     * Postgres specific database management for user badges
-     *
-     * @param postgresSqlDb pre-configured connection
+     * Postgres specific database management for user badges.
      */
-    @Inject
-    public PgUserBadgePersistenceManager(PostgresSqlDb postgresSqlDb) {
-        this.postgresSqlDb = postgresSqlDb;
+    public PgUserBadgePersistenceManager() {
     }
 
     @Override
-    public UserBadge getBadge(RegisteredUserDTO user, UserBadgeManager.Badge badgeName,
-                              ITransaction transaction) throws SegueDatabaseException {
+    public UserBadge getBadge(final RegisteredUserDTO user, final UserBadgeManager.Badge badgeName,
+                              final ITransaction transaction) throws SegueDatabaseException {
 
         if (!(transaction instanceof PgTransaction)) {
             throw new SegueDatabaseException("Unable to get badge definition from database.");
@@ -57,8 +50,8 @@ public class PgUserBadgePersistenceManager implements IUserBadgePersistenceManag
 
             try (ResultSet results = pst.executeQuery()) {
                 results.next();
-                return new UserBadge(user.getId(), badgeName, (results.getString("state") != null) ?
-                        mapper.readTree(results.getString("state")) : null);
+                return new UserBadge(user.getId(), badgeName, (results.getString("state") != null)
+                        ? mapper.readTree(results.getString("state")) : null);
             }
         } catch (SQLException | IOException e) {
             throw new SegueDatabaseException("Unable to get badge definition from database: " + e);
@@ -66,7 +59,7 @@ public class PgUserBadgePersistenceManager implements IUserBadgePersistenceManag
     }
 
     @Override
-    public void updateBadge(UserBadge badge, ITransaction transaction) throws SegueDatabaseException {
+    public void updateBadge(final UserBadge badge, final ITransaction transaction) throws SegueDatabaseException {
 
         if (!(transaction instanceof PgTransaction)) {
             throw new SegueDatabaseException("Unable to update database badge.");
