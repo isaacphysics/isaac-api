@@ -100,7 +100,7 @@ public class UserAccountManager implements IUserAccountManager {
     private final ISecondFactorAuthenticator secondFactorManager;
 
     private final int USER_NAME_MAX_LENGTH = 255;
-    private final String USER_NAME_ILLEGAL_CHARS_REGEX = "[*<>]";
+    private static final Pattern USER_NAME_FORBIDDEN_CHARS_REGEX = Pattern.compile("[*<>]");
 
 
     /**
@@ -770,11 +770,11 @@ public class UserAccountManager implements IUserAccountManager {
 
         // validate names
         if (!this.isUserNameValid(user.getGivenName())) {
-            throw new InvalidNameException("The given name provided is an invalid length or contains illegal characters.");
+            throw new InvalidNameException("The given name provided is an invalid length or contains forbidden characters.");
         }
 
         if (!this.isUserNameValid(user.getFamilyName())) {
-            throw new InvalidNameException("The family name provided is an invalid length or contains illegal characters.");
+            throw new InvalidNameException("The family name provided is an invalid length or contains forbidden characters.");
         }
 
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
@@ -857,11 +857,11 @@ public class UserAccountManager implements IUserAccountManager {
 
         // validate names
         if (!this.isUserNameValid(updatedUser.getGivenName())) {
-            throw new InvalidNameException("The given name provided is an invalid length or contains illegal characters.");
+            throw new InvalidNameException("The given name provided is an invalid length or contains forbidden characters.");
         }
 
         if (!this.isUserNameValid(updatedUser.getFamilyName())) {
-            throw new InvalidNameException("The family name provided is an invalid length or contains illegal characters.");
+            throw new InvalidNameException("The family name provided is an invalid length or contains forbidden characters.");
         }
 
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
@@ -1606,8 +1606,7 @@ public class UserAccountManager implements IUserAccountManager {
      * @return true if the name is valid, false otherwise.
      */
     public final boolean isUserNameValid(final String name){
-        Pattern illegalCharacters = Pattern.compile(USER_NAME_ILLEGAL_CHARS_REGEX);
-        if (name.length() > USER_NAME_MAX_LENGTH || illegalCharacters.matcher(name).find() || name.isEmpty()) {
+        if (name.length() > USER_NAME_MAX_LENGTH || USER_NAME_FORBIDDEN_CHARS_REGEX.matcher(name).find() || name.isEmpty()) {
            return false;
         }
         return true;
