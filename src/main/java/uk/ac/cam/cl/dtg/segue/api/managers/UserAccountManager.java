@@ -1605,9 +1605,10 @@ public class UserAccountManager implements IUserAccountManager {
      *            - the name to validate.
      * @return true if the name is valid, false otherwise.
      */
-    public final boolean isUserNameValid(final String name){
-        if (name.length() > USER_NAME_MAX_LENGTH || USER_NAME_FORBIDDEN_CHARS_REGEX.matcher(name).find() || name.isEmpty()) {
-           return false;
+    public final boolean isUserNameValid(final String name) {
+        if (null == name || name.length() > USER_NAME_MAX_LENGTH || USER_NAME_FORBIDDEN_CHARS_REGEX.matcher(name).find()
+                || name.isEmpty()) {
+            return false;
         }
         return true;
     }
