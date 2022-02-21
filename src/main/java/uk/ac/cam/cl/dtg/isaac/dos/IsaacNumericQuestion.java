@@ -35,6 +35,7 @@ import static uk.ac.cam.cl.dtg.isaac.api.Constants.NUMERIC_QUESTION_DEFAULT_SIGN
 @ValidatesWith(IsaacNumericValidator.class)
 public class IsaacNumericQuestion extends IsaacQuestionBase {
     private Boolean requireUnits;
+    private Boolean disregardSignificantFigures;
     private Integer significantFiguresMin;
     private Integer significantFiguresMax;
     private List<String> availableUnits;
@@ -133,5 +134,26 @@ public class IsaacNumericQuestion extends IsaacQuestionBase {
      */
     public void setDisplayUnit(String displayUnit) {
         this.displayUnit = displayUnit;
+    }
+
+    /**
+     * Set whether the question accepts values equal to the answer without considering significant figures.
+     *
+     * @param disregardSignificantFigures - whether to accept values equal to the answer without considering sig figs.
+     */
+    public final void setDisregardSignificantFigures(final boolean disregardSignificantFigures) {
+        this.disregardSignificantFigures = disregardSignificantFigures;
+    }
+
+    /**
+     * Get whether the question accepts values equal to the answer without considering significant figures.
+     *
+     * @return whether to accept values equal to the answer without considering sig figs.
+     */
+    public final Boolean getDisregardSignificantFigures() {
+        if (this.disregardSignificantFigures == null) {
+            return false;
+        }
+        return this.disregardSignificantFigures;
     }
 }

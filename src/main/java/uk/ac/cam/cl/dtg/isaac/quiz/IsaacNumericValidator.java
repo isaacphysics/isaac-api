@@ -103,6 +103,7 @@ public class IsaacNumericValidator implements IValidator {
         log.debug("Starting validation of '" + answerFromUser.getValue() + " " + answerFromUser.getUnits() + "' for '"
                 + isaacNumericQuestion.getId() + "'");
 
+        // check there are no obvious issues with the question (e.g. no correct answers, nonsensical sig fig requirements)
         if (null == isaacNumericQuestion.getChoices() || isaacNumericQuestion.getChoices().isEmpty()) {
             log.error("Question does not have any answers. " + question.getId() + " src: "
                     + question.getCanonicalSourceFile());
@@ -167,37 +168,39 @@ public class IsaacNumericValidator implements IValidator {
                 return useDefaultFeedbackIfNecessary(isaacNumericQuestion, bestResponse);
             }
 
-            // Step 3 - then do sig fig checking:
-            if (tooFewSignificantFigures(answerFromUser.getValue(), isaacNumericQuestion.getSignificantFiguresMin())) {
-                // If too few sig figs then give feedback about this.
+            // Step 3 - do sig fig checking (unless specified otherwise by question):
+            if (!isaacNumericQuestion.getDisregardSignificantFigures()) {
+                if (tooFewSignificantFigures(answerFromUser.getValue(), isaacNumericQuestion.getSignificantFiguresMin())) {
+                    // If too few sig figs then give feedback about this.
 
-                // If we have unit information available put it in our response.
-                Boolean validUnits = null;
-                if (isaacNumericQuestion.getRequireUnits()) {
-                    // Whatever the current bestResponse is, it contains all we need to know about the units:
-                    validUnits = bestResponse.getCorrectUnits();
+                    // If we have unit information available put it in our response.
+                    Boolean validUnits = null;
+                    if (isaacNumericQuestion.getRequireUnits()) {
+                        // Whatever the current bestResponse is, it contains all we need to know about the units:
+                        validUnits = bestResponse.getCorrectUnits();
+                    }
+                    // Our new bestResponse is about incorrect significant figures:
+                    Content sigFigResponse = new Content(DEFAULT_VALIDATION_RESPONSE);
+                    sigFigResponse.setTags(new HashSet<>(ImmutableList.of("sig_figs", "sig_figs_too_few")));
+                    bestResponse = new QuantityValidationResponse(question.getId(), answerFromUser, false, sigFigResponse,
+                            false, validUnits, new Date());
                 }
-                // Our new bestResponse is about incorrect significant figures:
-                Content sigFigResponse = new Content(DEFAULT_VALIDATION_RESPONSE);
-                sigFigResponse.setTags(new HashSet<>(ImmutableList.of("sig_figs", "sig_figs_too_few")));
-                bestResponse = new QuantityValidationResponse(question.getId(), answerFromUser, false, sigFigResponse,
-                        false, validUnits, new Date());
-            }
-            if (tooManySignificantFigures(answerFromUser.getValue(), isaacNumericQuestion.getSignificantFiguresMax())
-                    && bestResponse.isCorrect()) {
-                // If (and only if) _correct_, but to too many sig figs, give feedback about this.
+                if (tooManySignificantFigures(answerFromUser.getValue(), isaacNumericQuestion.getSignificantFiguresMax())
+                        && bestResponse.isCorrect()) {
+                    // If (and only if) _correct_, but to too many sig figs, give feedback about this.
 
-                // If we have unit information available put it in our response.
-                Boolean validUnits = null;
-                if (isaacNumericQuestion.getRequireUnits()) {
-                    // Whatever the current bestResponse is, it contains all we need to know about the units:
-                    validUnits = bestResponse.getCorrectUnits();
+                    // If we have unit information available put it in our response.
+                    Boolean validUnits = null;
+                    if (isaacNumericQuestion.getRequireUnits()) {
+                        // Whatever the current bestResponse is, it contains all we need to know about the units:
+                        validUnits = bestResponse.getCorrectUnits();
+                    }
+                    // Our new bestResponse is about incorrect significant figures:
+                    Content sigFigResponse = new Content(DEFAULT_VALIDATION_RESPONSE);
+                    sigFigResponse.setTags(new HashSet<>(ImmutableList.of("sig_figs", "sig_figs_too_many")));
+                    bestResponse = new QuantityValidationResponse(question.getId(), answerFromUser, false, sigFigResponse,
+                            false, validUnits, new Date());
                 }
-                // Our new bestResponse is about incorrect significant figures:
-                Content sigFigResponse = new Content(DEFAULT_VALIDATION_RESPONSE);
-                sigFigResponse.setTags(new HashSet<>(ImmutableList.of("sig_figs", "sig_figs_too_many")));
-                bestResponse = new QuantityValidationResponse(question.getId(), answerFromUser, false, sigFigResponse,
-                        false, validUnits, new Date());
             }
 
             // And then return the bestResponse:
@@ -228,8 +231,12 @@ public class IsaacNumericValidator implements IValidator {
                                                          final Quantity answerFromUser) {
         log.debug("\t[validateWithUnits]");
         QuantityValidationResponse bestResponse = null;
-        int sigFigsToValidateWith = numberOfSignificantFiguresToValidateWith(answerFromUser.getValue(),
-                isaacNumericQuestion.getSignificantFiguresMin(), isaacNumericQuestion.getSignificantFiguresMax());
+        Integer sigFigsToValidateWith = null;
+
+        if (!isaacNumericQuestion.getDisregardSignificantFigures()) {
+            sigFigsToValidateWith = numberOfSignificantFiguresToValidateWith(answerFromUser.getValue(),
+                    isaacNumericQuestion.getSignificantFiguresMin(), isaacNumericQuestion.getSignificantFiguresMax());
+        }
 
         String unitsFromUser = answerFromUser.getUnits().trim();
 
@@ -292,8 +299,12 @@ public class IsaacNumericValidator implements IValidator {
                                                             final Quantity answerFromUser) {
         log.debug("\t[validateWithoutUnits]");
         QuantityValidationResponse bestResponse = null;
-        int sigFigsToValidateWith = numberOfSignificantFiguresToValidateWith(answerFromUser.getValue(),
-                isaacNumericQuestion.getSignificantFiguresMin(), isaacNumericQuestion.getSignificantFiguresMax());
+        Integer sigFigsToValidateWith = null;
+
+        if (!isaacNumericQuestion.getDisregardSignificantFigures()) {
+            sigFigsToValidateWith = numberOfSignificantFiguresToValidateWith(answerFromUser.getValue(),
+                    isaacNumericQuestion.getSignificantFiguresMin(), isaacNumericQuestion.getSignificantFiguresMax());
+        }
 
         List<Choice> orderedChoices = getOrderedChoices(isaacNumericQuestion.getChoices());
 
@@ -329,21 +340,28 @@ public class IsaacNumericValidator implements IValidator {
      *
      * @param trustedValue               - first number
      * @param untrustedValue             - second number
-     * @param significantFiguresRequired - the number of significant figures to perform comparisons to
+     * @param significantFiguresRequired - the number of significant figures to perform comparisons to (can be null, in
+     *                                   which case exact comparison is performed)
      * @return true when the numbers match
      * @throws NumberFormatException - when one of the values cannot be parsed
      */
     private boolean numericValuesMatch(final String trustedValue, final String untrustedValue,
-                                       final int significantFiguresRequired) throws NumberFormatException {
+                                       final Integer significantFiguresRequired) throws NumberFormatException {
         log.debug("\t[numericValuesMatch]");
         double trustedDouble, untrustedDouble;
 
         String untrustedParsedValue = reformatNumberForParsing(untrustedValue);
         String trustedParsedValue = reformatNumberForParsing(trustedValue);
 
-        // Round to N s.f. for trusted value
-        trustedDouble = roundStringValueToSigFigs(trustedParsedValue, significantFiguresRequired);
-        untrustedDouble = roundStringValueToSigFigs(untrustedParsedValue, significantFiguresRequired);
+        if (null == significantFiguresRequired) {
+            trustedDouble = stringValueToDouble(trustedParsedValue);
+            untrustedDouble = stringValueToDouble(untrustedParsedValue);
+        } else {
+            // Round to N s.f.
+            trustedDouble = roundStringValueToSigFigs(trustedParsedValue, significantFiguresRequired);
+            untrustedDouble = roundStringValueToSigFigs(untrustedParsedValue, significantFiguresRequired);
+        }
+
         final double epsilon = 1e-50;
 
         return Math.abs(trustedDouble - untrustedDouble) < max(epsilon * max(trustedDouble, untrustedDouble), epsilon);
@@ -366,6 +384,18 @@ public class IsaacNumericValidator implements IValidator {
 
         return rounded.doubleValue();
 
+    }
+
+    /**
+     * Return a double equivalent to value.
+     *
+     * @param value - number, as String, to convert to double
+     * @return the converted number.
+     */
+    private double stringValueToDouble(final String value) {
+        log.debug("\t[stringValueToDouble]");
+
+        return new BigDecimal(value).doubleValue();
     }
 
     /**

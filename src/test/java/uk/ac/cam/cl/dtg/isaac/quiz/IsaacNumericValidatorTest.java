@@ -754,6 +754,86 @@ public class IsaacNumericValidatorTest {
         this.testSigFigExtractionWorks("3333000", 2, 4, 4);
     }
 
+    /*
+        Test that the validator returns a correct response when a question's disregard sig figs flag is enabled, and
+        an equivalent but excessively precise answer is provided
+    */
+    @Test
+    public final void isaacNumericValidator_DisregardSigFigsEnabledAndExactAnswerProvided_ResponseIsCorrect() {
+        // Arrange
+        IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
+        someNumericQuestion.setDisregardSignificantFigures(true);
+        someNumericQuestion.setRequireUnits(false);
+
+        List<Choice> answerList = Lists.newArrayList();
+        Quantity someCorrectAnswer = new Quantity("13");
+        someCorrectAnswer.setCorrect(true);
+
+        answerList.add(someCorrectAnswer);
+        someNumericQuestion.setChoices(answerList);
+
+        // Act
+        Quantity userSubmittedAnswerWithExcessivePrecision = new Quantity("13.000");
+        QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion,
+                userSubmittedAnswerWithExcessivePrecision);
+
+        // Assert
+        assertTrue(response.isCorrect());
+    }
+
+    /*
+        Test that the validator returns an incorrect response when a question's disregard sig figs flag is disabled, and
+        an equivalent but excessively precise answer is provided
+    */
+    @Test
+    public final void isaacNumericValidator_DisregardSigFigsDisabledAndExactAnswerProvided_ResponseIsIncorrect() {
+        // Arrange
+        IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
+        someNumericQuestion.setDisregardSignificantFigures(false);
+        someNumericQuestion.setRequireUnits(false);
+
+        List<Choice> answerList = Lists.newArrayList();
+        Quantity someCorrectAnswer = new Quantity("13");
+        someCorrectAnswer.setCorrect(true);
+
+        answerList.add(someCorrectAnswer);
+        someNumericQuestion.setChoices(answerList);
+
+        // Act
+        Quantity userSubmittedAnswerWithExcessivePrecision = new Quantity("13.000");
+        QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion,
+                userSubmittedAnswerWithExcessivePrecision);
+
+        // Assert
+        assertFalse(response.isCorrect());
+    }
+
+    /*
+    Test that the validator returns an incorrect response when a question's disregard sig figs flag is enabled, and
+    the user submitted answer is incorrect at a significant figure the correct answer is not specified to.
+    */
+    @Test
+    public final void isaacNumericValidator_DisregardSigFigsEnabledAndAnswerIncorrectAt3SF_ResponseIsIncorrect() {
+        // Arrange
+        IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
+        someNumericQuestion.setDisregardSignificantFigures(true);
+
+        List<Choice> answerList = Lists.newArrayList();
+        Quantity someCorrectAnswer = new Quantity("2.1", "None");
+        someCorrectAnswer.setCorrect(true);
+
+        answerList.add(someCorrectAnswer);
+        someNumericQuestion.setChoices(answerList);
+
+        // Act
+        Quantity userSubmittedAnswer = new Quantity("2.11", "None");
+        QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion,
+                userSubmittedAnswer);
+
+        // Assert
+        assertFalse(response.isCorrect());
+    }
+
     //  ---------- Helper methods to test internal functionality of the validator class ----------
 
     private void testSigFigRoundingWorks(String inputValue, int sigFigToRoundTo, double expectedResult) throws Exception {
