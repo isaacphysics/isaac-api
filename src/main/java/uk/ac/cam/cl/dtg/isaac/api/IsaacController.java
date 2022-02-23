@@ -27,7 +27,6 @@ import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
-import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.IStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
@@ -85,7 +84,6 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class IsaacController extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(IsaacController.class);
 
-    private final SegueContentFacade api;
     private final IStatisticsManager statsManager;
     private final UserAccountManager userManager;
     private final UserAssociationManager associationManager;
@@ -121,8 +119,6 @@ public class IsaacController extends AbstractIsaacFacade {
     /**
      * Creates an instance of the isaac controller which provides the REST endpoints for the isaac api.
      * 
-     * @param api
-     *            - Instance of segue Api
      * @param propertiesLoader
      *            - Instance of properties Loader
      * @param logManager
@@ -139,7 +135,7 @@ public class IsaacController extends AbstractIsaacFacade {
      *            - So we can summarize search results
      */
     @Inject
-    public IsaacController(final SegueContentFacade api, final PropertiesLoader propertiesLoader,
+    public IsaacController(final PropertiesLoader propertiesLoader,
                            final ILogManager logManager, final IStatisticsManager statsManager,
                            final UserAccountManager userManager, final IContentManager contentManager,
                            final UserAssociationManager associationManager,
@@ -148,7 +144,6 @@ public class IsaacController extends AbstractIsaacFacade {
                            final UserBadgeManager userBadgeManager,
                            final ContentSummarizerService contentSummarizerService) {
         super(propertiesLoader, logManager);
-        this.api = api;
         this.statsManager = statsManager;
         this.userManager = userManager;
         this.associationManager = associationManager;
@@ -245,6 +240,8 @@ public class IsaacController extends AbstractIsaacFacade {
      *
      * @param request
      *            - used for intelligent cache responses.
+     * @param httpServletRequest
+     *            - used for the Referer header for helpful error messages.
      * @param path
      *            of image in the database
      * @return a Response containing the image file contents or containing a SegueErrorResponse.
@@ -254,7 +251,7 @@ public class IsaacController extends AbstractIsaacFacade {
     @Path("images/{path:.*}")
     @GZIP
     @ApiOperation(value = "Get a binary object from the current content version.",
-            notes = "This can only be used to get images from the content database.")
+                  notes = "This can only be used to get images from the content database.")
     public final Response getImageByPath(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
                                          @PathParam("path") final String path) {
         if (null == path || Files.getFileExtension(path).isEmpty()) {
@@ -271,8 +268,8 @@ public class IsaacController extends AbstractIsaacFacade {
             return cachedResponse;
         }
 
-        ByteArrayOutputStream fileContent = null;
-        String mimeType = MediaType.WILDCARD;
+        ByteArrayOutputStream fileContent;
+        String mimeType;
 
         switch (Files.getFileExtension(path).toLowerCase()) {
             case "svg":
@@ -341,7 +338,7 @@ public class IsaacController extends AbstractIsaacFacade {
     @Path("documents/{path:.*}")
     @GZIP
     @ApiOperation(value = "Get a binary object from the current content version.",
-            notes = "This can only be used to get PDF documents from the content database.")
+                  notes = "This can only be used to get PDF documents from the content database.")
     public final Response getDocumentByPath(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
                                          @PathParam("path") final String path) {
         if (null == path || Files.getFileExtension(path).isEmpty()) {
@@ -433,7 +430,7 @@ public class IsaacController extends AbstractIsaacFacade {
     }
 
     /**
-     * Get snapshot for the current user
+     * Get snapshot for the current user.
      *
      * @param request
      *            - so we can find the current user.
