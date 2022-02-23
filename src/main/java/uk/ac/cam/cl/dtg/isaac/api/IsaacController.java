@@ -242,7 +242,7 @@ public class IsaacController extends AbstractIsaacFacade {
 
     /**
      * Rest end point to allow images to be requested from the database.
-     * 
+     *
      * @param request
      *            - used for intelligent cache responses.
      * @param path
@@ -254,23 +254,16 @@ public class IsaacController extends AbstractIsaacFacade {
     @Path("images/{path:.*}")
     @GZIP
     @ApiOperation(value = "Get a binary object from the current content version.",
-                  notes = "This can only be used to get images from the content database.")
+            notes = "This can only be used to get images from the content database.")
     public final Response getImageByPath(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
                                          @PathParam("path") final String path) {
-        // entity tags etc are already added by segue
-
-        // This comes from SegueContentFacade::getImageFileContent -- no other method was calling it, so moving it here.
-        if (null == this.contentIndex || null == path || Files.getFileExtension(path).isEmpty()) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
-                    "Bad input to api call. Required parameter not provided.");
-            log.debug(error.getErrorMessage());
+        if (null == path || Files.getFileExtension(path).isEmpty()) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid file path or filename.");
             return error.toResponse();
         }
-        // 'version' now points to an ElasticSearch index name (live or latest, probably)
-        // Go there and look up the git sha.
-        String sha = this.contentManager.getCurrentContentSHA();
 
         // determine if we can use the cache if so return cached response.
+        String sha = this.contentManager.getCurrentContentSHA();
         EntityTag etag = new EntityTag(sha.hashCode() + path.hashCode() + "");
         Response cachedResponse = generateCachedResponse(request, etag, NUMBER_SECONDS_IN_ONE_DAY);
 
