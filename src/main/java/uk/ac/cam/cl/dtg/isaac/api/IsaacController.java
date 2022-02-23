@@ -332,6 +332,89 @@ public class IsaacController extends AbstractIsaacFacade {
                 .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, true))
                 .tag(etag).build();
     }
+    /**
+     * Endpoint to allow documents to be requested from the content database.
+     *
+     * @param request
+     *            - used for intelligent cache responses.
+     * @param httpServletRequest
+     *            - used for the Referer header for helpful error messages.
+     * @param path
+     *            - file path of document in the content database
+     * @return a Response containing the file contents as Content-Disposition: attachment, or a SegueErrorResponse.
+     */
+    @GET
+    @Produces("*/*")
+    @Path("documents/{path:.*}")
+    @GZIP
+    @ApiOperation(value = "Get a binary object from the current content version.",
+            notes = "This can only be used to get PDF documents from the content database.")
+    public final Response getDocumentByPath(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
+                                         @PathParam("path") final String path) {
+        if (null == path || Files.getFileExtension(path).isEmpty()) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid file path or filename.");
+            return error.toResponse();
+        }
+
+        try {
+
+            RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(httpServletRequest);
+            if (!isUserTeacherOrAbove(userManager, currentlyLoggedInUser)) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "You must have a teacher account to access these resources.").toResponse();
+            }
+
+            // determine if we can use the cache if so return cached response.
+            String sha = this.contentManager.getCurrentContentSHA();
+            EntityTag etag = new EntityTag(sha.hashCode() + path.hashCode() + "");
+            Response cachedResponse = generateCachedResponse(request, etag, NUMBER_SECONDS_IN_ONE_DAY);
+            if (cachedResponse != null) {
+                return cachedResponse;
+            }
+
+            ByteArrayOutputStream fileContent;
+            String mimeType;
+            switch (Files.getFileExtension(path).toLowerCase()) {
+                case "pdf":
+                    mimeType = "application/pdf";
+                    break;
+
+                default:
+                    // if it is an unknown type return an error
+                    SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid file type requested");
+                    return error.toResponse(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, false), etag);
+            }
+
+            fileContent = this.contentManager.getFileBytes(sha, path);
+            if (null == fileContent) {
+                String refererHeader = httpServletRequest.getHeader("Referer");
+                SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the file: " + path);
+                log.warn(String.format("Unable to locate the file: (%s). Referer: (%s)", path, refererHeader));
+                return error.toResponse(getCacheControl(NUMBER_SECONDS_IN_TEN_MINUTES, false), etag);
+            }
+
+            ImmutableMap<String, String> logMap = new ImmutableMap.Builder<String, String>()
+                    .put(DOCUMENT_PATH_LOG_FIELDNAME, path)
+                    .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
+            getLogManager().logEvent(currentlyLoggedInUser, httpServletRequest, IsaacServerLogType.DOWNLOAD_FILE, logMap);
+
+            return Response.ok(fileContent.toByteArray()).type(mimeType)
+                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, true))
+                    .header("Content-Disposition", "attachment")  // Do not show this file in the browser.
+                    .tag(etag).build();
+
+        } catch (IOException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error reading file!");
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        } catch (UnsupportedOperationException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Multiple files match the path provided.");
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
+    }
 
     /**
      * Get some statistics out of how many questions the user has completed.
