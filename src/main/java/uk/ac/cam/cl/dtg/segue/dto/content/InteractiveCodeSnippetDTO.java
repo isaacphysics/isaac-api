@@ -26,10 +26,7 @@ public class InteractiveCodeSnippetDTO extends CodeSnippetDTO {
 
     protected String setupCode;
     protected String testCode;
-    protected String testInput;
-    protected String outputRegex;
     protected String expectedResult;
-    protected Boolean useAllTestInputs;
     protected Boolean wrapCodeInMain;
 
     @JsonCreator
