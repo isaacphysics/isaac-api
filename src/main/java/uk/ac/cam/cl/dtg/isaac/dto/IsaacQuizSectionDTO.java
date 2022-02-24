@@ -41,10 +41,11 @@ public class IsaacQuizSectionDTO extends SeguePageDTO {
                                @JsonProperty("value") String value, @JsonProperty("attribution") String attribution,
                                @JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
                                @JsonProperty("published") Boolean published, @JsonProperty("tags") Set<String> tags,
+                               @JsonProperty("deprecated") Boolean deprecated,
                                @JsonProperty("level") Integer level) {
 
         super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
-                attribution, relatedContent, published, tags, level);
+                attribution, relatedContent, published, deprecated, tags, level);
     }
 
     /**

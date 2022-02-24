@@ -71,23 +71,22 @@ public class PgLocationHistory implements LocationHistory {
     public LocationHistoryEvent getLatestByIPAddress(final String ipAddress) throws SegueDatabaseException {
         Validate.notBlank(ipAddress);
 
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM ip_location_history "
-                    + "WHERE ip_address = ? AND is_current = ? " + "ORDER BY last_lookup DESC");
-
+        String query = "SELECT * FROM ip_location_history WHERE ip_address = ? AND is_current = ? ORDER BY last_lookup DESC";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setString(1, ipAddress);
             pst.setBoolean(2, true);
 
-            ResultSet results = pst.executeQuery();
+            try (ResultSet results = pst.executeQuery()) {
 
-            while (results.next()) {
-                return buildPgLocationEntry(results);
+                while (results.next()) {
+                    return buildPgLocationEntry(results);
+                }
+
+                // we must not have found anything.
+                return null;
             }
-
-            // we must not have found anything.
-            return null;
-
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
@@ -99,22 +98,22 @@ public class PgLocationHistory implements LocationHistory {
             return null;
         }
 
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT postcode, lat, lon FROM uk_post_codes WHERE postcode = ?");
-
+        String query = "SELECT postcode, lat, lon FROM uk_post_codes WHERE postcode = ?";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setString(1, postCode);
 
-            ResultSet results = pst.executeQuery();
+            try (ResultSet results = pst.executeQuery()) {
 
-            while (results.next()) {
-                return new PostCode(results.getString("postcode"), results.getDouble("lat"),
-                        results.getDouble("lon"));
+                while (results.next()) {
+                    return new PostCode(results.getString("postcode"), results.getDouble("lat"),
+                            results.getDouble("lon"));
+                }
+
+                // we must not have found anything.
+                return null;
             }
-
-            // we must not have found anything.
-            return null;
-
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
@@ -124,19 +123,17 @@ public class PgLocationHistory implements LocationHistory {
     public Map<String, LocationHistoryEvent> getLatestByIPAddresses(final Collection<String> ipAddresses)
             throws SegueDatabaseException {
 
-        try (Connection conn = database.getDatabaseConnection()) {
+        // This is a nasty hack to make a prepared statement using the sql IN operator.
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < ipAddresses.size(); i++) {
+            builder.append("?,");
+        }
+        String query = "SELECT * FROM ip_location_history WHERE ip_address IN (" +
+                builder.deleteCharAt(builder.length() - 1).toString() + ") AND is_current = ? ORDER BY last_lookup DESC";
 
-            // This is a nasty hack to make a prepared statement using the sql IN operator.
-            StringBuilder builder = new StringBuilder();
-            for (int i = 0; i < ipAddresses.size(); i++) {
-                builder.append("?,");
-            }
-
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM ip_location_history " + "WHERE ip_address IN ("
-                    + builder.deleteCharAt(builder.length() - 1).toString() + ") AND is_current = ? "
-                    + "ORDER BY last_lookup DESC");
-
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             int index = 1;
             for (String s : ipAddresses) {
                 pst.setString(index++, s);
@@ -144,15 +141,15 @@ public class PgLocationHistory implements LocationHistory {
 
             pst.setBoolean(index++, true);
 
-            ResultSet results = pst.executeQuery();
-            Map<String, LocationHistoryEvent> resultToReturn = Maps.newHashMap();
+            try (ResultSet results = pst.executeQuery()) {
+                Map<String, LocationHistoryEvent> resultToReturn = Maps.newHashMap();
 
-            while (results.next()) {
-                PgLocationEvent buildPgLocationEntry = buildPgLocationEntry(results);
-                resultToReturn.put(buildPgLocationEntry.getIpAddress(), buildPgLocationEntry);
+                while (results.next()) {
+                    PgLocationEvent buildPgLocationEntry = buildPgLocationEntry(results);
+                    resultToReturn.put(buildPgLocationEntry.getIpAddress(), buildPgLocationEntry);
+                }
+                return resultToReturn;
             }
-
-            return resultToReturn;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
@@ -162,16 +159,19 @@ public class PgLocationHistory implements LocationHistory {
     public List<LocationHistoryEvent> getAllByIPAddress(final String ipAddress) throws SegueDatabaseException {
         Validate.notBlank(ipAddress);
 
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM ip_location_history WHERE ip_address = ? ORDER BY created ASC");
+        String query = "SELECT * FROM ip_location_history WHERE ip_address = ? ORDER BY created ASC";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setString(1, ipAddress);
-            ResultSet results = pst.executeQuery();
-            List<LocationHistoryEvent> returnResult = Lists.newArrayList();
-            while (results.next()) {
-                returnResult.add(buildPgLocationEntry(results));
+
+            try (ResultSet results = pst.executeQuery()) {
+                List<LocationHistoryEvent> returnResult = Lists.newArrayList();
+                while (results.next()) {
+                    returnResult.add(buildPgLocationEntry(results));
+                }
+                return returnResult;
             }
-            return returnResult;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
@@ -197,11 +197,10 @@ public class PgLocationHistory implements LocationHistory {
     public void updateLocationEventDate(final Long id, final boolean isCurrent) throws SegueDatabaseException {
         Validate.notNull(id);
 
-        try (Connection conn = database.getDatabaseConnection()) {
-            // create our java preparedstatement using a sql update query
-            PreparedStatement ps = conn
-                    .prepareStatement("UPDATE ip_location_history SET last_lookup = ?, is_current=? WHERE id = ?");
-
+        String query = "UPDATE ip_location_history SET last_lookup = ?, is_current=? WHERE id = ?";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement ps = conn.prepareStatement(query);
+        ) {
             ps.setTimestamp(1, new java.sql.Timestamp(new Date().getTime()));
             ps.setBoolean(2, isCurrent);
             ps.setLong(3, id);
@@ -229,17 +228,16 @@ public class PgLocationHistory implements LocationHistory {
      */
     private LocationHistoryEvent createNewEvent(final String ipAddress, final Location location)
             throws SegueDatabaseException, JsonProcessingException {
-        PreparedStatement pst;
-        try (Connection conn = database.getDatabaseConnection()) {
+        String query = "INSERT INTO ip_location_history(id, ip_address, location_information, created, last_lookup, is_current) "
+                + "VALUES (DEFAULT, ?, ?, ?, ?, ?)";
+        try (Connection conn = database.getDatabaseConnection();
+            PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+        ) {
             Date creationDate = new Date();
 
             PGobject jsonObject = new PGobject();
             jsonObject.setType("jsonb");
             jsonObject.setValue(new ObjectMapper().writeValueAsString(location));
-
-            pst = conn.prepareStatement("INSERT INTO ip_location_history "
-                    + "(id, ip_address, location_information, created, last_lookup, is_current) "
-                    + "VALUES (DEFAULT, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
 
             pst.setString(1, ipAddress);
             pst.setObject(2, jsonObject);
@@ -292,24 +290,23 @@ public class PgLocationHistory implements LocationHistory {
     @Override
     public Map<String, LocationHistoryEvent> getLatestByIPAddresses(final Date fromDate, final Date toDate)
             throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM ip_location_history "
-                    + "WHERE last_lookup BETWEEN ? AND ? AND is_current = TRUE ORDER BY last_lookup DESC");
-           
+        String query = "SELECT * FROM ip_location_history WHERE last_lookup BETWEEN ? AND ?" +
+                " AND is_current = TRUE ORDER BY last_lookup DESC";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setDate(1, new java.sql.Date(fromDate.getTime()));
             pst.setDate(2, new java.sql.Date(toDate.getTime()));
 
-            ResultSet results = pst.executeQuery();
-            Map<String, LocationHistoryEvent> resultToReturn = Maps.newHashMap();
+            try (ResultSet results = pst.executeQuery()) {
+                Map<String, LocationHistoryEvent> resultToReturn = Maps.newHashMap();
 
-            while (results.next()) {
-                PgLocationEvent buildPgLocationEntry = buildPgLocationEntry(results);
-                resultToReturn.put(buildPgLocationEntry.getIpAddress(), buildPgLocationEntry);
+                while (results.next()) {
+                    PgLocationEvent buildPgLocationEntry = buildPgLocationEntry(results);
+                    resultToReturn.put(buildPgLocationEntry.getIpAddress(), buildPgLocationEntry);
+                }
+                return resultToReturn;
             }
-
-            return resultToReturn;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
@@ -322,34 +319,29 @@ public class PgLocationHistory implements LocationHistory {
      */
     @Override
     public void storePostCodes(List<PostCode> foundPostCodes) throws SegueDatabaseException {
-        PreparedStatement pst;
+        String query = "INSERT INTO uk_post_codes(postcode, lat, lon) VALUES (?, ?, ?)";
         try (Connection conn = database.getDatabaseConnection()) {
             conn.setAutoCommit(false);
 
-            for(PostCode postCode : foundPostCodes) {
+            for (PostCode postCode : foundPostCodes) {
 
                 // Ignore post codes with invalid lat/lon
                 if (postCode.getLat() == null || postCode.getLon() == null) {
                     continue;
                 }
 
-                pst = conn.prepareStatement("INSERT INTO uk_post_codes "
-                        + "(postcode, lat, lon) "
-                        + "VALUES (?, ?, ?)");
-    
-                pst.setString(1, postCode.getPostCode());
-                pst.setDouble(2, postCode.getLat());
-                pst.setDouble(3, postCode.getLon());
-    
-    
-                if (pst.executeUpdate() == 0) {
-                    throw new SegueDatabaseException("Unable to save location event.");
+                try (PreparedStatement pst = conn.prepareStatement(query)) {
+                    pst.setString(1, postCode.getPostCode());
+                    pst.setDouble(2, postCode.getLat());
+                    pst.setDouble(3, postCode.getLon());
+
+                    if (pst.executeUpdate() == 0) {
+                        throw new SegueDatabaseException("Unable to save location event.");
+                    }
                 }
             }
             conn.commit();
             conn.setAutoCommit(true);
-
-
 
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);

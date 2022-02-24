@@ -157,6 +157,10 @@ public class IsaacItemQuestionValidator implements IValidator {
 
     @Override
     public List<Choice> getOrderedChoices(final List<Choice> choices) {
+        return getOrderedChoicesWithSubsets(choices);
+    }
+
+    public static List<Choice> getOrderedChoicesWithSubsets(final List<Choice> choices) {
         List<Choice> orderedChoices = Lists.newArrayList(choices);
 
         /* First sort by whether subset matching is allowed or not - 'strict' match
@@ -197,5 +201,4 @@ public class IsaacItemQuestionValidator implements IValidator {
 
         return orderedChoices;
     }
-
 }

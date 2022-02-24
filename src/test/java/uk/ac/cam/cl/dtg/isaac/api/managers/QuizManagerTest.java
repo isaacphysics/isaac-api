@@ -36,8 +36,7 @@ public class QuizManagerTest extends AbstractManagerTest {
         IContentManager contentManager = createMock(IContentManager.class);
         ContentSummarizerService contentSummarizerService = createMock(ContentSummarizerService.class);
         ContentMapper mapper = createMock(ContentMapper.class);
-        String contentIndex = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
-        quizManager = new QuizManager(properties, contentService, contentManager, contentSummarizerService, mapper, contentIndex);
+        quizManager = new QuizManager(properties, contentService, contentManager, contentSummarizerService, mapper);
 
         brokenQuiz = new IsaacQuizDTO();
         brokenQuiz.setChildren(ImmutableList.of(quizSection1, new ContentDTO(), quizSection2));

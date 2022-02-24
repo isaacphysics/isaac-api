@@ -81,7 +81,9 @@ public class IsaacEventPage extends Content {
 						  @JsonProperty("layout") String layout,
 						  @JsonProperty("children") List<ContentBase> children,
 						  @JsonProperty("relatedContent") List<String> relatedContent,
-						  @JsonProperty("version") boolean published, @JsonProperty("tags") Set<String> tags,
+						  @JsonProperty("version") boolean published,
+						  @JsonProperty("deprecated") Boolean deprecated,
+						  @JsonProperty("tags") Set<String> tags,
 						  @JsonProperty("date") Date date, @JsonProperty("end_date") Date end_date,
 						  @JsonProperty("bookingDeadline") Date bookingDeadline,
 						  @JsonProperty("prepWorkDeadline") Date prepWorkDeadline,
@@ -94,7 +96,7 @@ public class IsaacEventPage extends Content {
 						  @JsonProperty("groupReservationLimit") Integer groupReservationLimit,
 						  @JsonProperty("allowGroupReservations") Boolean allowGroupReservations) {
 		super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, null,
-			null, relatedContent, published, tags, null);
+			null, relatedContent, published, deprecated, tags, null);
 
 		this.date = date;
 		this.end_date = end_date;

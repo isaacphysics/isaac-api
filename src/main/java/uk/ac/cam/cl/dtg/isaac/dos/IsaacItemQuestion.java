@@ -50,7 +50,6 @@ public class IsaacItemQuestion extends IsaacQuestionBase {
      *
      * @return randomiseItems
      */
-    @JsonIgnore
     public Boolean getRandomiseItems() {
         return randomiseItems;
     }
