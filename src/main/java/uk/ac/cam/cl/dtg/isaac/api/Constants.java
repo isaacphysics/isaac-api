@@ -119,6 +119,7 @@ public final class Constants {
     public static final String CONCEPT_ID_LOG_FIELDNAME = "conceptId";
     public static final String PAGE_ID_LOG_FIELDNAME = "pageId";
     public static final String FRAGMENT_ID_LOG_FIELDNAME = "pageFragmentId";
+    public static final String DOCUMENT_PATH_LOG_FIELDNAME = "path";
 
     /**
      * Class to represent Isaac log types.
@@ -131,6 +132,7 @@ public final class Constants {
         DELETE_BOARD_FROM_PROFILE,
         DOWNLOAD_ASSIGNMENT_PROGRESS_CSV,
         DOWNLOAD_GROUP_PROGRESS_CSV,
+        DOWNLOAD_FILE,
         GLOBAL_SITE_SEARCH,
         SET_NEW_ASSIGNMENT,
         SET_NEW_QUIZ_ASSIGNMENT,
