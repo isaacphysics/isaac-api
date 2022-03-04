@@ -10,7 +10,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <segue.version>2.19.5-SNAPSHOT</segue.version>
+        <segue.version>2.19.9-SNAPSHOT</segue.version>
         <log4j.version>2.17.1</log4j.version>
         <resteasy.version>4.7.0.Final</resteasy.version>
         <guice.version>4.2.3</guice.version>
@@ -346,7 +346,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.2.19</version>
+            <version>42.3.2</version>
         </dependency>
 
         <dependency>

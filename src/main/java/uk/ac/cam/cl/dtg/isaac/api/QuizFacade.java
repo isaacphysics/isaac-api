@@ -452,7 +452,9 @@ public class QuizFacade extends AbstractIsaacFacade {
             List<QuizAssignmentDTO> activeQuizAssignments = this.quizAssignmentManager.getActiveQuizAssignments(quiz, user);
 
             if (!activeQuizAssignments.isEmpty()) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "This test is currently assigned to you. You must complete your assignment before you can attempt this test freely.").toResponse();
+                return new SegueErrorResponse(Status.FORBIDDEN, "This test has been assigned to you by a teacher. "
+                        + "You can not attempt this test freely. If you have already done the test for your teacher, "
+                        + "and want to do it again, ask your teacher to allow you another attempt.").toResponse();
             }
 
             // Create a quiz attempt

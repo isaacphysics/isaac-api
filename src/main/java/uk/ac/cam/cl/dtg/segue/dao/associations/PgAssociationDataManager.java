@@ -58,13 +58,11 @@ public class PgAssociationDataManager implements IAssociationDataManager {
     @Override
     public AssociationToken saveAssociationToken(final AssociationToken token) throws SegueDatabaseException {
         Validate.notNull(token);
-        
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn
-                    .prepareStatement(
-                            "INSERT INTO user_associations_tokens(token, owner_user_id, group_id) VALUES (?, ?, ?);");
-            
+
+        String query = "INSERT INTO user_associations_tokens(token, owner_user_id, group_id) VALUES (?, ?, ?);";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setString(1, token.getToken());
             pst.setLong(2, token.getOwnerUserId());
             pst.setLong(3, token.getGroupId());
@@ -85,15 +83,12 @@ public class PgAssociationDataManager implements IAssociationDataManager {
             throw new SegueDatabaseException("Unable to locate the token requested to delete.");
         }
 
-        try (Connection conn = database.getDatabaseConnection()) {            
-            PreparedStatement pst;
-            pst = conn.prepareStatement("DELETE FROM user_associations_tokens WHERE token = ?");
-            
-            log.debug(pst.toString());
-            
+        String query = "DELETE FROM user_associations_tokens WHERE token = ?";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setString(1, token);
             pst.execute();
-            
         } catch (SQLException e1) {
             throw new SegueDatabaseException("Postgres exception", e1);
         }
@@ -103,25 +98,9 @@ public class PgAssociationDataManager implements IAssociationDataManager {
     public void createAssociation(final AssociationToken token, final Long userIdGrantingAccess)
             throws SegueDatabaseException {
         Validate.notNull(token);
+        Long userIdReceivingAccess = token.getOwnerUserId();
 
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn
-                    .prepareStatement("INSERT INTO "
-                            + "user_associations(user_id_granting_permission, user_id_receiving_permission, created) "
-                            + "VALUES (?, ?, ?);");
-            
-            pst.setLong(1, userIdGrantingAccess);
-            pst.setLong(2, token.getOwnerUserId());
-            pst.setTimestamp(3, new Timestamp(new Date().getTime()));
-            
-            if (pst.executeUpdate() == 0) {
-                throw new SegueDatabaseException("Unable to create association.");
-            }
-            
-        } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
-        }
+        createAssociation(userIdReceivingAccess, userIdGrantingAccess);
     }
 
     @Override
@@ -129,13 +108,11 @@ public class PgAssociationDataManager implements IAssociationDataManager {
             throws SegueDatabaseException {
         Validate.notNull(userIdReceivingAccess);
 
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn
-                    .prepareStatement("INSERT INTO "
-                            + "user_associations(user_id_granting_permission, user_id_receiving_permission, created) "
-                            + "VALUES (?, ?, ?);");
-
+        String query = "INSERT INTO user_associations(user_id_granting_permission, user_id_receiving_permission," +
+                " created) VALUES (?, ?, ?);";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setLong(1, userIdGrantingAccess);
             pst.setLong(2, userIdReceivingAccess);
             pst.setTimestamp(3, new Timestamp(new Date().getTime()));
@@ -156,12 +133,10 @@ public class PgAssociationDataManager implements IAssociationDataManager {
             throw new SegueDatabaseException("Unable to locate the association requested to delete.");
         }
 
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            
-            pst = conn.prepareStatement("DELETE FROM user_associations"
-                    + " WHERE user_id_granting_permission = ? AND user_id_receiving_permission = ?");
-            
+        String query = "DELETE FROM user_associations WHERE user_id_granting_permission = ? AND user_id_receiving_permission = ?";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setLong(1, userIdWhoGrantedAccess);
             pst.setLong(2, userIdWithAccess);
             pst.execute();
@@ -183,19 +158,18 @@ public class PgAssociationDataManager implements IAssociationDataManager {
     @Override
     public boolean hasValidAssociation(final Long userIdRequestingAccess, final Long ownerUserId)
             throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT COUNT(1) AS TOTAL"
-                    + " FROM user_associations"
-                    + " WHERE user_id_receiving_permission = ? AND user_id_granting_permission = ?;");
-            
+        String query = "SELECT COUNT(1) AS TOTAL FROM user_associations" +
+                " WHERE user_id_receiving_permission = ? AND user_id_granting_permission = ?;";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setLong(1, userIdRequestingAccess);
             pst.setLong(2, ownerUserId);
 
-            ResultSet results = pst.executeQuery();
-            results.next();
-            
-            return results.getLong("TOTAL") == 1;
+            try (ResultSet results = pst.executeQuery()) {
+                results.next();
+                return results.getLong("TOTAL") == 1;
+            }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
@@ -205,20 +179,21 @@ public class PgAssociationDataManager implements IAssociationDataManager {
     public List<UserAssociation> getUserAssociations(final Long userId) throws SegueDatabaseException {
         Validate.notNull(userId);
 
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM user_associations WHERE user_id_granting_permission = ?;");
-
+        String query = "SELECT * FROM user_associations WHERE user_id_granting_permission = ?;";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setLong(1, userId);
             
-            ResultSet results = pst.executeQuery();
-            List<UserAssociation> listOfResults = Lists.newArrayList();
-            
-            while (results.next()) {
-                listOfResults.add(this.convertFromSQLToAssociation(results));
-            }
+            try (ResultSet results = pst.executeQuery()) {
+                List<UserAssociation> listOfResults = Lists.newArrayList();
 
-            return listOfResults;
+                while (results.next()) {
+                    listOfResults.add(this.convertFromSQLToAssociation(results));
+                }
+
+                return listOfResults;
+            }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Error while trying to find user associations by id", e);
         }
@@ -228,29 +203,30 @@ public class PgAssociationDataManager implements IAssociationDataManager {
 
     @Override
     public AssociationToken lookupAssociationToken(final String tokenCode) throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM user_associations_tokens WHERE token = ?;");
-
+        String query = "SELECT * FROM user_associations_tokens WHERE token = ?;";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setString(1, tokenCode);
             
-            ResultSet results = pst.executeQuery();
-            List<AssociationToken> listOfResults = Lists.newArrayList();
-            
-            while (results.next()) {
-                listOfResults.add(this.convertFromSQLToToken(results));
-            }
+            try (ResultSet results = pst.executeQuery()) {
+                List<AssociationToken> listOfResults = Lists.newArrayList();
 
-            if (listOfResults.size() == 0) {
-                return null;
-            }
+                while (results.next()) {
+                    listOfResults.add(this.convertFromSQLToToken(results));
+                }
 
-            if (listOfResults.size() > 1) {
-                throw new SegueDatabaseException("Ambiguous result, expected single result and found more than one"
-                        + listOfResults);
+                if (listOfResults.size() == 0) {
+                    return null;
+                }
+
+                if (listOfResults.size() > 1) {
+                    throw new SegueDatabaseException("Ambiguous result, expected single result and found more than one"
+                            + listOfResults);
+                }
+
+                return listOfResults.get(0);
             }
-            
-            return listOfResults.get(0);
         } catch (SQLException e) {
             throw new SegueDatabaseException("Error while trying to find token", e);
         }
@@ -258,29 +234,30 @@ public class PgAssociationDataManager implements IAssociationDataManager {
 
     @Override
     public AssociationToken getAssociationTokenByGroupId(final Long groupId) throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM user_associations_tokens WHERE group_id = ?;");
-
+        String query = "SELECT * FROM user_associations_tokens WHERE group_id = ?;";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setLong(1, groupId);
             
-            ResultSet results = pst.executeQuery();
-            List<AssociationToken> listOfResults = Lists.newArrayList();
-            
-            while (results.next()) {
-                listOfResults.add(this.convertFromSQLToToken(results));
+            try (ResultSet results = pst.executeQuery()) {
+                List<AssociationToken> listOfResults = Lists.newArrayList();
+
+                while (results.next()) {
+                    listOfResults.add(this.convertFromSQLToToken(results));
+                }
+
+                if (listOfResults.size() == 0) {
+                    return null;
+                }
+
+                if (listOfResults.size() > 1) {
+                    throw new SegueDatabaseException("Ambiguous result, expected single result and found more than one"
+                            + listOfResults);
+                }
+
+                return listOfResults.get(0);
             }
-            
-            if (listOfResults.size() == 0) {
-                return null;
-            }
-            
-            if (listOfResults.size() > 1) {
-                throw new SegueDatabaseException("Ambiguous result, expected single result and found more than one"
-                        + listOfResults);
-            }
-            
-            return listOfResults.get(0);
         } catch (SQLException e) {
             throw new SegueDatabaseException("Error while trying to find token by group", e);
         }
@@ -290,20 +267,21 @@ public class PgAssociationDataManager implements IAssociationDataManager {
     public List<UserAssociation> getUsersThatICanSee(final Long userId) throws SegueDatabaseException {
         Validate.notNull(userId);
 
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM user_associations WHERE user_id_receiving_permission = ?;");
-
+        String query = "SELECT * FROM user_associations WHERE user_id_receiving_permission = ?;";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setLong(1, userId);
             
-            ResultSet results = pst.executeQuery();
-            List<UserAssociation> listOfResults = Lists.newArrayList();
-            
-            while (results.next()) {
-                listOfResults.add(this.convertFromSQLToAssociation(results));
-            }
+            try (ResultSet results = pst.executeQuery()) {
+                List<UserAssociation> listOfResults = Lists.newArrayList();
 
-            return listOfResults;
+                while (results.next()) {
+                    listOfResults.add(this.convertFromSQLToAssociation(results));
+                }
+
+                return listOfResults;
+            }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Error while trying to find user associations by id", e);
         }
@@ -342,22 +320,20 @@ public class PgAssociationDataManager implements IAssociationDataManager {
             throw new SegueDatabaseException("No user Id specified for requested delete association operation.");
         }
 
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
+        StringBuilder sb = new StringBuilder();
+        sb.append("DELETE FROM user_associations WHERE ");
 
-            StringBuilder sb = new StringBuilder();
-            sb.append("DELETE FROM user_associations WHERE ");
+        if (isOwner) {
+            sb.append("user_id_granting_permission = ?");
+        } else {
+            sb.append("user_id_receiving_permission = ?");
+        }
 
-            if (isOwner) {
-                sb.append("user_id_granting_permission = ?");
-            } else {
-                sb.append("user_id_receiving_permission = ?");
-            }
-
-            pst = conn.prepareStatement(sb.toString());
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(sb.toString());
+        ) {
             pst.setLong(1, userIdOfInterest);
             pst.execute();
-
         } catch (SQLException e1) {
             throw new SegueDatabaseException("Postgres exception", e1);
         }

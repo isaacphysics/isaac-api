@@ -66,6 +66,7 @@ public class UserAlertsWebSocket implements IAlertListener {
     private Session session;
     private static ObjectMapper objectMapper = new ObjectMapper();
 
+    private static final String IDLE_TIMEOUT_MESSAGE = "Idle timeout expired";
     // Named unsafeConnectedSockets because, although non-aggregate operations on the concurrent hash map are fine,
     // operations on the user sets of websockets are unsafe unless used with the matching user lock.
     private static Map<Long, Set<UserAlertsWebSocket>> unsafeConnectedSockets = Maps.newConcurrentMap();
@@ -299,7 +300,10 @@ public class UserAlertsWebSocket implements IAlertListener {
     @OnWebSocketError
     public void onError(final Session session, final Throwable error) {
         long connectedUserId = connectedUser.getId();
-        log.warn(String.format("Error in WebSocket for user (%s): %s", connectedUserId, error));
+        String errorString = error.toString();
+        if (!errorString.contains(IDLE_TIMEOUT_MESSAGE)) {
+            log.warn(String.format("Error in WebSocket for user (%s): %s", connectedUserId, error));
+        }
     }
 
     /**

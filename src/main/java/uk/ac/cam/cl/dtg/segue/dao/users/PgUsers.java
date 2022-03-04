@@ -93,15 +93,17 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
         if (user.getId() == null) {
             return false;
         }
-        
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT COUNT(*) AS TOTAL FROM linked_accounts WHERE user_id = ?");
+
+        String query = "SELECT COUNT(*) AS TOTAL FROM linked_accounts WHERE user_id = ?";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setLong(1, user.getId());
 
-            ResultSet results = pst.executeQuery();
-            results.next();
-            return results.getInt("TOTAL") != 0;
+            try (ResultSet results = pst.executeQuery()) {
+                results.next();
+                return results.getInt("TOTAL") != 0;
+            }
         } catch (SQLException e) {
             throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         }     
@@ -115,15 +117,12 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
     @Override
     public Map<RegisteredUser, List<AuthenticationProvider>> getAuthenticationProvidersByUsers(final List<RegisteredUser> users) throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            StringBuilder sb = new StringBuilder("SELECT * FROM linked_accounts WHERE user_id IN (");
-            List<String> questionMarks = IntStream.range(0, users.size()).mapToObj(i -> "?").collect(Collectors.toList());
-            sb.append(String.join(",", questionMarks));
-            sb.append(");");
-
-            PreparedStatement pst;
-            pst = conn.prepareStatement(sb.toString());
-
+        StringBuilder sb = new StringBuilder("SELECT * FROM linked_accounts WHERE user_id IN (");
+        List<String> questionMarks = IntStream.range(0, users.size()).mapToObj(i -> "?").collect(Collectors.toList());
+        sb.append(String.join(",", questionMarks)).append(");");
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(sb.toString());
+        ) {
             int userParamIndex = 1;
             // These will come in handy later...
             Map<Long, RegisteredUser> userMap = users.stream().collect(Collectors.toMap(RegisteredUser::getId, Function.identity()));
@@ -139,12 +138,15 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             // generally a bad idea, unless a prepared statement is used to construct the query first, which is probably
             // still a bad idea, only slightly less so.
             // TL;DR: Sorry...
-            ResultSet queryResults = conn.createStatement().executeQuery(pst.toString());
-            while (queryResults.next()) {
-                RegisteredUser user = userMap.get(queryResults.getLong("user_id"));
-                authenticationProviders.get(user).add(AuthenticationProvider.valueOf(queryResults.getString("provider")));
+            try (Statement statement = conn.createStatement();
+                 ResultSet queryResults = statement.executeQuery(pst.toString());
+            ) {
+                while (queryResults.next()) {
+                    RegisteredUser user = userMap.get(queryResults.getLong("user_id"));
+                    authenticationProviders.get(user).add(AuthenticationProvider.valueOf(queryResults.getString("provider")));
+                }
+                return authenticationProviders;
             }
-            return authenticationProviders;
         } catch (SQLException e) {
             throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         }
@@ -153,32 +155,33 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
     @Override
     public UserAuthenticationSettings getUserAuthenticationSettings(Long userId) throws SegueDatabaseException {
 
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT users.id, password IS NOT NULL AS has_segue_account, user_totp.shared_secret IS NOT NULL AS mfa_status, array_agg(provider) AS linked_accounts " +
-                    "FROM (users LEFT OUTER JOIN user_credentials ON user_credentials.user_id=users.id) " +
-                    "LEFT OUTER JOIN linked_accounts ON users.id=linked_accounts.user_id " +
-                    "LEFT OUTER JOIN user_totp ON users.id=user_totp.user_id WHERE users.id=? GROUP BY users.id, user_credentials.user_id, mfa_status;");
+        String query = "SELECT users.id, password IS NOT NULL AS has_segue_account, user_totp.shared_secret IS NOT NULL AS mfa_status, array_agg(provider) AS linked_accounts " +
+                "FROM (users LEFT OUTER JOIN user_credentials ON user_credentials.user_id=users.id) " +
+                "LEFT OUTER JOIN linked_accounts ON users.id=linked_accounts.user_id " +
+                "LEFT OUTER JOIN user_totp ON users.id=user_totp.user_id WHERE users.id=? GROUP BY users.id, user_credentials.user_id, mfa_status;";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setLong(1, userId);
 
-            ResultSet results = pst.executeQuery();
-
-            if (!results.isBeforeFirst()) {
-                return null;
-            } else {
-                results.next();
-            }
-
-            String[] providers = (String[]) results.getArray("linked_accounts").getArray();
-            List<AuthenticationProvider> providersList = Lists.newArrayList();
-            for (String provider : providers) {
-                // the way the join works means that if a user has no linked accounts a single element comes back as null
-                if (provider != null) {
-                    providersList.add(AuthenticationProvider.valueOf(provider));
+            try (ResultSet results = pst.executeQuery()) {
+                if (!results.isBeforeFirst()) {
+                    return null;
+                } else {
+                    results.next();
                 }
-            }
 
-            return new UserAuthenticationSettings(userId, providersList, results.getBoolean("has_segue_account"), results.getBoolean("mfa_status"));
+                String[] providers = (String[]) results.getArray("linked_accounts").getArray();
+                List<AuthenticationProvider> providersList = Lists.newArrayList();
+                for (String provider : providers) {
+                    // the way the join works means that if a user has no linked accounts a single element comes back as null
+                    if (provider != null) {
+                        providersList.add(AuthenticationProvider.valueOf(provider));
+                    }
+                }
+
+                return new UserAuthenticationSettings(userId, providersList, results.getBoolean("has_segue_account"), results.getBoolean("mfa_status"));
+            }
         } catch (SQLException e) {
             throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         }
@@ -187,15 +190,13 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
     @Override
     public Map<RegisteredUser, Boolean> getSegueAccountExistenceByUsers(List<RegisteredUser> users) throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            StringBuilder sb = new StringBuilder("SELECT * FROM user_credentials WHERE user_id IN (");
-            List<String> questionMarks = IntStream.range(0, users.size()).mapToObj(i -> "?").collect(Collectors.toList());
-            sb.append(String.join(",", questionMarks));
-            sb.append(");");
+        StringBuilder sb = new StringBuilder("SELECT * FROM user_credentials WHERE user_id IN (");
+        List<String> questionMarks = IntStream.range(0, users.size()).mapToObj(i -> "?").collect(Collectors.toList());
+        sb.append(String.join(",", questionMarks)).append(");");
 
-            PreparedStatement pst;
-            pst = conn.prepareStatement(sb.toString());
-
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(sb.toString());
+        ) {
             int userParamIndex = 1;
             // These will come in handy later...
             Map<Long, RegisteredUser> userMap = users.stream().collect(Collectors.toMap(RegisteredUser::getId, Function.identity()));
@@ -207,12 +208,15 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             }
 
             // See comment in getAuthenticationProvidersByUsers
-            ResultSet queryResults = conn.createStatement().executeQuery(pst.toString());
-            while (queryResults.next()) {
-                RegisteredUser user = userMap.get(queryResults.getLong("user_id"));
-                userCredentialsExistence.put(user, true);
+            try (Statement statement = conn.createStatement();
+                 ResultSet queryResults = statement.executeQuery(pst.toString());
+            ) {
+                while (queryResults.next()) {
+                    RegisteredUser user = userMap.get(queryResults.getLong("user_id"));
+                    userCredentialsExistence.put(user, true);
+                }
+                return userCredentialsExistence;
             }
-            return userCredentialsExistence;
         } catch (SQLException e) {
             throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         }
@@ -221,21 +225,21 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
     @Override
     public RegisteredUser getByLinkedAccount(final AuthenticationProvider provider, final String providerUserId)
             throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM linked_accounts WHERE provider = ? AND provider_user_id = ?");
+        String query = "SELECT * FROM linked_accounts WHERE provider = ? AND provider_user_id = ?";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setString(1, provider.name());
             pst.setString(2, providerUserId);
 
-            ResultSet results = pst.executeQuery();
-            
-            if (!results.isBeforeFirst()) {
-                return null;
-            } else {
-                results.next();                
+            try (ResultSet results = pst.executeQuery()) {
+                if (!results.isBeforeFirst()) {
+                    return null;
+                } else {
+                    results.next();
+                }
+                return getById(results.getLong("user_id"));
             }
-            
-            return getById(results.getLong("user_id"));
         } catch (SQLException e) {
             throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         }    
@@ -244,13 +248,10 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
     @Override
     public boolean linkAuthProviderToAccount(final RegisteredUser user, final AuthenticationProvider provider,
             final String providerUserId) throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn
-                    .prepareStatement(
-                            "INSERT INTO linked_accounts(user_id, provider, provider_user_id)"
-                            + " VALUES (?, ?, ?);",
-                            Statement.RETURN_GENERATED_KEYS);
+        String query = "INSERT INTO linked_accounts(user_id, provider, provider_user_id) VALUES (?, ?, ?);";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+        ) {
             pst.setLong(1, user.getId());
             pst.setString(2, provider.name());
             pst.setString(3, providerUserId);
@@ -277,10 +278,11 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
                     "The delete request cannot be fulfilled as there is no %s provider registered for user (%s).",
                     provider, user.getEmail()));
         }
-               
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("DELETE FROM linked_accounts WHERE provider = ? AND user_id = ?");
+
+        String query = "DELETE FROM linked_accounts WHERE provider = ? AND user_id = ?";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setString(1, provider.name());
             pst.setLong(2, user.getId());
             
@@ -301,21 +303,20 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             return null;
         }
 
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
+        StringBuilder sb = new StringBuilder();
+        sb.append("SELECT * FROM users WHERE id = ?");
+        if (!includeDeletedUsers) {
+            sb.append(" AND NOT deleted");
+        }
 
-            StringBuilder sb = new StringBuilder();
-            sb.append("SELECT * FROM users WHERE id = ?");
-            if (!includeDeletedUsers) {
-                sb.append(" AND NOT deleted");
-            }
-
-            pst = conn.prepareStatement(sb.toString());
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(sb.toString());
+        ) {
             pst.setLong(1, id);
 
-            ResultSet results = pst.executeQuery();
-
-            return this.findOneUser(results);
+            try (ResultSet results = pst.executeQuery()) {
+                return this.findOneUser(results);
+            }
         } catch (SQLException e) {
             throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         } catch (JsonProcessingException e) {
@@ -326,14 +327,15 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
     @Override
     public RegisteredUser getByEmail(final String email) throws SegueDatabaseException {
         Validate.notBlank(email);
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM users WHERE lower(email)=lower(?) AND NOT deleted");
+        String query = "SELECT * FROM users WHERE lower(email)=lower(?) AND NOT deleted";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setString(1, email);
 
-            ResultSet results = pst.executeQuery();
-            
-            return this.findOneUser(results);
+            try (ResultSet results = pst.executeQuery()) {
+                return this.findOneUser(results);
+            }
         } catch (SQLException e) {
             throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         } catch (JsonProcessingException e) {
@@ -367,34 +369,35 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
         if (null != prototype.getRole()) {
             fieldsOfInterest.put("role", prototype.getRole().name());
         }
-        
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            
-            StringBuilder sb = new StringBuilder();
-            sb.append(" WHERE NOT deleted");
-            if (fieldsOfInterest.entrySet().size() != 0) {
+
+        // Build optional WHERE clause:
+        StringBuilder sb = new StringBuilder();
+        sb.append(" WHERE NOT deleted");
+        if (fieldsOfInterest.entrySet().size() != 0) {
+            sb.append(" AND ");
+        }
+
+        int index = 0;
+        List<Object> orderToAdd = Lists.newArrayList();
+        for (Entry<String, Object> e : fieldsOfInterest.entrySet()) {
+
+            if (e.getValue() instanceof String) {
+                sb.append(e.getKey() + " ILIKE ?");
+            } else {
+                sb.append(e.getKey() + " = ?");
+            }
+
+            orderToAdd.add(e.getValue());
+            if (index + 1 < fieldsOfInterest.entrySet().size()) {
                 sb.append(" AND ");
             }
-            
-            int index = 0;
-            List<Object> orderToAdd = Lists.newArrayList();
-            for (Entry<String, Object> e : fieldsOfInterest.entrySet()) {
-                
-                if (e.getValue() instanceof String) {
-                    sb.append(e.getKey() + " ILIKE ?");
-                } else {
-                    sb.append(e.getKey() + " = ?");
-                }
+            index++;
+        }
 
-                orderToAdd.add(e.getValue());
-                if (index + 1 < fieldsOfInterest.entrySet().size()) {
-                    sb.append(" AND ");
-                }
-                index++;
-            }
-            
-            pst = conn.prepareStatement("SELECT * FROM users" + sb.toString() + " ORDER BY family_name, given_name");
+        String query = "SELECT * FROM users" + sb.toString() + " ORDER BY family_name, given_name";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             index = 1;
             for (Object value : orderToAdd) {
                 if (value instanceof String) {
@@ -409,9 +412,9 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
                 index++;
             }
             
-            ResultSet results = pst.executeQuery();
-
-            return this.findAllUsers(results);
+            try (ResultSet results = pst.executeQuery()) {
+                return this.findAllUsers(results);
+            }
         } catch (SQLException e) {
             throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         } catch (JsonProcessingException e) {
@@ -421,28 +424,25 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
     @Override
     public List<RegisteredUser> findUsers(final List<Long> usersToLocate) throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            
-            StringBuilder inParams = new StringBuilder();
-            inParams.append("?");
-            for (int i = 1; i < usersToLocate.size(); i++) {
-                inParams.append(",?");
-            }
-            
-            pst = conn.prepareStatement(
-                    String.format("SELECT * FROM users WHERE id IN (%s) AND NOT deleted ORDER BY family_name, given_name",
-                            inParams.toString()));
+        StringBuilder inParams = new StringBuilder();
+        inParams.append("?");
+        for (int i = 1; i < usersToLocate.size(); i++) {
+            inParams.append(",?");
+        }
+        String query = String.format("SELECT * FROM users WHERE id IN (%s) AND NOT deleted ORDER BY family_name, given_name", inParams.toString());
 
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             int index = 1;
             for (Long userId : usersToLocate) {
                 pst.setLong(index, userId);
                 index++;
             }
 
-            ResultSet results = pst.executeQuery();
-            
-            return this.findAllUsers(results);
+            try (ResultSet results = pst.executeQuery()) {
+                return this.findAllUsers(results);
+            }
         } catch (SQLException e) {
             throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         } catch (JsonProcessingException e) {
@@ -452,11 +452,11 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
     @Override
     public Map<Role, Long> getRoleCount() throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT role, count(1) FROM users WHERE NOT deleted GROUP BY role;");
-
-            ResultSet results = pst.executeQuery();
+        String query = "SELECT role, count(1) FROM users WHERE NOT deleted GROUP BY role;";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+             ResultSet results = pst.executeQuery();
+        ) {
             Map<Role, Long> resultToReturn = Maps.newHashMap();
 
             while (results.next()) {
@@ -471,11 +471,11 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
     @Override
     public Map<Gender, Long> getGenderCount() throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT gender, count(1) FROM users WHERE NOT deleted GROUP BY gender;");
-
-            ResultSet results = pst.executeQuery();
+        String query = "SELECT gender, count(1) FROM users WHERE NOT deleted GROUP BY gender;";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+             ResultSet results = pst.executeQuery();
+        ) {
             Map<Gender, Long> resultToReturn = Maps.newHashMap();
 
             while (results.next()) {
@@ -492,16 +492,19 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
     @Override
     public Map<Role, Long> getRolesLastSeenOver(TimeInterval timeInterval) throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT role, count(1) FROM users WHERE NOT deleted AND last_seen >= now() - ? GROUP BY role");
+        String query = "SELECT role, count(1) FROM users WHERE NOT deleted AND last_seen >= now() - ? GROUP BY role";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setObject(1, timeInterval.getPGInterval());
-            ResultSet results = pst.executeQuery();
-            Map<Role, Long> resultsToReturn = Maps.newHashMap();
-            while (results.next()) {
-                resultsToReturn.put(Role.valueOf(results.getString("role")), results.getLong("count"));
+
+            try (ResultSet results = pst.executeQuery()) {
+                Map<Role, Long> resultsToReturn = Maps.newHashMap();
+                while (results.next()) {
+                    resultsToReturn.put(Role.valueOf(results.getString("role")), results.getLong("count"));
+                }
+                return resultsToReturn;
             }
-            return resultsToReturn;
         } catch (SQLException e) {
             throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         }
@@ -509,13 +512,12 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
     @Override
     public Map<SchoolInfoStatus, Long> getSchoolInfoStats() throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement(
-                    "SELECT school_id IS NOT NULL AS has_school_id,  school_other IS NOT NULL AS has_school_other," +
-                    " count(1) FROM users WHERE NOT deleted GROUP BY has_school_id, has_school_other;");
-            ResultSet results = pst.executeQuery();
-
+        String query = "SELECT school_id IS NOT NULL AS has_school_id,  school_other IS NOT NULL AS has_school_other," +
+                " count(1) FROM users WHERE NOT deleted GROUP BY has_school_id, has_school_other;";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+             ResultSet results = pst.executeQuery();
+        ) {
             Map<SchoolInfoStatus, Long> resultsToReturn = Maps.newHashMap();
             while (results.next()) {
                 boolean hasSchoolId = results.getBoolean("has_school_id");
@@ -532,14 +534,15 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
     @Override
     public RegisteredUser getByEmailVerificationToken(final String token) throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM users WHERE email_verification_token = ? AND NOT deleted");
+        String query = "SELECT * FROM users WHERE email_verification_token = ? AND NOT deleted";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setString(1, token);
 
-            ResultSet results = pst.executeQuery();
-            
-            return this.findOneUser(results);
+            try (ResultSet results = pst.executeQuery()) {
+                return this.findOneUser(results);
+            }
         } catch (SQLException e) {
             throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
         } catch (JsonProcessingException e) {
@@ -570,6 +573,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             throw new SegueDatabaseException("Unable to locate the user requested to delete.");
         }
 
+        // FIXME: try-with-resources!
         try (Connection conn = database.getDatabaseConnection()) {
             try {
                 conn.setAutoCommit(false);
@@ -582,21 +586,20 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
                 this.updateUser(conn, userToDelete);
 
                 // Replace all linked providers with a uid account provider IDs to prevent clashes if the user creates a new account.
-                PreparedStatement deleteLinkedAccounts;
-                deleteLinkedAccounts = conn.prepareStatement(
-                        "UPDATE linked_accounts SET provider_user_id = ? WHERE user_id = ?");
-
-                deleteLinkedAccounts.setString(1, UUID.randomUUID().toString());
-                deleteLinkedAccounts.setLong(2, userToDelete.getId());
-                deleteLinkedAccounts.execute();
+                String deleteLinkedAccountsQuery = "UPDATE linked_accounts SET provider_user_id = ? WHERE user_id = ?";
+                try (PreparedStatement deleteLinkedAccounts = conn.prepareStatement(deleteLinkedAccountsQuery)) {
+                    deleteLinkedAccounts.setString(1, UUID.randomUUID().toString());
+                    deleteLinkedAccounts.setLong(2, userToDelete.getId());
+                    deleteLinkedAccounts.execute();
+                }
 
                 // Hash all linked account provider IDs to prevent clashes if the user creates a new account.
-                PreparedStatement markUserAsDeleted;
-                markUserAsDeleted = conn.prepareStatement("UPDATE users SET deleted=TRUE, last_updated=? WHERE id = ?");
-
-                markUserAsDeleted.setTimestamp(1, new Timestamp(new Date().getTime()));
-                markUserAsDeleted.setLong(2, userToDelete.getId());
-                markUserAsDeleted.execute();
+                String markUserDeletedQuery = "UPDATE users SET deleted=TRUE, last_updated=? WHERE id = ?";
+                try (PreparedStatement markUserAsDeleted = conn.prepareStatement(markUserDeletedQuery)) {
+                    markUserAsDeleted.setTimestamp(1, new Timestamp(new Date().getTime()));
+                    markUserAsDeleted.setLong(2, userToDelete.getId());
+                    markUserAsDeleted.execute();
+                }
 
                 conn.commit();
             } catch (SQLException | JsonProcessingException e) {
@@ -624,13 +627,11 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             try {
                 conn.setAutoCommit(false);
 
-                PreparedStatement mergeUsers;
-                mergeUsers = conn.prepareStatement("SELECT mergeuser(?, ?)");
-
-                mergeUsers.setLong(1, target.getId());
-                mergeUsers.setLong(2, source.getId());
-                mergeUsers.execute();
-
+                try (PreparedStatement mergeUsers = conn.prepareStatement("SELECT mergeuser(?, ?)")) {
+                    mergeUsers.setLong(1, target.getId());
+                    mergeUsers.setLong(2, source.getId());
+                    mergeUsers.execute();
+                }
                 conn.commit();
             } catch (SQLException e) {
                 conn.rollback();
@@ -651,10 +652,11 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
     @Override
     public void updateUserLastSeen(final RegisteredUser user, final Date date) throws SegueDatabaseException {
         Validate.notNull(user);
-        
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("UPDATE users SET last_seen = ? WHERE id = ?");
+
+        String query = "UPDATE users SET last_seen = ? WHERE id = ?";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setTimestamp(1, new java.sql.Timestamp(date.getTime()));
             pst.setLong(2, user.getId());
             pst.execute();
@@ -667,9 +669,10 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
     public void incrementSessionToken(RegisteredUser user) throws SegueDatabaseException {
         Validate.notNull(user);
 
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("UPDATE users SET session_token = session_token + 1 WHERE id = ?");
+        String query = "UPDATE users SET session_token = session_token + 1 WHERE id = ?";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setLong(1, user.getId());
             pst.execute();
         } catch (SQLException e) {
@@ -694,18 +697,13 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             userToCreate.setEmailVerificationStatus(EmailVerificationStatus.NOT_VERIFIED);
         }
 
-        PreparedStatement pst;
-        try (Connection conn = database.getDatabaseConnection()) {
-            pst = conn
-                    .prepareStatement(
-                            "INSERT INTO users(family_name, given_name, email, role, "
-                            + "date_of_birth, gender, registration_date, school_id, "
-                            + "school_other, last_updated, email_verification_status, "
-                            + "last_seen, email_verification_token, email_to_verify, "
-                            + "registered_contexts, registered_contexts_last_confirmed) "
-                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
-                            Statement.RETURN_GENERATED_KEYS);
-
+        String query = "INSERT INTO users(family_name, given_name, email, role, date_of_birth, gender," +
+                " registration_date, school_id, school_other, last_updated, email_verification_status, last_seen," +
+                " email_verification_token, email_to_verify, registered_contexts, registered_contexts_last_confirmed)" +
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+        ) {
             List<String> userContextsJsonb = Lists.newArrayList();
             if (userToCreate.getRegisteredContexts() != null) {
                 for (UserContext registeredContext : userToCreate.getRegisteredContexts()) {
@@ -789,48 +787,44 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             throw new SegueDatabaseException("The user you have tried to update does not exist.");
         }
 
-        PreparedStatement pst = conn
-                .prepareStatement(
-                        "UPDATE users SET family_name = ?, given_name = ?, email = ?, role = ?, "
-                        + "date_of_birth = ?, gender = ?, registration_date = ?, school_id = ?, "
-                        + "school_other = ?, last_updated = ?, email_verification_status = ?, "
-                        + "last_seen = ?, email_verification_token = ?, email_to_verify = ?, "
-                        + "registered_contexts = ?, registered_contexts_last_confirmed = ? "
-                        + "WHERE id = ?;");
-
-        // TODO: Change this to annotations or something to rely exclusively on the pojo.
-        setValueHelper(pst, 1, userToCreate.getFamilyName());
-        setValueHelper(pst, 2, userToCreate.getGivenName());
-        setValueHelper(pst, 3, userToCreate.getEmail());
-        setValueHelper(pst, 4, userToCreate.getRole());
-        setValueHelper(pst, 5, userToCreate.getDateOfBirth());
-        setValueHelper(pst, 6, userToCreate.getGender());
-        setValueHelper(pst, 7, userToCreate.getRegistrationDate());
-        setValueHelper(pst, 8, userToCreate.getSchoolId());
-        setValueHelper(pst, 9, userToCreate.getSchoolOther());
-        setValueHelper(pst, 10, userToCreate.getLastUpdated());
-        setValueHelper(pst, 11,  userToCreate.getEmailVerificationStatus());
-        setValueHelper(pst, 12, userToCreate.getLastSeen());
-        setValueHelper(pst, 13, userToCreate.getEmailVerificationToken());
-        setValueHelper(pst, 14, userToCreate.getEmailToVerify());
-        List<String> userContextsJsonb = Lists.newArrayList();
-        if (userToCreate.getRegisteredContexts() != null) {
-            for (UserContext registeredContext : userToCreate.getRegisteredContexts()) {
-                userContextsJsonb.add(jsonMapper.writeValueAsString(registeredContext));
+        String query = "UPDATE users SET family_name = ?, given_name = ?, email = ?, role = ?, date_of_birth = ?," +
+                " gender = ?, registration_date = ?, school_id = ?, school_other = ?, last_updated = ?," +
+                " email_verification_status = ?, last_seen = ?, email_verification_token = ?, email_to_verify = ?," +
+                " registered_contexts = ?, registered_contexts_last_confirmed = ? WHERE id = ?;";
+        try (PreparedStatement pst = conn.prepareStatement(query)) {
+            // TODO: Change this to annotations or something to rely exclusively on the pojo.
+            setValueHelper(pst, 1, userToCreate.getFamilyName());
+            setValueHelper(pst, 2, userToCreate.getGivenName());
+            setValueHelper(pst, 3, userToCreate.getEmail());
+            setValueHelper(pst, 4, userToCreate.getRole());
+            setValueHelper(pst, 5, userToCreate.getDateOfBirth());
+            setValueHelper(pst, 6, userToCreate.getGender());
+            setValueHelper(pst, 7, userToCreate.getRegistrationDate());
+            setValueHelper(pst, 8, userToCreate.getSchoolId());
+            setValueHelper(pst, 9, userToCreate.getSchoolOther());
+            setValueHelper(pst, 10, userToCreate.getLastUpdated());
+            setValueHelper(pst, 11, userToCreate.getEmailVerificationStatus());
+            setValueHelper(pst, 12, userToCreate.getLastSeen());
+            setValueHelper(pst, 13, userToCreate.getEmailVerificationToken());
+            setValueHelper(pst, 14, userToCreate.getEmailToVerify());
+            List<String> userContextsJsonb = Lists.newArrayList();
+            if (userToCreate.getRegisteredContexts() != null) {
+                for (UserContext registeredContext : userToCreate.getRegisteredContexts()) {
+                    userContextsJsonb.add(jsonMapper.writeValueAsString(registeredContext));
+                }
             }
+            pst.setArray(15, conn.createArrayOf("jsonb", userContextsJsonb.toArray()));
+            setValueHelper(pst, 16, userToCreate.getRegisteredContextsLastConfirmed());
+
+            setValueHelper(pst, 17, userToCreate.getId());
+
+
+            if (pst.executeUpdate() == 0) {
+                throw new SegueDatabaseException("Unable to save user.");
+            }
+
+            return this.getById(existingUserRecord.getId());
         }
-        pst.setArray(15, conn.createArrayOf("jsonb", userContextsJsonb.toArray()));
-        setValueHelper(pst, 16, userToCreate.getRegisteredContextsLastConfirmed());
-
-        setValueHelper(pst, 17, userToCreate.getId());
-
-
-
-        if (pst.executeUpdate() == 0) {
-            throw new SegueDatabaseException("Unable to save user.");
-        }
-
-        return this.getById(existingUserRecord.getId());
     }
     
     /**

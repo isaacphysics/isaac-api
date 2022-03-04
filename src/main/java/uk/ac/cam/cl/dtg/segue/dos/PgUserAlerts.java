@@ -32,17 +32,19 @@ public class PgUserAlerts implements IUserAlerts {
 
     @Override
     public List<IUserAlert> getUserAlerts(Long userId) throws SegueDatabaseException {
-        try (Connection conn = db.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM user_alerts WHERE user_id = ? ORDER BY created ASC");
+        String query = "SELECT * FROM user_alerts WHERE user_id = ? ORDER BY created ASC";
+        try (Connection conn = db.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setLong(1, userId);
 
-            ResultSet results = pst.executeQuery();
-            List<IUserAlert> returnResult = Lists.newArrayList();
-            while (results.next()) {
-                returnResult.add(buildPgUserAlert(results));
+            try (ResultSet results = pst.executeQuery()) {
+                List<IUserAlert> returnResult = Lists.newArrayList();
+                while (results.next()) {
+                    returnResult.add(buildPgUserAlert(results));
+                }
+                return returnResult;
             }
-            return returnResult;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
@@ -50,28 +52,23 @@ public class PgUserAlerts implements IUserAlerts {
 
     @Override
     public IUserAlert createAlert(Long userId, String message, String link) throws SegueDatabaseException {
-        PreparedStatement pst;
-        try (Connection conn = db.getDatabaseConnection()) {
-
-            pst = conn
-                    .prepareStatement("INSERT INTO user_alerts "
-                            + "(user_id, message, link, created) "
-                            + "VALUES (?, ?, ?, ?) RETURNING *");
-
+        String query = "INSERT INTO user_alerts (user_id, message, link, created) VALUES (?, ?, ?, ?) RETURNING *";
+        try (Connection conn = db.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setLong(1, userId);
             pst.setString(2, message);
             pst.setString(3, link);
             pst.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
 
-            ResultSet results = pst.executeQuery();
-            results.next();
+            try (ResultSet results = pst.executeQuery()) {
+                results.next();
 
-            IUserAlert alert = buildPgUserAlert(results);
+                IUserAlert alert = buildPgUserAlert(results);
+                UserAlertsWebSocket.notifyUserOfAlert(userId, alert);
 
-            UserAlertsWebSocket.notifyUserOfAlert(userId, alert);
-
-            return alert;
-
+                return alert;
+            }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
@@ -79,25 +76,22 @@ public class PgUserAlerts implements IUserAlerts {
 
     @Override
     public void recordAlertEvent(Long alertId, IUserAlert.AlertEvents eventType) throws SegueDatabaseException {
-        PreparedStatement pst;
-        try (Connection conn = db.getDatabaseConnection()) {
-
-            String q = "UPDATE user_alerts SET ";
-            switch (eventType) {
-                case SEEN:
-                    q += "seen";
-                    break;
-                case CLICKED:
-                    q += "clicked";
-                    break;
-                case DISMISSED:
-                    q += "dismissed";
-                    break;
-            }
-            q += "= ?  WHERE id = ?";
-            pst = conn
-                    .prepareStatement(q);
-
+        String query = "UPDATE user_alerts SET ";
+        switch (eventType) {
+            case SEEN:
+                query += "seen";
+                break;
+            case CLICKED:
+                query += "clicked";
+                break;
+            case DISMISSED:
+                query += "dismissed";
+                break;
+        }
+        query += "= ?  WHERE id = ?";
+        try (Connection conn = db.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setTimestamp(1, new Timestamp(System.currentTimeMillis()));
             pst.setLong(2, alertId);
 

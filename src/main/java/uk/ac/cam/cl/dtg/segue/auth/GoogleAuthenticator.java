@@ -106,22 +106,24 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
         Validate.notBlank(clientSecretLocation, "Missing resource %s", clientSecretLocation);
 
         // load up the client secrets from the file system.
-        InputStream inputStream = new FileInputStream(clientSecretLocation);
-        InputStreamReader isr = new InputStreamReader(inputStream);
+        try (InputStream inputStream = new FileInputStream(clientSecretLocation);
+             InputStreamReader isr = new InputStreamReader(inputStream);
+        ) {
 
-        clientSecrets = GoogleClientSecrets.load(new JacksonFactory(), isr);
+            clientSecrets = GoogleClientSecrets.load(new JacksonFactory(), isr);
 
-        this.requestedScopes = Arrays.asList(requestedScopes.split(";"));
-        this.callbackUri = callbackUri;
+            this.requestedScopes = Arrays.asList(requestedScopes.split(";"));
+            this.callbackUri = callbackUri;
 
-        if (null == credentialStore) {
-            credentialStore = CacheBuilder.newBuilder()
-                    .expireAfterAccess(CREDENTIAL_CACHE_TTL_MINUTES, TimeUnit.MINUTES)
-                    .<String, Credential> build();
-        }
+            if (null == credentialStore) {
+                credentialStore = CacheBuilder.newBuilder()
+                        .expireAfterAccess(CREDENTIAL_CACHE_TTL_MINUTES, TimeUnit.MINUTES)
+                        .build();
+            }
 
-        if (null == tokenVerifier) {
-            tokenVerifier = new GoogleIdTokenVerifier(httpTransport, jsonFactory);
+            if (null == tokenVerifier) {
+                tokenVerifier = new GoogleIdTokenVerifier(httpTransport, jsonFactory);
+            }
         }
     }
 

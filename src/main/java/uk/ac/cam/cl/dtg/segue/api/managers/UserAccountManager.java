@@ -72,6 +72,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.text.WordUtils.capitalizeFully;
@@ -97,6 +98,10 @@ public class UserAccountManager implements IUserAccountManager {
     private final PropertiesLoader properties;
 
     private final ISecondFactorAuthenticator secondFactorManager;
+
+    private final int USER_NAME_MAX_LENGTH = 255;
+    private static final Pattern USER_NAME_FORBIDDEN_CHARS_REGEX = Pattern.compile("[*<>]");
+
 
     /**
      * Create an instance of the user manager class.
@@ -727,7 +732,7 @@ public class UserAccountManager implements IUserAccountManager {
             final HttpServletResponse response, final RegisteredUser user, final String newPassword,
                                                         final boolean rememberMe) throws InvalidPasswordException,
             MissingRequiredFieldException, SegueDatabaseException,
-            EmailMustBeVerifiedException, InvalidKeySpecException, NoSuchAlgorithmException {
+            EmailMustBeVerifiedException, InvalidKeySpecException, NoSuchAlgorithmException, InvalidNameException {
         Validate.isTrue(user.getId() == null,
                 "When creating a new user the user id must not be set.");
 
@@ -761,6 +766,15 @@ public class UserAccountManager implements IUserAccountManager {
         // Before save we should validate the user for mandatory fields.
         if (!this.isUserValid(userToSave)) {
             throw new MissingRequiredFieldException("The email address provided is invalid.");
+        }
+
+        // validate names
+        if (!this.isUserNameValid(user.getGivenName())) {
+            throw new InvalidNameException("The given name provided is an invalid length or contains forbidden characters.");
+        }
+
+        if (!this.isUserNameValid(user.getFamilyName())) {
+            throw new InvalidNameException("The family name provided is an invalid length or contains forbidden characters.");
         }
 
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
@@ -821,7 +835,7 @@ public class UserAccountManager implements IUserAccountManager {
      */
     public RegisteredUserDTO updateUserObject(final RegisteredUser updatedUser, final String newPassword)
             throws InvalidPasswordException, MissingRequiredFieldException, SegueDatabaseException,
-            InvalidKeySpecException, NoSuchAlgorithmException {
+            InvalidKeySpecException, NoSuchAlgorithmException, InvalidNameException {
         Validate.notNull(updatedUser.getId());
 
         // We want to map to DTO first to make sure that the user cannot
@@ -839,6 +853,15 @@ public class UserAccountManager implements IUserAccountManager {
         // Check that the user isn't trying to take an existing users e-mail.
         if (this.findUserByEmail(updatedUser.getEmail()) != null && !existingUser.getEmail().equals(updatedUser.getEmail())) {
             throw new DuplicateAccountException("An account with that e-mail address already exists.");
+        }
+
+        // validate names
+        if (!this.isUserNameValid(updatedUser.getGivenName())) {
+            throw new InvalidNameException("The given name provided is an invalid length or contains forbidden characters.");
+        }
+
+        if (!this.isUserNameValid(updatedUser.getFamilyName())) {
+            throw new InvalidNameException("The family name provided is an invalid length or contains forbidden characters.");
         }
 
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
@@ -1568,14 +1591,26 @@ public class UserAccountManager implements IUserAccountManager {
      * @return true if it meets the internal storage requirements, false if not.
      */
     private boolean isUserValid(final RegisteredUser userToValidate) {
-        boolean isValid = true;
-
         if (userToValidate.getEmail() == null || userToValidate.getEmail().isEmpty()
                 || !userToValidate.getEmail().matches(".*(@.+\\.[^.]+|-(facebook|google|twitter)$)")) {
-            isValid = false;
+            return false;
         }
-        
-        return isValid;
+        return true;
+    }
+
+    /**
+     * This function checks that the name provided is valid.
+     *
+     * @param name
+     *            - the name to validate.
+     * @return true if the name is valid, false otherwise.
+     */
+    public final boolean isUserNameValid(final String name) {
+        if (null == name || name.length() > USER_NAME_MAX_LENGTH || USER_NAME_FORBIDDEN_CHARS_REGEX.matcher(name).find()
+                || name.isEmpty()) {
+            return false;
+        }
+        return true;
     }
 
     /**

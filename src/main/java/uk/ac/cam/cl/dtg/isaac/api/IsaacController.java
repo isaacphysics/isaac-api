@@ -27,7 +27,6 @@ import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
-import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.IStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
@@ -85,7 +84,6 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class IsaacController extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(IsaacController.class);
 
-    private final SegueContentFacade api;
     private final IStatisticsManager statsManager;
     private final UserAccountManager userManager;
     private final UserAssociationManager associationManager;
@@ -121,8 +119,6 @@ public class IsaacController extends AbstractIsaacFacade {
     /**
      * Creates an instance of the isaac controller which provides the REST endpoints for the isaac api.
      * 
-     * @param api
-     *            - Instance of segue Api
      * @param propertiesLoader
      *            - Instance of properties Loader
      * @param logManager
@@ -139,7 +135,7 @@ public class IsaacController extends AbstractIsaacFacade {
      *            - So we can summarize search results
      */
     @Inject
-    public IsaacController(final SegueContentFacade api, final PropertiesLoader propertiesLoader,
+    public IsaacController(final PropertiesLoader propertiesLoader,
                            final ILogManager logManager, final IStatisticsManager statsManager,
                            final UserAccountManager userManager, final IContentManager contentManager,
                            final UserAssociationManager associationManager,
@@ -148,7 +144,6 @@ public class IsaacController extends AbstractIsaacFacade {
                            final UserBadgeManager userBadgeManager,
                            final ContentSummarizerService contentSummarizerService) {
         super(propertiesLoader, logManager);
-        this.api = api;
         this.statsManager = statsManager;
         this.userManager = userManager;
         this.associationManager = associationManager;
@@ -242,9 +237,11 @@ public class IsaacController extends AbstractIsaacFacade {
 
     /**
      * Rest end point to allow images to be requested from the database.
-     * 
+     *
      * @param request
      *            - used for intelligent cache responses.
+     * @param httpServletRequest
+     *            - used for the Referer header for helpful error messages.
      * @param path
      *            of image in the database
      * @return a Response containing the image file contents or containing a SegueErrorResponse.
@@ -257,20 +254,13 @@ public class IsaacController extends AbstractIsaacFacade {
                   notes = "This can only be used to get images from the content database.")
     public final Response getImageByPath(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
                                          @PathParam("path") final String path) {
-        // entity tags etc are already added by segue
-
-        // This comes from SegueContentFacade::getImageFileContent -- no other method was calling it, so moving it here.
-        if (null == this.contentIndex || null == path || Files.getFileExtension(path).isEmpty()) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
-                    "Bad input to api call. Required parameter not provided.");
-            log.debug(error.getErrorMessage());
+        if (null == path || Files.getFileExtension(path).isEmpty()) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid file path or filename.");
             return error.toResponse();
         }
-        // 'version' now points to an ElasticSearch index name (live or latest, probably)
-        // Go there and look up the git sha.
-        String sha = this.contentManager.getCurrentContentSHA();
 
         // determine if we can use the cache if so return cached response.
+        String sha = this.contentManager.getCurrentContentSHA();
         EntityTag etag = new EntityTag(sha.hashCode() + path.hashCode() + "");
         Response cachedResponse = generateCachedResponse(request, etag, NUMBER_SECONDS_IN_ONE_DAY);
 
@@ -278,8 +268,8 @@ public class IsaacController extends AbstractIsaacFacade {
             return cachedResponse;
         }
 
-        ByteArrayOutputStream fileContent = null;
-        String mimeType = MediaType.WILDCARD;
+        ByteArrayOutputStream fileContent;
+        String mimeType;
 
         switch (Files.getFileExtension(path).toLowerCase()) {
             case "svg":
@@ -332,6 +322,89 @@ public class IsaacController extends AbstractIsaacFacade {
                 .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, true))
                 .tag(etag).build();
     }
+    /**
+     * Endpoint to allow documents to be requested from the content database.
+     *
+     * @param request
+     *            - used for intelligent cache responses.
+     * @param httpServletRequest
+     *            - used for the Referer header for helpful error messages.
+     * @param path
+     *            - file path of document in the content database
+     * @return a Response containing the file contents as Content-Disposition: attachment, or a SegueErrorResponse.
+     */
+    @GET
+    @Produces("*/*")
+    @Path("documents/{path:.*}")
+    @GZIP
+    @ApiOperation(value = "Get a binary object from the current content version.",
+                  notes = "This can only be used to get PDF documents from the content database.")
+    public final Response getDocumentByPath(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
+                                         @PathParam("path") final String path) {
+        if (null == path || Files.getFileExtension(path).isEmpty()) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid file path or filename.");
+            return error.toResponse();
+        }
+
+        try {
+
+            RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(httpServletRequest);
+            if (!isUserTeacherOrAbove(userManager, currentlyLoggedInUser)) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "You must have a teacher account to access these resources.").toResponse();
+            }
+
+            // determine if we can use the cache if so return cached response.
+            String sha = this.contentManager.getCurrentContentSHA();
+            EntityTag etag = new EntityTag(sha.hashCode() + path.hashCode() + "");
+            Response cachedResponse = generateCachedResponse(request, etag, NUMBER_SECONDS_IN_ONE_DAY);
+            if (cachedResponse != null) {
+                return cachedResponse;
+            }
+
+            ByteArrayOutputStream fileContent;
+            String mimeType;
+            switch (Files.getFileExtension(path).toLowerCase()) {
+                case "pdf":
+                    mimeType = "application/pdf";
+                    break;
+
+                default:
+                    // if it is an unknown type return an error
+                    SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid file type requested");
+                    return error.toResponse(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, false), etag);
+            }
+
+            fileContent = this.contentManager.getFileBytes(sha, path);
+            if (null == fileContent) {
+                String refererHeader = httpServletRequest.getHeader("Referer");
+                SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the file: " + path);
+                log.warn(String.format("Unable to locate the file: (%s). Referer: (%s)", path, refererHeader));
+                return error.toResponse(getCacheControl(NUMBER_SECONDS_IN_TEN_MINUTES, false), etag);
+            }
+
+            ImmutableMap<String, String> logMap = new ImmutableMap.Builder<String, String>()
+                    .put(DOCUMENT_PATH_LOG_FIELDNAME, path)
+                    .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
+            getLogManager().logEvent(currentlyLoggedInUser, httpServletRequest, IsaacServerLogType.DOWNLOAD_FILE, logMap);
+
+            return Response.ok(fileContent.toByteArray()).type(mimeType)
+                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, true))
+                    .header("Content-Disposition", "attachment")  // Do not show this file in the browser.
+                    .tag(etag).build();
+
+        } catch (IOException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error reading file!");
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        } catch (UnsupportedOperationException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Multiple files match the path provided.");
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
+    }
 
     /**
      * Get some statistics out of how many questions the user has completed.
@@ -357,7 +430,7 @@ public class IsaacController extends AbstractIsaacFacade {
     }
 
     /**
-     * Get snapshot for the current user
+     * Get snapshot for the current user.
      *
      * @param request
      *            - so we can find the current user.
