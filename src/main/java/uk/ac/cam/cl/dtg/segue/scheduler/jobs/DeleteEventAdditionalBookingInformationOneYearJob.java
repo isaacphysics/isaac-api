@@ -36,21 +36,20 @@ public class DeleteEventAdditionalBookingInformationOneYearJob implements Job {
         ZonedDateTime now = ZonedDateTime.now();
         ZonedDateTime oneYearAgo = now.plusYears(-1);
         try {
-
-            try (Connection conn = database.getDatabaseConnection()) {
-                PreparedStatement pst;
-                // Check for additional info that needs removing, check if pii has already been removed, if
-                // so, don't re-remove
-                pst = conn.prepareStatement(
-                        "UPDATE event_bookings SET additional_booking_information=jsonb_set(jsonb_set(jsonb_set(jsonb_set(additional_booking_information," +
-                                " '{emergencyName}', '\"[REMOVED]\"'::JSONB, FALSE)," +
-                                " '{emergencyNumber}', '\"[REMOVED]\"'::JSONB, FALSE)," +
-                                " '{accessibilityRequirements}', '\"[REMOVED]\"'::JSONB, FALSE)," +
-                                " '{medicalRequirements}', '\"[REMOVED]\"'::JSONB, FALSE)," +
-                                " pii_removed=? " +
-                                " WHERE created < ?" +
-                                " AND additional_booking_information ??| array['emergencyName', 'emergencyNumber', 'accessibilityRequirements', 'medicalRequirements']" +
-                                " AND pii_removed IS NULL");
+            // Check for additional info that needs removing, check if pii has already been removed, if
+            // so, don't re-remove
+            String query = "UPDATE event_bookings SET additional_booking_information=jsonb_set(jsonb_set(jsonb_set(jsonb_set(additional_booking_information,"
+                + " '{emergencyName}', '\"[REMOVED]\"'::JSONB, FALSE),"
+                + " '{emergencyNumber}', '\"[REMOVED]\"'::JSONB, FALSE),"
+                + " '{accessibilityRequirements}', '\"[REMOVED]\"'::JSONB, FALSE),"
+                + " '{medicalRequirements}', '\"[REMOVED]\"'::JSONB, FALSE),"
+                + " pii_removed=? "
+                + " WHERE created < ?"
+                + " AND additional_booking_information ??| array['emergencyName', 'emergencyNumber', 'accessibilityRequirements', 'medicalRequirements']"
+                + " AND pii_removed IS NULL";
+            try (Connection conn = database.getDatabaseConnection();
+                 PreparedStatement pst = conn.prepareStatement(query);
+            ) {
                 pst.setTimestamp(1, Timestamp.valueOf(now.toLocalDateTime()));
                 pst.setTimestamp(2, Timestamp.valueOf(oneYearAgo.toLocalDateTime()));
 

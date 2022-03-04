@@ -82,20 +82,20 @@ public class DeleteEventAdditionalBookingInformationJob implements Job {
                     boolean endDate30DaysAgo = page.getEndDate() != null && page.getEndDate().toInstant().isBefore(thirtyDaysAgo.toInstant());
                     boolean noEndDateAndStartDate30DaysAgo = page.getEndDate() == null && page.getDate().toInstant().isBefore(thirtyDaysAgo.toInstant());
                     if (endDate30DaysAgo || noEndDateAndStartDate30DaysAgo) {
-                        try (Connection conn = database.getDatabaseConnection()) {
-                            PreparedStatement pst;
+                        String query = "UPDATE event_bookings SET additional_booking_information=jsonb_set(jsonb_set(jsonb_set(jsonb_set(additional_booking_information,"
+                            + " '{emergencyName}', '\"[REMOVED]\"'::JSONB, FALSE),"
+                            + " '{emergencyNumber}', '\"[REMOVED]\"'::JSONB, FALSE),"
+                            + " '{accessibilityRequirements}', '\"[REMOVED]\"'::JSONB, FALSE),"
+                            + " '{medicalRequirements}', '\"[REMOVED]\"'::JSONB, FALSE),"
+                            + " pii_removed=? "
+                            + " WHERE event_id = ?"
+                            + " AND additional_booking_information ??| array['emergencyName', 'emergencyNumber', 'accessibilityRequirements', 'medicalRequirements']"
+                            + " AND pii_removed IS NULL";
+                        try (Connection conn = database.getDatabaseConnection();
+                             PreparedStatement pst = conn.prepareStatement(query);
+                        ) {
                             // Check for additional info that needs removing, check if pii has already been removed, if
                             // so, don't re-remove
-                            pst = conn.prepareStatement(
-                                    "UPDATE event_bookings SET additional_booking_information=jsonb_set(jsonb_set(jsonb_set(jsonb_set(additional_booking_information," +
-                                    " '{emergencyName}', '\"[REMOVED]\"'::JSONB, FALSE)," +
-                                    " '{emergencyNumber}', '\"[REMOVED]\"'::JSONB, FALSE)," +
-                                    " '{accessibilityRequirements}', '\"[REMOVED]\"'::JSONB, FALSE)," +
-                                    " '{medicalRequirements}', '\"[REMOVED]\"'::JSONB, FALSE)," +
-                                    " pii_removed=? " +
-                                    " WHERE event_id = ?" +
-                                    " AND additional_booking_information ??| array['emergencyName', 'emergencyNumber', 'accessibilityRequirements', 'medicalRequirements']" +
-                                    " AND pii_removed IS NULL");
                             pst.setTimestamp(1, Timestamp.valueOf(now.toLocalDateTime()));
                             pst.setString(2, page.getId());
 
