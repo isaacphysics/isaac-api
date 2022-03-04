@@ -58,7 +58,7 @@ public class DeleteEventAdditionalBookingInformationJob implements Job {
     }
 
     @Override
-    public void execute(JobExecutionContext context) throws JobExecutionException {
+    public void execute(final JobExecutionContext context) throws JobExecutionException {
         // Magic number
         Integer limit = 10000;
         Integer startIndex = 0;
@@ -108,11 +108,8 @@ public class DeleteEventAdditionalBookingInformationJob implements Job {
                 }
             }
             log.info("Ran DeleteEventAdditionalBookingInformationJob");
-        } catch (SQLException e) {
-            new SegueDatabaseException("Postgres exception", e).printStackTrace();
-        } catch (ContentManagerException e) {
-            log.error("Failed to delete event additional booking information");
-            e.printStackTrace();
+        } catch (SQLException | ContentManagerException e) {
+            log.error("Failed to delete event additional booking information: ", e);
         }
     }
 }

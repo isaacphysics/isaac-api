@@ -32,7 +32,7 @@ public class DeleteEventAdditionalBookingInformationOneYearJob implements Job {
     }
 
     @Override
-    public void execute(JobExecutionContext context) throws JobExecutionException {
+    public void execute(final JobExecutionContext context) throws JobExecutionException {
         ZonedDateTime now = ZonedDateTime.now();
         ZonedDateTime oneYearAgo = now.plusYears(-1);
         try {
@@ -61,7 +61,7 @@ public class DeleteEventAdditionalBookingInformationOneYearJob implements Job {
             }
             log.info("Ran DeleteEventAdditionalBookingInformationOneYearJob");
         } catch (SQLException e) {
-            new SegueDatabaseException("Postgres exception", e).printStackTrace();
+            log.error("Failed to delete event additional booking information: ", e);
         }
     }
 }
