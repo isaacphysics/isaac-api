@@ -930,7 +930,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                   new DeleteEventAdditionalBookingInformationJob()
             );
 
-            SegueScheduledJob DeleteEventAdditionalBookingInformationOneYearJob = SegueScheduledJob.createCustomJob(
+            SegueScheduledJob deleteEventAdditionalBookingInformationOneYearJob = SegueScheduledJob.createCustomJob(
                     "deleteEventAdditionalBookingInformationOneYear",
                     "JavaJob",
                     "Delete event additional booking information a year after an event has taken place if not already removed",
@@ -945,7 +945,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                     "Sync users to mailjet",
                     "0 0 0/4 ? * * *");
 
-            List<SegueScheduledJob> configuredScheduledJobs = new ArrayList<>(Arrays.asList(PIISQLJob, cleanUpOldAnonymousUsers, cleanUpExpiredReservations, deleteEventAdditionalBookingInformation, DeleteEventAdditionalBookingInformationOneYearJob));
+            List<SegueScheduledJob> configuredScheduledJobs = new ArrayList<>(Arrays.asList(PIISQLJob, cleanUpOldAnonymousUsers,
+                    cleanUpExpiredReservations, deleteEventAdditionalBookingInformation, deleteEventAdditionalBookingInformationOneYearJob));
 
             if (mailjetKey != null && mailjetSecret != null) {
                 configuredScheduledJobs.add(syncMailjetUsers);
