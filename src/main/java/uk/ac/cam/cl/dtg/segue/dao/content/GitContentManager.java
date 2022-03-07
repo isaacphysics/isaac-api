@@ -58,12 +58,15 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 
@@ -284,48 +287,53 @@ public class GitContentManager implements IContentManager {
 
         BooleanMatchInstruction matchQuery = new BooleanMatchInstruction();
         int numberOfExpectedShouldMatches = 1;
-        for (String documentType : ImmutableList.of(QUESTION_TYPE, CONCEPT_TYPE, TOPIC_SUMMARY_PAGE_TYPE, PAGE_TYPE, EVENT_TYPE)) {
-            if (documentTypes == null || documentTypes.contains(documentType)) {
-                BooleanMatchInstruction contentQuery = new BooleanMatchInstruction();
 
-                // Match document type
-                contentQuery.must(new MustMatchInstruction(Constants.TYPE_FIELDNAME, documentType));
+        List<String> validDocumentTypes = Optional.ofNullable(documentTypes).orElse(Collections.emptyList()).stream()
+                .filter(SITE_WIDE_SEARCH_VALID_DOC_TYPES::contains).collect(Collectors.toList());
+        if (validDocumentTypes.isEmpty()) {
+            validDocumentTypes = Lists.newArrayList(SITE_WIDE_SEARCH_VALID_DOC_TYPES);
+        }
 
-                // Generic pages must be explicitly tagged to appear in search results
-                if (documentType.equals(PAGE_TYPE)) {
-                    contentQuery.must(new MustMatchInstruction(Constants.TAGS_FIELDNAME, SEARCHABLE_TAG));
-                }
+        for (String documentType : validDocumentTypes) {
+            BooleanMatchInstruction contentQuery = new BooleanMatchInstruction();
 
-                // Try to match fields
-                for (String field : importantFields) {
-                    contentQuery.should(new ShouldMatchInstruction(field, searchString, 10L, false));
-                    contentQuery.should(new ShouldMatchInstruction(field, searchString, 3L, true));
-                }
-                for (String field : otherFields) {
-                    contentQuery.should(new ShouldMatchInstruction(field, searchString, 5L, false));
+            // Match document type
+            contentQuery.must(new MustMatchInstruction(Constants.TYPE_FIELDNAME, documentType));
+
+            // Generic pages must be explicitly tagged to appear in search results
+            if (documentType.equals(PAGE_TYPE)) {
+                contentQuery.must(new MustMatchInstruction(Constants.TAGS_FIELDNAME, SEARCHABLE_TAG));
+            }
+
+            // Try to match fields
+            for (String field : importantFields) {
+                contentQuery.should(new ShouldMatchInstruction(field, searchString, 10L, false));
+                contentQuery.should(new ShouldMatchInstruction(field, searchString, 3L, true));
+            }
+            for (String field : otherFields) {
+                contentQuery.should(new ShouldMatchInstruction(field, searchString, 5L, false));
+                contentQuery.should(new ShouldMatchInstruction(field, searchString, 1L, true));
+            }
+
+            // Check location.address fields on event pages
+            if (documentType.equals(EVENT_TYPE)) {
+                String addressPath = String.join(nestedFieldConnector, Constants.ADDRESS_PATH_FIELDNAME);
+                for (String addressField : Constants.ADDRESS_FIELDNAMES) {
+                    String field = addressPath + nestedFieldConnector + addressField;
+                    contentQuery.should(new ShouldMatchInstruction(field, searchString, 3L, false));
                     contentQuery.should(new ShouldMatchInstruction(field, searchString, 1L, true));
                 }
-
-                // Check location.address fields on event pages
-                if (documentType.equals(EVENT_TYPE)) {
-                    String addressPath = String.join(nestedFieldConnector, Constants.ADDRESS_PATH_FIELDNAME);
-                    for (String addressField : Constants.ADDRESS_FIELDNAMES) {
-                        String field = addressPath + nestedFieldConnector + addressField;
-                        contentQuery.should(new ShouldMatchInstruction(field, searchString, 3L, false));
-                        contentQuery.should(new ShouldMatchInstruction(field, searchString, 1L, true));
-                    }
-                }
-
-                // Only show future events
-                if (documentType.equals(EVENT_TYPE)){
-                    LocalDate today = LocalDate.now();
-                    long now = today.atStartOfDay(ZoneId.systemDefault()).toEpochSecond() * Constants.EVENT_DATE_EPOCH_MULTIPLIER;
-                    contentQuery.must(new RangeMatchInstruction<Long>(Constants.DATE_FIELDNAME).greaterThanOrEqual(now));
-                }
-
-                contentQuery.setMinimumShouldMatch(numberOfExpectedShouldMatches);
-                matchQuery.should(contentQuery);
             }
+
+            // Only show future events
+            if (documentType.equals(EVENT_TYPE)){
+                LocalDate today = LocalDate.now();
+                long now = today.atStartOfDay(ZoneId.systemDefault()).toEpochSecond() * Constants.EVENT_DATE_EPOCH_MULTIPLIER;
+                contentQuery.must(new RangeMatchInstruction<Long>(Constants.DATE_FIELDNAME).greaterThanOrEqual(now));
+            }
+
+            contentQuery.setMinimumShouldMatch(numberOfExpectedShouldMatches);
+            matchQuery.should(contentQuery);
         }
 
         if (!includeHiddenContent) {

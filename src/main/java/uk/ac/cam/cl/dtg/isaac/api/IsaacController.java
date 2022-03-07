@@ -205,6 +205,11 @@ public class IsaacController extends AbstractIsaacFacade {
                 showHiddenContent = isUserStaff(userManager, (RegisteredUserDTO) currentUser);
             }
             List<String> documentTypes = !types.isEmpty() ? Arrays.asList(types.split(",")) : null;
+            // Return an error if any of the proposed document types are invalid
+            if (documentTypes != null && !SITE_WIDE_SEARCH_VALID_DOC_TYPES.containsAll(documentTypes)) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid document types.").toResponse();
+            }
+
             ResultsWrapper<ContentDTO> searchResults = this.contentManager.siteWideSearch(
                     this.contentIndex, searchString, documentTypes, showHiddenContent, startIndex, limit);
 
