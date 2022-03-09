@@ -197,7 +197,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(request);
 
-            boolean isStudent = !isUserTeacherOrAbove(userManager, user);
+            boolean isStudent = !userManager.isUserTeacherOrAbove(user);
             String userRoleString = user.getRole().name();
 
             EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + "");
@@ -308,7 +308,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
-            if (!(isUserTeacherOrAbove(userManager, user))) {
+            if (!(userManager.isUserTeacherOrAbove(user))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
@@ -923,7 +923,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
 
-            if (!(isUserTeacherOrAbove(userManager, currentlyLoggedInUser))) {
+            if (!(userManager.isUserTeacherOrAbove(currentlyLoggedInUser))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
@@ -989,7 +989,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
-            if (!(isUserTeacherOrAbove(userManager, user))) {
+            if (!(userManager.isUserTeacherOrAbove(user))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
@@ -1048,7 +1048,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
-            if (!(isUserTeacherOrAbove(userManager, user))) {
+            if (!(userManager.isUserTeacherOrAbove(user))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
@@ -1126,7 +1126,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
-            if (!(isUserTeacherOrAbove(userManager, user))) {
+            if (!(userManager.isUserTeacherOrAbove(user))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
@@ -1245,7 +1245,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
-            if (!(isUserTeacherOrAbove(userManager, user))) {
+            if (!(userManager.isUserTeacherOrAbove(user))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
@@ -1447,7 +1447,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
-            if (!(isUserTeacherOrAbove(userManager, user))) {
+            if (!(userManager.isUserTeacherOrAbove(user))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
@@ -1539,7 +1539,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
-            if (!(isUserTeacherOrAbove(userManager, user))) {
+            if (!(userManager.isUserTeacherOrAbove(user))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
@@ -1621,7 +1621,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
-            if (!(isUserTeacherOrAbove(userManager, user))) {
+            if (!(userManager.isUserTeacherOrAbove(user))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
@@ -1718,7 +1718,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
     private boolean canManageGroup(RegisteredUserDTO currentlyLoggedInUser, UserGroupDTO assigneeGroup) throws NoUserLoggedInException {
         return GroupManager.isOwnerOrAdditionalManager(assigneeGroup, currentlyLoggedInUser.getId())
-            || isUserAnAdmin(userManager, currentlyLoggedInUser);
+            || userManager.isUserAnAdmin(currentlyLoggedInUser);
     }
 
     private QuizAttemptDTO augmentAttempt(QuizAttemptDTO quizAttempt, @Nullable QuizAssignmentDTO quizAssignment, boolean includeCorrect) throws ContentManagerException, SegueDatabaseException {

@@ -262,7 +262,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 }
 
                 if (!GroupManager.isOwnerOrAdditionalManager(group, currentlyLoggedInUser.getId())
-                        && !isUserAnAdmin(userManager, currentlyLoggedInUser)) {
+                        && !userManager.isUserAnAdmin(currentlyLoggedInUser)) {
                     return new SegueErrorResponse(Status.FORBIDDEN, "You are not the owner or manager of this group").toResponse();
                 }
 
@@ -329,7 +329,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             UserGroupDTO group = this.groupManager.getGroupById(assignment.getGroupId());
 
             if (!GroupManager.isOwnerOrAdditionalManager(group, currentlyLoggedInUser.getId())
-                    && !isUserAnAdmin(userManager, currentlyLoggedInUser)) {
+                    && !userManager.isUserAnAdmin(currentlyLoggedInUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
             }
@@ -408,7 +408,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
-            boolean includeUserIDs = isUserAnAdminOrEventManager(userManager, currentlyLoggedInUser);
+            boolean includeUserIDs = userManager.isUserAnAdminOrEventManager(currentlyLoggedInUser);
 
             AssignmentDTO assignment = this.assignmentManager.getAssignmentById(assignmentId);
             if (null == assignment) {
@@ -418,7 +418,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             UserGroupDTO group = this.groupManager.getGroupById(assignment.getGroupId());
 
             if (!GroupManager.isOwnerOrAdditionalManager(group, currentlyLoggedInUser.getId())
-                    && !isUserAnAdmin(userManager, currentlyLoggedInUser)) {
+                    && !userManager.isUserAnAdmin(currentlyLoggedInUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
             }
@@ -619,7 +619,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
         try {
             // Fetch the currently logged in user
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
-            boolean includeUserIDs = isUserAnAdminOrEventManager(userManager, currentlyLoggedInUser);
+            boolean includeUserIDs = userManager.isUserAnAdminOrEventManager(currentlyLoggedInUser);
 
             // Fetch the requested group
             UserGroupDTO group;
@@ -627,7 +627,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             // Check the user has permission to access this group:
             if (!GroupManager.isOwnerOrAdditionalManager(group, currentlyLoggedInUser.getId())
-                    && !isUserAnAdmin(userManager, currentlyLoggedInUser)) {
+                    && !userManager.isUserAnAdmin(currentlyLoggedInUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
             }
@@ -958,8 +958,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
             UserGroupDTO assigneeGroup = groupManager.getGroupById(assignmentDTOFromClient.getGroupId());
 
-            boolean userIsTeacherOrAbove = isUserTeacherOrAbove(userManager, currentlyLoggedInUser);
-            boolean userIsStaff = isUserStaff(userManager, currentlyLoggedInUser);
+            boolean userIsTeacherOrAbove = userManager.isUserTeacherOrAbove(currentlyLoggedInUser);
+            boolean userIsStaff = userManager.isUserStaff(currentlyLoggedInUser);
             boolean notesIsNullOrEmpty = assignmentDTOFromClient.getNotes() == null || (assignmentDTOFromClient.getNotes() != null && assignmentDTOFromClient.getNotes().isEmpty());
             boolean notesIsTooLong = assignmentDTOFromClient.getNotes() != null && assignmentDTOFromClient.getNotes().length() > MAX_NOTE_CHAR_LENGTH;
 
@@ -973,7 +973,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             }
 
             if (!GroupManager.isOwnerOrAdditionalManager(assigneeGroup, currentlyLoggedInUser.getId())
-                    && !isUserAnAdmin(userManager, currentlyLoggedInUser)) {
+                    && !userManager.isUserAnAdmin(currentlyLoggedInUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only set assignments to groups you own or manage.").toResponse();
             }

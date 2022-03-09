@@ -202,7 +202,7 @@ public class IsaacController extends AbstractIsaacFacade {
             AbstractSegueUserDTO currentUser = userManager.getCurrentUser(httpServletRequest);
             boolean showHiddenContent = false;
             if (currentUser instanceof RegisteredUserDTO) {
-                showHiddenContent = isUserStaff(userManager, (RegisteredUserDTO) currentUser);
+                showHiddenContent = userManager.isUserStaff((RegisteredUserDTO) currentUser);
             }
             List<String> documentTypes = !types.isEmpty() ? Arrays.asList(types.split(",")) : null;
             // Return an error if any of the proposed document types are invalid
@@ -354,7 +354,7 @@ public class IsaacController extends AbstractIsaacFacade {
         try {
 
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(httpServletRequest);
-            if (!isUserTeacherOrAbove(userManager, currentlyLoggedInUser)) {
+            if (!userManager.isUserTeacherOrAbove(currentlyLoggedInUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You must have a teacher account to access these resources.").toResponse();
             }

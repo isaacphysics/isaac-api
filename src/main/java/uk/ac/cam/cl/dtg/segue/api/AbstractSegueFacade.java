@@ -17,21 +17,14 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dos.users.Role;
-import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.annotation.Nullable;
-import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
-import java.util.Arrays;
-import java.util.Collections;
 
 /**
  * An abstract representation of a Segue CMS facade.
@@ -180,151 +173,5 @@ public abstract class AbstractSegueFacade {
      */
     public ILogManager getLogManager() {
         return logManager;
-    }
-
-    /**
-     * Is the current user an admin.
-     * 
-     * @param userManager
-     *            - Instance of User Manager
-     * @param request
-     *            - with session information
-     * @return true if user is logged in as an admin, false otherwise.
-     * @throws NoUserLoggedInException
-     *             - if we are unable to tell because they are not logged in.
-     */
-    public static boolean isUserAnAdmin(final UserAccountManager userManager, final HttpServletRequest request)
-            throws NoUserLoggedInException {
-        return userManager.checkUserRole(request, Collections.singletonList(Role.ADMIN));
-    }
-
-    /**
-     * Is the current user an admin.
-     *
-     * @param userManager
-     *            - Instance of User Manager
-     * @param userDTO
-     *            - for the user of interest
-     * @return true if user is logged in as an admin, false otherwise.
-     * @throws NoUserLoggedInException
-     *             - if we are unable to tell because they are not logged in.
-     */
-    public static boolean isUserAnAdmin(final UserAccountManager userManager, final RegisteredUserDTO userDTO)
-            throws NoUserLoggedInException {
-        return userManager.checkUserRole(userDTO, Collections.singletonList(Role.ADMIN));
-    }
-
-    /**
-     * Is the current user in an event manager role.
-     *
-     * @param userManager
-     *            - Instance of User Manager
-     * @param request
-     *            - with session information
-     * @return true if user is logged in as an event manager, false otherwise.
-     * @throws NoUserLoggedInException
-     *             - if we are unable to tell because they are not logged in.
-     */
-    public static boolean isUserAnEventManager(final UserAccountManager userManager,
-                                                      final HttpServletRequest request) throws NoUserLoggedInException {
-        return userManager.checkUserRole(request, Collections.singletonList(Role.EVENT_MANAGER));
-    }
-
-    /**
-     * Is the current user in an event manager role.
-     *
-     * @param userManager
-     *            - Instance of User Manager
-     * @param userDTO
-     *            - for the user of interest
-     * @return true if user is logged in as an event manager, false otherwise.
-     * @throws NoUserLoggedInException
-     *             - if we are unable to tell because they are not logged in.
-     */
-    public static boolean isUserAnEventManager(final UserAccountManager userManager,
-                                                      final RegisteredUserDTO userDTO) throws NoUserLoggedInException {
-        return userManager.checkUserRole(userDTO, Collections.singletonList(Role.EVENT_MANAGER));
-    }
-    
-    /**
-     * Is the current user in an admin or event manager role.
-     * 
-     * @param userManager
-     *            - Instance of User Manager
-     * @param request
-     *            - with session information
-     * @return true if user is logged in as an admin or event manager, false otherwise.
-     * @throws NoUserLoggedInException
-     *             - if we are unable to tell because they are not logged in.
-     */
-    public static boolean isUserAnAdminOrEventManager(final UserAccountManager userManager,
-            final HttpServletRequest request) throws NoUserLoggedInException {
-        return userManager.checkUserRole(request, Arrays.asList(Role.ADMIN, Role.EVENT_MANAGER));
-    }
-
-    /**
-     * Is the current user in an admin or event manager role.
-     *
-     * @param userManager
-     *            - Instance of User Manager
-     * @param userDTO
-     *            - for the user of interest
-     * @return true if user is logged in as an admin or event manager, false otherwise.
-     * @throws NoUserLoggedInException
-     *             - if we are unable to tell because they are not logged in.
-     */
-    public static boolean isUserAnAdminOrEventManager(final UserAccountManager userManager,
-                                                      final RegisteredUserDTO userDTO) throws NoUserLoggedInException {
-        return userManager.checkUserRole(userDTO, Arrays.asList(Role.ADMIN, Role.EVENT_MANAGER));
-    }
-
-    /**
-     * Is the current user in a staff role.
-     * 
-     * @param userManager
-     *            - Instance of User Manager
-     * @param request
-     *            - with session information
-     * @return true if user is logged in as an staff, false otherwise.
-     * @throws NoUserLoggedInException
-     *             - if we are unable to tell because they are not logged in.
-     */
-    public static boolean isUserStaff(final UserAccountManager userManager, final HttpServletRequest request)
-            throws NoUserLoggedInException {
-        return userManager.checkUserRole(request,
-                Arrays.asList(Role.ADMIN, Role.EVENT_MANAGER, Role.CONTENT_EDITOR));
-    }
-
-    /**
-     * Is the current user in a staff role.
-     *
-     * @param userManager
-     *            - Instance of User Manager
-     * @param userDTO
-     *            - for the user of interest
-     * @return true if user is logged in as an admin, false otherwise.
-     * @throws NoUserLoggedInException
-     *             - if we are unable to tell because they are not logged in.
-     */
-    public static boolean isUserStaff(final UserAccountManager userManager, final RegisteredUserDTO userDTO)
-            throws NoUserLoggedInException {
-        return userManager.checkUserRole(userDTO,
-                Arrays.asList(Role.ADMIN, Role.EVENT_MANAGER, Role.CONTENT_EDITOR));
-    }
-
-    /**
-     * Is the current user anything other than a student (i.e. a teacher or staff account).
-     *
-     * @param userManager
-     *            - Instance of User Manager
-     * @param userDTO
-     *            - for the user of interest
-     * @return true if user is logged in as a teacher or above, false otherwise.
-     * @throws NoUserLoggedInException
-     *             - if we are unable to tell because they are not logged in.
-     */
-    public static boolean isUserTeacherOrAbove(final UserAccountManager userManager, final RegisteredUserDTO userDTO)
-            throws NoUserLoggedInException {
-        return !userManager.checkUserRole(userDTO, Collections.singletonList(Role.STUDENT));
     }
 }

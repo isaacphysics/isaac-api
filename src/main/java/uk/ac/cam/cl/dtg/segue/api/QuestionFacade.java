@@ -381,7 +381,7 @@ public class QuestionFacade extends AbstractSegueFacade {
                                  @QueryParam("type") final String questionType, final String testJson) {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
-            if (!isUserStaff(userManager, currentUser)) {
+            if (!userManager.isUserStaff(currentUser)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
@@ -416,7 +416,7 @@ public class QuestionFacade extends AbstractSegueFacade {
         }
 
         try {
-            if (!isUserStaff(userManager, request)) {
+            if (!userManager.isUserStaff(request)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
         } catch (NoUserLoggedInException e) {

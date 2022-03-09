@@ -412,7 +412,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     @ApiOperation(value = "Count all event bookings.")
     public final Response getCountForAllEventBookings(@Context final HttpServletRequest request) {
         try {
-            if (!isUserAnAdminOrEventManager(userManager, request)) {
+            if (!userManager.isUserAnAdminOrEventManager(request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
                         .toResponse();
             }
@@ -444,7 +444,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     public final Response getEventBookingsById(@Context final HttpServletRequest request,
                                                @PathParam("booking_id") final String bookingId) {
         try {
-            if (!isUserAnAdminOrEventManager(userManager, request)) {
+            if (!userManager.isUserAnAdminOrEventManager(request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
                         .toResponse();
             }
@@ -582,7 +582,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
             UserGroupDTO group = groupManager.getGroupById(Long.parseLong(groupId));
 
-            if (!(isUserAnAdmin(userManager, currentUser) || GroupManager.isOwnerOrAdditionalManager(group, currentUser.getId()))) {
+            if (!(userManager.isUserAnAdmin(currentUser) || GroupManager.isOwnerOrAdditionalManager(group, currentUser.getId()))) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You are not the owner or manager of this group.").toResponse();
             }
 
@@ -636,7 +636,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
 
-            if (!isUserTeacherOrAbove(userManager, currentUser)) {
+            if (!userManager.isUserTeacherOrAbove(currentUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to use this endpoint.").toResponse();
             }
 
@@ -1310,7 +1310,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                                         @PathParam("user_id") final Long userId) {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
-            if (!isUserAnAdmin(userManager, currentUser)) {
+            if (!userManager.isUserAnAdmin(currentUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an Admin user to access this endpoint.")
                         .toResponse();
             }

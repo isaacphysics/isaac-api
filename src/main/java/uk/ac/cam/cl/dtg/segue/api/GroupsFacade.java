@@ -198,7 +198,7 @@ public class GroupsFacade extends AbstractSegueFacade {
             RegisteredUserDTO user;
             if (userId.equals(requestingUser.getId())) {
                 user = requestingUser;
-            } else if (isUserStaff(userManager, requestingUser)) {
+            } else if (userManager.isUserStaff(requestingUser)) {
                 user = userManager.getUserDTOById(userId);
             } else {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access the groups of another user.")
@@ -295,7 +295,7 @@ public class GroupsFacade extends AbstractSegueFacade {
                         "You must provide a valid user id to access this endpoint.").toResponse();
             }
 
-            if (!isUserAnAdmin(userManager, request)) {
+            if (!userManager.isUserAnAdmin(request)) {
                 SegueErrorResponse.getIncorrectRoleResponse();
             }
 
@@ -340,7 +340,7 @@ public class GroupsFacade extends AbstractSegueFacade {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
-            if (!isUserTeacherOrAbove(userManager, user)) {
+            if (!userManager.isUserTeacherOrAbove(user)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You need a teacher account to create groups and set assignments!").toResponse();
             }
 
@@ -489,7 +489,7 @@ public class GroupsFacade extends AbstractSegueFacade {
         }
 
         try {
-            if (!isUserAnAdmin(userManager, request)) {
+            if (!userManager.isUserAnAdmin(request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "Only admins can directly add a user to a group without a token").toResponse();
             }
@@ -639,7 +639,7 @@ public class GroupsFacade extends AbstractSegueFacade {
             RegisteredUserDTO userToAdd = this.userManager.getUserDTOByEmail(responseMap.get("email"));
             UserGroupDTO group = groupManager.getGroupById(groupId);
 
-            if (null == group || !(group.getOwnerId().equals(user.getId()) || isUserAnAdmin(userManager, user))) {
+            if (null == group || !(group.getOwnerId().equals(user.getId()) || userManager.isUserAnAdmin(user))) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "Only group owners can modify additional group managers!").toResponse();
             }
 
@@ -707,7 +707,7 @@ public class GroupsFacade extends AbstractSegueFacade {
             boolean userIsAdditionalManager = GroupManager.isInAdditionalManagerList(group, user.getId());
             boolean managerRemovingThemselves = userIsAdditionalManager && user.getId().equals(userIdToRemove);
 
-            if (!userIsGroupOwner && !managerRemovingThemselves && !isUserAnAdmin(userManager, user)) {
+            if (!userIsGroupOwner && !managerRemovingThemselves && !userManager.isUserAnAdmin(user)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "Only group owners can modify additional group managers!").toResponse();
             }
 
@@ -744,7 +744,7 @@ public class GroupsFacade extends AbstractSegueFacade {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
             UserGroupDTO group = groupManager.getGroupById(groupId);
             if (!GroupManager.isOwnerOrAdditionalManager(group, currentUser.getId()) &&
-                    !isUserAnAdmin(userManager, currentUser)) {
+                    !userManager.isUserAnAdmin(currentUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
             }

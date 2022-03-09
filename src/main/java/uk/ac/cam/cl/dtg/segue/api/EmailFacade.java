@@ -350,7 +350,7 @@ public class EmailFacade extends AbstractSegueFacade {
 		
 		try {
             RegisteredUserDTO sender = this.userManager.getCurrentRegisteredUser(request);
-            if (!isUserAnAdmin(userManager, sender)) {
+            if (!userManager.isUserAnAdmin(sender)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
@@ -434,11 +434,11 @@ public class EmailFacade extends AbstractSegueFacade {
 
         try {
             RegisteredUserDTO sender = this.userManager.getCurrentRegisteredUser(request);
-            if (!isUserAnAdminOrEventManager(userManager, sender)) {
+            if (!userManager.isUserAnAdminOrEventManager(sender)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
-            if (isUserAnEventManager(userManager, sender)) {
+            if (userManager.isUserAnEventManager(sender)) {
                 if (misuseMonitor.willHaveMisused(sender.getId().toString(),
                         SendEmailMisuseHandler.class.getSimpleName(), userIds.size())) {
                     return SegueErrorResponse
@@ -537,11 +537,11 @@ public class EmailFacade extends AbstractSegueFacade {
 
         try {
             RegisteredUserDTO sender = this.userManager.getCurrentRegisteredUser(request);
-            if (!isUserAnAdminOrEventManager(userManager, sender)) {
+            if (!userManager.isUserAnAdminOrEventManager(sender)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
-            if (isUserAnEventManager(userManager, sender)) {
+            if (userManager.isUserAnEventManager(sender)) {
                 if (misuseMonitor.willHaveMisused(sender.getId().toString(),
                         SendEmailMisuseHandler.class.getSimpleName(), userIds.size())) {
                     return SegueErrorResponse

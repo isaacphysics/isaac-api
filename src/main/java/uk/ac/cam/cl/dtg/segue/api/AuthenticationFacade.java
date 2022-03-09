@@ -142,7 +142,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
                 userId = currentRegisteredUser.getId();
             }
 
-            if (!userId.equals(currentRegisteredUser.getId()) && !isUserAnAdmin(userManager, currentRegisteredUser)) {
+            if (!userId.equals(currentRegisteredUser.getId()) && !userManager.isUserAnAdmin(currentRegisteredUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin member to view this setting for another user.")
                         .toResponse();
             }
