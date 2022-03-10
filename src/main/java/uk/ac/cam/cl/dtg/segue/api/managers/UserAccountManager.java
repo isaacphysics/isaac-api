@@ -2217,7 +2217,7 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     /**
-     * Is the current user anything other than a student (i.e. a teacher or staff account).
+     * Is the user represented by userDTO anything other than a student (i.e. a teacher or staff account).
      *
      * @param userDTO
      *            - for the user of interest

@@ -282,9 +282,9 @@ abstract public class AbstractFacadeTest extends IsaacTest {
         }
     }
 
-    interface Step {}
+    public interface Step {}
 
-    class CheckStep implements Step {
+    public class CheckStep implements Step {
         private final Consumer<Response> checker;
         private final String name;
 
@@ -359,7 +359,7 @@ abstract public class AbstractFacadeTest extends IsaacTest {
         }
     }
 
-    class Testcase {
+    public class Testcase {
         private final List<RegisteredUserDTO> users;
         private final List<Step> steps;
 
