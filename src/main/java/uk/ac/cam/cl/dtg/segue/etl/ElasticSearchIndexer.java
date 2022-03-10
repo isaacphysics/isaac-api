@@ -1,6 +1,5 @@
 package uk.ac.cam.cl.dtg.segue.etl;
 
-import com.carrotsearch.hppc.cursors.ObjectObjectCursor;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
@@ -9,6 +8,7 @@ import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequestBuilder
 import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.elasticsearch.action.admin.indices.get.GetIndexResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -16,7 +16,6 @@ import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.metadata.AliasMetadata;
-import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
@@ -207,12 +206,12 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
     private void expungeOldIndices() {
         // This deletes any indices that don't have aliases pointing to them.
         // If you want an index kept, make sure it has an alias!
-        ImmutableOpenMap<String, IndexMetadata> indices = client.admin().cluster().prepareState().execute().actionGet().getState().getMetadata().indices();
-
-        for(ObjectObjectCursor<String, IndexMetadata> c: indices) {
-            if (c.value.getAliases().size() == 0) {
-                log.info("Index " + c.key + " has no aliases. Removing.");
-                this.expungeTypedIndexFromSearchCache(c.key);
+        GetIndexResponse indices = client.admin().indices().prepareGetIndex().get();
+        ImmutableOpenMap<String, List<AliasMetadata>> aliases = indices.getAliases();
+        for (String index : indices.getIndices()) {
+            if (!aliases.containsKey(index) || aliases.get(index).isEmpty()) {
+                log.info("Index " + index + " has no aliases. Removing.");
+                this.expungeTypedIndexFromSearchCache(index);
             }
         }
     }
