@@ -22,14 +22,14 @@ services:
     container_name: phy-elastic-live
     image: docker.elastic.co/elasticsearch/elasticsearch:7.14.2
     environment:
-      - cluster.name=isaac-phy-live-content
+      - "cluster.name=isaac-phy-live-content"
       - "network.host=${LOCAL_PHY_ELASTIC_IP}"
-      - "discovery.seed_hosts=${REMOTE_PHY_ELASTIC_IP},${LOCAL_PHY_ELASTIC_IP}" # master-eligible nodes
+      - "discovery.seed_hosts=${REMOTE_PHY_ELASTIC_IP},${LOCAL_PHY_ELASTIC_VOTER_IP},${REMOTE_PHY_ELASTIC_VOTER_IP}" # other master-eligible nodes
       - "ES_JAVA_OPTS=-Xms6g -Xmx6g"
-      - bootstrap.memory_lock=true # part of disabling swap
-      # VV UN-COMMENT FOR BOOTSTRAP VV #
-      # - "node.name=master"
-      # - "cluster.initial_master_nodes=master"
+      - "bootstrap.memory_lock=true" # part of disabling swap
+      - "node.name=${HOSTNAME}-phy-node"
+      # ! When starting a brand new Elasticsearch cluster for the first time, un-comment for cluster bootstrap VV
+      # - "cluster.initial_master_nodes=${HOSTNAME}-phy-node"
     ulimits:
       memlock: -1 # part of disabling swap
       nproc: -1 # doc suggestion: at least 2,048 our docker default is unlimited
@@ -41,19 +41,40 @@ services:
         ipv4_address: "${LOCAL_PHY_ELASTIC_IP}"
     restart: unless-stopped
 
+  phy-elastic-voter-live:
+    # container configuration https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html
+    container_name: phy-elastic-voter-live
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.14.2
+    environment:
+      - "cluster.name=isaac-phy-live-content"
+      - "network.host=${LOCAL_PHY_ELASTIC_VOTER_IP}"
+      - "discovery.seed_hosts=${LOCAL_PHY_ELASTIC_IP},${REMOTE_PHY_ELASTIC_IP},${REMOTE_PHY_ELASTIC_VOTER_IP}" # other master-eligible nodes
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+      - "bootstrap.memory_lock=true" # part of disabling swap
+      - "node.name=${HOSTNAME}-phy-voter-node"
+      - "node.roles=master,voting_only"
+    ulimits:
+      memlock: -1 # part of disabling swap
+      nproc: 2048 # doc suggestion: at least 2,048
+      nofile: 65536 # doc suggestion: at least 65,536
+    networks:
+      default:
+        ipv4_address: "${LOCAL_PHY_ELASTIC_VOTER_IP}"
+    restart: unless-stopped
+
   cs-elastic-live:
     # container configuration https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html
     container_name: cs-elastic-live
     image: docker.elastic.co/elasticsearch/elasticsearch:7.14.2
     environment:
-      - cluster.name=isaac-cs-live-content
+      - "cluster.name=isaac-cs-live-content"
       - "network.host=${LOCAL_CS_ELASTIC_IP}"
-      - "discovery.seed_hosts=${REMOTE_CS_ELASTIC_IP},${LOCAL_CS_ELASTIC_IP}" # master-eligible nodes
+      - "discovery.seed_hosts=${REMOTE_CS_ELASTIC_IP},${LOCAL_CS_ELASTIC_VOTER_IP},${REMOTE_CS_ELASTIC_VOTER_IP}" # other master-eligible nodes
       - "ES_JAVA_OPTS=-Xms6g -Xmx6g"
-      - bootstrap.memory_lock=true # part of disabling swap
-      # VV UN-COMMENT FOR BOOTSTRAP VV #
-      # - "node.name=master"
-      # - "cluster.initial_master_nodes=master"
+      - "bootstrap.memory_lock=true" # part of disabling swap
+      - "node.name=${HOSTNAME}-cs-node"
+      # ! When starting a brand new Elasticsearch cluster for the first time, un-comment for cluster bootstrap VV
+      # - "cluster.initial_master_nodes=${HOSTNAME}-cs-node"
     ulimits:
       memlock: -1 # part of disabling swap
       nproc: -1 # doc suggestion: at least 2,048 our docker default is unlimited
@@ -64,6 +85,29 @@ services:
       default:
         ipv4_address: "${LOCAL_CS_ELASTIC_IP}"
     restart: unless-stopped
+
+  cs-elastic-voter-live:
+    # container configuration https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html
+    container_name: cs-elastic-voter-live
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.14.2
+    environment:
+      - "cluster.name=isaac-cs-live-content"
+      - "network.host=${LOCAL_CS_ELASTIC_VOTER_IP}"
+      - "discovery.seed_hosts=${LOCAL_CS_ELASTIC_IP},${REMOTE_CS_ELASTIC_IP},${REMOTE_CS_ELASTIC_VOTER_IP}" # other master-eligible nodes
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+      - "bootstrap.memory_lock=true" # part of disabling swap
+      - "node.name=${HOSTNAME}-cs-voter-node"
+      - "node.roles=master,voting_only"
+    ulimits:
+      memlock: -1 # part of disabling swap
+      nproc: 2048 # doc suggestion: at least 2,048
+      nofile: 65536 # doc suggestion: at least 65,536
+    networks:
+      default:
+        ipv4_address: "${LOCAL_CS_ELASTIC_VOTER_IP}"
+    restart: unless-stopped
+
+
 
 volumes:
   phy-content:
