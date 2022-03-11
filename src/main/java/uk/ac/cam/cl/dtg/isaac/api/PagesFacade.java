@@ -29,6 +29,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacTopicSummaryPage;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacPageFragmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacTopicSummaryPageDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
@@ -657,12 +658,13 @@ public class PagesFacade extends AbstractIsaacFacade {
 
             Response result = this.findSingleResult(fieldsToMatch);
 
-            getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
-                    IsaacServerLogType.VIEW_PAGE_FRAGMENT, ImmutableMap.of(
-                            FRAGMENT_ID_LOG_FIELDNAME, fragmentId,
-                            CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()
-                    ));
-
+            if (result.getEntity() instanceof IsaacPageFragmentDTO) {
+                getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
+                        IsaacServerLogType.VIEW_PAGE_FRAGMENT, ImmutableMap.of(
+                                FRAGMENT_ID_LOG_FIELDNAME, fragmentId,
+                                CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()
+                        ));
+            }
             return Response.status(result.getStatus()).entity(result.getEntity())
                     .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
         } catch (SegueDatabaseException e) {
