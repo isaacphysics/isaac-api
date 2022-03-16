@@ -26,8 +26,6 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Formula;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
-import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
-import uk.ac.cam.cl.dtg.segue.quiz.ValidatorUnavailableException;
 
 import java.io.IOException;
 import java.util.Collections;

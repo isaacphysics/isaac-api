@@ -17,8 +17,8 @@ package uk.ac.cam.cl.dtg.isaac.dos.content;
 
 import java.util.List;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceQuestionDTO;
-import uk.ac.cam.cl.dtg.segue.quiz.ChoiceQuestionValidator;
-import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
+import uk.ac.cam.cl.dtg.isaac.quiz.ChoiceQuestionValidator;
+import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
 
 /**
  * Choice object The choice object is a specialised form of content and allows the storage of data relating to possible

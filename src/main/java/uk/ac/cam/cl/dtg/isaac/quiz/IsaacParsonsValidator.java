@@ -26,7 +26,6 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ParsonsChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ParsonsItem;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
-import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 
 import java.util.ArrayList;
 import java.util.Date;

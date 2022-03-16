@@ -51,7 +51,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
-import uk.ac.cam.cl.dtg.segue.quiz.ValidatorUnavailableException;
+import uk.ac.cam.cl.dtg.isaac.quiz.ValidatorUnavailableException;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 

@@ -19,7 +19,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacGraphSketcherQuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacGraphSketcherValidator;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
-import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
+import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
 
 /**
  * Content DO for IsaacGraphSketchingQuestion.

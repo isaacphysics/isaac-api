@@ -20,7 +20,7 @@ import uk.ac.cam.cl.dtg.isaac.quiz.IsaacItemQuestionValidator;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
-import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
+import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
 
 import java.util.List;
 

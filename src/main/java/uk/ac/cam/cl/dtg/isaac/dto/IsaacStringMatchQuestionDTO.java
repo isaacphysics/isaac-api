@@ -17,7 +17,7 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacStringMatchValidator;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
-import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
+import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
 
 /**
  * DTO for isaacStringMatchQuestion.

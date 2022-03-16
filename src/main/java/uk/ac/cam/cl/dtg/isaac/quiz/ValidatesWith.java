@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 James Sharkey
+ * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,25 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package uk.ac.cam.cl.dtg.isaac.quiz;
 
-package uk.ac.cam.cl.dtg.segue.quiz;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * An exception which indicates that the question validator is unavailable.
- *
- * @author James Sharkey
+ * Annotation used to bind a question type to an {@link IValidator}.
+ * 
+ * @author Stephen Cummins
  *
  */
-public class ValidatorUnavailableException extends Exception {
-    private static final long serialVersionUID = -5088917052521699195L;
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface ValidatesWith {
 
     /**
-     * Creates a ValidatorUnavailableException.
-     *
-     * @param message
-     *            - to store with the exception.
+     * The {@link IValidator} class that this Question relates to.
+     * 
+     * @return
      */
-    public ValidatorUnavailableException(final String message) {
-        super(message);
-    }
+    Class<? extends IValidator> value();
 }

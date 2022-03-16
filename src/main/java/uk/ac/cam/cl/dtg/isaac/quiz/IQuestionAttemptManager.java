@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.segue.quiz;
+package uk.ac.cam.cl.dtg.isaac.quiz;
 
 import java.util.Date;
 import java.util.List;

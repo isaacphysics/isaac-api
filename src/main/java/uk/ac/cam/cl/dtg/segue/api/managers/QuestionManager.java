@@ -56,12 +56,12 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.SeguePageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.segue.quiz.IQuestionAttemptManager;
-import uk.ac.cam.cl.dtg.segue.quiz.ISpecifier;
-import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
-import uk.ac.cam.cl.dtg.segue.quiz.SpecifiesWith;
-import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
-import uk.ac.cam.cl.dtg.segue.quiz.ValidatorUnavailableException;
+import uk.ac.cam.cl.dtg.isaac.quiz.IQuestionAttemptManager;
+import uk.ac.cam.cl.dtg.isaac.quiz.ISpecifier;
+import uk.ac.cam.cl.dtg.isaac.quiz.IValidator;
+import uk.ac.cam.cl.dtg.isaac.quiz.SpecifiesWith;
+import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
+import uk.ac.cam.cl.dtg.isaac.quiz.ValidatorUnavailableException;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Response;

@@ -27,7 +27,6 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.FreeTextRule;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import uk.ac.cam.cl.dtg.isaac.dos.content.StringChoice;
-import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 
 import java.util.Date;
 import java.util.Map;

@@ -25,7 +25,6 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Quantity;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
-import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
