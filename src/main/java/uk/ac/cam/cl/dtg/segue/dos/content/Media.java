@@ -15,7 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.dos.content;
 
-import uk.ac.cam.cl.dtg.segue.dto.content.MediaDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.MediaDTO;
 
 /**
  * Media (Abstract) Domain Object To be used anywhere that a figure should be displayed in the CMS.

@@ -15,7 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.dos.content;
 
-import uk.ac.cam.cl.dtg.segue.dto.content.QuantityDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.QuantityDTO;
 
 /**
  * Quantity class is a specialised choice object that allows both a value and a unit to be stored.

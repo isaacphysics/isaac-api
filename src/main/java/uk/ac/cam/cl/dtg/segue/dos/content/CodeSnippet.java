@@ -15,7 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.dos.content;
 
-import uk.ac.cam.cl.dtg.segue.dto.content.CodeSnippetDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.CodeSnippetDTO;
 
 /**
  * Code snippet object

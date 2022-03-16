@@ -15,7 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.dos.content;
 
-import uk.ac.cam.cl.dtg.segue.dto.content.EmailTemplateDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.EmailTemplateDTO;
 
 import java.util.List;
 import java.util.Set;

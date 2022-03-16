@@ -15,7 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.dos.content;
 
-import uk.ac.cam.cl.dtg.segue.dto.content.FormulaDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.FormulaDTO;
 
 /**
  * Formula is a specialised choice object that allows a python expression representing the formula to be stored.

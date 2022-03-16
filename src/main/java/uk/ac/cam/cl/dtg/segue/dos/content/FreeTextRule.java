@@ -15,7 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.dos.content;
 
-import uk.ac.cam.cl.dtg.segue.dto.content.FreeTextRuleDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.FreeTextRuleDTO;
 
 @DTOMapping(FreeTextRuleDTO.class)
 @JsonContentType("freeTextRule")

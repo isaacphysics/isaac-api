@@ -15,7 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto;
 
-import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 
 import javax.annotation.Nullable;
 import java.util.Objects;

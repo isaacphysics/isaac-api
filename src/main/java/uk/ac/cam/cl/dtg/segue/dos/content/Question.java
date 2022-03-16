@@ -16,7 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.dos.content;
 
 import java.util.List;
-import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
 
 /**
  * Base class for all question types.

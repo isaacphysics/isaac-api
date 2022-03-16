@@ -28,17 +28,17 @@ import uk.ac.cam.cl.dtg.segue.dos.content.ParsonsChoice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
 import uk.ac.cam.cl.dtg.segue.dos.content.StringChoice;
 import uk.ac.cam.cl.dtg.segue.dos.content.RegexPattern;
-import uk.ac.cam.cl.dtg.segue.dto.content.ChemicalFormulaDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.FormulaDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.FreeTextRuleDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.GraphChoiceDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ItemChoiceDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.LogicFormulaDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ParsonsChoiceDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.QuantityDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.StringChoiceDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.RegexPatternDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ChemicalFormulaDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.FormulaDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.FreeTextRuleDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.GraphChoiceDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ItemChoiceDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.LogicFormulaDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ParsonsChoiceDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.QuantityDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.StringChoiceDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.RegexPatternDTO;
 
 /**
  * ContentBaseOrikaConverter A specialist converter class to work with the Orika automapper library.

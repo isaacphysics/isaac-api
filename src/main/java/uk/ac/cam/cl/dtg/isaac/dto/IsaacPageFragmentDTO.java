@@ -17,7 +17,7 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 
 @JsonContentType("isaacPageFragment")
 public class IsaacPageFragmentDTO extends ContentDTO {

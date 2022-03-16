@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import uk.ac.cam.cl.dtg.segue.dao.TrimWhitespaceListDeserializer;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 
 import java.util.ArrayList;
 import java.util.HashSet;

@@ -15,7 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.dos.content;
 
-import uk.ac.cam.cl.dtg.segue.dto.content.ItemDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ItemDTO;
 
 /**
  * Specific content for items in Item Choices and Questions.

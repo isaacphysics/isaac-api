@@ -15,7 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.dos.content;
 
-import uk.ac.cam.cl.dtg.segue.dto.content.RegexPatternDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.RegexPatternDTO;
 
 /**
  * Regex Pattern allows for case-insensitive and multiple-line answer matching.

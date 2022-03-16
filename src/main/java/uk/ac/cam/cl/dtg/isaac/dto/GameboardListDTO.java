@@ -17,8 +17,6 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 
 import java.util.List;
 
-import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
-
 /**
  * GameboardListDTO Provides statistics for the My Boards Page.
  */

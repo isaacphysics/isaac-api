@@ -15,7 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.dos.content;
 
-import uk.ac.cam.cl.dtg.segue.dto.content.ParsonsChoiceDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ParsonsChoiceDTO;
 
 /**
  * Choice for Parsons Questions, containing a list of ParsonsItems.

@@ -15,7 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.dos.content;
 
-import uk.ac.cam.cl.dtg.segue.dto.content.StringChoiceDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.StringChoiceDTO;
 
 /**
  * String Choice allows marking as case-insensitive for more relaxed checking.

@@ -16,7 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.dos.content;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import uk.ac.cam.cl.dtg.segue.dto.content.GlossaryTermDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.GlossaryTermDTO;
 
 /**
  * Glossary Term object The glossary term object is a specialized form of content and allows the storage of data

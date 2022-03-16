@@ -17,16 +17,13 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.api.client.util.Lists;
 
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacNumericValidator;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
-import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.QuantityDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.QuantityDTO;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
-
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES;
 
 /**
  * DTO for isaacNumericQuestions.

@@ -18,7 +18,7 @@ package uk.ac.cam.cl.dtg.segue.dos;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
-import uk.ac.cam.cl.dtg.segue.dto.FormulaValidationResponseDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.FormulaValidationResponseDTO;
 
 import java.util.Date;
 

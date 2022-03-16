@@ -29,10 +29,10 @@ import uk.ac.cam.cl.dtg.segue.dos.IUserNotification;
 import uk.ac.cam.cl.dtg.segue.dos.IUserNotification.NotificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.IUserNotifications;
 import uk.ac.cam.cl.dtg.segue.dos.PgUserNotifications;
-import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.NotificationDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.NotificationDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 
 import java.util.Calendar;
 import java.util.Collections;

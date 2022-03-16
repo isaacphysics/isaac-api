@@ -17,7 +17,7 @@ package uk.ac.cam.cl.dtg.segue.dos.content;
 
 import java.util.Date;
 
-import uk.ac.cam.cl.dtg.segue.dto.content.NotificationDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.NotificationDTO;
 
 /**
  * Notification. This class represents a special content type which can be used to pop up a modal to users on the site.

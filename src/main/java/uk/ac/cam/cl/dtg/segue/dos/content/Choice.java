@@ -15,7 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.dos.content;
 
-import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
 
 /**
  * Choice object The choice object is a specialized form of content and allows the storage of data relating to possible

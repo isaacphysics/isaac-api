@@ -15,7 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.dos.content;
 
-import uk.ac.cam.cl.dtg.segue.dto.content.FigureDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.FigureDTO;
 
 /**
  * Figure class is a specialisation of an Image.

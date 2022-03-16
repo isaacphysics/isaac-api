@@ -15,7 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.dos.content;
 
-import uk.ac.cam.cl.dtg.segue.dto.content.AnvilAppDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.AnvilAppDTO;
 
 /**
  * @author sac92

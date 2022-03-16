@@ -642,7 +642,7 @@
                             <jsonLibrary>jackson2</jsonLibrary>
                             <classPatterns>
                                 <classPattern>uk.ac.cam.cl.dtg.isaac.dto.**DTO</classPattern>
-                                <classPattern>uk.ac.cam.cl.dtg.segue.dto.**DTO</classPattern>
+                                <classPattern>uk.ac.cam.cl.dtg.isaac.dto.**DTO</classPattern>
                             </classPatterns>
                             <outputKind>module</outputKind>
                             <outputFileType>declarationFile</outputFileType>

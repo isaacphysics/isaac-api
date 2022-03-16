@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 
 /**
  *  Abstract class for managing general user preferences.

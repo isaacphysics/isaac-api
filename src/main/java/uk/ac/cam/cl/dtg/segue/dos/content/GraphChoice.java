@@ -1,6 +1,6 @@
 package uk.ac.cam.cl.dtg.segue.dos.content;
 
-import uk.ac.cam.cl.dtg.segue.dto.content.GraphChoiceDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.GraphChoiceDTO;
 
 /**
  * A class instance of choice, where JSON strings of graphs are supposed to be input.

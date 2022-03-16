@@ -16,7 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.dos.content;
 
 import java.util.List;
-import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceQuestionDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.quiz.ChoiceQuestionValidator;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 
