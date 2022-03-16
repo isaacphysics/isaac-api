@@ -15,8 +15,8 @@ import uk.ac.cam.cl.dtg.segue.dao.userBadges.teacherBadges.TeacherBookPagesBadge
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.teacherBadges.TeacherCpdBadgePolicy;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.teacherBadges.TeacherGameboardsBadgePolicy;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.teacherBadges.TeacherGroupsBadgePolicy;
-import uk.ac.cam.cl.dtg.segue.dos.ITransaction;
-import uk.ac.cam.cl.dtg.segue.dos.UserBadge;
+import uk.ac.cam.cl.dtg.isaac.dos.ITransaction;
+import uk.ac.cam.cl.dtg.isaac.dos.UserBadge;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.IUserBadgePolicy;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 

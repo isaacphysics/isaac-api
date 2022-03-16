@@ -17,7 +17,7 @@ package uk.ac.cam.cl.dtg.isaac.dto.content;
 
 import java.util.Date;
 
-import uk.ac.cam.cl.dtg.segue.dos.content.ExternalReference;
+import uk.ac.cam.cl.dtg.isaac.dos.content.ExternalReference;
 
 /**
  * @author sac92

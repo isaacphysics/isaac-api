@@ -18,8 +18,8 @@ package uk.ac.cam.cl.dtg.segue.dao.users;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.metadata.Type;
 import uk.ac.cam.cl.dtg.segue.dao.content.AbstractPolymorphicBidirectionalConverter;
-import uk.ac.cam.cl.dtg.segue.dos.QuantityValidationResponse;
-import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.isaac.dos.QuantityValidationResponse;
+import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.QuantityValidationResponseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
 

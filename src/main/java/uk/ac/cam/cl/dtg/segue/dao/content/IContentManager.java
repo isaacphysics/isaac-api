@@ -16,7 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.dao.content;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants.*;
-import uk.ac.cam.cl.dtg.segue.dos.content.Content;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;

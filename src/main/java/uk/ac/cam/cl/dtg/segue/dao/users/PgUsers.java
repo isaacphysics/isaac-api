@@ -25,12 +25,12 @@ import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.dao.AbstractPgDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
-import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
-import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
-import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
-import uk.ac.cam.cl.dtg.segue.dos.users.Role;
-import uk.ac.cam.cl.dtg.segue.dos.users.UserAuthenticationSettings;
-import uk.ac.cam.cl.dtg.segue.dos.users.UserContext;
+import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
+import uk.ac.cam.cl.dtg.isaac.dos.users.Gender;
+import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
+import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
+import uk.ac.cam.cl.dtg.isaac.dos.users.UserAuthenticationSettings;
+import uk.ac.cam.cl.dtg.isaac.dos.users.UserContext;
 
 import java.sql.Array;
 import java.sql.Connection;

@@ -2,8 +2,8 @@ package uk.ac.cam.cl.dtg.segue.dao.userBadges;
 
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dos.ITransaction;
-import uk.ac.cam.cl.dtg.segue.dos.UserBadge;
+import uk.ac.cam.cl.dtg.isaac.dos.ITransaction;
+import uk.ac.cam.cl.dtg.isaac.dos.UserBadge;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 
 /**

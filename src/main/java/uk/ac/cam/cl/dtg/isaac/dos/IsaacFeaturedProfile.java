@@ -22,11 +22,11 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacFeaturedProfileDTO;
-import uk.ac.cam.cl.dtg.segue.dos.content.Content;
-import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
-import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
-import uk.ac.cam.cl.dtg.segue.dos.content.Image;
-import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
+import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
+import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Image;
+import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 
 /**
  * DO for isaac featured profiles.

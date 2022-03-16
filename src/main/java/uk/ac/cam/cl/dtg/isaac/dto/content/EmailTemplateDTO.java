@@ -15,7 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto.content;
 
-import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
+import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 
 import java.util.List;
 import java.util.Set;

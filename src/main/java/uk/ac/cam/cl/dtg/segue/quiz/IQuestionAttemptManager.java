@@ -6,9 +6,9 @@ import java.util.Map;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dos.LightweightQuestionValidationResponse;
-import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
-import uk.ac.cam.cl.dtg.segue.dos.users.Role;
+import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
+import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 
 /**
  * IQuestionAttemptManager. Objects implementing this interface are responsible for recording question attempts

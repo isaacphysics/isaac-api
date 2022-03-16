@@ -15,8 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dos;
 
-import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
-
 /**
  * Data structure to hold the expected correctness of a user's answer.
  */

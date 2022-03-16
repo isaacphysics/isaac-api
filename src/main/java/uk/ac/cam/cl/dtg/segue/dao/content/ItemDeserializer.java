@@ -22,9 +22,9 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
-import uk.ac.cam.cl.dtg.segue.dos.content.Item;
-import uk.ac.cam.cl.dtg.segue.dos.content.ParsonsItem;
+import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
+import uk.ac.cam.cl.dtg.isaac.dos.content.ParsonsItem;
 
 import java.io.IOException;
 

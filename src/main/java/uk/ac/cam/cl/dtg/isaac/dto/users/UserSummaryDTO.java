@@ -16,9 +16,9 @@
 package uk.ac.cam.cl.dtg.isaac.dto.users;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
-import uk.ac.cam.cl.dtg.segue.dos.users.Role;
-import uk.ac.cam.cl.dtg.segue.dos.users.UserContext;
+import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
+import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
+import uk.ac.cam.cl.dtg.isaac.dos.users.UserContext;
 
 import java.util.List;
 

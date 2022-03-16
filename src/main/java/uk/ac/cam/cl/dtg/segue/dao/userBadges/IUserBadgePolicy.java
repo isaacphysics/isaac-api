@@ -1,7 +1,7 @@
 package uk.ac.cam.cl.dtg.segue.dao.userBadges;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import uk.ac.cam.cl.dtg.segue.dos.ITransaction;
+import uk.ac.cam.cl.dtg.isaac.dos.ITransaction;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 
 /**

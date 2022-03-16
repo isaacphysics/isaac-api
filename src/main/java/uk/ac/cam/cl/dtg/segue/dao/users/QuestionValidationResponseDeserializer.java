@@ -27,10 +27,10 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import uk.ac.cam.cl.dtg.segue.dao.content.ChoiceDeserializer;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentBaseDeserializer;
-import uk.ac.cam.cl.dtg.segue.dos.QuantityValidationResponse;
-import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
-import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
-import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
+import uk.ac.cam.cl.dtg.isaac.dos.QuantityValidationResponse;
+import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
+import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 
 /**
  * QuestionValidationResponse deserializer

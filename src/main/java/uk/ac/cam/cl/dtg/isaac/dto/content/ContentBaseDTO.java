@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.api.client.util.Sets;
 import uk.ac.cam.cl.dtg.segue.dao.TrimWhitespaceDeserializer;
-import uk.ac.cam.cl.dtg.segue.dos.AudienceContext;
+import uk.ac.cam.cl.dtg.isaac.dos.AudienceContext;
 
 import java.util.List;
 import java.util.Map;

@@ -17,7 +17,7 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
 import org.joda.time.LocalDate;
-import uk.ac.cam.cl.dtg.segue.dos.LogEvent;
+import uk.ac.cam.cl.dtg.isaac.dos.LogEvent;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants.LogType;

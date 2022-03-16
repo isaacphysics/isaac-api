@@ -20,7 +20,7 @@ import com.google.api.client.util.Maps;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.metadata.Type;
 import uk.ac.cam.cl.dtg.segue.dao.content.AbstractPolymorphicConverter;
-import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
 
 import java.util.List;

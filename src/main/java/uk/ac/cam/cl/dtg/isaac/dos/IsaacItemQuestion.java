@@ -15,12 +15,11 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dos;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacItemQuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacItemQuestionValidator;
-import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
-import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
-import uk.ac.cam.cl.dtg.segue.dos.content.Item;
+import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
+import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 
 import java.util.List;

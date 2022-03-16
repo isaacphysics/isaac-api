@@ -28,7 +28,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
-import uk.ac.cam.cl.dtg.segue.dos.content.*;
+import uk.ac.cam.cl.dtg.isaac.dos.content.*;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
 import javax.annotation.Nullable;

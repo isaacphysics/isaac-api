@@ -16,7 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.quiz;
 
 
-import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 
 /**
  * Interface that allows the quiz engine to create a specification from an answer.

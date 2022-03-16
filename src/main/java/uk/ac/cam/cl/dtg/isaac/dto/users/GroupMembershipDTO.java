@@ -15,7 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto.users;
 
-import uk.ac.cam.cl.dtg.segue.dos.GroupMembershipStatus;
+import uk.ac.cam.cl.dtg.isaac.dos.GroupMembershipStatus;
 
 import java.util.Date;
 
