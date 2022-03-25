@@ -19,6 +19,11 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.api.client.util.Lists;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import com.google.common.collect.MapMaker;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import ma.glasnost.orika.MapperFacade;
@@ -50,6 +55,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Class responsible for mapping Content objects (or contentBase objects) to their respective subclass.
@@ -62,6 +68,10 @@ public class ContentMapper {
     // field.
     private final Map<String, Class<? extends Content>> jsonTypes;
     private final Map<Class<? extends Content>, Class<? extends ContentDTO>> mapOfDOsToDTOs;
+
+    // Fixed-size cache of recently deserialized JSON objects, as deserialization is expensive.
+    private static final int CONTENT_CACHE_SIZE = 128;
+    private final LoadingCache<String, Content> contentCache;
 
     // this autoMapper is initialised lazily in the getAutoMapper method
     private MapperFacade autoMapper = null;
@@ -78,6 +88,8 @@ public class ContentMapper {
     public ContentMapper() {
         jsonTypes = Maps.newConcurrentMap();
         mapOfDOsToDTOs = Maps.newConcurrentMap();
+        contentCache = CacheBuilder.newBuilder().maximumSize(CONTENT_CACHE_SIZE)
+                .build(new ContentMapperCacheLoader(getSharedContentObjectMapper()));
     }
     
     /**
@@ -293,18 +305,11 @@ public class ContentMapper {
      * @return Content List
      */
     public List<Content> mapFromStringListToContentList(final List<String> stringList) {
-        // setup object mapper to use preconfigured deserializer module.
-        // Required to deal with type polymorphism
-        ObjectMapper objectMapper = this.getSharedContentObjectMapper();
-
-        List<Content> contentList = new ArrayList<Content>();
-
-        for (String item : stringList) {
-            try {
-                contentList.add((Content) objectMapper.readValue(item, ContentBase.class));
-            } catch (IOException e) {
-                log.error("Error whilst mapping from string to list of content", e);
-            }
+        List<Content> contentList = new ArrayList<>();
+        try {
+            contentList = contentCache.getAll(stringList).values().asList();
+        } catch (ExecutionException e) {
+            log.error("Unexpected error while dealing with a content cache miss: ", e);
         }
         return contentList;
     }

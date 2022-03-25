@@ -19,11 +19,11 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.api.client.util.Sets;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import ma.glasnost.orika.MapperFacade;
@@ -59,6 +59,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -78,9 +79,16 @@ public class GameboardPersistenceManager {
     private static final Logger log = LoggerFactory.getLogger(GameboardPersistenceManager.class);
     private static final Long GAMEBOARD_TTL_MINUTES = 30L;
     private static final int GAMEBOARD_ITEM_MAP_BATCH_SIZE = 1000;
+    private static final int GAMEBOARD_ITEM_CACHE_SIZE = 128;
 
-    private final PostgresSqlDb database;
+    // Some gameboards are ephemeral and exist in-memory only, these are stored here
     private final Cache<String, GameboardDO> gameboardNonPersistentStorage;
+    private final PostgresSqlDb database;
+
+    // A cache of content based on content descriptor ID, which allows us to skip the content manager search and
+    // deserialization round-trip
+    // todo: clear this on content version change
+    private final Cache<String, ContentDTO> gameboardContentItemCache;
     
     private final MapperFacade mapper; // used for content object mapping.
     private final ObjectMapper objectMapper; // used for json serialisation
@@ -116,6 +124,8 @@ public class GameboardPersistenceManager {
         this.uriManager = uriManager;		
         this.gameboardNonPersistentStorage = CacheBuilder.newBuilder()
                 .expireAfterAccess(GAMEBOARD_TTL_MINUTES, TimeUnit.MINUTES).<String, GameboardDO> build();
+
+        this.gameboardContentItemCache = CacheBuilder.newBuilder().maximumSize(GAMEBOARD_ITEM_CACHE_SIZE).build();
     }
 
     /**
@@ -706,23 +716,33 @@ public class GameboardPersistenceManager {
     }
 
     /**
-     * Utility method to allow all gameboard related questions to be retrieved in one big batch.
+     * Retrieve fully populated gameboard items given content descriptors.
      *
      * @param contentDescriptors to query for.
      * @return a map of question id to fully populated gameboard item.
      */
     private Map<String, GameboardItem> getGameboardItemMap(final List<GameboardContentDescriptor> contentDescriptors) {
         Map<String, GameboardItem> gameboardReadyQuestions = Maps.newHashMap();
+
         Map<String, GameboardContentDescriptor> contentDescriptorsMap = Maps.newHashMap();
         contentDescriptors.forEach(cd -> contentDescriptorsMap.put(cd.getId(), cd));
 
-        // Batch the queries to the db to avoid the elasticsearch query clause limit of 1024
-        List<List<GameboardContentDescriptor>> contentDescriptorBatches =
-                Lists.partition(contentDescriptors, GAMEBOARD_ITEM_MAP_BATCH_SIZE);
-        for (List<GameboardContentDescriptor> contentDescriptorBatch : contentDescriptorBatches) {
-            List<String> questionsIds =
-                    contentDescriptorBatch.stream().map(GameboardContentDescriptor::getId).collect(Collectors.toList());
-            // build query the db to get full question information
+        // Load as many content items (based on descriptor ID) as possible from the cache, as loading from the content
+        // manager is expensive.
+        Map<String, ContentDTO> gameboardContentItems = new HashMap<>(gameboardContentItemCache
+                .getAllPresent(contentDescriptorsMap.keySet()));
+
+        // For any remaining content, we must query ElasticSearch.
+        // We will re-use the content descriptors map by removing cache-hits from it.
+        contentDescriptorsMap.keySet().retainAll(Sets.difference(contentDescriptorsMap.keySet(), gameboardContentItems.keySet()));
+
+        // Batch the queries to avoid the query clause limit of 1024.
+        List<List<String>> batchedContentDescriptorIDs =
+                Lists.partition(new ArrayList<>(contentDescriptorsMap.keySet()), GAMEBOARD_ITEM_MAP_BATCH_SIZE);
+
+        // Build and execute queries for each batch.
+        for (List<String> questionsIds : batchedContentDescriptorIDs) {
+            // Build query
             List<IContentManager.BooleanSearchClause> fieldsToMap = Lists.newArrayList();
             fieldsToMap.add(new IContentManager.BooleanSearchClause(
                     Constants.ID_FIELDNAME + '.' + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
@@ -731,23 +751,32 @@ public class GameboardPersistenceManager {
             fieldsToMap.add(new IContentManager.BooleanSearchClause(
                     TYPE_FIELDNAME, Constants.BooleanOperator.OR, Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE)));
 
-            // Search for questions that match the ids.
+            // Execute query
             ResultsWrapper<ContentDTO> results;
             try {
                 results = this.contentManager.findByFieldNames(
-                        this.contentIndex, fieldsToMap, 0, contentDescriptorBatch.size());
+                        this.contentIndex, fieldsToMap, 0, questionsIds.size());
             } catch (ContentManagerException e) {
                 results = new ResultsWrapper<ContentDTO>();
                 log.error("Unable to locate questions for gameboard. Using empty results", e);
             }
 
-            // Map each Content object into an GameboardItem object
-            List<ContentDTO> questionsForGameboard = results.getResults();
-            for (ContentDTO c : questionsForGameboard) {
-                GameboardItem contentInfo = this.convertToGameboardItem(c, contentDescriptorsMap.get(c.getId()));
-                gameboardReadyQuestions.put(c.getId(), contentInfo);
+            // Record results
+            List<ContentDTO> questions = results.getResults();
+            for (ContentDTO question : questions) {
+                gameboardContentItems.put(question.getId(), question);
+
+                // Also, cache it for next time.
+                gameboardContentItemCache.put(question.getId(), question);
             }
         }
+
+        // Finally, we must convert all the ContentDTOs to GameboardItems.
+        for (ContentDTO question : gameboardContentItems.values()) {
+            GameboardItem contentInfo = this.convertToGameboardItem(question, contentDescriptorsMap.get(question.getId()));
+            gameboardReadyQuestions.put(question.getId(), contentInfo);
+        }
+
         return gameboardReadyQuestions;
     }
 
