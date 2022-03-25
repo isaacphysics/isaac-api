@@ -636,17 +636,33 @@
                                     <goal>generate</goal>
                                 </goals>
                                 <phase>process-classes</phase>
+                                <configuration>
+                                    <classPatterns>
+                                        <classPattern>uk.ac.cam.cl.dtg.isaac.dto.**DTO</classPattern>
+                                        <classPattern>uk.ac.cam.cl.dtg.segue.dto.**DTO</classPattern>
+                                    </classPatterns>
+                                    <outputFile>isaac-api-types.d.ts</outputFile>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>generateDO</id>
+                                <goals>
+                                    <goal>generate</goal>
+                                </goals>
+                                <phase>process-classes</phase>
+                                <configuration>
+                                    <classPatterns>
+                                        <classPattern>uk.ac.cam.cl.dtg.isaac.dos.**</classPattern>
+                                        <classPattern>uk.ac.cam.cl.dtg.segue.dos.content.**</classPattern>
+                                    </classPatterns>
+                                    <outputFile>isaac-data-types.d.ts</outputFile>
+                                </configuration>
                             </execution>
                         </executions>
                         <configuration>
                             <jsonLibrary>jackson2</jsonLibrary>
-                            <classPatterns>
-                                <classPattern>uk.ac.cam.cl.dtg.isaac.dto.**DTO</classPattern>
-                                <classPattern>uk.ac.cam.cl.dtg.segue.dto.**DTO</classPattern>
-                            </classPatterns>
                             <outputKind>module</outputKind>
                             <outputFileType>declarationFile</outputFileType>
-                            <outputFile>isaac-api-types.d.ts</outputFile>
                             <optionalProperties>all</optionalProperties>
                         </configuration>
                     </plugin>
