@@ -1252,8 +1252,8 @@ public class QuizFacade extends AbstractIsaacFacade {
             UserGroupDTO group = this.groupManager.getGroupById(groupId);
 
             List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group).stream()
-                    .sorted(Comparator.comparing(RegisteredUserDTO::getFamilyName))
                     .sorted(Comparator.comparing(RegisteredUserDTO::getGivenName))
+                    .sorted(Comparator.comparing(RegisteredUserDTO::getFamilyName))
                     .collect(Collectors.toList());
 
             if (!canManageGroup(user, group)) {
@@ -1314,7 +1314,9 @@ public class QuizFacade extends AbstractIsaacFacade {
                         if (feedback != null) {
                             QuizFeedbackDTO.Mark overallMark = feedback.getOverallMark();
                             if (overallMark != null) {
-                                quizTotals.add(String.format("%d/%d", overallMark.correct, overallMark.correct + overallMark.incorrect + overallMark.notAttempted));
+                                // Add an apostrophe to the beginning of the score, so that the fraction isn't
+                                // interpreted as a date in excel
+                                quizTotals.add(String.format("'%d/%d", overallMark.correct, overallMark.correct + overallMark.incorrect + overallMark.notAttempted));
                             } else {
                                 quizTotals.add("");
                             }
