@@ -150,11 +150,11 @@ public class GroupManager {
     }
 
     /**
-     * getUsersInGroup.
+     * getUsersInGroup. This sorts the users by given name, then family name (case-insensitive)
      * 
      * @param group
      *            to find
-     * @return list of users who are members of the group, sorted by given name, then family name (case insensitive)
+     * @return list of users who are members of the group, sorted by given name, then family name (case-insensitive)
      * @throws SegueDatabaseException
      *             - If an error occurred while interacting with the database.
      */
@@ -167,6 +167,7 @@ public class GroupManager {
         }
 
         List<RegisteredUserDTO> users = userManager.findUsers(groupMemberIds);
+        // Sort the users by name
         this.orderUsersByName(users);
         return users;
     }
