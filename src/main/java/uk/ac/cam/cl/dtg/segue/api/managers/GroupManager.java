@@ -155,7 +155,7 @@ public class GroupManager {
      * 
      * @param group
      *            to find
-     * @return list of users who are members of the group
+     * @return list of users who are members of the group, sorted by given name, then family name (case insensitive)
      * @throws SegueDatabaseException
      *             - If an error occurred while interacting with the database.
      */
