@@ -173,21 +173,6 @@ public class GroupManager {
     }
 
     /**
-     * getUsersInGroupSortedByName. Case insensitive
-     *
-     * @param group to find
-     * @return list of users who are members of the group, sorted by name (family name first, then given name)
-     * @throws SegueDatabaseException
-     *             - If an error occurred while interacting with the database.
-     */
-    public List<RegisteredUserDTO> getUsersInGroupSortedByName(final UserGroupDTO group) throws SegueDatabaseException {
-        return getUsersInGroup(group).stream()
-                .sorted(Comparator.comparing(RegisteredUserDTO::getGivenName, String.CASE_INSENSITIVE_ORDER))
-                .sorted(Comparator.comparing(RegisteredUserDTO::getFamilyName, String.CASE_INSENSITIVE_ORDER))
-                .collect(Collectors.toList());
-    }
-
-    /**
      * Get a map representing the current membership of a given group.
      * @param groupId - group of interest
      * @return map of user id to membership record.

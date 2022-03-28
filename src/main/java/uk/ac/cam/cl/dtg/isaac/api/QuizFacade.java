@@ -1065,7 +1065,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             IsaacQuizDTO quiz = quizManager.findQuiz(assignment.getQuizId());
 
-            List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroupSortedByName(group);
+            List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group);
 
             Map<RegisteredUserDTO, QuizFeedbackDTO> feedbackMap = quizQuestionManager.getAssignmentTeacherFeedback(quiz, assignment, groupMembers);
 
@@ -1135,7 +1135,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             }
 
             IsaacQuizDTO quiz = quizManager.findQuiz(assignment.getQuizId());
-            List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroupSortedByName(group);
+            List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group);
 
             List<String[]> rows = Lists.newArrayList();
             StringWriter stringWriter = new StringWriter();
@@ -1245,7 +1245,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             UserGroupDTO group = this.groupManager.getGroupById(groupId);
 
-            List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroupSortedByName(group);
+            List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group);
 
             if (!canManageGroup(user, group)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
