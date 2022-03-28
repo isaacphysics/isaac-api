@@ -112,20 +112,42 @@ public class ContentService {
     /**
      * Helper method to generate field to match requirements for search queries.
      *
-     * Assumes that everything is AND queries
+     * An overloaded version of the static method also exists which allows overloading default boolean operator values.
      *
      * @param fieldsToMatch
      *            - expects a map of the form fieldname -> list of queries to match
      * @return A list of boolean search clauses to be passed to a content provider
      */
     public static List<IContentManager.BooleanSearchClause> generateDefaultFieldToMatch(final Map<String, List<String>> fieldsToMatch) {
+        return ContentService.generateDefaultFieldToMatch(fieldsToMatch, null);
+    }
+
+    /**
+     * Helper method to generate field to match requirements for search queries.
+     *
+     * Assumes whether to filter by 'any' or 'all' on a field by field basis, with the default being 'all'.
+     * You can pass an optional map specifying particular kinds of matching for specific fields
+     *
+     * @param fieldsToMatch
+     *            - expects a map of the form fieldname -> list of queries to match
+     * @param booleanOperatorOverrideMap
+     *            - an optional map of the form fieldname -> one of 'AND', 'OR' or 'NOT', to specify the
+     *              type of matching needed for that field. Overrides any other default matching behaviour
+     *              for the given fields
+     * @return A list of boolean search clauses to be passed to a content provider
+     */
+    public static List<IContentManager.BooleanSearchClause> generateDefaultFieldToMatch(final Map<String, List<String>> fieldsToMatch,
+                @Nullable final Map<String, Constants.BooleanOperator> booleanOperatorOverrideMap) {
         List<IContentManager.BooleanSearchClause> fieldsToMatchOutput = Lists.newArrayList();
 
         for (Map.Entry<String, List<String>> pair : fieldsToMatch.entrySet()) {
-            if (pair.getKey().equals(ID_FIELDNAME)) {
+            // First check if the field needs to be forced to a particular kind of matching
+            if (null != booleanOperatorOverrideMap && booleanOperatorOverrideMap.containsKey(pair.getKey())) {
+                fieldsToMatchOutput.add(new IContentManager.BooleanSearchClause(
+                        pair.getKey(), booleanOperatorOverrideMap.get(pair.getKey()), pair.getValue()));
+            } else if (pair.getKey().equals(ID_FIELDNAME)) {
                 fieldsToMatchOutput.add(new IContentManager.BooleanSearchClause(
                         pair.getKey(), Constants.BooleanOperator.OR, pair.getValue()));
-
             } else if (pair.getKey().equals(TYPE_FIELDNAME) && pair.getValue().size() > 1) {
                 // special case of when you want to allow more than one
                 fieldsToMatchOutput.add(new IContentManager.BooleanSearchClause(

@@ -32,6 +32,7 @@ import com.google.inject.name.Names;
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.SystemUtils;
 import org.elasticsearch.client.Client;
+import org.quartz.SchedulerException;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -124,6 +125,9 @@ import uk.ac.cam.cl.dtg.segue.quiz.PgQuestionAttempts;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueScheduledDatabaseScriptJob;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueScheduledJob;
+import uk.ac.cam.cl.dtg.segue.scheduler.jobs.DeleteEventAdditionalBookingInformationJob;
+import uk.ac.cam.cl.dtg.segue.scheduler.jobs.DeleteEventAdditionalBookingInformationOneYearJob;
+import uk.ac.cam.cl.dtg.segue.scheduler.jobs.SegueScheduledSyncMailjetUsersJob;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -138,8 +142,10 @@ import javax.servlet.ServletContextListener;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -904,8 +910,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     @Inject
-    private static SegueJobService getSegueJobService(final PostgresSqlDb database) {
+    private static SegueJobService getSegueJobService(final PropertiesLoader properties, final PostgresSqlDb database) throws SchedulerException {
         if (null == segueJobService) {
+            String mailjetKey = properties.getProperty(MAILJET_API_KEY);
+            String mailjetSecret = properties.getProperty(MAILJET_API_SECRET);
+
             SegueScheduledJob PIISQLJob = new SegueScheduledDatabaseScriptJob(
                     "PIIDeleteScheduledJob",
                     "SQLMaintenance",
@@ -924,8 +933,42 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                     "SQL scheduled job that deletes expired reservations for the event booking system",
                     "0 0 7 * * ?", "db_scripts/scheduled/expired-reservations-clean-up.sql");
 
-            segueJobService = new SegueJobService(Arrays.asList(PIISQLJob, cleanUpOldAnonymousUsers, cleanUpExpiredReservations));
-            log.info("Created Segue Job Manager for scheduled jobs");
+            SegueScheduledJob deleteEventAdditionalBookingInformation = SegueScheduledJob.createCustomJob(
+                  "deleteEventAdditionalBookingInformation",
+                  "JavaJob",
+                  "Delete event additional booking information a given period after an event has taken place",
+                  "0 0 7 * * ?",
+                  Maps.newHashMap(),
+                  new DeleteEventAdditionalBookingInformationJob()
+            );
+
+            SegueScheduledJob deleteEventAdditionalBookingInformationOneYearJob = SegueScheduledJob.createCustomJob(
+                    "deleteEventAdditionalBookingInformationOneYear",
+                    "JavaJob",
+                    "Delete event additional booking information a year after an event has taken place if not already removed",
+                    "0 0 7 * * ?",
+                    Maps.newHashMap(),
+                    new DeleteEventAdditionalBookingInformationOneYearJob()
+            );
+
+            SegueScheduledJob syncMailjetUsers = new SegueScheduledSyncMailjetUsersJob(
+                    "syncMailjetUsersJob",
+                    "JavaJob",
+                    "Sync users to mailjet",
+                    "0 0 0/4 ? * * *");
+
+            List<SegueScheduledJob> configuredScheduledJobs = new ArrayList<>(Arrays.asList(PIISQLJob, cleanUpOldAnonymousUsers,
+                    cleanUpExpiredReservations, deleteEventAdditionalBookingInformation, deleteEventAdditionalBookingInformationOneYearJob));
+
+            if (mailjetKey != null && mailjetSecret != null) {
+                configuredScheduledJobs.add(syncMailjetUsers);
+            }
+
+            segueJobService = new SegueJobService(configuredScheduledJobs, database);
+
+            if (mailjetKey == null && mailjetSecret == null) {
+                segueJobService.removeScheduleJob(syncMailjetUsers);
+            }
         }
 
         return segueJobService;

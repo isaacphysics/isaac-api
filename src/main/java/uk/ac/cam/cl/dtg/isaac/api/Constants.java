@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants.LogType;
+import com.google.common.collect.ImmutableSet;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -49,6 +50,9 @@ public final class Constants {
     public static final String SEARCHABLE_TAG = "search_result";
     public static final String HIDE_FROM_FILTER_TAG = "nofilter";
     public static final String RELATED_CONTENT_FIELDNAME = "relatedContent";
+
+    public static final Set<String> SITE_WIDE_SEARCH_VALID_DOC_TYPES = ImmutableSet.of(
+            QUESTION_TYPE, CONCEPT_TYPE, TOPIC_SUMMARY_PAGE_TYPE, PAGE_TYPE, EVENT_TYPE);
 
     public static final int NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES = 2;
 
@@ -119,6 +123,7 @@ public final class Constants {
     public static final String CONCEPT_ID_LOG_FIELDNAME = "conceptId";
     public static final String PAGE_ID_LOG_FIELDNAME = "pageId";
     public static final String FRAGMENT_ID_LOG_FIELDNAME = "pageFragmentId";
+    public static final String DOCUMENT_PATH_LOG_FIELDNAME = "path";
 
     /**
      * Class to represent Isaac log types.
@@ -131,6 +136,7 @@ public final class Constants {
         DELETE_BOARD_FROM_PROFILE,
         DOWNLOAD_ASSIGNMENT_PROGRESS_CSV,
         DOWNLOAD_GROUP_PROGRESS_CSV,
+        DOWNLOAD_FILE,
         GLOBAL_SITE_SEARCH,
         SET_NEW_ASSIGNMENT,
         SET_NEW_QUIZ_ASSIGNMENT,
@@ -159,6 +165,8 @@ public final class Constants {
         VIEW_SUPERSEDED_BY_QUESTION,
         CLONE_GAMEBOARD,
         VIEW_HINT,
+        QUICK_QUESTION_CONFIDENCE,
+        QUICK_QUESTION_CORRECT,
         QUICK_QUESTION_SHOW_ANSWER,
         VIEW_RELATED_CONCEPT,
         VIEW_RELATED_QUESTION,

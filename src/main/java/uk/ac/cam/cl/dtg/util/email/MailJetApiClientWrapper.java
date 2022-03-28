@@ -33,6 +33,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.segue.api.managers.ExternalAccountSynchronisationException;
 
 import javax.ws.rs.core.Response;
 
@@ -93,12 +94,7 @@ public class MailJetApiClientWrapper {
     public void permanentlyDeleteAccountById(final String mailjetId) throws MailjetException {
         Validate.notNull(mailjetId);
         MailjetRequest request = new MailjetRequest(Contacts.resource, mailjetId);
-        MailjetResponse response = mailjetClient.delete(request);
-        int responseStatus = response.getStatus();
-        if (!(responseStatus == Response.Status.OK.getStatusCode())) {
-            // TODO: Do we want to get any of the data from this request?
-            throw new MailjetException("Failed to delete user!");
-        }
+        mailjetClient.delete(request);
     }
 
     /**

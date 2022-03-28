@@ -47,9 +47,9 @@ import java.util.zip.CRC32;
  */
 public class PgEventBookings implements EventBookings {
     private static final Logger log = LoggerFactory.getLogger(PgEventBookings.class);
-    private PostgresSqlDb ds;
+    private final PostgresSqlDb ds;
 
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
     private static final String TABLE_NAME = "event_bookings";
 
     /**
@@ -72,17 +72,16 @@ public class PgEventBookings implements EventBookings {
      */
     @Override
     public EventBooking add(final String eventId, final Long userId, final Long reserveById, final BookingStatus status, Map<String, String> additionalEventInformation) throws SegueDatabaseException {
-        PreparedStatement pst;
-
         if (null == additionalEventInformation) {
             additionalEventInformation = Maps.newHashMap();
         }
 
-        try (Connection conn = ds.getDatabaseConnection()) {
+        String query = "INSERT INTO event_bookings (id, user_id, reserved_by, event_id, status, created, updated, additional_booking_information)" +
+                " VALUES (DEFAULT, ?, ?, ?, ?, ?, ?, ?::text::jsonb)";
+        try (Connection conn = ds.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+         ) {
             Date creationDate = new Date();
-            pst = conn.prepareStatement(
-                    "INSERT INTO event_bookings (id, user_id, reserved_by, event_id, status, created, updated, additional_booking_information) VALUES (DEFAULT, ?, ?, ?, ?, ?, ?, ?::text::jsonb)",
-                    Statement.RETURN_GENERATED_KEYS);
             pst.setLong(1, userId);
             if (reserveById == null) {
                 pst.setNull(2, Types.INTEGER);
@@ -122,7 +121,7 @@ public class PgEventBookings implements EventBookings {
     @Override
     public void updateStatus(final String eventId, final Long userId, final Long reservingUserId, final BookingStatus status, final Map<String, String> additionalEventInformation) throws SegueDatabaseException {
         PreparedStatement pst;
-
+        // FIXME: try-with-resources!
         try (Connection conn = ds.getDatabaseConnection()) {
 
             String reservingUserIdClause = "";
@@ -176,9 +175,10 @@ public class PgEventBookings implements EventBookings {
 
     @Override
     public void delete(final String eventId, final Long userId) throws SegueDatabaseException {
-        PreparedStatement pst;
-        try (Connection conn = ds.getDatabaseConnection()) {
-            pst = conn.prepareStatement("DELETE FROM event_bookings WHERE event_id = ? AND user_id = ?");
+        String query = "DELETE FROM event_bookings WHERE event_id = ? AND user_id = ?";
+        try (Connection conn = ds.getDatabaseConnection();
+            PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setString(1, eventId);
             pst.setLong(2, userId);
             int executeUpdate = pst.executeUpdate();
@@ -194,15 +194,12 @@ public class PgEventBookings implements EventBookings {
 
     @Override
     public void deleteAdditionalInformation(Long userId) throws SegueDatabaseException {
-        PreparedStatement pst;
-        try (Connection conn = ds.getDatabaseConnection()) {
-            pst = conn.prepareStatement("UPDATE event_bookings " +
-                    "SET additional_booking_information = null " +
-                    "WHERE user_id = ?;");
-
+        String query = "UPDATE event_bookings SET additional_booking_information = null WHERE user_id = ?;";
+        try (Connection conn = ds.getDatabaseConnection();
+            PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setLong(1, userId);
             pst.executeUpdate();
-
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception while trying to expunge additional event information", e);
         }
@@ -222,9 +219,9 @@ public class PgEventBookings implements EventBookings {
         crc.update((TABLE_NAME + resourceId).getBytes());
 
         // acquire lock
-        try (Connection conn = ds.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT pg_advisory_lock(?)");
+        try (Connection conn = ds.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement("SELECT pg_advisory_lock(?)");
+         ) {
             pst.setLong(1, crc.getValue());
             log.debug(String.format("Acquiring advisory lock on %s (%s)", TABLE_NAME + resourceId, crc.getValue()));
             pst.executeQuery();
@@ -251,9 +248,9 @@ public class PgEventBookings implements EventBookings {
         crc.update((TABLE_NAME + resourceId).getBytes());
 
         // acquire lock
-        try (Connection conn = ds.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT pg_advisory_unlock(?)");
+        try (Connection conn = ds.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement("SELECT pg_advisory_unlock(?)");
+        ) {
             pst.setLong(1, crc.getValue());
             log.debug(String.format("Releasing advisory lock on %s (%s)", TABLE_NAME + resourceId, crc.getValue()));
             pst.executeQuery();
@@ -276,32 +273,33 @@ public class PgEventBookings implements EventBookings {
             throws SegueDatabaseException {
         Validate.notBlank(eventId);
 
-        try (Connection conn = ds.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM event_bookings WHERE event_id = ? AND user_id = ?");
+        String query = "SELECT * FROM event_bookings WHERE event_id = ? AND user_id = ?";
+        try (Connection conn = ds.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setString(1, eventId);
             pst.setLong(2, userId);
-            ResultSet results = pst.executeQuery();
 
-            EventBooking result = null;
-            int count = 0;
-            while (results.next()) {
-                result = buildPgEventBooking(results);
-                count++;
+            try (ResultSet results = pst.executeQuery()) {
+                EventBooking result = null;
+                int count = 0;
+                while (results.next()) {
+                    result = buildPgEventBooking(results);
+                    count++;
+                }
+
+                if (count == 1) {
+                    return result;
+                } else if (count == 0) {
+                    throw new ResourceNotFoundException("Unable to locate the booking you requested.");
+                } else {
+                    String msg = String.format(
+                            "Found more than one event booking that matches event id (%s) and user id (%s).", eventId,
+                            userId);
+                    log.error(msg);
+                    throw new SegueDatabaseException(msg);
+                }
             }
-
-            if (count == 1) {
-                return result;
-            } else if (count == 0) {
-                throw new ResourceNotFoundException("Unable to locate the booking you requested.");
-            } else {
-                String msg = String.format(
-                        "Found more than one event booking that matches event id (%s) and user id (%s).", eventId,
-                        userId);
-                log.error(msg);
-                throw new SegueDatabaseException(msg);
-            }
-
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
@@ -319,11 +317,11 @@ public class PgEventBookings implements EventBookings {
 
     @Override
     public Long countAllEventBookings() throws SegueDatabaseException {
-        try (Connection conn = ds.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT COUNT(1) AS TOTAL FROM event_bookings");
-
-            ResultSet results = pst.executeQuery();
+        String query = "SELECT COUNT(1) AS TOTAL FROM event_bookings";
+        try (Connection conn = ds.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+             ResultSet results = pst.executeQuery();
+        ) {
             results.next();
             return results.getLong("TOTAL");
         } catch (SQLException e) {
@@ -346,25 +344,24 @@ public class PgEventBookings implements EventBookings {
 
         sb.append(" GROUP BY event_bookings.status, users.role;");
 
-        try (Connection conn = ds.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement(sb.toString());
+        try (Connection conn = ds.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(sb.toString());
+        ) {
             pst.setString(1, eventId);
 
-            ResultSet results = pst.executeQuery();
+            try (ResultSet results = pst.executeQuery()) {
+                Map<BookingStatus, Map<Role, Long>> returnResult = Maps.newHashMap();
+                while (results.next()) {
+                    BookingStatus bookingStatus = BookingStatus.valueOf(results.getString("status"));
+                    Role role = Role.valueOf(results.getString("role"));
+                    Long count = results.getLong("count");
 
-            Map<BookingStatus, Map<Role, Long>> returnResult = Maps.newHashMap();
-            while (results.next()) {
-                BookingStatus bookingStatus = BookingStatus.valueOf(results.getString("status"));
-                Role role = Role.valueOf(results.getString("role"));
-                Long count = results.getLong("count");
-
-                Map<Role, Long> roleCountMap = returnResult.getOrDefault(bookingStatus, Maps.newHashMap());
-                roleCountMap.put(role, count);
-                returnResult.put(bookingStatus, roleCountMap);
+                    Map<Role, Long> roleCountMap = returnResult.getOrDefault(bookingStatus, Maps.newHashMap());
+                    roleCountMap.put(role, count);
+                    returnResult.put(bookingStatus, roleCountMap);
+                }
+                return returnResult;
             }
-
-            return returnResult;
         } catch (SQLException e) {
             log.error("DB error ", e);
             throw new SegueDatabaseException("Postgres exception", e);
@@ -385,29 +382,28 @@ public class PgEventBookings implements EventBookings {
     public Iterable<EventBooking> findAllByEventIdAndStatus(final String eventId, @Nullable final BookingStatus status) throws SegueDatabaseException {
         Validate.notBlank(eventId);
 
-        try (Connection conn = ds.getDatabaseConnection()) {
-            PreparedStatement pst;
-            StringBuilder sb = new StringBuilder();
-            sb.append("SELECT * FROM event_bookings WHERE event_id = ?");
+        StringBuilder sb = new StringBuilder();
+        sb.append("SELECT * FROM event_bookings WHERE event_id = ?");
 
-            if (status != null) {
-                sb.append(" AND status = ?");
-            }
+        if (status != null) {
+            sb.append(" AND status = ?");
+        }
 
-            pst = conn.prepareStatement(sb.toString());
+        try (Connection conn = ds.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(sb.toString());
+        ) {
             pst.setString(1, eventId);
             if (status != null) {
                 pst.setString(2, status.name());
             }
 
-            ResultSet results = pst.executeQuery();
-
-            List<EventBooking> returnResult = Lists.newArrayList();
-            while (results.next()) {
-                returnResult.add(buildPgEventBooking(results));
+            try (ResultSet results = pst.executeQuery()) {
+                List<EventBooking> returnResult = Lists.newArrayList();
+                while (results.next()) {
+                    returnResult.add(buildPgEventBooking(results));
+                }
+                return returnResult;
             }
-
-            return returnResult;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
@@ -417,18 +413,19 @@ public class PgEventBookings implements EventBookings {
     public Iterable<EventBooking> findAllByUserId(final Long userId) throws SegueDatabaseException {
         Validate.notNull(userId);
 
-        try (Connection conn = ds.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM event_bookings WHERE user_id = ?");
+        String query = "SELECT * FROM event_bookings WHERE user_id = ?";
+        try (Connection conn = ds.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setLong(1, userId);
-            ResultSet results = pst.executeQuery();
 
-            List<EventBooking> returnResult = Lists.newArrayList();
-            while (results.next()) {
-                returnResult.add(buildPgEventBooking(results));
-
+            try (ResultSet results = pst.executeQuery()) {
+                List<EventBooking> returnResult = Lists.newArrayList();
+                while (results.next()) {
+                    returnResult.add(buildPgEventBooking(results));
+                }
+                return returnResult;
             }
-            return returnResult;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
@@ -438,18 +435,19 @@ public class PgEventBookings implements EventBookings {
     public Iterable<EventBooking> findAllReservationsByUserId(final Long userId) throws SegueDatabaseException {
         Validate.notNull(userId);
 
-        try (Connection conn = ds.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT distinct on (event_id) * FROM event_bookings WHERE reserved_by = ? AND status != 'CANCELLED'");
+        String query = "SELECT distinct on (event_id) * FROM event_bookings WHERE reserved_by = ? AND status != 'CANCELLED'";
+        try (Connection conn = ds.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setLong(1, userId);
-            ResultSet results = pst.executeQuery();
 
-            List<EventBooking> returnResult = Lists.newArrayList();
-            while (results.next()) {
-                returnResult.add(buildPgEventBooking(results));
-
+            try (ResultSet results = pst.executeQuery()) {
+                List<EventBooking> returnResult = Lists.newArrayList();
+                while (results.next()) {
+                    returnResult.add(buildPgEventBooking(results));
+                }
+                return returnResult;
             }
-            return returnResult;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }

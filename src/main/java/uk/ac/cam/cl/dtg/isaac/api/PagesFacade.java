@@ -29,6 +29,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacTopicSummaryPage;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacPageFragmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacTopicSummaryPageDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
@@ -184,6 +185,7 @@ public class PagesFacade extends AbstractIsaacFacade {
             fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
             etagCodeBuilder.append(tags);
         }
+        Map<String, BooleanOperator> booleanOperatorOverrideMap = ImmutableMap.of(TAGS_FIELDNAME, BooleanOperator.OR);
 
         // Calculate the ETag on last modified date of tags list
         // NOTE: Assumes that the latest version of the content is being used.
@@ -197,7 +199,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         }
 
         try {
-            return listContentObjects(fieldsToMatch, startIndex, newLimit).tag(etag)
+            return listContentObjects(fieldsToMatch, booleanOperatorOverrideMap, startIndex, newLimit).tag(etag)
                     .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
                     .build();
         } catch (ContentManagerException e1) {
@@ -378,7 +380,7 @@ public class PagesFacade extends AbstractIsaacFacade {
                         .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
                         .build();
             } else {
-                return listContentObjects(fieldsToMatch, newStartIndex, newLimit).tag(etag)
+                return listContentObjects(fieldsToMatch, null, newStartIndex, newLimit).tag(etag)
                         .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).build();
             }
         } catch (ContentManagerException e1) {
@@ -656,12 +658,13 @@ public class PagesFacade extends AbstractIsaacFacade {
 
             Response result = this.findSingleResult(fieldsToMatch);
 
-            getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
-                    IsaacServerLogType.VIEW_PAGE_FRAGMENT, ImmutableMap.of(
-                            FRAGMENT_ID_LOG_FIELDNAME, fragmentId,
-                            CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()
-                    ));
-
+            if (result.getEntity() instanceof IsaacPageFragmentDTO) {
+                getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
+                        IsaacServerLogType.VIEW_PAGE_FRAGMENT, ImmutableMap.of(
+                                FRAGMENT_ID_LOG_FIELDNAME, fragmentId,
+                                CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()
+                        ));
+            }
             return Response.status(result.getStatus()).entity(result.getEntity())
                     .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
         } catch (SegueDatabaseException e) {
@@ -888,6 +891,10 @@ public class PagesFacade extends AbstractIsaacFacade {
      * 
      * @param fieldsToMatch
      *            - expects a map of the form fieldname -> list of queries to match
+     * @param booleanOperatorOverrideMap
+     *            - an optional map of the form fieldname -> one of 'AND', 'OR' or 'NOT', to specify the
+     *              type of matching needed for that field. Overrides any other default matching behaviour
+     *              for the given fields
      * @param startIndex
      *            - the initial index for the first result.
      * @param limit
@@ -895,11 +902,11 @@ public class PagesFacade extends AbstractIsaacFacade {
      * @return Response builder containing a list of content summary objects or containing a SegueErrorResponse
      */
     private Response.ResponseBuilder listContentObjects(final Map<String, List<String>> fieldsToMatch,
-            final Integer startIndex, final Integer limit) throws ContentManagerException{
+            @Nullable final Map<String, BooleanOperator> booleanOperatorOverrideMap, final Integer startIndex, final Integer limit) throws ContentManagerException {
         ResultsWrapper<ContentDTO> c;
 
         c = api.findMatchingContent(this.contentIndex,
-                ContentService.generateDefaultFieldToMatch(fieldsToMatch), startIndex, limit);
+                ContentService.generateDefaultFieldToMatch(fieldsToMatch, booleanOperatorOverrideMap), startIndex, limit);
 
         ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
                 this.extractContentSummaryFromList(c.getResults()),

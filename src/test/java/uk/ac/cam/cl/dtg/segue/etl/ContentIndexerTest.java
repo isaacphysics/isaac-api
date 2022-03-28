@@ -215,7 +215,7 @@ public class ContentIndexerTest {
     private Content createEmptyContentElement(final List<ContentBase> children,
                                               final String id) {
         return new Content(id, "", "", "", "", "", "", "", children, "",
-                "", new LinkedList<>(), false, new HashSet<>(), 1);
+                "", new LinkedList<>(), false, false, new HashSet<>(), 1);
     }
 
     /**

@@ -64,12 +64,11 @@ public class PgQuizAssignmentPersistenceManager implements IQuizAssignmentPersis
     public Long saveAssignment(final QuizAssignmentDTO assignment) throws SegueDatabaseException {
         QuizAssignmentDO assignmentToSave = mapper.map(assignment, QuizAssignmentDO.class);
 
-        PreparedStatement pst;
-        try (Connection conn = database.getDatabaseConnection()) {
-            pst = conn.prepareStatement(
-                "INSERT INTO quiz_assignments(quiz_id, group_id, owner_user_id, creation_date, due_date, quiz_feedback_mode)"
-                    + " VALUES (?, ?, ?, ?, ?, ?);", Statement.RETURN_GENERATED_KEYS);
-
+        String query = "INSERT INTO quiz_assignments(quiz_id, group_id, owner_user_id, creation_date, due_date, quiz_feedback_mode)" +
+                " VALUES (?, ?, ?, ?, ?, ?);";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+        ) {
             pst.setString(1, assignmentToSave.getQuizId());
             pst.setLong(2, assignmentToSave.getGroupId());
             pst.setLong(3, assignmentToSave.getOwnerUserId());
@@ -111,23 +110,23 @@ public class PgQuizAssignmentPersistenceManager implements IQuizAssignmentPersis
 
     @Override
     public List<QuizAssignmentDTO> getAssignmentsByQuizIdAndGroup(final String quizId, final Long groupId) throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement(
-                "SELECT * FROM quiz_assignments WHERE quiz_id = ? AND group_id = ? AND NOT deleted");
-
+        String query = "SELECT * FROM quiz_assignments WHERE quiz_id = ? AND group_id = ? AND NOT deleted";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setString(1, quizId);
             pst.setLong(2, groupId);
 
-            ResultSet results = pst.executeQuery();
+            try (ResultSet results = pst.executeQuery()) {
 
-            List<QuizAssignmentDTO> listOfResults = Lists.newArrayList();
+                List<QuizAssignmentDTO> listOfResults = Lists.newArrayList();
 
-            while (results.next()) {
-                listOfResults.add(this.convertToQuizAssignmentDTO(this.convertFromSQLToQuizAssignmentDO(results)));
+                while (results.next()) {
+                    listOfResults.add(this.convertToQuizAssignmentDTO(this.convertFromSQLToQuizAssignmentDO(results)));
+                }
+
+                return listOfResults;
             }
-
-            return listOfResults;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Unable to find quiz assignment by group", e);
         }
@@ -139,31 +138,30 @@ public class PgQuizAssignmentPersistenceManager implements IQuizAssignmentPersis
         if (groupIds.isEmpty()) {
             return listOfResults; // IN condition below doesn't work with empty list.
         }
-        try (Connection conn = database.getDatabaseConnection()) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("SELECT * FROM quiz_assignments WHERE group_id IN (");
+        StringBuilder sb = new StringBuilder();
+        sb.append("SELECT * FROM quiz_assignments WHERE group_id IN (");
 
-            for (int i = 0; i < groupIds.size(); i++) {
-                sb.append("?").append(i < groupIds.size() - 1 ? ", " : "");
-            }
-            sb.append(") AND NOT deleted ORDER BY creation_date");
-
-            PreparedStatement pst;
-            pst = conn.prepareStatement(sb.toString());
+        for (int i = 0; i < groupIds.size(); i++) {
+            sb.append("?").append(i < groupIds.size() - 1 ? ", " : "");
+        }
+        sb.append(") AND NOT deleted ORDER BY creation_date");
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(sb.toString());
+        ) {
             int i = 1;
             for (Long id : groupIds) {
                 pst.setLong(i, id);
                 i++;
             }
 
-            ResultSet results = pst.executeQuery();
+            try (ResultSet results = pst.executeQuery()) {
 
-            while (results.next()) {
-                listOfResults.add(this.convertToQuizAssignmentDTO(this.convertFromSQLToQuizAssignmentDO(results)));
+                while (results.next()) {
+                    listOfResults.add(this.convertToQuizAssignmentDTO(this.convertFromSQLToQuizAssignmentDO(results)));
+                }
+
+                return listOfResults;
             }
-
-            return listOfResults;
-
         } catch (SQLException e) {
             throw new SegueDatabaseException("Unable to find assignment by group list", e);
         }
@@ -171,18 +169,20 @@ public class PgQuizAssignmentPersistenceManager implements IQuizAssignmentPersis
 
     @Override
     public QuizAssignmentDTO getAssignmentById(Long quizAssignmentId) throws SegueDatabaseException, AssignmentCancelledException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
+        String query = "SELECT * FROM quiz_assignments WHERE id = ?";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             // Deleted quiz assignments are filtered below with a specific error
-            pst = conn.prepareStatement("SELECT * FROM quiz_assignments WHERE id = ?");
             pst.setLong(1, quizAssignmentId);
 
-            ResultSet results = pst.executeQuery();
-            if (results.next()) {
-                if (results.getBoolean("deleted")) {
-                    throw new AssignmentCancelledException();
+            try (ResultSet results = pst.executeQuery()) {
+                if (results.next()) {
+                    if (results.getBoolean("deleted")) {
+                        throw new AssignmentCancelledException();
+                    }
+                    return this.convertToQuizAssignmentDTO(this.convertFromSQLToQuizAssignmentDO(results));
                 }
-                return this.convertToQuizAssignmentDTO(this.convertFromSQLToQuizAssignmentDO(results));
             }
             throw new SQLException("QuizAssignment result set empty.");
         } catch (SQLException e) {
@@ -192,10 +192,10 @@ public class PgQuizAssignmentPersistenceManager implements IQuizAssignmentPersis
 
     @Override
     public void cancelAssignment(Long quizAssignmentId) throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("UPDATE quiz_assignments SET deleted = true WHERE id = ?");
-
+        String query = "UPDATE quiz_assignments SET deleted = true WHERE id = ?";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             pst.setLong(1, quizAssignmentId);
 
             pst.execute();
@@ -206,10 +206,11 @@ public class PgQuizAssignmentPersistenceManager implements IQuizAssignmentPersis
 
     @Override
     public void updateAssignment(Long quizAssignmentId, QuizAssignmentDTO updates) throws SegueDatabaseException {
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            pst = conn.prepareStatement("UPDATE quiz_assignments SET quiz_feedback_mode = COALESCE(?, quiz_feedback_mode), due_date = COALESCE(?, due_date) WHERE id = ?");
-
+        String query = "UPDATE quiz_assignments SET quiz_feedback_mode = COALESCE(?, quiz_feedback_mode)," +
+                "due_date = COALESCE(?, due_date) WHERE id = ?";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
             if (updates.getQuizFeedbackMode() != null) {
                 pst.setString(1, updates.getQuizFeedbackMode().name());
             } else {

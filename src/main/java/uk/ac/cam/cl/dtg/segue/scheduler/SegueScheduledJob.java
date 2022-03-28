@@ -98,4 +98,25 @@ public abstract class SegueScheduledJob {
      */
     public abstract Job getExecutableTask();
 
+    /**
+     * Create a custom segue scheduled job that overrides the
+     * execution context and executable task
+     *
+     * @return SegueScheduledJob
+     */
+    public static SegueScheduledJob createCustomJob(String jobKey, String jobGroupName, String description, String cronString, Map<String, Object> executionContext, Job executableTask) {
+
+        return new SegueScheduledJob(jobKey, jobGroupName, description, cronString) {
+            @Override
+            public Map<String, Object> getExecutionContext() {
+                return executionContext;
+            }
+
+            @Override
+            public Job getExecutableTask() {
+                return executableTask;
+            }
+        };
+    }
+
 }

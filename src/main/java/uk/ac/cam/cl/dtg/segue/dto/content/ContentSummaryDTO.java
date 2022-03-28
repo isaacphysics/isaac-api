@@ -23,9 +23,9 @@ import java.util.List;
 
 /**
  * This DTO represents high level information about a piece of content
- * 
+ *
  * This should be a light weight object used for presenting search results etc.
- * 
+ *
  */
 public class ContentSummaryDTO {
     private String id;
@@ -38,6 +38,7 @@ public class ContentSummaryDTO {
     private Boolean correct;
     private List<String> questionPartIds;
     private String supersededBy;
+    private Boolean deprecated;
     private String difficulty;
     private List<AudienceContext> audience;
 
@@ -51,7 +52,7 @@ public class ContentSummaryDTO {
 
     /**
      * Gets the id.
-     * 
+     *
      * @return the id
      */
     public String getId() {
@@ -60,7 +61,7 @@ public class ContentSummaryDTO {
 
     /**
      * Sets the id.
-     * 
+     *
      * @param id
      *            the id to set
      */
@@ -70,7 +71,7 @@ public class ContentSummaryDTO {
 
     /**
      * Gets the title.
-     * 
+     *
      * @return the title
      */
     public String getTitle() {
@@ -79,7 +80,7 @@ public class ContentSummaryDTO {
 
     /**
      * Sets the title.
-     * 
+     *
      * @param title
      *            the title to set
      */
@@ -89,7 +90,7 @@ public class ContentSummaryDTO {
 
     /**
      * Gets the summary.
-     * 
+     *
      * @return the summary
      */
     public String getSummary() {
@@ -98,7 +99,7 @@ public class ContentSummaryDTO {
 
     /**
      * Sets the summary.
-     * 
+     *
      * @param summary
      *            the summary to set
      */
@@ -108,7 +109,7 @@ public class ContentSummaryDTO {
 
     /**
      * Gets the type.
-     * 
+     *
      * @return the type
      */
     public String getType() {
@@ -117,7 +118,7 @@ public class ContentSummaryDTO {
 
     /**
      * Sets the type.
-     * 
+     *
      * @param type
      *            the type to set
      */
@@ -127,7 +128,7 @@ public class ContentSummaryDTO {
 
     /**
      * Gets the tags.
-     * 
+     *
      * @return the tags
      */
     public List<String> getTags() {
@@ -136,7 +137,7 @@ public class ContentSummaryDTO {
 
     /**
      * Sets the tags.
-     * 
+     *
      * @param tags
      *            the tags to set
      */
@@ -146,7 +147,7 @@ public class ContentSummaryDTO {
 
     /**
      * Gets the level.
-     * 
+     *
      * @return the level
      */
     public String getLevel() {
@@ -155,7 +156,7 @@ public class ContentSummaryDTO {
 
     /**
      * Sets the level.
-     * 
+     *
      * @param level
      *            the level to set
      */
@@ -165,7 +166,7 @@ public class ContentSummaryDTO {
 
     /**
      * Gets the url.
-     * 
+     *
      * @return the url
      */
     public String getUrl() {
@@ -174,7 +175,7 @@ public class ContentSummaryDTO {
 
     /**
      * Sets the url.
-     * 
+     *
      * @param url
      *            the url to set
      */
@@ -234,6 +235,24 @@ public class ContentSummaryDTO {
      * @param supersededBy superseding question ID
      */
     public void setSupersededBy(String supersededBy) { this.supersededBy = supersededBy; }
+
+    /**
+     * Gets whether or not this question is deprecated
+     *
+     * @return is question deprecated, if null assume not deprecated
+     */
+    public Boolean getDeprecated() {
+        return deprecated;
+    }
+
+    /**
+     * Sets whether or not this question should be treated as deprecated
+     *
+     * @param deprecated is question deprecated or not
+     */
+    public void setDeprecated(Boolean deprecated) {
+        this.deprecated = deprecated;
+    }
 
     /**
      * Gets the difficulty.
