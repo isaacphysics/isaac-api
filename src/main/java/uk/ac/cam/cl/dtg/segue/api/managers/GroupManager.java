@@ -58,6 +58,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Comparator;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * GroupManager. Responsible for managing group related logic.
@@ -169,6 +170,21 @@ public class GroupManager {
         List<RegisteredUserDTO> users = userManager.findUsers(groupMemberIds);
         this.orderUsersByName(users);
         return users;
+    }
+
+    /**
+     * getUsersInGroupSortedByName. Case insensitive
+     *
+     * @param group to find
+     * @return list of users who are members of the group, sorted by name (family name first, then given name)
+     * @throws SegueDatabaseException
+     *             - If an error occurred while interacting with the database.
+     */
+    public List<RegisteredUserDTO> getUsersInGroupSortedByName(final UserGroupDTO group) throws SegueDatabaseException {
+        return getUsersInGroup(group).stream()
+                .sorted(Comparator.comparing(RegisteredUserDTO::getGivenName, String.CASE_INSENSITIVE_ORDER))
+                .sorted(Comparator.comparing(RegisteredUserDTO::getFamilyName, String.CASE_INSENSITIVE_ORDER))
+                .collect(Collectors.toList());
     }
 
     /**
