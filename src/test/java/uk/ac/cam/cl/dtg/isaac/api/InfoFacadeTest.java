@@ -9,11 +9,9 @@ import com.google.inject.util.Modules;
 import org.apache.commons.lang3.SystemUtils;
 import org.junit.Before;
 import org.junit.ClassRule;
-import org.junit.Rule;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.utility.DockerImageName;
+import org.testcontainers.containers.PostgreSQLContainer;
 import uk.ac.cam.cl.dtg.isaac.IsaacTest;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.services.GroupChangedService;
@@ -34,7 +32,6 @@ import static junit.framework.TestCase.assertNotNull;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.createMock;
-import static org.easymock.EasyMock.replay;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_LINUX_CONFIG_LOCATION;
 
 @PowerMockIgnore("javax.net.ssl.*")
@@ -45,18 +42,20 @@ public class InfoFacadeTest extends IsaacTest {
     public Request requestForCaching;
 
     @ClassRule
-    public static GenericContainer<?> postgres = new GenericContainer<>(DockerImageName.parse("postgres:12"))
-            .withExposedPorts(5432)
-            .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust") // Does not require password, OK for testing
+    public static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:12")
+            .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust")
+            .withUsername("rutherford")
+            .withInitScript("test-postgres-rutherford-create-script.sql")
             ;
-    @ClassRule
-    public static GenericContainer<?> elasticsearch = new GenericContainer<>(DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch-oss:7.8.0"))
-            .withExposedPorts(9200, 9300)
-            .withEnv("cluster.name", "isaac")
-            .withEnv("network.host", "0.0.0.0")
-            .withEnv("node.name", "localhost")
-            .withEnv("cluster.initial_master_nodes", "localhost")
-            ;
+
+//    @ClassRule
+//    public static GenericContainer<?> elasticsearch = new GenericContainer<>(DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch-oss:7.8.0"))
+//            .withExposedPorts(9200, 9300)
+//            .withEnv("cluster.name", "isaac")
+//            .withEnv("network.host", "0.0.0.0")
+//            .withEnv("node.name", "localhost")
+//            .withEnv("cluster.initial_master_nodes", "localhost")
+//            ;
 
     @Before
     public void setUp() throws RuntimeException, IOException {
