@@ -88,11 +88,10 @@ public class ContentIndexer {
 
             database.fetchLatestFromRemote();
 
-            // now we have acquired the lock check if someone else has indexed this.
-            boolean searchIndexed = es.hasIndex(version, CONTENT_INDEX_TYPE.CONTENT.toString());
-            if (searchIndexed) {
-                //log.info("Index already exists. Deleting.");
-                //es.expungeIndexFromSearchCache(version);
+            // Now we have acquired the lock check in case someone else has already indexed this version.
+            // The case where only some of the content types have been successfully indexed for this version, should
+            // never happen but is covered by an expunge at the start of #buildElasticSearchIndex(...).
+            if (allContentTypesAreIndexedForVersion(version)) {
                 log.info("Content already indexed: " + version);
                 return;
             }
@@ -114,7 +113,8 @@ public class ContentIndexer {
             buildElasticSearchIndex(version, contentCache, tagsList, allUnits, publishedUnits, indexProblemCache);
 
             // Verify the version requested is now available
-            if (!es.hasIndex(version, CONTENT_INDEX_TYPE.CONTENT.toString())) {
+            if (!allContentTypesAreIndexedForVersion(version)) {
+                expungeAnyContentTypeIndicesRelatedToVersion(version);
                 throw new Exception(String.format("Failed to index version %s. Don't know why.", version));
             }
 
@@ -605,11 +605,8 @@ public class ContentIndexer {
                                                       final Map<String, String> allUnits,
                                                       final Map<String, String> publishedUnits,
                                                       final Map<Content, List<String>> indexProblemCache) {
-        if (es.hasIndex(sha, CONTENT_INDEX_TYPE.CONTENT.toString())) {
-            log.info("Deleting existing indexes for version " + sha);
-            for (CONTENT_INDEX_TYPE contentIndexType : CONTENT_INDEX_TYPE.values()) {
-                es.expungeIndexFromSearchCache(sha, contentIndexType.toString());
-            }
+        if (anyContentTypesAreIndexedForVersion(sha)) {
+            expungeAnyContentTypeIndicesRelatedToVersion(sha);
         }
 
         log.info("Building search indexes for: " + sha);
@@ -920,6 +917,43 @@ public class ContentIndexer {
 
         return false;
     }
+
+    /**
+     * Remove any content type indices related to a version.
+     * If indices for only some of the content types at this version exist, they will be expunged. Trying to expunge an
+     * index which does not exist for any reason will log an error but otherwise fail safely.
+     * @param version the commit sha of the content that we are interested in.
+     */
+    private void expungeAnyContentTypeIndicesRelatedToVersion(final String version) {
+        log.info("Deleting existing indexes for version " + version);
+        for (CONTENT_INDEX_TYPE contentIndexType : CONTENT_INDEX_TYPE.values()) {
+            es.expungeIndexFromSearchCache(version, contentIndexType.toString());
+        }
+    }
+
+    /**
+     * A successful indexing of a version means the creation of an index for each of the content types defined in
+     * CONTENT_INDEX_TYPE. This method checks that they all exist for a particular version.
+     *
+     * @param version the content sha version to check.
+     * @return True if indices exist for all expected content types at the provided version, else return false.
+     */
+    private boolean allContentTypesAreIndexedForVersion(final String version) {
+        return Arrays.stream(CONTENT_INDEX_TYPE.values())
+                .allMatch(contentIndexType -> es.hasIndex(version, contentIndexType.toString()));
+    }
+
+    /**
+     * This method checks whether any indices have been created for this version.
+     *
+     * @param version the content sha version to check.
+     * @return True if indices exist for any of the expected content types at the provided version, else return false.
+     */
+    private boolean anyContentTypesAreIndexedForVersion(final String version) {
+        return Arrays.stream(CONTENT_INDEX_TYPE.values())
+                .anyMatch(contentIndexType -> es.hasIndex(version, contentIndexType.toString()));
+    }
+
 //
 //
 //

@@ -128,7 +128,8 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
             log.info("Sending delete request to ElasticSearch for search index: " + typedIndex);
             client.admin().indices().delete(new DeleteIndexRequest(typedIndex)).actionGet();
         } catch (ElasticsearchException e) {
-            log.error("ElasticSearch exception while trying to delete index " + typedIndex, e);
+            log.error("ElasticSearch exception while trying to delete index " + typedIndex +
+                    ", it might not have existed.", e);
             return false;
         }
 
