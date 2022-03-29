@@ -99,10 +99,13 @@ public class ContentIndexerTest {
 
         Map<Content, List<String>> someContentProblemsMap = Maps.newHashMap();
 
+        // assume in this case that there are no pre-existing indexes for this version
+        for (Constants.CONTENT_INDEX_TYPE contentIndexType : Constants.CONTENT_INDEX_TYPE.values()) {
+            expect(searchProvider.hasIndex(INITIAL_VERSION, contentIndexType.toString())).andReturn(false).once();
+        }
+
         // prepare pre-canned responses for the object mapper
 		ObjectMapper objectMapper = createMock(ObjectMapper.class);
-		expect(searchProvider.hasIndex(INITIAL_VERSION, Constants.CONTENT_INDEX_TYPE.CONTENT.toString())).andReturn(false)
-				.once();
 		expect(contentMapper.generateNewPreconfiguredContentMapper()).andReturn(objectMapper)
 				.once();
 		expect(objectMapper.writeValueAsString(content)).andReturn(
