@@ -226,8 +226,8 @@ public class QuizFacadeTest extends AbstractFacadeTest {
             requiresLogin(),
             as(studentsTeachersOrAdmin(),
                 prepare(quizAssignmentManager, m -> expect(m.getGroupForAssignment(studentAssignment)).andReturn(studentGroup)),
-                prepare(quizQuestionManager, m -> expect(m.getAssignmentTeacherFeedback(studentQuiz, studentAssignment, ImmutableList.of(secondStudent, student)))
-                    .andReturn(ImmutableMap.of(secondStudent, otherStudentFeedback, student, studentFeedback))),
+                prepare(quizQuestionManager, m -> expect(m.getAssignmentTeacherFeedback(studentQuiz, studentAssignment, ImmutableList.of(student, secondStudent)))
+                    .andReturn(ImmutableMap.of(student, studentFeedback, secondStudent, otherStudentFeedback))),
                 prepare(associationManager, m -> {
                     expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(secondStudent))).andAnswer(grantAccess(true));
                     expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(student))).andAnswer(grantAccess(true));
@@ -241,8 +241,8 @@ public class QuizFacadeTest extends AbstractFacadeTest {
             forbiddenForEveryoneElse(),
             as(studentsTeachersOrAdmin(),
                 prepare(quizAssignmentManager, m -> expect(m.getGroupForAssignment(studentAssignment)).andReturn(studentGroup)),
-                prepare(quizQuestionManager, m -> expect(m.getAssignmentTeacherFeedback(studentQuiz, studentAssignment, ImmutableList.of(secondStudent, student)))
-                    .andReturn(ImmutableMap.of(secondStudent, otherStudentFeedback, student, studentFeedback))),
+                prepare(quizQuestionManager, m -> expect(m.getAssignmentTeacherFeedback(studentQuiz, studentAssignment, ImmutableList.of(student, secondStudent)))
+                    .andReturn(ImmutableMap.of(student, studentFeedback, secondStudent, otherStudentFeedback))),
                 prepare(associationManager, m -> {
                     expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(secondStudent))).andAnswer(grantAccess(false));
                     expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(student))).andAnswer(grantAccess(true));

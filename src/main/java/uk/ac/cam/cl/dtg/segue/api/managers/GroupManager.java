@@ -150,11 +150,11 @@ public class GroupManager {
     }
 
     /**
-     * getUsersInGroup.
+     * getUsersInGroup. This sorts the users by given name, then family name (case-insensitive)
      * 
      * @param group
      *            to find
-     * @return list of users who are members of the group
+     * @return list of users who are members of the group, sorted by given name, then family name (case-insensitive)
      * @throws SegueDatabaseException
      *             - If an error occurred while interacting with the database.
      */
@@ -167,6 +167,7 @@ public class GroupManager {
         }
 
         List<RegisteredUserDTO> users = userManager.findUsers(groupMemberIds);
+        // Sort the users by name
         this.orderUsersByName(users);
         return users;
     }
@@ -197,14 +198,14 @@ public class GroupManager {
     }
 
     /**
-     * Helper method to consistently sort users by family name then given name in a case-insensitive order.
+     * Helper method to consistently sort users by given name then family name in a case-insensitive order.
      * @param users
      *            - list of users.
      */
     private void orderUsersByName(final List<RegisteredUserDTO> users) {
         users.sort((userA, userB) -> ComparisonChain.start().
-                compare(userA.getFamilyName(), userB.getFamilyName(), Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)).
                 compare(userA.getGivenName(), userB.getGivenName(), Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)).
+                compare(userA.getFamilyName(), userB.getFamilyName(), Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)).
                 result());
     }
 
