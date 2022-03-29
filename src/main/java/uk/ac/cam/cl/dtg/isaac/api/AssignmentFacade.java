@@ -180,12 +180,16 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     .stream().collect(Collectors.toMap(GameboardDTO::getId, Function.identity()));
 
             // we want to populate gameboard details for the assignment DTO.
+            List<Long> groupIds = assignments.stream().map(AssignmentDTO::getGroupId).distinct().collect(Collectors.toList());
+            Map<Long, String> groupNameMap = new HashMap<>();
+            for (Long groupId: groupIds) {
+                UserGroupDTO group = groupManager.getGroupById(groupId);
+                groupNameMap.put(groupId, getFilteredGroupNameFromGroup(group));
+            }
+
             for (AssignmentDTO assignment : assignments) {
                 assignment.setGameboard(gameboardsMap.get(assignment.getGameboardId()));
-
-                // Augment with group name if allowed
-                UserGroupDTO group = groupManager.getGroupById(assignment.getGroupId());
-                assignment.setGroupName(getFilteredGroupNameFromGroup(group));
+                assignment.setGroupName(groupNameMap.get(assignment.getGroupId()));
             }
 
             this.assignmentService.augmentAssignerSummaries(assignments);
