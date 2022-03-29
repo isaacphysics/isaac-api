@@ -176,7 +176,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             // Gather all gameboards we need to augment for the assignments in a single query
             List<String> gameboardIds = assignments.stream().map(AssignmentDTO::getGameboardId).collect(Collectors.toList());
-            Map<String, GameboardDTO> gameboardsMap = this.gameManager.getGameboards(gameboardIds, currentlyLoggedInUser, questionAttemptsByUser)
+            Map<String, GameboardDTO> gameboardsMap = this.gameManager.getGameboards(gameboardIds, questionAttemptsByUser)
                     .stream().collect(Collectors.toMap(GameboardDTO::getId, Function.identity()));
 
             // we want to populate gameboard details for the assignment DTO.
@@ -272,11 +272,12 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 // In order to get all the information about gameboard items, we need to use the method which augments
                 // gameboards with user attempt information. But we don't _want_ this information for real, so we won't
                 // do the costly loading of the real attempt information from the database:
+                // FIXME: would GameManager::getGameboards with only one argument work correctly / be better?
                 Map<String, Map<String, List<QuestionValidationResponse>>> fakeQuestionAttemptMap = new HashMap<>();
 
                 // we want to populate gameboard details for the assignment DTO.
                 List<String> gameboardIDs = allAssignmentsSetToGroup.stream().map(AssignmentDTO::getGameboardId).collect(Collectors.toList());
-                Map<String, GameboardDTO> gameboards = this.gameManager.getGameboards(gameboardIDs, currentlyLoggedInUser, fakeQuestionAttemptMap)
+                Map<String, GameboardDTO> gameboards = this.gameManager.getGameboards(gameboardIDs, fakeQuestionAttemptMap)
                         .stream().collect(Collectors.toMap(GameboardDTO::getId, Function.identity()));
                 for (AssignmentDTO assignment : allAssignmentsSetToGroup) {
                     assignment.setGameboard(gameboards.get(assignment.getGameboardId()));
