@@ -722,20 +722,10 @@ public class GameboardPersistenceManager {
         for (List<GameboardContentDescriptor> contentDescriptorBatch : contentDescriptorBatches) {
             List<String> questionsIds =
                     contentDescriptorBatch.stream().map(GameboardContentDescriptor::getId).collect(Collectors.toList());
-            // build query the db to get full question information
-            List<IContentManager.BooleanSearchClause> fieldsToMap = Lists.newArrayList();
-            fieldsToMap.add(new IContentManager.BooleanSearchClause(
-                    Constants.ID_FIELDNAME + '.' + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
-                    Constants.BooleanOperator.OR, questionsIds));
-
-            fieldsToMap.add(new IContentManager.BooleanSearchClause(
-                    TYPE_FIELDNAME, Constants.BooleanOperator.OR, Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE)));
-
             // Search for questions that match the ids.
             ResultsWrapper<ContentDTO> results;
             try {
-                results = this.contentManager.findByFieldNames(
-                        this.contentIndex, fieldsToMap, 0, contentDescriptorBatch.size());
+                results = this.contentManager.getContentMatchingIds(this.contentIndex, questionsIds, 0, contentDescriptorBatch.size());
             } catch (ContentManagerException e) {
                 results = new ResultsWrapper<ContentDTO>();
                 log.error("Unable to locate questions for gameboard. Using empty results", e);
