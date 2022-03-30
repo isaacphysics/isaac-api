@@ -133,20 +133,6 @@ public class ContentIndexer {
 
     }
 
-
-            // Verify the version requested is now available
-            if (!es.hasIndex(version, CONTENT_INDEX_TYPE.CONTENT.toString())) {
-                throw new Exception(String.format("Failed to index version %s. Don't know why.", version));
-            }
-
-            log.info("Finished indexing version " + version);
-
-        } finally {
-            versionLocks.remove(version);
-        }
-
-    }
-
     void setNamedVersion(String alias, String version) {
         List<String> allContentTypes = Arrays.stream(CONTENT_INDEX_TYPE.values())
                 .map((contentIndexType) -> contentIndexType.toString()).collect(Collectors.toList());
@@ -706,7 +692,7 @@ public class ContentIndexer {
             startTime = System.nanoTime();
             es.bulkIndex(sha, CONTENT_INDEX_TYPE.CONTENT.toString(), contentToIndex);
             endTime = System.nanoTime();
-            log.info("Bulk indexing content indexing took: " + ((endTime - startTime) / 1000000) + "ms");
+            log.info("Bulk indexing content took: " + ((endTime - startTime) / 1000000) + "ms");
             log.info("Search index request sent for: " + sha);
         } catch (SegueSearchException e) {
             log.error("Error whilst trying to perform bulk index operation.", e);
