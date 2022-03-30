@@ -725,7 +725,8 @@ public class GameboardPersistenceManager {
             // Search for questions that match the ids.
             ResultsWrapper<ContentDTO> results;
             try {
-                results = this.contentManager.getContentMatchingIds(this.contentIndex, questionsIds, 0, contentDescriptorBatch.size());
+                results = this.contentManager.getContentMatchingIds(this.contentManager.getCurrentContentSHA(),
+                        questionsIds, 0, contentDescriptorBatch.size());
             } catch (ContentManagerException e) {
                 results = new ResultsWrapper<ContentDTO>();
                 log.error("Unable to locate questions for gameboard. Using empty results", e);
