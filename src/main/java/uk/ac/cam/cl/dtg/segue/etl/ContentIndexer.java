@@ -37,14 +37,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -814,5 +807,178 @@ public class ContentIndexer {
 //    }*/
 
     // GitContentManager ensureCache
+
+    /**
+     * This method will record content type specific errors for a single item of content
+     *
+     * @param sha       version to validate integrity of.
+     * @param content   a single item of content
+     */
+    private void recordContentTypeSpecificError(final String sha, final Content content, final Map<Content, List<String>> indexProblemCache) {
+        // ensure content does not have children and a value
+        if (content.getValue() != null && !content.getChildren().isEmpty()) {
+            String id = content.getId();
+            String firstLine = "Content";
+            if (id != null) {
+                firstLine += ": " + id;
+            }
+
+            this.registerContentProblem(content, firstLine + " in " + content.getCanonicalSourceFile()
+                    + " found with both children and a value. "
+                    + "Content objects are only allowed to have one or the other.", indexProblemCache);
+
+            log.error("Invalid content item detected: The object with ID (" + content.getCanonicalSourceFile()
+                    + ") has both children and a value.");
+        }
+
+        if (content instanceof Media) {
+            Media f = (Media) content;
+
+            if (f.getSrc() != null && !f.getSrc().startsWith("http")) {
+                ByteArrayOutputStream fileData = null;
+                try {
+                    // This will return null if the file is not found:
+                    fileData = database.getFileByCommitSHA(sha, f.getSrc());
+                } catch (IOException | UnsupportedOperationException e) {
+                    // Leave fileData = null;
+                }
+                if (null == fileData) {
+                    this.registerContentProblem(content, "Unable to find Image: " + f.getSrc()
+                            + " in Git. Could the reference be incorrect? SourceFile is " + content.getCanonicalSourceFile(), indexProblemCache);
+                } else if (fileData.size() > MEDIA_FILE_SIZE_LIMIT) {
+                    int sizeInKiloBytes = fileData.size() / 1024;
+                    this.registerContentProblem(content, String.format("Image (%s) is %s kB and exceeds file size warning limit!",
+                            f.getSrc(), sizeInKiloBytes), indexProblemCache);
+                }
+            }
+
+            // check that there is some alt text.
+            if (f.getAltText() == null || f.getAltText().isEmpty()) {
+                if (!(f instanceof Video)) {
+                    // Videos probably don't need alt text unless there is a good reason.
+                    this.registerContentProblem(content, "No altText attribute set for media element: " + f.getSrc()
+                            + " in Git source file " + content.getCanonicalSourceFile(), indexProblemCache);
+                }
+            }
+        }
+        if (content instanceof Question && content.getId() == null) {
+            this.registerContentProblem(content, "Question: " + content.getTitle() + " in " + content.getCanonicalSourceFile()
+                    + " found without a unqiue id. " + "This question cannot be logged correctly.", indexProblemCache);
+        }
+
+        if (content instanceof ChoiceQuestion
+                && !(content.getType().equals("isaacQuestion"))) {
+            ChoiceQuestion question = (ChoiceQuestion) content;
+
+            if (question.getChoices() == null || question.getChoices().isEmpty()) {
+                this.registerContentProblem(question,
+                        "Question: " + question.getId() + " found without any choice metadata. "
+                                + "This question will always be automatically " + "marked as incorrect", indexProblemCache);
+            } else {
+                boolean correctOptionFound = false;
+                for (Choice choice : question.getChoices()) {
+                    if (choice.isCorrect()) {
+                        correctOptionFound = true;
+                    }
+                }
+                if (!correctOptionFound) {
+                    this.registerContentProblem(question,
+                            "Question: " + question.getId() + " found without a correct answer. "
+                                    + "This question will always be automatically marked as incorrect", indexProblemCache);
+                }
+            }
+        }
+
+        if (content instanceof EmailTemplate) {
+            EmailTemplate e = (EmailTemplate) content;
+            if (e.getPlainTextContent() == null) {
+                this.registerContentProblem(content,
+                        "Email template should always have plain text content field", indexProblemCache);
+            }
+        }
+
+        if (content instanceof IsaacEventPage) {
+            IsaacEventPage e = (IsaacEventPage) content;
+            if (e.getEndDate() != null && e.getEndDate().before(e.getDate())) {
+                this.registerContentProblem(content, "Event has end date before start date", indexProblemCache);
+            }
+        }
+
+        // Find quantities with values that cannot be parsed as numbers.
+        if (content instanceof IsaacNumericQuestion) {
+            IsaacNumericQuestion q = (IsaacNumericQuestion) content;
+            for (Choice choice : q.getChoices()) {
+                if (choice instanceof Quantity) {
+                    Quantity quantity = (Quantity) choice;
+
+                    // Check valid number:
+                    try {
+                        Double.parseDouble(quantity.getValue());
+                    } catch (NumberFormatException e) {
+                        this.registerContentProblem(content,
+                                "Numeric Question: " + q.getId() + " has Quantity (" + quantity.getValue()
+                                        + ")  with value that cannot be interpreted as a number. "
+                                        + "Users will never be able to match this answer.", indexProblemCache);
+                    }
+
+                    if (!q.getRequireUnits() && (null != quantity.getUnits() && !quantity.getUnits().isEmpty())) {
+                        this.registerContentProblem(content, "Numeric Question: " + q.getId()
+                                + " has a Quantity with units but does not require units!", indexProblemCache);
+                    }
+
+
+                } else {
+                    this.registerContentProblem(content, "Numeric Question: " + q.getId() + " has non-Quantity Choice ("
+                            + choice.getValue() + "). It must be deleted and a new Quantity Choice created.", indexProblemCache);
+                }
+            }
+            if (q.getRequireUnits() && (null != q.getDisplayUnit() && !q.getDisplayUnit().isEmpty())) {
+                this.registerContentProblem(content, "Numeric Question: " + q.getId() + " has a displayUnit set but also requiresUnits!"
+                        + " Units will be ignored for this question!", indexProblemCache);
+            }
+        }
+
+        // Find Symbolic Questions with broken properties. Need to exclude Chemistry questions!
+        if (content instanceof IsaacSymbolicQuestion) {
+            if (content.getClass().equals(IsaacSymbolicQuestion.class)) {
+                IsaacSymbolicQuestion q = (IsaacSymbolicQuestion) content;
+                for (String sym : q.getAvailableSymbols()) {
+                    if (sym.contains("\\")) {
+                        this.registerContentProblem(content, "Symbolic Question: " + q.getId() + " has availableSymbol ("
+                                + sym + ") which contains a '\\' character.", indexProblemCache);
+                    }
+                }
+                for (Choice choice : q.getChoices()) {
+                    if (choice instanceof Formula) {
+                        Formula f = (Formula) choice;
+                        if (f.getPythonExpression().contains("\\")) {
+                            this.registerContentProblem(content, "Symbolic Question: " + q.getId() + " has Formula ("
+                                    + choice.getValue() + ") with pythonExpression which contains a '\\' character.", indexProblemCache);
+                        } else if (f.getPythonExpression() == null || f.getPythonExpression().isEmpty()) {
+                            this.registerContentProblem( content, "Symbolic Question: " + q.getId() + " has Formula ("
+                                    + choice.getValue() + ") with empty pythonExpression!", indexProblemCache);
+                        }
+                    } else {
+                        this.registerContentProblem(content, "Symbolic Question: " + q.getId() + " has non-Formula Choice ("
+                                + choice.getValue() + "). It must be deleted and a new Formula Choice created.", indexProblemCache);
+                    }
+                }
+            } else if (content.getClass().equals(IsaacSymbolicChemistryQuestion.class)) {
+                IsaacSymbolicChemistryQuestion q = (IsaacSymbolicChemistryQuestion) content;
+                for (Choice choice : q.getChoices()) {
+                    if (choice instanceof ChemicalFormula) {
+                        ChemicalFormula f = (ChemicalFormula) choice;
+                        if (f.getMhchemExpression() == null || f.getMhchemExpression().isEmpty()) {
+                            this.registerContentProblem(content, "Chemistry Question: " + q.getId() + " has ChemicalFormula"
+                                    + " with empty mhchemExpression!", indexProblemCache);
+                        }
+                    } else {
+                        this.registerContentProblem(content, "Chemistry Question: " + q.getId() + " has non-ChemicalFormula Choice ("
+                                + choice.getValue() + "). It must be deleted and a new ChemicalFormula Choice created.", indexProblemCache);
+                    }
+                }
+            }
+        }
+    }
 
 }
