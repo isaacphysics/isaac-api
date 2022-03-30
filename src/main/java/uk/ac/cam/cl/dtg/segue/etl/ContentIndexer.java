@@ -102,33 +102,30 @@ public class ContentIndexer {
 
             long totalStartTime, startTime, endTime;
 
-            log.debug("Beginning to populate the Git content cache");
-
             totalStartTime = System.nanoTime();
             buildGitContentIndex(version, true, contentCache, tagsList, allUnits, publishedUnits, indexProblemCache);
             endTime = System.nanoTime();
 
-            log.debug("Finished populating Git content cache, took: " + ((endTime - totalStartTime) / 1000000) + " milliseconds");
-            log.debug("Beginning to record content errors");
+            log.info("Finished populating Git content cache, took: " + ((endTime - totalStartTime) / 1000000) + "ms");
+            log.info("Beginning to record content errors");
 
             startTime = System.nanoTime();
             recordContentErrors(version, contentCache, indexProblemCache);
             endTime = System.nanoTime();
 
-            log.debug("Finished recording content errors, took: " + ((endTime - startTime) / 1000000) + " milliseconds");
-            log.debug("Beginning to build elasticsearch index from Git content cache");
+            log.info("Finished recording content errors, took: " + ((endTime - startTime) / 1000000) + "ms");
 
             startTime = System.nanoTime();
             buildElasticSearchIndex(version, contentCache, tagsList, allUnits, publishedUnits, indexProblemCache);
             endTime = System.nanoTime();
-            log.debug("Finished indexing git content cache, took: " + ((endTime - startTime) / 1000000) + " milliseconds");
+            log.info("Finished indexing git content cache, took: " + ((endTime - startTime) / 1000000) + "ms");
 
             // Verify the version requested is now available
             if (!es.hasIndex(version, CONTENT_INDEX_TYPE.CONTENT.toString())) {
                 throw new Exception(String.format("Failed to index version %s. Don't know why.", version));
             }
 
-            log.info("Finished indexing version " + version + ", took: " + ((endTime - totalStartTime) / 1000000) + " milliseconds");
+            log.info("Finished indexing version " + version + ", took: " + ((endTime - totalStartTime) / 1000000) + "ms");
 
         } finally {
             versionLocks.remove(version);
@@ -679,7 +676,7 @@ public class ContentIndexer {
                 }
             }).filter(Objects::nonNull).collect(Collectors.toList()));
             endTime = System.nanoTime();
-            log.debug("Bulk unit indexing took: " + ((endTime - startTime) / 1000000) + " milliseconds");
+            log.info("Bulk unit indexing took: " + ((endTime - startTime) / 1000000) + "ms");
 
             startTime = System.nanoTime();
             es.bulkIndex(sha, CONTENT_INDEX_TYPE.CONTENT_ERROR.toString(), indexProblemCache.entrySet().stream().map(e -> {
@@ -696,9 +693,8 @@ public class ContentIndexer {
                     return null;
                 }
             }).filter(Objects::nonNull).collect(Collectors.toList()));
-
             endTime = System.nanoTime();
-            log.debug("Bulk content error indexing took: " + ((endTime - startTime) / 1000000) + " milliseconds");
+            log.info("Bulk content error indexing took: " + ((endTime - startTime) / 1000000) + "ms");
         } catch (JsonProcessingException e) {
             log.error("Unable to serialise sha or tags");
         } catch (SegueSearchException e) {
@@ -710,7 +706,7 @@ public class ContentIndexer {
             startTime = System.nanoTime();
             es.bulkIndex(sha, CONTENT_INDEX_TYPE.CONTENT.toString(), contentToIndex);
             endTime = System.nanoTime();
-            log.debug("Bulk indexing content indexing took: " + ((endTime - startTime) / 1000000) + " milliseconds");
+            log.info("Bulk indexing content indexing took: " + ((endTime - startTime) / 1000000) + "ms");
             log.info("Search index request sent for: " + sha);
         } catch (SegueSearchException e) {
             log.error("Error whilst trying to perform bulk index operation.", e);
