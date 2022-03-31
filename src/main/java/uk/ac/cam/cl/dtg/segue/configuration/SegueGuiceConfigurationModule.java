@@ -944,7 +944,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                 "eventScheduledEmail",
                 "JavaJob",
                 "Send scheduled emails to events",
-                "0 * * ? * * *",//""0 * * ? * * *",
+                "0 0 7 * * ?",//""0 * * ? * * *",
                 Maps.newHashMap(),
                 new EventScheduledEmailJob()
             );
