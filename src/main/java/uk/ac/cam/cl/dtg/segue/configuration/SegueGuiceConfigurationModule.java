@@ -922,23 +922,23 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                     "SQL scheduled job that deletes expired reservations for the event booking system",
                     "0 0 7 * * ?", "db_scripts/scheduled/expired-reservations-clean-up.sql");
 
-//            SegueScheduledJob deleteEventAdditionalBookingInformation = SegueScheduledJob.createCustomJob(
-//                  "deleteEventAdditionalBookingInformation",
-//                  "JavaJob",
-//                  "Delete event additional booking information a given period after an event has taken place",
-//                  "0 0 7 * * ?",
-//                  Maps.newHashMap(),
-//                  new DeleteEventAdditionalBookingInformationJob()
-//            );
-//
-//            SegueScheduledJob deleteEventAdditionalBookingInformationOneYearJob = SegueScheduledJob.createCustomJob(
-//                    "deleteEventAdditionalBookingInformationOneYear",
-//                    "JavaJob",
-//                    "Delete event additional booking information a year after an event has taken place if not already removed",
-//                    "0 0 7 * * ?",
-//                    Maps.newHashMap(),
-//                    new DeleteEventAdditionalBookingInformationOneYearJob()
-//            );
+            SegueScheduledJob deleteEventAdditionalBookingInformation = SegueScheduledJob.createCustomJob(
+                  "deleteEventAdditionalBookingInformation",
+                  "JavaJob",
+                  "Delete event additional booking information a given period after an event has taken place",
+                  "0 0 7 * * ?",
+                  Maps.newHashMap(),
+                  new DeleteEventAdditionalBookingInformationJob()
+            );
+
+            SegueScheduledJob deleteEventAdditionalBookingInformationOneYearJob = SegueScheduledJob.createCustomJob(
+                    "deleteEventAdditionalBookingInformationOneYear",
+                    "JavaJob",
+                    "Delete event additional booking information a year after an event has taken place if not already removed",
+                    "0 0 7 * * ?",
+                    Maps.newHashMap(),
+                    new DeleteEventAdditionalBookingInformationOneYearJob()
+            );
 
             SegueScheduledJob eventScheduledEmail = SegueScheduledJob.createCustomJob(
                 "eventScheduledEmail",
