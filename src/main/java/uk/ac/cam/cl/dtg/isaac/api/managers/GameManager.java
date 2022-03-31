@@ -1033,9 +1033,11 @@ public class GameManager {
         int questionPartsNotAttempted = 0;
         String questionPageId = gameItem.getId();
 
+        IsaacQuestionPageDTO questionPage = (IsaacQuestionPageDTO) this.contentManager.getContentById(
+                this.contentManager.getCurrentContentSHA(), questionPageId);
         // get all question parts in the question page: depends on each question
         // having an id that starts with the question page id.
-        Collection<QuestionDTO> listOfQuestionParts = getAllMarkableQuestionPartsDFSOrder(questionPageId);
+        Collection<QuestionDTO> listOfQuestionParts = getAllMarkableQuestionPartsDFSOrder(questionPage);
         Map<String, ? extends List<? extends LightweightQuestionValidationResponse>> questionAttempts =
                 questionAttemptsFromUser.get(questionPageId);
         if (questionAttempts != null) {
@@ -1072,8 +1074,6 @@ public class GameManager {
         }
 
         // Get the pass mark for the question page
-        IsaacQuestionPage questionPage = (IsaacQuestionPage) this.contentManager.getContentDOById(
-                this.contentManager.getCurrentContentSHA(), questionPageId);
         if (questionPage == null) {
             throw new ResourceNotFoundException(String.format("Unable to locate the question: %s for augmenting",
                     questionPageId));
