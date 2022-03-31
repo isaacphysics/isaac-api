@@ -26,15 +26,18 @@ public class CodeSnippetDTO extends ContentDTO {
     protected String language;
     protected String code;
     protected boolean disableHighlighting;
+    protected Boolean expandable;
     protected String url;
 
     @JsonCreator
     public CodeSnippetDTO(@JsonProperty("language") String language, @JsonProperty("code") String code,
-                          @JsonProperty("disableHighlighting") Boolean disableHighlighting, @JsonProperty("url") String url) {
+                          @JsonProperty("disableHighlighting") Boolean disableHighlighting,
+                          @JsonProperty("url") String url, @JsonProperty("expandable") Boolean expandable) {
         this.language = language;
         this.code = code;
         this.disableHighlighting = disableHighlighting;
         this.url = url;
+        this.expandable = expandable;
     }
 
     public String getLanguage() {
@@ -59,5 +62,16 @@ public class CodeSnippetDTO extends ContentDTO {
     public String getUrl() { return this.url; }
 
     public void setUrl(String url) { this.url = url; }
+
+    public Boolean getExpandable() {
+        if (this.expandable == null) {
+            return false;
+        }
+        return this.expandable;
+    }
+
+    public void setExpandable(final boolean expandable) {
+        this.expandable = expandable;
+    }
 }
 
