@@ -204,8 +204,8 @@ public class GroupManager {
      */
     private List<RegisteredUserDTO> orderUsersByName(final List<RegisteredUserDTO> users) {
         return users.stream()
-                .sorted(Comparator.comparing(RegisteredUserDTO::getGivenName, String.CASE_INSENSITIVE_ORDER))
-                .sorted(Comparator.comparing(RegisteredUserDTO::getFamilyName, String.CASE_INSENSITIVE_ORDER))
+                .sorted(Comparator.comparing(RegisteredUserDTO::getGivenName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
+                .sorted(Comparator.comparing(RegisteredUserDTO::getFamilyName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
                 .collect(Collectors.toList());
     }
 
