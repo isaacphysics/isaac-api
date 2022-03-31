@@ -3,18 +3,18 @@ package uk.ac.cam.cl.dtg.isaac.api.managers;
 import org.junit.Before;
 import org.junit.Test;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
-import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
-import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.powermock.reflect.Whitebox;
 
 import static org.easymock.EasyMock.createMock;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 public class GroupManagerTest extends AbstractManagerTest {
 
@@ -27,14 +27,14 @@ public class GroupManagerTest extends AbstractManagerTest {
 
     @Test
     public void orderUsersByName_ordersBySurnamePrimarily() throws Exception {
-        List<RegisteredUserDTO> users = Arrays.asList(
-                new RegisteredUserDTO("C", "Ab", "aab@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, ""),
+        List<RegisteredUserDTO> users = Stream.of(
+                new RegisteredUserDTO("A", "Ab", "aab@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, ""),
                 new RegisteredUserDTO("B", "Ar", "bar@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.FEMALE, somePastDate, ""),
-                new RegisteredUserDTO("A", "Az", "caz@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, ""),
-                new RegisteredUserDTO("F", "Ba", "dba@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.FEMALE, somePastDate, ""),
-                new RegisteredUserDTO("E", "Bb", "ebb@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, ""),
-                new RegisteredUserDTO("D", "Bf", "fbf@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.FEMALE, somePastDate, "")
-        );
+                new RegisteredUserDTO("C", "Az", "caz@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, ""),
+                new RegisteredUserDTO("A", "Ba", "dba@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.FEMALE, somePastDate, ""),
+                new RegisteredUserDTO("B", "Bb", "ebb@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, ""),
+                new RegisteredUserDTO("C", "Bf", "fbf@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.FEMALE, somePastDate, "")
+        ).peek(user -> user.setId((long) (user.getGivenName() + user.getFamilyName()).hashCode())).collect(Collectors.toList());
         List<RegisteredUserDTO> sortedUsers = Whitebox.invokeMethod(groupManager, "orderUsersByName", users);
         assertEquals(users, sortedUsers);
     }
