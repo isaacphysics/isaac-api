@@ -51,6 +51,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.PrototypeReplacement;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -168,6 +169,11 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @ApiOperation(value = "List all boards assigned to the current user.")
     public Response getAssignments(@Context final HttpServletRequest request,
                                    @QueryParam("assignmentStatus") final GameboardState assignmentStatus) {
+        return PrototypeReplacement.prototypeEndpoint("getAssignments_base", "getAssignments_replacement", this, request, assignmentStatus);
+    }
+
+    public Response getAssignments_base(@Context final HttpServletRequest request,
+        @QueryParam("assignmentStatus") final GameboardState assignmentStatus) {
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
             Collection<AssignmentDTO> assignments = this.assignmentManager.getAssignments(currentlyLoggedInUser);
@@ -225,6 +231,19 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Unable to retrieve the content requested. Please try again later.", e).toResponse();
         }
+    }
+
+    public Response getAssignments_replacement(@Context final HttpServletRequest request,
+                                      @QueryParam("assignmentStatus") final GameboardState assignmentStatus) {
+        long i = 0, j = 0;
+        for (long x = 0L; x < 10000000000L; x++) {
+            if (x % 2 == 0) {
+                i++;
+            } else {
+                j++;
+            }
+        }
+        return null;
     }
 
     /**
