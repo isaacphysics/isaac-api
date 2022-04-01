@@ -12,6 +12,9 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.elasticsearch.ElasticsearchContainer;
+import org.testcontainers.utility.DockerImageName;
+import org.testcontainers.utility.MountableFile;
 import uk.ac.cam.cl.dtg.isaac.IsaacTest;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.services.GroupChangedService;
@@ -48,14 +51,15 @@ public class InfoFacadeTest extends IsaacTest {
             .withInitScript("test-postgres-rutherford-create-script.sql")
             ;
 
-//    @ClassRule
-//    public static GenericContainer<?> elasticsearch = new GenericContainer<>(DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch-oss:7.8.0"))
-//            .withExposedPorts(9200, 9300)
-//            .withEnv("cluster.name", "isaac")
-//            .withEnv("network.host", "0.0.0.0")
-//            .withEnv("node.name", "localhost")
-//            .withEnv("cluster.initial_master_nodes", "localhost")
-//            ;
+    @ClassRule
+    public static ElasticsearchContainer elasticsearch = new ElasticsearchContainer(DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch-oss:7.8.0"))
+            .withCopyFileToContainer(MountableFile.forClasspathResource("isaac-test-es-data.tar.gz"), "/usr/share/elasticsearch/isaac-test-es-data.tar.gz")
+            .withCopyFileToContainer(MountableFile.forClasspathResource("isaac-test-es-docker-entrypoint.sh"), "/usr/local/bin/docker-entrypoint.sh")
+            .withExposedPorts(9200, 9300)
+            .withEnv("cluster.name", "isaac")
+            .withEnv("network.host", "0.0.0.0")
+            .withEnv("node.name", "localhost")
+            ;
 
     @Before
     public void setUp() throws RuntimeException, IOException {
