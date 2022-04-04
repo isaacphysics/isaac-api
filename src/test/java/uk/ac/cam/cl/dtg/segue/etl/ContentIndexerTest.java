@@ -143,7 +143,7 @@ public class ContentIndexerTest {
         expectLastCall().once();
 
         // Ensure at least one bulk index for general content is requested
-        searchProvider.bulkIndex(eq(INITIAL_VERSION), eq(Constants.CONTENT_INDEX_TYPE.CONTENT.toString()), anyObject());
+        searchProvider.bulkIndexWithIDs(eq(INITIAL_VERSION), eq(Constants.CONTENT_INDEX_TYPE.CONTENT.toString()), anyObject());
 		expectLastCall().once();
 
 		replay(searchProvider, contentMapper, objectMapper);
