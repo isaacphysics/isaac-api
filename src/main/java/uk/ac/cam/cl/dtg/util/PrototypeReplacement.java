@@ -63,6 +63,9 @@ public final class PrototypeReplacement {
                 prototypeResponse = (Response) prototypeMethod.invoke(facadeInstance, args);
                 prototypeEndTime = System.nanoTime();
                 log.info(String.format("Prototype endpoint method \"%s\" took %d ms to run for test #%d.", prototypeMethodName, (prototypeEndTime - prototypeStartTime) / 1000000, testTime));
+            } catch (InvocationTargetException e) {
+                log.error(String.format("Prototype endpoint method \"%s\" threw an InvocationTargetException when being called, cause was: %s", prototypeMethodName, e.getCause().toString()));
+                return;
             } catch (Exception e) {
                 log.error(String.format("Prototype endpoint method \"%s\" threw an error when being called: %s", prototypeMethodName, e));
                 return;

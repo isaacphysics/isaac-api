@@ -235,6 +235,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
     public Response getAssignments_replacement(@Context final HttpServletRequest request,
                                       @QueryParam("assignmentStatus") final GameboardState assignmentStatus) {
+        log.info("request is: " + request.toString());
+        log.info("assignmentStatus is: " + assignmentStatus.toString());
         long i = 0, j = 0;
         for (long x = 0L; x < 10000000000L; x++) {
             if (x % 2 == 0) {
