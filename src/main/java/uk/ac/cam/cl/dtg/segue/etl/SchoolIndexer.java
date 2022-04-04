@@ -79,7 +79,7 @@ class SchoolIndexer {
         }
 
         try {
-            es.bulkIndex(SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString(), indexList);
+            es.bulkIndexWithIDs(SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString(), indexList);
             log.info("School list index request complete.");
         } catch (SegueSearchException e) {
             log.error("Unable to complete bulk index operation for schools list.", e);

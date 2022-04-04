@@ -648,7 +648,7 @@ public class ContentIndexer {
             startTime = System.nanoTime();
             es.bulkIndex(sha, CONTENT_INDEX_TYPE.UNIT.toString(), allUnits.entrySet().stream().map(entry -> {
                 try {
-                    return immutableEntry((String) null, objectMapper.writeValueAsString(ImmutableMap.of("cleanKey", entry.getKey(), "unit", entry.getValue())));
+                    return objectMapper.writeValueAsString(ImmutableMap.of("cleanKey", entry.getKey(), "unit", entry.getValue()));
                 } catch (JsonProcessingException jsonProcessingException) {
                     log.error("Unable to serialise unit entry for unit: " + entry.getValue());
                     return null;
@@ -656,7 +656,7 @@ public class ContentIndexer {
             }).filter(Objects::nonNull).collect(Collectors.toList()));
             es.bulkIndex(sha, CONTENT_INDEX_TYPE.PUBLISHED_UNIT.toString(), publishedUnits.entrySet().stream().map(entry -> {
                 try {
-                    return immutableEntry((String) null, objectMapper.writeValueAsString(ImmutableMap.of("cleanKey", entry.getKey(), "unit", entry.getValue())));
+                    return objectMapper.writeValueAsString(ImmutableMap.of("cleanKey", entry.getKey(), "unit", entry.getValue()));
                 } catch (JsonProcessingException jsonProcessingException) {
                     log.error("Unable to serialise published unit entry for unit: " + entry.getValue());
                     return null;
@@ -668,13 +668,13 @@ public class ContentIndexer {
             startTime = System.nanoTime();
             es.bulkIndex(sha, CONTENT_INDEX_TYPE.CONTENT_ERROR.toString(), indexProblemCache.entrySet().stream().map(e -> {
                 try {
-                    return immutableEntry((String) null, objectMapper.writeValueAsString(ImmutableMap.of(
+                    return objectMapper.writeValueAsString(ImmutableMap.of(
                             "canonicalSourceFile", e.getKey().getCanonicalSourceFile(),
                             "id", e.getKey().getId() == null ? "" : e.getKey().getId(),
                             "title", e.getKey().getTitle() == null ? "" : e.getKey().getTitle(),
                             // "tags", c.getTags(), // TODO: Add tags
                             "published", e.getKey().getPublished() == null ? "" : e.getKey().getPublished(),
-                            "errors", e.getValue().toArray())));
+                            "errors", e.getValue().toArray()));
                 } catch (JsonProcessingException jsonProcessingException) {
                     log.error("Unable to serialise content error entry from file: " + e.getKey().getCanonicalSourceFile());
                     return null;
@@ -691,7 +691,7 @@ public class ContentIndexer {
 
         try {
             startTime = System.nanoTime();
-            es.bulkIndex(sha, CONTENT_INDEX_TYPE.CONTENT.toString(), contentToIndex);
+            es.bulkIndexWithIDs(sha, CONTENT_INDEX_TYPE.CONTENT.toString(), contentToIndex);
             endTime = System.nanoTime();
             log.info("Bulk indexing content took: " + ((endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
             log.info("Search index request sent for: " + sha);
