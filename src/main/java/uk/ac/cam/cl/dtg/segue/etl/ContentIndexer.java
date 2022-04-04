@@ -57,6 +57,7 @@ public class ContentIndexer {
     private ContentMapper mapper;
 
     private static final int MEDIA_FILE_SIZE_LIMIT = 300 * 1024; // Bytes
+    private static final int NANOSECONDS_IN_A_MILLISECOND = 1000000;
 
     @Inject
     public ContentIndexer(GitDb database, ElasticSearchIndexer es, ContentMapper mapper) {
@@ -106,26 +107,26 @@ public class ContentIndexer {
             buildGitContentIndex(version, true, contentCache, tagsList, allUnits, publishedUnits, indexProblemCache);
             endTime = System.nanoTime();
 
-            log.info("Finished populating Git content cache, took: " + ((endTime - totalStartTime) / 1000000) + "ms");
+            log.info("Finished populating Git content cache, took: " + ((endTime - totalStartTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
             log.info("Beginning to record content errors");
 
             startTime = System.nanoTime();
             recordContentErrors(version, contentCache, indexProblemCache);
             endTime = System.nanoTime();
 
-            log.info("Finished recording content errors, took: " + ((endTime - startTime) / 1000000) + "ms");
+            log.info("Finished recording content errors, took: " + ((endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
 
             startTime = System.nanoTime();
             buildElasticSearchIndex(version, contentCache, tagsList, allUnits, publishedUnits, indexProblemCache);
             endTime = System.nanoTime();
-            log.info("Finished indexing git content cache, took: " + ((endTime - startTime) / 1000000) + "ms");
+            log.info("Finished indexing git content cache, took: " + ((endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
 
             // Verify the version requested is now available
             if (!es.hasIndex(version, CONTENT_INDEX_TYPE.CONTENT.toString())) {
                 throw new Exception(String.format("Failed to index version %s. Don't know why.", version));
             }
 
-            log.info("Finished indexing version " + version + ", took: " + ((endTime - totalStartTime) / 1000000) + "ms");
+            log.info("Finished indexing version " + version + ", took: " + ((endTime - totalStartTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
 
         } finally {
             versionLocks.remove(version);
@@ -662,7 +663,7 @@ public class ContentIndexer {
                 }
             }).filter(Objects::nonNull).collect(Collectors.toList()));
             endTime = System.nanoTime();
-            log.info("Bulk unit indexing took: " + ((endTime - startTime) / 1000000) + "ms");
+            log.info("Bulk unit indexing took: " + ((endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
 
             startTime = System.nanoTime();
             es.bulkIndex(sha, CONTENT_INDEX_TYPE.CONTENT_ERROR.toString(), indexProblemCache.entrySet().stream().map(e -> {
@@ -680,7 +681,7 @@ public class ContentIndexer {
                 }
             }).filter(Objects::nonNull).collect(Collectors.toList()));
             endTime = System.nanoTime();
-            log.info("Bulk content error indexing took: " + ((endTime - startTime) / 1000000) + "ms");
+            log.info("Bulk content error indexing took: " + ((endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
         } catch (JsonProcessingException e) {
             log.error("Unable to serialise sha or tags");
         } catch (SegueSearchException e) {
@@ -692,7 +693,7 @@ public class ContentIndexer {
             startTime = System.nanoTime();
             es.bulkIndex(sha, CONTENT_INDEX_TYPE.CONTENT.toString(), contentToIndex);
             endTime = System.nanoTime();
-            log.info("Bulk indexing content took: " + ((endTime - startTime) / 1000000) + "ms");
+            log.info("Bulk indexing content took: " + ((endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
             log.info("Search index request sent for: " + sha);
         } catch (SegueSearchException e) {
             log.error("Error whilst trying to perform bulk index operation.", e);
