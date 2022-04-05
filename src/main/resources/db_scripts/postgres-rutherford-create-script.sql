@@ -1184,6 +1184,13 @@ CREATE UNIQUE INDEX user_alerts_id_uindex ON public.user_alerts USING btree (id)
 
 
 --
+-- Name: user_alerts_id_uindex; Type: INDEX; Schema: public; Owner: rutherford
+--
+
+CREATE INDEX user_associations_tokens_groups ON public.user_associations_tokens USING btree (group_id DESC);
+
+
+--
 -- Name: user_badges_user_id_badge_unique; Type: INDEX; Schema: public; Owner: rutherford
 --
 
