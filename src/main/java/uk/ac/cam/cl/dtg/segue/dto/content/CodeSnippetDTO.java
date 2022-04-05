@@ -26,7 +26,6 @@ public class CodeSnippetDTO extends ContentDTO {
     protected String language;
     protected String code;
     protected boolean disableHighlighting;
-    protected Boolean expandable;
     protected String url;
 
     @JsonCreator
