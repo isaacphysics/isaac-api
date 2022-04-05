@@ -280,6 +280,8 @@ public class GitContentManager implements IContentManager {
     ) throws  ContentManagerException {
         String nestedFieldConnector = searchProvider.getNestedFieldConnector();
 
+        List<String> importantDocumentTypes = ImmutableList.of(TOPIC_SUMMARY_PAGE_TYPE);
+
         List<String> importantFields = ImmutableList.of(
                 Constants.TITLE_FIELDNAME, Constants.ID_FIELDNAME, Constants.SUMMARY_FIELDNAME, Constants.TAGS_FIELDNAME
         );
@@ -333,6 +335,11 @@ public class GitContentManager implements IContentManager {
             }
 
             contentQuery.setMinimumShouldMatch(numberOfExpectedShouldMatches);
+
+            if (importantDocumentTypes.contains(documentType)) {
+                contentQuery.setBoost(10f);
+            }
+
             matchQuery.should(contentQuery);
         }
 
