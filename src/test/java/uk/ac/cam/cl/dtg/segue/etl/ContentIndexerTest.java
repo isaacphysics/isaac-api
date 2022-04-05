@@ -136,13 +136,17 @@ public class ContentIndexerTest {
         expectLastCall().atLeastOnce();
 
         // Ensure units are indexed
-        searchProvider.indexObject(eq(INITIAL_VERSION), eq("unit"), eq(someUnitsMap.toString()));
-        expectLastCall().atLeastOnce();
-        searchProvider.indexObject(eq(INITIAL_VERSION), eq("publishedUnit"), eq(publishedUnitsMap.toString()));
-        expectLastCall().atLeastOnce();
+        searchProvider.bulkIndex(eq(INITIAL_VERSION), eq(Constants.CONTENT_INDEX_TYPE.UNIT.toString()), anyObject());
+        expectLastCall().once();
+        searchProvider.bulkIndex(eq(INITIAL_VERSION), eq(Constants.CONTENT_INDEX_TYPE.PUBLISHED_UNIT.toString()), anyObject());
+        expectLastCall().once();
+
+        // Ensure content errors are indexed
+        searchProvider.bulkIndex(eq(INITIAL_VERSION), eq(Constants.CONTENT_INDEX_TYPE.CONTENT_ERROR.toString()), anyObject());
+        expectLastCall().once();
 
         // Ensure at least one bulk index for general content is requested
-        searchProvider.bulkIndex(eq(INITIAL_VERSION), eq(Constants.CONTENT_INDEX_TYPE.CONTENT.toString()), anyObject());
+        searchProvider.bulkIndexWithIDs(eq(INITIAL_VERSION), eq(Constants.CONTENT_INDEX_TYPE.CONTENT.toString()), anyObject());
 		expectLastCall().once();
 
 		replay(searchProvider, contentMapper, objectMapper);
