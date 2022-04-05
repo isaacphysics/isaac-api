@@ -62,16 +62,5 @@ public class CodeSnippetDTO extends ContentDTO {
     public String getUrl() { return this.url; }
 
     public void setUrl(String url) { this.url = url; }
-
-    public Boolean getExpandable() {
-        if (this.expandable == null) {
-            return false;
-        }
-        return this.expandable;
-    }
-
-    public void setExpandable(final boolean expandable) {
-        this.expandable = expandable;
-    }
 }
 

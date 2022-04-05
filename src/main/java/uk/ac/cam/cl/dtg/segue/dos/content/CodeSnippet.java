@@ -27,7 +27,6 @@ public class CodeSnippet extends Content {
     protected String language;
     protected String code;
     protected boolean disableHighlighting;
-    protected Boolean expandable;
     protected String url;
 
     /**
@@ -73,16 +72,5 @@ public class CodeSnippet extends Content {
 
     public final void setUrl(final String url) {
         this.url = url;
-    }
-
-    public Boolean getExpandable() {
-        if (this.expandable == null) {
-            return false;
-        }
-        return this.expandable;
-    }
-
-    public void setExpandable(final boolean expandable) {
-        this.expandable = expandable;
     }
 }
