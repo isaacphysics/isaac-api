@@ -1142,13 +1142,6 @@ CREATE INDEX "question-attempts-by-user" ON public.question_attempts USING btree
 
 
 --
--- Name: question_attempts_by_question; Type: INDEX; Schema: public; Owner: rutherford
---
-
-CREATE INDEX question_attempts_by_question ON public.question_attempts USING btree (question_id);
-
-
---
 -- Name: question_attempts_by_timestamp; Type: INDEX; Schema: public; Owner: rutherford
 --
 
