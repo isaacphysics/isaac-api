@@ -4,9 +4,6 @@ import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
-import com.google.inject.Injector;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
@@ -17,7 +14,6 @@ import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
-import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
@@ -78,6 +74,59 @@ public class ScheduledEmailManager {
         this.emailManager = emailManager;
     }
 
+    public boolean reminderEmailNotAlreadySent(IsaacEventPageDTO event) {
+        ZonedDateTime now = ZonedDateTime.now();
+        String query = "INSERT INTO scheduled_emails(email_id, sent) VALUES (?, ?)"
+            + " ON CONFLICT (email_id) DO NOTHING";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
+            pst.setString(1, event.getId() + "@pre");
+            pst.setTimestamp(2, Timestamp.valueOf(now.toLocalDateTime()));
+
+            int notAlreadySent = pst.executeUpdate();
+            return notAlreadySent > 0;
+        } catch (SQLException e) {
+            log.error("Failed to add the scheduled email sent time: ", e);
+        }
+        return false;
+    };
+
+    public void sendEmailForEvent(IsaacEventPageDTO event) throws SegueDatabaseException {
+        List<String> eventTags = Lists.newArrayList("booster", "teachercpd", "discovery", "masterclass", "voyager", "explorer", "teacher", "workshop", "virtual");
+        Set<String> matchingTags = eventTags.stream().distinct().filter(event.getTags()::contains).collect(
+            Collectors.toSet());
+        log.info(event.getId());
+        log.info(matchingTags.toString());
+        log.info(event.getDate().toString());
+
+        if (this.reminderEmailNotAlreadySent(event)) {
+            List<Long> ids = Lists.newArrayList();
+            List<DetailedEventBookingDTO> eventBookings = bookingManager.adminGetBookingsByEventId(event.getId());
+            eventBookings.stream().map(DetailedEventBookingDTO::getUserBooked).map(UserSummaryDTO::getId)
+                .forEach(ids::add);
+            for (Long id : ids) {
+                try {
+                    RegisteredUserDTO user = userAccountManager.getUserDTOById(id);
+                    emailManager.sendTemplatedEmailToUser(user,
+                        emailManager.getEmailTemplateDTO("event_reminder"),
+                        new ImmutableMap.Builder<String, Object>()
+                            .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
+                            .put("event", event)
+                            .build(),
+                        EmailType.SYSTEM);
+                    log.info(String.format("Sent email to user: %s %s, at: %s", user.getGivenName(), user.getFamilyName(), user.getEmail()));
+                } catch (NoUserException e) {
+                    log.error(String.format("No user found with ID: %s", id));
+                } catch (ContentManagerException e) {
+                    log.error("Failed to add the scheduled email sent time: ", e);
+                }
+
+            }
+        }
+        log.info(" ");
+    }
+
     public void sendReminderEmails() {
         // Magic number
         Integer limit = 10000;
@@ -85,15 +134,14 @@ public class ScheduledEmailManager {
         Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
         Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
         Map<String, AbstractFilterInstruction> filterInstructions = Maps.newHashMap();
-        List<String> eventTags = Lists.newArrayList("booster", "teachercpd", "discovery", "masterclass", "voyager", "explorer", "teacher", "workshop", "virtual");
         fieldsToMatch.put(TYPE_FIELDNAME, Collections.singletonList(EVENT_TYPE));
         sortInstructions.put(DATE_FIELDNAME, Constants.SortOrder.DESC);
         ZonedDateTime now = ZonedDateTime.now();
-        ZonedDateTime oneYearAgo = now.plusDays(-365);
-        ZonedDateTime oneYearAhead = now.plusDays(365);
+//        ZonedDateTime oneYearAgo = now.plusDays(-365);
+        ZonedDateTime threeDaysAhead = now.plusDays(3);
         DateRangeFilterInstruction
-            eventsWithinSixtyDays = new DateRangeFilterInstruction(Date.from(oneYearAgo.toInstant()), Date.from(oneYearAhead.toInstant()));
-        filterInstructions.put(ENDDATE_FIELDNAME, eventsWithinSixtyDays);
+            eventsWithinThreeDays = new DateRangeFilterInstruction(new Date(), Date.from(threeDaysAhead.toInstant()));
+        filterInstructions.put(ENDDATE_FIELDNAME, eventsWithinThreeDays);
 
         try {
             ResultsWrapper<ContentDTO> findByFieldNames = this.contentManager.findByFieldNames(
@@ -102,52 +150,11 @@ public class ScheduledEmailManager {
             for (ContentDTO contentResult : findByFieldNames.getResults()) {
                 if (contentResult instanceof IsaacEventPageDTO) {
                     IsaacEventPageDTO event = (IsaacEventPageDTO) contentResult;
-                    Set<String> matchingTags = eventTags.stream().distinct().filter(event.getTags()::contains).collect(
-                        Collectors.toSet());
-                    // Event end date (if present) > 30 days ago, else event date > 30 days ago
-                    log.info(event.getId());
-                    log.info(matchingTags.toString());
-                    log.info(event.getDate().toString());
-                    List<Long> ids = Lists.newArrayList();
-                    List<DetailedEventBookingDTO> eventBookings = bookingManager.adminGetBookingsByEventId(event.getId());
-                    eventBookings.stream().map(DetailedEventBookingDTO::getUserBooked).map(UserSummaryDTO::getId)
-                        .forEach(ids::add);
-                    String query = "INSERT INTO scheduled_emails(email_id, sent) VALUES (?, ?)"
-                        + " ON CONFLICT (email_id) DO NOTHING";
-                    try (Connection conn = database.getDatabaseConnection();
-                         PreparedStatement pst = conn.prepareStatement(query);
-                    ) {
-                        pst.setString(1, event.getId() + "@pre");
-                        pst.setTimestamp(2, Timestamp.valueOf(now.toLocalDateTime()));
-
-                        int notAlreadySent = pst.executeUpdate();
-                        if (notAlreadySent > 0) {
-                            for (Long id : ids) {
-                                try {
-                                    RegisteredUserDTO user = userAccountManager.getUserDTOById(id);
-                                    emailManager.sendTemplatedEmailToUser(user,
-                                        emailManager.getEmailTemplateDTO("event_reminder"),
-                                        new ImmutableMap.Builder<String, Object>()
-                                            .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
-                                            .put("event", event)
-                                            .build(),
-                                        EmailType.SYSTEM);
-                                    log.info(String.format("Sent email to user: %s %s, at: %s", user.getGivenName(), user.getFamilyName(), user.getEmail()));
-                                } catch (NoUserException e) {
-                                    log.error(String.format("No user found with ID: %s", id));
-                                }
-                            }
-                        }
-                    } catch (SQLException e) {
-                        log.error("Failed to add the scheduled email sent time: ", e);
-                    }
-                    log.info(" ");
+                    this.sendEmailForEvent(event);
                 }
             }
-        } catch (ContentManagerException e) {
+        } catch (ContentManagerException | SegueDatabaseException e) {
             log.error("Failed to send scheduled event emails: ", e);
-        } catch (SegueDatabaseException e) {
-            e.printStackTrace();
         }
     }
 }
