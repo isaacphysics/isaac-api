@@ -15,7 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.auth;
 
-import uk.ac.cam.cl.dtg.segue.dos.users.Role;
+import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 
 /**
  * SecuredEndpoint.

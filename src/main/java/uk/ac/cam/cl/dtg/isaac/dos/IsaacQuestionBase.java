@@ -16,9 +16,9 @@
 package uk.ac.cam.cl.dtg.isaac.dos;
 
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionBaseDTO;
-import uk.ac.cam.cl.dtg.segue.dos.content.ChoiceQuestion;
-import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
-import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
+import uk.ac.cam.cl.dtg.isaac.dos.content.ChoiceQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
+import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 
 /**
  * Common DO superclass for isaac Questions.
