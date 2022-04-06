@@ -343,7 +343,7 @@ public class EventBookingManager {
                     + " booked on to it.", event.getId(), user.getEmail()));
         }
 
-        EventBookingDTO booking = null;
+        EventBookingDTO booking;
         try {
             // Obtain an exclusive database lock to lock the booking
             this.bookingPersistenceManager.acquireDistributedLock(event.getId());
@@ -355,6 +355,12 @@ public class EventBookingManager {
             booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), status,
                     additionalEventInformation);
 
+        } finally {
+            // release lock.
+            this.bookingPersistenceManager.releaseDistributedLock(event.getId());
+        }
+
+        try {
             // Send an email notifying the user (unless they are being added after the event for the sake of our records)
             Date bookingDate = new Date();
             if (event.getEndDate() == null || bookingDate.before(event.getEndDate())) {
@@ -384,10 +390,6 @@ public class EventBookingManager {
         } catch (ContentManagerException e) {
             log.error(String.format("Unable to send booking confirmation email (%s) to user (%s)", event.getId(), user
                     .getEmail()), e);
-
-        } finally {
-            // release lock.
-            this.bookingPersistenceManager.releaseDistributedLock(event.getId());
         }
 
         addUserToEventGroup(event, user);
