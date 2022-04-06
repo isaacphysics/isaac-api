@@ -657,6 +657,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *            - Responsible for handling the various authentication functions.
      * @param secondFactorManager
      *            - For managing TOTP multifactor authentication.
+     * @param userPreferenceManager
+     *      *     - For managing user preferences.
      * @return Content version controller with associated dependencies.
      */
     @Inject
@@ -667,10 +669,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                                                final EmailManager emailQueue, final IAnonymousUserDataManager temporaryUserCache,
                                                final ILogManager logManager, final MapperFacade mapperFacade,
                                                final UserAuthenticationManager userAuthenticationManager,
-                                               final ISecondFactorAuthenticator secondFactorManager) {
+                                               final ISecondFactorAuthenticator secondFactorManager,
+                                               final AbstractUserPreferenceManager userPreferenceManager) {
         if (null == userManager) {
             userManager = new UserAccountManager(database, questionManager, properties, providersToRegister,
-                    mapperFacade, emailQueue, temporaryUserCache, logManager, userAuthenticationManager, secondFactorManager);
+                    mapperFacade, emailQueue, temporaryUserCache, logManager, userAuthenticationManager,
+                    secondFactorManager, userPreferenceManager);
             log.info("Creating singleton of UserManager");
         }
 

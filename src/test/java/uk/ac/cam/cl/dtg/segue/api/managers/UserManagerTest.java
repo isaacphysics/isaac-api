@@ -42,6 +42,7 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IAnonymousUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
+import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.users.AnonymousUser;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Gender;
@@ -101,6 +102,8 @@ public class UserManagerTest {
 
     private ISecondFactorAuthenticator dummySecondFactorAuthenticator;
 
+    private AbstractUserPreferenceManager dummyUserPreferenceManager;
+
     /**
      * Initial configuration of tests.
      * 
@@ -128,6 +131,8 @@ public class UserManagerTest {
         this.dummyLogManager = createMock(ILogManager.class);
 
         this.dummySecondFactorAuthenticator = createMock(ISecondFactorAuthenticator.class);
+
+        this.dummyUserPreferenceManager = createMock(AbstractUserPreferenceManager.class);
 
         expect(this.dummyPropertiesLoader.getProperty(Constants.HMAC_SALT)).andReturn(dummyHMACSalt).anyTimes();
         expect(this.dummyPropertiesLoader.getProperty(Constants.HOST_NAME)).andReturn(dummyHostName).anyTimes();
@@ -784,7 +789,8 @@ public class UserManagerTest {
         providerMap.put(provider, authenticator);
         return new UserAccountManager(dummyDatabase, this.dummyQuestionDatabase, this.dummyPropertiesLoader,
                 providerMap, this.dummyMapper, this.dummyQueue, this.dummyUserCache, this.dummyLogManager,
-                buildTestAuthenticationManager(provider, authenticator), dummySecondFactorAuthenticator);
+                buildTestAuthenticationManager(provider, authenticator), dummySecondFactorAuthenticator,
+                dummyUserPreferenceManager);
     }
     
     private UserAuthenticationManager buildTestAuthenticationManager() {

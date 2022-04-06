@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -41,6 +42,10 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IAnonymousUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
+import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
+import uk.ac.cam.cl.dtg.isaac.dos.UserPreference;
+import uk.ac.cam.cl.dtg.isaac.dos.users.UserContext;
+import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.users.AnonymousUser;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Gender;
@@ -60,14 +65,17 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URI;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -99,6 +107,8 @@ public class UserAccountManager implements IUserAccountManager {
 
     private final ISecondFactorAuthenticator secondFactorManager;
 
+    private final AbstractUserPreferenceManager userPreferenceManager;
+
     private final int USER_NAME_MAX_LENGTH = 255;
     private static final Pattern USER_NAME_FORBIDDEN_CHARS_REGEX = Pattern.compile("[*<>]");
 
@@ -123,12 +133,17 @@ public class UserAccountManager implements IUserAccountManager {
      *            - so that we can log events for users.
      * @param userAuthenticationManager
      * @param secondFactorManager
+     * @param userPreferenceManager
+     *            - Allows user preferences to be managed.
      */
     @Inject
-    public UserAccountManager(final IUserDataManager database, final QuestionManager questionDb,
-                              final PropertiesLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
-                              final MapperFacade dtoMapper, final EmailManager emailQueue, final IAnonymousUserDataManager temporaryUserCache, final ILogManager logManager,
-                              final UserAuthenticationManager userAuthenticationManager, final ISecondFactorAuthenticator secondFactorManager) {
+    public UserAccountManager(final IUserDataManager database, final QuestionManager questionDb, final PropertiesLoader properties,
+                              final Map<AuthenticationProvider, IAuthenticator> providersToRegister, final MapperFacade dtoMapper,
+                              final EmailManager emailQueue, final IAnonymousUserDataManager temporaryUserCache,
+                              final ILogManager logManager, final UserAuthenticationManager userAuthenticationManager,
+                              final ISecondFactorAuthenticator secondFactorManager,
+                              final AbstractUserPreferenceManager userPreferenceManager) {
+
         Validate.notNull(properties.getProperty(HMAC_SALT));
         Validate.notNull(properties.getProperty(SESSION_EXPIRY_SECONDS_DEFAULT));
         Validate.notNull(properties.getProperty(SESSION_EXPIRY_SECONDS_REMEMBERED));
@@ -146,10 +161,9 @@ public class UserAccountManager implements IUserAccountManager {
         this.dtoMapper = dtoMapper;
 
         this.emailManager = emailQueue;
-
         this.userAuthenticationManager = userAuthenticationManager;
-
         this.secondFactorManager = secondFactorManager;
+        this.userPreferenceManager = userPreferenceManager;
     }
 
     /**
@@ -357,6 +371,286 @@ public class UserAccountManager implements IUserAccountManager {
             throw new MFARequiredButNotConfiguredException(message);
         } else {
             return this.logUserIn(request, response, user, rememberMe);
+        }
+    }
+
+    /**
+     * Create a user object. This method allows new user objects to be created.
+     *
+     * @param request
+     *            - so that we can identify the user
+     * @param response
+     *            to tell the browser to store the session in our own segue cookie.
+     * @param userObjectFromClient
+     *            - the new user object from the clients perspective.
+     * @param newPassword
+     *            - the new password for the user.
+     * @param userPreferenceObject
+     * 			  - the new preferences for this user
+     * @param rememberMe
+     *            - Boolean to indicate whether or not this cookie expiry duration should be long or short
+     * @return the updated user object.
+     */
+    public Response createUserObjectAndLogIn(final HttpServletRequest request, final HttpServletResponse response,
+                                              final RegisteredUser userObjectFromClient, final String newPassword,
+                                              final Map<String, Map<String, Boolean>> userPreferenceObject,
+                                              final boolean rememberMe)
+            throws InvalidKeySpecException, NoSuchAlgorithmException {
+        try {
+            RegisteredUserDTO savedUser = this.createUserObjectAndSession(request, response,
+                    userObjectFromClient, newPassword, rememberMe);
+
+            if (userPreferenceObject != null) {
+                List<UserPreference> userPreferences = userPreferenceObjectToList(userPreferenceObject, savedUser.getId());
+                userPreferenceManager.saveUserPreferences(userPreferences);
+            }
+
+            return Response.ok(savedUser).build();
+        } catch (InvalidPasswordException e) {
+            log.warn("Invalid password exception occurred during registration!");
+            return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
+        } catch (FailedToHashPasswordException e) {
+            log.error("Failed to hash password during user registration!");
+            return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR,
+                    "Unable to set a password.").toResponse();
+        } catch (MissingRequiredFieldException e) {
+            log.warn("Missing field during update operation. ", e);
+            return new SegueErrorResponse(Response.Status.BAD_REQUEST, "You are missing a required field. "
+                    + "Please make sure you have specified all mandatory fields in your response.").toResponse();
+        } catch (DuplicateAccountException e) {
+            log.warn(String.format("Duplicate account registration attempt for (%s)", userObjectFromClient.getEmail()));
+            return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
+        } catch (SegueDatabaseException e) {
+            String errorMsg = "Unable to set a password, due to an internal database error.";
+            log.error(errorMsg, e);
+            return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
+        } catch (EmailMustBeVerifiedException e) {
+            log.warn("Someone attempted to register with an Isaac email address: " + userObjectFromClient.getEmail());
+            return new SegueErrorResponse(Response.Status.BAD_REQUEST,
+                    "You cannot register with an Isaac email address.").toResponse();
+        } catch (InvalidNameException e) {
+            log.warn("Invalid name provided during registration.");
+            return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
+        }
+    }
+
+
+    /**
+     * Convert user-provided preference maps to UserPreference lists.
+     *
+     * @param userPreferenceObject
+     *            - the user-provided preference object
+     * @param userId
+     *            - the userId of the user
+     * @return whether the preference is valid
+     */
+    private List<UserPreference> userPreferenceObjectToList(final Map<String, Map<String, Boolean>> userPreferenceObject,
+                                                            final long userId) {
+        List<UserPreference> userPreferences = com.google.common.collect.Lists.newArrayList();
+        if (null == userPreferenceObject) {
+            return userPreferences;
+        }
+        // FIXME: This entire method is horrible, but required to sanitise what is stored in the database . . .
+        for (String preferenceType: userPreferenceObject.keySet()) {
+
+            // Check if the given preference type is one we support:
+            if (!EnumUtils.isValidEnum(uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacUserPreferences.class, preferenceType)
+                    && !EnumUtils.isValidEnum(SegueUserPreferences.class, preferenceType)) {
+                log.warn("Unknown user preference type '" + preferenceType + "' provided. Skipping.");
+                continue;
+            }
+
+            if (EnumUtils.isValidEnum(SegueUserPreferences.class, preferenceType)
+                    && SegueUserPreferences.EMAIL_PREFERENCE.equals(SegueUserPreferences.valueOf(preferenceType))) {
+                // This is an email preference, which is treated specially:
+                for (String preferenceName : userPreferenceObject.get(preferenceType).keySet()) {
+                    if (!EnumUtils.isValidEnum(EmailType.class, preferenceName)
+                            || !EmailType.valueOf(preferenceName).isValidEmailPreference()) {
+                        log.warn("Invalid email preference name '" + preferenceName + "' provided for '"
+                                + preferenceType + "'! Skipping.");
+                        continue;
+                    }
+                    boolean preferenceValue = userPreferenceObject.get(preferenceType).get(preferenceName);
+                    userPreferences.add(new UserPreference(userId, preferenceType, preferenceName, preferenceValue));
+                }
+            } else if (EnumUtils.isValidEnum(uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacUserPreferences.class,
+                    preferenceType)) {
+                // Isaac user preference names are configured in the config files:
+                String acceptedPreferenceNamesProperty = properties.getProperty(preferenceType);
+                if (null == acceptedPreferenceNamesProperty) {
+                    log.error("Failed to find allowed user preferences names for '" + preferenceType
+                            + "'! Has it been configured?");
+                    acceptedPreferenceNamesProperty = "";
+                }
+                List<String> acceptedPreferenceNames = Arrays.asList(acceptedPreferenceNamesProperty.split(","));
+                for (String preferenceName : userPreferenceObject.get(preferenceType).keySet()) {
+                    if (!acceptedPreferenceNames.contains(preferenceName)) {
+                        log.warn("Invalid user preference name '" + preferenceName + "' provided for type '"
+                                + preferenceType + "'! Skipping.");
+                        continue;
+                    }
+                    boolean preferenceValue = userPreferenceObject.get(preferenceType).get(preferenceName);
+                    userPreferences.add(new UserPreference(userId, preferenceType, preferenceName, preferenceValue));
+                }
+            } else {
+                log.warn("Unexpected user preference type '" + preferenceType + "' provided. Skipping.");
+            }
+        }
+        return userPreferences;
+    }
+
+    /**
+     * Update a user object.
+     * <p>
+     * This method does all of the necessary security checks to determine who is allowed to edit what.
+     *
+     * @param request              - so that we can identify the user
+     * @param response             - so we can modify the session
+     * @param userObjectFromClient - the new user object from the clients perspective.
+     * @param passwordCurrent      - the current password, used if the password has changed
+     * @param newPassword          - the new password, used if the password has changed
+     * @param userPreferenceObject - the preferences for this user
+     * @return the updated user object.
+     * @throws NoCredentialsAvailableException
+     * @throws IncorrectCredentialsProvidedException
+     */
+    public Response updateUserObject(final HttpServletRequest request, final HttpServletResponse response,
+                                     final RegisteredUser userObjectFromClient, final String passwordCurrent,
+                                     final String newPassword,
+                                     final Map<String, Map<String, Boolean>> userPreferenceObject,
+                                     final List<UserContext> registeredUserContexts)
+            throws IncorrectCredentialsProvidedException, NoCredentialsAvailableException, InvalidKeySpecException,
+            NoSuchAlgorithmException {
+        Validate.notNull(userObjectFromClient.getId());
+
+        // this is an update as the user has an id
+        // security checks
+        try {
+            // check that the current user has permissions to change this users details.
+            RegisteredUserDTO currentlyLoggedInUser = this.getCurrentRegisteredUser(request);
+            if (!currentlyLoggedInUser.getId().equals(userObjectFromClient.getId())
+                    && !checkUserRole(currentlyLoggedInUser, Arrays.asList(Role.ADMIN, Role.EVENT_MANAGER))) {
+                return new SegueErrorResponse(Response.Status.FORBIDDEN,
+                        "You cannot change someone else's user settings.").toResponse();
+            }
+
+            // check if they are trying to change a password
+            if (newPassword != null && !newPassword.isEmpty()) {
+                // only admins and the account owner can change passwords 
+                if (!currentlyLoggedInUser.getId().equals(userObjectFromClient.getId())
+                        && !checkUserRole(currentlyLoggedInUser, Collections.singletonList(Role.ADMIN))) {
+                    return new SegueErrorResponse(Response.Status.FORBIDDEN,
+                            "You cannot change someone else's password.").toResponse();
+                }
+
+                // Password change requires auth check unless admin is modifying non-admin user account
+                if (!(checkUserRole(currentlyLoggedInUser, Collections.singletonList(Role.ADMIN))
+                        && userObjectFromClient.getRole() != Role.ADMIN)) {
+                    // authenticate the user to check they are allowed to change the password
+
+                    if (null == passwordCurrent) {
+                        return new SegueErrorResponse(Response.Status.BAD_REQUEST,
+                                "You must provide your current password to change your password!").toResponse();
+                    }
+
+                    this.ensureCorrectPassword(AuthenticationProvider.SEGUE.name(),
+                            userObjectFromClient.getEmail(), passwordCurrent);
+                }
+            }
+
+            // check that any changes to protected fields being made are allowed.
+            RegisteredUserDTO existingUserFromDb = this.getUserDTOById(userObjectFromClient
+                    .getId());
+
+            if (Role.EVENT_MANAGER.equals(currentlyLoggedInUser.getRole())) {
+                if (Role.ADMIN.equals(existingUserFromDb.getRole())
+                        || Role.ADMIN.equals(userObjectFromClient.getRole())) {
+                    return new SegueErrorResponse(Response.Status.FORBIDDEN,
+                            "You cannot modify admin roles.").toResponse();
+                }
+            }
+
+            // check that the user is allowed to change the role of another user
+            // if that is what they are doing.
+            if (!checkUserRole(currentlyLoggedInUser, Arrays.asList(Role.ADMIN, Role.EVENT_MANAGER))
+                    && userObjectFromClient.getRole() != null
+                    && !userObjectFromClient.getRole().equals(existingUserFromDb.getRole())) {
+                return new SegueErrorResponse(Response.Status.FORBIDDEN,
+                        "You do not have permission to change a users role.").toResponse();
+            }
+
+            if (registeredUserContexts != null) {
+                // We always set the last confirmed date from code rather than trusting the client
+                userObjectFromClient.setRegisteredContexts(registeredUserContexts);
+                userObjectFromClient.setRegisteredContextsLastConfirmed(new Date());
+            } else {
+                // Registered contexts should only ever be set via the registeredUserContexts object, so that it is the
+                // server that sets the time that they last confirmed their user context values.
+                // To ensure this, we overwrite the fields with the values already set in the db if registeredUserContexts is null
+                userObjectFromClient.setRegisteredContexts(existingUserFromDb.getRegisteredContexts());
+                userObjectFromClient.setRegisteredContextsLastConfirmed(existingUserFromDb.getRegisteredContextsLastConfirmed());
+            }
+
+            RegisteredUserDTO updatedUser = updateUserObject(userObjectFromClient, newPassword);
+
+            // If the user's role has changed, record it. Check this using Objects.equals() to be null safe!
+            if (!Objects.equals(updatedUser.getRole(), existingUserFromDb.getRole())) {
+                log.info("ADMIN user " + currentlyLoggedInUser.getEmail() + " has modified the role of "
+                        + updatedUser.getEmail() + "[" + updatedUser.getId() + "]" + " to "
+                        + updatedUser.getRole());
+                this.logManager.logEvent(currentlyLoggedInUser, request, SegueServerLogType.CHANGE_USER_ROLE,
+                        ImmutableMap.of(USER_ID_FKEY_FIELDNAME, updatedUser.getId(),
+                                "oldRole", existingUserFromDb.getRole(),
+                                "newRole", updatedUser.getRole()));
+            }
+
+            // If the user's school has changed, record it. Check this using Objects.equals() to be null safe!
+            if (!Objects.equals(updatedUser.getSchoolId(), existingUserFromDb.getSchoolId())
+                    || !Objects.equals(updatedUser.getSchoolOther(), existingUserFromDb.getSchoolOther())) {
+                LinkedHashMap<String, Object> eventDetails = new LinkedHashMap<>();
+                eventDetails.put("oldSchoolId", existingUserFromDb.getSchoolId());
+                eventDetails.put("newSchoolId", updatedUser.getSchoolId());
+                eventDetails.put("oldSchoolOther", existingUserFromDb.getSchoolOther());
+                eventDetails.put("newSchoolOther", updatedUser.getSchoolOther());
+
+                if (!Objects.equals(currentlyLoggedInUser.getId(), updatedUser.getId())) {
+                    // This is an ADMIN user changing another user's school:
+                    eventDetails.put(USER_ID_FKEY_FIELDNAME, updatedUser.getId());
+                    this.logManager.logEvent(currentlyLoggedInUser, request, SegueServerLogType.ADMIN_CHANGE_USER_SCHOOL,
+                            eventDetails);
+                } else {
+                    this.logManager.logEvent(currentlyLoggedInUser, request, SegueServerLogType.USER_SCHOOL_CHANGE,
+                            eventDetails);
+                }
+            }
+
+            if (userPreferenceObject != null) {
+                List<UserPreference> userPreferences = userPreferenceObjectToList(userPreferenceObject,
+                        updatedUser.getId());
+                userPreferenceManager.saveUserPreferences(userPreferences);
+            }
+
+            return Response.ok(updatedUser).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (NoUserException e) {
+            return new SegueErrorResponse(Response.Status.NOT_FOUND,
+                    "The user specified does not exist.").toResponse();
+        } catch (SegueDatabaseException e) {
+            log.error("Unable to modify user", e);
+            return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR,
+                    "Error while modifying the user").toResponse();
+        } catch (InvalidPasswordException e) {
+            return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
+        } catch (MissingRequiredFieldException e) {
+            log.warn("Missing field during update operation. ", e);
+            return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
+        } catch (AuthenticationProviderMappingException e) {
+            return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR,
+                    "Unable to map to a known authenticator. The provider: is unknown").toResponse();
+        } catch (InvalidNameException e) {
+            log.warn("Invalid name provided during user update.");
+            return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
         }
     }
 
