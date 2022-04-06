@@ -20,9 +20,12 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacClozeQuestion;
-import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
-import uk.ac.cam.cl.dtg.segue.dos.content.*;
-import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
+import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
+import uk.ac.cam.cl.dtg.isaac.dos.content.ItemChoice;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 
 import java.util.ArrayList;
 import java.util.Date;

@@ -38,16 +38,16 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupPersistenceManager;
-import uk.ac.cam.cl.dtg.segue.dos.GroupMembership;
-import uk.ac.cam.cl.dtg.segue.dos.GroupMembershipStatus;
-import uk.ac.cam.cl.dtg.segue.dos.GroupStatus;
-import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
-import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.GroupMembershipDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithEmailAddressDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryWithGroupMembershipDTO;
+import uk.ac.cam.cl.dtg.isaac.dos.GroupMembership;
+import uk.ac.cam.cl.dtg.isaac.dos.GroupMembershipStatus;
+import uk.ac.cam.cl.dtg.isaac.dos.GroupStatus;
+import uk.ac.cam.cl.dtg.isaac.dos.UserGroup;
+import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.GroupMembershipDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithGroupMembershipDTO;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -58,6 +58,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Comparator;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * GroupManager. Responsible for managing group related logic.
@@ -150,11 +151,11 @@ public class GroupManager {
     }
 
     /**
-     * getUsersInGroup.
+     * getUsersInGroup. This sorts the users by given name, then family name (case-insensitive)
      * 
      * @param group
      *            to find
-     * @return list of users who are members of the group
+     * @return list of users who are members of the group, sorted by given name, then family name (case-insensitive)
      * @throws SegueDatabaseException
      *             - If an error occurred while interacting with the database.
      */
@@ -167,8 +168,8 @@ public class GroupManager {
         }
 
         List<RegisteredUserDTO> users = userManager.findUsers(groupMemberIds);
-        this.orderUsersByName(users);
-        return users;
+        // Sort the users by name
+        return this.orderUsersByName(users);
     }
 
     /**
@@ -197,15 +198,15 @@ public class GroupManager {
     }
 
     /**
-     * Helper method to consistently sort users by family name then given name in a case-insensitive order.
+     * Helper method to consistently sort users by given name then family name in a case-insensitive order.
      * @param users
      *            - list of users.
      */
-    private void orderUsersByName(final List<RegisteredUserDTO> users) {
-        users.sort((userA, userB) -> ComparisonChain.start().
-                compare(userA.getFamilyName(), userB.getFamilyName(), Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)).
-                compare(userA.getGivenName(), userB.getGivenName(), Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)).
-                result());
+    private List<RegisteredUserDTO> orderUsersByName(final List<RegisteredUserDTO> users) {
+        return users.stream()
+                .sorted(Comparator.comparing(RegisteredUserDTO::getGivenName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
+                .sorted(Comparator.comparing(RegisteredUserDTO::getFamilyName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
+                .collect(Collectors.toList());
     }
 
     /**

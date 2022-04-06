@@ -83,7 +83,8 @@ CREATE TABLE public.event_bookings (
     reserved_by integer DEFAULT NULL,
     status text DEFAULT 'CONFIRMED'::text NOT NULL,
     updated timestamp without time zone,
-    additional_booking_information jsonb
+    additional_booking_information jsonb,
+    pii_removed timestamp without time zone
 );
 
 
@@ -1141,13 +1142,6 @@ CREATE INDEX "question-attempts-by-user" ON public.question_attempts USING btree
 
 
 --
--- Name: question_attempts_by_question; Type: INDEX; Schema: public; Owner: rutherford
---
-
-CREATE INDEX question_attempts_by_question ON public.question_attempts USING btree (question_id);
-
-
---
 -- Name: question_attempts_by_timestamp; Type: INDEX; Schema: public; Owner: rutherford
 --
 
@@ -1187,6 +1181,13 @@ CREATE UNIQUE INDEX "unique email case insensitive" ON public.users USING btree 
 --
 
 CREATE UNIQUE INDEX user_alerts_id_uindex ON public.user_alerts USING btree (id);
+
+
+--
+-- Name: user_alerts_id_uindex; Type: INDEX; Schema: public; Owner: rutherford
+--
+
+CREATE INDEX user_associations_tokens_groups ON public.user_associations_tokens USING btree (group_id DESC);
 
 
 --

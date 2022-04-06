@@ -16,7 +16,7 @@
 
 package uk.ac.cam.cl.dtg.segue.dao;
 
-import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 
 import javax.servlet.http.HttpServletRequest;
 

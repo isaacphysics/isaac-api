@@ -20,9 +20,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacGraphSketcherQuestion;
-import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
-import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
-import uk.ac.cam.cl.dtg.segue.dos.content.GraphChoice;
+import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
+import uk.ac.cam.cl.dtg.isaac.dos.content.GraphChoice;
 
 import java.util.List;
 

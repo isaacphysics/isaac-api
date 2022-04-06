@@ -1,7 +1,5 @@
 package uk.ac.cam.cl.dtg.isaac.dos;
 
-import uk.ac.cam.cl.dtg.segue.dos.AudienceContext;
-
 public class GameboardContentDescriptor {
     private String id;
     private String contentType;

@@ -15,8 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
-import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 
 /**
  * Interface to allow classes interested in group changes to register their interest.

@@ -29,6 +29,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacTopicSummaryPage;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacPageFragmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacTopicSummaryPageDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
@@ -38,17 +39,17 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
-import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
-import uk.ac.cam.cl.dtg.segue.dos.content.Content;
-import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
-import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
+import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.SeguePageDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.annotation.Nullable;
@@ -657,12 +658,13 @@ public class PagesFacade extends AbstractIsaacFacade {
 
             Response result = this.findSingleResult(fieldsToMatch);
 
-            getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
-                    IsaacServerLogType.VIEW_PAGE_FRAGMENT, ImmutableMap.of(
-                            FRAGMENT_ID_LOG_FIELDNAME, fragmentId,
-                            CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()
-                    ));
-
+            if (result.getEntity() instanceof IsaacPageFragmentDTO) {
+                getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
+                        IsaacServerLogType.VIEW_PAGE_FRAGMENT, ImmutableMap.of(
+                                FRAGMENT_ID_LOG_FIELDNAME, fragmentId,
+                                CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()
+                        ));
+            }
             return Response.status(result.getStatus()).entity(result.getEntity())
                     .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
         } catch (SegueDatabaseException e) {

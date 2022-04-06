@@ -54,17 +54,17 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
-import uk.ac.cam.cl.dtg.segue.dos.content.Content;
-import uk.ac.cam.cl.dtg.segue.dos.content.Question;
-import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
-import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
-import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
+import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.annotation.Nullable;
@@ -92,7 +92,6 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -1065,10 +1064,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             IsaacQuizDTO quiz = quizManager.findQuiz(assignment.getQuizId());
 
-            List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group).stream()
-                    .sorted(Comparator.comparing(RegisteredUserDTO::getGivenName, String.CASE_INSENSITIVE_ORDER))
-                    .sorted(Comparator.comparing(RegisteredUserDTO::getFamilyName, String.CASE_INSENSITIVE_ORDER))
-                    .collect(Collectors.toList());
+            List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group);
 
             Map<RegisteredUserDTO, QuizFeedbackDTO> feedbackMap = quizQuestionManager.getAssignmentTeacherFeedback(quiz, assignment, groupMembers);
 
@@ -1138,10 +1134,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             }
 
             IsaacQuizDTO quiz = quizManager.findQuiz(assignment.getQuizId());
-            List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group).stream()
-                    .sorted(Comparator.comparing(RegisteredUserDTO::getGivenName))
-                    .sorted(Comparator.comparing(RegisteredUserDTO::getFamilyName))
-                    .collect(Collectors.toList());
+            List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group);
 
             List<String[]> rows = Lists.newArrayList();
             StringWriter stringWriter = new StringWriter();
@@ -1251,10 +1244,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             UserGroupDTO group = this.groupManager.getGroupById(groupId);
 
-            List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group).stream()
-                    .sorted(Comparator.comparing(RegisteredUserDTO::getFamilyName))
-                    .sorted(Comparator.comparing(RegisteredUserDTO::getGivenName))
-                    .collect(Collectors.toList());
+            List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group);
 
             if (!canManageGroup(user, group)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
@@ -1314,7 +1304,9 @@ public class QuizFacade extends AbstractIsaacFacade {
                         if (feedback != null) {
                             QuizFeedbackDTO.Mark overallMark = feedback.getOverallMark();
                             if (overallMark != null) {
-                                quizTotals.add(String.format("%d/%d", overallMark.correct, overallMark.correct + overallMark.incorrect + overallMark.notAttempted));
+                                // Add an apostrophe to the beginning of the score, so that the fraction isn't
+                                // interpreted as a date in excel
+                                quizTotals.add(String.format("'%d/%d", overallMark.correct, overallMark.correct + overallMark.incorrect + overallMark.notAttempted));
                             } else {
                                 quizTotals.add("");
                             }

@@ -29,6 +29,7 @@ services:
     ports:
       - "9200:9200"
       - "9300:9300"
+    mem_limit: 3G
   cs-elasticsearch:
     network_mode: bridge
     container_name: cs-elasticsearch
@@ -41,6 +42,7 @@ services:
     ports:
       - "9201:9200"
       - "9301:9300"
+    mem_limit: 3G
   postgres:
     network_mode: bridge
     container_name: postgres

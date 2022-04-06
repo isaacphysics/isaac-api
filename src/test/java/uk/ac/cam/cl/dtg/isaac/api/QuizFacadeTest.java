@@ -39,15 +39,15 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
-import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
-import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
-import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.QuizSummaryDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.QuizSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.ws.rs.core.EntityTag;
@@ -226,8 +226,8 @@ public class QuizFacadeTest extends AbstractFacadeTest {
             requiresLogin(),
             as(studentsTeachersOrAdmin(),
                 prepare(quizAssignmentManager, m -> expect(m.getGroupForAssignment(studentAssignment)).andReturn(studentGroup)),
-                prepare(quizQuestionManager, m -> expect(m.getAssignmentTeacherFeedback(studentQuiz, studentAssignment, ImmutableList.of(secondStudent, student)))
-                    .andReturn(ImmutableMap.of(secondStudent, otherStudentFeedback, student, studentFeedback))),
+                prepare(quizQuestionManager, m -> expect(m.getAssignmentTeacherFeedback(studentQuiz, studentAssignment, ImmutableList.of(student, secondStudent)))
+                    .andReturn(ImmutableMap.of(student, studentFeedback, secondStudent, otherStudentFeedback))),
                 prepare(associationManager, m -> {
                     expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(secondStudent))).andAnswer(grantAccess(true));
                     expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(student))).andAnswer(grantAccess(true));
@@ -241,8 +241,8 @@ public class QuizFacadeTest extends AbstractFacadeTest {
             forbiddenForEveryoneElse(),
             as(studentsTeachersOrAdmin(),
                 prepare(quizAssignmentManager, m -> expect(m.getGroupForAssignment(studentAssignment)).andReturn(studentGroup)),
-                prepare(quizQuestionManager, m -> expect(m.getAssignmentTeacherFeedback(studentQuiz, studentAssignment, ImmutableList.of(secondStudent, student)))
-                    .andReturn(ImmutableMap.of(secondStudent, otherStudentFeedback, student, studentFeedback))),
+                prepare(quizQuestionManager, m -> expect(m.getAssignmentTeacherFeedback(studentQuiz, studentAssignment, ImmutableList.of(student, secondStudent)))
+                    .andReturn(ImmutableMap.of(student, studentFeedback, secondStudent, otherStudentFeedback))),
                 prepare(associationManager, m -> {
                     expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(secondStudent))).andAnswer(grantAccess(false));
                     expect(m.enforceAuthorisationPrivacy(currentUser(), getUserSummaryFor(student))).andAnswer(grantAccess(true));

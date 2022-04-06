@@ -19,7 +19,7 @@ import java.io.IOException;
 
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
-import uk.ac.cam.cl.dtg.segue.dos.users.UserFromAuthProvider;
+import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
 
 /**
  * Classes that implement this interface must provide some way (via another

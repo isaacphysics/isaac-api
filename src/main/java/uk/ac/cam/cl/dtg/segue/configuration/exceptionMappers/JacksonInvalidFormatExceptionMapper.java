@@ -19,7 +19,7 @@ package uk.ac.cam.cl.dtg.segue.configuration.exceptionMappers;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Context;
