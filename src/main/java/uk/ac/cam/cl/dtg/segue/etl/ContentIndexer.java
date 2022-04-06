@@ -848,6 +848,28 @@ public class ContentIndexer {
                     + ") has both children and a value.");
         }
 
+        // Make sure no children of potentially expandable content are expandable, if so record a content error
+        if (content.getLayout().equals("tabs") || content instanceof CodeSnippet) {
+            String expandableChildrenLog = content.getChildren().stream()
+                    .filter(child -> child instanceof Content && ((Content) child).getExpandable())               // Filter out non-expandable children
+                    .map(childContent -> "id " + childContent.getId() + " of type " + childContent.getType())     // Compile info about expandable child
+                    .reduce("", (acc, childString) -> acc + (acc.equals("") ? ": " : "; ") + childString); // Join together expandable child info into one String
+            if (!expandableChildrenLog.equals("")) {
+                this.registerContentProblem(content, ": " + content.getId() + " in " + content.getCanonicalSourceFile() + " is "
+                        + "potentially expandable, but has the following expandable children: " + expandableChildrenLog
+                        + ". These children will have their expandable property disabled since we cannot handle nested "
+                        + "expandable content. Please make sure the parent content block with id " + content.getId() + " is "
+                        + "marked as expandable instead, and that it's children blocks have the expandable property "
+                        + "disabled.", indexProblemCache);
+            }
+        }
+
+        // Ensure that the expandable content is only of a type that support expansion
+        if (content.getExpandable() && !content.getLayout().equals("tabs") && !(content instanceof CodeSnippet)) {
+            this.registerContentProblem(content, ": " + content.getId() + " in " + content.getCanonicalSourceFile() + " is "
+                    + "marked as expandable, but we do not support expanding this type of content yet.", indexProblemCache);
+        }
+
         if (content instanceof Media) {
             Media f = (Media) content;
 
