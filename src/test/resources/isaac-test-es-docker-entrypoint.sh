@@ -11,9 +11,9 @@ rm -rf /usr/share/elasticsearch/data
 # Expand our custom pre-built index
 tar -xpf isaac-test-es-data.tar.gz -C /usr/share/elasticsearch
 # Remove node 0's lock otherwise ES cannot start
-rm /usr/share/elasticsearch/data/nodes/0/node.lock
+rm -f /usr/share/elasticsearch/data/nodes/0/node.lock
 # Also remove write locks for node 0 otherwise ES cannot start
-find /usr/share/elasticsearch/data -name write.lock -exec rm {} \;
+find /usr/share/elasticsearch/data -name write.lock -exec rm -f {} \;
 ### END OF CUSTOM ISAAC PART
 
 
