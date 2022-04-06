@@ -15,8 +15,8 @@
         <resteasy.version>4.7.0.Final</resteasy.version>
         <guice.version>4.2.3</guice.version>
         <oauth-client.version>1.31.0</oauth-client.version>
-        <jackson.version>2.12.1</jackson.version>
-        <jackson-databind.version>2.12.1</jackson-databind.version>
+        <jackson.version>2.13.2</jackson.version>
+        <jackson-databind.version>2.13.2.2</jackson-databind.version>
         <powermock.version>2.0.4</powermock.version>
         <swagger-ui-version>3.19.5</swagger-ui-version>
         <prometheus.version>0.8.0</prometheus.version>
