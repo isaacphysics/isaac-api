@@ -444,12 +444,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <dependency>
-            <groupId>uk.ac.cam.cl.dtg.teaching</groupId>
-            <artifactId>isaac-api</artifactId>
-            <version>2.16.6-SNAPSHOT</version>
-            <scope>test</scope>
-        </dependency>
 
     </dependencies>
 
