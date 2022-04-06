@@ -58,6 +58,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Comparator;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * GroupManager. Responsible for managing group related logic.
@@ -168,8 +169,7 @@ public class GroupManager {
 
         List<RegisteredUserDTO> users = userManager.findUsers(groupMemberIds);
         // Sort the users by name
-        this.orderUsersByName(users);
-        return users;
+        return this.orderUsersByName(users);
     }
 
     /**
@@ -202,11 +202,11 @@ public class GroupManager {
      * @param users
      *            - list of users.
      */
-    private void orderUsersByName(final List<RegisteredUserDTO> users) {
-        users.sort((userA, userB) -> ComparisonChain.start().
-                compare(userA.getGivenName(), userB.getGivenName(), Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)).
-                compare(userA.getFamilyName(), userB.getFamilyName(), Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)).
-                result());
+    private List<RegisteredUserDTO> orderUsersByName(final List<RegisteredUserDTO> users) {
+        return users.stream()
+                .sorted(Comparator.comparing(RegisteredUserDTO::getGivenName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
+                .sorted(Comparator.comparing(RegisteredUserDTO::getFamilyName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
+                .collect(Collectors.toList());
     }
 
     /**
