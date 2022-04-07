@@ -255,7 +255,7 @@ public class GameManager {
     /**
      * Get a list of gameboards by their ids.
      *
-     * Note: These gameboards will not be augmented with user information.
+     * Note: These gameboards will not be augmented with any user information.
      *
      * @param gameboardIds
      *            - to look up.
@@ -275,23 +275,20 @@ public class GameManager {
     /**
      * Get a list of gameboards by their ids.
      *
-     * Note: These gameboards WILL be augmented with user information.
+     * Note: These gameboards WILL be augmented with user attempt information, but not whether the gameboard is saved
+     * to the user's boards.
      *
      * @param gameboardIds
      *            - to look up.
-     * @param user
-     *            - This allows state information to be retrieved.
      * @param userQuestionAttempts
      *            - so that we can augment the gameboard.
      * @return the gameboards or null.
      * @throws SegueDatabaseException
-     *             - if there is a problem retrieving the gameboards in the database or updating the users gameboards
-     *             link table.
+     *             - if there is a problem retrieving the gameboards in the database.
      * @throws ContentManagerException
      *             - if there is a problem resolving content
      */
     public final List<GameboardDTO> getGameboards(final List<String> gameboardIds,
-                                                  final AbstractSegueUserDTO user,
                                                   final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts)
             throws SegueDatabaseException, ContentManagerException {
         if (null == gameboardIds || gameboardIds.isEmpty()) {
@@ -300,7 +297,7 @@ public class GameManager {
 
         List<GameboardDTO> gameboardsByIds = this.gameboardPersistenceManager.getGameboardsByIds(gameboardIds);
         for (GameboardDTO gb : gameboardsByIds) {
-            augmentGameboardWithQuestionAttemptInformationAndUserInformation(gb, userQuestionAttempts, user);
+            augmentGameboardWithQuestionAttemptInformation(gb, userQuestionAttempts);
         }
 
         return gameboardsByIds;
@@ -1036,9 +1033,11 @@ public class GameManager {
         int questionPartsNotAttempted = 0;
         String questionPageId = gameItem.getId();
 
+        IsaacQuestionPageDTO questionPage = (IsaacQuestionPageDTO) this.contentManager.getContentById(
+                this.contentManager.getCurrentContentSHA(), questionPageId);
         // get all question parts in the question page: depends on each question
         // having an id that starts with the question page id.
-        Collection<QuestionDTO> listOfQuestionParts = getAllMarkableQuestionPartsDFSOrder(questionPageId);
+        Collection<QuestionDTO> listOfQuestionParts = getAllMarkableQuestionPartsDFSOrder(questionPage);
         Map<String, ? extends List<? extends LightweightQuestionValidationResponse>> questionAttempts =
                 questionAttemptsFromUser.get(questionPageId);
         if (questionAttempts != null) {
@@ -1075,8 +1074,6 @@ public class GameManager {
         }
 
         // Get the pass mark for the question page
-        IsaacQuestionPage questionPage = (IsaacQuestionPage) this.contentManager.getContentDOById(
-                this.contentManager.getCurrentContentSHA(), questionPageId);
         if (questionPage == null) {
             throw new ResourceNotFoundException(String.format("Unable to locate the question: %s for augmenting",
                     questionPageId));
