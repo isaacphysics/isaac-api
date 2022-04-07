@@ -273,10 +273,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 Collection<AssignmentDTO> allAssignmentsSetToGroup
                         = this.assignmentManager.getAssignmentsByGroup(group.getId());
 
-                // In order to get all the information about gameboard items, we need to use the method which augments
-                // gameboards with user attempt information. But we don't _want_ this information for real, so we won't
-                // do the costly loading of the real attempt information from the database:
-                // FIXME: would GameManager::getGameboards with only one argument work correctly / be better?
+                // In order to get all the information about parts and pass marks, which is needed for Assignment Progress,
+                // we need to use the method which augments gameboards with user attempt information.
+                // But we don't _want_ the attempt information itself for real, so we won't load it from the database:
                 Map<String, Map<String, List<QuestionValidationResponse>>> fakeQuestionAttemptMap = new HashMap<>();
 
                 // we want to populate gameboard details for the assignment DTO.
