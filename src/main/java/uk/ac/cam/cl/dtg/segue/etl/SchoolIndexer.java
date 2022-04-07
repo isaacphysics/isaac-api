@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
-import uk.ac.cam.cl.dtg.segue.dos.users.School;
+import uk.ac.cam.cl.dtg.isaac.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
 import java.io.*;
@@ -79,7 +79,7 @@ class SchoolIndexer {
         }
 
         try {
-            es.bulkIndex(SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString(), indexList);
+            es.bulkIndexWithIDs(SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString(), indexList);
             log.info("School list index request complete.");
         } catch (SegueSearchException e) {
             log.error("Unable to complete bulk index operation for schools list.", e);

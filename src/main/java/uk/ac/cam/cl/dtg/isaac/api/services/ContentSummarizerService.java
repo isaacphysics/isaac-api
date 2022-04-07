@@ -18,9 +18,9 @@ package uk.ac.cam.cl.dtg.isaac.api.services;
 import com.google.inject.Inject;
 import ma.glasnost.orika.MapperFacade;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
-import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 
 import java.util.ArrayList;
 

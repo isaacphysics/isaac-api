@@ -35,10 +35,10 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.JsonLoader;
-import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
-import uk.ac.cam.cl.dtg.segue.dos.users.FacebookTokenInfo;
-import uk.ac.cam.cl.dtg.segue.dos.users.FacebookUser;
-import uk.ac.cam.cl.dtg.segue.dos.users.UserFromAuthProvider;
+import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
+import uk.ac.cam.cl.dtg.isaac.dos.users.FacebookTokenInfo;
+import uk.ac.cam.cl.dtg.isaac.dos.users.FacebookUser;
+import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
 
 import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
 import com.google.api.client.auth.oauth2.AuthorizationCodeFlow.Builder;

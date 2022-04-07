@@ -19,7 +19,7 @@ import com.google.common.collect.Lists;
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardContentDescriptor;
-import uk.ac.cam.cl.dtg.segue.dos.AudienceContext;
+import uk.ac.cam.cl.dtg.isaac.dos.AudienceContext;
 
 import javax.annotation.Nullable;
 import java.util.List;

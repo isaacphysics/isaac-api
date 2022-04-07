@@ -18,8 +18,8 @@ package uk.ac.cam.cl.dtg.segue.dao.associations;
 import java.util.List;
 
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
-import uk.ac.cam.cl.dtg.segue.dos.UserAssociation;
+import uk.ac.cam.cl.dtg.isaac.dos.AssociationToken;
+import uk.ac.cam.cl.dtg.isaac.dos.UserAssociation;
 
 /**
  * Interface for data manager classes that deal with user association data.

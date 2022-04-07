@@ -16,7 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.dao.users;
 
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dos.users.LocalUserCredential;
+import uk.ac.cam.cl.dtg.isaac.dos.users.LocalUserCredential;
 
 /**
  * Interface representing an abstract persistence mechanism for passwords.

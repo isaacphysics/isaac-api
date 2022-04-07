@@ -177,6 +177,7 @@ public final class Constants {
         LEAVE_GAMEBOARD_BUILDER,
         SAVE_GAMEBOARD,
         CLIENT_SIDE_ERROR,
+        LOGIN_MODAL_SHOWN,
     }
     public static final Set<String> ISAAC_CLIENT_LOG_TYPES = Arrays.stream(IsaacClientLogType.values()).map(IsaacClientLogType::name).collect(Collectors.toSet());
 
