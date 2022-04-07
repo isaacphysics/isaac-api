@@ -117,7 +117,7 @@ public class GitContentManager implements IContentManager {
         }
 
         this.cache = CacheBuilder.newBuilder().recordStats().softValues().expireAfterAccess(1, TimeUnit.DAYS).build();
-        CACHE_METRICS_COLLECTOR.addCache("GitContentManagerCache", cache);
+        CACHE_METRICS_COLLECTOR.addCache("git_content_manager_cache", cache);
 
         this.contentShaCache = CacheBuilder.newBuilder().softValues().expireAfterWrite(5, TimeUnit.SECONDS).build();
     }
