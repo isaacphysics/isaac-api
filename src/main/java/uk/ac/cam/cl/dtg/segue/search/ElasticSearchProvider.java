@@ -617,6 +617,9 @@ public class ElasticSearchProvider implements ISearchProvider {
                 query.mustNot(processMatchInstructions(mustNot));
             }
             query.minimumShouldMatch(booleanMatch.getMinimumShouldMatch());
+            if (booleanMatch.getBoost() != null) {
+                query.boost(booleanMatch.getBoost());
+            }
             return query;
         }
 
