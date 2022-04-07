@@ -180,7 +180,7 @@ public class PgLocationHistory implements LocationHistory {
     /*
      * (non-Javadoc)
      * 
-     * @see uk.ac.cam.cl.dtg.isaac.dos.LocationHistory#storeLocationEvent(uk.ac.cam .cl.dtg.segue.dos.LocationEvent)
+     * @see uk.ac.cam.cl.dtg.isaac.dos.LocationHistory#storeLocationEvent(uk.ac.cam.cl.dtg.isaac.dos.LocationEvent)
      */
     @Override
     public LocationHistoryEvent storeLocationEvent(final String ipAddress, final Location location)
@@ -191,7 +191,7 @@ public class PgLocationHistory implements LocationHistory {
     /*
      * (non-Javadoc)
      * 
-     * @see uk.ac.cam.cl.dtg.isaac.dos.LocationHistory#storeLocationEvent(uk.ac.cam .cl.dtg.segue.dos.LocationEvent)
+     * @see uk.ac.cam.cl.dtg.isaac.dos.LocationHistory#storeLocationEvent(uk.ac.cam.cl.dtg.isaac.dos.LocationEvent)
      */
     @Override
     public void updateLocationEventDate(final Long id, final boolean isCurrent) throws SegueDatabaseException {
