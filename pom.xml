@@ -640,7 +640,7 @@
                                     <classPatterns>
                                         <classPattern>uk.ac.cam.cl.dtg.isaac.dto.**DTO</classPattern>
                                     </classPatterns>
-                                    <outputFile>isaac-api-types.d.ts</outputFile>
+                                    <outputFile>isaac-dto-types.d.ts</outputFile>
                                 </configuration>
                             </execution>
                             <execution>
@@ -653,7 +653,7 @@
                                     <classPatterns>
                                         <classPattern>uk.ac.cam.cl.dtg.isaac.dos.**</classPattern>
                                     </classPatterns>
-                                    <outputFile>isaac-data-types.d.ts</outputFile>
+                                    <outputFile>isaac-do-types.d.ts</outputFile>
                                 </configuration>
                             </execution>
                         </executions>
