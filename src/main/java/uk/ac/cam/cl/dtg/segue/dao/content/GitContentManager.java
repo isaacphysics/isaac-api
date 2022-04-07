@@ -69,6 +69,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.CACHE_METRICS_COLLECTOR;
 
 /**
  * Implementation that specifically works with Content objects.
@@ -115,7 +116,9 @@ public class GitContentManager implements IContentManager {
             log.info("API Configured to only allow published content to be returned.");
         }
 
-        this.cache = CacheBuilder.newBuilder().softValues().expireAfterAccess(1, TimeUnit.DAYS).build();
+        this.cache = CacheBuilder.newBuilder().recordStats().softValues().expireAfterAccess(1, TimeUnit.DAYS).build();
+        CACHE_METRICS_COLLECTOR.addCache("GitContentManagerCache", cache);
+
         this.contentShaCache = CacheBuilder.newBuilder().softValues().expireAfterWrite(5, TimeUnit.SECONDS).build();
     }
 
