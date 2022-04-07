@@ -337,7 +337,7 @@ public class GitContentManager implements IContentManager {
             contentQuery.setMinimumShouldMatch(numberOfExpectedShouldMatches);
 
             if (importantDocumentTypes.contains(documentType)) {
-                contentQuery.setBoost(10f);
+                contentQuery.setBoost(5f);
             }
 
             matchQuery.should(contentQuery);
