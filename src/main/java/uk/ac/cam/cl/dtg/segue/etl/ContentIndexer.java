@@ -849,11 +849,12 @@ public class ContentIndexer {
         }
 
         // Make sure no children of potentially expandable content are expandable, if so record a content error
-        if (content.getLayout().equals("tabs") || content instanceof CodeSnippet) {
+        if (((null != content.getLayout() && content.getLayout().equals("tabs")) || content instanceof CodeSnippet) && null != content.getChildren()) {
             String expandableChildrenLog = content.getChildren().stream()
-                    .filter(child -> child instanceof Content && ((Content) child).getExpandable())               // Filter out non-expandable children
-                    .map(childContent -> "id " + childContent.getId() + " of type " + childContent.getType())     // Compile info about expandable child
-                    .reduce("", (acc, childString) -> acc + (acc.equals("") ? ": " : "; ") + childString); // Join together expandable child info into one String
+                    .filter(child -> child instanceof Content && null != ((Content) child).getExpandable() && ((Content) child).getExpandable())  // Filter out non-expandable children
+                    .map(childContent -> "id " + (null != childContent.getId() ? childContent.getId() : "undefined")                              // Compile info about expandable child
+                            + " of type " + (null != childContent.getType() ? childContent.getType() : "undefined"))
+                    .reduce("", (acc, childString) -> acc + (acc.equals("") ? ": " : "; ") + childString);                                 // Join together expandable child info into one String
             if (!expandableChildrenLog.equals("")) {
                 this.registerContentProblem(content, ": " + content.getId() + " in " + content.getCanonicalSourceFile() + " is "
                         + "potentially expandable, but has the following expandable children: " + expandableChildrenLog
@@ -865,8 +866,8 @@ public class ContentIndexer {
         }
 
         // Ensure that the expandable content is only of a type that support expansion
-        if (content.getExpandable() && !content.getLayout().equals("tabs") && !(content instanceof CodeSnippet)) {
-            this.registerContentProblem(content, ": " + content.getId() + " in " + content.getCanonicalSourceFile() + " is "
+        if (null != content.getExpandable() && content.getExpandable() && null != content.getLayout() && !content.getLayout().equals("tabs") && !(content instanceof CodeSnippet)) {
+            this.registerContentProblem(content, ": " + (null != content.getId() ? content.getId() : "undefined") + " in " + content.getCanonicalSourceFile() + " is "
                     + "marked as expandable, but we do not support expanding this type of content yet.", indexProblemCache);
         }
 
