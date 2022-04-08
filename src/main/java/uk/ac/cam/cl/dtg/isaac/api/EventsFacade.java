@@ -98,22 +98,7 @@ import java.util.stream.Collectors;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.DATE_FIELDNAME;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.ENDDATE_FIELDNAME;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.EVENT_TYPE;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.ADMIN_BOOKING_REASON_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.ATTENDED_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.BOOKING_STATUS_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT_AS_STRING;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_START_INDEX_AS_STRING;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_DATE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_ID_FKEY_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_TAGS_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.EventFilterOption;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueServerLogType;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TAGS_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_FKEY_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_LIST_FKEY_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Events Facade.
@@ -199,6 +184,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     @GZIP
     @ApiOperation(value = "List events matching the provided criteria.")
     public final Response getEvents(@Context final HttpServletRequest request, @QueryParam("tags") final String tags,
+            @QueryParam("audience") final String audience,
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
             @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit,
             @QueryParam("sort_by") final String sortOrder,
@@ -220,6 +206,10 @@ public class EventsFacade extends AbstractIsaacFacade {
 
         if (tags != null) {
             fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
+        }
+
+        if (audience != null) {
+            fieldsToMatch.put(STAGE_FIELDNAME, Arrays.asList(audience.split(",")));
         }
 
         final Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
