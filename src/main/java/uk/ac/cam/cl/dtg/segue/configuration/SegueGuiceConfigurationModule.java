@@ -127,7 +127,8 @@ import uk.ac.cam.cl.dtg.segue.scheduler.SegueScheduledDatabaseScriptJob;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueScheduledJob;
 import uk.ac.cam.cl.dtg.segue.scheduler.jobs.DeleteEventAdditionalBookingInformationJob;
 import uk.ac.cam.cl.dtg.segue.scheduler.jobs.DeleteEventAdditionalBookingInformationOneYearJob;
-import uk.ac.cam.cl.dtg.segue.scheduler.jobs.EventScheduledEmailJob;
+import uk.ac.cam.cl.dtg.segue.scheduler.jobs.EventFeedbackEmailJob;
+import uk.ac.cam.cl.dtg.segue.scheduler.jobs.EventReminderEmailJob;
 import uk.ac.cam.cl.dtg.segue.scheduler.jobs.SegueScheduledSyncMailjetUsersJob;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
@@ -903,6 +904,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         if (null == segueJobService) {
             String mailjetKey = properties.getProperty(MAILJET_API_KEY);
             String mailjetSecret = properties.getProperty(MAILJET_API_SECRET);
+            String eventPrePostEmails = properties.getProperty(EVENT_PRE_POST_EMAILS);
 
             SegueScheduledJob PIISQLJob = new SegueScheduledDatabaseScriptJob(
                     "PIIDeleteScheduledJob",
@@ -940,13 +942,22 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                     new DeleteEventAdditionalBookingInformationOneYearJob()
             );
 
-            SegueScheduledJob eventScheduledEmail = SegueScheduledJob.createCustomJob(
-                "eventScheduledEmail",
+            SegueScheduledJob eventReminderEmail = SegueScheduledJob.createCustomJob(
+                "eventReminderEmail",
                 "JavaJob",
-                "Send scheduled emails to events",
+                "Send scheduled reminder emails to events",
                 "0 0 7 * * ?",//""0 * * ? * * *",
                 Maps.newHashMap(),
-                new EventScheduledEmailJob()
+                new EventReminderEmailJob()
+            );
+
+            SegueScheduledJob eventFeedbackEmail = SegueScheduledJob.createCustomJob(
+                "eventFeedbackEmail",
+                "JavaJob",
+                "Send scheduled feedback emails to events",
+                "0 0 20 * * ?",
+                Maps.newHashMap(),
+                new EventFeedbackEmailJob()
             );
 
             SegueScheduledJob syncMailjetUsers = new SegueScheduledSyncMailjetUsersJob(
@@ -956,10 +967,15 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                     "0 0 0/4 ? * * *");
 
             List<SegueScheduledJob> configuredScheduledJobs = new ArrayList<>(Arrays.asList(PIISQLJob, cleanUpOldAnonymousUsers,
-                    cleanUpExpiredReservations, eventScheduledEmail));
+                    cleanUpExpiredReservations));
 
             if (mailjetKey != null && mailjetSecret != null) {
                 configuredScheduledJobs.add(syncMailjetUsers);
+            }
+
+            if (eventPrePostEmails != null) {
+                configuredScheduledJobs.add(eventReminderEmail);
+                configuredScheduledJobs.add(eventFeedbackEmail);
             }
 
             segueJobService = new SegueJobService(configuredScheduledJobs, database);
@@ -967,6 +983,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             if (mailjetKey == null && mailjetSecret == null) {
                 segueJobService.removeScheduleJob(syncMailjetUsers);
             }
+
+            if (eventPrePostEmails == null) {
+                segueJobService.removeScheduleJob(eventReminderEmail);
+                segueJobService.removeScheduleJob(eventFeedbackEmail);
+            }
+
         }
 
         return segueJobService;

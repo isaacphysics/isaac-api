@@ -9,23 +9,22 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.ScheduledEmailManager;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 
-public class EventScheduledEmailJob implements Job {
-    private static final Logger log = LoggerFactory.getLogger(EventScheduledEmailJob.class);
+public class EventFeedbackEmailJob implements Job {
+    private static final Logger log = LoggerFactory.getLogger(EventReminderEmailJob.class);
     private final ScheduledEmailManager scheduledEmailManager;
 
     /**
      * This class is required by quartz and must be executable by any instance of the segue api relying only on the
      * jobdata context provided.
      */
-    public EventScheduledEmailJob() {
+    public EventFeedbackEmailJob() {
         Injector injector = SegueGuiceConfigurationModule.getGuiceInjector();
         scheduledEmailManager = injector.getInstance(ScheduledEmailManager.class);
     }
 
     @Override
     public void execute(final JobExecutionContext context) throws JobExecutionException {
-        scheduledEmailManager.sendReminderEmails();
-        log.info("Ran EventScheudledEmailJob");
+        scheduledEmailManager.sendFeedbackEmails();
+        log.info("Ran EventFeedbackEmailJob");
     }
 }
-

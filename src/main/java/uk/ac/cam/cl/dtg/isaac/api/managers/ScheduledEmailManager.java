@@ -22,7 +22,7 @@ import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
-import uk.ac.cam.cl.dtg.segue.scheduler.jobs.EventScheduledEmailJob;
+import uk.ac.cam.cl.dtg.segue.scheduler.jobs.EventReminderEmailJob;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.DateRangeFilterInstruction;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -36,8 +36,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.DATE_FIELDNAME;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.ENDDATE_FIELDNAME;
@@ -46,7 +44,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
 
 public class ScheduledEmailManager {
-    private static final Logger log = LoggerFactory.getLogger(EventScheduledEmailJob.class);
+    private static final Logger log = LoggerFactory.getLogger(EventReminderEmailJob.class);
 
     private final PropertiesLoader properties;
     private final PostgresSqlDb database;
@@ -74,14 +72,14 @@ public class ScheduledEmailManager {
         this.emailManager = emailManager;
     }
 
-    public boolean reminderEmailNotAlreadySent(IsaacEventPageDTO event) {
+    public boolean scheduledEmailNotAlreadySent(IsaacEventPageDTO event, String appendId) {
         ZonedDateTime now = ZonedDateTime.now();
         String query = "INSERT INTO scheduled_emails(email_id, sent) VALUES (?, ?)"
             + " ON CONFLICT (email_id) DO NOTHING";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
         ) {
-            pst.setString(1, event.getId() + "@pre");
+            pst.setString(1, event.getId() + appendId);
             pst.setTimestamp(2, Timestamp.valueOf(now.toLocalDateTime()));
 
             int notAlreadySent = pst.executeUpdate();
@@ -92,15 +90,8 @@ public class ScheduledEmailManager {
         return false;
     };
 
-    public void sendEmailForEvent(IsaacEventPageDTO event) throws SegueDatabaseException {
-        List<String> eventTags = Lists.newArrayList("booster", "teachercpd", "discovery", "masterclass", "voyager", "explorer", "teacher", "workshop", "virtual");
-        Set<String> matchingTags = eventTags.stream().distinct().filter(event.getTags()::contains).collect(
-            Collectors.toSet());
-        log.info(event.getId());
-        log.info(matchingTags.toString());
-        log.info(event.getDate().toString());
-
-        if (this.reminderEmailNotAlreadySent(event)) {
+    public void sendEmailForEvent(IsaacEventPageDTO event, String templateId, String appendId) throws SegueDatabaseException {
+        if (this.scheduledEmailNotAlreadySent(event, appendId)) {
             List<Long> ids = Lists.newArrayList();
             List<DetailedEventBookingDTO> eventBookings = bookingManager.adminGetBookingsByEventId(event.getId());
             eventBookings.stream().map(DetailedEventBookingDTO::getUserBooked).map(UserSummaryDTO::getId)
@@ -109,7 +100,7 @@ public class ScheduledEmailManager {
                 try {
                     RegisteredUserDTO user = userAccountManager.getUserDTOById(id);
                     emailManager.sendTemplatedEmailToUser(user,
-                        emailManager.getEmailTemplateDTO("event_reminder"),
+                        emailManager.getEmailTemplateDTO(templateId),
                         new ImmutableMap.Builder<String, Object>()
                             .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
                             .put("event", event)
@@ -137,7 +128,6 @@ public class ScheduledEmailManager {
         fieldsToMatch.put(TYPE_FIELDNAME, Collections.singletonList(EVENT_TYPE));
         sortInstructions.put(DATE_FIELDNAME, Constants.SortOrder.DESC);
         ZonedDateTime now = ZonedDateTime.now();
-//        ZonedDateTime oneYearAgo = now.plusDays(-365);
         ZonedDateTime threeDaysAhead = now.plusDays(3);
         DateRangeFilterInstruction
             eventsWithinThreeDays = new DateRangeFilterInstruction(new Date(), Date.from(threeDaysAhead.toInstant()));
@@ -150,11 +140,48 @@ public class ScheduledEmailManager {
             for (ContentDTO contentResult : findByFieldNames.getResults()) {
                 if (contentResult instanceof IsaacEventPageDTO) {
                     IsaacEventPageDTO event = (IsaacEventPageDTO) contentResult;
-                    this.sendEmailForEvent(event);
+                    this.sendEmailForEvent(event, "event_reminder", "@pre");
                 }
             }
         } catch (ContentManagerException | SegueDatabaseException e) {
-            log.error("Failed to send scheduled event emails: ", e);
+            log.error("Failed to send scheduled event reminder emails: ", e);
         }
     }
+
+    public void sendFeedbackEmails() {
+        // Magic number
+        Integer limit = 10000;
+        Integer startIndex = 0;
+        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
+        Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
+        Map<String, AbstractFilterInstruction> filterInstructions = Maps.newHashMap();
+        fieldsToMatch.put(TYPE_FIELDNAME, Collections.singletonList(EVENT_TYPE));
+        sortInstructions.put(DATE_FIELDNAME, Constants.SortOrder.DESC);
+        ZonedDateTime now = ZonedDateTime.now();
+        ZonedDateTime sixtyDaysAgo = now.plusDays(-60);
+
+        DateRangeFilterInstruction
+            eventsInLastSixtyDays = new DateRangeFilterInstruction(Date.from(sixtyDaysAgo.toInstant()), new Date());
+        filterInstructions.put(ENDDATE_FIELDNAME, eventsInLastSixtyDays);
+
+        try {
+            ResultsWrapper<ContentDTO> findByFieldNames = this.contentManager.findByFieldNames(
+                properties.getProperty(CONTENT_INDEX), ContentService.generateDefaultFieldToMatch(fieldsToMatch),
+                startIndex, limit, sortInstructions, filterInstructions);
+            for (ContentDTO contentResult : findByFieldNames.getResults()) {
+                if (contentResult instanceof IsaacEventPageDTO) {
+                    IsaacEventPageDTO event = (IsaacEventPageDTO) contentResult;
+                    // Event end date (if present) is today or before, else event date is today or before
+                    boolean endDateToday = event.getEndDate() != null && event.getEndDate().toInstant().isBefore(new Date().toInstant());
+                    boolean noEndDateAndStartDateToday = event.getEndDate() == null && event.getDate().toInstant().isBefore(new Date().toInstant());
+                    if (endDateToday || noEndDateAndStartDateToday) {
+                        this.sendEmailForEvent(event, "event_feedback", "@post");
+                    }
+                }
+            }
+        } catch (ContentManagerException | SegueDatabaseException e) {
+            log.error("Failed to send scheduled event feedback emails: ", e);
+        }
+    }
+
 }
