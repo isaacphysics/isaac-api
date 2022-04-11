@@ -16,8 +16,8 @@
 package uk.ac.cam.cl.dtg.isaac.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
-import uk.ac.cam.cl.dtg.segue.dto.content.ItemDTO;
+import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ItemDTO;
 
 import java.util.List;
 

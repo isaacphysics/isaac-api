@@ -33,8 +33,8 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.inject.Inject;
 
-import uk.ac.cam.cl.dtg.segue.dos.LocationHistoryEvent;
-import uk.ac.cam.cl.dtg.segue.dos.LocationHistory;
+import uk.ac.cam.cl.dtg.isaac.dos.LocationHistoryEvent;
+import uk.ac.cam.cl.dtg.isaac.dos.LocationHistory;
 import uk.ac.cam.cl.dtg.util.locations.IPLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.Location;
 import uk.ac.cam.cl.dtg.util.locations.LocationServerException;

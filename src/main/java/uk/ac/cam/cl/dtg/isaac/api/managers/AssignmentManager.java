@@ -28,8 +28,8 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IAssignmentLike;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.util.ArrayList;

@@ -34,12 +34,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
-import uk.ac.cam.cl.dtg.segue.dos.content.Content;
-import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
+import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.BooleanMatchInstruction;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
@@ -69,6 +69,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.CACHE_METRICS_COLLECTOR;
 
 /**
  * Implementation that specifically works with Content objects.
@@ -115,7 +116,9 @@ public class GitContentManager implements IContentManager {
             log.info("API Configured to only allow published content to be returned.");
         }
 
-        this.cache = CacheBuilder.newBuilder().softValues().expireAfterAccess(1, TimeUnit.DAYS).build();
+        this.cache = CacheBuilder.newBuilder().recordStats().softValues().expireAfterAccess(1, TimeUnit.DAYS).build();
+        CACHE_METRICS_COLLECTOR.addCache("git_content_manager_cache", cache);
+
         this.contentShaCache = CacheBuilder.newBuilder().softValues().expireAfterWrite(5, TimeUnit.SECONDS).build();
     }
 
@@ -280,6 +283,8 @@ public class GitContentManager implements IContentManager {
     ) throws  ContentManagerException {
         String nestedFieldConnector = searchProvider.getNestedFieldConnector();
 
+        List<String> importantDocumentTypes = ImmutableList.of(TOPIC_SUMMARY_PAGE_TYPE);
+
         List<String> importantFields = ImmutableList.of(
                 Constants.TITLE_FIELDNAME, Constants.ID_FIELDNAME, Constants.SUMMARY_FIELDNAME, Constants.TAGS_FIELDNAME
         );
@@ -333,6 +338,11 @@ public class GitContentManager implements IContentManager {
             }
 
             contentQuery.setMinimumShouldMatch(numberOfExpectedShouldMatches);
+
+            if (importantDocumentTypes.contains(documentType)) {
+                contentQuery.setBoost(5f);
+            }
+
             matchQuery.should(contentQuery);
         }
 

@@ -16,7 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.configuration;
 
 import java.util.List;
-import uk.ac.cam.cl.dtg.segue.dos.content.Content;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 
 /**
  * Interface for configuration modules that will work nicely with Segue.

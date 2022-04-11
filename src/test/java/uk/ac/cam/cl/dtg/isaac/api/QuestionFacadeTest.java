@@ -27,7 +27,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
-import uk.ac.cam.cl.dtg.segue.dos.IUserStreaksManager;
+import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.ws.rs.core.EntityTag;

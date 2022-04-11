@@ -3,9 +3,9 @@ package uk.ac.cam.cl.dtg.isaac.api.managers;
 import org.junit.Before;
 import org.junit.Test;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
-import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
-import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
-import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
+import uk.ac.cam.cl.dtg.isaac.dos.users.Gender;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 
 import java.util.ArrayList;
 import java.util.Collections;

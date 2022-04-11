@@ -17,9 +17,9 @@ package uk.ac.cam.cl.dtg.isaac.dos;
 
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacClozeQuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacClozeValidator;
-import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
-import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
-import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
+import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
+import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
+import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
 
 
 /**

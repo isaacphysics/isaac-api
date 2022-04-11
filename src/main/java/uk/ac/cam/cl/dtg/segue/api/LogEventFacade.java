@@ -26,10 +26,10 @@ import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.LogEventMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.servlet.http.HttpServletRequest;

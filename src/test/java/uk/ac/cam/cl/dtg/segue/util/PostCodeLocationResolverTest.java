@@ -33,8 +33,8 @@ import com.google.api.client.util.Maps;
 
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
-import uk.ac.cam.cl.dtg.segue.dos.LocationHistory;
-import uk.ac.cam.cl.dtg.segue.dos.PgLocationHistory;
+import uk.ac.cam.cl.dtg.isaac.dos.LocationHistory;
+import uk.ac.cam.cl.dtg.isaac.dos.PgLocationHistory;
 import uk.ac.cam.cl.dtg.util.locations.LocationServerException;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeIOLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeRadius;

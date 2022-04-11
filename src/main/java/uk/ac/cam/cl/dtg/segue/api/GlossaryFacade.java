@@ -26,9 +26,9 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
-import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
-import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.ws.rs.GET;

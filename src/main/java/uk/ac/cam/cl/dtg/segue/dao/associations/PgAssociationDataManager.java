@@ -29,8 +29,8 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
-import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
-import uk.ac.cam.cl.dtg.segue.dos.UserAssociation;
+import uk.ac.cam.cl.dtg.isaac.dos.AssociationToken;
+import uk.ac.cam.cl.dtg.isaac.dos.UserAssociation;
 
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
