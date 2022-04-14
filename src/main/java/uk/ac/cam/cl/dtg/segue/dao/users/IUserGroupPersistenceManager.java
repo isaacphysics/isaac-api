@@ -21,9 +21,9 @@ import java.util.Map;
 import java.util.Set;
 
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dos.GroupMembership;
-import uk.ac.cam.cl.dtg.segue.dos.GroupMembershipStatus;
-import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
+import uk.ac.cam.cl.dtg.isaac.dos.GroupMembership;
+import uk.ac.cam.cl.dtg.isaac.dos.GroupMembershipStatus;
+import uk.ac.cam.cl.dtg.isaac.dos.UserGroup;
 
 import javax.annotation.Nullable;
 

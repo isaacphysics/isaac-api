@@ -20,7 +20,7 @@ import com.google.inject.Inject;
 import uk.ac.cam.cl.dtg.segue.dao.AbstractPgDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
-import uk.ac.cam.cl.dtg.segue.dos.users.LocalUserCredential;
+import uk.ac.cam.cl.dtg.isaac.dos.users.LocalUserCredential;
 
 import java.sql.*;
 import java.util.List;

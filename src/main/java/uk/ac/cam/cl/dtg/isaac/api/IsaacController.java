@@ -37,13 +37,13 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
-import uk.ac.cam.cl.dtg.segue.dos.IUserStreaksManager;
-import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
-import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
+import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.servlet.http.HttpServletRequest;
@@ -182,10 +182,12 @@ public class IsaacController extends AbstractIsaacFacade {
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
             @DefaultValue(DEFAULT_SEARCH_RESULT_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
 
-        // Impose 1000 character search string limit internally
+        // Check the search string is sensible:
+        if (null == searchString || searchString.isEmpty()) {
+            return SegueErrorResponse.getBadRequestResponse("Search string must not be blank.");
+        }
         if (searchString.length() > SEARCH_TEXT_CHAR_LIMIT) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Search string exceeded " +
-                    SEARCH_TEXT_CHAR_LIMIT.toString() + " character limit.").toResponse();
+            return SegueErrorResponse.getBadRequestResponse(String.format("Search string exceeded %s character limit.", SEARCH_TEXT_CHAR_LIMIT));
         }
 
         // Calculate the ETag on current live version of the content
@@ -205,6 +207,11 @@ public class IsaacController extends AbstractIsaacFacade {
                 showHiddenContent = isUserStaff(userManager, (RegisteredUserDTO) currentUser);
             }
             List<String> documentTypes = !types.isEmpty() ? Arrays.asList(types.split(",")) : null;
+            // Return an error if any of the proposed document types are invalid
+            if (documentTypes != null && !SITE_WIDE_SEARCH_VALID_DOC_TYPES.containsAll(documentTypes)) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid document types.").toResponse();
+            }
+
             ResultsWrapper<ContentDTO> searchResults = this.contentManager.siteWideSearch(
                     this.contentIndex, searchString, documentTypes, showHiddenContent, startIndex, limit);
 

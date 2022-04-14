@@ -1142,13 +1142,6 @@ CREATE INDEX "question-attempts-by-user" ON public.question_attempts USING btree
 
 
 --
--- Name: question_attempts_by_question; Type: INDEX; Schema: public; Owner: rutherford
---
-
-CREATE INDEX question_attempts_by_question ON public.question_attempts USING btree (question_id);
-
-
---
 -- Name: question_attempts_by_timestamp; Type: INDEX; Schema: public; Owner: rutherford
 --
 
@@ -1188,6 +1181,19 @@ CREATE UNIQUE INDEX "unique email case insensitive" ON public.users USING btree 
 --
 
 CREATE UNIQUE INDEX user_alerts_id_uindex ON public.user_alerts USING btree (id);
+
+
+--
+-- Name: user_associations_by_receiving; Type: INDEX; Schema: public; Owner: rutherford
+--
+CREATE INDEX user_associations_by_receiving ON public.user_associations USING btree (user_id_receiving_permission);
+
+
+--
+-- Name: user_associations_tokens_groups; Type: INDEX; Schema: public; Owner: rutherford
+--
+
+CREATE INDEX user_associations_tokens_groups ON public.user_associations_tokens USING btree (group_id DESC);
 
 
 --

@@ -9,6 +9,7 @@ public class BooleanMatchInstruction extends AbstractMatchInstruction {
     private List<AbstractMatchInstruction> shoulds = Lists.newArrayList();
     private List<AbstractMatchInstruction> mustNots = Lists.newArrayList();
     private int minimumShouldMatch = 0;
+    private Float boost;
 
     public List<AbstractMatchInstruction> getMusts() {
         return musts;
@@ -36,5 +37,12 @@ public class BooleanMatchInstruction extends AbstractMatchInstruction {
     }
     public void setMinimumShouldMatch(int minimumShouldMatch) {
         this.minimumShouldMatch = minimumShouldMatch;
+    }
+
+    public void setBoost(final Float boostValue) {
+        this.boost = boostValue;
+    }
+    public Float getBoost() {
+        return this.boost;
     }
 }

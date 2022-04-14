@@ -44,13 +44,13 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
-import uk.ac.cam.cl.dtg.segue.dos.ITransaction;
-import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
-import uk.ac.cam.cl.dtg.segue.dos.users.Role;
-import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dos.AssociationToken;
+import uk.ac.cam.cl.dtg.isaac.dos.ITransaction;
+import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
+import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
+import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.io.UnsupportedEncodingException;
@@ -343,7 +343,7 @@ public class EventBookingManager {
                     + " booked on to it.", event.getId(), user.getEmail()));
         }
 
-        EventBookingDTO booking = null;
+        EventBookingDTO booking;
         try {
             // Obtain an exclusive database lock to lock the booking
             this.bookingPersistenceManager.acquireDistributedLock(event.getId());
@@ -355,6 +355,12 @@ public class EventBookingManager {
             booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), status,
                     additionalEventInformation);
 
+        } finally {
+            // release lock.
+            this.bookingPersistenceManager.releaseDistributedLock(event.getId());
+        }
+
+        try {
             // Send an email notifying the user (unless they are being added after the event for the sake of our records)
             Date bookingDate = new Date();
             if (event.getEndDate() == null || bookingDate.before(event.getEndDate())) {
@@ -384,10 +390,6 @@ public class EventBookingManager {
         } catch (ContentManagerException e) {
             log.error(String.format("Unable to send booking confirmation email (%s) to user (%s)", event.getId(), user
                     .getEmail()), e);
-
-        } finally {
-            // release lock.
-            this.bookingPersistenceManager.releaseDistributedLock(event.getId());
         }
 
         addUserToEventGroup(event, user);

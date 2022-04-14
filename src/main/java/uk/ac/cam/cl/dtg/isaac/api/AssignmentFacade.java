@@ -43,13 +43,13 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dos.LightweightQuestionValidationResponse;
-import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
-import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
+import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.servlet.http.HttpServletRequest;
@@ -176,16 +176,20 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             // Gather all gameboards we need to augment for the assignments in a single query
             List<String> gameboardIds = assignments.stream().map(AssignmentDTO::getGameboardId).collect(Collectors.toList());
-            Map<String, GameboardDTO> gameboardsMap = this.gameManager.getGameboards(gameboardIds, currentlyLoggedInUser, questionAttemptsByUser)
+            Map<String, GameboardDTO> gameboardsMap = this.gameManager.getGameboards(gameboardIds, questionAttemptsByUser)
                     .stream().collect(Collectors.toMap(GameboardDTO::getId, Function.identity()));
 
             // we want to populate gameboard details for the assignment DTO.
+            List<Long> groupIds = assignments.stream().map(AssignmentDTO::getGroupId).distinct().collect(Collectors.toList());
+            Map<Long, String> groupNameMap = new HashMap<>();
+            for (Long groupId: groupIds) {
+                UserGroupDTO group = groupManager.getGroupById(groupId);
+                groupNameMap.put(groupId, getFilteredGroupNameFromGroup(group));
+            }
+
             for (AssignmentDTO assignment : assignments) {
                 assignment.setGameboard(gameboardsMap.get(assignment.getGameboardId()));
-
-                // Augment with group name if allowed
-                UserGroupDTO group = groupManager.getGroupById(assignment.getGroupId());
-                assignment.setGroupName(getFilteredGroupNameFromGroup(group));
+                assignment.setGroupName(groupNameMap.get(assignment.getGroupId()));
             }
 
             this.assignmentService.augmentAssignerSummaries(assignments);
@@ -269,14 +273,14 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 Collection<AssignmentDTO> allAssignmentsSetToGroup
                         = this.assignmentManager.getAssignmentsByGroup(group.getId());
 
-                // In order to get all the information about gameboard items, we need to use the method which augments
-                // gameboards with user attempt information. But we don't _want_ this information for real, so we won't
-                // do the costly loading of the real attempt information from the database:
+                // In order to get all the information about parts and pass marks, which is needed for Assignment Progress,
+                // we need to use the method which augments gameboards with user attempt information.
+                // But we don't _want_ the attempt information itself for real, so we won't load it from the database:
                 Map<String, Map<String, List<QuestionValidationResponse>>> fakeQuestionAttemptMap = new HashMap<>();
 
                 // we want to populate gameboard details for the assignment DTO.
                 List<String> gameboardIDs = allAssignmentsSetToGroup.stream().map(AssignmentDTO::getGameboardId).collect(Collectors.toList());
-                Map<String, GameboardDTO> gameboards = this.gameManager.getGameboards(gameboardIDs, currentlyLoggedInUser, fakeQuestionAttemptMap)
+                Map<String, GameboardDTO> gameboards = this.gameManager.getGameboards(gameboardIDs, fakeQuestionAttemptMap)
                         .stream().collect(Collectors.toMap(GameboardDTO::getId, Function.identity()));
                 for (AssignmentDTO assignment : allAssignmentsSetToGroup) {
                     assignment.setGameboard(gameboards.get(assignment.getGameboardId()));

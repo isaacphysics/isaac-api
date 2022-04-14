@@ -15,7 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
-import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 
 import javax.ws.rs.core.Response;
 

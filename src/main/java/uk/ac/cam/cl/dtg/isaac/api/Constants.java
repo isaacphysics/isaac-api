@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants.LogType;
+import com.google.common.collect.ImmutableSet;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -49,6 +50,9 @@ public final class Constants {
     public static final String SEARCHABLE_TAG = "search_result";
     public static final String HIDE_FROM_FILTER_TAG = "nofilter";
     public static final String RELATED_CONTENT_FIELDNAME = "relatedContent";
+
+    public static final Set<String> SITE_WIDE_SEARCH_VALID_DOC_TYPES = ImmutableSet.of(
+            QUESTION_TYPE, CONCEPT_TYPE, TOPIC_SUMMARY_PAGE_TYPE, PAGE_TYPE, EVENT_TYPE);
 
     public static final int NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES = 2;
 
@@ -173,6 +177,7 @@ public final class Constants {
         LEAVE_GAMEBOARD_BUILDER,
         SAVE_GAMEBOARD,
         CLIENT_SIDE_ERROR,
+        LOGIN_MODAL_SHOWN,
     }
     public static final Set<String> ISAAC_CLIENT_LOG_TYPES = Arrays.stream(IsaacClientLogType.values()).map(IsaacClientLogType::name).collect(Collectors.toSet());
 
