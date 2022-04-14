@@ -98,7 +98,24 @@ import java.util.stream.Collectors;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.DATE_FIELDNAME;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.ENDDATE_FIELDNAME;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.EVENT_TYPE;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.ADMIN_BOOKING_REASON_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.ATTENDED_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.BOOKING_STATUS_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT_AS_STRING;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_START_INDEX_AS_STRING;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_DATE_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_ID_FKEY_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_TAGS_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.EventFilterOption;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueServerLogType;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TAGS_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_FKEY_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_LIST_FKEY_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.STAGE_FIELDNAME;
+
 
 /**
  * Events Facade.
