@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2021 Raspberry Pi Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,7 +27,9 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class AssignmentService {
     private static final Logger log = LoggerFactory.getLogger(AssignmentService.class);
@@ -39,24 +41,25 @@ public class AssignmentService {
         this.userManager = userManager;
     }
 
-    public <T extends IAssignmentLike> void augmentAssignerSummaries(Collection<T> assignments) throws SegueDatabaseException {
+    public <T extends IAssignmentLike> void augmentAssignerSummaries(final Collection<T> assignments) throws SegueDatabaseException {
         Map<Long, UserSummaryDTO> userSummaryCache = new HashMap<>();
+
+        // Iterating over the owner IDs allows us to cache "no user found" errors without querying database each time:
+        List<Long> ownerUserIds = assignments.stream().map(IAssignmentLike::getOwnerUserId).distinct().collect(Collectors.toList());
+        for (Long ownerUserId: ownerUserIds) {
+            try {
+                RegisteredUserDTO user = userManager.getUserDTOById(ownerUserId);
+                UserSummaryDTO userSummary = userManager.convertToUserSummaryObject(user);
+                userSummaryCache.put(ownerUserId, userSummary);
+            } catch (NoUserException e) {
+                log.debug(String.format("Assignments exist with owner user ID (%s) that does not exist!", ownerUserId));
+            }
+        }
 
         for (T assignment: assignments) {
             Long ownerUserId = assignment.getOwnerUserId();
             if (ownerUserId != null) {
-                UserSummaryDTO userSummary = userSummaryCache.get(ownerUserId);
-                if (userSummary == null) {
-                    try {
-                        RegisteredUserDTO user = userManager.getUserDTOById(ownerUserId);
-                        userSummary = userManager.convertToUserSummaryObject(user);
-                        userSummaryCache.put(ownerUserId, userSummary);
-                    } catch (NoUserException e) {
-                        log.warn("Assignment (" + assignment.getId() + " of class " + assignment.getClass().getSimpleName() + ") exists with owner user ID ("
-                            + assignment.getOwnerUserId() + ") that does not exist!");
-                    }
-                }
-                assignment.setAssignerSummary(userSummary);
+                assignment.setAssignerSummary(userSummaryCache.get(ownerUserId));
             }
         }
     }
