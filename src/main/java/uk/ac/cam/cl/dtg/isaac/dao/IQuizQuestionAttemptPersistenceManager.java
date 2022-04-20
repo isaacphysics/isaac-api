@@ -16,7 +16,7 @@
 package uk.ac.cam.cl.dtg.isaac.dao;
 
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 
 import java.util.List;
 import java.util.Map;

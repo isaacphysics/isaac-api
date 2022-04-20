@@ -54,7 +54,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
-import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
@@ -617,6 +617,9 @@ public class ElasticSearchProvider implements ISearchProvider {
                 query.mustNot(processMatchInstructions(mustNot));
             }
             query.minimumShouldMatch(booleanMatch.getMinimumShouldMatch());
+            if (booleanMatch.getBoost() != null) {
+                query.boost(booleanMatch.getBoost());
+            }
             return query;
         }
 

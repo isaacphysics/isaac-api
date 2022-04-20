@@ -18,7 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.dto.eventbookings;
 import java.util.Date;
 
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
-import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 
 /**
  * @author sac92

@@ -37,18 +37,18 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
-import uk.ac.cam.cl.dtg.segue.dos.AudienceContext;
-import uk.ac.cam.cl.dtg.segue.dos.Difficulty;
-import uk.ac.cam.cl.dtg.segue.dos.IUserStreaksManager;
-import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
-import uk.ac.cam.cl.dtg.segue.dos.Stage;
-import uk.ac.cam.cl.dtg.segue.dos.users.Role;
-import uk.ac.cam.cl.dtg.segue.dos.users.School;
-import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dos.AudienceContext;
+import uk.ac.cam.cl.dtg.isaac.dos.Difficulty;
+import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
+import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.isaac.dos.Stage;
+import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
+import uk.ac.cam.cl.dtg.isaac.dos.users.School;
+import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 import uk.ac.cam.cl.dtg.util.locations.Location;
 
@@ -65,7 +65,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -779,7 +778,8 @@ public class StatisticsManager implements IStatisticsManager {
 
         // Search for questions that match the ids.
         ResultsWrapper<ContentDTO> allMatchingIds =
-                this.contentManager.getContentMatchingIds(this.contentIndex, ids, 0, ids.size());
+                this.contentManager.getContentMatchingIds(this.contentManager.getCurrentContentSHA(), ids,
+                        0, ids.size());
 
         List<ContentDTO> questionsForGameboard = allMatchingIds.getResults();
 
