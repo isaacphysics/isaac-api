@@ -10,10 +10,11 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
-import uk.ac.cam.cl.dtg.segue.dos.users.School;
+import uk.ac.cam.cl.dtg.isaac.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -78,7 +79,7 @@ class SchoolIndexer {
         }
 
         try {
-            es.bulkIndex(SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString(), indexList);
+            es.bulkIndexWithIDs(SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString(), indexList);
             log.info("School list index request complete.");
         } catch (SegueSearchException e) {
             log.error("Unable to complete bulk index operation for schools list.", e);
@@ -101,8 +102,11 @@ class SchoolIndexer {
         // otherwise we need to generate it.
         List<School> schools = com.google.api.client.util.Lists.newArrayList();
 
-        try {
-            CSVReader reader = new CSVReader(new InputStreamReader(new FileInputStream(schoolsListPath), "UTF-8"));
+        try (FileInputStream fs = new FileInputStream(schoolsListPath);
+             InputStreamReader is = new InputStreamReader(fs, StandardCharsets.UTF_8);
+             CSVReader reader = new CSVReader(is);
+        ) {
+
 
             // use first line to determine field names.
             String[] columns = reader.readNext();

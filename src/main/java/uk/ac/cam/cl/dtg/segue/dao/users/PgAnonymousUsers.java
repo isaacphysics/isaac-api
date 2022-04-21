@@ -20,7 +20,7 @@ import org.apache.commons.lang3.Validate;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
-import uk.ac.cam.cl.dtg.segue.dos.users.AnonymousUser;
+import uk.ac.cam.cl.dtg.isaac.dos.users.AnonymousUser;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

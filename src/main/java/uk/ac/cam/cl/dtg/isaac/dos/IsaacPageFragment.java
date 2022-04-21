@@ -16,11 +16,31 @@
 package uk.ac.cam.cl.dtg.isaac.dos;
 
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacPageFragmentDTO;
-import uk.ac.cam.cl.dtg.segue.dos.content.Content;
-import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
-import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
+import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
+import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 
 @DTOMapping(IsaacPageFragmentDTO.class)
 @JsonContentType("isaacPageFragment")
 public class IsaacPageFragment extends Content {
+    private String summary;
+
+    /**
+     * Gets the summary.
+     *
+     * @return the summary
+     */
+    public final String getSummary() {
+        return summary;
+    }
+
+    /**
+     * Sets the summary.
+     *
+     * @param summary
+     *            the summary to set
+     */
+    public final void setSummary(final String summary) {
+        this.summary = summary;
+    }
 }

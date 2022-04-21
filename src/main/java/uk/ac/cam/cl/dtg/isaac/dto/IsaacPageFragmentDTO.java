@@ -16,11 +16,12 @@
 package uk.ac.cam.cl.dtg.isaac.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 
 @JsonContentType("isaacPageFragment")
 public class IsaacPageFragmentDTO extends ContentDTO {
+    private String summary;
 
     @Override
     @JsonIgnore(false) // Override the parent class decorator!
@@ -28,4 +29,22 @@ public class IsaacPageFragmentDTO extends ContentDTO {
         return this.canonicalSourceFile;
     }
 
+    /**
+     * Gets the summary.
+     *
+     * @return the summary
+     */
+    public final String getSummary() {
+        return summary;
+    }
+
+    /**
+     * Sets the summary.
+     *
+     * @param summary
+     *            the summary to set
+     */
+    public final void setSummary(final String summary) {
+        this.summary = summary;
+    }
 }

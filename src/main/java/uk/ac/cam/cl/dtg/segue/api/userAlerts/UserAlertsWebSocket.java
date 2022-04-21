@@ -25,10 +25,10 @@ import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dos.IUserAlert;
-import uk.ac.cam.cl.dtg.segue.dos.IUserAlerts;
-import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
-import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dos.IUserAlert;
+import uk.ac.cam.cl.dtg.isaac.dos.IUserAlerts;
+import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.io.IOException;
@@ -66,6 +66,7 @@ public class UserAlertsWebSocket implements IAlertListener {
     private Session session;
     private static ObjectMapper objectMapper = new ObjectMapper();
 
+    private static final String IDLE_TIMEOUT_MESSAGE = "Idle timeout expired";
     // Named unsafeConnectedSockets because, although non-aggregate operations on the concurrent hash map are fine,
     // operations on the user sets of websockets are unsafe unless used with the matching user lock.
     private static Map<Long, Set<UserAlertsWebSocket>> unsafeConnectedSockets = Maps.newConcurrentMap();
@@ -299,7 +300,10 @@ public class UserAlertsWebSocket implements IAlertListener {
     @OnWebSocketError
     public void onError(final Session session, final Throwable error) {
         long connectedUserId = connectedUser.getId();
-        log.warn(String.format("Error in WebSocket for user (%s): %s", connectedUserId, error));
+        String errorString = error.toString();
+        if (!errorString.contains(IDLE_TIMEOUT_MESSAGE)) {
+            log.warn(String.format("Error in WebSocket for user (%s): %s", connectedUserId, error));
+        }
     }
 
     /**

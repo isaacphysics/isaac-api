@@ -112,19 +112,21 @@ import uk.ac.cam.cl.dtg.segue.dao.users.PgUserGroupPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgUsers;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
-import uk.ac.cam.cl.dtg.segue.dos.AbstractUserPreferenceManager;
-import uk.ac.cam.cl.dtg.segue.dos.IUserAlerts;
-import uk.ac.cam.cl.dtg.segue.dos.IUserStreaksManager;
-import uk.ac.cam.cl.dtg.segue.dos.LocationHistory;
-import uk.ac.cam.cl.dtg.segue.dos.PgLocationHistory;
-import uk.ac.cam.cl.dtg.segue.dos.PgUserAlerts;
-import uk.ac.cam.cl.dtg.segue.dos.PgUserPreferenceManager;
-import uk.ac.cam.cl.dtg.segue.dos.PgUserStreakManager;
-import uk.ac.cam.cl.dtg.segue.quiz.IQuestionAttemptManager;
-import uk.ac.cam.cl.dtg.segue.quiz.PgQuestionAttempts;
+import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
+import uk.ac.cam.cl.dtg.isaac.dos.IUserAlerts;
+import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
+import uk.ac.cam.cl.dtg.isaac.dos.LocationHistory;
+import uk.ac.cam.cl.dtg.isaac.dos.PgLocationHistory;
+import uk.ac.cam.cl.dtg.isaac.dos.PgUserAlerts;
+import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
+import uk.ac.cam.cl.dtg.isaac.dos.PgUserStreakManager;
+import uk.ac.cam.cl.dtg.isaac.quiz.IQuestionAttemptManager;
+import uk.ac.cam.cl.dtg.isaac.quiz.PgQuestionAttempts;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueScheduledDatabaseScriptJob;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueScheduledJob;
+import uk.ac.cam.cl.dtg.segue.scheduler.jobs.DeleteEventAdditionalBookingInformationJob;
+import uk.ac.cam.cl.dtg.segue.scheduler.jobs.DeleteEventAdditionalBookingInformationOneYearJob;
 import uk.ac.cam.cl.dtg.segue.scheduler.jobs.SegueScheduledSyncMailjetUsersJob;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
@@ -655,6 +657,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *            - Responsible for handling the various authentication functions.
      * @param secondFactorManager
      *            - For managing TOTP multifactor authentication.
+     * @param userPreferenceManager
+     *      *     - For managing user preferences.
      * @return Content version controller with associated dependencies.
      */
     @Inject
@@ -665,10 +669,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                                                final EmailManager emailQueue, final IAnonymousUserDataManager temporaryUserCache,
                                                final ILogManager logManager, final MapperFacade mapperFacade,
                                                final UserAuthenticationManager userAuthenticationManager,
-                                               final ISecondFactorAuthenticator secondFactorManager) {
+                                               final ISecondFactorAuthenticator secondFactorManager,
+                                               final AbstractUserPreferenceManager userPreferenceManager) {
         if (null == userManager) {
             userManager = new UserAccountManager(database, questionManager, properties, providersToRegister,
-                    mapperFacade, emailQueue, temporaryUserCache, logManager, userAuthenticationManager, secondFactorManager);
+                    mapperFacade, emailQueue, temporaryUserCache, logManager, userAuthenticationManager,
+                    secondFactorManager, userPreferenceManager);
             log.info("Creating singleton of UserManager");
         }
 
@@ -919,13 +925,32 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                     "SQL scheduled job that deletes expired reservations for the event booking system",
                     "0 0 7 * * ?", "db_scripts/scheduled/expired-reservations-clean-up.sql");
 
+            SegueScheduledJob deleteEventAdditionalBookingInformation = SegueScheduledJob.createCustomJob(
+                  "deleteEventAdditionalBookingInformation",
+                  "JavaJob",
+                  "Delete event additional booking information a given period after an event has taken place",
+                  "0 0 7 * * ?",
+                  Maps.newHashMap(),
+                  new DeleteEventAdditionalBookingInformationJob()
+            );
+
+            SegueScheduledJob deleteEventAdditionalBookingInformationOneYearJob = SegueScheduledJob.createCustomJob(
+                    "deleteEventAdditionalBookingInformationOneYear",
+                    "JavaJob",
+                    "Delete event additional booking information a year after an event has taken place if not already removed",
+                    "0 0 7 * * ?",
+                    Maps.newHashMap(),
+                    new DeleteEventAdditionalBookingInformationOneYearJob()
+            );
+
             SegueScheduledJob syncMailjetUsers = new SegueScheduledSyncMailjetUsersJob(
                     "syncMailjetUsersJob",
                     "JavaJob",
                     "Sync users to mailjet",
                     "0 0 0/4 ? * * *");
 
-            List<SegueScheduledJob> configuredScheduledJobs = new ArrayList<>(Arrays.asList(PIISQLJob, cleanUpOldAnonymousUsers, cleanUpExpiredReservations));
+            List<SegueScheduledJob> configuredScheduledJobs = new ArrayList<>(Arrays.asList(PIISQLJob, cleanUpOldAnonymousUsers,
+                    cleanUpExpiredReservations, deleteEventAdditionalBookingInformation, deleteEventAdditionalBookingInformationOneYearJob));
 
             if (mailjetKey != null && mailjetSecret != null) {
                 configuredScheduledJobs.add(syncMailjetUsers);

@@ -1,6 +1,5 @@
 package uk.ac.cam.cl.dtg.segue.etl;
 
-import com.carrotsearch.hppc.cursors.ObjectObjectCursor;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
@@ -9,6 +8,7 @@ import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequestBuilder
 import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.elasticsearch.action.admin.indices.get.GetIndexResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -16,7 +16,6 @@ import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.metadata.AliasMetadata;
-import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
@@ -33,6 +32,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * Created by Ian on 17/10/2016.
@@ -61,10 +61,13 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
         indexObject(indexBase, indexType, content, null);
     }
 
-
-    void bulkIndex(final String indexBase, final String indexType, final List<Map.Entry<String, String>> dataToIndex)
+    /**
+     *
+     * @param buildBulkRequest a function that takes an elasticsearch typed index name, and produces a (populated) BulkRequestBuilder
+     * @throws SegueSearchException
+     */
+    private void executeBulkIndexRequest(final String indexBase, final String indexType, final Function<String, BulkRequestBuilder> buildBulkRequest)
             throws SegueSearchException {
-
         String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
 
         // check index already exists if not execute any initialisation steps.
@@ -74,12 +77,8 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
             }
         }
 
-        // build bulk request
-        BulkRequestBuilder bulkRequest = client.prepareBulk();
-        for (Map.Entry<String, String> itemToIndex : dataToIndex) {
-            bulkRequest.add(client.prepareIndex(typedIndex, indexType, itemToIndex.getKey())
-                    .setSource(itemToIndex.getValue(), XContentType.JSON));
-        }
+        // execute bulk request builder function
+        BulkRequestBuilder bulkRequest = buildBulkRequest.apply(typedIndex);
 
         try {
             // execute bulk request
@@ -95,6 +94,30 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
         } catch (ElasticsearchException e) {
             throw new SegueSearchException("Error during bulk index operation.", e);
         }
+    }
+
+    void bulkIndex(final String indexBase, final String indexType, final List<String> dataToIndex)
+            throws SegueSearchException {
+        executeBulkIndexRequest(indexBase, indexType, typedIndex -> {
+            // build bulk request, items don't have ids
+            BulkRequestBuilder bulkRequest = client.prepareBulk();
+            dataToIndex.forEach(itemToIndex -> bulkRequest.add(
+                    client.prepareIndex(typedIndex, indexType).setSource(itemToIndex, XContentType.JSON)
+            ));
+            return bulkRequest;
+        });
+    }
+
+    void bulkIndexWithIDs(final String indexBase, final String indexType, final List<Map.Entry<String, String>> dataToIndex)
+            throws SegueSearchException {
+        executeBulkIndexRequest(indexBase, indexType, typedIndex -> {
+            // build bulk request, ids of data items are specified by their keys
+            BulkRequestBuilder bulkRequest = client.prepareBulk();
+            dataToIndex.forEach(itemToIndex -> bulkRequest.add(
+                    client.prepareIndex(typedIndex, indexType, itemToIndex.getKey()).setSource(itemToIndex.getValue(), XContentType.JSON)
+            ));
+            return bulkRequest;
+        });
     }
 
 
@@ -129,7 +152,8 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
             log.info("Sending delete request to ElasticSearch for search index: " + typedIndex);
             client.admin().indices().delete(new DeleteIndexRequest(typedIndex)).actionGet();
         } catch (ElasticsearchException e) {
-            log.error("ElasticSearch exception while trying to delete index " + typedIndex, e);
+            log.error("ElasticSearch exception while trying to delete index " + typedIndex +
+                    ", it might not have existed.", e);
             return false;
         }
 
@@ -207,12 +231,12 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
     private void expungeOldIndices() {
         // This deletes any indices that don't have aliases pointing to them.
         // If you want an index kept, make sure it has an alias!
-        ImmutableOpenMap<String, IndexMetadata> indices = client.admin().cluster().prepareState().execute().actionGet().getState().getMetadata().indices();
-
-        for(ObjectObjectCursor<String, IndexMetadata> c: indices) {
-            if (c.value.getAliases().size() == 0) {
-                log.info("Index " + c.key + " has no aliases. Removing.");
-                this.expungeTypedIndexFromSearchCache(c.key);
+        GetIndexResponse indices = client.admin().indices().prepareGetIndex().get();
+        ImmutableOpenMap<String, List<AliasMetadata>> aliases = indices.getAliases();
+        for (String index : indices.getIndices()) {
+            if (!aliases.containsKey(index) || aliases.get(index).isEmpty()) {
+                log.info("Index " + index + " has no aliases. Removing.");
+                this.expungeTypedIndexFromSearchCache(index);
             }
         }
     }

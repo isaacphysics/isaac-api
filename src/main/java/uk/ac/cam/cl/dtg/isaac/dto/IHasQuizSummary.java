@@ -1,6 +1,6 @@
 package uk.ac.cam.cl.dtg.isaac.dto;
 
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 
 public interface IHasQuizSummary {
 

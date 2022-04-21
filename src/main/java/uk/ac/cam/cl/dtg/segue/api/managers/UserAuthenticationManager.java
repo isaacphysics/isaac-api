@@ -53,9 +53,9 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
-import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
-import uk.ac.cam.cl.dtg.segue.dos.users.UserFromAuthProvider;
-import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
+import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 
@@ -514,7 +514,7 @@ public class UserAuthenticationManager {
             logoutCookie.setSecure(setSecureCookies);
             // TODO - set sameSite=Lax at minimum when Jetty supports this (9.4.x)
 
-            response.addCookie(logoutCookie);
+            response.addCookie(logoutCookie);  // lgtm [java/insecure-cookie]  false positive due to conditional above!
         } catch (IllegalStateException e) {
             log.info("The session has already been invalidated. " + "Unable to logout again...", e);
         }
@@ -936,7 +936,7 @@ public class UserAuthenticationManager {
 
             log.debug(String.format("Creating AuthCookie for user (%s) with value %s", userId, authCookie.getValue()));
 
-            response.addCookie(authCookie);
+            response.addCookie(authCookie);  // lgtm [java/insecure-cookie]  false positive due to conditional above!
             
         } catch (JsonProcessingException e1) {
             log.error("Unable to save cookie.", e1);

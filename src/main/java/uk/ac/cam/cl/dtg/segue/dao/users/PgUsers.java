@@ -25,12 +25,12 @@ import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.dao.AbstractPgDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
-import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
-import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
-import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
-import uk.ac.cam.cl.dtg.segue.dos.users.Role;
-import uk.ac.cam.cl.dtg.segue.dos.users.UserAuthenticationSettings;
-import uk.ac.cam.cl.dtg.segue.dos.users.UserContext;
+import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
+import uk.ac.cam.cl.dtg.isaac.dos.users.Gender;
+import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
+import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
+import uk.ac.cam.cl.dtg.isaac.dos.users.UserAuthenticationSettings;
+import uk.ac.cam.cl.dtg.isaac.dos.users.UserContext;
 
 import java.sql.Array;
 import java.sql.Connection;
@@ -138,7 +138,9 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             // generally a bad idea, unless a prepared statement is used to construct the query first, which is probably
             // still a bad idea, only slightly less so.
             // TL;DR: Sorry...
-            try (ResultSet queryResults = conn.createStatement().executeQuery(pst.toString())) {
+            try (Statement statement = conn.createStatement();
+                 ResultSet queryResults = statement.executeQuery(pst.toString());
+            ) {
                 while (queryResults.next()) {
                     RegisteredUser user = userMap.get(queryResults.getLong("user_id"));
                     authenticationProviders.get(user).add(AuthenticationProvider.valueOf(queryResults.getString("provider")));
@@ -206,7 +208,9 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             }
 
             // See comment in getAuthenticationProvidersByUsers
-            try (ResultSet queryResults = conn.createStatement().executeQuery(pst.toString())) {
+            try (Statement statement = conn.createStatement();
+                 ResultSet queryResults = statement.executeQuery(pst.toString());
+            ) {
                 while (queryResults.next()) {
                     RegisteredUser user = userMap.get(queryResults.getLong("user_id"));
                     userCredentialsExistence.put(user, true);
@@ -582,21 +586,20 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
                 this.updateUser(conn, userToDelete);
 
                 // Replace all linked providers with a uid account provider IDs to prevent clashes if the user creates a new account.
-                PreparedStatement deleteLinkedAccounts;
-                deleteLinkedAccounts = conn.prepareStatement(
-                        "UPDATE linked_accounts SET provider_user_id = ? WHERE user_id = ?");
-
-                deleteLinkedAccounts.setString(1, UUID.randomUUID().toString());
-                deleteLinkedAccounts.setLong(2, userToDelete.getId());
-                deleteLinkedAccounts.execute();
+                String deleteLinkedAccountsQuery = "UPDATE linked_accounts SET provider_user_id = ? WHERE user_id = ?";
+                try (PreparedStatement deleteLinkedAccounts = conn.prepareStatement(deleteLinkedAccountsQuery)) {
+                    deleteLinkedAccounts.setString(1, UUID.randomUUID().toString());
+                    deleteLinkedAccounts.setLong(2, userToDelete.getId());
+                    deleteLinkedAccounts.execute();
+                }
 
                 // Hash all linked account provider IDs to prevent clashes if the user creates a new account.
-                PreparedStatement markUserAsDeleted;
-                markUserAsDeleted = conn.prepareStatement("UPDATE users SET deleted=TRUE, last_updated=? WHERE id = ?");
-
-                markUserAsDeleted.setTimestamp(1, new Timestamp(new Date().getTime()));
-                markUserAsDeleted.setLong(2, userToDelete.getId());
-                markUserAsDeleted.execute();
+                String markUserDeletedQuery = "UPDATE users SET deleted=TRUE, last_updated=? WHERE id = ?";
+                try (PreparedStatement markUserAsDeleted = conn.prepareStatement(markUserDeletedQuery)) {
+                    markUserAsDeleted.setTimestamp(1, new Timestamp(new Date().getTime()));
+                    markUserAsDeleted.setLong(2, userToDelete.getId());
+                    markUserAsDeleted.execute();
+                }
 
                 conn.commit();
             } catch (SQLException | JsonProcessingException e) {
