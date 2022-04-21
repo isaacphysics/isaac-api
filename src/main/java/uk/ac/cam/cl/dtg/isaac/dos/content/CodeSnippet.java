@@ -63,8 +63,13 @@ public class CodeSnippet extends Content {
         this.code = code;
     }
 
-    public final boolean getDisableHighlighting() { return disableHighlighting; }
-    public final void setDisableHighlighting(final boolean disableHighlighting) { this.disableHighlighting = disableHighlighting; }
+    public final boolean getDisableHighlighting() {
+        return disableHighlighting;
+    }
+
+    public final void setDisableHighlighting(final boolean disableHighlighting) {
+        this.disableHighlighting = disableHighlighting;
+    }
 
     public final String getUrl() {
         return this.url;
