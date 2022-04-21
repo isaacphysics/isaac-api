@@ -10,10 +10,10 @@ import uk.ac.cam.cl.dtg.isaac.dos.PgTransaction;
  */
 public class PgTransactionManager implements ITransactionManager {
 
-    private PostgresSqlDb postgresSqlDb;
+    private final PostgresSqlDb postgresSqlDb;
 
     @Inject
-    public PgTransactionManager(PostgresSqlDb postgresSqlDb) {
+    public PgTransactionManager(final PostgresSqlDb postgresSqlDb) {
         this.postgresSqlDb = postgresSqlDb;
     }
 

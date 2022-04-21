@@ -11,7 +11,7 @@ import java.sql.SQLException;
  */
 public class PgTransaction implements ITransaction {
 
-    private Connection conn;
+    private final Connection conn;
 
     public PgTransaction(final PostgresSqlDb postgresSqlDb) throws SegueDatabaseException {
         try {
