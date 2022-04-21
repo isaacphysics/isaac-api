@@ -872,12 +872,13 @@ public class EventBookingManagerTest {
                 .updateBookingStatus(eq(testCase.event.getId()), eq(testCase.student2.getId()), eq(testCase.teacher.getId()), eq(BookingStatus.RESERVED), anyObject()))
                 .andReturn(testCase.student2Booking).once();
 
-        dummyTransaction.commit();
-        expectLastCall().once();
-
         dummyEventBookingPersistenceManager.releaseDistributedLock(testCase.event.getId());
         expectLastCall().once();
 
+        dummyTransaction.commit();
+        expectLastCall().once();
+        dummyTransaction.close();
+        expectLastCall().once();
 
         // Send Emails
         expect(dummyEmailManager.getEmailTemplateDTO(("email-event-reservation-requested"))).andReturn(testCase.reservationEmail).atLeastOnce();
@@ -1016,10 +1017,12 @@ public class EventBookingManagerTest {
                 .createBooking(eq(testCase.event.getId()), eq(testCase.student1.getId()), eq(testCase.teacher.getId()), eq(BookingStatus.RESERVED), anyObject()))
                 .andReturn(testCase.student1Booking).once();
 
-        dummyTransaction.commit();
+        dummyEventBookingPersistenceManager.releaseDistributedLock(testCase.event.getId());
         expectLastCall().once();
 
-        dummyEventBookingPersistenceManager.releaseDistributedLock(testCase.event.getId());
+        dummyTransaction.commit();
+        expectLastCall().once();
+        dummyTransaction.close();
         expectLastCall().once();
 
         // Send Emails

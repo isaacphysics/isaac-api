@@ -7,7 +7,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 /**
- * Created by du220 on 04/06/2018.
+ *  @see ITransaction
  */
 public class PgTransaction implements ITransaction {
 
@@ -30,11 +30,7 @@ public class PgTransaction implements ITransaction {
     @Override
     public void commit() throws SegueDatabaseException {
         try {
-            try {
-                conn.commit();
-            } finally {
-                conn.close();
-            }
+            conn.commit();
         } catch (SQLException e) {
             throw new SegueDatabaseException("Transaction Commit Failure!", e);
         }
@@ -43,11 +39,16 @@ public class PgTransaction implements ITransaction {
     @Override
     public void rollback() throws SegueDatabaseException {
         try {
-            try {
-                conn.rollback();
-            } finally {
-                conn.close();
-            }
+            conn.rollback();
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Transaction Rollback Failure!", e);
+        }
+    }
+
+    @Override
+    public void close() throws SegueDatabaseException {
+        try {
+            conn.close();
         } catch (SQLException e) {
             throw new SegueDatabaseException("Transaction Rollback Failure!", e);
         }

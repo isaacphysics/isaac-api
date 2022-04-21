@@ -497,22 +497,21 @@ public class EventBookingManager {
         }
 
         List<EventBookingDTO> reservations = new ArrayList<>();
-        try {
-            // Obtain an exclusive database lock for the event
-            this.bookingPersistenceManager.acquireDistributedLock(event.getId());
-
-            // is there space on the event? Teachers don't count for student events.
-            // work out capacity information for the event at this moment in time.
-            // If there is no space, no reservations are made. Throw an exception and handle in EventsFacade.
-            this.ensureCapacity(event, users);
-
-            // Is the request for more reservations that this event allows?
-            this.enforceReservationLimit(event, users, reservingUser);
-
-            // Wrap this into a database transaction
-            ITransaction transaction = transactionManager.getTransaction();
-
+        // Wrap this into a database transaction
+        // FIXME: None of this code uses this transaction in any way!
+        try (ITransaction transaction = transactionManager.getTransaction()) {
             try {
+                // Obtain an exclusive database lock for the event
+                this.bookingPersistenceManager.acquireDistributedLock(event.getId());
+
+                // is there space on the event? Teachers don't count for student events.
+                // work out capacity information for the event at this moment in time.
+                // If there is no space, no reservations are made. Throw an exception and handle in EventsFacade.
+                this.ensureCapacity(event, users);
+
+                // Is the request for more reservations that this event allows?
+                this.enforceReservationLimit(event, users, reservingUser);
+
                 for (RegisteredUserDTO user : users) {
                     // attempt to book them on the event
                     EventBookingDTO reservation;
@@ -543,18 +542,16 @@ public class EventBookingManager {
                     }
                     reservations.add(reservation);
                 }
+                transaction.commit();
             } catch (SegueDatabaseException e) {
                 // Something happened, we just roll the transaction back and rethrow.
                 // Apparently, this is the only exception that can be thrown after we began the transaction.
                 transaction.rollback();
                 throw e;
+            } finally {
+                // If we made it past this point, we can release the lock and start sending emails.
+                this.bookingPersistenceManager.releaseDistributedLock(event.getId());
             }
-
-            transaction.commit();
-            // If we made it past this point, we can release the lock and start sending emails.
-        } finally {
-            // Ensure the event is unlocked
-            this.bookingPersistenceManager.releaseDistributedLock(event.getId());
         }
 
         // Send email to individual reserved users
