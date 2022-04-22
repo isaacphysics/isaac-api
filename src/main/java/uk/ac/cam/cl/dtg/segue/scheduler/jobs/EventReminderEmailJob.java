@@ -6,12 +6,12 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.api.managers.ScheduledEmailManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.EventNotificationEmailManager;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 
 public class EventReminderEmailJob implements Job {
     private static final Logger log = LoggerFactory.getLogger(EventReminderEmailJob.class);
-    private final ScheduledEmailManager scheduledEmailManager;
+    private final EventNotificationEmailManager scheduledEmailManager;
 
     /**
      * This class is required by quartz and must be executable by any instance of the segue api relying only on the
@@ -19,7 +19,7 @@ public class EventReminderEmailJob implements Job {
      */
     public EventReminderEmailJob() {
         Injector injector = SegueGuiceConfigurationModule.getGuiceInjector();
-        scheduledEmailManager = injector.getInstance(ScheduledEmailManager.class);
+        scheduledEmailManager = injector.getInstance(EventNotificationEmailManager.class);
     }
 
     @Override

@@ -950,7 +950,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                 "eventReminderEmail",
                 "JavaJob",
                 "Send scheduled reminder emails to events",
-                "0 0 7 * * ?",//""0 * * ? * * *",
+                "0 0 7 * * ?",
                 Maps.newHashMap(),
                 new EventReminderEmailJob()
             );
@@ -977,7 +977,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                 configuredScheduledJobs.add(syncMailjetUsers);
             }
 
-            if (eventPrePostEmails != null) {
+            if (Boolean.parseBoolean(eventPrePostEmails)) {
                 configuredScheduledJobs.add(eventReminderEmail);
                 configuredScheduledJobs.add(eventFeedbackEmail);
             }
@@ -988,7 +988,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                 segueJobService.removeScheduleJob(syncMailjetUsers);
             }
 
-            if (eventPrePostEmails == null) {
+            if (Boolean.parseBoolean(eventPrePostEmails)) {
                 segueJobService.removeScheduleJob(eventReminderEmail);
                 segueJobService.removeScheduleJob(eventFeedbackEmail);
             }
