@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 
+import uk.ac.cam.cl.dtg.isaac.dos.ITransaction;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.*;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.DetailedEventBookingDTO;
@@ -301,6 +302,7 @@ public class EventBookingPersistenceManager {
      * @param resourceId - the unique id for the object to be locked.
      * @throws SegueDatabaseException if there is a problem acquiring the lock
      */
+    @Deprecated
     public void acquireDistributedLock(final String resourceId) throws SegueDatabaseException {
         dao.acquireDistributedLock(resourceId);
     }
@@ -311,8 +313,21 @@ public class EventBookingPersistenceManager {
      * @param resourceId - the unique id for the object to be locked.
      * @throws SegueDatabaseException if there is a problem releasing the lock
      */
+    @Deprecated
     public void releaseDistributedLock(final String resourceId) throws SegueDatabaseException {
         dao.releaseDistributedLock(resourceId);
+    }
+
+    /**
+     * Acquire a globally unique lock on an event for the duration of a transaction.
+     *
+     * This lock will interact as expected with acquireDistributedLock for the same resource ID.
+     *
+     * @param transaction - the database transaction to acquire the lock in.
+     * @param resourceId - the ID of the event to be locked.
+     */
+    public void lockEventUntilTransactionComplete(final ITransaction transaction, final String resourceId) throws SegueDatabaseException {
+        dao.lockEventUntilTransactionComplete(transaction, resourceId);
     }
 
     /**

@@ -848,7 +848,7 @@ public class EventBookingManagerTest {
         }};
 
         // Define expected external calls
-        dummyEventBookingPersistenceManager.acquireDistributedLock(testCase.event.getId());
+        dummyEventBookingPersistenceManager.lockEventUntilTransactionComplete(dummyTransaction, testCase.event.getId());
         expectLastCall().once();
 
         // Check existing bookings
@@ -871,9 +871,6 @@ public class EventBookingManagerTest {
         expect(dummyEventBookingPersistenceManager
                 .updateBookingStatus(eq(testCase.event.getId()), eq(testCase.student2.getId()), eq(testCase.teacher.getId()), eq(BookingStatus.RESERVED), anyObject()))
                 .andReturn(testCase.student2Booking).once();
-
-        dummyEventBookingPersistenceManager.releaseDistributedLock(testCase.event.getId());
-        expectLastCall().once();
 
         dummyTransaction.commit();
         expectLastCall().once();
@@ -916,15 +913,15 @@ public class EventBookingManagerTest {
         List<RegisteredUserDTO> studentsToReserve = ImmutableList.of(testCase.student1, testCase.student2);
 
         // Define expected external calls
-        dummyEventBookingPersistenceManager.acquireDistributedLock(testCase.event.getId());
+        expect(dummyTransactionManager.getTransaction()).andReturn(dummyTransaction).once();
+        dummyEventBookingPersistenceManager.lockEventUntilTransactionComplete(dummyTransaction, testCase.event.getId());
         expectLastCall().atLeastOnce();
 
         expect(dummyEventBookingPersistenceManager.getEventBookingStatusCounts(testCase.event.getId(), false))
                 .andReturn(Maps.newHashMap()).once();
-        dummyEventBookingPersistenceManager.releaseDistributedLock(testCase.event.getId());
-        expectLastCall().atLeastOnce();
 
         replay(dummyEventBookingPersistenceManager);
+        replay(dummyTransactionManager);
         try {
             eventBookingManager.requestReservations(testCase.event, studentsToReserve, testCase.teacher);
             fail("Expected to fail from trying to reserve 2 students onto an event with only one space.");
@@ -955,7 +952,8 @@ public class EventBookingManagerTest {
         }};
 
         // Define expected external calls
-        dummyEventBookingPersistenceManager.acquireDistributedLock(testCase.event.getId());
+        expect(dummyTransactionManager.getTransaction()).andReturn(dummyTransaction).once();
+        dummyEventBookingPersistenceManager.lockEventUntilTransactionComplete(dummyTransaction, testCase.event.getId());
         expectLastCall().atLeastOnce();
         expect(dummyEventBookingPersistenceManager
                 .getEventBookingStatusCounts(testCase.event.getId(), false))
@@ -963,10 +961,9 @@ public class EventBookingManagerTest {
         expect(dummyEventBookingPersistenceManager
                 .getBookingsByEventId(testCase.event.getId()))
                 .andReturn(ImmutableList.of(existingEventBooking));
-        dummyEventBookingPersistenceManager.releaseDistributedLock(testCase.event.getId());
-        expectLastCall().atLeastOnce();
 
         replay(dummyEventBookingPersistenceManager);
+        replay(dummyTransactionManager);
         try {
             eventBookingManager.requestReservations(testCase.event, studentsToReserve, testCase.teacher);
             fail("Expected to fail from trying to reserve 2 students onto an event with only one space.");
@@ -997,7 +994,7 @@ public class EventBookingManagerTest {
         previousBookingCounts.put(BookingStatus.CANCELLED, ImmutableMap.of(Role.STUDENT, 1L));
 
         // Define expected external calls
-        dummyEventBookingPersistenceManager.acquireDistributedLock(testCase.event.getId());
+        dummyEventBookingPersistenceManager.lockEventUntilTransactionComplete(dummyTransaction, testCase.event.getId());
         expectLastCall().once();
 
         // Check existing bookings
@@ -1016,9 +1013,6 @@ public class EventBookingManagerTest {
         expect(dummyEventBookingPersistenceManager
                 .createBooking(eq(testCase.event.getId()), eq(testCase.student1.getId()), eq(testCase.teacher.getId()), eq(BookingStatus.RESERVED), anyObject()))
                 .andReturn(testCase.student1Booking).once();
-
-        dummyEventBookingPersistenceManager.releaseDistributedLock(testCase.event.getId());
-        expectLastCall().once();
 
         dummyTransaction.commit();
         expectLastCall().once();

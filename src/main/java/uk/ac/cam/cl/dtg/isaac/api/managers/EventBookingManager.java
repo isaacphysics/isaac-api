@@ -498,11 +498,11 @@ public class EventBookingManager {
 
         List<EventBookingDTO> reservations = new ArrayList<>();
         // Wrap this into a database transaction
-        // FIXME: None of this code uses this transaction in any way!
+        // FIXME: None of the booking code uses this transaction in any way!
         try (ITransaction transaction = transactionManager.getTransaction()) {
             try {
-                // Obtain an exclusive database lock for the event
-                this.bookingPersistenceManager.acquireDistributedLock(event.getId());
+                // Obtain an exclusive database lock for the event:
+                this.bookingPersistenceManager.lockEventUntilTransactionComplete(transaction, event.getId());
 
                 // is there space on the event? Teachers don't count for student events.
                 // work out capacity information for the event at this moment in time.
@@ -548,9 +548,6 @@ public class EventBookingManager {
                 // Apparently, this is the only exception that can be thrown after we began the transaction.
                 transaction.rollback();
                 throw e;
-            } finally {
-                // If we made it past this point, we can release the lock and start sending emails.
-                this.bookingPersistenceManager.releaseDistributedLock(event.getId());
             }
         }
 
@@ -1053,16 +1050,16 @@ public class EventBookingManager {
      * @throws SegueDatabaseException - if an error occurs.
      */
     public void deleteBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user) throws SegueDatabaseException {
-        try {
-            // Obtain an exclusive database lock to lock the booking
-            this.bookingPersistenceManager.acquireDistributedLock(event.getId());
+            try {
+                // Obtain an exclusive database lock to lock the booking
+                this.bookingPersistenceManager.acquireDistributedLock(event.getId());
             this.bookingPersistenceManager.deleteBooking(event.getId(), user.getId());
 
-            this.removeUserFromEventGroup(event, user);
+                this.removeUserFromEventGroup(event, user);
 
-        } finally {
-            this.bookingPersistenceManager.releaseDistributedLock(event.getId());
-        }
+            } finally {
+                this.bookingPersistenceManager.releaseDistributedLock(event.getId());
+            }
     }
 
     /**

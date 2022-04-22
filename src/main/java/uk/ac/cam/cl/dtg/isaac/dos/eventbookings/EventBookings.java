@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dos.eventbookings;
 
+import uk.ac.cam.cl.dtg.isaac.dos.ITransaction;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 
@@ -78,7 +79,7 @@ public interface EventBookings {
 
     /**
      * Remove booking from the database.
-     * 
+     *
      * @param eventId
      *            - the event id
      * @param userId
@@ -93,6 +94,7 @@ public interface EventBookings {
      * This lock must be released manually.
      * @param resourceId - the unique id for the object to be locked.
      */
+    @Deprecated
     void acquireDistributedLock(String resourceId) throws SegueDatabaseException;
 
     /**
@@ -101,7 +103,18 @@ public interface EventBookings {
      *
      * @param resourceId - the unique id for the object to be locked.
      */
+    @Deprecated
     void releaseDistributedLock(String resourceId) throws SegueDatabaseException;
+
+    /**
+     * Acquire a globally unique lock on an event for the duration of a transaction.
+     *
+     * This lock will interact as expected with acquireDistributedLock for the same resource ID.
+     *
+     * @param transaction - the database transaction to acquire the lock in.
+     * @param resourceId - the ID of the event to be locked.
+     */
+    void lockEventUntilTransactionComplete(ITransaction transaction, String resourceId) throws SegueDatabaseException;
 
     /**
      * Find all bookings for a given event.

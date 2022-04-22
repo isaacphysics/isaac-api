@@ -22,6 +22,8 @@ import com.google.api.client.util.Maps;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.ITransaction;
+import uk.ac.cam.cl.dtg.isaac.dos.PgTransaction;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
@@ -232,6 +234,36 @@ public class PgEventBookings implements EventBookings {
             throw new SegueDatabaseException(msg);
         }
         log.debug(String.format("Acquired advisory lock on %s (%s)", TABLE_NAME + resourceId, crc.getValue()));
+    }
+
+    /**
+     * Acquire a globally unique lock on an event for the duration of a transaction.
+     *
+     * This lock will interact as expected with acquireDistributedLock for the same resource ID.
+     *
+     * @param transaction - the database transaction to acquire the lock in.
+     * @param resourceId - the ID of the event to be locked.
+     */
+    @Override
+    public void lockEventUntilTransactionComplete(final ITransaction transaction, final String resourceId) throws SegueDatabaseException {
+        if (!(transaction instanceof PgTransaction)) {
+            throw new SegueDatabaseException("Incorrect database transaction class type!");
+        }
+
+        // Generate 32 bit CRC based on table id and resource id so that is is more likely to be unique globally.
+        CRC32 crc = new CRC32();
+        crc.update((TABLE_NAME + resourceId).getBytes());
+
+        Connection conn = ((PgTransaction) transaction).getConnection();
+        try (PreparedStatement pst = conn.prepareStatement("SELECT pg_advisory_xact_lock(?)")) {
+            pst.setLong(1, crc.getValue());
+            log.debug(String.format("Acquiring advisory transaction lock on %s (%s)", TABLE_NAME + resourceId, crc.getValue()));
+        } catch (SQLException e) {
+            String msg = String.format("Unable to acquire lock for event (%s).", resourceId);
+            log.error(msg);
+            throw new SegueDatabaseException(msg);
+        }
+        log.debug(String.format("Acquired advisory transaction lock on %s (%s)", TABLE_NAME + resourceId, crc.getValue()));
     }
 
     /**
