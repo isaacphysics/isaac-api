@@ -81,15 +81,13 @@ public class EventNotificationEmailManager {
                         .put("event", event)
                         .build(),
                     EmailType.SYSTEM);
-                log.info(String.format("Sent email to user: %s %s, at: %s", user.getGivenName(), user.getFamilyName(), user.getEmail()));
+                log.debug(String.format("Sent email to user: %s %s, at: %s", user.getGivenName(), user.getFamilyName(), user.getEmail()));
             } catch (NoUserException e) {
                 log.error(String.format("No user found with ID: %s", id));
             } catch (ContentManagerException e) {
                 log.error("Failed to add the scheduled email sent time: ", e);
             }
-
         }
-        log.info(" ");
     }
 
     public void sendReminderEmails() {
@@ -102,10 +100,9 @@ public class EventNotificationEmailManager {
         fieldsToMatch.put(TYPE_FIELDNAME, Collections.singletonList(EVENT_TYPE));
         sortInstructions.put(DATE_FIELDNAME, Constants.SortOrder.DESC);
         ZonedDateTime now = ZonedDateTime.now();
-        ZonedDateTime threeDaysbehind = now.plusDays(-365);
-        ZonedDateTime threeDaysAhead = now.plusDays(365);
+        ZonedDateTime threeDaysAhead = now.plusDays(3);
         DateRangeFilterInstruction
-            eventsWithinThreeDays = new DateRangeFilterInstruction(Date.from(threeDaysbehind.toInstant()), Date.from(threeDaysAhead.toInstant()));
+            eventsWithinThreeDays = new DateRangeFilterInstruction(new Date(), Date.from(threeDaysAhead.toInstant()));
         filterInstructions.put(ENDDATE_FIELDNAME, eventsWithinThreeDays);
 
         try {
@@ -119,8 +116,6 @@ public class EventNotificationEmailManager {
                     if (!pgScheduledEmailManager.scheduledEmailAlreadySent(emailKey)) {
                         pgScheduledEmailManager.saveScheduledEmailSent(emailKey);
                         this.sendEmailForEvent(event, "event_reminder");
-                    } else {
-                        log.info(String.format("Emails already sent for event: %s", event.getId()));
                     }
                 }
             }
@@ -164,8 +159,6 @@ public class EventNotificationEmailManager {
                             pgScheduledEmailManager.saveScheduledEmailSent(emailKey);
                             this.sendEmailForEvent(event, "event_feedback");
                         }
-                    } else {
-                        log.info("Event falls outside range for feedback email");
                     }
                 }
             }

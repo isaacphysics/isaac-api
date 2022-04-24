@@ -43,21 +43,23 @@ public class PgScheduledEmailManager {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            log.error("Failed to check if the scheduled email is already sent: ", e);
         }
         return true;
     }
 
     public void saveScheduledEmailSent(String emailKey) throws SegueDatabaseException {
         ZonedDateTime now = ZonedDateTime.now();
-        String query = "INSERT INTO scheduled_emails(email_id, sent) VALUES (?, ?)"
-            + " ON CONFLICT (email_id) DO NOTHING";
+        String query = "INSERT INTO scheduled_emails(email_id, sent) VALUES (?, ?)";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
         ) {
             pst.setString(1, emailKey);
             pst.setTimestamp(2, Timestamp.valueOf(now.toLocalDateTime()));
-            pst.executeUpdate();
+            if (pst.executeUpdate() == 0) {
+                throw new SegueDatabaseException("Email has already been sent.");
+            }
+
         } catch (SQLException e) {
             log.error("Failed to add the scheduled email sent time: ", e);
         }
