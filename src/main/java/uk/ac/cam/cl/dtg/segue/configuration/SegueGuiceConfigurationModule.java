@@ -988,7 +988,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                 segueJobService.removeScheduleJob(syncMailjetUsers);
             }
 
-            if (Boolean.parseBoolean(eventPrePostEmails)) {
+            if (!Boolean.parseBoolean(eventPrePostEmails)) {
                 segueJobService.removeScheduleJob(eventReminderEmail);
                 segueJobService.removeScheduleJob(eventFeedbackEmail);
             }
