@@ -10,16 +10,24 @@ import com.google.inject.util.Modules;
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.SystemUtils;
 import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.modules.junit4.PowerMockRunner;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
+import org.testcontainers.utility.MountableFile;
+import uk.ac.cam.cl.dtg.isaac.IsaacTest;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.services.GroupChangedService;
 import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
+import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.PgTransactionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -43,40 +51,42 @@ import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.powermock.api.easymock.PowerMock.createMock;
+import static org.powermock.api.easymock.PowerMock.replay;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_LINUX_CONFIG_LOCATION;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_GIT_DB;
 
+@RunWith(PowerMockRunner.class)
 @PowerMockIgnore("javax.net.ssl.*")
-public class EventsFacadeTest extends AbstractFacadeTest {
+public class EventsFacadeTest extends IsaacTest {
 
     public EventsFacade eventsFacade;
 
+    @Rule
+    public static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:12")
+            .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust")
+            .withUsername("rutherford")
+            .withInitScript("test-postgres-rutherford-create-script.sql")
+            ;
+
+    @ClassRule
+    public static ElasticsearchContainer elasticsearch = new ElasticsearchContainer(DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch-oss:7.8.0"))
+            .withCopyFileToContainer(MountableFile.forClasspathResource("isaac-test-es-data.tar.gz"), "/usr/share/elasticsearch/isaac-test-es-data.tar.gz")
+            .withCopyFileToContainer(MountableFile.forClasspathResource("isaac-test-es-docker-entrypoint.sh"), "/usr/local/bin/docker-entrypoint.sh")
+            .withExposedPorts(9200, 9300)
+            .withEnv("cluster.name", "isaac")
+            .withEnv("network.host", "0.0.0.0")
+            .withEnv("node.name", "localhost")
+            ;
+
     @Before
     public void setUp() throws RuntimeException, IOException, ClassNotFoundException {
-        PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(DockerImageName.parse("postgres:12"))
-                .withDatabaseName("rutherford")
-                .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust")
-                .withUsername("rutherford")
-                .withPassword("somerandompassword")
-                .withInitScript("db_scripts/postgres-rutherford-create-script.sql")
-                .waitingFor(Wait.forLogMessage(".*PostgreSQL init process complete.*", 1));
-                ;
-        postgres.start();
-
-        ElasticsearchContainer elasticsearch = new ElasticsearchContainer(DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch-oss:7.8.0"))
-                .withEnv("cluster.name", "isaac")
-                .withEnv("network.host", "0.0.0.0")
-                .withEnv("node.name", "localhost")
-                // .withEnv("cluster.initial_master_nodes", "localhost")
-                .waitingFor(Wait.forHealthcheck());
-        elasticsearch.start();
-
         String configLocation = SystemUtils.IS_OS_LINUX ? DEFAULT_LINUX_CONFIG_LOCATION : null;
         if (System.getProperty("test.config.location") != null) {
             configLocation = System.getProperty("test.config.location");
@@ -114,10 +124,12 @@ public class EventsFacadeTest extends AbstractFacadeTest {
         UserAuthenticationManager userAuthenticationManager = new UserAuthenticationManager(pgUsers, mockedProperties,
                 providersToRegister, emailManager);
         ISecondFactorAuthenticator secondFactorManager = createMock(SegueTOTPAuthenticator.class);
+        AbstractUserPreferenceManager userPreferenceManager = new PgUserPreferenceManager(postgresSqlDb);
 
         UserAccountManager userAccountManager =
                 new UserAccountManager(pgUsers, questionDb, mockedProperties, providersToRegister, dtoMapper,
-                        emailManager, pgAnonymousUsers, logManager, userAuthenticationManager, secondFactorManager);
+                        emailManager, pgAnonymousUsers, logManager, userAuthenticationManager, secondFactorManager,
+                        userPreferenceManager);
 
         // FIXME: This should be passed in from the environment and point to an actual test repo.
         GitDb gitDb = new GitDb(mockedProperties.getProperty(LOCAL_GIT_DB));
@@ -131,10 +143,10 @@ public class EventsFacadeTest extends AbstractFacadeTest {
         IContentManager contentManager = new GitContentManager(gitDb, elasticSearchProvider, contentMapper, mockedProperties);
         ObjectMapper objectMapper = new ObjectMapper();
         EventBookingPersistenceManager bookingPersistanceManager =
-                new EventBookingPersistenceManager(postgresSqlDb, userManager, contentManager, objectMapper, null,
+                new EventBookingPersistenceManager(postgresSqlDb, userAccountManager, contentManager, objectMapper, null,
                         "contentIndex");
         PgAssociationDataManager pgAssociationDataManager = new PgAssociationDataManager(postgresSqlDb);
-        UserAssociationManager userAssociationManager = new UserAssociationManager(pgAssociationDataManager, userManager, groupManager);
+        UserAssociationManager userAssociationManager = new UserAssociationManager(pgAssociationDataManager, userAccountManager, groupManager);
         PgTransactionManager pgTransactionManager = new PgTransactionManager(postgresSqlDb);
         EventBookingManager eventBookingManager =
                 new EventBookingManager(bookingPersistanceManager, emailManager, userAssociationManager,
@@ -160,7 +172,10 @@ public class EventsFacadeTest extends AbstractFacadeTest {
 
     @Test
     public void someTest() {
-        Response response = eventsFacade.getEvents(this.request, "", 0, 1000, "DESC", false, false, false, false);
+        HttpServletRequest request = createMock(HttpServletRequest.class);
+        replay(request);
+
+        Response response = eventsFacade.getEvents(request, "", 0, 1000, "DESC", false, false, false, false);
         int status = response.getStatus();
         assertEquals(status, Response.Status.OK.getStatusCode());
     }
