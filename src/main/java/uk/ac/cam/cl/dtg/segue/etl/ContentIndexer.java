@@ -874,9 +874,11 @@ public class ContentIndexer {
         }
 
         // Ensure that the expandable content is only of a type that support expansion
-        if (null != content.getExpandable() && content.getExpandable() && null != content.getLayout() && !content.getLayout().equals("tabs") && !(content instanceof CodeSnippet)) {
+        if (null != content.getExpandable() && content.getExpandable() && (null == content.getLayout()
+                || !content.getLayout().equals("tabs")) && !(content instanceof CodeSnippet)) {
             this.registerContentProblem(content, "Content of type " + content.getType() + " in " + content.getCanonicalSourceFile() + " is "
-                    + "marked as expandable, but we do not support expanding this type of content yet.", indexProblemCache);
+                    + "marked as expandable, but we do not support expanding this type of content yet. If this is a HTML"
+                    + " table, use class='expandable' in the table tag instead.", indexProblemCache);
         }
 
         if (content instanceof Media) {
