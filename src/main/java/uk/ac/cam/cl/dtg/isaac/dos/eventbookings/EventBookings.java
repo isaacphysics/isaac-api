@@ -80,6 +80,8 @@ public interface EventBookings {
     /**
      * Remove booking from the database.
      *
+     * @param transaction
+     *            - the database transaction to use
      * @param eventId
      *            - the event id
      * @param userId
@@ -87,7 +89,7 @@ public interface EventBookings {
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    void delete(final String eventId, final Long userId) throws SegueDatabaseException;
+    void delete(ITransaction transaction, String eventId, Long userId) throws SegueDatabaseException;
 
     /**
      * Acquire a globally unique database lock.

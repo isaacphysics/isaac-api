@@ -1050,16 +1050,13 @@ public class EventBookingManager {
      * @throws SegueDatabaseException - if an error occurs.
      */
     public void deleteBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user) throws SegueDatabaseException {
-            try {
-                // Obtain an exclusive database lock to lock the booking
-                this.bookingPersistenceManager.acquireDistributedLock(event.getId());
-            this.bookingPersistenceManager.deleteBooking(event.getId(), user.getId());
+        try (ITransaction transaction = transactionManager.getTransaction()) {
+            // Obtain an exclusive database lock to lock the booking
+            this.bookingPersistenceManager.lockEventUntilTransactionComplete(transaction, event.getId());
 
-                this.removeUserFromEventGroup(event, user);
-
-            } finally {
-                this.bookingPersistenceManager.releaseDistributedLock(event.getId());
-            }
+            this.bookingPersistenceManager.deleteBooking(transaction, event.getId(), user.getId());
+            this.removeUserFromEventGroup(event, user);
+        }
     }
 
     /**

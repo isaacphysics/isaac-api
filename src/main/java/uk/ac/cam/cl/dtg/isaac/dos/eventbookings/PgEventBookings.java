@@ -176,11 +176,14 @@ public class PgEventBookings implements EventBookings {
     }
 
     @Override
-    public void delete(final String eventId, final Long userId) throws SegueDatabaseException {
+    public void delete(final ITransaction transaction, final String eventId, final Long userId) throws SegueDatabaseException {
+        if (!(transaction instanceof PgTransaction)) {
+            throw new SegueDatabaseException("Incorrect database transaction class type!");
+        }
+
         String query = "DELETE FROM event_bookings WHERE event_id = ? AND user_id = ?";
-        try (Connection conn = ds.getDatabaseConnection();
-            PreparedStatement pst = conn.prepareStatement(query);
-        ) {
+        Connection conn = ((PgTransaction) transaction).getConnection();
+        try (PreparedStatement pst = conn.prepareStatement(query)) {
             pst.setString(1, eventId);
             pst.setLong(2, userId);
             int executeUpdate = pst.executeUpdate();

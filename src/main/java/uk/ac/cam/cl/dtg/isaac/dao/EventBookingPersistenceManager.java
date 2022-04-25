@@ -273,6 +273,8 @@ public class EventBookingPersistenceManager {
     }
 
     /**
+     * @param transaction
+     *            - the database transaction to use
      * @param eventId
      *            - event id
      * @param userId
@@ -280,8 +282,8 @@ public class EventBookingPersistenceManager {
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    public void deleteBooking(final String eventId, final Long userId) throws SegueDatabaseException {
-        dao.delete(eventId, userId);
+    public void deleteBooking(final ITransaction transaction, final String eventId, final Long userId) throws SegueDatabaseException {
+        dao.delete(transaction, eventId, userId);
     }
 
     /**
