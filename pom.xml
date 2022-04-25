@@ -422,6 +422,11 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <dependency>
+            <groupId>org.owasp</groupId>
+            <artifactId>dependency-check-maven</artifactId>
+            <version>7.0.4</version>
+        </dependency>
 
     </dependencies>
 
@@ -429,9 +434,9 @@
         <finalName>${project.artifactId}</finalName>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.1.1</version>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+<!--                <version>${dependency-check-maven.version}</version>-->
             </plugin>
             <plugin>
                 <artifactId>maven-antrun-plugin</artifactId>
