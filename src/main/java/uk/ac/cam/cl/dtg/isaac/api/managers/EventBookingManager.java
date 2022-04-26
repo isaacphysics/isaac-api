@@ -1056,6 +1056,7 @@ public class EventBookingManager {
 
             this.bookingPersistenceManager.deleteBooking(transaction, event.getId(), user.getId());
             this.removeUserFromEventGroup(event, user);
+            transaction.commit();
         }
     }
 
