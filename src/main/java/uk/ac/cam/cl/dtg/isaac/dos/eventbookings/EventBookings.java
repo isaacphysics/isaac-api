@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2015 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -76,7 +76,8 @@ public interface EventBookings {
      * @param additionalEventInformation - additional information required for the event if null it will be unmodified.
      * @throws SegueDatabaseException - if the database goes wrong.
      */
-    void updateStatus(ITransaction transaction, String eventId, Long userId, Long reservingUserId, BookingStatus status, Map<String, String> additionalEventInformation) throws SegueDatabaseException;
+    void updateStatus(ITransaction transaction, String eventId, Long userId, Long reservingUserId, BookingStatus status,
+                      Map<String, String> additionalEventInformation) throws SegueDatabaseException;
 
     /**
      * Remove booking from the database.

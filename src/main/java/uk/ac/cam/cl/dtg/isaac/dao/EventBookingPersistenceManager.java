@@ -1,23 +1,24 @@
 package uk.ac.cam.cl.dtg.isaac.dao;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.util.Lists;
+import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import ma.glasnost.orika.MapperFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.api.client.util.Lists;
-import com.google.inject.Inject;
-
 import uk.ac.cam.cl.dtg.isaac.dos.ITransaction;
-import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.*;
+import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
+import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.EventBooking;
+import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.EventBookings;
+import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.PgEventBooking;
+import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.PgEventBookings;
+import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.DetailedEventBookingDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
@@ -25,11 +26,12 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
-import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
-import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * EventBookingPersistenceManager.
@@ -42,7 +44,6 @@ public class EventBookingPersistenceManager {
     private final EventBookings dao;
     private final UserAccountManager userManager;
     private final IContentManager contentManager;
-    private final String contentIndex;
 
     /**
      * EventBookingPersistenceManager.
@@ -55,16 +56,13 @@ public class EventBookingPersistenceManager {
      *            - Instance of User Manager
      * @param objectMapper
      *            - Instance of objectmapper so we can deal with jsonb
-     * @param dtoMapper
-     *            - Instance of dtoMapper so we can deal with jsonb
      */
     @Inject
     public EventBookingPersistenceManager(final PostgresSqlDb database, final UserAccountManager userManager,
-                                          final IContentManager contentManager, final ObjectMapper objectMapper, final MapperFacade dtoMapper, @Named(CONTENT_INDEX) final String contentIndex) {
+                                          final IContentManager contentManager, final ObjectMapper objectMapper) {
         this.database = database;
         this.userManager = userManager;
         this.contentManager = contentManager;
-        this.contentIndex = contentIndex;
         this.dao = new PgEventBookings(database, objectMapper);
     }
 
@@ -128,7 +126,8 @@ public class EventBookingPersistenceManager {
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    public DetailedEventBookingDTO updateBookingStatus(final ITransaction transaction, final String eventId, final Long userId, final Long reservingUserId, final BookingStatus bookingStatus, final Map<String, String> additionalEventInformation) throws SegueDatabaseException {
+    public DetailedEventBookingDTO updateBookingStatus(final ITransaction transaction, final String eventId, final Long userId, final Long reservingUserId,
+                                                       final BookingStatus bookingStatus, final Map<String, String> additionalEventInformation) throws SegueDatabaseException {
         dao.updateStatus(transaction, eventId, userId, reservingUserId, bookingStatus, additionalEventInformation);
         return this.getBookingByEventIdAndUserId(eventId, userId);
     }
@@ -136,14 +135,17 @@ public class EventBookingPersistenceManager {
     /**
      * Modify an existing event booking's status
      *
+     * @param transaction - the database transaction to use
      * @param eventId - the id of the event
      * @param userId = the user who is registered against the event
      * @param bookingStatus - the new booking status for this booking.
+     * @param additionalEventInformation - additional information required for the event.
      * @return The newly updated event booking
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    public DetailedEventBookingDTO updateBookingStatus(final ITransaction transaction, final String eventId, final Long userId, final BookingStatus bookingStatus, final Map additionalEventInformation) throws SegueDatabaseException {
+    public DetailedEventBookingDTO updateBookingStatus(final ITransaction transaction, final String eventId, final Long userId,
+                                                       final BookingStatus bookingStatus, final Map<String, String> additionalEventInformation) throws SegueDatabaseException {
         return updateBookingStatus(transaction, eventId, userId, null, bookingStatus, additionalEventInformation);
     }
 
