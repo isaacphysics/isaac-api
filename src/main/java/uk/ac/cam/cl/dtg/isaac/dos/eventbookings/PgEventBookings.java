@@ -320,35 +320,6 @@ public class PgEventBookings implements EventBookings {
     }
 
     /**
-     * Acquire a globally unique database lock.
-     * This method will block until the lock is released.
-     * Any locks must be released manually.
-     *
-     * @param resourceId - the unique id for the object to be locked.
-     */
-    @Override
-    public void acquireDistributedLock(final String resourceId) throws SegueDatabaseException {
-        // generate 32 bit CRC based on table id and resource id so that is is more likely to be unique globally.
-        CRC32 crc = new CRC32();
-        crc.update((TABLE_NAME + resourceId).getBytes());
-
-        // acquire lock
-        try (Connection conn = ds.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement("SELECT pg_advisory_lock(?)");
-         ) {
-            pst.setLong(1, crc.getValue());
-            log.debug(String.format("Acquiring advisory lock on %s (%s)", TABLE_NAME + resourceId, crc.getValue()));
-            pst.executeQuery();
-        } catch (SQLException e) {
-            String msg = String.format(
-                "Unable to acquire lock for event (%s).", resourceId);
-            log.error(msg);
-            throw new SegueDatabaseException(msg);
-        }
-        log.debug(String.format("Acquired advisory lock on %s (%s)", TABLE_NAME + resourceId, crc.getValue()));
-    }
-
-    /**
      * Acquire a globally unique lock on an event for the duration of a transaction.
      *
      * This lock will interact as expected with acquireDistributedLock for the same resource ID.
@@ -376,35 +347,6 @@ public class PgEventBookings implements EventBookings {
             throw new SegueDatabaseException(msg);
         }
         log.debug(String.format("Acquired advisory transaction lock on %s (%s)", TABLE_NAME + resourceId, crc.getValue()));
-    }
-
-    /**
-     * Release a globally unique database lock.
-     * This method will release a previously acquired lock.
-     *
-     * @param resourceId - the unique id for the object to be locked.
-     */
-    @Override
-    public void releaseDistributedLock(final String resourceId) throws SegueDatabaseException {
-
-        // generate 32 bit CRC based on table id and resource id so that is is more likely to be unique globally.
-        CRC32 crc = new CRC32();
-        crc.update((TABLE_NAME + resourceId).getBytes());
-
-        // acquire lock
-        try (Connection conn = ds.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement("SELECT pg_advisory_unlock(?)");
-        ) {
-            pst.setLong(1, crc.getValue());
-            log.debug(String.format("Releasing advisory lock on %s (%s)", TABLE_NAME + resourceId, crc.getValue()));
-            pst.executeQuery();
-        } catch (SQLException e) {
-            String msg = String.format(
-                "Unable to release lock for event (%s).", resourceId);
-            log.error(msg);
-            throw new SegueDatabaseException(msg);
-        }
-        log.debug(String.format("Released advisory lock on %s (%s)", TABLE_NAME + resourceId, crc.getValue()));
     }
 
     /*

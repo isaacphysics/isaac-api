@@ -91,23 +91,6 @@ public interface EventBookings {
     void delete(ITransaction transaction, String eventId, Long userId) throws SegueDatabaseException;
 
     /**
-     * Acquire a globally unique database lock.
-     * This lock must be released manually.
-     * @param resourceId - the unique id for the object to be locked.
-     */
-    @Deprecated
-    void acquireDistributedLock(String resourceId) throws SegueDatabaseException;
-
-    /**
-     * Release a globally unique database lock.
-     * This method will release a previously acquired lock.
-     *
-     * @param resourceId - the unique id for the object to be locked.
-     */
-    @Deprecated
-    void releaseDistributedLock(String resourceId) throws SegueDatabaseException;
-
-    /**
      * Acquire a globally unique lock on an event for the duration of a transaction.
      *
      * This lock will interact as expected with acquireDistributedLock for the same resource ID.
