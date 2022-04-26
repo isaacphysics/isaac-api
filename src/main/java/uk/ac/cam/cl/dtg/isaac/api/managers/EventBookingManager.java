@@ -491,8 +491,7 @@ public class EventBookingManager {
         }
 
         List<EventBookingDTO> reservations = new ArrayList<>();
-        // Wrap this into a database transaction
-        // FIXME: None of the booking code uses this transaction in any way!
+        // Wrap this into a database transaction:
         try (ITransaction transaction = transactionManager.getTransaction()) {
             try {
                 // Obtain an exclusive database lock for the event:
