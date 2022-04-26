@@ -422,11 +422,11 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <dependency>
-            <groupId>org.owasp</groupId>
-            <artifactId>dependency-check-maven</artifactId>
-            <version>7.0.4</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.owasp</groupId>-->
+<!--            <artifactId>dependency-check-maven</artifactId>-->
+<!--            <version>7.0.4</version>-->
+<!--        </dependency>-->
 
     </dependencies>
 
