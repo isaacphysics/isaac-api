@@ -131,7 +131,7 @@ public class EventBookingManagerTest {
         dummyTransaction.close();
         expectLastCall().once();
 
-        expect(dummyEventBookingPersistenceManager.createBooking(testEvent.getId(), someUser.getId(), BookingStatus
+        expect(dummyEventBookingPersistenceManager.createBooking(dummyTransaction, testEvent.getId(), someUser.getId(), BookingStatus
 				.CONFIRMED, someAdditionalInformation)).andReturn(firstBooking).atLeastOnce();
 
         expect(dummyEmailManager.getEmailTemplateDTO("email-event-booking-confirmed")).andReturn(new EmailTemplateDTO()).atLeastOnce();
@@ -379,7 +379,7 @@ public class EventBookingManagerTest {
         dummyTransaction.close();
         expectLastCall().once();
 
-        expect(dummyEventBookingPersistenceManager.createBooking(testEvent.getId(), someUser.getId(),
+        expect(dummyEventBookingPersistenceManager.createBooking(dummyTransaction, testEvent.getId(), someUser.getId(),
                 BookingStatus.CONFIRMED, someAdditionalInformation)).andReturn(secondBooking).atLeastOnce();
 
         expect(dummyEmailManager.getEmailTemplateDTO("email-event-booking-confirmed")).andReturn(new EmailTemplateDTO()).atLeastOnce();
@@ -445,7 +445,7 @@ public class EventBookingManagerTest {
         dummyTransaction.close();
         expectLastCall().once();
 
-        expect(dummyEventBookingPersistenceManager.createBooking(testEvent.getId(), firstUserFull.getId(),
+        expect(dummyEventBookingPersistenceManager.createBooking(dummyTransaction, testEvent.getId(), firstUserFull.getId(),
 				BookingStatus.CONFIRMED, someAdditionalInformation)).andReturn(secondBooking).atLeastOnce();
 
         dummyEmailManager.sendTemplatedEmailToUser(anyObject(), anyObject(), anyObject(), anyObject(), anyObject());
@@ -880,7 +880,7 @@ public class EventBookingManagerTest {
                 .getBookingByEventIdAndUserId(testCase.event.getId(), testCase.student1.getId()))
                 .andReturn(null).once();
         expect(dummyEventBookingPersistenceManager
-                .createBooking(eq(testCase.event.getId()), eq(testCase.student1.getId()), eq(testCase.teacher.getId()), eq(BookingStatus.RESERVED), anyObject()))
+                .createBooking(eq(dummyTransaction), eq(testCase.event.getId()), eq(testCase.student1.getId()), eq(testCase.teacher.getId()), eq(BookingStatus.RESERVED), anyObject()))
                 .andReturn(testCase.student1Booking).once();
 
         expect(dummyEventBookingPersistenceManager
@@ -1030,7 +1030,7 @@ public class EventBookingManagerTest {
                 .getBookingByEventIdAndUserId(testCase.event.getId(), testCase.student1.getId()))
                 .andReturn(null).once();
         expect(dummyEventBookingPersistenceManager
-                .createBooking(eq(testCase.event.getId()), eq(testCase.student1.getId()), eq(testCase.teacher.getId()), eq(BookingStatus.RESERVED), anyObject()))
+                .createBooking(eq(dummyTransaction), eq(testCase.event.getId()), eq(testCase.student1.getId()), eq(testCase.teacher.getId()), eq(BookingStatus.RESERVED), anyObject()))
                 .andReturn(testCase.student1Booking).once();
 
         dummyTransaction.commit();

@@ -344,21 +344,19 @@ public class EventBookingManager {
         }
 
         EventBookingDTO booking;
-        try {
+        try (ITransaction transaction = transactionManager.getTransaction()) {
             // Obtain an exclusive database lock to lock the booking
-            this.bookingPersistenceManager.acquireDistributedLock(event.getId());
+            this.bookingPersistenceManager.lockEventUntilTransactionComplete(transaction, event.getId());
 
             if (BookingStatus.CONFIRMED.equals(status)) {
                 this.ensureCapacity(event, user);
             }
 
-            booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), status,
-                    additionalEventInformation);
-
-        } finally {
-            // release lock.
-            this.bookingPersistenceManager.releaseDistributedLock(event.getId());
+            booking = this.bookingPersistenceManager.createBooking(transaction, event.getId(), user.getId(), status, additionalEventInformation);
+            transaction.commit();
         }
+
+        addUserToEventGroup(event, user);
 
         try {
             // Send an email notifying the user (unless they are being added after the event for the sake of our records)
@@ -391,8 +389,6 @@ public class EventBookingManager {
             log.error(String.format("Unable to send booking confirmation email (%s) to user (%s)", event.getId(), user
                     .getEmail()), e);
         }
-
-        addUserToEventGroup(event, user);
 
         return booking;
     }
@@ -439,7 +435,7 @@ public class EventBookingManager {
             } else {
                 // check capacity at this moment in time and then create booking
                 this.ensureCapacity(event, user);
-                booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(),
+                booking = this.bookingPersistenceManager.createBooking(transaction, event.getId(), user.getId(),
                         BookingStatus.CONFIRMED, additionalEventInformation);
             }
             transaction.commit();
@@ -535,7 +531,7 @@ public class EventBookingManager {
                                 user.getId(), reservingUser.getId(), BookingStatus.RESERVED,
                                 additionalEventInformation);
                     } else {
-                        reservation = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(),
+                        reservation = this.bookingPersistenceManager.createBooking(transaction, event.getId(), user.getId(),
                                 reservingUser.getId(), BookingStatus.RESERVED, additionalEventInformation);
                     }
                     reservations.add(reservation);
@@ -665,7 +661,7 @@ public class EventBookingManager {
                         BookingStatus.WAITING_LIST,
                         additionalInformation);
             } else {
-                booking = this.bookingPersistenceManager.createBooking(event.getId(),
+                booking = this.bookingPersistenceManager.createBooking(transaction, event.getId(),
                         user.getId(),
                         null,
                         BookingStatus.WAITING_LIST,

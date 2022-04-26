@@ -223,35 +223,32 @@ public class EventBookingPersistenceManager {
     }
 
     /**
-     * @param eventId
-     *            - of interest
-     * @param userId
-     *            - user to book on to the event.
-     * @param reservingId
-     *            - user making the reservation
-     * @param status
-     *            - The status of the booking to create.
+     * @param transaction - the database transaction to use
+     * @param eventId - of interest
+     * @param userId - user to book on to the event.
+     * @param reservingId - user making the reservation
+     * @param status - The status of the booking to create.
+     * @param additionalInformation - additional information required for the event.
      * @return the newly created booking.
-     * @throws SegueDatabaseException
-     *             - if an error occurs.
+     * @throws SegueDatabaseException - if an error occurs.
      */
-    public EventBookingDTO createBooking(final String eventId, final Long userId, final Long reservingId, final BookingStatus status, final Map<String,String> additionalInformation) throws SegueDatabaseException {
-        return this.convertToDTO(dao.add(eventId, userId, reservingId, status, additionalInformation));
+    public EventBookingDTO createBooking(final ITransaction transaction, final String eventId, final Long userId, final Long reservingId, final BookingStatus status,
+                                         final Map<String, String> additionalInformation) throws SegueDatabaseException {
+        return this.convertToDTO(dao.add(transaction, eventId, userId, reservingId, status, additionalInformation));
     }
 
     /**
-     * @param eventId
-     *            - of interest
-     * @param userId
-     *            - user to book on to the event.
-     * @param status
-     *            - The status of the booking to create.
+     * @param transaction - the database transaction to use
+     * @param eventId - of interest
+     * @param userId - user to book on to the event.
+     * @param status - The status of the booking to create.
+     * @param additionalInformation - additional information required for the event.
      * @return the newly created booking.
-     * @throws SegueDatabaseException
-     *             - if an error occurs.
+     * @throws SegueDatabaseException - if an error occurs.
      */
-    public EventBookingDTO createBooking(final String eventId, final Long userId, final BookingStatus status, final Map<String,String> additionalInformation) throws SegueDatabaseException {
-        return this.convertToDTO(dao.add(eventId, userId, status, additionalInformation));
+    public EventBookingDTO createBooking(final ITransaction transaction, final String eventId, final Long userId, final BookingStatus status,
+                                         final Map<String, String> additionalInformation) throws SegueDatabaseException {
+        return this.convertToDTO(dao.add(transaction, eventId, userId, status, additionalInformation));
     }
 
     /**

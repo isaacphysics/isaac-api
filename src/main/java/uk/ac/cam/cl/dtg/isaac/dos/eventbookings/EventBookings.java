@@ -34,36 +34,33 @@ public interface EventBookings {
     /**
      * Add booking to the database.
      *
-     * @param eventId
-     *            - the event id
-     * @param userId
-     *            - the user id
-     * @param reservedById
-     *            - the user id of who made the reservation (can be null)
-     * @param status
-     *            - the initial status of the booking.
+     * @param transaction - the database transaction to use
+     * @param eventId - the event id
+     * @param userId - the user id
+     * @param reservedById - the user id of who made the reservation (can be null)
+     * @param status - the initial status of the booking.
      * @param additionalInformation - additional information required for the event.
      * @return the newly created booking
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    EventBooking add(final String eventId, final Long userId, final Long reservedById, final BookingStatus status, final Map<String,String> additionalInformation) throws SegueDatabaseException;
+    EventBooking add(ITransaction transaction, String eventId, Long userId, Long reservedById, BookingStatus status,
+                     Map<String, String> additionalInformation) throws SegueDatabaseException;
 
     /**
      * Add booking to the database.
-     * 
-     * @param eventId
-     *            - the event id
-     * @param userId
-     *            - the user id
-     * @param status
-     *            - the initial status of the booking.
+     *
+     * @param transaction - the database transaction to use
+     * @param eventId - the event id
+     * @param userId - the user id
+     * @param status - the initial status of the booking.
      * @param additionalInformation - additional information required for the event.
      * @return the newly created booking
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    EventBooking add(final String eventId, final Long userId, final BookingStatus status, final Map<String,String> additionalInformation) throws SegueDatabaseException;
+    EventBooking add(ITransaction transaction, String eventId, Long userId, BookingStatus status,
+                     Map<String, String> additionalInformation) throws SegueDatabaseException;
 
 	/**
      * updateStatus.

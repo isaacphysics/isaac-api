@@ -66,23 +66,21 @@ public class PgEventBookings implements EventBookings {
         this.objectMapper = mapper;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see uk.ac.cam.cl.dtg.isaac.dos.eventbookings.EventBookings#add(uk.ac.cam.
-     * cl.dtg.isaac.dos.eventbookings.EventBooking)
-     */
     @Override
-    public EventBooking add(final String eventId, final Long userId, final Long reserveById, final BookingStatus status, Map<String, String> additionalEventInformation) throws SegueDatabaseException {
+    public EventBooking add(final ITransaction transaction, final String eventId, final Long userId, final Long reserveById,
+                            final BookingStatus status, Map<String, String> additionalEventInformation) throws SegueDatabaseException {
+        if (!(transaction instanceof PgTransaction)) {
+            throw new SegueDatabaseException("Incorrect database transaction class type!");
+        }
+
         if (null == additionalEventInformation) {
             additionalEventInformation = Maps.newHashMap();
         }
 
-        String query = "INSERT INTO event_bookings (id, user_id, reserved_by, event_id, status, created, updated, additional_booking_information)" +
-                " VALUES (DEFAULT, ?, ?, ?, ?, ?, ?, ?::text::jsonb)";
-        try (Connection conn = ds.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
-         ) {
+        String query = "INSERT INTO event_bookings (id, user_id, reserved_by, event_id, status, created, updated, additional_booking_information)"
+                + " VALUES (DEFAULT, ?, ?, ?, ?, ?, ?, ?::text::jsonb)";
+        Connection conn = ((PgTransaction) transaction).getConnection();
+        try (PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
             Date creationDate = new Date();
             pst.setLong(1, userId);
             if (reserveById == null) {
@@ -116,8 +114,9 @@ public class PgEventBookings implements EventBookings {
     }
 
     @Override
-    public EventBooking add(final String eventId, final Long userId, final BookingStatus status, Map<String, String> additionalEventInformation) throws SegueDatabaseException {
-        return add(eventId, userId, null, status, additionalEventInformation);
+    public EventBooking add(final ITransaction transaction, final String eventId, final Long userId, final BookingStatus status,
+                            final Map<String, String> additionalEventInformation) throws SegueDatabaseException {
+        return add(transaction, eventId, userId, null, status, additionalEventInformation);
     }
 
     @Override
