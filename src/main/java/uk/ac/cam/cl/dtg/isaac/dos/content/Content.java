@@ -51,6 +51,7 @@ public class Content extends ContentBase {
     protected Boolean deprecated;
     protected Integer level;
     protected String searchableContent;
+    protected Boolean expandable;
 
     @JsonCreator
     public Content(@JsonProperty("id") String id, @JsonProperty("title") String title,
@@ -227,6 +228,14 @@ public class Content extends ContentBase {
 
     public void setSearchableContent(String searchableContent) {
         this.searchableContent = searchableContent;
+    }
+
+    public Boolean getExpandable() {
+        return this.expandable;
+    }
+
+    public void setExpandable(Boolean expandable) {
+        this.expandable = expandable;
     }
 
     @Override

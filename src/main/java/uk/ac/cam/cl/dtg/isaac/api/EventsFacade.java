@@ -114,6 +114,8 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.TAGS_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_FKEY_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_LIST_FKEY_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.STAGE_FIELDNAME;
+
 
 /**
  * Events Facade.
@@ -191,6 +193,8 @@ public class EventsFacade extends AbstractIsaacFacade {
      *            - true will impose filtering on the results. False will not. Defaults to false.
      * @param showInactiveOnly
      *            - true will impose filtering on the results. False will not. Defaults to false.
+     * @param showStageOnly
+     *            - if present, only events with an audience matching this string will be shown
      * @return a Response containing a list of events objects or containing a SegueErrorResponse.
      */
     @GET
@@ -198,14 +202,16 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @ApiOperation(value = "List events matching the provided criteria.")
-    public final Response getEvents(@Context final HttpServletRequest request, @QueryParam("tags") final String tags,
+    public final Response getEvents(@Context final HttpServletRequest request,
+            @QueryParam("tags") final String tags,
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
             @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit,
             @QueryParam("sort_by") final String sortOrder,
             @QueryParam("show_active_only") final Boolean showActiveOnly,
             @QueryParam("show_inactive_only") final Boolean showInactiveOnly,
             @QueryParam("show_booked_only") final Boolean showMyBookingsOnly,
-            @QueryParam("show_reservations_only") final Boolean showReservationsOnly) {
+            @QueryParam("show_reservations_only") final Boolean showReservationsOnly,
+            @QueryParam("show_stage_only") final String showStageOnly) {
         Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 
         Integer newLimit = null;
@@ -220,6 +226,10 @@ public class EventsFacade extends AbstractIsaacFacade {
 
         if (tags != null) {
             fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
+        }
+
+        if (showStageOnly != null) {
+            fieldsToMatch.put(STAGE_FIELDNAME, Arrays.asList(showStageOnly.split(",")));
         }
 
         final Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
@@ -1553,6 +1563,8 @@ public class EventsFacade extends AbstractIsaacFacade {
      *            - the maximums number of results to return
      * @param showActiveOnly
      *            - true will impose filtering on the results. False will not. Defaults to false.
+     * @param showStageOnly
+     *            - if present, only events with an audience matching this string will be shown
      * @return a Response containing a list of event map summaries or containing a SegueErrorResponse.
      */
     @GET
@@ -1563,7 +1575,8 @@ public class EventsFacade extends AbstractIsaacFacade {
     public final Response getEventMapData(@Context final HttpServletRequest request, @QueryParam("tags") final String tags,
                                             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
                                             @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit,
-                                            @QueryParam("show_active_only") final Boolean showActiveOnly) {
+                                            @QueryParam("show_active_only") final Boolean showActiveOnly,
+                                            @QueryParam("show_stage_only") final String showStageOnly) {
         Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 
         Integer newLimit = null;
@@ -1578,6 +1591,10 @@ public class EventsFacade extends AbstractIsaacFacade {
 
         if (tags != null) {
             fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
+        }
+
+        if (showStageOnly != null) {
+            fieldsToMatch.put(STAGE_FIELDNAME, Arrays.asList(showStageOnly.split(",")));
         }
 
         final Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();

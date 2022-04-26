@@ -30,7 +30,8 @@ public class CodeSnippetDTO extends ContentDTO {
 
     @JsonCreator
     public CodeSnippetDTO(@JsonProperty("language") String language, @JsonProperty("code") String code,
-                          @JsonProperty("disableHighlighting") Boolean disableHighlighting, @JsonProperty("url") String url) {
+                          @JsonProperty("disableHighlighting") Boolean disableHighlighting,
+                          @JsonProperty("url") String url) {
         this.language = language;
         this.code = code;
         this.disableHighlighting = disableHighlighting;
