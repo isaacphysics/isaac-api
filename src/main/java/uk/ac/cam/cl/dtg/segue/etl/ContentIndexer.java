@@ -707,7 +707,6 @@ public class ContentIndexer {
      *            version to validate integrity of.
      * @param gitCache
      *            Data structure containing all content for a given sha.
-     * @return True if we are happy with the integrity of the git repository, False if there is something wrong.
      */
     private void recordContentErrors(final String sha, final Map<String, Content> gitCache,
                                           Map<Content, List<String>> indexProblemCache) {
@@ -825,6 +824,19 @@ public class ContentIndexer {
 
     // GitContentManager ensureCache
 
+    private String collateExpandableChildren(Content content) {
+        StringBuilder ret = new StringBuilder();
+        for (Content child : flattenContentObjects(content)) {
+            if (child != content && null != child.getExpandable() && child.getExpandable()) {
+                ret.append((null != child.getType() ? child.getType() : "undefined")).append(",");
+            }
+        }
+        if (ret.length() > 0) {
+            ret.deleteCharAt(ret.length() - 1);
+        }
+        return ret.toString();
+    }
+
     /**
      * This method will record content type specific errors for a single item of content
      *
@@ -846,6 +858,27 @@ public class ContentIndexer {
 
             log.error("Invalid content item detected: The object with ID (" + content.getCanonicalSourceFile()
                     + ") has both children and a value.");
+        }
+
+        // Make sure no children of potentially expandable content are expandable, if so record a content error
+        if (((null != content.getLayout() && content.getLayout().equals("tabs")) || content instanceof CodeSnippet) && null != content.getChildren()) {
+            String expandableChildrenLog = collateExpandableChildren(content);
+            if (!expandableChildrenLog.equals("")) {
+                this.registerContentProblem(content, "Content of type " + content.getType() + " in " + content.getCanonicalSourceFile() + " is "
+                        + "potentially expandable, but has expandable children of the following types: " + expandableChildrenLog
+                        + ". These children will have their expandable property disabled since we cannot handle nested "
+                        + "expandable content. Please make sure the parent content block is "
+                        + "marked as expandable instead, and that it's children blocks have the expandable property "
+                        + "disabled.", indexProblemCache);
+            }
+        }
+
+        // Ensure that the expandable content is only of a type that support expansion
+        if (null != content.getExpandable() && content.getExpandable() && (null == content.getLayout()
+                || !content.getLayout().equals("tabs")) && !(content instanceof CodeSnippet)) {
+            this.registerContentProblem(content, "Content of type " + content.getType() + " in " + content.getCanonicalSourceFile() + " is "
+                    + "marked as expandable, but we do not support expanding this type of content yet. If this is a HTML"
+                    + " table, use class='expandable' in the table tag instead.", indexProblemCache);
         }
 
         if (content instanceof Media) {
