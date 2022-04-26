@@ -50,7 +50,7 @@ public class PgTransaction implements ITransaction {
         try {
             conn.close();
         } catch (SQLException e) {
-            throw new SegueDatabaseException("Transaction Rollback Failure!", e);
+            throw new SegueDatabaseException("Transaction Close Failure!", e);
         }
     }
 }
