@@ -68,14 +68,15 @@ public interface EventBookings {
 	/**
      * updateStatus.
      *
+     * @param transaction - the database transaction to use
      * @param eventId - the id of the event
      * @param userId - the id of the user booked on to the event
+     * @param reservingUserId - the id of the user making the reservation
      * @param status - the new status to change the booking to
      * @param additionalEventInformation - additional information required for the event if null it will be unmodified.
-     * @return the newly updated event booking.
      * @throws SegueDatabaseException - if the database goes wrong.
      */
-    void updateStatus(final String eventId, final Long userId, final Long reservingUserId, final BookingStatus status, Map<String, String> additionalEventInformation) throws SegueDatabaseException;
+    void updateStatus(ITransaction transaction, String eventId, Long userId, Long reservingUserId, BookingStatus status, Map<String, String> additionalEventInformation) throws SegueDatabaseException;
 
     /**
      * Remove booking from the database.

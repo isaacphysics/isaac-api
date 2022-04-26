@@ -118,16 +118,18 @@ public class EventBookingPersistenceManager {
 	/**
      * Modify an existing event booking's status
      *
+     * @param transaction - the database transaction to use
      * @param eventId - the id of the event
      * @param userId = the user who is registered against the event
      * @param reservingUserId - the user who is updating this booking to be a reservation
      * @param bookingStatus - the new booking status for this booking.
+     * @param additionalEventInformation - additional information required for the event.
      * @return The newly updated event booking
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    public DetailedEventBookingDTO updateBookingStatus(final String eventId, final Long userId, final Long reservingUserId, final BookingStatus bookingStatus, final Map additionalEventInformation) throws SegueDatabaseException {
-        dao.updateStatus(eventId, userId, reservingUserId, bookingStatus, additionalEventInformation);
+    public DetailedEventBookingDTO updateBookingStatus(final ITransaction transaction, final String eventId, final Long userId, final Long reservingUserId, final BookingStatus bookingStatus, final Map<String, String> additionalEventInformation) throws SegueDatabaseException {
+        dao.updateStatus(transaction, eventId, userId, reservingUserId, bookingStatus, additionalEventInformation);
         return this.getBookingByEventIdAndUserId(eventId, userId);
     }
 
@@ -141,8 +143,8 @@ public class EventBookingPersistenceManager {
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    public DetailedEventBookingDTO updateBookingStatus(final String eventId, final Long userId, final BookingStatus bookingStatus, final Map additionalEventInformation) throws SegueDatabaseException {
-        return updateBookingStatus(eventId, userId, null, bookingStatus, additionalEventInformation);
+    public DetailedEventBookingDTO updateBookingStatus(final ITransaction transaction, final String eventId, final Long userId, final BookingStatus bookingStatus, final Map additionalEventInformation) throws SegueDatabaseException {
+        return updateBookingStatus(transaction, eventId, userId, null, bookingStatus, additionalEventInformation);
     }
 
     /**

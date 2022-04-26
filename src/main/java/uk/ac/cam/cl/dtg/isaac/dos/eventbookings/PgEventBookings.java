@@ -121,57 +121,167 @@ public class PgEventBookings implements EventBookings {
     }
 
     @Override
-    public void updateStatus(final String eventId, final Long userId, final Long reservingUserId, final BookingStatus status, final Map<String, String> additionalEventInformation) throws SegueDatabaseException {
-        PreparedStatement pst;
-        // FIXME: try-with-resources!
-        try (Connection conn = ds.getDatabaseConnection()) {
+    public void updateStatus(final ITransaction transaction, final String eventId, final Long userId, final Long reservingUserId, final BookingStatus status, final Map<String, String> additionalEventInformation) throws SegueDatabaseException {
+        if (additionalEventInformation != null && reservingUserId != null) {
+            updateBookingStatus(transaction, eventId, userId, reservingUserId, status, additionalEventInformation);
+        } else if (additionalEventInformation != null) {
+            updateBookingStatus(transaction, eventId, userId, status, additionalEventInformation);
+        } else if (reservingUserId != null) {
+            updateBookingStatus(transaction, eventId, userId, reservingUserId, status);
+        } else {
+            updateBookingStatus(transaction, eventId, userId, status);
+        }
+    }
 
-            String reservingUserIdClause = "";
-            if (reservingUserId != null) {
-                reservingUserIdClause = ", reserved_by = ? ";
-            }
+    /**
+     *  Update a booking with additional booking information and a reserving user.
+     *
+     * @see #updateStatus
+     *
+     * @param transaction - the database transaction to use
+     * @param eventId - the id of the event
+     * @param userId - the id of the user booked on to the event
+     * @param reservingUserId - the id of the user making the reservation
+     * @param status - the new status to change the booking to
+     * @param additionalEventInformation - additional information required for the event
+     * @throws SegueDatabaseException - if the database goes wrong.
+     */
+    private void updateBookingStatus(final ITransaction transaction, final String eventId, final Long userId,
+                                     final Long reservingUserId, final BookingStatus status,
+                                     final Map<String, String> additionalEventInformation) throws SegueDatabaseException {
+        if (!(transaction instanceof PgTransaction)) {
+            throw new SegueDatabaseException("Incorrect database transaction class type!");
+        }
 
-            if (additionalEventInformation != null) {
-                pst = conn.prepareStatement("UPDATE event_bookings " +
-                    "SET status = ?, updated = ?, additional_booking_information = ?::text::jsonb " + reservingUserIdClause +
-                    "WHERE event_id = ? AND user_id = ?;");
-                pst.setString(1, status.name());
-                pst.setTimestamp(2, new java.sql.Timestamp(new Date().getTime()));
-                pst.setString(3, objectMapper.writeValueAsString(additionalEventInformation));
-                if (reservingUserId != null) {
-                    pst.setLong(4, reservingUserId);
-                    pst.setString(5, eventId);
-                    pst.setLong(6, userId);
-                } else {
-                    pst.setString(4, eventId);
-                    pst.setLong(5, userId);
-                }
-            } else {
-                pst = conn.prepareStatement("UPDATE event_bookings " +
-                    "SET status = ?, updated = ? " + reservingUserIdClause +
-                    "WHERE event_id = ? AND user_id = ?;");
-                pst.setString(1, status.name());
-                pst.setTimestamp(2, new java.sql.Timestamp(new Date().getTime()));
-                if (reservingUserId != null) {
-                    pst.setLong(3, reservingUserId);
-                    pst.setString(4, eventId);
-                    pst.setLong(5, userId);
-                } else {
-                    pst.setString(3, eventId);
-                    pst.setLong(4, userId);
-                }
-            }
+        String query = "UPDATE event_bookings SET status = ?, updated = ?, additional_booking_information = ?::text::jsonb, reserved_by = ? WHERE event_id = ? AND user_id = ?;";
+        Connection conn = ((PgTransaction) transaction).getConnection();
+        try (PreparedStatement pst = conn.prepareStatement(query)) {
+            pst.setString(1, status.name());
+            pst.setTimestamp(2, new java.sql.Timestamp(new Date().getTime()));
+            pst.setString(3, objectMapper.writeValueAsString(additionalEventInformation));
+            pst.setLong(4, reservingUserId);
+            pst.setString(5, eventId);
+            pst.setLong(6, userId);
 
             int executeUpdate = pst.executeUpdate();
 
             if (executeUpdate == 0) {
-                throw new ResourceNotFoundException("Could not delete the requested booking.");
+                throw new ResourceNotFoundException("Could not update the requested booking.");
             }
-
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception while trying to update event booking", e);
         } catch (JsonProcessingException e) {
             throw new SegueDatabaseException("Unable to convert json to string for persistence.", e);
+        }
+    }
+
+    /**
+     *  Update a booking with a reserving user but without additional booking information.
+     *
+     *  @see #updateStatus
+     *
+     * @param transaction - the database transaction to use
+     * @param eventId - the id of the event
+     * @param userId - the id of the user booked on to the event
+     * @param reservingUserId - the id of the user making the reservation
+     * @param status - the new status to change the booking to
+     * @throws SegueDatabaseException - if the database goes wrong.
+     */
+    private void updateBookingStatus(final ITransaction transaction, final String eventId, final Long userId,
+                                     final Long reservingUserId, final BookingStatus status) throws SegueDatabaseException {
+        if (!(transaction instanceof PgTransaction)) {
+            throw new SegueDatabaseException("Incorrect database transaction class type!");
+        }
+        String query = "UPDATE event_bookings SET status = ?, updated = ?, reserved_by = ? WHERE event_id = ? AND user_id = ?;";
+        Connection conn = ((PgTransaction) transaction).getConnection();
+        try (PreparedStatement pst = conn.prepareStatement(query)) {
+            pst.setString(1, status.name());
+            pst.setTimestamp(2, new java.sql.Timestamp(new Date().getTime()));
+            pst.setLong(3, reservingUserId);
+            pst.setString(4, eventId);
+            pst.setLong(5, userId);
+            int executeUpdate = pst.executeUpdate();
+
+            if (executeUpdate == 0) {
+                throw new ResourceNotFoundException("Could not update the requested booking.");
+            }
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception while trying to update event booking", e);
+        }
+    }
+
+    /**
+     *  Update a booking with additional booking information but without a reserving user.
+     *
+     * @see #updateStatus
+     *
+     * @param transaction - the database transaction to use
+     * @param eventId - the id of the event
+     * @param userId - the id of the user booked on to the event
+     * @param status - the new status to change the booking to
+     * @param additionalEventInformation - additional information required for the event
+     * @throws SegueDatabaseException - if the database goes wrong.
+     */
+    private void updateBookingStatus(final ITransaction transaction, final String eventId, final Long userId,
+                                     final BookingStatus status,
+                                     final Map<String, String> additionalEventInformation) throws SegueDatabaseException {
+        if (!(transaction instanceof PgTransaction)) {
+            throw new SegueDatabaseException("Incorrect database transaction class type!");
+        }
+
+        String query = "UPDATE event_bookings SET status = ?, updated = ?, additional_booking_information = ?::text::jsonb WHERE event_id = ? AND user_id = ?;";
+        Connection conn = ((PgTransaction) transaction).getConnection();
+        try (PreparedStatement pst = conn.prepareStatement(query)) {
+            pst.setString(1, status.name());
+            pst.setTimestamp(2, new java.sql.Timestamp(new Date().getTime()));
+            pst.setString(3, objectMapper.writeValueAsString(additionalEventInformation));
+            pst.setString(4, eventId);
+            pst.setLong(5, userId);
+
+            int executeUpdate = pst.executeUpdate();
+
+            if (executeUpdate == 0) {
+                throw new ResourceNotFoundException("Could not update the requested booking.");
+            }
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception while trying to update event booking", e);
+        } catch (JsonProcessingException e) {
+            throw new SegueDatabaseException("Unable to convert json to string for persistence.", e);
+        }
+    }
+
+    /**
+     *  Update a booking without additional booking information or a reserving user.
+     *
+     * @see #updateStatus
+     *
+     * @param transaction - the database transaction to use
+     * @param eventId - the id of the event
+     * @param userId - the id of the user booked on to the event
+     * @param status - the new status to change the booking to
+     * @throws SegueDatabaseException - if the database goes wrong.
+     */
+    private void updateBookingStatus(final ITransaction transaction, final String eventId, final Long userId,
+                                     final BookingStatus status) throws SegueDatabaseException {
+        if (!(transaction instanceof PgTransaction)) {
+            throw new SegueDatabaseException("Incorrect database transaction class type!");
+        }
+
+        String query = "UPDATE event_bookings SET status = ?, updated = ? WHERE event_id = ? AND user_id = ?;";
+        Connection conn = ((PgTransaction) transaction).getConnection();
+        try (PreparedStatement pst = conn.prepareStatement(query)) {
+            pst.setString(1, status.name());
+            pst.setTimestamp(2, new java.sql.Timestamp(new Date().getTime()));
+            pst.setString(3, eventId);
+            pst.setLong(4, userId);
+
+            int executeUpdate = pst.executeUpdate();
+
+            if (executeUpdate == 0) {
+                throw new ResourceNotFoundException("Could not update the requested booking.");
+            }
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception while trying to update event booking", e);
         }
     }
 
