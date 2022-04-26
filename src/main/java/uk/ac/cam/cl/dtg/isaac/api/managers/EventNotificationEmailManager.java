@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
@@ -25,6 +26,7 @@ import uk.ac.cam.cl.dtg.segue.search.DateRangeFilterInstruction;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.time.ZonedDateTime;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -65,9 +67,10 @@ public class EventNotificationEmailManager {
         this.pgScheduledEmailManager = pgScheduledEmailManager;
     }
 
-    public void sendEmailForEvent(IsaacEventPageDTO event, String templateId) throws SegueDatabaseException {
+    public void sendBookingStatusFilteredEmailForEvent(IsaacEventPageDTO event, String templateId, List<BookingStatus> bookingStatuses) throws SegueDatabaseException {
         List<DetailedEventBookingDTO> eventBookings = bookingManager.adminGetBookingsByEventId(event.getId());
         List<Long> ids = eventBookings.stream()
+                            .filter(DetailedEventBookingDTO -> bookingStatuses == null || bookingStatuses.contains(DetailedEventBookingDTO.getBookingStatus()))
                             .map(DetailedEventBookingDTO::getUserBooked)
                             .map(UserSummaryDTO::getId)
                             .distinct().collect(Collectors.toList());
@@ -113,9 +116,10 @@ public class EventNotificationEmailManager {
                 if (contentResult instanceof IsaacEventPageDTO) {
                     IsaacEventPageDTO event = (IsaacEventPageDTO) contentResult;
                     String emailKey = String.format("%s@pre", event.getId());
+                    List<BookingStatus> bookingStatuses = Arrays.asList(BookingStatus.CONFIRMED, BookingStatus.ATTENDED);
                     if (!pgScheduledEmailManager.scheduledEmailAlreadySent(emailKey)) {
                         pgScheduledEmailManager.saveScheduledEmailSent(emailKey);
-                        this.sendEmailForEvent(event, "event_reminder");
+                        this.sendBookingStatusFilteredEmailForEvent(event, "event_reminder", bookingStatuses);
                     }
                 }
             }
@@ -155,9 +159,10 @@ public class EventNotificationEmailManager {
                     boolean noEndDateAndStartDateToday = event.getEndDate() == null && event.getDate().toInstant().isBefore(new Date().toInstant());
                     if (endDateToday || noEndDateAndStartDateToday) {
                         String emailKey = String.format("%s@post", event.getId());
+                        List<BookingStatus> bookingStatuses = Arrays.asList(BookingStatus.CONFIRMED, BookingStatus.ATTENDED);
                         if (!pgScheduledEmailManager.scheduledEmailAlreadySent(emailKey)) {
                             pgScheduledEmailManager.saveScheduledEmailSent(emailKey);
-                            this.sendEmailForEvent(event, "event_feedback");
+                            this.sendBookingStatusFilteredEmailForEvent(event, "event_feedback", bookingStatuses);
                         }
                     }
                 }
