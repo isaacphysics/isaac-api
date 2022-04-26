@@ -909,6 +909,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             String mailjetKey = properties.getProperty(MAILJET_API_KEY);
             String mailjetSecret = properties.getProperty(MAILJET_API_SECRET);
             String eventPrePostEmails = properties.getProperty(EVENT_PRE_POST_EMAILS);
+            Boolean eventPrePostEmailsEnabled = !eventPrePostEmails.isEmpty() && Boolean.parseBoolean(eventPrePostEmails);
 
             SegueScheduledJob PIISQLJob = new SegueScheduledDatabaseScriptJob(
                     "PIIDeleteScheduledJob",
@@ -977,7 +978,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                 configuredScheduledJobs.add(syncMailjetUsers);
             }
 
-            if (Boolean.parseBoolean(eventPrePostEmails)) {
+            if (eventPrePostEmailsEnabled) {
                 configuredScheduledJobs.add(eventReminderEmail);
                 configuredScheduledJobs.add(eventFeedbackEmail);
             }
@@ -988,7 +989,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                 segueJobService.removeScheduleJob(syncMailjetUsers);
             }
 
-            if (!Boolean.parseBoolean(eventPrePostEmails)) {
+            if (!eventPrePostEmailsEnabled) {
                 segueJobService.removeScheduleJob(eventReminderEmail);
                 segueJobService.removeScheduleJob(eventFeedbackEmail);
             }
