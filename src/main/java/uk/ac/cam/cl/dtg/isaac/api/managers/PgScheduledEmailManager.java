@@ -39,7 +39,7 @@ public class PgScheduledEmailManager {
                 if (results.next()) {
                     return results.getBoolean(1);
                 } else {
-                    return true;
+                    throw new SegueDatabaseException(String.format("Checking if '%s' was sent went wrong.", emailKey));
                 }
             }
         } catch (SQLException e) {
