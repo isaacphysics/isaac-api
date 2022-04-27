@@ -132,7 +132,6 @@ ALTER TABLE public.external_accounts OWNER TO rutherford;
 CREATE TABLE public.gameboards (
     id character varying NOT NULL,
     title text,
-    questions character varying[],
     contents jsonb[] DEFAULT array[]::jsonb[] NOT NULL,
     wildcard jsonb,
     wildcard_position integer,
@@ -696,7 +695,6 @@ CREATE TABLE public.users (
     registration_date timestamp without time zone,
     school_id text,
     school_other text,
-    exam_board text,
     registered_contexts jsonb[] DEFAULT array[]::jsonb[] NOT NULL,
     registered_contexts_last_confirmed timestamp without time zone,
     last_updated timestamp without time zone,

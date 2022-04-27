@@ -96,7 +96,7 @@ CREATE TABLE anonymous.group_additional_managers AS
 CREATE TABLE anonymous.gameboards AS
     SELECT
         id,
-        questions,
+        contents,
         wildcard,
         wildcard_position,
         game_filter,
