@@ -341,6 +341,7 @@ public class PgEventBookings implements EventBookings {
         try (PreparedStatement pst = conn.prepareStatement("SELECT pg_advisory_xact_lock(?)")) {
             pst.setLong(1, crc.getValue());
             log.debug(String.format("Attempting to acquire advisory transaction lock on %s (%s)", TABLE_NAME + resourceId, crc.getValue()));
+            pst.executeQuery();
         } catch (SQLException e) {
             String msg = String.format("Unable to acquire lock for event (%s).", resourceId);
             log.error(msg);
