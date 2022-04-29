@@ -773,6 +773,7 @@ public class EventBookingManager {
             userDTO, final boolean attended)
             throws SegueDatabaseException, EventBookingUpdateException {
 
+        DetailedEventBookingDTO updatedBooking;
         try (ITransaction transaction = transactionManager.getTransaction()) {
             this.bookingPersistenceManager.lockEventUntilTransactionComplete(transaction, event.getId());
 
@@ -787,9 +788,12 @@ public class EventBookingManager {
                 throw new EventBookingUpdateException("Booking attendance is already registered.");
             }
 
-            return this.bookingPersistenceManager.updateBookingStatus(transaction, eventBooking.getEventId(),
+            updatedBooking = this.bookingPersistenceManager.updateBookingStatus(transaction, eventBooking.getEventId(),
                     userDTO.getId(), attendanceStatus, eventBooking.getAdditionalInformation());
+
+            transaction.commit();
         }
+        return updatedBooking;
     }
 
     /**
