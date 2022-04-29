@@ -93,8 +93,6 @@ public interface EventBookings {
     /**
      * Acquire a globally unique lock on an event for the duration of a transaction.
      *
-     * This lock will interact as expected with acquireDistributedLock for the same resource ID.
-     *
      * @param transaction - the database transaction to acquire the lock in.
      * @param resourceId - the ID of the event to be locked.
      */
