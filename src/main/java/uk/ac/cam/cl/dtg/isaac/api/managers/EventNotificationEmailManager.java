@@ -106,7 +106,7 @@ public class EventNotificationEmailManager {
         ZonedDateTime threeDaysAhead = now.plusDays(3);
         DateRangeFilterInstruction
             eventsWithinThreeDays = new DateRangeFilterInstruction(new Date(), Date.from(threeDaysAhead.toInstant()));
-        filterInstructions.put(ENDDATE_FIELDNAME, eventsWithinThreeDays);
+        filterInstructions.put(DATE_FIELDNAME, eventsWithinThreeDays);
 
         try {
             ResultsWrapper<ContentDTO> findByFieldNames = this.contentManager.findByFieldNames(
@@ -145,7 +145,7 @@ public class EventNotificationEmailManager {
 
         DateRangeFilterInstruction
             eventsInLastSixtyDays = new DateRangeFilterInstruction(Date.from(sixtyDaysAgo.toInstant()), new Date());
-        filterInstructions.put(ENDDATE_FIELDNAME, eventsInLastSixtyDays);
+        filterInstructions.put(DATE_FIELDNAME, eventsInLastSixtyDays);
 
         try {
             ResultsWrapper<ContentDTO> findByFieldNames = this.contentManager.findByFieldNames(
