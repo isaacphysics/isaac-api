@@ -86,16 +86,17 @@ public class UserBadgeManager {
             throws SegueDatabaseException {
 
         // start database transaction to ensure atomicity of badge state update (if required)
-        ITransaction transaction = transactionManager.getTransaction();
-        UserBadge badge = userBadgePersistenceManager.getBadge(user, badgeName, transaction);
+        try (ITransaction transaction = transactionManager.getTransaction()) {
+            UserBadge badge = userBadgePersistenceManager.getBadge(user, badgeName, transaction);
 
-        if (null == badge.getState()) {
-            badge.setState(badgePolicies.get(badgeName).initialiseState(user, transaction));
-            userBadgePersistenceManager.updateBadge(badge, transaction);
+            if (null == badge.getState()) {
+                badge.setState(badgePolicies.get(badgeName).initialiseState(user, transaction));
+                userBadgePersistenceManager.updateBadge(badge, transaction);
+            }
+
+            transaction.commit();
+            return badge;
         }
-
-        transaction.commit();
-        return badge;
     }
 
     /**
@@ -111,34 +112,35 @@ public class UserBadgeManager {
             throws SegueDatabaseException {
 
         // start a database transaction as an update occurs across two queries
-        ITransaction transaction = transactionManager.getTransaction();
+        try (ITransaction transaction = transactionManager.getTransaction()) {
 
-        UserBadge badge = userBadgePersistenceManager.getBadge(user, badgeName, transaction);
+            UserBadge badge = userBadgePersistenceManager.getBadge(user, badgeName, transaction);
 
-        if (null != badge.getState()) {
+            if (null != badge.getState()) {
 
-            JsonNode state = badge.getState();
-            int oldLevel = badgePolicies.get(badgeName).getLevel(state);
+                JsonNode state = badge.getState();
+                int oldLevel = badgePolicies.get(badgeName).getLevel(state);
 
-            JsonNode newState = badgePolicies.get(badgeName).updateState(user, state, event);
-            int newLevel = badgePolicies.get(badgeName).getLevel(newState);
+                JsonNode newState = badgePolicies.get(badgeName).updateState(user, state, event);
+                int newLevel = badgePolicies.get(badgeName).getLevel(newState);
 
-            if (newLevel != oldLevel) {
-                // todo: signal to user if significant change has occured
+                if (newLevel != oldLevel) {
+                    // todo: signal to user if significant change has occured
+                }
+
+                badge.setState(newState);
+
+            } else {
+                badge.setState(badgePolicies.get(badgeName).initialiseState(user, transaction));
             }
 
-            badge.setState(newState);
+            userBadgePersistenceManager.updateBadge(badge, transaction);
 
-        } else {
-            badge.setState(badgePolicies.get(badgeName).initialiseState(user, transaction));
+            // commit the badge state update to the database
+            transaction.commit();
+
+            return badge;
         }
-
-        userBadgePersistenceManager.updateBadge(badge, transaction);
-
-        // commit the badge state update to the database
-        transaction.commit();
-
-        return badge;
     }
 
     /**
