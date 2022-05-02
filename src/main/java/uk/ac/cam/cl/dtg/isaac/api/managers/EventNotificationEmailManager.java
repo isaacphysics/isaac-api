@@ -117,8 +117,7 @@ public class EventNotificationEmailManager {
                     IsaacEventPageDTO event = (IsaacEventPageDTO) contentResult;
                     String emailKey = String.format("%s@pre", event.getId());
                     List<BookingStatus> bookingStatuses = Arrays.asList(BookingStatus.CONFIRMED, BookingStatus.ATTENDED);
-                    if (!pgScheduledEmailManager.scheduledEmailAlreadySent(emailKey)) {
-                        pgScheduledEmailManager.saveScheduledEmailSent(emailKey);
+                    if (pgScheduledEmailManager.saveScheduledEmailSent(emailKey)) {
                         this.sendBookingStatusFilteredEmailForEvent(event, "event_reminder", bookingStatuses);
                     }
                 }
@@ -160,8 +159,7 @@ public class EventNotificationEmailManager {
                     if (endDateToday || noEndDateAndStartDateToday) {
                         String emailKey = String.format("%s@post", event.getId());
                         List<BookingStatus> bookingStatuses = Arrays.asList(BookingStatus.CONFIRMED, BookingStatus.ATTENDED);
-                        if (!pgScheduledEmailManager.scheduledEmailAlreadySent(emailKey)) {
-                            pgScheduledEmailManager.saveScheduledEmailSent(emailKey);
+                        if (pgScheduledEmailManager.saveScheduledEmailSent(emailKey)) {
                             this.sendBookingStatusFilteredEmailForEvent(event, "event_feedback", bookingStatuses);
                         }
                     }

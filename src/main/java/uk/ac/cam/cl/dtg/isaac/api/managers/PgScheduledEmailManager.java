@@ -29,39 +29,20 @@ public class PgScheduledEmailManager {
         this.database = database;
     }
 
-    public Boolean scheduledEmailAlreadySent(String emailKey) throws SegueDatabaseException {
-        String query = "SELECT EXISTS(SELECT 1 FROM scheduled_emails WHERE email_id = ?)";
-        try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(query);
-        ) {
-            pst.setString(1, emailKey);
-            try (ResultSet results = pst.executeQuery()) {
-                if (results.next()) {
-                    return results.getBoolean(1);
-                } else {
-                    throw new SegueDatabaseException(String.format("Checking if '%s' was sent went wrong.", emailKey));
-                }
-            }
-        } catch (SQLException e) {
-            log.error("Failed to check if the scheduled email is already sent: ", e);
-        }
-        return true;
-    }
-
-    public void saveScheduledEmailSent(String emailKey) throws SegueDatabaseException {
+    public boolean saveScheduledEmailSent(String emailKey) throws SegueDatabaseException {
         ZonedDateTime now = ZonedDateTime.now();
-        String query = "INSERT INTO scheduled_emails(email_id, sent) VALUES (?, ?)";
+        String query = "INSERT INTO scheduled_emails(email_id, sent) VALUES (?, ?) ON CONFLICT (email_id) DO NOTHING";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
         ) {
             pst.setString(1, emailKey);
             pst.setTimestamp(2, Timestamp.valueOf(now.toLocalDateTime()));
-            if (pst.executeUpdate() == 0) {
-                throw new SegueDatabaseException("Email has already been sent.");
-            }
+            int executeUpdate = pst.executeUpdate();
 
+            return executeUpdate == 1;
         } catch (SQLException e) {
             log.error("Failed to add the scheduled email sent time: ", e);
         }
+        return false;
     }
 }
