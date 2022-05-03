@@ -468,7 +468,7 @@ public class PgEventBookings implements EventBookings {
         Validate.notBlank(eventId);
 
         StringBuilder sb = new StringBuilder();
-        sb.append("SELECT * FROM event_bookings WHERE event_id = ?");
+        sb.append("SELECT event_bookings.* FROM event_bookings JOIN users ON users.id=user_id WHERE event_id=? AND NOT users.deleted");
 
         if (status != null) {
             sb.append(" AND status = ?");
