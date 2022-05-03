@@ -985,6 +985,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
             segueJobService = new SegueJobService(configuredScheduledJobs, database);
 
+            // Simply removing the following jobs from the configuredScheduledJobs wouldn't remove them from the qrtz_job_details
+            // page so they need properly removing.
             if (mailjetKey == null && mailjetSecret == null) {
                 segueJobService.removeScheduleJob(syncMailjetUsers);
             }
