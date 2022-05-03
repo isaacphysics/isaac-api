@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.content.ExternalReference;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
@@ -161,7 +162,9 @@ public class EventNotificationEmailManager {
                         String emailKey = String.format("%s@post", event.getId());
                         // Includes the confirmed status in case the events team don't update the status to attended in time.
                         List<BookingStatus> bookingStatuses = Arrays.asList(BookingStatus.CONFIRMED, BookingStatus.ATTENDED);
-                        if (pgScheduledEmailManager.commitToSchedulingEmail(emailKey)) {
+                        List<ExternalReference> postResources = event.getPostResources();
+                        boolean postResourcesPresent = postResources != null && !postResources.isEmpty() && !postResources.contains(null);
+                        if (postResourcesPresent && pgScheduledEmailManager.commitToSchedulingEmail(emailKey)) {
                             this.sendBookingStatusFilteredEmailForEvent(event, "event_feedback", bookingStatuses);
                         }
                     }
