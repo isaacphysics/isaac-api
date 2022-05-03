@@ -8,7 +8,6 @@ import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.ZonedDateTime;
@@ -29,7 +28,7 @@ public class PgScheduledEmailManager {
         this.database = database;
     }
 
-    public boolean saveScheduledEmailSent(String emailKey) throws SegueDatabaseException {
+    public boolean commitToSchedulingEmail(String emailKey) throws SegueDatabaseException {
         ZonedDateTime now = ZonedDateTime.now();
         String query = "INSERT INTO scheduled_emails(email_id, sent) VALUES (?, ?) ON CONFLICT (email_id) DO NOTHING";
         try (Connection conn = database.getDatabaseConnection();
@@ -37,9 +36,10 @@ public class PgScheduledEmailManager {
         ) {
             pst.setString(1, emailKey);
             pst.setTimestamp(2, Timestamp.valueOf(now.toLocalDateTime()));
-            int executeUpdate = pst.executeUpdate();
+            int rowsInserted = pst.executeUpdate();
+            int expectedRowsInserted = 1;
 
-            return executeUpdate == 1;
+            return rowsInserted == expectedRowsInserted;
         } catch (SQLException e) {
             log.error("Failed to add the scheduled email sent time: ", e);
         }

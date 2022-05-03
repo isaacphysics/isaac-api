@@ -118,7 +118,7 @@ public class EventNotificationEmailManager {
                     String emailKey = String.format("%s@pre", event.getId());
                     // Includes the attended status in case the events team have pre-emptively marked someone as attended.
                     List<BookingStatus> bookingStatuses = Arrays.asList(BookingStatus.CONFIRMED, BookingStatus.ATTENDED);
-                    if (pgScheduledEmailManager.saveScheduledEmailSent(emailKey)) {
+                    if (pgScheduledEmailManager.commitToSchedulingEmail(emailKey)) {
                         this.sendBookingStatusFilteredEmailForEvent(event, "event_reminder", bookingStatuses);
                     }
                 }
@@ -161,7 +161,7 @@ public class EventNotificationEmailManager {
                         String emailKey = String.format("%s@post", event.getId());
                         // Includes the confirmed status in case the events team don't update the status to attended in time.
                         List<BookingStatus> bookingStatuses = Arrays.asList(BookingStatus.CONFIRMED, BookingStatus.ATTENDED);
-                        if (pgScheduledEmailManager.saveScheduledEmailSent(emailKey)) {
+                        if (pgScheduledEmailManager.commitToSchedulingEmail(emailKey)) {
                             this.sendBookingStatusFilteredEmailForEvent(event, "event_feedback", bookingStatuses);
                         }
                     }
