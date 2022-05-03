@@ -28,7 +28,7 @@ public class PgScheduledEmailManager {
         this.database = database;
     }
 
-    public boolean commitToSchedulingEmail(String emailKey) throws SegueDatabaseException {
+    public boolean commitToSchedulingEmail(final String emailKey) throws SegueDatabaseException {
         ZonedDateTime now = ZonedDateTime.now();
         String query = "INSERT INTO scheduled_emails(email_id, sent) VALUES (?, ?) ON CONFLICT (email_id) DO NOTHING";
         try (Connection conn = database.getDatabaseConnection();
