@@ -31,9 +31,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateAssignmentException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.services.AssignmentService;
-import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
+import uk.ac.cam.cl.dtg.isaac.dto.*;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -45,8 +43,6 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
-import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
@@ -939,12 +935,136 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     }
 
     /**
+     * Allows a user to assign a gameboard to one or more groups of users. We assume that each partial AssignmentDTO object has
+     * the same gameboardId, notes and dueDate to make validation easier, but this could be changed in theory, given a more
+     * flexible front-end.
+     *
+     * @param request
+     *            - so that we can identify the current user.
+     * @param assignmentDTOsFromClient a list of partially completed DTO(s) for the assignment(s).
+     * @return a list of ids of successful assignments, and a list of failed (an AssignmentSettingResponseDTO)
+     */
+    @POST
+    @Path("/assign_many")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @ApiOperation(value = "Create one or more new assignment(s).")
+    public Response assignGameBoards(@Context final HttpServletRequest request,
+                                    final List<AssignmentDTO> assignmentDTOsFromClient) {
+        try {
+            RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
+            // Assert user is allowed to set assignments
+            boolean userIsTeacherOrAbove = isUserTeacherOrAbove(userManager, currentlyLoggedInUser);
+            boolean userIsStaff = isUserStaff(userManager, currentlyLoggedInUser);
+
+            if (!userIsTeacherOrAbove) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You need a teacher account to create groups and set assignments!").toResponse();
+            }
+
+            // Assert that there is at least one assignment
+            if (assignmentDTOsFromClient.size() == 0) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You need to specify at least one assignment to set.").toResponse();
+            }
+
+            // Since all of the assignment notes in a single query are currently the same, we only have to do note size
+            // checks once, and we only need to fetch the gameboard once
+            AssignmentDTO firstAssignment = assignmentDTOsFromClient.get(0);
+            boolean notesIsNullOrEmpty = firstAssignment.getNotes() == null || (firstAssignment.getNotes() != null && firstAssignment.getNotes().isEmpty());
+            boolean notesIsTooLong = firstAssignment.getNotes() != null && firstAssignment.getNotes().length() > MAX_NOTE_CHAR_LENGTH;
+
+            if (userIsStaff) {
+                if (notesIsTooLong) {
+                    return new SegueErrorResponse(Status.BAD_REQUEST, "Your assignment notes exceed the maximum allowed length of "
+                            + MAX_NOTE_CHAR_LENGTH.toString() + " characters.").toResponse();
+                }
+            } else if (!notesIsNullOrEmpty) {
+                // user is not staff but it is a teacher, if we got here unscathed
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You are not allowed to add assignment notes.").toResponse();
+            }
+
+            if (firstAssignment.getGameboardId() == null) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "A required field was missing. Must provide gameboard id.").toResponse();
+            }
+
+            GameboardDTO gameboard = this.gameManager.getGameboard(firstAssignment.getGameboardId());
+            if (null == gameboard) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "The gameboard id specified does not exist.")
+                        .toResponse();
+            }
+
+            List<Long> assigmentSuccessfulGroupIds = new ArrayList<>();
+            List<AssignmentErrorDTO> assigmentErorrs = new ArrayList<>();
+
+            for (AssignmentDTO assignmentDTO : assignmentDTOsFromClient) {
+                if (assignmentDTO.getGroupId() == null) {
+                    assigmentErorrs.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), "Group id is null."));
+                    continue;
+                }
+
+                try {
+                    UserGroupDTO assigneeGroup = groupManager.getGroupById(assignmentDTO.getGroupId());
+
+                    if (null == assigneeGroup) {
+                        assigmentErorrs.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), "The group id specified does not exist."));
+                        continue;
+                    }
+
+                    if (!GroupManager.isOwnerOrAdditionalManager(assigneeGroup, currentlyLoggedInUser.getId())
+                            && !isUserAnAdmin(userManager, currentlyLoggedInUser)) {
+                        assigmentErorrs.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), "You can only set assignments to groups you own or manage."));
+                        continue;
+                    }
+
+                    assignmentDTO.setOwnerUserId(currentlyLoggedInUser.getId());
+                    assignmentDTO.setCreationDate(null);
+                    assignmentDTO.setId(null);
+
+                    // modifies assignment passed in to include an id.
+                    AssignmentDTO assignmentWithID = this.assignmentManager.createAssignment(assignmentDTO);
+
+                    LinkedHashMap<String, Object> eventDetails = new LinkedHashMap<>();
+                    eventDetails.put(Constants.GAMEBOARD_ID_FKEY, assignmentWithID.getGameboardId());
+                    eventDetails.put(GROUP_FK, assignmentWithID.getGroupId());
+                    eventDetails.put(ASSIGNMENT_FK, assignmentWithID.getId());
+                    eventDetails.put(ASSIGNMENT_DUEDATE_FK, assignmentWithID.getDueDate());
+                    this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacServerLogType.SET_NEW_ASSIGNMENT, eventDetails);
+
+                    this.userBadgeManager.updateBadge(currentlyLoggedInUser,
+                            UserBadgeManager.Badge.TEACHER_ASSIGNMENTS_SET, assignmentWithID.getId().toString());
+
+                    tagsLoop:
+                    for (String tag : bookTags) {
+                        for (GameboardItem item : gameboard.getContents()) {
+                            if (item.getTags().contains(tag)) {
+                                this.userBadgeManager.updateBadge(currentlyLoggedInUser,
+                                        UserBadgeManager.Badge.TEACHER_BOOK_PAGES_SET, assignmentWithID.getId().toString());
+                                break tagsLoop;
+                            }
+                        }
+                    }
+                    // Assigning to this group was a success
+                    assigmentSuccessfulGroupIds.add(assignmentWithID.getGroupId());
+                } catch (DuplicateAssignmentException e) {
+                    assigmentErorrs.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), e.getMessage()));
+                }
+            }
+
+            return Response.ok(new AssignmentSettingResponseDTO(assigmentSuccessfulGroupIds, assigmentErorrs)).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            log.error("Database error while trying to assign work", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unknown database error.").toResponse();
+        }
+    }
+
+    /**
      * Allows a user to assign a gameboard to group of users.
      *
      * @param request
      *            - so that we can identify the current user.
      * @param assignmentDTOFromClient a partially completed DTO for the assignment.
-     * @return the assignment object.
+     * @return an AssignmentSettingResponseDTO (see assignGameBoards)
      */
     @POST
     @Path("/assign/")
@@ -953,89 +1073,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @ApiOperation(value = "Create a new assignment.")
     public Response assignGameBoard(@Context final HttpServletRequest request,
                                     final AssignmentDTO assignmentDTOFromClient) {
-
-        if (assignmentDTOFromClient.getGameboardId() == null || assignmentDTOFromClient.getGroupId() == null) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "A required field was missing. Must provide group and gameboard ids").toResponse();
-        }
-
-        try {
-            RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
-            UserGroupDTO assigneeGroup = groupManager.getGroupById(assignmentDTOFromClient.getGroupId());
-
-            boolean userIsTeacherOrAbove = isUserTeacherOrAbove(userManager, currentlyLoggedInUser);
-            boolean userIsStaff = isUserStaff(userManager, currentlyLoggedInUser);
-            boolean notesIsNullOrEmpty = assignmentDTOFromClient.getNotes() == null || (assignmentDTOFromClient.getNotes() != null && assignmentDTOFromClient.getNotes().isEmpty());
-            boolean notesIsTooLong = assignmentDTOFromClient.getNotes() != null && assignmentDTOFromClient.getNotes().length() > MAX_NOTE_CHAR_LENGTH;
-
-            if (!userIsTeacherOrAbove) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You need a teacher account to create groups and set assignments!").toResponse();
-            }
-
-            if (null == assigneeGroup) {
-                return new SegueErrorResponse(Status.BAD_REQUEST, "The group id specified does not exist.")
-                        .toResponse();
-            }
-
-            if (!GroupManager.isOwnerOrAdditionalManager(assigneeGroup, currentlyLoggedInUser.getId())
-                    && !isUserAnAdmin(userManager, currentlyLoggedInUser)) {
-                return new SegueErrorResponse(Status.FORBIDDEN,
-                        "You can only set assignments to groups you own or manage.").toResponse();
-            }
-
-            if (userIsStaff) {
-                if (notesIsTooLong) {
-                    return new SegueErrorResponse(Status.BAD_REQUEST, "Your assignment notes exceed the maximum allowed length of " +
-                            MAX_NOTE_CHAR_LENGTH.toString() + " characters.").toResponse();
-                }
-            } else if (!notesIsNullOrEmpty) {
-                // user is not staff but it is a teacher, if we got here unscathed
-                return new SegueErrorResponse(Status.BAD_REQUEST, "You are not allowed to add assignment notes.").toResponse();
-            }
-
-            GameboardDTO gameboard = this.gameManager.getGameboard(assignmentDTOFromClient.getGameboardId());
-            if (null == gameboard) {
-                return new SegueErrorResponse(Status.BAD_REQUEST, "The gameboard id specified does not exist.")
-                        .toResponse();
-            }
-
-            assignmentDTOFromClient.setOwnerUserId(currentlyLoggedInUser.getId());
-            assignmentDTOFromClient.setCreationDate(null);
-            assignmentDTOFromClient.setId(null);
-
-            // modifies assignment passed in to include an id.
-            AssignmentDTO assignmentWithID = this.assignmentManager.createAssignment(assignmentDTOFromClient);
-
-            LinkedHashMap<String, Object> eventDetails = new LinkedHashMap<>();
-            eventDetails.put(Constants.GAMEBOARD_ID_FKEY, assignmentWithID.getGameboardId());
-            eventDetails.put(GROUP_FK, assignmentWithID.getGroupId());
-            eventDetails.put(ASSIGNMENT_FK, assignmentWithID.getId());
-            eventDetails.put(ASSIGNMENT_DUEDATE_FK, assignmentWithID.getDueDate());
-            this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacServerLogType.SET_NEW_ASSIGNMENT, eventDetails);
-
-            this.userBadgeManager.updateBadge(currentlyLoggedInUser,
-                    UserBadgeManager.Badge.TEACHER_ASSIGNMENTS_SET, assignmentWithID.getId().toString());
-
-            tagsLoop:
-            for (String tag : bookTags) {
-
-                for (GameboardItem item : gameboard.getContents()) {
-                    if (item.getTags().contains(tag)) {
-                        this.userBadgeManager.updateBadge(currentlyLoggedInUser,
-                                UserBadgeManager.Badge.TEACHER_BOOK_PAGES_SET, assignmentWithID.getId().toString());
-                        break tagsLoop;
-                    }
-                }
-            }
-
-            return Response.ok(assignmentDTOFromClient).build();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (DuplicateAssignmentException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
-        } catch (SegueDatabaseException e) {
-            log.error("Database error while trying to assign work", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unknown database error.").toResponse();
-        }
+        return this.assignGameBoards(request, Collections.singletonList(assignmentDTOFromClient));
     }
 
     /**
