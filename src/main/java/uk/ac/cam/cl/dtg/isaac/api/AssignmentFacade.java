@@ -961,9 +961,11 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You need a teacher account to create groups and set assignments!").toResponse();
             }
 
-            // Assert that there is at least one assignment
+            // Assert that there is at least one assignment, and that multiple assignments are only set by staff
             if (assignmentDTOsFromClient.size() == 0) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "You need to specify at least one assignment to set.").toResponse();
+            } else if (!userIsStaff && assignmentDTOsFromClient.size() > 1) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You need a staff account to set assignments to more than one group at once!").toResponse();
             }
 
             // Since all of the assignment notes in a single query are currently the same, we only have to do note size
