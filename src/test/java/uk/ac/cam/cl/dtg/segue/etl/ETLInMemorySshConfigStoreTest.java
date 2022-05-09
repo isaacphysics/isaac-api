@@ -70,7 +70,7 @@ public class ETLInMemorySshConfigStoreTest {
         InMemoryHostConfig hostConfig = new InMemoryHostConfig(sshConfig);
 
         // Act & Assert
-        assertNull(hostConfig.getValue(null));
+        assertNull(hostConfig.getValue("StrictHostKeyChecking"));
     }
 
     @Test
@@ -113,7 +113,7 @@ public class ETLInMemorySshConfigStoreTest {
     }
 
     @Test
-    public void inMemoryHostConfigGetValues_Null_ReturnsNull() {
+    public void inMemoryHostConfigGetValues_NullKey_ReturnsNull() {
         // Arrange
         Map<String, List<String>> sshConfig = new HashMap<>();
 
