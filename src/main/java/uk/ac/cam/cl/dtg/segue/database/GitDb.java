@@ -30,6 +30,7 @@ import org.apache.commons.lang3.Validate;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.NoHeadException;
+import org.eclipse.jgit.api.errors.TransportException;
 import org.eclipse.jgit.errors.RevisionSyntaxException;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
@@ -44,6 +45,7 @@ import org.eclipse.jgit.transport.RefSpec;
 import org.eclipse.jgit.transport.SshConfigStore;
 import org.eclipse.jgit.transport.SshSessionFactory;
 import org.eclipse.jgit.transport.TrackingRefUpdate;
+import org.eclipse.jgit.transport.sshd.JGitKeyCache;
 import org.eclipse.jgit.transport.sshd.SshdSessionFactory;
 import org.eclipse.jgit.transport.sshd.SshdSessionFactoryBuilder.ConfigStoreFactory;
 import org.eclipse.jgit.transport.sshd.SshdSessionFactoryBuilder;
@@ -366,8 +368,10 @@ public class GitDb {
                     log.info("Fetched latest from git. Latest version is: " + this.getHeadSha());
                 }
             }
-
-
+        } catch (TransportException e) {
+            log.error("Failed to authenticate with the remote content repository via SSH. Ensure the 'Git' section of "
+                    + "segue-config[.cs].properties has valid values, particularly that the key at "
+                    + "'REMOTE_GIT_SSH_KEY_PATH' exists.", e);
         } catch (GitAPIException e) {
             log.error("Error while trying to pull the latest from the remote repository.", e);
         }
@@ -478,7 +482,7 @@ public class GitDb {
                 .setHomeDirectory(FS.DETECTED.userHome())
                 .setSshDirectory(new File(FS.DETECTED.userHome(), "/.ssh"))
                 .setConfigStoreFactory(inMemorySshConfigStoreFactory)
-                .build(null);
+                .build(new JGitKeyCache());
 
         // set the factory as the default provider for SSH sessions
         if (this.sshFetchUrl != null) {
