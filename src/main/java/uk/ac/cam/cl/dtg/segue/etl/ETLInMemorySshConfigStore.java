@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.segue.database;
+package uk.ac.cam.cl.dtg.segue.etl;
 
 import org.eclipse.jgit.transport.SshConfigStore;
 

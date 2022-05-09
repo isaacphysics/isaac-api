@@ -31,11 +31,19 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.NoHeadException;
 import org.eclipse.jgit.errors.RevisionSyntaxException;
-import org.eclipse.jgit.lib.*;
+import org.eclipse.jgit.lib.Constants;
+import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.ObjectLoader;
+import org.eclipse.jgit.lib.RefUpdate;
+import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.revwalk.RevWalk;
-import org.eclipse.jgit.transport.*;
+import org.eclipse.jgit.transport.FetchResult;
+import org.eclipse.jgit.transport.RefSpec;
+import org.eclipse.jgit.transport.SshConfigStore;
+import org.eclipse.jgit.transport.SshSessionFactory;
+import org.eclipse.jgit.transport.TrackingRefUpdate;
 import org.eclipse.jgit.transport.sshd.SshdSessionFactory;
 import org.eclipse.jgit.transport.sshd.SshdSessionFactoryBuilder.ConfigStoreFactory;
 import org.eclipse.jgit.transport.sshd.SshdSessionFactoryBuilder;
@@ -47,6 +55,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
+import uk.ac.cam.cl.dtg.segue.etl.ETLInMemorySshConfigStore;
 
 
 /**
@@ -453,15 +462,16 @@ public class GitDb {
 
     private void configureSshSessionFactory() {
         // set options for all SSH sessions produced by the factory (of the sort ordinarily found in ~/.ssh/config).
-        Map<String, List<String>> config = new HashMap<>();
-        config.put("StrictHostKeyChecking", Collections.singletonList("no"));
-        config.put("IdentityFile", Collections.singletonList(privateKey));
+        Map<String, List<String>> sshConfig = new HashMap<>();
+        sshConfig.put("StrictHostKeyChecking", Collections.singletonList("no"));
+        sshConfig.put("IdentityFile", Collections.singletonList(privateKey));
+        sshConfig.put("IdentitiesOnly", Collections.singletonList("yes"));
 
         // configure the factory to use the above options, and create
         ConfigStoreFactory inMemorySshConfigStoreFactory = new ConfigStoreFactory() {
             @Override
             public SshConfigStore create(final File homeDir, final File configFile, final String localUserName) {
-                return new ETLInMemorySshConfigStore(config);
+                return new ETLInMemorySshConfigStore(sshConfig);
             }
         };
         SshdSessionFactory factory = new SshdSessionFactoryBuilder()
