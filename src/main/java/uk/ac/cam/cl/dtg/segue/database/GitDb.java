@@ -19,7 +19,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.NotFoundException;
 
@@ -33,16 +36,18 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.transport.*;
-import org.eclipse.jgit.transport.OpenSshConfig.Host;
+import org.eclipse.jgit.transport.sshd.SshdSessionFactory;
+import org.eclipse.jgit.transport.sshd.SshdSessionFactoryBuilder.ConfigStoreFactory;
+import org.eclipse.jgit.transport.sshd.SshdSessionFactoryBuilder;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.PathFilter;
 import org.eclipse.jgit.treewalk.filter.PathSuffixFilter;
+import org.eclipse.jgit.util.FS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
-import com.jcraft.jsch.JSch;
-import com.jcraft.jsch.JSchException;
+
 
 /**
  * This class is a representation of the Git Database and provides some helper methods to allow file access.
@@ -338,29 +343,7 @@ public class GitDb {
      */
     public synchronized String fetchLatestFromRemote() {
         try {
-            SshSessionFactory factory = new JschConfigSessionFactory() {
-                @Override
-                public void configure(final Host hc, final com.jcraft.jsch.Session session) {
-                    session.setConfig("StrictHostKeyChecking", "no");
-                }
-
-                @Override
-                protected JSch getJSch(final OpenSshConfig.Host hc, final org.eclipse.jgit.util.FS fs)
-                        throws JSchException {
-                    JSch jsch = super.getJSch(hc, fs);
-                    jsch.removeAllIdentity();
-
-                    if (null != privateKey) {
-                        jsch.addIdentity(privateKey);
-                    }
-
-                    return jsch;
-                }
-            };
-
-            if (this.sshFetchUrl != null) {
-                SshSessionFactory.setInstance(factory);
-            }
+            configureSshSessionFactory();
 
             RefSpec refSpec = new RefSpec("+refs/heads/*:refs/remotes/origin/*");
             FetchResult result = gitHandle.fetch().setRefSpecs(refSpec).setRemote(sshFetchUrl).call();
@@ -466,5 +449,30 @@ public class GitDb {
         revWalk.dispose();
         log.debug("Retrieved Commit Id: " + commitId.getName() + " Searching for: " + filename + " found: " + path);
         return objectId;
+    }
+
+    private void configureSshSessionFactory() {
+        // set options for all SSH sessions produced by the factory (of the sort ordinarily found in ~/.ssh/config).
+        Map<String, List<String>> config = new HashMap<>();
+        config.put("StrictHostKeyChecking", Collections.singletonList("no"));
+        config.put("IdentityFile", Collections.singletonList(privateKey));
+
+        // configure the factory to use the above options, and create
+        ConfigStoreFactory inMemorySshConfigStoreFactory = new ConfigStoreFactory() {
+            @Override
+            public SshConfigStore create(final File homeDir, final File configFile, final String localUserName) {
+                return new ETLInMemorySshConfigStore(config);
+            }
+        };
+        SshdSessionFactory factory = new SshdSessionFactoryBuilder()
+                .setHomeDirectory(FS.DETECTED.userHome())
+                .setSshDirectory(new File(FS.DETECTED.userHome(), "/.ssh"))
+                .setConfigStoreFactory(inMemorySshConfigStoreFactory)
+                .build(null);
+
+        // set the factory as the default provider for SSH sessions
+        if (this.sshFetchUrl != null) {
+            SshSessionFactory.setInstance(factory);
+        }
     }
 }
