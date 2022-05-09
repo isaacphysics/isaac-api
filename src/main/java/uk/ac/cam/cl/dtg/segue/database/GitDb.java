@@ -29,6 +29,7 @@ import javax.ws.rs.NotFoundException;
 import org.apache.commons.lang3.Validate;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.InvalidRemoteException;
 import org.eclipse.jgit.api.errors.NoHeadException;
 import org.eclipse.jgit.api.errors.TransportException;
 import org.eclipse.jgit.errors.RevisionSyntaxException;
@@ -42,7 +43,6 @@ import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.transport.FetchResult;
 import org.eclipse.jgit.transport.RefSpec;
-import org.eclipse.jgit.transport.SshConfigStore;
 import org.eclipse.jgit.transport.SshSessionFactory;
 import org.eclipse.jgit.transport.TrackingRefUpdate;
 import org.eclipse.jgit.transport.sshd.JGitKeyCache;
@@ -79,29 +79,7 @@ public class GitDb {
      * Create a new instance of a GitDb object
      * 
      * This will immediately try and connect to the Git folder specified to check its validity.
-     * 
-     * @param repoLocation
-     *            - location of the local git repository
-     * @throws IOException
-     *             - if we cannot access the repo location.
-     */
-    public GitDb(final String repoLocation) throws IOException {
-        Validate.notBlank(repoLocation);
-
-        // unused for this constructor
-        this.privateKey = null;
-        this.sshFetchUrl = null;
-
-        gitHandle = Git.open(new File(repoLocation));
-    }
-
-    /**
-     * Create a new instance of a GitDb object
-     * 
-     * This will immediately try and connect to the Git folder specified to check its validity.
-     * 
-     * This constructor is only necessary if we want to access a private repository.
-     * 
+     *
      * @param repoLocation
      *            - location of the local git repository
      * @param sshFetchUrl
@@ -120,6 +98,7 @@ public class GitDb {
         this.privateKey = privateKeyFileLocation;
 
         gitHandle = Git.open(new File(repoLocation));
+        configureSshSessionFactory();
     }
 
     /**
@@ -354,8 +333,6 @@ public class GitDb {
      */
     public synchronized String fetchLatestFromRemote() {
         try {
-            configureSshSessionFactory();
-
             RefSpec refSpec = new RefSpec("+refs/heads/*:refs/remotes/origin/*");
             FetchResult result = gitHandle.fetch().setRefSpecs(refSpec).setRemote(sshFetchUrl).call();
 
@@ -372,6 +349,10 @@ public class GitDb {
             log.error("Failed to authenticate with the remote content repository via SSH. Ensure the 'Git' section of "
                     + "segue-config[.cs].properties has valid values, particularly that the key at "
                     + "'REMOTE_GIT_SSH_KEY_PATH' exists.", e);
+        } catch (InvalidRemoteException e) {
+            log.error("Failed to pull the latest from the remote content repository via SSH. Ensure the URL at "
+                    + "'REMOTE_GIT_SSH_URL' in the 'Git' section of segue-config[.cs].properties is correct, "
+                    + "and the private key at 'REMOTE_GIT_SSH_KEY_PATH' is valid for that repository.", e);
         } catch (GitAPIException e) {
             log.error("Error while trying to pull the latest from the remote repository.", e);
         }
@@ -464,6 +445,9 @@ public class GitDb {
         return objectId;
     }
 
+    /**
+     * Sets up the SSH session factory which JGit will use to create SSH sessions for transport.
+     */
     private void configureSshSessionFactory() {
         // set options for all SSH sessions produced by the factory (of the sort ordinarily found in ~/.ssh/config).
         Map<String, List<String>> sshConfig = new HashMap<>();
@@ -472,12 +456,8 @@ public class GitDb {
         sshConfig.put("IdentitiesOnly", Collections.singletonList("yes"));
 
         // configure the factory to use the above options, and create
-        ConfigStoreFactory inMemorySshConfigStoreFactory = new ConfigStoreFactory() {
-            @Override
-            public SshConfigStore create(final File homeDir, final File configFile, final String localUserName) {
-                return new ETLInMemorySshConfigStore(sshConfig);
-            }
-        };
+        ConfigStoreFactory inMemorySshConfigStoreFactory = (homeDir, configFile, localUserName) ->
+                new ETLInMemorySshConfigStore(sshConfig);
         SshdSessionFactory factory = new SshdSessionFactoryBuilder()
                 .setHomeDirectory(FS.DETECTED.userHome())
                 .setSshDirectory(new File(FS.DETECTED.userHome(), "/.ssh"))

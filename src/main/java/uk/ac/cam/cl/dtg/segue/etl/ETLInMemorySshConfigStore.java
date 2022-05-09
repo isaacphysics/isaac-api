@@ -7,6 +7,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 
+/**
+ * A SshConfigStore used by JGit to configure the SSH sessions it creates.
+ * ETL will use the same settings regardless of host and ignore existing on-disk configs.
+ */
 public class ETLInMemorySshConfigStore implements SshConfigStore {
 
     private final InMemoryHostConfig inMemoryHostConfig;
@@ -62,7 +66,7 @@ public class ETLInMemorySshConfigStore implements SshConfigStore {
         public Map<String, String> getOptions() {
             return config.entrySet()
                     .stream()
-                    .filter(e -> null != e.getValue() && e.getValue().size() == 1)
+                    .filter(e -> null != e.getValue() && e.getValue().size() == 1 && null != e.getValue().get(0))
                     .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().get(0)));
         }
 
