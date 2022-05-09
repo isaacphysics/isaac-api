@@ -31,7 +31,13 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateAssignmentException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.services.AssignmentService;
-import uk.ac.cam.cl.dtg.isaac.dto.*;
+import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.AssignmentErrorDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.AssignmentSettingResponseDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
+import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -945,7 +951,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
      * @return a list of ids of successful assignments, and a list of failed (an AssignmentSettingResponseDTO)
      */
     @POST
-    @Path("/assign_many")
+    @Path("/assign_bulk")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @ApiOperation(value = "Create one or more new assignment(s).")
@@ -953,10 +959,10 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                                     final List<AssignmentDTO> assignmentDTOsFromClient) {
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
+
             // Assert user is allowed to set assignments
             boolean userIsTeacherOrAbove = isUserTeacherOrAbove(userManager, currentlyLoggedInUser);
             boolean userIsStaff = isUserStaff(userManager, currentlyLoggedInUser);
-
             if (!userIsTeacherOrAbove) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You need a teacher account to create groups and set assignments!").toResponse();
             }
@@ -968,42 +974,46 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You need a staff account to set assignments to more than one group at once!").toResponse();
             }
 
-            // Since all of the assignment notes in a single query are currently the same, we only have to do note size
-            // checks once, and we only need to fetch the gameboard once
-            AssignmentDTO firstAssignment = assignmentDTOsFromClient.get(0);
-            boolean notesIsNullOrEmpty = firstAssignment.getNotes() == null || (firstAssignment.getNotes() != null && firstAssignment.getNotes().isEmpty());
-            boolean notesIsTooLong = firstAssignment.getNotes() != null && firstAssignment.getNotes().length() > MAX_NOTE_CHAR_LENGTH;
-
-            if (userIsStaff) {
-                if (notesIsTooLong) {
-                    return new SegueErrorResponse(Status.BAD_REQUEST, "Your assignment notes exceed the maximum allowed length of "
-                            + MAX_NOTE_CHAR_LENGTH.toString() + " characters.").toResponse();
-                }
-            } else if (!notesIsNullOrEmpty) {
-                // user is not staff but it is a teacher, if we got here unscathed
-                return new SegueErrorResponse(Status.BAD_REQUEST, "You are not allowed to add assignment notes.").toResponse();
-            }
-
-            if (firstAssignment.getGameboardId() == null) {
-                return new SegueErrorResponse(Status.BAD_REQUEST, "A required field was missing. Must provide gameboard id.").toResponse();
-            }
-
-            GameboardDTO gameboard = this.gameManager.getGameboard(firstAssignment.getGameboardId());
-            if (null == gameboard) {
-                return new SegueErrorResponse(Status.BAD_REQUEST, "The gameboard id specified does not exist.")
-                        .toResponse();
-            }
-
             List<Long> assigmentSuccessfulGroupIds = new ArrayList<>();
             List<AssignmentErrorDTO> assigmentErorrs = new ArrayList<>();
+            Map<String, GameboardDTO> validGameboards = new HashMap<>();
 
             for (AssignmentDTO assignmentDTO : assignmentDTOsFromClient) {
-                if (assignmentDTO.getGroupId() == null) {
-                    assigmentErorrs.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), "Group id is null."));
+                if (null == assignmentDTO.getGameboardId() || null == assignmentDTO.getGroupId()) {
+                    assigmentErorrs.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), "A required field was missing. Must provide gameboard id and group id."));
+                    continue;
+                }
+
+                // Staff can set assignment notes (instructions to assignees) up to a max length of MAX_NOTE_CHAR_LENGTH,
+                // teachers cannot set notes.
+                boolean notesIsNullOrEmpty = null == assignmentDTO.getNotes() || (null != assignmentDTO.getNotes() && assignmentDTO.getNotes().isEmpty());
+                if (userIsStaff) {
+                    boolean notesIsTooLong = null != assignmentDTO.getNotes() && assignmentDTO.getNotes().length() > MAX_NOTE_CHAR_LENGTH;
+                    if (notesIsTooLong) {
+                        assigmentErorrs.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), "Your assignment notes exceed the maximum allowed length of "
+                                + MAX_NOTE_CHAR_LENGTH + " characters."));
+                        continue;
+                    }
+                } else if (!notesIsNullOrEmpty) {
+                    // user is not staff but it is a teacher, if we got here unscathed
+                    assigmentErorrs.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), "You are not allowed to add assignment notes."));
                     continue;
                 }
 
                 try {
+                    // The `computeIfAbsent` map function would be perfect for this use case, but apparently the compiler doesn't understand
+                    // that: "If the function itself throws an (unchecked) exception, the exception is rethrown, and no mapping is recorded."
+                    // (from the Java 8 `Map` docs)
+                    GameboardDTO gameboard = validGameboards.get(assignmentDTO.getGameboardId());
+                    if (null == gameboard) {
+                        gameboard = this.gameManager.getGameboard(assignmentDTO.getGameboardId());
+                        if (null == gameboard) {
+                            assigmentErorrs.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), "The gameboard id specified does not exist."));
+                            continue;
+                        }
+                        validGameboards.put(gameboard.getId(), gameboard);
+                    }
+
                     UserGroupDTO assigneeGroup = groupManager.getGroupById(assignmentDTO.getGroupId());
 
                     if (null == assigneeGroup) {
@@ -1048,15 +1058,14 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     assigmentSuccessfulGroupIds.add(assignmentWithID.getGroupId());
                 } catch (DuplicateAssignmentException e) {
                     assigmentErorrs.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), e.getMessage()));
+                } catch (SegueDatabaseException e) {
+                    log.error("Database error while trying to assign work", e);
+                    assigmentErorrs.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), "Unknown database error."));
                 }
             }
-
             return Response.ok(new AssignmentSettingResponseDTO(assigmentSuccessfulGroupIds, assigmentErorrs)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (SegueDatabaseException e) {
-            log.error("Database error while trying to assign work", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unknown database error.").toResponse();
         }
     }
 
