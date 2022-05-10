@@ -347,11 +347,11 @@ public class GitDb {
             }
         } catch (TransportException e) {
             log.error("Failed to authenticate with the remote content repository via SSH. Ensure the 'Git' section of "
-                    + "segue-config[.cs].properties has valid values, particularly that the key at "
+                    + "segue-config.properties has valid values, particularly that the key at "
                     + "'REMOTE_GIT_SSH_KEY_PATH' exists.", e);
         } catch (InvalidRemoteException e) {
             log.error("Failed to pull the latest from the remote content repository via SSH. Ensure the URL at "
-                    + "'REMOTE_GIT_SSH_URL' in the 'Git' section of segue-config[.cs].properties is correct, "
+                    + "'REMOTE_GIT_SSH_URL' in the 'Git' section of segue-config.properties is correct, "
                     + "and the private key at 'REMOTE_GIT_SSH_KEY_PATH' is valid for that repository.", e);
         } catch (GitAPIException e) {
             log.error("Error while trying to pull the latest from the remote repository.", e);
