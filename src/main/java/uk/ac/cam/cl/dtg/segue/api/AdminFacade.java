@@ -1279,7 +1279,7 @@ public class AdminFacade extends AbstractSegueFacade {
     /**
      *  Manually trigger a sync for testing or debugging purposes. Minimal success or failure reporting.
      */
-    @GET
+    @POST
     @Path("/sync_external_accounts")
     @ApiOperation(value = "Trigger an update for external providers where account details have changed.")
     public Response syncExternalAccounts(@Context final HttpServletRequest httpServletRequest) {
