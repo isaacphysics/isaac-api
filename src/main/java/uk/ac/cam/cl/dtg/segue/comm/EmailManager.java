@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.EnumUtils;
@@ -122,9 +123,10 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * @param emailParameters - the parameters to be inserted into the email
      */
     public static void sanitizeEmailParameters(final Map<Object, Object> emailParameters) {
+        List<String> allowedHtmlKeys = ImmutableList.of("assignmentsInfo", "studentsList");
         for (Map.Entry<Object, Object> entry : emailParameters.entrySet()) {
             String key = entry.getKey().toString();
-            if (!(key.startsWith("event.") || key.startsWith("assignmentsInfo") || key.startsWith("studentsList"))) {
+            if (!(key.startsWith("event.") || key.endsWith("URL") || allowedHtmlKeys.contains(key))) {
                 emailParameters.put(entry.getKey(), StringEscapeUtils.escapeHtml4(entry.getValue().toString()));
             }
         }
