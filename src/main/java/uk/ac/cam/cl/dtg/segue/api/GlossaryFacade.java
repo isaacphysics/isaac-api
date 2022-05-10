@@ -43,10 +43,7 @@ import javax.ws.rs.core.Response.Status;
 import java.util.Collections;
 import java.util.List;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Glossary Facade
@@ -121,7 +118,7 @@ public class GlossaryFacade extends AbstractSegueFacade {
         // Calculate the ETag on last modified date of tags list
         // NOTE: Assumes that the latest version of the content is being used.
         EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + "");
-        return Response.ok(c).tag(etag).build();
+        return Response.ok(c).tag(etag).cacheControl(getCacheControl(NUMBER_SECONDS_IN_TEN_MINUTES, true)).build();
     }
 
     /**
