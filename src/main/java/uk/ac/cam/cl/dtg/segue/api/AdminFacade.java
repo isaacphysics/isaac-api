@@ -988,7 +988,8 @@ public class AdminFacade extends AbstractSegueFacade {
             log.info(String.format("%s user (%s) did a user id lookup based on user id {%s}", currentUser.getRole(),
                     currentUser.getEmail(), userId));
 
-            return Response.ok(this.userManager.getUserDTOById(userId)).build();
+            return Response.ok(this.userManager.getUserDTOById(userId))
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (SegueDatabaseException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Database error while looking up user information.").toResponse();
