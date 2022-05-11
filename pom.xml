@@ -10,7 +10,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <segue.version>2.21.1-SNAPSHOT</segue.version>
+        <segue.version>v2.21.4-SNAPSHOT</segue.version>
         <log4j.version>2.17.1</log4j.version>
         <resteasy.version>4.7.6.Final</resteasy.version>
         <guice.version>4.2.3</guice.version>
@@ -135,7 +135,7 @@
         </dependency>
         <dependency>
             <groupId>org.eclipse.jgit</groupId>
-            <artifactId>org.eclipse.jgit.ssh.jsch</artifactId>
+            <artifactId>org.eclipse.jgit.ssh.apache</artifactId>
             <version>5.13.0.202109080827-r</version>
         </dependency>
 
@@ -424,15 +424,15 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>org.owasp</groupId>
-            <artifactId>dependency-check-maven</artifactId>
-            <version>7.1.0</version>
-        </dependency>
-        <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.owasp</groupId>
+            <artifactId>dependency-check-maven</artifactId>
+            <version>7.1.0</version>
+        </dependency>
     </dependencies>
 
     <build>

@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2015 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dos.eventbookings;
 
+import uk.ac.cam.cl.dtg.isaac.dos.ITransaction;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 
@@ -33,52 +34,53 @@ public interface EventBookings {
     /**
      * Add booking to the database.
      *
-     * @param eventId
-     *            - the event id
-     * @param userId
-     *            - the user id
-     * @param reservedById
-     *            - the user id of who made the reservation (can be null)
-     * @param status
-     *            - the initial status of the booking.
+     * @param transaction - the database transaction to use
+     * @param eventId - the event id
+     * @param userId - the user id
+     * @param reservedById - the user id of who made the reservation (can be null)
+     * @param status - the initial status of the booking.
      * @param additionalInformation - additional information required for the event.
      * @return the newly created booking
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    EventBooking add(final String eventId, final Long userId, final Long reservedById, final BookingStatus status, final Map<String,String> additionalInformation) throws SegueDatabaseException;
+    EventBooking add(ITransaction transaction, String eventId, Long userId, Long reservedById, BookingStatus status,
+                     Map<String, String> additionalInformation) throws SegueDatabaseException;
 
     /**
      * Add booking to the database.
-     * 
-     * @param eventId
-     *            - the event id
-     * @param userId
-     *            - the user id
-     * @param status
-     *            - the initial status of the booking.
+     *
+     * @param transaction - the database transaction to use
+     * @param eventId - the event id
+     * @param userId - the user id
+     * @param status - the initial status of the booking.
      * @param additionalInformation - additional information required for the event.
      * @return the newly created booking
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    EventBooking add(final String eventId, final Long userId, final BookingStatus status, final Map<String,String> additionalInformation) throws SegueDatabaseException;
+    EventBooking add(ITransaction transaction, String eventId, Long userId, BookingStatus status,
+                     Map<String, String> additionalInformation) throws SegueDatabaseException;
 
 	/**
      * updateStatus.
      *
+     * @param transaction - the database transaction to use
      * @param eventId - the id of the event
      * @param userId - the id of the user booked on to the event
+     * @param reservingUserId - the id of the user making the reservation
      * @param status - the new status to change the booking to
      * @param additionalEventInformation - additional information required for the event if null it will be unmodified.
-     * @return the newly updated event booking.
      * @throws SegueDatabaseException - if the database goes wrong.
      */
-    void updateStatus(final String eventId, final Long userId, final Long reservingUserId, final BookingStatus status, Map<String, String> additionalEventInformation) throws SegueDatabaseException;
+    void updateStatus(ITransaction transaction, String eventId, Long userId, Long reservingUserId, BookingStatus status,
+                      Map<String, String> additionalEventInformation) throws SegueDatabaseException;
 
     /**
      * Remove booking from the database.
-     * 
+     *
+     * @param transaction
+     *            - the database transaction to use
      * @param eventId
      *            - the event id
      * @param userId
@@ -86,22 +88,15 @@ public interface EventBookings {
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    void delete(final String eventId, final Long userId) throws SegueDatabaseException;
+    void delete(ITransaction transaction, String eventId, Long userId) throws SegueDatabaseException;
 
     /**
-     * Acquire a globally unique database lock.
-     * This lock must be released manually.
-     * @param resourceId - the unique id for the object to be locked.
-     */
-    void acquireDistributedLock(String resourceId) throws SegueDatabaseException;
-
-    /**
-     * Release a globally unique database lock.
-     * This method will release a previously acquired lock.
+     * Acquire a globally unique lock on an event for the duration of a transaction.
      *
-     * @param resourceId - the unique id for the object to be locked.
+     * @param transaction - the database transaction to acquire the lock in.
+     * @param resourceId - the ID of the event to be locked.
      */
-    void releaseDistributedLock(String resourceId) throws SegueDatabaseException;
+    void lockEventUntilTransactionComplete(ITransaction transaction, String resourceId) throws SegueDatabaseException;
 
     /**
      * Find all bookings for a given event.

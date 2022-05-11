@@ -31,7 +31,7 @@ CREATE SCHEMA anonymous;
 
 CREATE TABLE anonymous.users AS
     SELECT
-        id AS old_id,
+--         id AS old_id,
         anonymise(id, hash_salt) AS id,
         role,
         CASE
@@ -96,10 +96,7 @@ CREATE TABLE anonymous.group_additional_managers AS
 CREATE TABLE anonymous.gameboards AS
     SELECT
         id,
-        questions,
-        wildcard,
-        wildcard_position,
-        game_filter,
+        contents,
         anonymise(owner_user_id, hash_salt) AS owner_user_id,
         creation_method,
         creation_date,
@@ -165,6 +162,39 @@ CREATE TABLE anonymous.user_streak_targets AS
         end_date
     FROM public.user_streak_targets;
 
+-- Quiz tables:
+
+CREATE TABLE anonymous.quiz_assignments AS
+    SELECT
+        id,
+        quiz_id,
+        anonymise(group_id, hash_salt) AS group_id,
+        anonymise(owner_user_id, hash_salt) AS owner_user_id,
+        creation_date,
+        due_date,
+        quiz_feedback_mode,
+        deleted
+    FROM public.quiz_assignments;
+
+CREATE TABLE anonymous.quiz_attempts AS
+    SELECT
+        id,
+        anonymise(user_id, hash_salt),
+        quiz_id,
+        quiz_assignment_id,
+        start_date,
+        completed_date
+    FROM public.quiz_attempts;
+
+CREATE TABLE anonymous.quiz_question_attempts AS
+    SELECT
+        id,
+        quiz_attempt_id,
+        question_id,
+        question_attempt,
+        correct,
+        timestamp
+    FROM public.quiz_question_attempts;
 
 -- Logged events:
 
@@ -174,7 +204,6 @@ CREATE TABLE anonymous.logged_events AS
         anonymise(user_id, hash_salt) AS user_id,
         anonymous_user,
         event_type,
-        event_details_type,
         event_details,
         timestamp
     FROM public.logged_events
@@ -230,7 +259,13 @@ UPDATE anonymous.logged_events
 UPDATE anonymous.logged_events
     SET event_details=event_details - 'token'
     WHERE event_details->>'token' IS NOT NULL;
-
+-- school_other
+UPDATE anonymous.logged_events
+SET event_details=jsonb_strip_nulls(event_details - 'oldSchoolOther')
+WHERE event_details->>'oldSchoolOther' IS NOT NULL;
+UPDATE anonymous.logged_events
+SET event_details=jsonb_strip_nulls(event_details - 'newSchoolOther')
+WHERE event_details->>'newSchoolOther' IS NOT NULL;
 
 RETURN true;
 END;

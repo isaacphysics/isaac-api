@@ -70,6 +70,18 @@ ALTER TABLE public.assignments_id_seq OWNER TO rutherford;
 
 ALTER SEQUENCE public.assignments_id_seq OWNED BY public.assignments.id;
 
+--
+-- Name: scheduled_emails; Type: TABLE; Schema: public; Owner: rutherford
+--
+
+CREATE TABLE public.scheduled_emails (
+    email_id TEXT NOT NULL,
+    sent TIMESTAMP WITHOUT TIME ZONE,
+    CONSTRAINT scheduled_emails_pk PRIMARY KEY (email_id)
+);
+
+
+ALTER TABLE public.scheduled_emails OWNER TO rutherford;
 
 --
 -- Name: event_bookings; Type: TABLE; Schema: public; Owner: rutherford

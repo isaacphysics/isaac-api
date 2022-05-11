@@ -1,22 +1,24 @@
 package uk.ac.cam.cl.dtg.isaac.dao;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.util.Lists;
+import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import ma.glasnost.orika.MapperFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.api.client.util.Lists;
-import com.google.inject.Inject;
-
-import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.*;
+import uk.ac.cam.cl.dtg.isaac.dos.ITransaction;
+import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
+import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.EventBooking;
+import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.EventBookings;
+import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.PgEventBooking;
+import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.PgEventBookings;
+import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.DetailedEventBookingDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
@@ -24,11 +26,12 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
-import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
-import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * EventBookingPersistenceManager.
@@ -41,7 +44,6 @@ public class EventBookingPersistenceManager {
     private final EventBookings dao;
     private final UserAccountManager userManager;
     private final IContentManager contentManager;
-    private final String contentIndex;
 
     /**
      * EventBookingPersistenceManager.
@@ -54,16 +56,13 @@ public class EventBookingPersistenceManager {
      *            - Instance of User Manager
      * @param objectMapper
      *            - Instance of objectmapper so we can deal with jsonb
-     * @param dtoMapper
-     *            - Instance of dtoMapper so we can deal with jsonb
      */
     @Inject
     public EventBookingPersistenceManager(final PostgresSqlDb database, final UserAccountManager userManager,
-                                          final IContentManager contentManager, final ObjectMapper objectMapper, final MapperFacade dtoMapper, @Named(CONTENT_INDEX) final String contentIndex) {
+                                          final IContentManager contentManager, final ObjectMapper objectMapper) {
         this.database = database;
         this.userManager = userManager;
         this.contentManager = contentManager;
-        this.contentIndex = contentIndex;
         this.dao = new PgEventBookings(database, objectMapper);
     }
 
@@ -117,31 +116,37 @@ public class EventBookingPersistenceManager {
 	/**
      * Modify an existing event booking's status
      *
+     * @param transaction - the database transaction to use
      * @param eventId - the id of the event
      * @param userId = the user who is registered against the event
      * @param reservingUserId - the user who is updating this booking to be a reservation
      * @param bookingStatus - the new booking status for this booking.
+     * @param additionalEventInformation - additional information required for the event.
      * @return The newly updated event booking
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    public DetailedEventBookingDTO updateBookingStatus(final String eventId, final Long userId, final Long reservingUserId, final BookingStatus bookingStatus, final Map additionalEventInformation) throws SegueDatabaseException {
-        dao.updateStatus(eventId, userId, reservingUserId, bookingStatus, additionalEventInformation);
+    public DetailedEventBookingDTO updateBookingStatus(final ITransaction transaction, final String eventId, final Long userId, final Long reservingUserId,
+                                                       final BookingStatus bookingStatus, final Map<String, String> additionalEventInformation) throws SegueDatabaseException {
+        dao.updateStatus(transaction, eventId, userId, reservingUserId, bookingStatus, additionalEventInformation);
         return this.getBookingByEventIdAndUserId(eventId, userId);
     }
 
     /**
      * Modify an existing event booking's status
      *
+     * @param transaction - the database transaction to use
      * @param eventId - the id of the event
      * @param userId = the user who is registered against the event
      * @param bookingStatus - the new booking status for this booking.
+     * @param additionalEventInformation - additional information required for the event.
      * @return The newly updated event booking
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    public DetailedEventBookingDTO updateBookingStatus(final String eventId, final Long userId, final BookingStatus bookingStatus, final Map additionalEventInformation) throws SegueDatabaseException {
-        return updateBookingStatus(eventId, userId, null, bookingStatus, additionalEventInformation);
+    public DetailedEventBookingDTO updateBookingStatus(final ITransaction transaction, final String eventId, final Long userId,
+                                                       final BookingStatus bookingStatus, final Map<String, String> additionalEventInformation) throws SegueDatabaseException {
+        return updateBookingStatus(transaction, eventId, userId, null, bookingStatus, additionalEventInformation);
     }
 
     /**
@@ -218,35 +223,32 @@ public class EventBookingPersistenceManager {
     }
 
     /**
-     * @param eventId
-     *            - of interest
-     * @param userId
-     *            - user to book on to the event.
-     * @param reservingId
-     *            - user making the reservation
-     * @param status
-     *            - The status of the booking to create.
+     * @param transaction - the database transaction to use
+     * @param eventId - of interest
+     * @param userId - user to book on to the event.
+     * @param reservingId - user making the reservation
+     * @param status - The status of the booking to create.
+     * @param additionalInformation - additional information required for the event.
      * @return the newly created booking.
-     * @throws SegueDatabaseException
-     *             - if an error occurs.
+     * @throws SegueDatabaseException - if an error occurs.
      */
-    public EventBookingDTO createBooking(final String eventId, final Long userId, final Long reservingId, final BookingStatus status, final Map<String,String> additionalInformation) throws SegueDatabaseException {
-        return this.convertToDTO(dao.add(eventId, userId, reservingId, status, additionalInformation));
+    public EventBookingDTO createBooking(final ITransaction transaction, final String eventId, final Long userId, final Long reservingId, final BookingStatus status,
+                                         final Map<String, String> additionalInformation) throws SegueDatabaseException {
+        return this.convertToDTO(dao.add(transaction, eventId, userId, reservingId, status, additionalInformation));
     }
 
     /**
-     * @param eventId
-     *            - of interest
-     * @param userId
-     *            - user to book on to the event.
-     * @param status
-     *            - The status of the booking to create.
+     * @param transaction - the database transaction to use
+     * @param eventId - of interest
+     * @param userId - user to book on to the event.
+     * @param status - The status of the booking to create.
+     * @param additionalInformation - additional information required for the event.
      * @return the newly created booking.
-     * @throws SegueDatabaseException
-     *             - if an error occurs.
+     * @throws SegueDatabaseException - if an error occurs.
      */
-    public EventBookingDTO createBooking(final String eventId, final Long userId, final BookingStatus status, final Map<String,String> additionalInformation) throws SegueDatabaseException {
-        return this.convertToDTO(dao.add(eventId, userId, status, additionalInformation));
+    public EventBookingDTO createBooking(final ITransaction transaction, final String eventId, final Long userId, final BookingStatus status,
+                                         final Map<String, String> additionalInformation) throws SegueDatabaseException {
+        return this.convertToDTO(dao.add(transaction, eventId, userId, status, additionalInformation));
     }
 
     /**
@@ -272,6 +274,8 @@ public class EventBookingPersistenceManager {
     }
 
     /**
+     * @param transaction
+     *            - the database transaction to use
      * @param eventId
      *            - event id
      * @param userId
@@ -279,8 +283,8 @@ public class EventBookingPersistenceManager {
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    public void deleteBooking(final String eventId, final Long userId) throws SegueDatabaseException {
-        dao.delete(eventId, userId);
+    public void deleteBooking(final ITransaction transaction, final String eventId, final Long userId) throws SegueDatabaseException {
+        dao.delete(transaction, eventId, userId);
     }
 
     /**
@@ -294,25 +298,13 @@ public class EventBookingPersistenceManager {
     }
 
     /**
-     * Acquire a globally unique database lock.
+     * Acquire a globally unique lock on an event for the duration of a transaction.
      *
-     * This lock must be released manually.
-     *
-     * @param resourceId - the unique id for the object to be locked.
-     * @throws SegueDatabaseException if there is a problem acquiring the lock
+     * @param transaction - the database transaction to acquire the lock in.
+     * @param resourceId - the ID of the event to be locked.
      */
-    public void acquireDistributedLock(final String resourceId) throws SegueDatabaseException {
-        dao.acquireDistributedLock(resourceId);
-    }
-
-    /**
-     * Release a globally unique database lock.
-     * This lock must be released manually.
-     * @param resourceId - the unique id for the object to be locked.
-     * @throws SegueDatabaseException if there is a problem releasing the lock
-     */
-    public void releaseDistributedLock(final String resourceId) throws SegueDatabaseException {
-        dao.releaseDistributedLock(resourceId);
+    public void lockEventUntilTransactionComplete(final ITransaction transaction, final String resourceId) throws SegueDatabaseException {
+        dao.lockEventUntilTransactionComplete(transaction, resourceId);
     }
 
     /**
