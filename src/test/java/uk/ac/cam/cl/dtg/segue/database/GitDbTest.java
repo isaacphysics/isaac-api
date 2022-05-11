@@ -29,33 +29,6 @@ import org.powermock.api.easymock.PowerMock;
 public class GitDbTest {
 
 	@Test
-	public void gitDb_checkForBadParameters_exceptionsShouldBeThrown() throws IOException {
-		PowerMock.mockStatic(Git.class);
-
-		// Test that if you provide an empty string or null, an IllegalArgumentException gets thrown and git.open never gets called.
-
-		PowerMock.replay(Git.class);
-
-		try {
-			new GitDb("");
-			fail("GitDb constructor was given an empty string, but didn't throw an exception");
-		} catch (IllegalArgumentException e) {
-			// Exception correctly thrown.
-		} catch (Exception e) {
-			fail("GitDb constructor threw wrong exception type: " + e);
-		}
-
-		try {
-			new GitDb((String)null);
-			fail("GitDb constructor was given null, but didn't throw an exception");
-		} catch (NullPointerException e) {
-			// Exception correctly thrown.
-		} catch (Exception e) {
-			fail("GitDb constructor threw wrong exception type: " + e);
-		}
-	}
-
-	@Test
 	public void gitDbOtherConstructor_checkForBadParameters_exceptionsShouldBeThrown() {
 		// Test that if you provide an empty string or null, an IllegalArgumentException gets thrown and git.open never gets called.
 

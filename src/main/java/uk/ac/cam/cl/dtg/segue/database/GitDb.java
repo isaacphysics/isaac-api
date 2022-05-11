@@ -19,30 +19,46 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.NotFoundException;
 
 import org.apache.commons.lang3.Validate;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.InvalidRemoteException;
 import org.eclipse.jgit.api.errors.NoHeadException;
+import org.eclipse.jgit.api.errors.TransportException;
 import org.eclipse.jgit.errors.RevisionSyntaxException;
-import org.eclipse.jgit.lib.*;
+import org.eclipse.jgit.lib.Constants;
+import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.ObjectLoader;
+import org.eclipse.jgit.lib.RefUpdate;
+import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.revwalk.RevWalk;
-import org.eclipse.jgit.transport.*;
-import org.eclipse.jgit.transport.OpenSshConfig.Host;
+import org.eclipse.jgit.transport.FetchResult;
+import org.eclipse.jgit.transport.RefSpec;
+import org.eclipse.jgit.transport.SshSessionFactory;
+import org.eclipse.jgit.transport.TrackingRefUpdate;
+import org.eclipse.jgit.transport.sshd.JGitKeyCache;
+import org.eclipse.jgit.transport.sshd.SshdSessionFactory;
+import org.eclipse.jgit.transport.sshd.SshdSessionFactoryBuilder.ConfigStoreFactory;
+import org.eclipse.jgit.transport.sshd.SshdSessionFactoryBuilder;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.PathFilter;
 import org.eclipse.jgit.treewalk.filter.PathSuffixFilter;
+import org.eclipse.jgit.util.FS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
-import com.jcraft.jsch.JSch;
-import com.jcraft.jsch.JSchException;
+import uk.ac.cam.cl.dtg.segue.etl.ETLInMemorySshConfigStore;
+
 
 /**
  * This class is a representation of the Git Database and provides some helper methods to allow file access.
@@ -63,29 +79,7 @@ public class GitDb {
      * Create a new instance of a GitDb object
      * 
      * This will immediately try and connect to the Git folder specified to check its validity.
-     * 
-     * @param repoLocation
-     *            - location of the local git repository
-     * @throws IOException
-     *             - if we cannot access the repo location.
-     */
-    public GitDb(final String repoLocation) throws IOException {
-        Validate.notBlank(repoLocation);
-
-        // unused for this constructor
-        this.privateKey = null;
-        this.sshFetchUrl = null;
-
-        gitHandle = Git.open(new File(repoLocation));
-    }
-
-    /**
-     * Create a new instance of a GitDb object
-     * 
-     * This will immediately try and connect to the Git folder specified to check its validity.
-     * 
-     * This constructor is only necessary if we want to access a private repository.
-     * 
+     *
      * @param repoLocation
      *            - location of the local git repository
      * @param sshFetchUrl
@@ -104,6 +98,7 @@ public class GitDb {
         this.privateKey = privateKeyFileLocation;
 
         gitHandle = Git.open(new File(repoLocation));
+        configureSshSessionFactory();
     }
 
     /**
@@ -338,30 +333,6 @@ public class GitDb {
      */
     public synchronized String fetchLatestFromRemote() {
         try {
-            SshSessionFactory factory = new JschConfigSessionFactory() {
-                @Override
-                public void configure(final Host hc, final com.jcraft.jsch.Session session) {
-                    session.setConfig("StrictHostKeyChecking", "no");
-                }
-
-                @Override
-                protected JSch getJSch(final OpenSshConfig.Host hc, final org.eclipse.jgit.util.FS fs)
-                        throws JSchException {
-                    JSch jsch = super.getJSch(hc, fs);
-                    jsch.removeAllIdentity();
-
-                    if (null != privateKey) {
-                        jsch.addIdentity(privateKey);
-                    }
-
-                    return jsch;
-                }
-            };
-
-            if (this.sshFetchUrl != null) {
-                SshSessionFactory.setInstance(factory);
-            }
-
             RefSpec refSpec = new RefSpec("+refs/heads/*:refs/remotes/origin/*");
             FetchResult result = gitHandle.fetch().setRefSpecs(refSpec).setRemote(sshFetchUrl).call();
 
@@ -374,8 +345,14 @@ public class GitDb {
                     log.info("Fetched latest from git. Latest version is: " + this.getHeadSha());
                 }
             }
-
-
+        } catch (TransportException e) {
+            log.error("Failed to authenticate with the remote content repository via SSH. Ensure the 'Git' section of "
+                    + "segue-config.properties has valid values, particularly that the key at "
+                    + "'REMOTE_GIT_SSH_KEY_PATH' exists.", e);
+        } catch (InvalidRemoteException e) {
+            log.error("Failed to pull the latest from the remote content repository via SSH. Ensure the URL at "
+                    + "'REMOTE_GIT_SSH_URL' in the 'Git' section of segue-config.properties is correct, "
+                    + "and the private key at 'REMOTE_GIT_SSH_KEY_PATH' is valid for that repository.", e);
         } catch (GitAPIException e) {
             log.error("Error while trying to pull the latest from the remote repository.", e);
         }
@@ -466,5 +443,30 @@ public class GitDb {
         revWalk.dispose();
         log.debug("Retrieved Commit Id: " + commitId.getName() + " Searching for: " + filename + " found: " + path);
         return objectId;
+    }
+
+    /**
+     * Sets up the SSH session factory which JGit will use to create SSH sessions for transport.
+     */
+    private void configureSshSessionFactory() {
+        // set options for all SSH sessions produced by the factory (of the sort ordinarily found in ~/.ssh/config).
+        Map<String, List<String>> sshConfig = new HashMap<>();
+        sshConfig.put("StrictHostKeyChecking", Collections.singletonList("no"));
+        sshConfig.put("IdentityFile", Collections.singletonList(privateKey));
+        sshConfig.put("IdentitiesOnly", Collections.singletonList("yes"));
+
+        // configure the factory to use the above options, and create
+        ConfigStoreFactory inMemorySshConfigStoreFactory = (homeDir, configFile, localUserName) ->
+                new ETLInMemorySshConfigStore(sshConfig);
+        SshdSessionFactory factory = new SshdSessionFactoryBuilder()
+                .setHomeDirectory(FS.DETECTED.userHome())
+                .setSshDirectory(new File(FS.DETECTED.userHome(), "/.ssh"))
+                .setConfigStoreFactory(inMemorySshConfigStoreFactory)
+                .build(new JGitKeyCache());
+
+        // set the factory as the default provider for SSH sessions
+        if (this.sshFetchUrl != null) {
+            SshSessionFactory.setInstance(factory);
+        }
     }
 }
