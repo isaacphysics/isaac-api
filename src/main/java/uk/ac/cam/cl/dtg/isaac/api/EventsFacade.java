@@ -1681,7 +1681,10 @@ public class EventsFacade extends AbstractIsaacFacade {
         }
 
         if (possibleEvent instanceof IsaacEventPageDTO) {
-            return (IsaacEventPageDTO) possibleEvent;
+            // The Events Facade *mutates* the EventDTO returned by this method; we must return a copy of
+            // the original object else we will poison the contentManager's cache!
+            // TODO: might it be better to get the DO from the cache and map it to DTO here to reduce overhead?
+            return mapper.map(possibleEvent, IsaacEventPageDTO.class);
         }
         return null;
     }
