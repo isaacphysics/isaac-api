@@ -432,11 +432,13 @@
             <groupId>org.owasp</groupId>
             <artifactId>dependency-check-maven</artifactId>
             <version>7.1.0</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.sonatype.ossindex.maven</groupId>
             <artifactId>ossindex-maven-plugin</artifactId>
             <version>3.2.0</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 
@@ -446,10 +448,12 @@
             <plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
+                <version>7.1.0</version>
             </plugin>
             <plugin>
                 <groupId>org.sonatype.ossindex.maven</groupId>
                 <artifactId>ossindex-maven-plugin</artifactId>
+                <version>3.2.0</version>
             </plugin>
             <plugin>
                 <artifactId>maven-antrun-plugin</artifactId>
