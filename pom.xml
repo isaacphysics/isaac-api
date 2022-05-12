@@ -20,7 +20,7 @@
         <powermock.version>2.0.4</powermock.version>
         <swagger-ui-version>3.19.5</swagger-ui-version>
         <prometheus.version>0.8.0</prometheus.version>
-        <jetty-version>9.4.42.v20210604</jetty-version>
+        <jetty-version>9.4.46.v20220331</jetty-version>
         <jetty.port.api>8080</jetty.port.api>
         <jetty.port.etl>8090</jetty.port.etl>
         <web.xml>override-api-web.xml</web.xml>
@@ -433,6 +433,11 @@
             <artifactId>dependency-check-maven</artifactId>
             <version>7.1.0</version>
         </dependency>
+        <dependency>
+            <groupId>org.sonatype.ossindex.maven</groupId>
+            <artifactId>ossindex-maven-plugin</artifactId>
+            <version>3.2.0</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -441,7 +446,10 @@
             <plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
-                <version>7.1.0</version>
+            </plugin>
+            <plugin>
+                <groupId>org.sonatype.ossindex.maven</groupId>
+                <artifactId>ossindex-maven-plugin</artifactId>
             </plugin>
             <plugin>
                 <artifactId>maven-antrun-plugin</artifactId>
@@ -583,6 +591,12 @@
                 <groupId>com.google.http-client</groupId>
                 <artifactId>google-http-client-gson</artifactId>
                 <version>1.41.8</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp</artifactId>
+                <version>3.12.13</version>
             </dependency>
 
             <dependency>
