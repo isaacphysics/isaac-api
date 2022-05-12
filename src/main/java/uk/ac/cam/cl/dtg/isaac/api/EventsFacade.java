@@ -1721,12 +1721,10 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             try {
                 RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
-                page.setUserBooked(this.bookingManager.isUserBooked(page.getId(), user.getId()));
-                page.setUserOnWaitList(this.bookingManager.hasBookingWithStatus(page.getId(), user.getId(), BookingStatus.WAITING_LIST));
                 page.setUserBookingStatus(this.bookingManager.getBookingStatus(page.getId(), user.getId()));
             } catch (NoUserLoggedInException e) {
                 // no action as we don't require the user to be logged in.
-                page.setUserBooked(null);
+                page.setUserBookingStatus(null);
             }
 
             page.setPlacesAvailable(this.bookingManager.getPlacesAvailable(page));
