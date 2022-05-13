@@ -1081,6 +1081,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Path("/assign/")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @Deprecated
     @ApiOperation(value = "Create a new assignment.")
     public Response assignGameBoard(@Context final HttpServletRequest request,
                                     final AssignmentDTO assignmentDTOFromClient) {
