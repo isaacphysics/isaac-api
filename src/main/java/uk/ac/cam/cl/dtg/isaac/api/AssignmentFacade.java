@@ -975,43 +975,40 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             }
 
             List<Long> assigmentSuccessfulGroupIds = new ArrayList<>();
-            List<AssignmentErrorDTO> assigmentErorrs = new ArrayList<>();
-            Map<String, GameboardDTO> validGameboards = new HashMap<>();
+            List<AssignmentErrorDTO> assigmentErrors = new ArrayList<>();
+            Map<String, GameboardDTO> gameboardMap = new HashMap<>();
 
             for (AssignmentDTO assignmentDTO : assignmentDTOsFromClient) {
                 if (null == assignmentDTO.getGameboardId() || null == assignmentDTO.getGroupId()) {
-                    assigmentErorrs.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), "A required field was missing. Must provide gameboard id and group id."));
+                    assigmentErrors.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), "A required field was missing. Must provide gameboard id and group id."));
                     continue;
                 }
 
-                // Staff can set assignment notes (instructions to assignees) up to a max length of MAX_NOTE_CHAR_LENGTH,
-                // teachers cannot set notes.
-                boolean notesIsNullOrEmpty = null == assignmentDTO.getNotes() || (null != assignmentDTO.getNotes() && assignmentDTO.getNotes().isEmpty());
+                // Staff can set assignment notes up to a max length of MAX_NOTE_CHAR_LENGTH, teachers cannot set notes.
+                boolean notesIsNullOrEmpty = null == assignmentDTO.getNotes() || assignmentDTO.getNotes().isEmpty();
                 if (userIsStaff) {
                     boolean notesIsTooLong = null != assignmentDTO.getNotes() && assignmentDTO.getNotes().length() > MAX_NOTE_CHAR_LENGTH;
                     if (notesIsTooLong) {
-                        assigmentErorrs.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), "Your assignment notes exceed the maximum allowed length of "
+                        assigmentErrors.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), "Your assignment notes exceed the maximum allowed length of "
                                 + MAX_NOTE_CHAR_LENGTH + " characters."));
                         continue;
                     }
                 } else if (!notesIsNullOrEmpty) {
-                    // user is not staff but it is a teacher, if we got here unscathed
-                    assigmentErorrs.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), "You are not allowed to add assignment notes."));
+                    assigmentErrors.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), "You are not allowed to add assignment notes."));
                     continue;
                 }
 
                 try {
-                    // The `computeIfAbsent` map function would be perfect for this use case, but apparently the compiler doesn't understand
-                    // that: "If the function itself throws an (unchecked) exception, the exception is rethrown, and no mapping is recorded."
-                    // (from the Java 8 `Map` docs)
-                    GameboardDTO gameboard = validGameboards.get(assignmentDTO.getGameboardId());
+                    // Get the gameboard:
+                    // The `computeIfAbsent` Map function won't work because of checked SegueDatabaseException (for getGameboard/getGroupById)
+                    GameboardDTO gameboard = gameboardMap.get(assignmentDTO.getGameboardId());
                     if (null == gameboard) {
                         gameboard = this.gameManager.getGameboard(assignmentDTO.getGameboardId());
                         if (null == gameboard) {
-                            assigmentErorrs.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), "The gameboard id specified does not exist."));
+                            assigmentErrors.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), "The gameboard id specified does not exist."));
                             continue;
                         }
-                        validGameboards.put(gameboard.getId(), gameboard);
+                        gameboardMap.put(gameboard.getId(), gameboard);
                     }
 
                     UserGroupDTO assigneeGroup = groupManager.getGroupById(assignmentDTO.getGroupId());
@@ -1023,7 +1020,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
                     if (!GroupManager.isOwnerOrAdditionalManager(assigneeGroup, currentlyLoggedInUser.getId())
                             && !isUserAnAdmin(userManager, currentlyLoggedInUser)) {
-                        assigmentErorrs.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), "You can only set assignments to groups you own or manage."));
+                        assigmentErrors.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), "You can only set assignments to groups you own or manage."));
                         continue;
                     }
 
@@ -1057,13 +1054,13 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     // Assigning to this group was a success
                     assigmentSuccessfulGroupIds.add(assignmentWithID.getGroupId());
                 } catch (DuplicateAssignmentException e) {
-                    assigmentErorrs.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), e.getMessage()));
+                    assigmentErrors.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), e.getMessage()));
                 } catch (SegueDatabaseException e) {
                     log.error("Database error while trying to assign work", e);
-                    assigmentErorrs.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), "Unknown database error."));
+                    assigmentErrors.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), "Unknown database error."));
                 }
             }
-            return Response.ok(new AssignmentSettingResponseDTO(assigmentSuccessfulGroupIds, assigmentErorrs)).build();
+            return Response.ok(new AssignmentSettingResponseDTO(assigmentSuccessfulGroupIds, assigmentErrors)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
