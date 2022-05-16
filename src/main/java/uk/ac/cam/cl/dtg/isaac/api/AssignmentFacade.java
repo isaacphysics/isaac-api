@@ -32,8 +32,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateAssignmentException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.services.AssignmentService;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.AssignmentErrorDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.AssignmentSettingResponseDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.AssignmentStatusDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
@@ -974,13 +973,12 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You need a staff account to set assignments to more than one group at once!").toResponse();
             }
 
-            List<Long> assigmentSuccessfulGroupIds = new ArrayList<>();
-            List<AssignmentErrorDTO> assigmentErorrs = new ArrayList<>();
+            List<AssignmentStatusDTO> assigmentFeedback = new ArrayList<>();
             Map<String, GameboardDTO> validGameboards = new HashMap<>();
 
             for (AssignmentDTO assignmentDTO : assignmentDTOsFromClient) {
                 if (null == assignmentDTO.getGameboardId() || null == assignmentDTO.getGroupId()) {
-                    assigmentErorrs.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), "A required field was missing. Must provide gameboard id and group id."));
+                    assigmentFeedback.add(new AssignmentStatusDTO(assignmentDTO.getGroupId(), "A required field was missing. Must provide gameboard id and group id."));
                     continue;
                 }
 
@@ -990,13 +988,13 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 if (userIsStaff) {
                     boolean notesIsTooLong = null != assignmentDTO.getNotes() && assignmentDTO.getNotes().length() > MAX_NOTE_CHAR_LENGTH;
                     if (notesIsTooLong) {
-                        assigmentErorrs.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), "Your assignment notes exceed the maximum allowed length of "
+                        assigmentFeedback.add(new AssignmentStatusDTO(assignmentDTO.getGroupId(), "Your assignment notes exceed the maximum allowed length of "
                                 + MAX_NOTE_CHAR_LENGTH + " characters."));
                         continue;
                     }
                 } else if (!notesIsNullOrEmpty) {
                     // user is not staff but it is a teacher, if we got here unscathed
-                    assigmentErorrs.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), "You are not allowed to add assignment notes."));
+                    assigmentFeedback.add(new AssignmentStatusDTO(assignmentDTO.getGroupId(), "You are not allowed to add assignment notes."));
                     continue;
                 }
 
@@ -1008,7 +1006,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     if (null == gameboard) {
                         gameboard = this.gameManager.getGameboard(assignmentDTO.getGameboardId());
                         if (null == gameboard) {
-                            assigmentErorrs.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), "The gameboard id specified does not exist."));
+                            assigmentFeedback.add(new AssignmentStatusDTO(assignmentDTO.getGroupId(), "The gameboard id specified does not exist."));
                             continue;
                         }
                         validGameboards.put(gameboard.getId(), gameboard);
@@ -1017,13 +1015,13 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     UserGroupDTO assigneeGroup = groupManager.getGroupById(assignmentDTO.getGroupId());
 
                     if (null == assigneeGroup) {
-                        assigmentErorrs.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), "The group id specified does not exist."));
+                        assigmentFeedback.add(new AssignmentStatusDTO(assignmentDTO.getGroupId(), "The group id specified does not exist."));
                         continue;
                     }
 
                     if (!GroupManager.isOwnerOrAdditionalManager(assigneeGroup, currentlyLoggedInUser.getId())
                             && !isUserAnAdmin(userManager, currentlyLoggedInUser)) {
-                        assigmentErorrs.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), "You can only set assignments to groups you own or manage."));
+                        assigmentFeedback.add(new AssignmentStatusDTO(assignmentDTO.getGroupId(), "You can only set assignments to groups you own or manage."));
                         continue;
                     }
 
@@ -1055,15 +1053,15 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                         }
                     }
                     // Assigning to this group was a success
-                    assigmentSuccessfulGroupIds.add(assignmentWithID.getGroupId());
+                    assigmentFeedback.add(new AssignmentStatusDTO(assignmentWithID.getGroupId(), assignmentWithID.getId()));
                 } catch (DuplicateAssignmentException e) {
-                    assigmentErorrs.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), e.getMessage()));
+                    assigmentFeedback.add(new AssignmentStatusDTO(assignmentDTO.getGroupId(), e.getMessage()));
                 } catch (SegueDatabaseException e) {
                     log.error("Database error while trying to assign work", e);
-                    assigmentErorrs.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), "Unknown database error."));
+                    assigmentFeedback.add(new AssignmentStatusDTO(assignmentDTO.getGroupId(), "Unknown database error."));
                 }
             }
-            return Response.ok(new AssignmentSettingResponseDTO(assigmentSuccessfulGroupIds, assigmentErorrs)).build();
+            return Response.ok(assigmentFeedback).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }

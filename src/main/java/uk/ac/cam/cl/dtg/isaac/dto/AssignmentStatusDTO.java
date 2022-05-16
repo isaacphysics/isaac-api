@@ -18,13 +18,19 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 /**
  * This DTO records an error during attempting to set an assignment to a group
  */
-public class AssignmentErrorDTO {
+public class AssignmentStatusDTO {
     private Long groupId;
-    private String reason;
+    private Long assignmentId;
+    private String errorMessage;
 
-    public AssignmentErrorDTO(final Long groupId, final String reason) {
+    public AssignmentStatusDTO(final Long groupId, final String errorMessage) {
         this.groupId = groupId;
-        this.reason = reason;
+        this.errorMessage = errorMessage;
+    }
+
+    public AssignmentStatusDTO(final Long groupId, final Long assignmentId) {
+        this.groupId = groupId;
+        this.assignmentId = assignmentId;
     }
 
     public Long getGroupId() {
@@ -35,11 +41,19 @@ public class AssignmentErrorDTO {
         this.groupId = groupId;
     }
 
-    public String getReason() {
-        return reason;
+    public String getErrorMessage() {
+        return errorMessage;
     }
 
-    public void setReason(final String reason) {
-        this.reason = reason;
+    public void setErrorMessage(final String errorMessage) {
+        this.errorMessage = errorMessage;
+    }
+
+    public Long getAssignmentId() {
+        return assignmentId;
+    }
+
+    public void setAssignmentId(final Long assignmentId) {
+        this.assignmentId = assignmentId;
     }
 }
