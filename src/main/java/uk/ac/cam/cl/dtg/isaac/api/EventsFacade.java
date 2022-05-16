@@ -1681,7 +1681,10 @@ public class EventsFacade extends AbstractIsaacFacade {
         }
 
         if (possibleEvent instanceof IsaacEventPageDTO) {
-            return (IsaacEventPageDTO) possibleEvent;
+            // The Events Facade *mutates* the EventDTO returned by this method; we must return a copy of
+            // the original object else we will poison the contentManager's cache!
+            // TODO: might it be better to get the DO from the cache and map it to DTO here to reduce overhead?
+            return mapper.map(possibleEvent, IsaacEventPageDTO.class);
         }
         return null;
     }
@@ -1718,12 +1721,10 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             try {
                 RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
-                page.setUserBooked(this.bookingManager.isUserBooked(page.getId(), user.getId()));
-                page.setUserOnWaitList(this.bookingManager.hasBookingWithStatus(page.getId(), user.getId(), BookingStatus.WAITING_LIST));
                 page.setUserBookingStatus(this.bookingManager.getBookingStatus(page.getId(), user.getId()));
             } catch (NoUserLoggedInException e) {
                 // no action as we don't require the user to be logged in.
-                page.setUserBooked(null);
+                page.setUserBookingStatus(null);
             }
 
             page.setPlacesAvailable(this.bookingManager.getPlacesAvailable(page));

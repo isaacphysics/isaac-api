@@ -65,8 +65,6 @@ public class IsaacEventPageDTO extends ContentDTO {
 
     private String isaacGroupToken;
 
-    private Boolean isUserBooked;
-    private Boolean isUserOnWaitList;
     private BookingStatus userBookingStatus;
 
     private Long placesAvailable;
@@ -436,22 +434,6 @@ public class IsaacEventPageDTO extends ContentDTO {
     }
 
 	/**
-     * Gets whether the currently logged in user is booked onto this event or not.
-     * @return true is yes, false is no, null is not logged in
-     */
-    public Boolean isUserBooked() {
-        return isUserBooked;
-    }
-
-	/**
-     * Sets whether or not the current user is booked on an event.
-     * @param loggedInUserBooked - true is yes, false is no, null is not logged in
-     */
-    public void setUserBooked(final Boolean loggedInUserBooked) {
-        isUserBooked = loggedInUserBooked;
-    }
-
-	/**
 	 * getPlacesAvailable based on current bookings..
      * @return the get the places available.
      */
@@ -465,14 +447,6 @@ public class IsaacEventPageDTO extends ContentDTO {
      */
     public void setPlacesAvailable(final Long placesAvailable) {
         this.placesAvailable = placesAvailable;
-    }
-
-    public Boolean isUserOnWaitList() {
-        return isUserOnWaitList;
-    }
-
-    public void setUserOnWaitList(Boolean userOnWaitList) {
-        isUserOnWaitList = userOnWaitList;
     }
 
     /**
