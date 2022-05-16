@@ -977,6 +977,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             List<Long> assigmentSuccessfulGroupIds = new ArrayList<>();
             List<AssignmentErrorDTO> assigmentErrors = new ArrayList<>();
             Map<String, GameboardDTO> gameboardMap = new HashMap<>();
+            Map<Long, UserGroupDTO> groupMap = new HashMap<>();
 
             for (AssignmentDTO assignmentDTO : assignmentDTOsFromClient) {
                 if (null == assignmentDTO.getGameboardId() || null == assignmentDTO.getGroupId()) {
@@ -1010,12 +1011,15 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                         }
                         gameboardMap.put(gameboard.getId(), gameboard);
                     }
-
-                    UserGroupDTO assigneeGroup = groupManager.getGroupById(assignmentDTO.getGroupId());
-
+                    // Get the group:
+                    UserGroupDTO assigneeGroup = groupMap.get(assignmentDTO.getGroupId());
                     if (null == assigneeGroup) {
-                        assigmentErorrs.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), "The group id specified does not exist."));
-                        continue;
+                        assigneeGroup = groupManager.getGroupById(assignmentDTO.getGroupId());
+                        if (null == assigneeGroup) {
+                            assigmentErrors.add(new AssignmentErrorDTO(assignmentDTO.getGroupId(), "The group id specified does not exist."));
+                            continue;
+                        }
+                        groupMap.put(assigneeGroup.getId(), assigneeGroup);
                     }
 
                     if (!GroupManager.isOwnerOrAdditionalManager(assigneeGroup, currentlyLoggedInUser.getId())
