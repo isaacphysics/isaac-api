@@ -559,7 +559,7 @@ public class GameboardPersistenceManager {
      * @throws SegueDatabaseException
      */
     private GameboardDO saveGameboard(final GameboardDO gameboardToSave) throws JsonProcessingException, SegueDatabaseException {
-        String query = "INSERT INTO gameboards(id, title, questions, contents, wildcard, wildcard_position, "
+        String query = "INSERT INTO gameboards(id, title, contents, wildcard, wildcard_position, "
                 + "game_filter, owner_user_id, creation_method, tags, creation_date)"
                 + " VALUES (?, ?, ?, ?::text::jsonb[], ?::text::jsonb, ?, ?::text::jsonb, ?, ?, ?::text::jsonb, ?);";
         try (Connection conn = database.getDatabaseConnection();
@@ -570,24 +570,20 @@ public class GameboardPersistenceManager {
                 contentsJsonb.add(objectMapper.writeValueAsString(content));
             }
             Array contents = conn.createArrayOf("jsonb", contentsJsonb.toArray());
-            // TODO MT AUDIENCE_CONTEXT CLEAN UP - Temporarily also store questions in DB for the benefit of old APIs
-            Array questionIds = conn.createArrayOf("varchar",
-                    gameboardToSave.getContents().stream().map(GameboardContentDescriptor::getId).toArray());
 
             pst.setObject(1, gameboardToSave.getId());
             pst.setString(2, gameboardToSave.getTitle());
-            pst.setObject(3, questionIds);
-            pst.setArray(4, contents);
-            pst.setString(5, objectMapper.writeValueAsString(gameboardToSave.getWildCard()));
-            pst.setInt(6, gameboardToSave.getWildCardPosition());
-            pst.setString(7, objectMapper.writeValueAsString(gameboardToSave.getGameFilter()));
-            pst.setLong(8, gameboardToSave.getOwnerUserId());
-            pst.setString(9, gameboardToSave.getCreationMethod().toString());
-            pst.setString(10, objectMapper.writeValueAsString(gameboardToSave.getTags()));
+            pst.setArray(3, contents);
+            pst.setString(4, objectMapper.writeValueAsString(gameboardToSave.getWildCard()));
+            pst.setInt(5, gameboardToSave.getWildCardPosition());
+            pst.setString(6, objectMapper.writeValueAsString(gameboardToSave.getGameFilter()));
+            pst.setLong(7, gameboardToSave.getOwnerUserId());
+            pst.setString(8, gameboardToSave.getCreationMethod().toString());
+            pst.setString(9, objectMapper.writeValueAsString(gameboardToSave.getTags()));
             if (gameboardToSave.getCreationDate() != null) {
-                pst.setTimestamp(11, new java.sql.Timestamp(gameboardToSave.getCreationDate().getTime()));
+                pst.setTimestamp(10, new java.sql.Timestamp(gameboardToSave.getCreationDate().getTime()));
             } else {
-                pst.setTimestamp(11, new java.sql.Timestamp(new Date().getTime()));
+                pst.setTimestamp(10, new java.sql.Timestamp(new Date().getTime()));
             }
 
             if (pst.executeUpdate() == 0) {
