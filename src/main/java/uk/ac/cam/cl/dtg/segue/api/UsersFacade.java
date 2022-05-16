@@ -521,7 +521,8 @@ public class UsersFacade extends AbstractSegueFacade {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(request);
 
-            return Response.ok(this.userManager.getNewSharedSecret(user)).build();
+            return Response.ok(this.userManager.getNewSharedSecret(user))
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
 
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
@@ -542,7 +543,8 @@ public class UsersFacade extends AbstractSegueFacade {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(request);
 
-            return Response.ok(ImmutableMap.of("mfaStatus", this.userManager.has2FAConfigured(user))).build();
+            return Response.ok(ImmutableMap.of("mfaStatus", this.userManager.has2FAConfigured(user)))
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
