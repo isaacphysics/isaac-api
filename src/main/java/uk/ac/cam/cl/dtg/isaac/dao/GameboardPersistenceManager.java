@@ -561,7 +561,7 @@ public class GameboardPersistenceManager {
     private GameboardDO saveGameboard(final GameboardDO gameboardToSave) throws JsonProcessingException, SegueDatabaseException {
         String query = "INSERT INTO gameboards(id, title, contents, wildcard, wildcard_position, "
                 + "game_filter, owner_user_id, creation_method, tags, creation_date)"
-                + " VALUES (?, ?, ?, ?::text::jsonb[], ?::text::jsonb, ?, ?::text::jsonb, ?, ?, ?::text::jsonb, ?);";
+                + " VALUES (?, ?, ?::text::jsonb[], ?::text::jsonb, ?, ?::text::jsonb, ?, ?, ?::text::jsonb, ?);";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
         ) {
