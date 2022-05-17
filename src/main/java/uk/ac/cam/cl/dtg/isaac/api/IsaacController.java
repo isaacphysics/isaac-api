@@ -468,7 +468,7 @@ public class IsaacController extends AbstractIsaacFacade {
                 "achievementsRecord", userBadgeManager.getAllUserBadges(user)
         );
 
-        return Response.ok(userSnapshot).build();
+        return Response.ok(userSnapshot).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
     }
 
     /**
