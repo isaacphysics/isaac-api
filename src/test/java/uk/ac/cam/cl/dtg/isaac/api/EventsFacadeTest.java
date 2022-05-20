@@ -10,17 +10,8 @@ import com.google.inject.util.Modules;
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.SystemUtils;
 import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.elasticsearch.ElasticsearchContainer;
-import org.testcontainers.utility.DockerImageName;
-import org.testcontainers.utility.MountableFile;
 import uk.ac.cam.cl.dtg.isaac.IsaacTest;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
@@ -62,28 +53,11 @@ import static org.powermock.api.easymock.PowerMock.replay;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_LINUX_CONFIG_LOCATION;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_GIT_DB;
 
-@RunWith(PowerMockRunner.class)
+//@RunWith(PowerMockRunner.class)
 @PowerMockIgnore("javax.net.ssl.*")
 public class EventsFacadeTest extends IsaacTest {
 
     public EventsFacade eventsFacade;
-
-    @Rule
-    public static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:12")
-            .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust")
-            .withUsername("rutherford")
-            .withInitScript("test-postgres-rutherford-create-script.sql")
-            ;
-
-    @ClassRule
-    public static ElasticsearchContainer elasticsearch = new ElasticsearchContainer(DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch-oss:7.8.0"))
-            .withCopyFileToContainer(MountableFile.forClasspathResource("isaac-test-es-data.tar.gz"), "/usr/share/elasticsearch/isaac-test-es-data.tar.gz")
-            .withCopyFileToContainer(MountableFile.forClasspathResource("isaac-test-es-docker-entrypoint.sh"), "/usr/local/bin/docker-entrypoint.sh")
-            .withExposedPorts(9200, 9300)
-            .withEnv("cluster.name", "isaac")
-            .withEnv("network.host", "0.0.0.0")
-            .withEnv("node.name", "localhost")
-            ;
 
     @Before
     public void setUp() throws RuntimeException, IOException, ClassNotFoundException {
@@ -110,7 +84,7 @@ public class EventsFacadeTest extends IsaacTest {
             "rutherford",
             "somerandompassword")
             ; // user/pass are irrelevant because POSTGRES_HOST_AUTH_METHOD is set to "trust"
-        
+
         PgUsers pgUsers = new PgUsers(postgresSqlDb, null); // FIXME: This null thing.
         PgAnonymousUsers pgAnonymousUsers = new PgAnonymousUsers(postgresSqlDb);
         QuestionManager questionDb = createMock(QuestionManager.class);

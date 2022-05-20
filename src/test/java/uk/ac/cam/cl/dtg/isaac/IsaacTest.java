@@ -19,6 +19,10 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.AbstractModule;
 import org.junit.Before;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.elasticsearch.ElasticsearchContainer;
+import org.testcontainers.utility.DockerImageName;
+import org.testcontainers.utility.MountableFile;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionBase;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuiz;
@@ -59,7 +63,33 @@ import static org.powermock.api.easymock.PowerMock.replay;
 import static org.powermock.api.easymock.PowerMock.reset;
 import static org.powermock.api.easymock.PowerMock.verify;
 
-public class IsaacTest extends AbstractModule {
+abstract class AbstractContainerBaseTest extends AbstractModule {
+    public static final PostgreSQLContainer postgres;
+    public static final ElasticsearchContainer elasticsearch;
+
+    static {
+        postgres = new PostgreSQLContainer<>("postgres:12")
+                .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust")
+                .withUsername("rutherford")
+                .withInitScript("test-postgres-rutherford-create-script.sql")
+                .withCommand("postgres", "-c", "fsync=off", "-c", "log_statement=all") // This is for debugging, it may be removed later
+        ;
+
+        elasticsearch = new ElasticsearchContainer(DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch-oss:7.8.0"))
+                .withCopyFileToContainer(MountableFile.forClasspathResource("isaac-test-es-data.tar.gz"), "/usr/share/elasticsearch/isaac-test-es-data.tar.gz")
+                .withCopyFileToContainer(MountableFile.forClasspathResource("isaac-test-es-docker-entrypoint.sh"), "/usr/local/bin/docker-entrypoint.sh")
+                .withExposedPorts(9200, 9300)
+                .withEnv("cluster.name", "isaac")
+                .withEnv("network.host", "0.0.0.0")
+                .withEnv("node.name", "localhost")
+        ;
+
+        postgres.start();
+        elasticsearch.start();
+    }
+}
+
+public class IsaacTest extends AbstractContainerBaseTest {
     protected static Date somePastDate = new Date(System.currentTimeMillis() - 7*24*60*60*1000);
     protected static Date someFurtherPastDate = new Date(System.currentTimeMillis() - 14*24*60*60*1000);
     protected static Date someFutureDate = new Date(System.currentTimeMillis() + 7*24*60*60*1000);
