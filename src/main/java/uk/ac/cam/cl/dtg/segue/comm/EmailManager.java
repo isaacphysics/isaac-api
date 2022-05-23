@@ -118,15 +118,14 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     }
 
     /**
-     * Escape any HTML present in the email before sending
+     * Escape any HTML present in the email before sending.
      *
      * @param emailParameters - the parameters to be inserted into the email
      */
     public static void sanitizeEmailParameters(final Map<Object, Object> emailParameters) {
-        List<String> allowedHtmlKeys = ImmutableList.of("assignmentsInfo", "studentsList");
         for (Map.Entry<Object, Object> entry : emailParameters.entrySet()) {
             String key = entry.getKey().toString();
-            if (!(key.startsWith("event.") || key.endsWith("URL") || allowedHtmlKeys.contains(key))) {
+            if (!(key.startsWith("event.") || key.endsWith("URL") || key.endsWith("_HTML"))) {
                 emailParameters.put(entry.getKey(), StringEscapeUtils.escapeHtml4(entry.getValue().toString()));
             }
         }
