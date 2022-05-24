@@ -46,6 +46,7 @@ import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.MustMatchInstruction;
 import uk.ac.cam.cl.dtg.segue.search.RangeMatchInstruction;
 import uk.ac.cam.cl.dtg.segue.search.ShouldMatchInstruction;
+import uk.ac.cam.cl.dtg.segue.search.SimpleExclusionInstruction;
 import uk.ac.cam.cl.dtg.segue.search.SimpleFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.TermsFilterInstruction;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -85,6 +86,7 @@ public class GitContentManager implements IContentManager {
     private final ISearchProvider searchProvider;
     private final PropertiesLoader globalProperties;
     private final boolean allowOnlyPublishedContent;
+    private final boolean hideRegressionTestContent;
 
     private final Cache<Object, Object> cache;
     private final Cache<String, GetResponse> contentShaCache;
@@ -116,6 +118,13 @@ public class GitContentManager implements IContentManager {
             log.info("API Configured to only allow published content to be returned.");
         }
 
+        this.hideRegressionTestContent = Boolean.parseBoolean(
+                globalProperties.getProperty(Constants.HIDE_REGRESSION_TEST_CONTENT));
+
+        if (this.hideRegressionTestContent) {
+            log.info("API Configured to hide content tagged with 'regression_test'.");
+        }
+
         this.cache = CacheBuilder.newBuilder().recordStats().softValues().expireAfterAccess(1, TimeUnit.DAYS).build();
         CACHE_METRICS_COLLECTOR.addCache("git_content_manager_cache", cache);
 
@@ -139,6 +148,7 @@ public class GitContentManager implements IContentManager {
         this.searchProvider = searchProvider;
         this.globalProperties = null;
         this.allowOnlyPublishedContent = false;
+        this.hideRegressionTestContent = false;
         this.cache = CacheBuilder.newBuilder().softValues().expireAfterAccess(1, TimeUnit.DAYS).build();
         this.contentShaCache = CacheBuilder.newBuilder().softValues().expireAfterWrite(1, TimeUnit.MINUTES).build();
     }
@@ -178,7 +188,7 @@ public class GitContentManager implements IContentManager {
             List<Content> searchResults = mapper.mapFromStringListToContentList(this.searchProvider.termSearch(version,
                     CONTENT_TYPE, id,
                     Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, 0, 1,
-                    this.getUnpublishedFilter()).getResults());
+                    this.getBaseFilters()).getResults());
 
             if (null == searchResults || searchResults.isEmpty()) {
                 if (!failQuietly) {
@@ -203,7 +213,7 @@ public class GitContentManager implements IContentManager {
 
             ResultsWrapper<String> searchHits = this.searchProvider.findByPrefix(version, CONTENT_TYPE,
                     Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
-                    idPrefix, startIndex, limit, this.getUnpublishedFilter());
+                    idPrefix, startIndex, limit, this.getBaseFilters());
 
             List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
 
@@ -227,8 +237,8 @@ public class GitContentManager implements IContentManager {
                                     new TermsFilterInstruction(ids))
                                 .build());
 
-            if (getUnpublishedFilter() != null) {
-                finalFilter.putAll(getUnpublishedFilter());
+            if (getBaseFilters() != null) {
+                finalFilter.putAll(getBaseFilters());
             }
 
             ResultsWrapper<String> searchHits = this.searchProvider.termSearch(version, CONTENT_TYPE, null,
@@ -252,7 +262,7 @@ public class GitContentManager implements IContentManager {
 
             ResultsWrapper<String> searchHits = this.searchProvider.findByRegEx(version, CONTENT_TYPE,
                     Constants.TYPE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
-                    regex, startIndex, limit, this.getUnpublishedFilter());
+                    regex, startIndex, limit, this.getBaseFilters());
 
             List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
 
@@ -267,7 +277,7 @@ public class GitContentManager implements IContentManager {
             final String version, final String searchString, @Nullable final Map<String, List<String>> fieldsThatMustMatch,
             final Integer startIndex, final Integer limit) throws ContentManagerException {
         ResultsWrapper<String> searchHits = searchProvider.fuzzySearch(
-                version, CONTENT_TYPE, searchString, startIndex, limit, fieldsThatMustMatch, this.getUnpublishedFilter(),
+                version, CONTENT_TYPE, searchString, startIndex, limit, fieldsThatMustMatch, this.getBaseFilters(),
                 Constants.ID_FIELDNAME, Constants.TITLE_FIELDNAME, Constants.TAGS_FIELDNAME, Constants.VALUE_FIELDNAME,
                 Constants.CHILDREN_FIELDNAME);
 
@@ -352,7 +362,7 @@ public class GitContentManager implements IContentManager {
         }
 
         ResultsWrapper<String> searchHits = searchProvider.nestedMatchSearch(
-                version, CONTENT_TYPE, startIndex, limit, searchString,matchQuery, this.getUnpublishedFilter());
+                version, CONTENT_TYPE, startIndex, limit, searchString,matchQuery, this.getBaseFilters());
 
         List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
 
@@ -392,13 +402,13 @@ public class GitContentManager implements IContentManager {
             newSortInstructions = sortInstructions;
         }
 
-        // deal with unpublished filter if necessary
+        // add base filters to filter instructions
         Map<String, AbstractFilterInstruction> newFilterInstructions = filterInstructions;
-        if (this.getUnpublishedFilter() != null) {
+        if (this.getBaseFilters() != null) {
             if (null == newFilterInstructions) {
                 newFilterInstructions = Maps.newHashMap();
             }
-            newFilterInstructions.putAll(this.getUnpublishedFilter());
+            newFilterInstructions.putAll(this.getBaseFilters());
         }
 
         ResultsWrapper<String> searchHits = searchProvider.matchSearch(version, CONTENT_TYPE, fieldsToMatch,
@@ -432,7 +442,7 @@ public class GitContentManager implements IContentManager {
 
         ResultsWrapper<String> searchHits;
         searchHits = searchProvider.randomisedMatchSearch(version, CONTENT_TYPE, fieldsToMatch, startIndex, limit, randomSeed,
-                this.getUnpublishedFilter());
+                this.getBaseFilters());
 
         // setup object mapper to use pre-configured deserializer module.
         // Required to deal with type polymorphism
@@ -627,15 +637,24 @@ public class GitContentManager implements IContentManager {
     }
 
     /**
-     * Helper to decide whether the published filter should be set.
+     * Returns the basic filter configuration.
      *
      * @return either null or a map setup with the published filter config.
      */
-    private Map<String, AbstractFilterInstruction> getUnpublishedFilter() {
-        if (this.allowOnlyPublishedContent) {
-            return ImmutableMap.of("published", new SimpleFilterInstruction("true"));
+    private Map<String, AbstractFilterInstruction> getBaseFilters() {
+        if (!this.hideRegressionTestContent && !this.allowOnlyPublishedContent) {
+            return null;
         }
-        return null;
+
+        HashMap<String, AbstractFilterInstruction> filters = new HashMap<>();
+
+        if (this.hideRegressionTestContent) {
+            filters.put("tags", new SimpleExclusionInstruction("regression_test"));
+        }
+        if (this.allowOnlyPublishedContent) {
+            filters.put("published", new SimpleFilterInstruction("true"));
+        }
+        return ImmutableMap.copyOf(filters);
     }
 
     /**
