@@ -111,16 +111,15 @@ public class GitContentManager implements IContentManager {
         this.mapper = contentMapper;
         this.searchProvider = searchProvider;
         this.globalProperties = globalProperties;
+
         this.allowOnlyPublishedContent = Boolean.parseBoolean(
                 globalProperties.getProperty(Constants.SHOW_ONLY_PUBLISHED_CONTENT));
-
         if (this.allowOnlyPublishedContent) {
             log.info("API Configured to only allow published content to be returned.");
         }
 
         this.hideRegressionTestContent = Boolean.parseBoolean(
                 globalProperties.getProperty(Constants.HIDE_REGRESSION_TEST_CONTENT));
-
         if (this.hideRegressionTestContent) {
             log.info("API Configured to hide content tagged with 'regression_test'.");
         }

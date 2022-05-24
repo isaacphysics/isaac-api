@@ -46,7 +46,6 @@ public class GitContentManagerTest {
 	private GitContentManager defaultGCM;
 
 	private static final String INITIAL_VERSION = "0b72984c5eff4f53604fe9f1c724d3f387799db9";
-	private PropertiesLoader properties;
 
 	/**
 	 * Initial configuration of tests.
@@ -59,10 +58,8 @@ public class GitContentManagerTest {
 		this.database = createMock(GitDb.class);
 		this.searchProvider = createMock(ISearchProvider.class);
 		this.contentMapper = createMock(ContentMapper.class);
-		this.properties = createMock(PropertiesLoader.class);
 
-		this.defaultGCM = new GitContentManager(database, searchProvider,
-				contentMapper, properties);
+		this.defaultGCM = new GitContentManager(database, searchProvider, contentMapper);
 	}
 
 	/**
