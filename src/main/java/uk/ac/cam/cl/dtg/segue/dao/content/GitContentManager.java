@@ -639,7 +639,7 @@ public class GitContentManager implements IContentManager {
     /**
      * Returns the basic filter configuration.
      *
-     * @return either null or a map setup with the published filter config.
+     * @return either null or a map setup with filter/exclusion instructions, based on environment properties.
      */
     private Map<String, AbstractFilterInstruction> getBaseFilters() {
         if (!this.hideRegressionTestContent && !this.allowOnlyPublishedContent) {
