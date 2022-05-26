@@ -25,6 +25,7 @@
         <jetty.port.etl>8090</jetty.port.etl>
         <web.xml>override-api-web.xml</web.xml>
         <netty.version>4.1.76.Final</netty.version>
+        <dependency-check.version>7.1.0</dependency-check.version>
     </properties>
 
     <repositories>
@@ -431,7 +432,7 @@
         <dependency>
             <groupId>org.owasp</groupId>
             <artifactId>dependency-check-maven</artifactId>
-            <version>7.1.0</version>
+            <version>${dependency-check.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -448,7 +449,7 @@
             <plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
-                <version>7.1.0</version>
+                <version>${dependency-check.version}</version>
             </plugin>
             <plugin>
                 <groupId>org.sonatype.ossindex.maven</groupId>
