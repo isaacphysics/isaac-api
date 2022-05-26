@@ -568,6 +568,7 @@
         </resources>
     </build>
 
+    <!-- This block pins versions of indirect dependencies - useful to address security issues -->
     <dependencyManagement>
         <dependencies>
             <dependency>
