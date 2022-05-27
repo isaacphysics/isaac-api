@@ -24,11 +24,22 @@ import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuiz;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuizSection;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicChemistryQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.content.ChemicalFormula;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
+import uk.ac.cam.cl.dtg.isaac.dos.content.ChoiceQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.content.CodeSnippet;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
+import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
+import uk.ac.cam.cl.dtg.isaac.dos.content.EmailTemplate;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Formula;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Media;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Quantity;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Video;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
-import uk.ac.cam.cl.dtg.isaac.dos.content.*;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
 import javax.annotation.Nullable;
@@ -36,13 +47,22 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.math.BigDecimal;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static com.google.common.collect.Maps.immutableEntry;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX_TYPE;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Created by Ian on 17/10/2016.
@@ -961,9 +981,9 @@ public class ContentIndexer {
                 if (choice instanceof Quantity) {
                     Quantity quantity = (Quantity) choice;
 
-                    // Check valid number:
+                    // Check valid number by parsing in the same way as IsaacNumericValidator::stringValueToDouble:
                     try {
-                        Double.parseDouble(quantity.getValue());
+                        new BigDecimal(quantity.getValue()).doubleValue();
                     } catch (NumberFormatException e) {
                         this.registerContentProblem(content,
                                 "Numeric Question: " + q.getId() + " has Quantity (" + quantity.getValue()

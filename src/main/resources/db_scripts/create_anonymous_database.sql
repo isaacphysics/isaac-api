@@ -97,6 +97,9 @@ CREATE TABLE anonymous.gameboards AS
     SELECT
         id,
         contents,
+        wildcard,
+        wildcard_position,
+        game_filter,
         anonymise(owner_user_id, hash_salt) AS owner_user_id,
         creation_method,
         creation_date,

@@ -468,7 +468,7 @@ public class IsaacController extends AbstractIsaacFacade {
                 "achievementsRecord", userBadgeManager.getAllUserBadges(user)
         );
 
-        return Response.ok(userSnapshot).build();
+        return Response.ok(userSnapshot).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
     }
 
     /**
@@ -521,7 +521,7 @@ public class IsaacController extends AbstractIsaacFacade {
                 this.getLogManager().logEvent(user, request, IsaacServerLogType.VIEW_USER_PROGRESS,
                         ImmutableMap.of(USER_ID_FKEY_FIELDNAME, userOfInterestFull.getId()));
 
-                return Response.ok(userProgressInformation).build();
+                return Response.ok(userProgressInformation).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
             } else {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to view this users data.")
                         .toResponse();
