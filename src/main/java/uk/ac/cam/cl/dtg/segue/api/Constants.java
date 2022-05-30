@@ -102,6 +102,13 @@ public final class Constants {
     public static final String SHOW_ONLY_PUBLISHED_CONTENT = "SHOW_ONLY_PUBLISHED_CONTENT";
 
     /**
+     * Constant representing the key for the configuration option indicating whether content tagged with
+     * "regression_test" should be visible.
+     */
+    public static final String HIDE_REGRESSION_TEST_CONTENT = "HIDE_REGRESSION_TEST_CONTENT";
+
+
+    /**
      * Constant representing the key for the location for the version config file..
      */
     public static final String CONTENT_INDICES_LOCATION = "CONTENT_INDICES_LOCATION";
