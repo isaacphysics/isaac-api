@@ -67,7 +67,7 @@ public class IsaacClozeValidator implements IValidator {
         if (null == clozeQuestion.getChoices() || clozeQuestion.getChoices().isEmpty()) {
             log.error("Question does not have any answers. " + question.getId() + " src: "
                     + question.getCanonicalSourceFile());
-            feedback = new Content("This question does not have any correct answers");
+            feedback = new Content("This question does not have any correct answers!");
         }
 
         if (null == clozeQuestion.getItems() || clozeQuestion.getItems().isEmpty()) {
@@ -79,7 +79,7 @@ public class IsaacClozeValidator implements IValidator {
         // STEP 1: Did they provide a valid answer?
 
         if (null == feedback && (null == submittedChoice.getItems() || submittedChoice.getItems().isEmpty())) {
-            feedback = new Content("You did not provide an answer");
+            feedback = new Content("You did not provide an answer.");
         }
 
         Set<String> submittedItemIdSet = null;

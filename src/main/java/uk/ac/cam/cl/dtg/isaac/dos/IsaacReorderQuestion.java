@@ -29,4 +29,5 @@ import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
 @DTOMapping(IsaacReorderQuestionDTO.class)
 @JsonContentType("isaacReorderQuestion")
 @ValidatesWith(IsaacReorderValidator.class)
-public class IsaacReorderQuestion extends IsaacItemQuestion { }
+public class IsaacReorderQuestion extends IsaacItemQuestion {
+}
