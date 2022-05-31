@@ -375,7 +375,7 @@ public class ElasticSearchProvider implements ISearchProvider {
      *            - in the form "fieldName --> instruction key --> instruction value"
      * @return filterbuilder
      */
-    private QueryBuilder generateFilterQuery(final Map<String, AbstractFilterInstruction> filterInstructions) {
+    public QueryBuilder generateFilterQuery(final Map<String, AbstractFilterInstruction> filterInstructions) {
         BoolQueryBuilder filter = QueryBuilders.boolQuery();
         for (Entry<String, AbstractFilterInstruction> fieldToFilterInstruction : filterInstructions.entrySet()) {
             // date filter logic
@@ -398,7 +398,6 @@ public class ElasticSearchProvider implements ISearchProvider {
             if (fieldToFilterInstruction.getValue() instanceof SimpleFilterInstruction) {
                 SimpleFilterInstruction sfi = (SimpleFilterInstruction) fieldToFilterInstruction.getValue();
 
-
                 List<IContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
                 fieldsToMatch.add(new IContentManager.BooleanSearchClause(
                         fieldToFilterInstruction.getKey(), Constants.BooleanOperator.AND,
@@ -410,6 +409,17 @@ public class ElasticSearchProvider implements ISearchProvider {
             if (fieldToFilterInstruction.getValue() instanceof TermsFilterInstruction) {
                 TermsFilterInstruction sfi = (TermsFilterInstruction) fieldToFilterInstruction.getValue();
                 filter.must(QueryBuilders.termsQuery(fieldToFilterInstruction.getKey(), sfi.getMatchValues()));
+            }
+
+            if (fieldToFilterInstruction.getValue() instanceof SimpleExclusionInstruction) {
+                SimpleExclusionInstruction sfi = (SimpleExclusionInstruction) fieldToFilterInstruction.getValue();
+
+                List<IContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
+                fieldsToMatch.add(new IContentManager.BooleanSearchClause(
+                        fieldToFilterInstruction.getKey(), Constants.BooleanOperator.AND,
+                        Collections.singletonList(sfi.getMustNotMatchValue())));
+
+                filter.mustNot(this.generateBoolMatchQuery(fieldsToMatch));
             }
         }
 

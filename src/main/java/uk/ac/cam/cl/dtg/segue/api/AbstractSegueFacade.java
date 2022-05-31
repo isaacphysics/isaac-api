@@ -168,6 +168,8 @@ public abstract class AbstractSegueFacade {
         // assume if null or false that the data is private
         if (isPublicData != null && isPublicData) {
             cc.getCacheExtension().put("public", "");
+        } else {
+            cc.setPrivate(true);
         }
         
         return cc;

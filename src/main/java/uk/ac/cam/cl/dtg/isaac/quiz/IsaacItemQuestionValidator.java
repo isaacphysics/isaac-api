@@ -78,7 +78,7 @@ public class IsaacItemQuestionValidator implements IValidator {
         // STEP 1: Did they provide a valid answer?
 
         if (null == feedback && (null == submittedChoice.getItems() || submittedChoice.getItems().isEmpty())) {
-            feedback = new Content("You did not provide an answer");
+            feedback = new Content("You did not provide an answer.");
         }
 
         Set<String> submittedItemIds = null;
@@ -87,10 +87,10 @@ public class IsaacItemQuestionValidator implements IValidator {
             submittedItemIds = submittedChoice.getItems().stream().map(Item::getId).collect(Collectors.toSet());
             allowedItemIds = itemQuestion.getItems().stream().map(Item::getId).collect(Collectors.toSet());
             if (!allowedItemIds.containsAll(submittedItemIds)) {
-                feedback = new Content("You did not provide a valid answer; it contained unrecognised items");
+                feedback = new Content("You did not provide a valid answer; it contained unrecognised items!");
             }
             if (submittedItemIds.size() != submittedChoice.getItems().size()) {
-                feedback = new Content("You did not provide a valid answer; it contained duplicate items");
+                feedback = new Content("You did not provide a valid answer; it contained duplicate items!");
             }
         }
 

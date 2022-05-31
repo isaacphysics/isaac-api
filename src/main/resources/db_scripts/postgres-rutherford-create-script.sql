@@ -70,6 +70,18 @@ ALTER TABLE public.assignments_id_seq OWNER TO rutherford;
 
 ALTER SEQUENCE public.assignments_id_seq OWNED BY public.assignments.id;
 
+--
+-- Name: scheduled_emails; Type: TABLE; Schema: public; Owner: rutherford
+--
+
+CREATE TABLE public.scheduled_emails (
+    email_id TEXT NOT NULL,
+    sent TIMESTAMP WITHOUT TIME ZONE,
+    CONSTRAINT scheduled_emails_pk PRIMARY KEY (email_id)
+);
+
+
+ALTER TABLE public.scheduled_emails OWNER TO rutherford;
 
 --
 -- Name: event_bookings; Type: TABLE; Schema: public; Owner: rutherford
@@ -132,7 +144,6 @@ ALTER TABLE public.external_accounts OWNER TO rutherford;
 CREATE TABLE public.gameboards (
     id character varying NOT NULL,
     title text,
-    questions character varying[],
     contents jsonb[] DEFAULT array[]::jsonb[] NOT NULL,
     wildcard jsonb,
     wildcard_position integer,
@@ -696,7 +707,6 @@ CREATE TABLE public.users (
     registration_date timestamp without time zone,
     school_id text,
     school_other text,
-    exam_board text,
     registered_contexts jsonb[] DEFAULT array[]::jsonb[] NOT NULL,
     registered_contexts_last_confirmed timestamp without time zone,
     last_updated timestamp without time zone,

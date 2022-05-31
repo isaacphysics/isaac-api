@@ -147,11 +147,15 @@ public class AuthenticationFacade extends AbstractSegueFacade {
                         .toResponse();
             }
 
+            RegisteredUserDTO userToLookup;
             if (currentRegisteredUser.getId().equals(userId)) {
-                return Response.ok(this.userManager.getUsersAuthenticationSettings(currentRegisteredUser)).build();
+                userToLookup = currentRegisteredUser;
             } else {
-                return Response.ok(this.userManager.getUsersAuthenticationSettings(this.userManager.getUserDTOById(userId))).build();
+                userToLookup = this.userManager.getUserDTOById(userId);
             }
+
+            return Response.ok(this.userManager.getUsersAuthenticationSettings(userToLookup))
+                    .cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {

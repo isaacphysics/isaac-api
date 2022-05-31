@@ -71,9 +71,7 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueServerLogType;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdFromQuestionId;
 
 /**
@@ -214,7 +212,8 @@ public class QuestionFacade extends AbstractSegueFacade {
                 fromDateObject = userOfInterest.getRegistrationDate();
             }
 
-            return Response.ok(this.questionManager.getUsersQuestionAttemptCountsByDate(userOfInterest, fromDateObject, new Date(toDate), perDay)).build();
+            return Response.ok(this.questionManager.getUsersQuestionAttemptCountsByDate(userOfInterest, fromDateObject, new Date(toDate), perDay))
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (NoUserException e) {

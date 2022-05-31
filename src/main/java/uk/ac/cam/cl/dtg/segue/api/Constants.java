@@ -102,6 +102,13 @@ public final class Constants {
     public static final String SHOW_ONLY_PUBLISHED_CONTENT = "SHOW_ONLY_PUBLISHED_CONTENT";
 
     /**
+     * Constant representing the key for the configuration option indicating whether content tagged with
+     * "regression_test" should be visible.
+     */
+    public static final String HIDE_REGRESSION_TEST_CONTENT = "HIDE_REGRESSION_TEST_CONTENT";
+
+
+    /**
      * Constant representing the key for the location for the version config file..
      */
     public static final String CONTENT_INDICES_LOCATION = "CONTENT_INDICES_LOCATION";
@@ -189,6 +196,8 @@ public final class Constants {
     public static final String MAILJET_API_SECRET = "MAILJET_API_SECRET";
     public static final String MAILJET_NEWS_LIST_ID = "MAILJET_NEWS_LIST_ID";
     public static final String MAILJET_EVENTS_LIST_ID = "MAILJET_EVENTS_LIST_ID";
+
+    public static final String EVENT_PRE_POST_EMAILS = "EVENT_PRE_POST_EMAILS";
 
     // MailGun Key
     public static final String MAILGUN_SECRET_KEY = "MAILGUN_SECRET_KEY";

@@ -219,7 +219,7 @@ public class GroupsFacade extends AbstractSegueFacade {
                 results.add(map);
             }
 
-            return Response.ok(results).build();
+            return Response.ok(results).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
@@ -770,7 +770,7 @@ public class GroupsFacade extends AbstractSegueFacade {
                 s.setUser(associationManager.enforceAuthorisationPrivacy(currentUser, s.getUser()));
             }
 
-            return Response.ok(groupProgressSummary).build();
+            return Response.ok(groupProgressSummary).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (SegueDatabaseException e) {
             log.error("Database error while trying to get group progress for a group. ", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();

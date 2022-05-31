@@ -10,21 +10,24 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <segue.version>2.21.1-SNAPSHOT</segue.version>
+        <segue.version>v2.22.1-SNAPSHOT</segue.version>
         <log4j.version>2.17.1</log4j.version>
-        <resteasy.version>4.7.0.Final</resteasy.version>
+        <resteasy.version>4.7.6.Final</resteasy.version>
         <guice.version>4.2.3</guice.version>
-        <oauth-client.version>1.31.0</oauth-client.version>
-        <jackson.version>2.13.2</jackson.version>
-        <jackson-databind.version>2.13.2.2</jackson-databind.version>
+        <oauth-client.version>1.33.3</oauth-client.version>
+        <jackson.version>2.13.3</jackson.version>
+        <jackson-databind.version>2.13.3</jackson-databind.version>
         <powermock.version>2.0.4</powermock.version>
         <swagger-ui-version>3.19.5</swagger-ui-version>
         <prometheus.version>0.8.0</prometheus.version>
-        <jetty-version>9.4.42.v20210604</jetty-version>
+        <jetty-version>9.4.46.v20220331</jetty-version>
         <jetty.port.api>8080</jetty.port.api>
         <jetty.port.etl>8090</jetty.port.etl>
         <testcontainers.version>1.17.2</testcontainers.version>
         <web.xml>override-api-web.xml</web.xml>
+        <netty.version>4.1.77.Final</netty.version>
+        <dependency-check.version>7.1.0</dependency-check.version>
+        <ossindex.version>3.2.0</ossindex.version>
     </properties>
 
     <repositories>
@@ -139,7 +142,7 @@
         </dependency>
         <dependency>
             <groupId>org.eclipse.jgit</groupId>
-            <artifactId>org.eclipse.jgit.ssh.jsch</artifactId>
+            <artifactId>org.eclipse.jgit.ssh.apache</artifactId>
             <version>5.13.0.202109080827-r</version>
         </dependency>
 
@@ -153,7 +156,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>30.1.1-jre</version>
+            <version>31.1-jre</version>
         </dependency>
 
         <dependency>
@@ -375,7 +378,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-dbcp2</artifactId>
-            <version>2.7.0</version>
+            <version>2.9.0</version>
         </dependency>
 
         <dependency>
@@ -446,15 +449,43 @@
             </exclusions>
         </dependency>
 
+        <!-- These two don't need to be included in the war package so their scope is "provided" which means we
+             promise to make them available in the deployment environment, but we aren't going to because they are
+             not needed at runtime anyway. -->
+        <dependency>
+            <groupId>org.owasp</groupId>
+            <artifactId>dependency-check-maven</artifactId>
+            <version>${dependency-check.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.sonatype.ossindex.maven</groupId>
+            <artifactId>ossindex-maven-plugin</artifactId>
+            <version>${ossindex.version}</version>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <build>
         <finalName>${project.artifactId}</finalName>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.1.1</version>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>${dependency-check.version}</version>
+                <configuration>
+                    <!-- Skip packages in the "provided" scope as they are not relevant -->
+                    <skipProvidedScope>true</skipProvidedScope>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.sonatype.ossindex.maven</groupId>
+                <artifactId>ossindex-maven-plugin</artifactId>
+                <version>${ossindex.version}</version>
+                <configuration>
+                    <!-- Limit to the "runtime" scope -->
+                    <scope>runtime</scope>
+                </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-antrun-plugin</artifactId>
@@ -568,17 +599,84 @@
         </resources>
     </build>
 
+    <!-- This block pins versions of indirect dependencies - useful to address security issues -->
+    <!-- TODO: When doing dependency updates, please make sure these are still necessary, and remove them if not -->
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>org.apache.james</groupId>
                 <artifactId>apache-mime4j</artifactId>
-                <version>0.8.3</version>
+                <version>0.8.7</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-core</artifactId>
+                <version>3.8.5</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.google.code.gson</groupId>
+                <artifactId>gson</artifactId>
+                <version>2.9.0</version>
             </dependency>
             <dependency>
-                <groupId>commons-codec</groupId>
-                <artifactId>commons-codec</artifactId>
-                <version>1.15</version>
+                <groupId>com.google.http-client</groupId>
+                <artifactId>google-http-client-gson</artifactId>
+                <version>1.41.8</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp</artifactId>
+                <version>3.14.9</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-buffer</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-http</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-common</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-handler</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-resolver</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-smile</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-cbor</artifactId>
+                <version>${jackson.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
