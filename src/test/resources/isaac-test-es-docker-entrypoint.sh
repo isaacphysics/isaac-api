@@ -10,6 +10,8 @@ umask 0002
 rm -rf /usr/share/elasticsearch/data
 # Expand our custom pre-built index
 tar -xpf isaac-test-es-data.tar.gz -C /usr/share/elasticsearch
+chown -R elasticsearch:root data
+rm isaac-test-es-data.tar.gz
 # Remove node 0's lock otherwise ES cannot start
 rm -f /usr/share/elasticsearch/data/nodes/0/node.lock
 # Also remove write locks for node 0 otherwise ES cannot start
