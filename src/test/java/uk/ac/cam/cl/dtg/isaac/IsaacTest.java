@@ -80,8 +80,8 @@ abstract class AbstractContainerBaseTest extends AbstractModule {
                 .withCopyFileToContainer(MountableFile.forClasspathResource("isaac-test-es-docker-entrypoint.sh"), "/usr/local/bin/docker-entrypoint.sh")
                 .withExposedPorts(9200, 9300)
                 .withEnv("cluster.name", "isaac")
-                .withEnv("network.host", "0.0.0.0")
                 .withEnv("node.name", "localhost")
+                .withEnv("network.host", "0.0.0.0")
         ;
 
         postgres.start();
