@@ -10,10 +10,10 @@ import com.google.inject.util.Modules;
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.SystemUtils;
 import org.eclipse.jgit.api.Git;
-import org.h2.result.ResultRemote;
 import org.junit.Before;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.reflections.Reflections;
 import uk.ac.cam.cl.dtg.isaac.IsaacTest;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
@@ -23,12 +23,12 @@ import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
-import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.PgTransactionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISecondFactorAuthenticator;
@@ -37,10 +37,10 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.associations.PgAssociationDataManager;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgAnonymousUsers;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgUsers;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
@@ -48,14 +48,18 @@ import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
+import static org.easymock.EasyMock.expect;
 import static org.junit.Assert.assertEquals;
 import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.replay;
+import static org.junit.Assert.assertNotNull;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_LINUX_CONFIG_LOCATION;
 
 //@RunWith(PowerMockRunner.class)
@@ -74,7 +78,7 @@ public class EventsFacadeTest extends IsaacTest {
             configLocation = System.getenv("SEGUE_TEST_CONFIG_LOCATION");
         }
 
-        PropertiesLoader mockedProperties = new PropertiesLoader(configLocation) {
+        PropertiesLoader properties = new PropertiesLoader(configLocation) {
             final Map<String, String> propertyOverrides = ImmutableMap.of(
                     "SEARCH_CLUSTER_NAME", "isaac"
             );
@@ -94,19 +98,21 @@ public class EventsFacadeTest extends IsaacTest {
         PgAnonymousUsers pgAnonymousUsers = new PgAnonymousUsers(postgresSqlDb);
         QuestionManager questionDb = createMock(QuestionManager.class);
 
+        ContentMapper contentMapper = new ContentMapper(new Reflections("uk.ac.cam.cl.dtg"));
+        MapperFacade mapper = contentMapper.getAutoMapper();
+
         // The following may need some actual authentication providers...
         Map<AuthenticationProvider, IAuthenticator> providersToRegister = createMock(Map.class);
 
-        MapperFacade dtoMapper = createMock(MapperFacade.class);
         EmailManager emailManager = createMock(EmailManager.class);
         ILogManager logManager = createMock(ILogManager.class);
-        UserAuthenticationManager userAuthenticationManager = new UserAuthenticationManager(pgUsers, mockedProperties,
+        UserAuthenticationManager userAuthenticationManager = new UserAuthenticationManager(pgUsers, properties,
                 providersToRegister, emailManager);
         ISecondFactorAuthenticator secondFactorManager = createMock(SegueTOTPAuthenticator.class);
         AbstractUserPreferenceManager userPreferenceManager = new PgUserPreferenceManager(postgresSqlDb);
 
         UserAccountManager userAccountManager =
-                new UserAccountManager(pgUsers, questionDb, mockedProperties, providersToRegister, dtoMapper,
+                new UserAccountManager(pgUsers, questionDb, properties, providersToRegister, mapper,
                         emailManager, pgAnonymousUsers, logManager, userAuthenticationManager, secondFactorManager,
                         userPreferenceManager);
 
@@ -116,10 +122,9 @@ public class EventsFacadeTest extends IsaacTest {
                 new ElasticSearchProvider(ElasticSearchProvider.getTransportClient(
                         "isaac",
                         "localhost",
-                        elasticsearch.getMappedPort(9200))
+                        elasticsearch.getMappedPort(9300))
                 );
-        ContentMapper contentMapper = new ContentMapper();
-        IContentManager contentManager = new GitContentManager(gitDb, elasticSearchProvider, contentMapper, mockedProperties);
+        IContentManager contentManager = new GitContentManager(gitDb, elasticSearchProvider, contentMapper, properties);
         ObjectMapper objectMapper = new ObjectMapper();
         EventBookingPersistenceManager bookingPersistanceManager =
                 new EventBookingPersistenceManager(postgresSqlDb, userAccountManager, contentManager, objectMapper);
@@ -128,17 +133,12 @@ public class EventsFacadeTest extends IsaacTest {
         PgTransactionManager pgTransactionManager = new PgTransactionManager(postgresSqlDb);
         EventBookingManager eventBookingManager =
                 new EventBookingManager(bookingPersistanceManager, emailManager, userAssociationManager,
-                        mockedProperties, groupManager, userAccountManager, pgTransactionManager);
-
-//        ResultsWrapper<ContentDTO> events;
-//        try {
-//            events = contentManager.getAllByTypeRegEx("current", ".*Event.*", 0, 1000);
-//        } catch (ContentManagerException e) {
-//            throw new RuntimeException(e);
-//        }
+                        properties, groupManager, userAccountManager, pgTransactionManager);
+        UserBadgeManager userBadgeManager = createMock(UserBadgeManager.class);
+        SchoolListReader schoolListReader = createMock(SchoolListReader.class);
 
         // Create Mocked Injector
-        SegueGuiceConfigurationModule.setGlobalPropertiesIfNotSet(mockedProperties);
+        SegueGuiceConfigurationModule.setGlobalPropertiesIfNotSet(properties);
         Module productionModule = new SegueGuiceConfigurationModule();
         Module testModule = Modules.override(productionModule).with(new AbstractModule() {
             @Override protected void configure() {
@@ -151,18 +151,25 @@ public class EventsFacadeTest extends IsaacTest {
         });
         Injector injector = Guice.createInjector(testModule);
         // Register DTOs to json mapper
-        ContentMapper mapper = injector.getInstance(ContentMapper.class);
+        MapperFacade mapperFacade = contentMapper.getAutoMapper();
         // Get instance of class to test
-        eventsFacade = injector.getInstance(EventsFacade.class);
+        eventsFacade = new EventsFacade(properties, logManager, eventBookingManager, userAccountManager, contentManager, "latest", userBadgeManager, userAssociationManager, groupManager, userAccountManager, schoolListReader, mapperFacade);
     }
 
     @Test
-    public void someTest() {
+    public void getEventsTest() throws InterruptedException {
         HttpServletRequest request = createMock(HttpServletRequest.class);
-//        replay(request);
+        Cookie[] emptyCookies = {};
+        expect(request.getCookies()).andReturn(emptyCookies).anyTimes();
+        replay(request);
 
         Response response = eventsFacade.getEvents(request, null, 0, 10, null, null, null, null, null, null);
         int status = response.getStatus();
         assertEquals(status, Response.Status.OK.getStatusCode());
+        ResultsWrapper<IsaacEventPageDTO> entity = (ResultsWrapper<IsaacEventPageDTO>) response.getEntity();
+        assertNotNull(entity);
+        List<IsaacEventPageDTO> results = entity.getResults();
+        assertNotNull(entity);
+        assertEquals(results.size(), 5);
     }
 }
