@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.AbstractModule;
 import org.junit.Before;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.containers.output.BaseConsumer;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
@@ -32,6 +33,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizSectionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -75,13 +77,13 @@ abstract class AbstractContainerBaseTest extends AbstractModule {
                 .withCommand("postgres", "-c", "fsync=off", "-c", "log_statement=all") // This is for debugging, it may be removed later
         ;
 
-        elasticsearch = new ElasticsearchContainer(DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch-oss:7.8.0"))
+        // TODO It would be nice if we could pull the version from pom.xml
+        elasticsearch = new ElasticsearchContainer(DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch:7.14.2"))
                 .withCopyFileToContainer(MountableFile.forClasspathResource("isaac-test-es-data.tar.gz"), "/usr/share/elasticsearch/isaac-test-es-data.tar.gz")
                 .withCopyFileToContainer(MountableFile.forClasspathResource("isaac-test-es-docker-entrypoint.sh"), "/usr/local/bin/docker-entrypoint.sh")
                 .withExposedPorts(9200, 9300)
                 .withEnv("cluster.name", "isaac")
                 .withEnv("node.name", "localhost")
-                .withEnv("network.host", "0.0.0.0")
         ;
 
         postgres.start();
