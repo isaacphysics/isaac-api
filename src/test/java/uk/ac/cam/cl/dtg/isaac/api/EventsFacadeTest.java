@@ -159,14 +159,15 @@ public class EventsFacadeTest extends IsaacTest {
     @Test
     public void getEventsTest() throws InterruptedException {
         HttpServletRequest request = createMock(HttpServletRequest.class);
-        Cookie[] emptyCookies = {};
-        expect(request.getCookies()).andReturn(emptyCookies).anyTimes();
+        expect(request.getCookies()).andReturn(new Cookie[]{}).anyTimes();
         replay(request);
 
         Response response = eventsFacade.getEvents(request, null, 0, 10, null, null, null, null, null, null);
         int status = response.getStatus();
         assertEquals(status, Response.Status.OK.getStatusCode());
-        ResultsWrapper<IsaacEventPageDTO> entity = (ResultsWrapper<IsaacEventPageDTO>) response.getEntity();
+        Object entityObject = response.getEntity();
+        assertNotNull(entityObject);
+        @SuppressWarnings("unchecked") ResultsWrapper<IsaacEventPageDTO> entity = (ResultsWrapper<IsaacEventPageDTO>) entityObject;
         assertNotNull(entity);
         List<IsaacEventPageDTO> results = entity.getResults();
         assertNotNull(entity);
