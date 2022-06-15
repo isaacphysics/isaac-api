@@ -208,9 +208,9 @@ public class IsaacNumericValidator implements IValidator {
         } catch (NumberFormatException e) {
             log.debug("Validation failed for '" + answerFromUser.getValue() + " " + answerFromUser.getUnits() + "': "
                     + "cannot parse as number!");
-            HashSet<String> responseTags = new HashSet<>(ImmutableList.of("nq_format"));
+            HashSet<String> responseTags = new HashSet<>(ImmutableList.of("unrecognised_format"));
             if (answerFromUser.getValue().matches(INVALID_NEGATIVE_STANDARD_FORM)) {
-                responseTags.add("nq_format_std_form");
+                responseTags.add("invalid_std_form");
             }
             Content invalidFormatResponse = new Content("Your answer is not in a format we recognise, please enter your answer as a decimal number.");
             invalidFormatResponse.setTags(responseTags);
