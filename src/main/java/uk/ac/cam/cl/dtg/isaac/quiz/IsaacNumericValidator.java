@@ -212,7 +212,7 @@ public class IsaacNumericValidator implements IValidator {
             if (answerFromUser.getValue().matches(INVALID_NEGATIVE_STANDARD_FORM)) {
                 responseTags.add("nq_format_std_form");
             }
-            Content invalidFormatResponse = new Content(DEFAULT_VALIDATION_RESPONSE);
+            Content invalidFormatResponse = new Content("Your answer is not in a format we recognise, please enter your answer as a decimal number.");
             invalidFormatResponse.setTags(responseTags);
             return new QuantityValidationResponse(question.getId(), answerFromUser, false, invalidFormatResponse,
                     false, false, new Date());
