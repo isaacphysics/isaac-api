@@ -101,7 +101,7 @@ public class IsaacNumericValidatorTest {
         // Test response:
         QuestionValidationResponse response = validator.validateQuestionResponse(numericQuestionNoUnits, q);
         assertFalse(response.isCorrect());
-        assertTrue(response.getExplanation().getTags().contains("nq_format"));
+        assertTrue(response.getExplanation().getTags().contains("unrecognised_format"));
     }
 
     /*
@@ -257,8 +257,8 @@ public class IsaacNumericValidatorTest {
         // Test response:
         QuestionValidationResponse response = validator.validateQuestionResponse(numericQuestionNoUnits, q);
         assertFalse(response.isCorrect());
-        assertTrue(response.getExplanation().getTags().contains("nq_format"));
-        assertTrue(response.getExplanation().getTags().contains("nq_format_std_form"));
+        assertTrue(response.getExplanation().getTags().contains("unrecognised_format"));
+        assertTrue(response.getExplanation().getTags().contains("invalid_std_form"));
     }
 
     /*
