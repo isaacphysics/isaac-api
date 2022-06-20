@@ -795,6 +795,12 @@ public class ContentIndexer {
 
         log.info(String.format("Validation processing (%s) complete. There are %s files with content problems", sha,
                 indexProblemCache.size()));
+
+        if (indexProblemCache.size() == 0) {
+            // Register a no-op style error to simplify application logic by ensuring there is always a content errors index
+            Content dummyContentRecord = new Content() {{setCanonicalSourceFile("\uD83D\uDE0E");}};
+            this.registerContentProblem(dummyContentRecord, "No content errors!", indexProblemCache);
+        }
     }
 
     /**

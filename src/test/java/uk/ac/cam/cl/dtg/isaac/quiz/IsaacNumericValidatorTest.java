@@ -101,7 +101,7 @@ public class IsaacNumericValidatorTest {
         // Test response:
         QuestionValidationResponse response = validator.validateQuestionResponse(numericQuestionNoUnits, q);
         assertFalse(response.isCorrect());
-        assertTrue(response.getExplanation().getValue().contains("not in a format we recognise"));
+        assertTrue(response.getExplanation().getTags().contains("unrecognised_format"));
     }
 
     /*
@@ -257,7 +257,8 @@ public class IsaacNumericValidatorTest {
         // Test response:
         QuestionValidationResponse response = validator.validateQuestionResponse(numericQuestionNoUnits, q);
         assertFalse(response.isCorrect());
-        assertTrue(response.getExplanation().getValue().contains("must include a `^` between the 10 and the exponent"));
+        assertTrue(response.getExplanation().getTags().contains("unrecognised_format"));
+        assertTrue(response.getExplanation().getTags().contains("invalid_std_form"));
     }
 
     /*

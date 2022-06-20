@@ -509,6 +509,8 @@ public class EventBookingManager {
                     // attempt to book them on the event
                     EventBookingDTO reservation;
 
+                    // Set the reservation close date (date at which an unconfirmed reservation is cancelled) to
+                    // the day of the event or in EVENT_RESERVATION_CLOSE_INTERVAL_DAYS from now, whichever is earlier.
                     Calendar calendar = Calendar.getInstance();
                     calendar.add(Calendar.DAY_OF_MONTH, EVENT_RESERVATION_CLOSE_INTERVAL_DAYS);
                     Date reservationCloseDate = Stream.of(calendar.getTime(), event.getDate())

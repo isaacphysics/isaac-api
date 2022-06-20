@@ -208,12 +208,13 @@ public class IsaacNumericValidator implements IValidator {
         } catch (NumberFormatException e) {
             log.debug("Validation failed for '" + answerFromUser.getValue() + " " + answerFromUser.getUnits() + "': "
                     + "cannot parse as number!");
-
-            String feedback = "Your answer is not in a format we recognise, please enter your answer as a decimal number.";
+            HashSet<String> responseTags = new HashSet<>(ImmutableList.of("unrecognised_format"));
             if (answerFromUser.getValue().matches(INVALID_NEGATIVE_STANDARD_FORM)) {
-                feedback += "<br>When writing standard form, you must include a `^` between the 10 and the exponent.";
+                responseTags.add("invalid_std_form");
             }
-            return new QuantityValidationResponse(question.getId(), answerFromUser, false, new Content(feedback),
+            Content invalidFormatResponse = new Content("Your answer is not in a format we recognise, please enter your answer as a decimal number.");
+            invalidFormatResponse.setTags(responseTags);
+            return new QuantityValidationResponse(question.getId(), answerFromUser, false, invalidFormatResponse,
                     false, false, new Date());
         }
     }
