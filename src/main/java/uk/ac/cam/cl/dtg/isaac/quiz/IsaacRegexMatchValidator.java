@@ -110,6 +110,11 @@ public class IsaacRegexMatchValidator implements IValidator {
             }
         }
 
+        // STEP 3: If we still have no feedback to give, use the question's default feedback if any to use:
+        if (feedbackIsNullOrEmpty(feedback) && null != regexMatchQuestion.getDefaultFeedback()) {
+            feedback = regexMatchQuestion.getDefaultFeedback();
+        }
+
         return new QuestionValidationResponse(question.getId(), userAnswer, responseCorrect, feedback, new Date());
     }
 
