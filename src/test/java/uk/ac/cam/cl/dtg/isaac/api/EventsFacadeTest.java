@@ -75,6 +75,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.easymock.EasyMock.and;
 import static org.easymock.EasyMock.capture;
@@ -217,18 +218,21 @@ public class EventsFacadeTest extends IsaacTest {
 
         Capture<Cookie> capturedCookie = Capture.newInstance(); // new Capture<Cookie>(); seems deprecated
 
-        HttpServletRequest request = createNiceMock(HttpServletRequest.class);
-        expect(request.getSession()).andReturn(httpSession).atLeastOnce();
-        expect(request.getCookies()).andReturn((Cookie[]) Collections.singletonList(capturedCookie).toArray()).atLeastOnce();
-        replay(request);
+        HttpServletRequest loginRequest = createNiceMock(HttpServletRequest.class);
+        expect(loginRequest.getSession()).andReturn(httpSession).atLeastOnce();
+        replay(loginRequest);
 
-        HttpServletResponse response = createNiceMock(HttpServletResponse.class);
-        response.addCookie(and(capture(capturedCookie), isA(Cookie.class)));
+        HttpServletResponse loginResponse = createNiceMock(HttpServletResponse.class);
+        loginResponse.addCookie(and(capture(capturedCookie), isA(Cookie.class)));
         expectLastCall().atLeastOnce(); // This is how you expect void methods, apparently...
-        replay(response);
+        replay(loginResponse);
 
-        RegisteredUserDTO testUsers = userAccountManager.authenticateWithCredentials(request, response, AuthenticationProvider.SEGUE.toString(), "test-teacher@test.com", "test1234", false);
-        Response createBookingResponse = eventsFacade.createBookingForMe(request, "b34eeb0c-7304-4c25-b83b-f28c78b5d078", null);
+        HttpServletRequest createBookingRequest = createNiceMock(HttpServletRequest.class);
+        expect(createBookingRequest.getCookies()).andReturn((Cookie[]) Collections.singletonList(capturedCookie).toArray()).atLeastOnce();
+        replay(createBookingRequest);
+
+        RegisteredUserDTO testUsers = userAccountManager.authenticateWithCredentials(loginRequest, loginResponse, AuthenticationProvider.SEGUE.toString(), "test-teacher@test.com", "test1234", false);
+        Response createBookingResponse = eventsFacade.createBookingForMe(createBookingRequest, "b34eeb0c-7304-4c25-b83b-f28c78b5d078", null);
         assertEquals(createBookingResponse.getStatus(), Response.Status.OK.getStatusCode());
         // Response response = eventsFacade.getEventBookingsById(request, )
     }
