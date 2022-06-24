@@ -426,6 +426,12 @@
             </exclusions>
         </dependency>
 
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15on</artifactId>
+            <version>1.70</version>
+        </dependency>
+
         <!-- These two don't need to be included in the war package so their scope is "provided" which means we
              promise to make them available in the deployment environment, but we aren't going to because they are
              not needed at runtime anyway. -->
