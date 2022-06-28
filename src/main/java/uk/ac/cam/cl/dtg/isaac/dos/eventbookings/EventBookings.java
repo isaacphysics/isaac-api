@@ -16,8 +16,8 @@
 package uk.ac.cam.cl.dtg.isaac.dos.eventbookings;
 
 import uk.ac.cam.cl.dtg.isaac.dos.ITransaction;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
 import javax.annotation.Nullable;
 import java.util.Map;
@@ -179,6 +179,15 @@ public interface EventBookings {
      *             - if an error occurs.
      */
     EventBooking findBookingByEventAndUser(String eventId, Long userId) throws SegueDatabaseException;
+
+    /**
+     * Find an event booking by id.
+     *
+     * @param bookingId - the event ID of interest.
+     * @return the booking or an error.
+     * @throws SegueDatabaseException - if an error occurs.
+     */
+    EventBooking findBookingById(Long bookingId) throws SegueDatabaseException;
 
     /**
      * Expunge the additional information field for all bookings for a given user id.

@@ -24,10 +24,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.ITransaction;
 import uk.ac.cam.cl.dtg.isaac.dos.PgTransaction;
+import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
-import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 
 import javax.annotation.Nullable;
 import java.sql.Connection;
@@ -100,7 +100,7 @@ public class PgEventBookings implements EventBookings {
             try (ResultSet generatedKeys = pst.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
                     Long id = generatedKeys.getLong(1);
-                    return new PgEventBooking(ds, id, userId, reserveById, eventId, status, creationDate, creationDate, additionalEventInformation);
+                    return new PgEventBooking(id, userId, reserveById, eventId, status, creationDate, creationDate, additionalEventInformation);
                 } else {
                     throw new SQLException("Creating event booking failed, no ID obtained.");
                 }
@@ -348,6 +348,39 @@ public class PgEventBookings implements EventBookings {
         log.debug(String.format("Acquired advisory transaction lock on %s (%s)", TABLE_NAME + resourceId, crc.getValue()));
     }
 
+    @Override
+    public EventBooking findBookingById(final Long bookingId) throws SegueDatabaseException {
+        Validate.notNull(bookingId);
+
+        String query = "SELECT * FROM event_bookings WHERE id = ?";
+        try (Connection conn = ds.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
+            pst.setLong(1, bookingId);
+
+            try (ResultSet results = pst.executeQuery()) {
+                EventBooking result = null;
+                int count = 0;
+                while (results.next()) {
+                    result = buildPgEventBooking(results);
+                    count++;
+                }
+
+                if (count == 1) {
+                    return result;
+                } else if (count == 0) {
+                    throw new ResourceNotFoundException("Unable to locate the booking you requested.");
+                } else {
+                    String msg = String.format("Found more than one event booking with ID (%s).", bookingId);
+                    log.error(msg);
+                    throw new SegueDatabaseException(msg);
+                }
+            }
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        }
+    }
+
     /*
      * (non-Javadoc)
      * 
@@ -550,7 +583,7 @@ public class PgEventBookings implements EventBookings {
      *             - if an error occurs.
      */
     private PgEventBooking buildPgEventBooking(final ResultSet results) throws SQLException, SegueDatabaseException {
-        return new PgEventBooking(ds,
+        return new PgEventBooking(
                 results.getLong("id"),
                 results.getLong("user_id"),
                 results.getLong("reserved_by"),

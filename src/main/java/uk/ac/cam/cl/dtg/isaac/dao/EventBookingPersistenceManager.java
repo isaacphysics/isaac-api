@@ -3,15 +3,12 @@ package uk.ac.cam.cl.dtg.isaac.dao;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
-import ma.glasnost.orika.MapperFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.ITransaction;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.EventBooking;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.EventBookings;
-import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.PgEventBooking;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.PgEventBookings;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
@@ -30,8 +27,6 @@ import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * EventBookingPersistenceManager.
@@ -96,7 +91,7 @@ public class EventBookingPersistenceManager {
      *             - if an error occurs.
      */
     public EventBookingDTO getBookingById(final Long bookingId) throws SegueDatabaseException {
-        return this.convertToDTO(new PgEventBooking(database, bookingId));
+        return this.convertToDTO(dao.findBookingById(bookingId));
     }
 
     /**
