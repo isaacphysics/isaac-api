@@ -19,6 +19,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.PgTransactionManager;
@@ -72,6 +73,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.easymock.EasyMock.and;
+import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.expect;
@@ -92,11 +94,11 @@ public class EventsFacadeTest extends IsaacTest {
     private EventsFacade eventsFacade;
     private UserAuthenticationManager userAuthenticationManager;
     private UserAccountManager userAccountManager;
-
     private EmailManager emailManager;
+    private PropertiesLoader properties;
 
     @Before
-    public void setUp() throws RuntimeException, IOException, ClassNotFoundException {
+    public void setUp() throws RuntimeException, IOException, ClassNotFoundException, SegueDatabaseException {
         String configLocation = SystemUtils.IS_OS_LINUX ? DEFAULT_LINUX_CONFIG_LOCATION : null;
         if (System.getProperty("test.config.location") != null) {
             configLocation = System.getProperty("test.config.location");
@@ -105,7 +107,7 @@ public class EventsFacadeTest extends IsaacTest {
             configLocation = System.getenv("SEGUE_TEST_CONFIG_LOCATION");
         }
 
-        PropertiesLoader properties = new PropertiesLoader(configLocation) {
+        properties = new PropertiesLoader(configLocation) {
             final Map<String, String> propertyOverrides = ImmutableMap.of(
                     "SEARCH_CLUSTER_NAME", "isaac"
             );
@@ -170,6 +172,9 @@ public class EventsFacadeTest extends IsaacTest {
         userAuthenticationManager = new UserAuthenticationManager(pgUsers, properties,
                 providersToRegister, emailManager);
         ISecondFactorAuthenticator secondFactorManager = createMock(SegueTOTPAuthenticator.class);
+        // We don't care for MFA here so we can safely disable it
+        expect(secondFactorManager.has2FAConfigured(anyObject())).andReturn(false).atLeastOnce();
+        replay(secondFactorManager);
 
         userAccountManager =
                 new UserAccountManager(pgUsers, questionDb, properties, providersToRegister, mapper,
@@ -237,24 +242,55 @@ public class EventsFacadeTest extends IsaacTest {
         expect(httpSession.getId()).andReturn(someSegueAnonymousUserId).atLeastOnce();
         replay(httpSession);
 
-        Capture<Cookie> capturedCookie = Capture.newInstance(); // new Capture<Cookie>(); seems deprecated
+        // --- Login as a student
+        Capture<Cookie> capturedStudentCookie = Capture.newInstance(); // new Capture<Cookie>(); seems deprecated
 
-        HttpServletRequest loginRequest = createNiceMock(HttpServletRequest.class);
-        expect(loginRequest.getSession()).andReturn(httpSession).atLeastOnce();
-        replay(loginRequest);
+        HttpServletRequest studentLoginRequest = createNiceMock(HttpServletRequest.class);
+        expect(studentLoginRequest.getSession()).andReturn(httpSession).atLeastOnce();
+        replay(studentLoginRequest);
 
-        HttpServletResponse loginResponse = createNiceMock(HttpServletResponse.class);
-        loginResponse.addCookie(and(capture(capturedCookie), isA(Cookie.class)));
+        HttpServletResponse studentLoginResponse = createNiceMock(HttpServletResponse.class);
+        studentLoginResponse.addCookie(and(capture(capturedStudentCookie), isA(Cookie.class)));
         expectLastCall().atLeastOnce(); // This is how you expect void methods, apparently...
-        replay(loginResponse);
+        replay(studentLoginResponse);
 
-        RegisteredUserDTO testUsers = userAccountManager.authenticateWithCredentials(loginRequest, loginResponse, AuthenticationProvider.SEGUE.toString(), "test-teacher@test.com", "test1234", false);
+        RegisteredUserDTO testStudent = userAccountManager.authenticateWithCredentials(studentLoginRequest, studentLoginResponse, AuthenticationProvider.SEGUE.toString(), properties.getProperty("TEST_STUDENT_EMAIL"), properties.getProperty("TEST_STUDENT_PASSWORD"), false);
 
+        // --- Login as an event manager
+        Capture<Cookie> capturedEventManagerCookie = Capture.newInstance(); // new Capture<Cookie>(); seems deprecated
+
+        HttpServletRequest eventManagerLoginRequest = createNiceMock(HttpServletRequest.class);
+        expect(eventManagerLoginRequest.getSession()).andReturn(httpSession).atLeastOnce();
+        replay(eventManagerLoginRequest);
+
+        HttpServletResponse eventManagerLoginResponse = createNiceMock(HttpServletResponse.class);
+        eventManagerLoginResponse.addCookie(and(capture(capturedEventManagerCookie), isA(Cookie.class)));
+        expectLastCall().atLeastOnce(); // This is how you expect void methods, apparently...
+        replay(eventManagerLoginResponse);
+
+        RegisteredUserDTO testEventManager = userAccountManager.authenticateWithCredentials(eventManagerLoginRequest, eventManagerLoginResponse, AuthenticationProvider.SEGUE.toString(), properties.getProperty("TEST_EVENTMANAGER_EMAIL"), properties.getProperty("TEST_EVENTMANAGER_PASSWORD"), false);
+
+        // --- Create a booking as a logged in student
         HttpServletRequest createBookingRequest = createNiceMock(HttpServletRequest.class);
-        expect(createBookingRequest.getCookies()).andReturn(new Cookie[] { capturedCookie.getValue() }).atLeastOnce();
+        expect(createBookingRequest.getCookies()).andReturn(new Cookie[] { capturedStudentCookie.getValue() }).atLeastOnce();
         replay(createBookingRequest);
 
         Response createBookingResponse = eventsFacade.createBookingForMe(createBookingRequest, "b34eeb0c-7304-4c25-b83b-f28c78b5d078", null);
+        // Check that the booking was created successfully
         assertEquals(createBookingResponse.getStatus(), Response.Status.OK.getStatusCode());
+        EventBookingDTO eventBookingDTO = null;
+        if (null != createBookingResponse.getEntity() && createBookingResponse.getEntity() instanceof EventBookingDTO) {
+            eventBookingDTO = (EventBookingDTO) createBookingResponse.getEntity();
+            // Check that the returned entity is an EventBookingDTO and the ID of the user who created the booking matches
+            assertEquals(testStudent.getId(), ((EventBookingDTO) createBookingResponse.getEntity()).getUserBooked().getId());
+        }
+        assertNotNull(eventBookingDTO);
+
+        // --- Check whether we are leaking PII to event managers
+        HttpServletRequest getEventBookingsByIdRequest = createNiceMock(HttpServletRequest.class);
+        expect(getEventBookingsByIdRequest.getCookies()).andReturn(new Cookie[] { capturedEventManagerCookie.getValue() }).atLeastOnce();
+        replay(getEventBookingsByIdRequest);
+
+        Response getEventBookingsByIdResponse = eventsFacade.getEventBookingsById(getEventBookingsByIdRequest, eventBookingDTO.getBookingId().toString());
     }
 }
