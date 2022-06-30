@@ -85,7 +85,7 @@ public class NotificationPicker {
                 TYPE_FIELDNAME, BooleanOperator.AND, Collections.singletonList("notification")));
 
         ResultsWrapper<ContentDTO> allContentNotifications = this.contentManager
-                .findByFieldNames(this.contentIndex, fieldsToMatch, 0, -1);
+                .findByFieldNames(fieldsToMatch, 0, -1);
 
         Map<String, IUserNotification> listOfRecordedNotifications = getMapOfRecordedNotifications(user);
 
@@ -171,7 +171,7 @@ public class NotificationPicker {
     public void recordNotificationAction(final RegisteredUserDTO user, final String notificationId,
             final NotificationStatus status) throws SegueDatabaseException, ContentManagerException {
         ContentDTO notification = this.contentManager.getContentById(
-                this.contentManager.getCurrentContentSHA(), notificationId);
+                notificationId);
 
         if (null == notification) {
             throw new ResourceNotFoundException(String.format(
@@ -195,7 +195,7 @@ public class NotificationPicker {
             ResourceNotFoundException {
         // get available notifications that still can be displayed
         ContentDTO notification = this.contentManager.getContentById(
-                this.contentManager.getCurrentContentSHA(), notificationId);
+                notificationId);
 
         if (notification instanceof NotificationDTO) {
             return notification;

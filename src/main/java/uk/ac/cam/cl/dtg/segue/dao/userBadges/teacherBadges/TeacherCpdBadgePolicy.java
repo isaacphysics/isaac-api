@@ -92,6 +92,6 @@ public class TeacherCpdBadgePolicy implements IUserBadgePolicy {
      * @throws ContentManagerException
      */
     private ContentDTO getcontentDetails(String eventId) throws ContentManagerException {
-        return this.contentManager.getContentById(this.contentIndex, eventId);
+        return this.contentManager.getContentById(eventId);
     }
 }

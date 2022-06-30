@@ -630,7 +630,7 @@ public class AdminFacade extends AbstractSegueFacade {
     public Response getContentProblems(@Context final HttpServletRequest request,
             @Context final Request requestForCaching) {
         Map<Content, List<String>> problemMap = this.contentManager.getProblemMap(
-                this.contentIndex);
+        );
 
         if (this.getProperties().getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(EnvironmentType.PROD.name())) {
             try {
@@ -678,7 +678,6 @@ public class AdminFacade extends AbstractSegueFacade {
                 try {
                     
                     boolean success = this.contentManager.getContentById(
-                            this.contentManager.getCurrentContentSHA(),
                             partialContentWithErrors.getId(),
                             true) != null;
                     

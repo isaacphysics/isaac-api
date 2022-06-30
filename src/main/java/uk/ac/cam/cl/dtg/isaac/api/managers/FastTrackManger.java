@@ -76,7 +76,7 @@ public class FastTrackManger {
         Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
         fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(FAST_TRACK_QUESTION_TYPE));
         fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(questionId));
-        ResultsWrapper<ContentDTO> resultsList = contentManager.findByFieldNames(contentIndex,
+        ResultsWrapper<ContentDTO> resultsList = contentManager.findByFieldNames(
                 ContentService.generateDefaultFieldToMatch(fieldsToMatch), 0, DEFAULT_RESULTS_LIMIT);
 
         String upperConceptTitle = "";
@@ -133,6 +133,6 @@ public class FastTrackManger {
         sortInstructions.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Constants.SortOrder.ASC);
 
         return this.contentManager.findByFieldNames(
-                this.contentIndex, fieldsToMap, 0, SEARCH_MAX_WINDOW_SIZE, sortInstructions).getResults();
+                fieldsToMap, 0, SEARCH_MAX_WINDOW_SIZE, sortInstructions).getResults();
     }
 }

@@ -19,7 +19,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.EnumUtils;
@@ -672,7 +671,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     private ContentDTO getContentDTO(final String id)
             throws ContentManagerException, ResourceNotFoundException {
         ContentDTO c = this.contentManager.getContentById(
-                this.contentManager.getCurrentContentSHA(), id);
+                id);
 
         if (null == c) {
             throw new ResourceNotFoundException(String.format("E-mail template %s does not exist!", id));
@@ -695,7 +694,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     public EmailTemplateDTO getEmailTemplateDTO(final String id) throws ContentManagerException,
             ResourceNotFoundException {
         ContentDTO c = this.contentManager.getContentById(
-                this.contentManager.getCurrentContentSHA(), id);
+                id);
 
         if (null == c) {
             throw new ResourceNotFoundException(String.format("E-mail template %s does not exist!", id));

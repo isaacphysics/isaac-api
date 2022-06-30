@@ -30,7 +30,6 @@ import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardContentDescriptor;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
 import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
@@ -643,7 +642,7 @@ public class GameManager {
         sortInstructions.put(TITLE_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, SortOrder.ASC);
 
         ResultsWrapper<ContentDTO> wildcardResults = this.contentManager.findByFieldNames(
-                this.contentIndex, fieldsToMap, 0, -1, sortInstructions);
+                fieldsToMap, 0, -1, sortInstructions);
 
         if (wildcardResults.getTotalResults() == 0) {
             throw new NoWildcardException();
@@ -673,7 +672,7 @@ public class GameManager {
         Validate.notBlank(questionPageId);
 
         // do a depth first traversal of the question page to get the correct order of questions
-        ContentDTO questionPage = this.contentManager.getContentById(this.contentManager.getCurrentContentSHA(),
+        ContentDTO questionPage = this.contentManager.getContentById(
                 questionPageId);
         return getAllMarkableQuestionPartsDFSOrder(questionPage);
     }
@@ -977,7 +976,7 @@ public class GameManager {
         // Search for questions that match the fields to map variable.
 
         ResultsWrapper<ContentDTO> results = this.contentManager.findByFieldNamesRandomOrder(
-                this.contentIndex, fieldsToMap, index, MAX_QUESTIONS_TO_SEARCH, randomSeed);
+                fieldsToMap, index, MAX_QUESTIONS_TO_SEARCH, randomSeed);
 
         List<ContentDTO> questionsForGameboard = results.getResults();
 
@@ -1034,7 +1033,7 @@ public class GameManager {
         String questionPageId = gameItem.getId();
 
         IsaacQuestionPageDTO questionPage = (IsaacQuestionPageDTO) this.contentManager.getContentById(
-                this.contentManager.getCurrentContentSHA(), questionPageId);
+                questionPageId);
         // get all question parts in the question page: depends on each question
         // having an id that starts with the question page id.
         Collection<QuestionDTO> listOfQuestionParts = getAllMarkableQuestionPartsDFSOrder(questionPage);
@@ -1135,7 +1134,7 @@ public class GameManager {
 
         // FIXME - the 999 is a magic number because using NO_SEARCH_LIMIT doesn't work for all elasticsearch queries!
         ResultsWrapper<ContentDTO> wildcardResults = this.contentManager.findByFieldNamesRandomOrder(
-                this.contentIndex, fieldsToMap, 0, 999);
+                fieldsToMap, 0, 999);
 
         // try to increase randomness of wildcard results.
         Collections.shuffle(wildcardResults.getResults());
@@ -1183,7 +1182,7 @@ public class GameManager {
         fieldsToMap.put(immutableEntry(BooleanOperator.AND, ID_FIELDNAME), Collections.singletonList(id));
         fieldsToMap.put(immutableEntry(BooleanOperator.AND, TYPE_FIELDNAME), Collections.singletonList(WILDCARD_TYPE));
 
-        Content wildcardResults = this.contentManager.getContentDOById(this.contentManager.getCurrentContentSHA(), id);
+        Content wildcardResults = this.contentManager.getContentDOById(id);
 
         return mapper.map(wildcardResults, IsaacWildcard.class);
     }

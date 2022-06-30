@@ -110,7 +110,7 @@ public class GlossaryFacade extends AbstractSegueFacade {
                 startIndexOfResults = 0;
             }
 
-            c = this.contentManager.findByFieldNames(this.contentIndex, fieldsToMatch, startIndexOfResults, resultsLimit);
+            c = this.contentManager.findByFieldNames(fieldsToMatch, startIndexOfResults, resultsLimit);
         } catch (ContentManagerException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Content acquisition error.", e).toResponse();
@@ -140,7 +140,7 @@ public class GlossaryFacade extends AbstractSegueFacade {
 
         ResultsWrapper<ContentDTO> c;
         try {
-            c = this.contentManager.getByIdPrefix(this.contentIndex, term_id, 0, 10000);
+            c = this.contentManager.getByIdPrefix(term_id, 0, 10000);
             if (null == c) {
                 SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "No glossary term found with id: " + term_id);
                 log.debug(error.getErrorMessage());

@@ -213,7 +213,7 @@ public class IsaacController extends AbstractIsaacFacade {
             }
 
             ResultsWrapper<ContentDTO> searchResults = this.contentManager.siteWideSearch(
-                    this.contentIndex, searchString, documentTypes, showHiddenContent, startIndex, limit);
+                    searchString, documentTypes, showHiddenContent, startIndex, limit);
 
             ImmutableMap<String, String> logMap = new ImmutableMap.Builder<String, String>()
                     .put(TYPE_FIELDNAME, types)
@@ -305,7 +305,7 @@ public class IsaacController extends AbstractIsaacFacade {
         }
 
         try {
-            fileContent = this.contentManager.getFileBytes(sha, path);
+            fileContent = this.contentManager.getFileBytes(path);
         } catch (IOException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Error reading from file repository", e);
@@ -382,7 +382,7 @@ public class IsaacController extends AbstractIsaacFacade {
                     return error.toResponse(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, false), etag);
             }
 
-            fileContent = this.contentManager.getFileBytes(sha, path);
+            fileContent = this.contentManager.getFileBytes(path);
             if (null == fileContent) {
                 String refererHeader = httpServletRequest.getHeader("Referer");
                 SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the file: " + path);

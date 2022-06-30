@@ -118,7 +118,7 @@ public class QuizManager {
      * @return The quiz.
      */
     public IsaacQuizDTO findQuiz(final String quizId) throws ContentManagerException {
-        Content cachedContent = contentManager.getContentDOById(this.contentManager.getCurrentContentSHA(), quizId);
+        Content cachedContent = contentManager.getContentDOById(quizId);
 
         if (cachedContent == null) {
             throw new ContentManagerException("Couldn't find test with id " + quizId);

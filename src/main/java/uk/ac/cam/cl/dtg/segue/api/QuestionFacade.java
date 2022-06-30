@@ -253,7 +253,7 @@ public class QuestionFacade extends AbstractSegueFacade {
         Content contentBasedOnId;
         try {
             contentBasedOnId = this.contentManager.getContentDOById(
-                    this.contentManager.getCurrentContentSHA(), questionId);
+                    questionId);
         } catch (ContentManagerException e1) {
             SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Error locating the version requested",
                     e1);
@@ -278,7 +278,7 @@ public class QuestionFacade extends AbstractSegueFacade {
             String questionPageId = extractPageIdFromQuestionId(questionId);
             Content pageContent;
             try {
-                pageContent = this.contentManager.getContentDOById(contentIndex, questionPageId);
+                pageContent = this.contentManager.getContentDOById(questionPageId);
                 if (pageContent instanceof IsaacQuiz) {
                     return new SegueErrorResponse(Status.FORBIDDEN, "This question is part of a quiz").toResponse();
                 }

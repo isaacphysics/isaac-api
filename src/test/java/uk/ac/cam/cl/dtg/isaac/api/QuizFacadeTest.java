@@ -163,9 +163,9 @@ public class QuizFacadeTest extends AbstractFacadeTest {
         expect(contentManager.getCurrentContentSHA()).andStubReturn(currentSHA);
         expect(contentSummarizerService.extractContentSummary(studentQuiz, QuizSummaryDTO.class)).andStubReturn(studentQuizSummary);
         expect(contentSummarizerService.extractContentSummary(teacherQuiz, QuizSummaryDTO.class)).andStubReturn(teacherQuizSummary);
-        expect(contentManager.getContentDOById(currentSHA, questionDO.getId())).andStubReturn(questionDO);
-        expect(contentManager.getContentDOById(currentSHA, studentQuizDO.getId())).andStubReturn(studentQuizDO);
-        expect(contentManager.getContentDOById(currentSHA, questionPageQuestionDO.getId())).andStubReturn(questionPageQuestionDO);
+        expect(contentManager.getContentDOById(questionDO.getId())).andStubReturn(questionDO);
+        expect(contentManager.getContentDOById(studentQuizDO.getId())).andStubReturn(studentQuizDO);
+        expect(contentManager.getContentDOById(questionPageQuestionDO.getId())).andStubReturn(questionPageQuestionDO);
 
         replay(requestForCaching, properties, logManager, contentManager, contentSummarizerService, quizManager, groupManager, quizAssignmentManager,
             assignmentService, quizAttemptManager, quizQuestionManager, associationManager);

@@ -111,7 +111,7 @@ public class EventNotificationEmailManager {
 
         try {
             ResultsWrapper<ContentDTO> findByFieldNames = this.contentManager.findByFieldNames(
-                properties.getProperty(CONTENT_INDEX), ContentService.generateDefaultFieldToMatch(fieldsToMatch),
+                    ContentService.generateDefaultFieldToMatch(fieldsToMatch),
                 startIndex, limit, sortInstructions, filterInstructions);
             for (ContentDTO contentResult : findByFieldNames.getResults()) {
                 if (contentResult instanceof IsaacEventPageDTO) {
@@ -150,7 +150,7 @@ public class EventNotificationEmailManager {
 
         try {
             ResultsWrapper<ContentDTO> findByFieldNames = this.contentManager.findByFieldNames(
-                properties.getProperty(CONTENT_INDEX), ContentService.generateDefaultFieldToMatch(fieldsToMatch),
+                    ContentService.generateDefaultFieldToMatch(fieldsToMatch),
                 startIndex, limit, sortInstructions, filterInstructions);
             for (ContentDTO contentResult : findByFieldNames.getResults()) {
                 if (contentResult instanceof IsaacEventPageDTO) {

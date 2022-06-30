@@ -71,7 +71,7 @@ public class ContentService {
             newStartIndex = startIndex;
         }
 
-        return this.contentManager.findByFieldNames(newVersion, fieldsToMatch, newStartIndex, newLimit);
+        return this.contentManager.findByFieldNames(fieldsToMatch, newStartIndex, newLimit);
     }
 
     /**
@@ -106,7 +106,7 @@ public class ContentService {
             newStartIndex = startIndex;
         }
 
-        return this.contentManager.searchForContent(newVersion, searchString, fieldsThatMustMatch, newStartIndex, newLimit);
+        return this.contentManager.searchForContent(searchString, fieldsThatMustMatch, newStartIndex, newLimit);
     }
 
     /**

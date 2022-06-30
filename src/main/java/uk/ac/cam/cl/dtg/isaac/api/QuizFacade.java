@@ -88,7 +88,6 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -798,7 +797,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             Content contentBasedOnId;
             try {
-                contentBasedOnId = this.contentManager.getContentDOById(this.contentManager.getCurrentContentSHA(), questionId);
+                contentBasedOnId = this.contentManager.getContentDOById(questionId);
             } catch (ContentManagerException e1) {
                 SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Error locating the version requested",
                     e1);

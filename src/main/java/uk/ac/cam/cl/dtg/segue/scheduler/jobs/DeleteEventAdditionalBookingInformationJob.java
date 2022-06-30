@@ -11,7 +11,6 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
@@ -35,7 +34,6 @@ import static uk.ac.cam.cl.dtg.isaac.api.Constants.EVENT_TYPE;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.DATE_FIELDNAME;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.ENDDATE_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
 
 public class DeleteEventAdditionalBookingInformationJob implements Job {
@@ -73,7 +71,7 @@ public class DeleteEventAdditionalBookingInformationJob implements Job {
         ZonedDateTime thirtyDaysAgo = now.plusDays(-30);
         try {
             ResultsWrapper<ContentDTO> findByFieldNames = this.contentManager.findByFieldNames(
-                    properties.getProperty(CONTENT_INDEX), ContentService.generateDefaultFieldToMatch(fieldsToMatch),
+                    ContentService.generateDefaultFieldToMatch(fieldsToMatch),
                     startIndex, limit, sortInstructions, filterInstructions);
             for (ContentDTO contentResult : findByFieldNames.getResults()) {
                 if (contentResult instanceof IsaacEventPageDTO) {

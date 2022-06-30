@@ -164,7 +164,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
 
         // Deserialize object into POJO of specified type, providing one exists.
         try {
-            c = this.contentManager.findByFieldNamesRandomOrder(newVersion, fieldsToMatch, newStartIndex,
+            c = this.contentManager.findByFieldNamesRandomOrder(fieldsToMatch, newStartIndex,
                     newLimit, randomSeed);
         } catch (IllegalArgumentException e) {
             log.error("Unable to map content object.", e);
@@ -226,7 +226,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
             return cachedResponse;
         }
 
-        Set<String> tags = this.contentManager.getTagsList(this.contentIndex);
+        Set<String> tags = this.contentManager.getTagsList();
 
         return Response.ok(tags).cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
     }
@@ -255,7 +255,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
         }
 
         Collection<String> units;
-        units = this.contentManager.getAllUnits(this.contentIndex);
+        units = this.contentManager.getAllUnits();
 
         return Response.ok(units).tag(etag).cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, true)).build();
     }

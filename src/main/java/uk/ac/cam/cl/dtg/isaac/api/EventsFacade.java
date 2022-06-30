@@ -291,7 +291,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                 }
             } else {
                 findByFieldNames = this.contentManager.findByFieldNames(
-                    this.contentIndex, ContentService.generateDefaultFieldToMatch(fieldsToMatch),
+                        ContentService.generateDefaultFieldToMatch(fieldsToMatch),
                     newStartIndex, newLimit, sortInstructions, filterInstructions);
 
                 // augment (maybe slow for large numbers of bookings)
@@ -1491,7 +1491,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             ResultsWrapper<ContentDTO> findByFieldNames = null;
 
             findByFieldNames = this.contentManager.findByFieldNames(
-                    this.contentIndex, ContentService.generateDefaultFieldToMatch(fieldsToMatch),
+                    ContentService.generateDefaultFieldToMatch(fieldsToMatch),
                     newStartIndex, newLimit, sortInstructions, filterInstructions);
 
             List<Map<String, Object>> resultList = Lists.newArrayList();
@@ -1613,7 +1613,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         try {
             ResultsWrapper<ContentDTO> findByFieldNames = null;
 
-            findByFieldNames = this.contentManager.findByFieldNames(this.contentIndex,
+            findByFieldNames = this.contentManager.findByFieldNames(
                     ContentService.generateDefaultFieldToMatch(fieldsToMatch),
                     newStartIndex, newLimit, sortInstructions, filterInstructions);
 
@@ -1674,7 +1674,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     private IsaacEventPageDTO getRawEventDTOById(final String eventId)
             throws ContentManagerException, SegueDatabaseException {
 
-        ContentDTO possibleEvent = this.contentManager.getContentById(this.contentManager.getCurrentContentSHA(), eventId);
+        ContentDTO possibleEvent = this.contentManager.getContentById(eventId);
 
         if (null == possibleEvent) {
             throw new ResourceNotFoundException(String.format("Unable to locate the event with id; %s", eventId));

@@ -62,15 +62,12 @@ public interface IContentManager {
      * 
      * @param id
      *            id to search for in preconfigured data source.
-     * @param version
-     *            - the version to attempt to retrieve.
-     * 
      * @return Will return a Content object (or subclass of Content) or Null if no content object is found.
      * @throws ContentManagerException
      *             - if there is an error retrieving the content requested.
      */
-    Content getContentDOById(String version, String id) throws ContentManagerException;
-    Content getContentDOById(String version, String id, boolean failQuietly) throws ContentManagerException;
+    Content getContentDOById(String id) throws ContentManagerException;
+    Content getContentDOById(String id, boolean failQuietly) throws ContentManagerException;
 
     /**
      * Goes to the configured Database and attempts to find a content item with the specified ID. This returns the
@@ -78,21 +75,16 @@ public interface IContentManager {
      * 
      * @param id
      *            id to search for in preconfigured data source.
-     * @param version
-     *            - the SHA (not alias due to caching) to attempt to retrieve.
-     * 
      * @return Will return a Content object (or subclass of Content) or Null if no content object is found.
      * @throws ContentManagerException
      *             - if there is an error retrieving the content requested.
      */
-    ContentDTO getContentById(String version, String id) throws ContentManagerException;
-    ContentDTO getContentById(String version, String id, boolean failQuietly) throws ContentManagerException;
+    ContentDTO getContentById(String id) throws ContentManagerException;
+    ContentDTO getContentById(String id, boolean failQuietly) throws ContentManagerException;
 
     /**
      * GetByIdPrefix Returns results that match a given id prefix for a specified version number.
      * 
-     * @param version
-     *            - SHA (not alias due to caching) of the content version to search against.
      * @param idPrefix
      *            - id prefix to search for.
      * @param startIndex
@@ -103,7 +95,7 @@ public interface IContentManager {
      * @throws ContentManagerException
      *             - if there is an error retrieving the content requested.
      */
-    ResultsWrapper<ContentDTO> getByIdPrefix(String version, String idPrefix, int startIndex, int limit)
+    ResultsWrapper<ContentDTO> getByIdPrefix(String idPrefix, int startIndex, int limit)
             throws ContentManagerException;
 
     /**
@@ -111,8 +103,6 @@ public interface IContentManager {
      *
      * This method will retrieve all content that matches at least one of the given list of IDs.
      *
-     * @param version
-     *            - SHA (not alias due to caching) of the content version to search against.
      * @param ids
      *            - ids to match.
      * @param startIndex
@@ -123,14 +113,12 @@ public interface IContentManager {
      * @throws ContentManagerException
      *             - if there is an error retrieving the content requested.
      */
-    ResultsWrapper<ContentDTO> getContentMatchingIds(String version, Collection<String> ids, int startIndex, int limit)
+    ResultsWrapper<ContentDTO> getContentMatchingIds(Collection<String> ids, int startIndex, int limit)
             throws ContentManagerException;
 
     /**
      * Method to allow bulk search of content based on the type field.
      * 
-     * @param version
-     *            - version of the content to search.
      * @param fieldsToMatch
      *            - List of boolean clauses used for field matching.
      * @param startIndex
@@ -142,14 +130,12 @@ public interface IContentManager {
      *             - if there is an error retrieving the content requested.
      */
     ResultsWrapper<ContentDTO> findByFieldNames(
-            String version, final List<BooleanSearchClause> fieldsToMatch, Integer startIndex, Integer limit
+            final List<BooleanSearchClause> fieldsToMatch, Integer startIndex, Integer limit
     ) throws ContentManagerException;
 
     /**
      * Method to allow bulk search of content based on the type field.
      * 
-     * @param version
-     *            - version of the content to search.
      * @param fieldsToMatch
      *            - List of boolean clauses used for field matching.
      * @param startIndex
@@ -163,15 +149,13 @@ public interface IContentManager {
      *             - if there is an error retrieving the content requested.
      */
     ResultsWrapper<ContentDTO> findByFieldNames(
-            String version, List<BooleanSearchClause> fieldsToMatch, Integer startIndex, Integer limit,
+            List<BooleanSearchClause> fieldsToMatch, Integer startIndex, Integer limit,
             Map<String, SortOrder> sortInstructions
     ) throws ContentManagerException;
 
     /**
      * Method to allow bulk search of content based on the type field.
      * 
-     * @param version
-     *            - version of the content to search.
      * @param fieldsToMatch
      *            - List of boolean clauses used for field matching.
      * @param startIndex
@@ -187,15 +171,13 @@ public interface IContentManager {
      *             - if there is an error retrieving the content requested.
      */
     ResultsWrapper<ContentDTO> findByFieldNames(
-            String version, List<BooleanSearchClause> fieldsToMatch, Integer startIndex, Integer limit,
+            List<BooleanSearchClause> fieldsToMatch, Integer startIndex, Integer limit,
             Map<String, SortOrder> sortInstructions, @Nullable final Map<String, AbstractFilterInstruction> filterInstructions
     ) throws ContentManagerException;
 
     /**
      * The same as findByFieldNames but the results list is returned in a randomised order.
      * 
-     * @param version
-     *            - version of the content to search.
      * @param fieldsToMatch
      *            - List of boolean clauses used for field matching.
      * @param startIndex
@@ -207,14 +189,12 @@ public interface IContentManager {
      *             - if there is an error retrieving the content requested.
      */
     ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(
-            String version, List<BooleanSearchClause> fieldsToMatch, Integer startIndex, Integer limit
+            List<BooleanSearchClause> fieldsToMatch, Integer startIndex, Integer limit
     ) throws ContentManagerException;
 
     /**
      * The same as findByFieldNames but the results list is returned in a randomised order.
      * 
-     * @param version
-     *            - version of the content to search.
      * @param fieldsToMatch
      *            - List of boolean clauses used for field matching.
      * @param startIndex
@@ -228,7 +208,7 @@ public interface IContentManager {
      *             - if there is an error retrieving the content requested.
      */
     ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(
-            String version, List<BooleanSearchClause> fieldsToMatch, Integer startIndex, Integer limit, @Nullable Long randomSeed
+            List<BooleanSearchClause> fieldsToMatch, Integer startIndex, Integer limit, @Nullable Long randomSeed
     ) throws ContentManagerException;
 
     /**
@@ -236,8 +216,6 @@ public interface IContentManager {
      * 
      * The fields included in the search is determined by the content manager.
      * 
-     * @param version
-     *            - version of the content to search.
      * @param searchString
      *            - string to use as search term.
      * @param fieldsThatMustMatch
@@ -250,12 +228,12 @@ public interface IContentManager {
      * @throws ContentManagerException
      *             - if there is an error retrieving the content requested.
      */
-    ResultsWrapper<ContentDTO> searchForContent(String version, String searchString,
-            @Nullable Map<String, List<String>> fieldsThatMustMatch, Integer startIndex, Integer limit)
+    ResultsWrapper<ContentDTO> searchForContent(String searchString,
+                                                @Nullable Map<String, List<String>> fieldsThatMustMatch, Integer startIndex, Integer limit)
             throws ContentManagerException;
 
     ResultsWrapper<ContentDTO> siteWideSearch(
-            final String version, final String searchString, final List<String> documentTypes,
+            final String searchString, final List<String> documentTypes,
             final boolean includeHiddenContent, final Integer startIndex, final Integer limit
     ) throws  ContentManagerException;
 
@@ -264,15 +242,13 @@ public interface IContentManager {
      * Method allows raw output to be retrieved for given files in the git repository. This is mainly so we can retrieve
      * image files.
      *
-     * @param version
-     *            - The version of the content to retrieve
      * @param filename
      *            - The full path of the file you wish to retrieve.
      * @return The output stream of the file contents
      * @throws IOException
      *             if failed IO occurs.
      */
-    ByteArrayOutputStream getFileBytes(String version, String filename) throws IOException;
+    ByteArrayOutputStream getFileBytes(String filename) throws IOException;
 
     /**
      * Provide a list of all possible versions from the underlying database
@@ -281,7 +257,7 @@ public interface IContentManager {
      * 
      * @return the list of available versions
      */
-    List<String> listAvailableVersions();
+    List<String> listAvailableContentSHAs();
 
     /**
      * Get the latest version number from the database.
@@ -291,33 +267,29 @@ public interface IContentManager {
      * 
      * @return the latest version id
      */
-    String getLatestVersionId();
+    String getLatestContentSHA();
 
 
     /**
      * A method that will return an unordered set of tags registered for a particular version of the content.
      * 
-     * @param version
-     *            - version to look up tag list for.
      * @return A set of tags that have been already used in a particular version of the content
      */
-    Set<String> getTagsList(String version);
+    Set<String> getTagsList();
 
     /**
      * A method that will return an unordered set of all units registered for a particular version of the content.
      * 
-     * @param version
-     *            - version to look up unit list for.
      * @return A set of units that have been already used in a particular version of the content
      */
-    Collection<String> getAllUnits(String version);
+    Collection<String> getAllUnits();
 
     /**
      * Provides a Set of currently indexed and cached versions.
      * 
      * @return A set of all of the version id's which are currently available without reindexing.
      */
-    Set<String> getCachedVersionList();
+    Set<String> getCachedContentSHAList();
     
     /**
      * Utility method that will check whether a version number supplied validates.
@@ -326,7 +298,7 @@ public interface IContentManager {
      *            - version to validate.
      * @return true if the version specified is valid and can potentially be indexed, false if it cannot.
      */
-    boolean isValidVersion(String version);
+    boolean isValidContentSHA(String version);
 
     /**
      * This method will compare two versions to determine which is the newer.
@@ -344,30 +316,24 @@ public interface IContentManager {
     /**
      * Get the problem map for a particular version.
      * 
-     * @param version
-     *            - version of the content to get problem map for.
      * @return the map containing the content objects with problems and associated list of problem messages. Or null if
      *         there is no problem index.
      */
-    Map<Content, List<String>> getProblemMap(String version);
+    Map<Content, List<String>> getProblemMap();
 
     /**
      * Augment content DTO with related content.
      * 
-     * @param version
-     *            - the version of the content to use for the augmentation operation.
      * @param contentDTO
      *            - the destination contentDTO which should have content summaries created.
      * @return fully populated contentDTO.
      * @throws ContentManagerException
      *             - if there is an error retrieving the content requested.
      */
-    ContentDTO populateRelatedContent(String version, ContentDTO contentDTO) throws ContentManagerException;
+    ContentDTO populateRelatedContent(ContentDTO contentDTO) throws ContentManagerException;
 
     /**
      * Allows us to find things by type (regex).
-     * @param version
-     *            - version of the content to search against.
      * @param regex
      *            - regex to search for.
      * @param startIndex
@@ -378,7 +344,7 @@ public interface IContentManager {
      * @throws ContentManagerException
      *             - if there is an error retrieving the content requested.
      */
-    ResultsWrapper<ContentDTO> getAllByTypeRegEx(String version, String regex, int startIndex, int limit)
+    ResultsWrapper<ContentDTO> getAllByTypeRegEx(String regex, int startIndex, int limit)
             throws ContentManagerException;
 
     /**

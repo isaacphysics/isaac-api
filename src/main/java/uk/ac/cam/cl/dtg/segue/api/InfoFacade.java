@@ -18,7 +18,6 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.apache.http.HttpResponse;
@@ -148,7 +147,7 @@ public class InfoFacade extends AbstractSegueFacade {
     public final Response getCachedVersions() {
 
         ImmutableMap<String, Collection<String>> result = new ImmutableMap.Builder<String, Collection<String>>().put(
-                "cachedVersions", this.contentManager.getCachedVersionList()).build();
+                "cachedVersions", this.contentManager.getCachedContentSHAList()).build();
 
         return Response.ok(result).build();
     }

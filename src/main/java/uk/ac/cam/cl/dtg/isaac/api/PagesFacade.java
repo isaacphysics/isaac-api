@@ -505,8 +505,8 @@ public class PagesFacade extends AbstractIsaacFacade {
 
         try {
             // Load the summary page:
-            Content contentDOById = this.contentManager.getContentDOById(this.contentManager.getCurrentContentSHA(), summaryPageId);
-            ContentDTO contentDTOById = this.contentManager.getContentById(this.contentManager.getCurrentContentSHA(), summaryPageId);
+            Content contentDOById = this.contentManager.getContentDOById(summaryPageId);
+            ContentDTO contentDTOById = this.contentManager.getContentById(summaryPageId);
 
             if (!(contentDOById instanceof IsaacTopicSummaryPage && contentDTOById instanceof IsaacTopicSummaryPageDTO)) {
                 return SegueErrorResponse.getResourceNotFoundResponse(String.format(
@@ -734,7 +734,7 @@ public class PagesFacade extends AbstractIsaacFacade {
                                                         @Nullable final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts)
             throws ContentManagerException {
 
-        ContentDTO augmentedDTO = this.contentManager.populateRelatedContent(version, contentToAugment);
+        ContentDTO augmentedDTO = this.contentManager.populateRelatedContent(contentToAugment);
 
         if (usersQuestionAttempts != null) {
             this.augmentRelatedQuestionsWithAttemptInformation(augmentedDTO, usersQuestionAttempts);

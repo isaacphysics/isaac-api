@@ -72,9 +72,9 @@ public class QuestionFacadeTest extends AbstractFacadeTest {
             userManager, questionManager, logManager, misuseMonitor, userBadgeManager, userStreaksManager, userAssociationManager);
 
         expect(contentManager.getCurrentContentSHA()).andStubReturn(contentIndex);
-        expect(contentManager.getContentDOById(contentIndex, questionDO.getId())).andStubReturn(questionDO);
-        expect(contentManager.getContentDOById(contentIndex, studentQuizDO.getId())).andStubReturn(studentQuizDO);
-        expect(contentManager.getContentDOById(contentIndex, questionPageQuestionDO.getId())).andStubReturn(questionPageQuestionDO);
+        expect(contentManager.getContentDOById(questionDO.getId())).andStubReturn(questionDO);
+        expect(contentManager.getContentDOById(studentQuizDO.getId())).andStubReturn(studentQuizDO);
+        expect(contentManager.getContentDOById(questionPageQuestionDO.getId())).andStubReturn(questionPageQuestionDO);
 
         replayAll();
     }

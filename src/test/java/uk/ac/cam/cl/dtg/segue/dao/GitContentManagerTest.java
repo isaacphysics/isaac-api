@@ -25,7 +25,6 @@ import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.util.*;
 
@@ -138,7 +137,7 @@ public class GitContentManagerTest {
 	public void getById_invalidId_checkNullReturned() {
 		String id = null;
 		try {
-			assertTrue(defaultGCM.getContentDOById(INITIAL_VERSION, id) == null);
+			assertTrue(defaultGCM.getContentDOById(id) == null);
 		} catch (ContentManagerException e) {
 			fail("Null should be returned");
 		}

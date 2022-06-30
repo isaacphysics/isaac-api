@@ -420,7 +420,7 @@ public class GameboardPersistenceManager {
         // Search for questions that match the ids.       
         ResultsWrapper<ContentDTO> results;
         try {
-            results = this.contentManager.findByFieldNames(this.contentIndex,
+            results = this.contentManager.findByFieldNames(
                     fieldsToMap, 0, gameboardDO.getContents().size());
         } catch (ContentManagerException e) {
             results = new ResultsWrapper<ContentDTO>();
@@ -721,7 +721,7 @@ public class GameboardPersistenceManager {
             // Search for questions that match the ids.
             ResultsWrapper<ContentDTO> results;
             try {
-                results = this.contentManager.getContentMatchingIds(this.contentManager.getCurrentContentSHA(),
+                results = this.contentManager.getContentMatchingIds(
                         questionsIds, 0, contentDescriptorBatch.size());
             } catch (ContentManagerException e) {
                 results = new ResultsWrapper<ContentDTO>();
