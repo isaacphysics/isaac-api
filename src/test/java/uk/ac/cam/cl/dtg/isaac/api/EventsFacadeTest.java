@@ -9,9 +9,11 @@ import org.apache.commons.lang3.SystemUtils;
 import org.easymock.Capture;
 import org.eclipse.jgit.api.Git;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.reflections.Reflections;
+import uk.ac.cam.cl.dtg.isaac.IsaacE2ETest;
 import uk.ac.cam.cl.dtg.isaac.IsaacTest;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
 import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
@@ -23,6 +25,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.PgTransactionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -90,12 +93,14 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
 //@RunWith(PowerMockRunner.class)
 @PowerMockIgnore("javax.net.ssl.*")
-public class EventsFacadeTest extends IsaacTest {
+@Ignore
+public class EventsFacadeTest extends IsaacE2ETest {
 
     private EventsFacade eventsFacade;
     private UserAuthenticationManager userAuthenticationManager;
     private UserAccountManager userAccountManager;
     private EmailManager emailManager;
+    private GroupManager groupManager;
     private PropertiesLoader properties;
 
     @Before

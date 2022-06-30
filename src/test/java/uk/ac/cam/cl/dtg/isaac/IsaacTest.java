@@ -65,33 +65,7 @@ import static org.powermock.api.easymock.PowerMock.replay;
 import static org.powermock.api.easymock.PowerMock.reset;
 import static org.powermock.api.easymock.PowerMock.verify;
 
-abstract class AbstractContainerBaseTest extends AbstractModule {
-    public static final PostgreSQLContainer postgres;
-    public static final ElasticsearchContainer elasticsearch;
-
-    static {
-        postgres = new PostgreSQLContainer<>("postgres:12")
-                .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust")
-                .withUsername("rutherford")
-                .withInitScript("test-postgres-rutherford-create-script.sql")
-                .withCommand("postgres", "-c", "fsync=off", "-c", "log_statement=all") // This is for debugging, it may be removed later
-        ;
-
-        // TODO It would be nice if we could pull the version from pom.xml
-        elasticsearch = new ElasticsearchContainer(DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch:7.14.2"))
-                .withCopyFileToContainer(MountableFile.forClasspathResource("isaac-test-es-data.tar.gz"), "/usr/share/elasticsearch/isaac-test-es-data.tar.gz")
-                .withCopyFileToContainer(MountableFile.forClasspathResource("isaac-test-es-docker-entrypoint.sh"), "/usr/local/bin/docker-entrypoint.sh")
-                .withExposedPorts(9200, 9300)
-                .withEnv("cluster.name", "isaac")
-                .withEnv("node.name", "localhost")
-        ;
-
-        postgres.start();
-        elasticsearch.start();
-    }
-}
-
-public class IsaacTest extends AbstractContainerBaseTest {
+public class IsaacTest extends AbstractModule {
     protected static Date somePastDate = new Date(System.currentTimeMillis() - 7*24*60*60*1000);
     protected static Date someFurtherPastDate = new Date(System.currentTimeMillis() - 14*24*60*60*1000);
     protected static Date someFutureDate = new Date(System.currentTimeMillis() + 7*24*60*60*1000);
