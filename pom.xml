@@ -43,7 +43,8 @@
             <id>central</id>
             <name>Maven Central</name>
             <url>https://repo1.maven.org/maven2/</url>
-        </repository></repositories>
+        </repository>
+    </repositories>
     <dependencies>
         <dependency>
             <groupId>org.isaacphysics.thirdparty</groupId>
