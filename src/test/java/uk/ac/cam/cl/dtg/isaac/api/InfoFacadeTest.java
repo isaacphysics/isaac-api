@@ -8,14 +8,10 @@ import com.google.inject.Module;
 import com.google.inject.util.Modules;
 import org.apache.commons.lang3.SystemUtils;
 import org.junit.Before;
-import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.elasticsearch.ElasticsearchContainer;
-import org.testcontainers.utility.DockerImageName;
-import org.testcontainers.utility.MountableFile;
-import uk.ac.cam.cl.dtg.isaac.IsaacTest;
+import uk.ac.cam.cl.dtg.isaac.IsaacE2ETest;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.services.GroupChangedService;
 import uk.ac.cam.cl.dtg.segue.api.InfoFacade;
@@ -38,28 +34,12 @@ import static org.easymock.EasyMock.createMock;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_LINUX_CONFIG_LOCATION;
 
 @PowerMockIgnore("javax.net.ssl.*")
-public class InfoFacadeTest extends IsaacTest {
+@Ignore // NOTE: This was a proof of concept but I'm not too sure we actually need this entire test suite.
+public class InfoFacadeTest extends IsaacE2ETest {
 
     public InfoFacade infoFacade;
 
     public Request requestForCaching;
-
-    @ClassRule
-    public static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:12")
-            .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust")
-            .withUsername("rutherford")
-            .withInitScript("test-postgres-rutherford-create-script.sql")
-            ;
-
-    @ClassRule
-    public static ElasticsearchContainer elasticsearch = new ElasticsearchContainer(DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch-oss:7.8.0"))
-            .withCopyFileToContainer(MountableFile.forClasspathResource("isaac-test-es-data.tar.gz"), "/usr/share/elasticsearch/isaac-test-es-data.tar.gz")
-            .withCopyFileToContainer(MountableFile.forClasspathResource("isaac-test-es-docker-entrypoint.sh"), "/usr/local/bin/docker-entrypoint.sh")
-            .withExposedPorts(9200, 9300)
-            .withEnv("cluster.name", "isaac")
-            .withEnv("network.host", "0.0.0.0")
-            .withEnv("node.name", "localhost")
-            ;
 
     @Before
     public void setUp() throws RuntimeException, IOException {
@@ -147,8 +127,7 @@ public class InfoFacadeTest extends IsaacTest {
             ImmutableMap<String, String> entity = (ImmutableMap<String, String>) response.getEntity();
             assertNotNull(entity);
             assertNotNull(entity.get("liveVersion"));
-            // TODO: Checking a content version probably needs to mock the Content Manager to return a fake hash and
-            //  then we can check that the returned hash is the one we faked.
+            // TODO: with a live content manager, this is going to be a fun test case to keep up to date.
             // assertEquals(entity.get("liveVersion", "someRandomStringWeMocked"));
         }
     }
