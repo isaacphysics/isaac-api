@@ -23,7 +23,9 @@
         <jetty-version>9.4.46.v20220331</jetty-version>
         <jetty.port.api>8080</jetty.port.api>
         <jetty.port.etl>8090</jetty.port.etl>
-        <web.xml>override-api-web.xml</web.xml>
+        <web.xml>web-api-live.xml</web.xml>
+        <web.xml.etl>web-etl.xml</web.xml.etl>
+        <web.xml.local>web-api-local.xml</web.xml.local>
         <netty.version>4.1.77.Final</netty.version>
         <dependency-check.version>7.1.0</dependency-check.version>
         <ossindex.version>3.2.0</ossindex.version>
@@ -536,7 +538,7 @@
                 <configuration>
                     <webApp>
                         <contextPath>/isaac-api</contextPath>
-                        <overrideDescriptor>override-api-web.xml</overrideDescriptor>
+                        <overrideDescriptor>${web.xml}</overrideDescriptor>
                         <webInfIncludeJarPattern>^$</webInfIncludeJarPattern>
                         <containerIncludeJarPattern>^$</containerIncludeJarPattern>
                     </webApp>
@@ -669,6 +671,8 @@
             </activation>
             <properties>
                 <build.profile.id>local</build.profile.id>
+                <!-- Override the web.xml property locally: -->
+                <web.xml>${web.xml.local}</web.xml>
             </properties>
             <build>
                 <resources>
@@ -684,7 +688,8 @@
             <id>etl</id>
             <properties>
                 <build.profile.id>etl</build.profile.id>
-                <web.xml>override-etl-web.xml</web.xml>
+                <!-- Override the web.xml property for ETL: -->
+                <web.xml>${web.xml.etl}</web.xml>
             </properties>
             <build>
                 <plugins>
@@ -695,7 +700,7 @@
                         <configuration>
                             <webApp>
                                 <contextPath>/isaac-api</contextPath>
-                                <overrideDescriptor>override-etl-web.xml</overrideDescriptor>
+                                <overrideDescriptor>${web.xml}</overrideDescriptor>
                                 <webInfIncludeJarPattern>^$</webInfIncludeJarPattern>
                                 <containerIncludeJarPattern>^$</containerIncludeJarPattern>
                             </webApp>
@@ -719,7 +724,6 @@
             <id>generate-types</id>
             <properties>
                 <build.profile.id>generate-types</build.profile.id>
-                <web.xml>override-api-web.xml</web.xml>
             </properties>
             <build>
                 <plugins>
