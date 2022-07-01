@@ -304,10 +304,10 @@ public class ContentIndexer {
                             // therefore log an error
                             log.debug("Resource with duplicate ID (" + content.getId()
                                     + ") detected in cache. Skipping " + treeWalk.getPathString());
-                            this.registerContentProblem(flattenedContent,
-                                    "Index failure - Duplicate ID found in file " + treeWalk.getPathString() + " and "
-                                            + contentCache.get(flattenedContent.getId()).getCanonicalSourceFile()
-                                            + " only one will be available", indexProblemCache);
+                            this.registerContentProblem(flattenedContent, String.format(
+                                    "Index failure - Duplicate ID (%s) found in files (%s) and (%s): only one will be available.",
+                                    content.getId(), treeWalk.getPathString(), contentCache.get(flattenedContent.getId()).getCanonicalSourceFile()),
+                                indexProblemCache);
                         }
                     }
                 } catch (JsonMappingException e) {

@@ -375,8 +375,14 @@ public class EventBookingManager {
                             EmailType.SYSTEM,
                             Collections.singletonList(generateEventICSFile(event, booking)));
                 } else if (BookingStatus.WAITING_LIST.equals(status)) {
+                    String emailTemplateContentId;
+                    if (event.getEventStatus() == EventStatus.WAITING_LIST_ONLY) {
+                        emailTemplateContentId = "email-event-waiting-list-only-addition-notification";
+                    } else {
+                        emailTemplateContentId = "email-event-waiting-list-addition-notification";
+                    }
                     emailManager.sendTemplatedEmailToUser(user,
-                            emailManager.getEmailTemplateDTO("email-event-waiting-list-addition-notification"),
+                            emailManager.getEmailTemplateDTO(emailTemplateContentId),
                             new ImmutableMap.Builder<String, Object>()
                                     .put("contactUsURL", generateEventContactUsURL(event))
                                     .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
@@ -677,8 +683,14 @@ public class EventBookingManager {
         }
 
         try {
+            String emailTemplateContentId;
+            if (event.getEventStatus() == EventStatus.WAITING_LIST_ONLY) {
+                emailTemplateContentId = "email-event-waiting-list-only-addition-notification";
+            } else {
+                emailTemplateContentId = "email-event-waiting-list-addition-notification";
+            }
             emailManager.sendTemplatedEmailToUser(user,
-                    emailManager.getEmailTemplateDTO("email-event-waiting-list-addition-notification"),
+                    emailManager.getEmailTemplateDTO(emailTemplateContentId),
                     new ImmutableMap.Builder<String, Object>()
                             .put("contactUsURL", generateEventContactUsURL(event))
                             .put("event", event)
@@ -740,8 +752,15 @@ public class EventBookingManager {
             // Send an email notifying the user (unless they are being promoted after the event for the sake of our records)
             Date promotionDate = new Date();
             if (event.getEndDate() == null || promotionDate.before(event.getEndDate())) {
+                String emailTemplateContentId;
+                if (event.getEventStatus() == EventStatus.WAITING_LIST_ONLY) {
+                    emailTemplateContentId = "email-event-booking-waiting-list-only-promotion-confirmed";
+                } else {
+                    emailTemplateContentId = "email-event-booking-waiting-list-promotion-confirmed";
+                }
+
                 emailManager.sendTemplatedEmailToUser(userDTO,
-                        emailManager.getEmailTemplateDTO("email-event-booking-waiting-list-promotion-confirmed"),
+                        emailManager.getEmailTemplateDTO(emailTemplateContentId),
                         new ImmutableMap.Builder<String, Object>()
                                 .put("contactUsURL", generateEventContactUsURL(event))
                                 .put("authorizationLink", String.format("https://%s/account?authToken=%s",
