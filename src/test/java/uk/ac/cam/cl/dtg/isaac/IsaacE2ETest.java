@@ -74,24 +74,20 @@ public class IsaacE2ETest {
     protected static final Map<String, String> globalTokens;
     protected static final PostgresSqlDb postgresSqlDb;
     protected static final ElasticSearchProvider elasticSearchProvider;
+    protected static final SchoolListReader schoolListReader;
+    protected static final MapperFacade mapperFacade;
 
     // Managers
     protected static final EmailManager emailManager;
-
     protected static final UserAuthenticationManager userAuthenticationManager;
-
     protected static final UserAccountManager userAccountManager;
-
     protected static final GameManager gameManager;
-
     protected static final GroupManager groupManager;
     protected static final EventBookingManager eventBookingManager;
     protected static final ILogManager logManager;
     protected static final IContentManager contentManager;
     protected static final UserBadgeManager userBadgeManager;
-    protected static final SchoolListReader schoolListReader;
     protected static final UserAssociationManager userAssociationManager;
-    protected static final MapperFacade mapperFacade;
 
     static {
         postgres = new PostgreSQLContainer<>("postgres:12")
