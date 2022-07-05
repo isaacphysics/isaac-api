@@ -1,6 +1,5 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
-import org.easymock.Capture;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -9,10 +8,8 @@ import uk.ac.cam.cl.dtg.isaac.IsaacE2ETest;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AdditionalAuthenticationRequiredException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
@@ -24,21 +21,15 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.core.Response;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.List;
 
-import static org.easymock.EasyMock.and;
-import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.expectLastCall;
-import static org.easymock.EasyMock.isA;
 import static org.junit.Assert.assertEquals;
-import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.replay;
 import static org.junit.Assert.assertNotNull;
 
@@ -57,7 +48,7 @@ public class EventsFacadeTest extends IsaacE2ETest {
 
     @Test
     public void getEventsTest() throws InterruptedException {
-        HttpServletRequest request = createMock(HttpServletRequest.class);
+        HttpServletRequest request = createNiceMock(HttpServletRequest.class);
         expect(request.getCookies()).andReturn(new Cookie[]{}).anyTimes();
         replay(request);
 
@@ -83,36 +74,14 @@ public class EventsFacadeTest extends IsaacE2ETest {
         replay(httpSession);
 
         // --- Login as a student
-        Capture<Cookie> capturedStudentCookie = Capture.newInstance(); // new Capture<Cookie>(); seems deprecated
-
-        HttpServletRequest studentLoginRequest = createNiceMock(HttpServletRequest.class);
-        expect(studentLoginRequest.getSession()).andReturn(httpSession).atLeastOnce();
-        replay(studentLoginRequest);
-
-        HttpServletResponse studentLoginResponse = createNiceMock(HttpServletResponse.class);
-        studentLoginResponse.addCookie(and(capture(capturedStudentCookie), isA(Cookie.class)));
-        expectLastCall().atLeastOnce(); // This is how you expect void methods, apparently...
-        replay(studentLoginResponse);
-
-        RegisteredUserDTO testStudent = userAccountManager.authenticateWithCredentials(studentLoginRequest, studentLoginResponse, AuthenticationProvider.SEGUE.toString(), properties.getProperty("TEST_STUDENT_EMAIL"), properties.getProperty("TEST_STUDENT_PASSWORD"), false);
+        LoginResult studentLogin = loginAs(httpSession, properties.getProperty("TEST_STUDENT_EMAIL"), properties.getProperty("TEST_STUDENT_PASSWORD"));
 
         // --- Login as an event manager
-        Capture<Cookie> capturedEventManagerCookie = Capture.newInstance(); // new Capture<Cookie>(); seems deprecated
-
-        HttpServletRequest eventManagerLoginRequest = createNiceMock(HttpServletRequest.class);
-        expect(eventManagerLoginRequest.getSession()).andReturn(httpSession).atLeastOnce();
-        replay(eventManagerLoginRequest);
-
-        HttpServletResponse eventManagerLoginResponse = createNiceMock(HttpServletResponse.class);
-        eventManagerLoginResponse.addCookie(and(capture(capturedEventManagerCookie), isA(Cookie.class)));
-        expectLastCall().atLeastOnce(); // This is how you expect void methods, apparently...
-        replay(eventManagerLoginResponse);
-
-        RegisteredUserDTO testEventManager = userAccountManager.authenticateWithCredentials(eventManagerLoginRequest, eventManagerLoginResponse, AuthenticationProvider.SEGUE.toString(), properties.getProperty("TEST_EVENTMANAGER_EMAIL"), properties.getProperty("TEST_EVENTMANAGER_PASSWORD"), false);
+        LoginResult eventManagerLogin = loginAs(httpSession, properties.getProperty("TEST_EVENTMANAGER_EMAIL"), properties.getProperty("TEST_EVENTMANAGER_PASSWORD"));
 
         // --- Create a booking as a logged in student
         HttpServletRequest createBookingRequest = createNiceMock(HttpServletRequest.class);
-        expect(createBookingRequest.getCookies()).andReturn(new Cookie[] { capturedStudentCookie.getValue() }).atLeastOnce();
+        expect(createBookingRequest.getCookies()).andReturn(new Cookie[] { studentLogin.cookie }).atLeastOnce();
         replay(createBookingRequest);
 
         Response createBookingResponse = eventsFacade.createBookingForMe(createBookingRequest, "b34eeb0c-7304-4c25-b83b-f28c78b5d078", null);
@@ -122,13 +91,13 @@ public class EventsFacadeTest extends IsaacE2ETest {
         if (null != createBookingResponse.getEntity() && createBookingResponse.getEntity() instanceof EventBookingDTO) {
             eventBookingDTO = (EventBookingDTO) createBookingResponse.getEntity();
             // Check that the returned entity is an EventBookingDTO and the ID of the user who created the booking matches
-            assertEquals(testStudent.getId(), ((EventBookingDTO) createBookingResponse.getEntity()).getUserBooked().getId());
+            assertEquals(studentLogin.user.getId(), ((EventBookingDTO) createBookingResponse.getEntity()).getUserBooked().getId());
         }
         assertNotNull(eventBookingDTO);
 
         // --- Check whether we are leaking PII to event managers
         HttpServletRequest getEventBookingsByIdRequest = createNiceMock(HttpServletRequest.class);
-        expect(getEventBookingsByIdRequest.getCookies()).andReturn(new Cookie[] { capturedEventManagerCookie.getValue() }).atLeastOnce();
+        expect(getEventBookingsByIdRequest.getCookies()).andReturn(new Cookie[] { eventManagerLogin.cookie }).atLeastOnce();
         replay(getEventBookingsByIdRequest);
 
         Response getEventBookingsByIdResponse = eventsFacade.getEventBookingsById(getEventBookingsByIdRequest, eventBookingDTO.getBookingId().toString());

@@ -6,6 +6,7 @@ import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.SystemUtils;
+import org.easymock.Capture;
 import org.eclipse.jgit.api.Git;
 import org.reflections.Reflections;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -19,6 +20,8 @@ import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
+import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.quiz.PgQuestionAttempts;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.PgTransactionManager;
@@ -34,6 +37,12 @@ import uk.ac.cam.cl.dtg.segue.auth.ISegueHashingAlgorithm;
 import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v3;
 import uk.ac.cam.cl.dtg.segue.auth.SegueTOTPAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AdditionalAuthenticationRequiredException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.MFARequiredButNotConfiguredException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -52,15 +61,25 @@ import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.easymock.EasyMock.and;
 import static org.easymock.EasyMock.anyObject;
+import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.expectLastCall;
+import static org.easymock.EasyMock.isA;
 import static org.easymock.EasyMock.replay;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_LINUX_CONFIG_LOCATION;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.EMAIL_SIGNATURE;
@@ -87,6 +106,16 @@ public class IsaacE2ETest {
     protected static final IContentManager contentManager;
     protected static final UserBadgeManager userBadgeManager;
     protected static final UserAssociationManager userAssociationManager;
+
+    protected class LoginResult {
+        public RegisteredUserDTO user;
+        public Cookie cookie;
+
+        public LoginResult(final RegisteredUserDTO user, final Cookie cookie) {
+            this.user = user;
+            this.cookie = cookie;
+        }
+    }
 
     static {
         postgres = new PostgreSQLContainer<>("postgres:12")
@@ -227,6 +256,22 @@ public class IsaacE2ETest {
         });
         Injector injector = Guice.createInjector(testModule);
          */
+    }
 
+    protected LoginResult loginAs(final HttpSession httpSession, final String username, final String password) throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException, AuthenticationProviderMappingException, IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+        Capture<Cookie> capturedUserCookie = Capture.newInstance(); // new Capture<Cookie>(); seems deprecated
+
+        HttpServletRequest userLoginRequest = createNiceMock(HttpServletRequest.class);
+        expect(userLoginRequest.getSession()).andReturn(httpSession).atLeastOnce();
+        replay(userLoginRequest);
+
+        HttpServletResponse userLoginResponse = createNiceMock(HttpServletResponse.class);
+        userLoginResponse.addCookie(and(capture(capturedUserCookie), isA(Cookie.class)));
+        expectLastCall().atLeastOnce(); // This is how you expect void methods, apparently...
+        replay(userLoginResponse);
+
+        RegisteredUserDTO user = userAccountManager.authenticateWithCredentials(userLoginRequest, userLoginResponse, AuthenticationProvider.SEGUE.toString(), username, password, false);
+
+        return new LoginResult(user, capturedUserCookie.getValue());
     }
 }
