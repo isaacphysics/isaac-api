@@ -30,6 +30,7 @@ import java.security.spec.InvalidKeySpecException;
  * This is a parent class for PBKDF2 algorithms.
  *
  */
+@Deprecated
 public class SeguePBKDF2 {
     private final String algorithm;
     private final Integer keyLength;
