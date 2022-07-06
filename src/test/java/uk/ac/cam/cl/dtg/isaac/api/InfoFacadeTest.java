@@ -90,14 +90,14 @@ public class InfoFacadeTest extends IsaacE2ETest {
     public void getSegueAppVersion_respondsOK() {
         // /info/segue_version
         Response response = infoFacade.getSegueAppVersion();
-        assertEquals(response.getStatus(), Response.Status.OK.getStatusCode());
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
     }
 
     @Test
     public void getSegueEnvironment_respondsOK() {
         // /info/segue_environment
         Response response = infoFacade.getSegueEnvironment(requestForCaching);
-        assertEquals(response.getStatus(), Response.Status.OK.getStatusCode());
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
     }
 
     @Test
@@ -108,7 +108,7 @@ public class InfoFacadeTest extends IsaacE2ETest {
             ImmutableMap<String, String> entity = (ImmutableMap<String, String>) response.getEntity();
             assertNotNull(entity);
             assertNotNull(entity.get("segueEnvironment"));
-            assertEquals(entity.get("segueEnvironment"), "DEV");
+            assertEquals("DEV", entity.get("segueEnvironment"));
         }
     }
 
@@ -116,7 +116,7 @@ public class InfoFacadeTest extends IsaacE2ETest {
     public void getLiveVersion_respondsOK() {
         // /info/content_version/live_version
         Response response = infoFacade.getLiveVersionInfo();
-        assertEquals(response.getStatus(), Response.Status.OK.getStatusCode());
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
     }
 
     @Test
@@ -136,14 +136,14 @@ public class InfoFacadeTest extends IsaacE2ETest {
     public void etlPing_respondsOK() {
         // /info/etl/ping
         Response response = infoFacade.pingETLServer();
-        assertEquals(response.getStatus(), Response.Status.OK.getStatusCode());
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
     }
 
     @Test
     public void elasticsearchPing_respondsOK() {
         // /info/elasticsearch/ping
         Response response = infoFacade.pingElasticSearch();
-        assertEquals(response.getStatus(), Response.Status.OK.getStatusCode());
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
     }
 
     // NOTE: The other methods are probably less useful to test unless we also bring up the checkers

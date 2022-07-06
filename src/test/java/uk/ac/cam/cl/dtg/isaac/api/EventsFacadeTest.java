@@ -54,14 +54,14 @@ public class EventsFacadeTest extends IsaacE2ETest {
 
         Response response = eventsFacade.getEvents(request, null, 0, 10, null, null, null, null, null, null);
         int status = response.getStatus();
-        assertEquals(status, Response.Status.OK.getStatusCode());
+        assertEquals(Response.Status.OK.getStatusCode(), status);
         Object entityObject = response.getEntity();
         assertNotNull(entityObject);
         @SuppressWarnings("unchecked") ResultsWrapper<IsaacEventPageDTO> entity = (ResultsWrapper<IsaacEventPageDTO>) entityObject;
         assertNotNull(entity);
         List<IsaacEventPageDTO> results = entity.getResults();
         assertNotNull(entity);
-        assertEquals(results.size(), 5);
+        assertEquals(7, results.size());
     }
 
     @Test
@@ -78,7 +78,7 @@ public class EventsFacadeTest extends IsaacE2ETest {
         Response createBookingResponse = eventsFacade.createBookingForMe(createBookingRequest, "_regular_test_event", null);
 
         // Check that the booking was created successfully
-        assertEquals(createBookingResponse.getStatus(), Response.Status.OK.getStatusCode());
+        assertEquals(Response.Status.OK.getStatusCode(), createBookingResponse.getStatus());
         EventBookingDTO eventBookingDTO = null;
         if (null != createBookingResponse.getEntity() && createBookingResponse.getEntity() instanceof EventBookingDTO) {
             eventBookingDTO = (EventBookingDTO) createBookingResponse.getEntity();
@@ -95,7 +95,7 @@ public class EventsFacadeTest extends IsaacE2ETest {
         Response getEventBookingsByIdResponse = eventsFacade.getEventBookingsById(getEventBookingsByIdRequest, eventBookingDTO.getBookingId().toString());
         if (null != getEventBookingsByIdResponse.getEntity() && getEventBookingsByIdResponse.getEntity() instanceof EventBookingDTO) {
             assertNotNull(((EventBookingDTO) getEventBookingsByIdResponse.getEntity()).getUserBooked());
-            assertEquals(((EventBookingDTO) getEventBookingsByIdResponse.getEntity()).getUserBooked().getClass(), UserSummaryWithEmailAddressDTO.class);
+            assertEquals(UserSummaryWithEmailAddressDTO.class, ((EventBookingDTO) getEventBookingsByIdResponse.getEntity()).getUserBooked().getClass());
         }
     }
 
@@ -106,7 +106,7 @@ public class EventsFacadeTest extends IsaacE2ETest {
         HttpServletRequest getEventBookingsAsAnonymous_Request = createNiceMock(HttpServletRequest.class);
         replay(getEventBookingsAsAnonymous_Request);
         Response getEventBookingsAsAnonymous_Response = eventsFacade.adminGetEventBookingByEventId(getEventBookingsAsAnonymous_Request, "_regular_test_event");
-        assertNotEquals(getEventBookingsAsAnonymous_Response.getStatus(), Response.Status.OK.getStatusCode());
+        assertNotEquals(Response.Status.OK.getStatusCode(), getEventBookingsAsAnonymous_Response.getStatus());
 
         // Get event bookings by event id as a student (should fail)
         LoginResult studentLogin = loginAs(httpSession, properties.getProperty("TEST_STUDENT_EMAIL"), properties.getProperty("TEST_STUDENT_PASSWORD"));
@@ -114,7 +114,7 @@ public class EventsFacadeTest extends IsaacE2ETest {
         expect(getEventBookingsAsStudent_Request.getCookies()).andReturn(new Cookie[] { studentLogin.cookie }).atLeastOnce();
         replay(getEventBookingsAsStudent_Request);
         Response getEventBookingsAsStudent_Response = eventsFacade.adminGetEventBookingByEventId(getEventBookingsAsStudent_Request, "_regular_test_event");
-        assertNotEquals(getEventBookingsAsStudent_Response.getStatus(), Response.Status.OK.getStatusCode());
+        assertNotEquals(Response.Status.OK.getStatusCode(), getEventBookingsAsStudent_Response.getStatus());
 
         // Get event bookings by event id as a teacher (should fail)
         LoginResult teacherLogin = loginAs(httpSession, properties.getProperty("TEST_TEACHER_EMAIL"), properties.getProperty("TEST_TEACHER_PASSWORD"));
@@ -122,7 +122,7 @@ public class EventsFacadeTest extends IsaacE2ETest {
         expect(getEventBookingsAsTeacher_Request.getCookies()).andReturn(new Cookie[] { teacherLogin.cookie }).atLeastOnce();
         replay(getEventBookingsAsTeacher_Request);
         Response getEventBookingsAsTeacher_Response = eventsFacade.adminGetEventBookingByEventId(getEventBookingsAsTeacher_Request, "_regular_test_event");
-        assertNotEquals(getEventBookingsAsTeacher_Response.getStatus(), Response.Status.OK.getStatusCode());
+        assertNotEquals(Response.Status.OK.getStatusCode(), getEventBookingsAsTeacher_Response.getStatus());
 
         // Get event bookings by event id as a teacher (should fail)
         LoginResult editorLogin = loginAs(httpSession, properties.getProperty("TEST_EDITOR_EMAIL"), properties.getProperty("TEST_EDITOR_PASSWORD"));
@@ -130,7 +130,7 @@ public class EventsFacadeTest extends IsaacE2ETest {
         expect(getEventBookingsAsEditor_Request.getCookies()).andReturn(new Cookie[] { editorLogin.cookie }).atLeastOnce();
         replay(getEventBookingsAsEditor_Request);
         Response getEventBookingsAsEditor_Response = eventsFacade.adminGetEventBookingByEventId(getEventBookingsAsEditor_Request, "_regular_test_event");
-        assertNotEquals(getEventBookingsAsEditor_Response.getStatus(), Response.Status.OK.getStatusCode());
+        assertNotEquals(Response.Status.OK.getStatusCode(), getEventBookingsAsEditor_Response.getStatus());
 
         // Get event bookings by event id as an event manager (should succeed)
         LoginResult eventManagerLogin = loginAs(httpSession, properties.getProperty("TEST_EVENTMANAGER_EMAIL"), properties.getProperty("TEST_EVENTMANAGER_PASSWORD"));
@@ -138,10 +138,10 @@ public class EventsFacadeTest extends IsaacE2ETest {
         expect(getEventBookingsAsEventManager_Request.getCookies()).andReturn(new Cookie[] { eventManagerLogin.cookie }).atLeastOnce();
         replay(getEventBookingsAsEventManager_Request);
         Response getEventBookingsAsEventManager_Response = eventsFacade.adminGetEventBookingByEventId(getEventBookingsAsEventManager_Request, "_regular_test_event");
-        assertEquals(getEventBookingsAsEventManager_Response.getStatus(), Response.Status.OK.getStatusCode());
+        assertEquals(Response.Status.OK.getStatusCode(), getEventBookingsAsEventManager_Response.getStatus());
         if (null != getEventBookingsAsEventManager_Response.getEntity() && getEventBookingsAsAnonymous_Response.getEntity() instanceof List) {
             List<?> entity = (List<?>) getEventBookingsAsEventManager_Response.getEntity();
-            assertEquals(entity.size(), 2);
+            assertEquals(2, entity.size());
             for (Object o : entity) {
                 assert(o instanceof DetailedEventBookingDTO);
             }
