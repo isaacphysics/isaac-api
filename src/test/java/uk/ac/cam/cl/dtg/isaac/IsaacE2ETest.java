@@ -23,6 +23,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.quiz.PgQuestionAttempts;
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.PgTransactionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
@@ -76,6 +77,7 @@ import java.util.Map;
 import static org.easymock.EasyMock.and;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.capture;
+import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
@@ -86,6 +88,8 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.EMAIL_SIGNATURE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
 public class IsaacE2ETest {
+
+    protected static final HttpSession httpSession;
     protected static final PostgreSQLContainer postgres;
     protected static final ElasticsearchContainer elasticsearch;
     protected static final PropertiesLoader properties;
@@ -214,7 +218,7 @@ public class IsaacE2ETest {
         emailManager = new EmailManager(communicator, userPreferenceManager, properties, contentManager, logManager, globalTokens);
 
         userAuthenticationManager = new UserAuthenticationManager(pgUsers, properties, providersToRegister, emailManager);
-        ISecondFactorAuthenticator secondFactorManager = createNiceMock(SegueTOTPAuthenticator.class);
+        ISecondFactorAuthenticator secondFactorManager = createMock(SegueTOTPAuthenticator.class);
         // We don't care for MFA here so we can safely disable it
         try {
             expect(secondFactorManager.has2FAConfigured(anyObject())).andReturn(false).atLeastOnce();
@@ -239,6 +243,12 @@ public class IsaacE2ETest {
         eventBookingManager = new EventBookingManager(bookingPersistanceManager, emailManager, userAssociationManager, properties, groupManager, userAccountManager, pgTransactionManager);
         userBadgeManager = createNiceMock(UserBadgeManager.class);
         schoolListReader = createNiceMock(SchoolListReader.class);
+
+        String someSegueAnonymousUserId = "9284723987anonymous83924923";
+        httpSession = createNiceMock(HttpSession.class);
+        expect(httpSession.getAttribute(Constants.ANONYMOUS_USER)).andReturn(null).anyTimes();
+        expect(httpSession.getId()).andReturn(someSegueAnonymousUserId).anyTimes();
+        replay(httpSession);
 
         // NOTE: The next part is commented out until we figure out a way of actually using Guice to do the heavy lifting for us..
         /*
