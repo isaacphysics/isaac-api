@@ -368,12 +368,13 @@ public class GameManager {
         Validate.notNull(user);
 
         List<GameboardDTO> usersGameboards = this.gameboardPersistenceManager.getGameboardsByUserId(user);
-        Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser = questionManager
-                .getQuestionAttemptsByUser(user);
-
         if (null == usersGameboards || usersGameboards.isEmpty()) {
             return new GameboardListDTO();
         }
+
+        List<String> questionPageIds = usersGameboards.stream().map(GameboardDTO::getContents).flatMap(Collection::stream).map(GameboardItem::getId).collect(Collectors.toList());
+        Map<String, Map<String, List<LightweightQuestionValidationResponse>>> questionAttemptsFromUser =
+                questionManager.getMatchingQuestionAttempts(user, questionPageIds);
 
         List<GameboardDTO> resultToReturn = Lists.newArrayList();
 
@@ -735,7 +736,7 @@ public class GameManager {
      *             - if there is an error retrieving the content requested.
      */
     private GameboardDTO augmentGameboardWithQuestionAttemptInformation(final GameboardDTO gameboardDTO,
-                                                                        final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser)
+                                                                        final Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> questionAttemptsFromUser)
             throws ContentManagerException {
         if (null == gameboardDTO) {
             return null;

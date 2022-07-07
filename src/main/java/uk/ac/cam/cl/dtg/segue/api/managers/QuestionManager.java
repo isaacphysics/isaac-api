@@ -410,6 +410,22 @@ public class QuestionManager {
         return this.questionAttemptPersistenceManager.getQuestionAttemptsByUsersAndQuestionPrefix(userIds,
                 questionPageIds);
     }
+
+    /**
+     *  Helper method for attempts from a single user.
+     *
+     * @see #getMatchingQuestionAttempts(List, List)
+     *
+     * @param user who we are interested in.
+     * @param questionPageIds we want to look up.
+     * @return a map of user id to question page id to question_id to list of attempts.
+     * @throws SegueDatabaseException if there is a database error.
+     */
+    public Map<String, Map<String, List<LightweightQuestionValidationResponse>>> getMatchingQuestionAttempts(
+            final RegisteredUserDTO user, final List<String> questionPageIds) throws SegueDatabaseException {
+
+        return this.getMatchingQuestionAttempts(Collections.singletonList(user), questionPageIds).get(user.getId());
+    }
     
     /**
      * mergeAnonymousQuestionAttemptsIntoRegisteredUser.
