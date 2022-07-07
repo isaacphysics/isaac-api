@@ -9,6 +9,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.DetailedEventBookingDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AdditionalAuthenticationRequiredException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
@@ -24,14 +25,19 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.expect;
 import static org.junit.Assert.assertEquals;
 import static org.easymock.EasyMock.replay;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 //@RunWith(PowerMockRunner.class)
 @PowerMockIgnore("javax.net.ssl.*")
@@ -47,7 +53,7 @@ public class EventsFacadeTest extends IsaacE2ETest {
     }
 
     @Test
-    public void getEventsTest() throws InterruptedException {
+    public void getEventsTest() {
         HttpServletRequest request = createNiceMock(HttpServletRequest.class);
         expect(request.getCookies()).andReturn(new Cookie[]{}).anyTimes();
         replay(request);
@@ -65,7 +71,7 @@ public class EventsFacadeTest extends IsaacE2ETest {
     }
 
     @Test
-    public void getBookingByIdTest() throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException, AuthenticationProviderMappingException, IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException, MFARequiredButNotConfiguredException, ContentManagerException {
+    public void getBookingByIdTest() throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException, AuthenticationProviderMappingException, IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException, MFARequiredButNotConfiguredException, SQLException {
         // --- Login as a student
         LoginResult studentLogin = loginAs(httpSession, properties.getProperty("TEST_STUDENT_EMAIL"), properties.getProperty("TEST_STUDENT_PASSWORD"));
         // --- Login as an event manager
@@ -87,16 +93,29 @@ public class EventsFacadeTest extends IsaacE2ETest {
         }
         assertNotNull(eventBookingDTO);
 
-        // --- Check whether what we get as event managers
+        // --- Check whether what we get as event managers contains the right amount of information
         HttpServletRequest getEventBookingsByIdRequest = createNiceMock(HttpServletRequest.class);
         expect(getEventBookingsByIdRequest.getCookies()).andReturn(new Cookie[] { eventManagerLogin.cookie }).atLeastOnce();
         replay(getEventBookingsByIdRequest);
 
         Response getEventBookingsByIdResponse = eventsFacade.getEventBookingsById(getEventBookingsByIdRequest, eventBookingDTO.getBookingId().toString());
-        if (null != getEventBookingsByIdResponse.getEntity() && getEventBookingsByIdResponse.getEntity() instanceof EventBookingDTO) {
-            assertNotNull(((EventBookingDTO) getEventBookingsByIdResponse.getEntity()).getUserBooked());
-            assertEquals(UserSummaryWithEmailAddressDTO.class, ((EventBookingDTO) getEventBookingsByIdResponse.getEntity()).getUserBooked().getClass());
-        }
+        assertNotNull(getEventBookingsByIdResponse.getEntity());
+        assertEquals(DetailedEventBookingDTO.class.getCanonicalName(), getEventBookingsByIdResponse.getEntity().getClass().getCanonicalName());
+        assertNotNull(((DetailedEventBookingDTO) getEventBookingsByIdResponse.getEntity()).getUserBooked());
+        assertEquals(UserSummaryWithEmailAddressDTO.class.getCanonicalName(), ((EventBookingDTO) getEventBookingsByIdResponse.getEntity()).getUserBooked().getClass().getCanonicalName());
+
+        // --- Delete the booking created above otherwise the other tests may be affected.
+        HttpServletRequest cancelBookingRequest = createNiceMock(HttpServletRequest.class);
+        expect(cancelBookingRequest.getCookies()).andReturn(new Cookie[] { studentLogin.cookie }).atLeastOnce();
+        replay(cancelBookingRequest);
+        Response cancelBookingResponse = eventsFacade.cancelBooking(cancelBookingRequest, "_regular_test_event");
+        assertEquals(Response.Status.NO_CONTENT.getStatusCode(), cancelBookingResponse.getStatus());
+
+        // --- Tear down
+        // This should not be necessary, but we don't actually remove cancelled bookings from the database.
+        PreparedStatement pst = postgresSqlDb.getDatabaseConnection().prepareStatement("DELETE FROM event_bookings WHERE id = ?;");
+        pst.setLong(1, ((EventBookingDTO) createBookingResponse.getEntity()).getBookingId());
+        pst.executeUpdate();
     }
 
     // events/{event_id}/bookings
@@ -139,12 +158,12 @@ public class EventsFacadeTest extends IsaacE2ETest {
         replay(getEventBookingsAsEventManager_Request);
         Response getEventBookingsAsEventManager_Response = eventsFacade.adminGetEventBookingByEventId(getEventBookingsAsEventManager_Request, "_regular_test_event");
         assertEquals(Response.Status.OK.getStatusCode(), getEventBookingsAsEventManager_Response.getStatus());
-        if (null != getEventBookingsAsEventManager_Response.getEntity() && getEventBookingsAsAnonymous_Response.getEntity() instanceof List) {
-            List<?> entity = (List<?>) getEventBookingsAsEventManager_Response.getEntity();
-            assertEquals(2, entity.size());
-            for (Object o : entity) {
-                assert(o instanceof DetailedEventBookingDTO);
-            }
+        assertNotNull(getEventBookingsAsEventManager_Response.getEntity());
+        assertTrue(getEventBookingsAsEventManager_Response.getEntity() instanceof List);
+        List<?> entity = (List<?>) getEventBookingsAsEventManager_Response.getEntity();
+        assertEquals(2, entity.size());
+        for (Object o : entity) {
+            assertEquals(DetailedEventBookingDTO.class.getCanonicalName(), o.getClass().getCanonicalName());
         }
 
         // Get event bookings by event id as an admin (should succeed)
