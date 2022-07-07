@@ -18,7 +18,6 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.MFARequiredButNotConfiguredExcepti
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -41,7 +40,7 @@ import static org.junit.Assert.assertTrue;
 
 //@RunWith(PowerMockRunner.class)
 @PowerMockIgnore("javax.net.ssl.*")
-@Ignore
+//@Ignore
 public class EventsFacadeTest extends IsaacE2ETest {
 
     private EventsFacade eventsFacade;
