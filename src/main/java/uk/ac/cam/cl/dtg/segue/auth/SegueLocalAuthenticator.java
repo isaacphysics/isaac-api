@@ -189,24 +189,18 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 
         LocalUserCredential luc = passwordDataManager.getLocalUserCredential(userToAttachToken.getId());
         if (null == luc) {
-            // Create a new luc as this user didn't have one before - they won't ever be able to login with this
-            // because the @ symbol is not a valid Base64 character and the KEY_LENGTH is also shorter than those used
-            // when checking real passwords.
-            // If new password algorithms are implemented that use short keys and/or a larger charset than Base64 does
-            // this may become an issue, although unlikely because short keys are risky and Base64 is an encoding safe charset.
+            // Create a new luc as this user didn't have one before - they won't ever be able to log in with this
+            // because the @ symbol is not a valid Base64 character.
             luc = new LocalUserCredential(userToAttachToken.getId(),
-                    "LOCKED@" + new String(Base64.encodeBase64(this.preferredAlgorithm.computeHash(UUID.randomUUID().toString(),
-                            UUID.randomUUID().toString(), SHORT_KEY_LENGTH))),
-                    new String(Base64.encodeBase64(this.preferredAlgorithm.computeHash(UUID.randomUUID().toString(),
-                            UUID.randomUUID().toString(), SHORT_KEY_LENGTH))),
+                    "LOCKED@@@" + new String(Base64.encodeBase64(UUID.randomUUID().toString().getBytes())),
+                    this.preferredAlgorithm.generateSalt(),
                     this.preferredAlgorithm.hashingAlgorithmName());
         }
 
         // Trim the "=" padding off the end of the base64 encoded token so that the URL that is
         // eventually generated is correctly parsed in email clients
-        String token = new String(Base64.encodeBase64(this.preferredAlgorithm.computeHash(UUID.randomUUID().toString(),
-                luc.getSecureSalt(), SHORT_KEY_LENGTH))).replace("=", "").replace("/", "")
-                .replace("+", "");
+        String token = this.preferredAlgorithm.hashPassword(UUID.randomUUID().toString(), luc.getSecureSalt())
+                .replace("=", "").replace("/", "").replace("+", "");
 
         luc.setResetToken(token);
 
