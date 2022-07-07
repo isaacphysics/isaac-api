@@ -82,7 +82,7 @@ public class SeguePBKDF2 {
      * @throws InvalidKeySpecException
      *             - if the preconfigured key spec is invalid.
      */
-    public byte[] computeHash(final String str, final String salt, final int keyLength)
+    private byte[] computeHash(final String str, final String salt, final int keyLength)
             throws NoSuchAlgorithmException, InvalidKeySpecException {
         char[] strChars = str.toCharArray();
         byte[] saltBytes = salt.getBytes();
