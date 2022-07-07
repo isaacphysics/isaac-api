@@ -23,12 +23,12 @@ import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
-import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -43,6 +43,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdFromQuestionId;
@@ -234,10 +235,12 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
     
     @Override
     public Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>>
-            getQuestionAttemptsByUsersAndQuestionPrefix(final List<Long> userIds, final List<String> questionPageIds)
+            getQuestionAttemptsByUsersAndQuestionPrefix(final List<Long> userIds, final List<String> allQuestionPageIds)
             throws SegueDatabaseException {
-        Validate.notEmpty(questionPageIds);
-        
+        Validate.notEmpty(allQuestionPageIds);
+
+        List<String> uniquePageIds = allQuestionPageIds.stream().distinct().collect(Collectors.toList());
+
         if (userIds.isEmpty()) {
             return Maps.newHashMap();
         }
@@ -248,29 +251,13 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             
             // add all of the user ids we are interested in.
             if (!userIds.isEmpty()) {
-                StringBuilder inParams = new StringBuilder();
-                inParams.append("?");
-                for (int i = 1; i < userIds.size(); i++) {
-                    inParams.append(",?");
-                }
-    
-                query.append(String.format(" user_id IN (%s)", inParams.toString()));
+                String inParams = userIds.stream().map(u -> "?").collect(Collectors.joining(", "));
+                query.append(String.format(" user_id IN (%s)", inParams));
             }
 
             // add all of the question page ids we are interested in
-            StringBuilder questionIdsSB = new StringBuilder();
-            if (!questionPageIds.isEmpty()) {
-                questionIdsSB.append("^(");
-                questionIdsSB.append(questionPageIds.get(0));
-                for (int i = 1; i < questionPageIds.size(); i++) {
-                    questionIdsSB.append("|").append(questionPageIds.get(i));
-                }
-                
-                questionIdsSB.append(")");
-                
-                query.append(" AND question_id ~ ?");
-            }   
-            
+            String questionIdsOr = uniquePageIds.stream().map(q -> "question_id LIKE ?").collect(Collectors.joining(" OR "));
+            query.append(" AND (").append(questionIdsOr).append(")");
             query.append(" ORDER BY \"timestamp\" ASC");
             
             try (PreparedStatement pst = conn.prepareStatement(query.toString())) {
@@ -284,7 +271,10 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
                     mapToReturn.put(userId, new HashMap<>());
                 }
 
-                pst.setString(index++, questionIdsSB.toString());
+                for (String pageId : uniquePageIds) {
+                    // Using LIKE matching on part IDs, so add wildcard to each page ID:
+                    pst.setString(index++, pageId + "%");
+                }
 
                 try (ResultSet results = pst.executeQuery()) {
                     while (results.next()) {
