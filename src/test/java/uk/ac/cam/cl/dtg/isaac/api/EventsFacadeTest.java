@@ -171,4 +171,63 @@ public class EventsFacadeTest extends IsaacE2ETest {
         // nightmare I'm not prepared to face yet. Plus, if we have people who obtained the ADMIN role, we have
         // bigger problems anyway.
     }
+
+    @Test
+    public void getEventBookingForAllGroupsTest() throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException, AuthenticationProviderMappingException, IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+        HttpServletRequest anonymous_Request = createNiceMock(HttpServletRequest.class);
+        replay(anonymous_Request);
+        Response anonymous_Response = eventsFacade.getEventBookingForAllGroups(anonymous_Request, "_regular_test_event");
+        assertNotEquals(Response.Status.OK.getStatusCode(), anonymous_Response.getStatus());
+
+        // Get event bookings by event id as a student (should fail)
+        LoginResult studentLogin = loginAs(httpSession, properties.getProperty("TEST_STUDENT_EMAIL"), properties.getProperty("TEST_STUDENT_PASSWORD"));
+        HttpServletRequest student_Request = createNiceMock(HttpServletRequest.class);
+        expect(student_Request.getCookies()).andReturn(new Cookie[] { studentLogin.cookie }).atLeastOnce();
+        replay(student_Request);
+        Response student_Response = eventsFacade.getEventBookingForAllGroups(student_Request, "_regular_test_event");
+        assertNotEquals(Response.Status.OK.getStatusCode(), student_Response.getStatus());
+
+        LoginResult teacherLogin = loginAs(httpSession, properties.getProperty("TEST_TEACHER_EMAIL"), properties.getProperty("TEST_TEACHER_PASSWORD"));
+        HttpServletRequest teacher_Request = createNiceMock(HttpServletRequest.class);
+        expect(teacher_Request.getCookies()).andReturn(new Cookie[] { teacherLogin.cookie }).atLeastOnce();
+        replay(teacher_Request);
+        Response teacher_Response = eventsFacade.getEventBookingForAllGroups(teacher_Request, "_regular_test_event");
+        assertEquals(Response.Status.OK.getStatusCode(), teacher_Response.getStatus());
+        assertNotNull(teacher_Response.getEntity());
+        // Make sure the EventBookingDTOs contain UserSummaryDTOs, thus not leaking information
+        assertTrue(teacher_Response.getEntity() instanceof List);
+
+        List<?> teacherEntity = (List<?>) teacher_Response.getEntity();
+        for (Object o : teacherEntity) {
+            assertEquals(EventBookingDTO.class.getCanonicalName(), o.getClass().getCanonicalName());
+            assertEquals(UserSummaryDTO.class.getCanonicalName(), ((EventBookingDTO) o).getUserBooked().getClass().getCanonicalName());
+        }
+        Optional<UserSummaryDTO> teacherAlice = (Optional<UserSummaryDTO>) teacherEntity.stream().filter(e -> ((EventBookingDTO) e).getUserBooked().getId() == 7).findFirst();
+        // Alice is associated with Teacher and is booked for this event => Alice should be present
+        assertTrue(teacherAlice.isPresent());
+        Optional<UserSummaryDTO> teacherCharlie = (Optional<UserSummaryDTO>) teacherEntity.stream().filter(e -> ((EventBookingDTO) e).getUserBooked().getId() == 9).findFirst();
+        // Charlie is not associated with Teacher and is not booked for this event => Charlie should not be present
+        assertFalse(teacherCharlie.isPresent());
+
+        LoginResult daveLogin = loginAs(httpSession, "dave-teacher@test.com", properties.getProperty("TEST_TEACHER_PASSWORD"));
+        HttpServletRequest dave_Request = createNiceMock(HttpServletRequest.class);
+        expect(dave_Request.getCookies()).andReturn(new Cookie[] { daveLogin.cookie }).atLeastOnce();
+        replay(dave_Request);
+        Response dave_Response = eventsFacade.getEventBookingForAllGroups(dave_Request, "_regular_test_event");
+        assertEquals(Response.Status.OK.getStatusCode(), dave_Response.getStatus());
+        assertNotNull(dave_Response.getEntity());
+        // Make sure the EventBookingDTOs contain UserSummaryDTOs, thus not leaking information
+        assertTrue(dave_Response.getEntity() instanceof List); // instanceof is OK here because we just need to know this is a subclass of a List
+        List<?> daveEntity = (List<?>) dave_Response.getEntity();
+        for (Object o : daveEntity) {
+            assertEquals(EventBookingDTO.class.getCanonicalName(), o.getClass().getCanonicalName());
+            assertEquals(UserSummaryDTO.class.getCanonicalName(), ((EventBookingDTO) o).getUserBooked().getClass().getCanonicalName());
+        }
+        Optional<UserSummaryDTO> daveAlice = (Optional<UserSummaryDTO>) daveEntity.stream().filter(e -> ((EventBookingDTO) e).getUserBooked().getId() == 7).findFirst();
+        // Alice is not associated with Dave but is booked for this event => Alice should not be present
+        assertFalse(daveAlice.isPresent());
+        Optional<UserSummaryDTO> daveCharlie = (Optional<UserSummaryDTO>) daveEntity.stream().filter(e -> ((EventBookingDTO) e).getUserBooked().getId() == 9).findFirst();
+        // Charlie is associated with Dave and is not booked for this event => Charlie should not be present
+        assertFalse(daveCharlie.isPresent());
+    }
 }

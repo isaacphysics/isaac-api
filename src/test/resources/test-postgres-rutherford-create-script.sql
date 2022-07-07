@@ -1482,12 +1482,18 @@ INSERT INTO public.event_bookings (id, event_id, created, user_id, reserved_by, 
 -- Data for Name: group_memberships; Type: TABLE DATA; Schema: public; Owner: rutherford
 --
 
+INSERT INTO public.group_memberships (group_id, user_id, created, updated, status) VALUES (1, 7, NULL, '2022-07-06 14:38:03.339711+00', 'ACTIVE');
+INSERT INTO public.group_memberships (group_id, user_id, created, updated, status) VALUES (1, 8, NULL, '2022-07-06 14:38:17.286686+00', 'ACTIVE');
+INSERT INTO public.group_memberships (group_id, user_id, created, updated, status) VALUES (2, 8, NULL, '2022-07-06 14:38:36.064903+00', 'ACTIVE');
+INSERT INTO public.group_memberships (group_id, user_id, created, updated, status) VALUES (2, 9, NULL, '2022-07-06 14:38:36.064903+00', 'ACTIVE');
 
 
 --
 -- Data for Name: groups; Type: TABLE DATA; Schema: public; Owner: rutherford
 --
 
+INSERT INTO public.groups (id, group_name, owner_id, created, archived, group_status, last_updated) VALUES (1, 'AB Group (Test)', 5, '2022-07-06 15:36:58', false, 'ACTIVE', NULL);
+INSERT INTO public.groups (id, group_name, owner_id, created, archived, group_status, last_updated) VALUES (2, 'BC Group (Dave)', 10, '2022-07-06 15:37:32', false, 'ACTIVE', NULL);
 
 
 --
@@ -1554,12 +1560,20 @@ INSERT INTO public.event_bookings (id, event_id, created, user_id, reserved_by, 
 -- Data for Name: user_associations; Type: TABLE DATA; Schema: public; Owner: rutherford
 --
 
+INSERT INTO public.user_associations (user_id_granting_permission, user_id_receiving_permission, created) VALUES (7, 5, '2022-07-06 16:05:29');
+INSERT INTO public.user_associations (user_id_granting_permission, user_id_receiving_permission, created) VALUES (8, 5, '2022-07-06 16:05:46');
+INSERT INTO public.user_associations (user_id_granting_permission, user_id_receiving_permission, created) VALUES (8, 10, '2022-07-06 16:06:03');
+INSERT INTO public.user_associations (user_id_granting_permission, user_id_receiving_permission, created) VALUES (9, 10, '2022-07-06 16:06:11');
 
 
 --
 -- Data for Name: user_associations_tokens; Type: TABLE DATA; Schema: public; Owner: rutherford
 --
 
+INSERT INTO public.user_associations_tokens (token, owner_user_id, group_id) VALUES ('ABTOK7', 7, 1);
+INSERT INTO public.user_associations_tokens (token, owner_user_id, group_id) VALUES ('ABTOK8', 8, 1);
+INSERT INTO public.user_associations_tokens (token, owner_user_id, group_id) VALUES ('BCTOK8', 8, 2);
+INSERT INTO public.user_associations_tokens (token, owner_user_id, group_id) VALUES ('BCTOK9', 9, 2);
 
 
 --
@@ -1596,6 +1610,7 @@ INSERT INTO public.user_credentials (user_id, password, secure_salt, security_sc
 INSERT INTO public.user_credentials (user_id, password, secure_salt, security_scheme, reset_token, reset_expiry, created, last_updated) VALUES (7, 'ak86hEtKZzGppIDDaPBOIftJ5rrI/lSKz30q3hkX0utfxsv+f5rzb1RfEEi5rbfIEaseGs18Aj6X3zYV/ZRNwQ==', 'EXNmh521xIMQBh11ayfawg==', 'SeguePBKDF2v3', NULL, NULL, '2019-08-01 12:51:05.940811+00', '2021-01-25 15:11:02.617+00');
 INSERT INTO public.user_credentials (user_id, password, secure_salt, security_scheme, reset_token, reset_expiry, created, last_updated) VALUES (8, 'ak86hEtKZzGppIDDaPBOIftJ5rrI/lSKz30q3hkX0utfxsv+f5rzb1RfEEi5rbfIEaseGs18Aj6X3zYV/ZRNwQ==', 'EXNmh521xIMQBh11ayfawg==', 'SeguePBKDF2v3', NULL, NULL, '2019-08-01 12:51:05.940811+00', '2021-01-25 15:11:02.617+00');
 INSERT INTO public.user_credentials (user_id, password, secure_salt, security_scheme, reset_token, reset_expiry, created, last_updated) VALUES (9, 'ak86hEtKZzGppIDDaPBOIftJ5rrI/lSKz30q3hkX0utfxsv+f5rzb1RfEEi5rbfIEaseGs18Aj6X3zYV/ZRNwQ==', 'EXNmh521xIMQBh11ayfawg==', 'SeguePBKDF2v3', NULL, NULL, '2019-08-01 12:51:05.940811+00', '2021-01-25 15:11:02.617+00');
+INSERT INTO public.user_credentials (user_id, password, secure_salt, security_scheme, reset_token, reset_expiry, created, last_updated) VALUES (10, 'ak86hEtKZzGppIDDaPBOIftJ5rrI/lSKz30q3hkX0utfxsv+f5rzb1RfEEi5rbfIEaseGs18Aj6X3zYV/ZRNwQ==', 'EXNmh521xIMQBh11ayfawg==', 'SeguePBKDF2v3', NULL, NULL, '2019-08-01 12:51:05.940811+00', '2021-01-25 15:11:02.617+00');
 
 
 --
@@ -1663,7 +1678,8 @@ INSERT INTO public.users (id, _id, family_name, given_name, email, role, date_of
 INSERT INTO public.users (id, _id, family_name, given_name, email, role, date_of_birth, gender, registration_date, school_id, school_other, exam_board, registered_contexts, registered_contexts_last_confirmed, last_updated, email_verification_status, last_seen, email_to_verify, email_verification_token, session_token, deleted) VALUES (6, NULL, 'Student', 'Test Student', 'test-student@test.com', 'STUDENT', NULL, 'MALE', '2019-08-01 12:51:39.981', '110158', NULL, 'OCR', '{"{\"stage\": \"all\", \"examBoard\": \"ocr\"}"}', '2021-10-04 14:12:13.351', '2021-10-04 14:12:13.384', 'VERIFIED', '2022-03-22 15:37:44.585', 'test-student@test.com', 'ZMUU7NbjhUSawOClEzb1KPEMcUA93QCkxuGejMwmE', 0, false);
 INSERT INTO public.users (id, _id, family_name, given_name, email, role, date_of_birth, gender, registration_date, school_id, school_other, exam_board, registered_contexts, registered_contexts_last_confirmed, last_updated, email_verification_status, last_seen, email_to_verify, email_verification_token, session_token, deleted) VALUES (7, NULL, 'Student', 'Alice', 'alice-student@test.com', 'STUDENT', '1991-01-01', 'FEMALE', '2022-07-05 17:31:12', NULL, 'A Manually Entered School', 'OTHER', '{"{\"stage\": \"all\", \"examBoard\": \"all\"}"}', '2022-07-06 10:52:35.922', '2022-07-06 10:52:36.056', 'VERIFIED', '2022-07-06 10:52:36.163', 'alice-student@test.com', NULL, 0, false);
 INSERT INTO public.users (id, _id, family_name, given_name, email, role, date_of_birth, gender, registration_date, school_id, school_other, exam_board, registered_contexts, registered_contexts_last_confirmed, last_updated, email_verification_status, last_seen, email_to_verify, email_verification_token, session_token, deleted) VALUES (8, NULL, 'Student', 'Bob', 'bob-student@test.com', 'STUDENT', NULL, 'MALE', '2022-07-05 17:32:41', '110158', NULL, 'AQA', '{}', NULL, '2022-07-05 17:32:57', 'VERIFIED', '2022-07-06 10:55:53.905', 'bob-student@test.com', NULL, 0, false);
-INSERT INTO public.users (id, _id, family_name, given_name, email, role, date_of_birth, gender, registration_date, school_id, school_other, exam_board, registered_contexts, registered_contexts_last_confirmed, last_updated, email_verification_status, last_seen, email_to_verify, email_verification_token, session_token, deleted) VALUES (2, NULL, 'Test', 'Test Admin', 'test-admin@test.com', 'ADMIN', NULL, 'OTHER', '2019-08-01 12:40:16.738', NULL, 'A Manually Entered School', 'OTHER', '{"{\"stage\": \"all\", \"examBoard\": \"all\"}"}', '2022-07-06 10:48:59.527', '2022-07-06 10:48:59.673', 'VERIFIED', '2022-07-06 10:57:59.279', 'test-admin@test.com', 'AwrblcwVoRFMWxJtV2TXAalOeA7a84TpD3rO2RmE', 0, false);
+INSERT INTO public.users (id, _id, family_name, given_name, email, role, date_of_birth, gender, registration_date, school_id, school_other, exam_board, registered_contexts, registered_contexts_last_confirmed, last_updated, email_verification_status, last_seen, email_to_verify, email_verification_token, session_token, deleted) VALUES (10, NULL, 'Teacher', 'Dave', 'dave-teacher@test.com', 'TEACHER', NULL, 'MALE', '2022-07-06 15:15:00', '110158', NULL, 'OTHER', '{}', NULL, NULL, 'VERIFIED', NULL, 'dave-teacher@test.com', NULL, 0, false);
+INSERT INTO public.users (id, _id, family_name, given_name, email, role, date_of_birth, gender, registration_date, school_id, school_other, exam_board, registered_contexts, registered_contexts_last_confirmed, last_updated, email_verification_status, last_seen, email_to_verify, email_verification_token, session_token, deleted) VALUES (2, NULL, 'Test', 'Test Admin', 'test-admin@test.com', 'ADMIN', NULL, 'OTHER', '2019-08-01 12:40:16.738', NULL, 'A Manually Entered School', 'OTHER', '{"{\"stage\": \"all\", \"examBoard\": \"all\"}"}', '2022-07-06 10:48:59.527', '2022-07-06 10:48:59.673', 'VERIFIED', '2022-07-06 15:38:56.023', 'test-admin@test.com', 'AwrblcwVoRFMWxJtV2TXAalOeA7a84TpD3rO2RmE', 0, false);
 
 
 --
@@ -1724,7 +1740,7 @@ INSERT INTO quartz_cluster.qrtz_locks (sched_name, lock_name) VALUES ('SegueSche
 -- Data for Name: qrtz_scheduler_state; Type: TABLE DATA; Schema: quartz_cluster; Owner: rutherford
 --
 
-INSERT INTO quartz_cluster.qrtz_scheduler_state (sched_name, instance_name, last_checkin_time, checkin_interval) VALUES ('SegueScheduler', 'dhcp-10-248-96-181.eduroam.wireless.private.cam.ac.uk1657100614313', 1657102035772, 20000);
+INSERT INTO quartz_cluster.qrtz_scheduler_state (sched_name, instance_name, last_checkin_time, checkin_interval) VALUES ('SegueScheduler', 'c0746.int.cl.cam.ac.uk1657113330166', 1657119795329, 20000);
 
 
 --
@@ -1743,11 +1759,11 @@ INSERT INTO quartz_cluster.qrtz_scheduler_state (sched_name, instance_name, last
 -- Data for Name: qrtz_triggers; Type: TABLE DATA; Schema: quartz_cluster; Owner: rutherford
 --
 
-INSERT INTO quartz_cluster.qrtz_triggers (sched_name, trigger_name, trigger_group, job_name, job_group, description, next_fire_time, prev_fire_time, priority, trigger_state, trigger_type, start_time, end_time, calendar_name, misfire_instr, job_data) VALUES ('SegueScheduler', 'PIIDeleteScheduledJob_trigger', 'SQLMaintenance', 'PIIDeleteScheduledJob', 'SQLMaintenance', NULL, 1657155600000, -1, 5, 'WAITING', 'CRON', 1657100614000, 0, NULL, 0, '\x');
-INSERT INTO quartz_cluster.qrtz_triggers (sched_name, trigger_name, trigger_group, job_name, job_group, description, next_fire_time, prev_fire_time, priority, trigger_state, trigger_type, start_time, end_time, calendar_name, misfire_instr, job_data) VALUES ('SegueScheduler', 'cleanAnonymousUsers_trigger', 'SQLMaintenance', 'cleanAnonymousUsers', 'SQLMaintenance', NULL, 1657157400000, -1, 5, 'WAITING', 'CRON', 1657100614000, 0, NULL, 0, '\x');
-INSERT INTO quartz_cluster.qrtz_triggers (sched_name, trigger_name, trigger_group, job_name, job_group, description, next_fire_time, prev_fire_time, priority, trigger_state, trigger_type, start_time, end_time, calendar_name, misfire_instr, job_data) VALUES ('SegueScheduler', 'cleanUpExpiredReservations_trigger', 'SQLMaintenence', 'cleanUpExpiredReservations', 'SQLMaintenence', NULL, 1657173600000, -1, 5, 'WAITING', 'CRON', 1657100614000, 0, NULL, 0, '\x');
-INSERT INTO quartz_cluster.qrtz_triggers (sched_name, trigger_name, trigger_group, job_name, job_group, description, next_fire_time, prev_fire_time, priority, trigger_state, trigger_type, start_time, end_time, calendar_name, misfire_instr, job_data) VALUES ('SegueScheduler', 'deleteEventAdditionalBookingInformation_trigger', 'JavaJob', 'deleteEventAdditionalBookingInformation', 'JavaJob', NULL, 1657173600000, -1, 5, 'WAITING', 'CRON', 1657100614000, 0, NULL, 0, '\x');
-INSERT INTO quartz_cluster.qrtz_triggers (sched_name, trigger_name, trigger_group, job_name, job_group, description, next_fire_time, prev_fire_time, priority, trigger_state, trigger_type, start_time, end_time, calendar_name, misfire_instr, job_data) VALUES ('SegueScheduler', 'deleteEventAdditionalBookingInformationOneYear_trigger', 'JavaJob', 'deleteEventAdditionalBookingInformationOneYear', 'JavaJob', NULL, 1657173600000, -1, 5, 'WAITING', 'CRON', 1657100614000, 0, NULL, 0, '\x');
+INSERT INTO quartz_cluster.qrtz_triggers (sched_name, trigger_name, trigger_group, job_name, job_group, description, next_fire_time, prev_fire_time, priority, trigger_state, trigger_type, start_time, end_time, calendar_name, misfire_instr, job_data) VALUES ('SegueScheduler', 'PIIDeleteScheduledJob_trigger', 'SQLMaintenance', 'PIIDeleteScheduledJob', 'SQLMaintenance', NULL, 1657155600000, -1, 5, 'WAITING', 'CRON', 1657114598000, 0, NULL, 0, '\x');
+INSERT INTO quartz_cluster.qrtz_triggers (sched_name, trigger_name, trigger_group, job_name, job_group, description, next_fire_time, prev_fire_time, priority, trigger_state, trigger_type, start_time, end_time, calendar_name, misfire_instr, job_data) VALUES ('SegueScheduler', 'cleanAnonymousUsers_trigger', 'SQLMaintenance', 'cleanAnonymousUsers', 'SQLMaintenance', NULL, 1657157400000, -1, 5, 'WAITING', 'CRON', 1657114598000, 0, NULL, 0, '\x');
+INSERT INTO quartz_cluster.qrtz_triggers (sched_name, trigger_name, trigger_group, job_name, job_group, description, next_fire_time, prev_fire_time, priority, trigger_state, trigger_type, start_time, end_time, calendar_name, misfire_instr, job_data) VALUES ('SegueScheduler', 'cleanUpExpiredReservations_trigger', 'SQLMaintenence', 'cleanUpExpiredReservations', 'SQLMaintenence', NULL, 1657173600000, -1, 5, 'WAITING', 'CRON', 1657114598000, 0, NULL, 0, '\x');
+INSERT INTO quartz_cluster.qrtz_triggers (sched_name, trigger_name, trigger_group, job_name, job_group, description, next_fire_time, prev_fire_time, priority, trigger_state, trigger_type, start_time, end_time, calendar_name, misfire_instr, job_data) VALUES ('SegueScheduler', 'deleteEventAdditionalBookingInformation_trigger', 'JavaJob', 'deleteEventAdditionalBookingInformation', 'JavaJob', NULL, 1657173600000, -1, 5, 'WAITING', 'CRON', 1657114598000, 0, NULL, 0, '\x');
+INSERT INTO quartz_cluster.qrtz_triggers (sched_name, trigger_name, trigger_group, job_name, job_group, description, next_fire_time, prev_fire_time, priority, trigger_state, trigger_type, start_time, end_time, calendar_name, misfire_instr, job_data) VALUES ('SegueScheduler', 'deleteEventAdditionalBookingInformationOneYear_trigger', 'JavaJob', 'deleteEventAdditionalBookingInformationOneYear', 'JavaJob', NULL, 1657173600000, -1, 5, 'WAITING', 'CRON', 1657114598000, 0, NULL, 0, '\x');
 
 
 --
