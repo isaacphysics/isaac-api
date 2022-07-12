@@ -11,7 +11,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <segue.version>v2.22.6-SNAPSHOT</segue.version>
-        <log4j.version>2.17.1</log4j.version>
+        <log4j.version>2.18.0</log4j.version>
         <resteasy.version>4.7.6.Final</resteasy.version>
         <guice.version>4.2.3</guice.version>
         <oauth-client.version>1.33.3</oauth-client.version>
@@ -20,7 +20,7 @@
         <powermock.version>2.0.4</powermock.version>
         <swagger-ui-version>3.19.5</swagger-ui-version>
         <prometheus.version>0.8.0</prometheus.version>
-        <jetty-version>9.4.46.v20220331</jetty-version>
+        <jetty-version>9.4.48.v20220622</jetty-version>
         <jetty.port.api>8080</jetty.port.api>
         <jetty.port.etl>8090</jetty.port.etl>
         <web.xml>override-api-web.xml</web.xml>
