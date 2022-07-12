@@ -208,20 +208,11 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
                     String questionPageId = extractPageIdFromQuestionId(questionAttempt.getQuestionId());
                     String questionId = questionAttempt.getQuestionId();
 
+                    Map<String, List<QuestionValidationResponse>> attemptsForThisQuestionPage
+                            = mapOfQuestionAttemptsByPage.computeIfAbsent(questionPageId, k -> Maps.newLinkedHashMap());
 
-                    Map<String, List<QuestionValidationResponse>> attemptsForThisQuestionPage = mapOfQuestionAttemptsByPage
-                            .get(questionPageId);
-
-                    if (null == attemptsForThisQuestionPage) {
-                        attemptsForThisQuestionPage = Maps.newLinkedHashMap();
-                        mapOfQuestionAttemptsByPage.put(questionPageId, attemptsForThisQuestionPage);
-                    }
-
-                    List<QuestionValidationResponse> listOfResponses = attemptsForThisQuestionPage.get(questionId);
-                    if (null == listOfResponses) {
-                        listOfResponses = Lists.newArrayList();
-                        attemptsForThisQuestionPage.put(questionId, listOfResponses);
-                    }
+                    List<QuestionValidationResponse> listOfResponses
+                            = attemptsForThisQuestionPage.computeIfAbsent(questionId, k -> Lists.newArrayList());
 
                     listOfResponses.add(questionAttempt);
                 }
