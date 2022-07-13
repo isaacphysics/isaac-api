@@ -132,13 +132,20 @@ public class IsaacE2ETest {
         // TODO It would be nice if we could pull the version from pom.xml
         elasticsearch = new ElasticsearchContainer(DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch:7.14.2"))
                 .withCopyFileToContainer(MountableFile.forClasspathResource("isaac-test-es-data.tar.gz"), "/usr/share/elasticsearch/isaac-test-es-data.tar.gz")
-//                .withCopyFileToContainer(MountableFile.forClasspathResource("isaac-test-es-docker-entrypoint.sh"), "/usr/local/bin/docker-entrypoint.sh")
+                // .withCopyFileToContainer(MountableFile.forClasspathResource("isaac-test-es-docker-entrypoint.sh"), "/usr/local/bin/docker-entrypoint.sh")
                 .withExposedPorts(9200, 9300)
                 .withEnv("cluster.name", "isaac")
                 .withEnv("node.name", "localhost")
         ;
 
         postgres.start();
+        elasticsearch.start();
+        try {
+            elasticsearch.execInContainer("rm -rf /usr/share/elasticsearch/data && tar -xpf isaac-test-es-data.tar.gz -C /usr/share/elasticsearch && chown -R elasticsearch:root data && rm isaac-test-es-data.tar.gz && rm -f /usr/share/elasticsearch/data/nodes/0/node.lock && find /usr/share/elasticsearch/data -name write.lock -exec rm -f {} \\;\n");
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        elasticsearch.stop();
         elasticsearch.start();
 
         postgresSqlDb = new PostgresSqlDb(
