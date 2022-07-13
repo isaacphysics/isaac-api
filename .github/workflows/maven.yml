@@ -31,7 +31,7 @@ jobs:
     - name: Debug permissions
       run: ls -lah src/test/resources/isaac-test-es-docker-entrypoint.sh
     - name: Set ES custom entrypoint script as executable
-      run: chmod a+x src/test/resources/isaac-test-es-docker-entrypoint.sh
+      run: chmod 775 src/test/resources/isaac-test-es-docker-entrypoint.sh && chown root:root src/test/resources/isaac-test-es-docker-entrypoint.sh
     - name: Debug permissions
       run: ls -lah src/test/resources/isaac-test-es-docker-entrypoint.sh
 #    - name: Build with Maven
