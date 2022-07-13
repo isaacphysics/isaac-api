@@ -18,6 +18,8 @@ import org.eclipse.jgit.treewalk.TreeWalk;
 import org.elasticsearch.action.ActionRequestValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacCard;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacCardDeck;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacEventPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuiz;
@@ -394,6 +396,13 @@ public class ContentIndexer {
             Choice choice = (Choice) content;
             this.augmentChildContent((Content) choice.getExplanation(), canonicalSourceFile,
                     newParentId, parentPublished);
+        }
+
+        // hack to get cards to count as children:
+        if (content instanceof IsaacCardDeck) {
+            for (IsaacCard card : ((IsaacCardDeck) content).getCards()) {
+                this.augmentChildContent(card, canonicalSourceFile, newParentId, parentPublished);
+            }
         }
 
         // TODO: hack to get hints to apply as children
