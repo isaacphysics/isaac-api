@@ -34,7 +34,7 @@ import static org.easymock.EasyMock.createMock;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_LINUX_CONFIG_LOCATION;
 
 @PowerMockIgnore("javax.net.ssl.*")
-@Ignore // NOTE: This was a proof of concept but I'm not too sure we actually need this entire test suite.
+// NOTE: This was a proof of concept but I'm not too sure we actually need this entire test suite.
 public class InfoFacadeTest extends IsaacE2ETest {
 
     public InfoFacade infoFacade;
