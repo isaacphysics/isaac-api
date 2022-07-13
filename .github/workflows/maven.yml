@@ -37,5 +37,5 @@ jobs:
     - name: Build with Maven
       run: mvn -B package -DskipTests --file pom.xml
     - name: Test with Maven
-      run: mvn -B test -Dtest="EventsFacadeTest" --file pom.xml
+      run: mvn -B test -Dtest.config.location=src/test/resources/segue-test-config.properties -Dtest="EventsFacadeTest" --file pom.xml
     - uses: codecov/codecov-action@v2

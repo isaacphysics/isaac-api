@@ -138,7 +138,6 @@ public class IsaacE2ETest {
                 .withEnv("node.name", "localhost")
         ;
 
-        postgres.start();
         elasticsearch.start();
 //        try {
 //            elasticsearch.execInContainer("rm -rf /usr/share/elasticsearch/data && tar -xpf isaac-test-es-data.tar.gz -C /usr/share/elasticsearch && chown -R elasticsearch:root data && rm isaac-test-es-data.tar.gz && rm -f /usr/share/elasticsearch/data/nodes/0/node.lock && find /usr/share/elasticsearch/data -name write.lock -exec rm -f {} \\;\n");
@@ -147,6 +146,7 @@ public class IsaacE2ETest {
 //        }
 //        elasticsearch.stop();
 //        elasticsearch.start();
+        postgres.start();
 
         postgresSqlDb = new PostgresSqlDb(
                 postgres.getJdbcUrl(),
