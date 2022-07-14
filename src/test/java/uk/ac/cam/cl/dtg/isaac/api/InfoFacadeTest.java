@@ -7,26 +7,25 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import uk.ac.cam.cl.dtg.isaac.IsaacE2ETest;
 import uk.ac.cam.cl.dtg.segue.api.InfoFacade;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
-import uk.ac.cam.cl.dtg.segue.scheduler.SegueScheduledJob;
 
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
-import java.util.ArrayList;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
+import static org.easymock.EasyMock.createNiceMock;
 
 @PowerMockIgnore("javax.net.ssl.*")
 // NOTE: This was a proof of concept but I'm not too sure we actually need this entire test suite.
 public class InfoFacadeTest extends IsaacE2ETest {
 
-    public InfoFacade infoFacade = new InfoFacade(properties, contentManager, new SegueJobService(new ArrayList<SegueScheduledJob>(), postgresSqlDb), logManager);
-
-    public Request requestForCaching;
+    public InfoFacade infoFacade;
 
     @Before
     public void setUp() throws RuntimeException, IOException {
+        SegueJobService segueJobService = createNiceMock(SegueJobService.class); // new SegueJobService(new ArrayList<>(), postgresSqlDb);
+        infoFacade = new InfoFacade(properties, contentManager, segueJobService, logManager);
     }
 
     @Test
@@ -39,14 +38,16 @@ public class InfoFacadeTest extends IsaacE2ETest {
     @Test
     public void getSegueEnvironment_respondsOK() {
         // /info/segue_environment
-        Response response = infoFacade.getSegueEnvironment(requestForCaching);
+        Request request = createNiceMock(Request.class);
+        Response response = infoFacade.getSegueEnvironment(request);
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
     }
 
     @Test
     public void getSegueEnvironment_respondsWithDEV() {
         // /info/segue_environment
-        Response response = infoFacade.getSegueEnvironment(requestForCaching);
+        Request request = createNiceMock(Request.class);
+        Response response = infoFacade.getSegueEnvironment(request);
         if (response.getEntity() instanceof ImmutableMap) {
             ImmutableMap<String, String> entity = (ImmutableMap<String, String>) response.getEntity();
             assertNotNull(entity);
