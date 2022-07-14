@@ -204,26 +204,6 @@ public class GitDb {
     }
 
     /**
-     * Attempt to verify if an object exists in the git repository for a given sha and full path.
-     * 
-     * @param sha
-     *            - the version that to search within.
-     * @param fullfilePath
-     *            - the full path of the file in git.
-     * @return True if we can successfully find the object, false if not. False if we encounter an exception.
-     */
-    public boolean verifyGitObject(final String sha, final String fullfilePath) {
-        try {
-            if (findGitObject(sha, fullfilePath) != null) {
-                return true;
-            }
-        } catch (UnsupportedOperationException | IOException e) {
-            return false;
-        }
-        return false;
-    }
-
-    /**
      * Check that a commit sha exists within the git repository.
      * 
      * @param sha
