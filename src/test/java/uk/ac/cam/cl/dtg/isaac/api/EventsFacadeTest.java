@@ -60,7 +60,7 @@ public class EventsFacadeTest extends IsaacE2ETest {
         assertNotNull(entity);
         List<IsaacEventPageDTO> results = entity.getResults();
         assertNotNull(entity);
-        assertEquals(results.size(), 5);
+        assertEquals(results.size(), 7);
     }
 
     @Test
