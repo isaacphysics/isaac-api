@@ -142,6 +142,8 @@ public class GitDb {
         }
 
         Repository repository = gitHandle.getRepository();
+        // This may or may not help with concurrent repo update issues:
+        repository.scanForRepoChanges();
 
         ObjectId commitId = repository.resolve(sha);
 
@@ -186,7 +188,8 @@ public class GitDb {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         loader.copyTo(out);
 
-        repository.close();
+        // TODO: Calling close seems to be unnecessary when not writing to the repo, and prints an error frequently.
+        //repository.close();
         return out;
     }
 
