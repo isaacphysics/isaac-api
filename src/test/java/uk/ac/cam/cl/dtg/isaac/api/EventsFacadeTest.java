@@ -35,7 +35,6 @@ import static org.junit.Assert.assertNotNull;
 
 //@RunWith(PowerMockRunner.class)
 @PowerMockIgnore("javax.net.ssl.*")
-@Ignore
 public class EventsFacadeTest extends IsaacE2ETest {
 
     private EventsFacade eventsFacade;
