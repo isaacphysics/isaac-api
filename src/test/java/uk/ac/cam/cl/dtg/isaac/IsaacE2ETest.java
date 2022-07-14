@@ -20,7 +20,6 @@ import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
-import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.quiz.PgQuestionAttempts;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
@@ -283,5 +282,11 @@ public class IsaacE2ETest {
         RegisteredUserDTO user = userAccountManager.authenticateWithCredentials(userLoginRequest, userLoginResponse, AuthenticationProvider.SEGUE.toString(), username, password, false);
 
         return new LoginResult(user, capturedUserCookie.getValue());
+    }
+
+    protected HttpServletRequest createRequestWithCookies(final Cookie[] cookies) {
+        HttpServletRequest request = createNiceMock(HttpServletRequest.class);
+        expect(request.getCookies()).andReturn(cookies).atLeastOnce();
+        return request;
     }
 }
