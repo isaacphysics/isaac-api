@@ -286,7 +286,7 @@ public class IsaacE2ETest {
 
     protected HttpServletRequest createRequestWithCookies(final Cookie[] cookies) {
         HttpServletRequest request = createNiceMock(HttpServletRequest.class);
-        expect(request.getCookies()).andReturn(cookies).atLeastOnce();
+        expect(request.getCookies()).andReturn(cookies).anyTimes();
         return request;
     }
 }

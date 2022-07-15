@@ -38,6 +38,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 //@RunWith(PowerMockRunner.class)
 @PowerMockIgnore("javax.net.ssl.*")
@@ -52,24 +53,36 @@ public class EventsFacadeTest extends IsaacE2ETest {
     }
 
     @Test
+    // GET /events -> EventFacade::getEvents(request, tags, startIndex, limit, sortOrder, showActiveOnly, showInactiveOnly, showMyBookingsOnly, showReservationsOnly, showStageOnly)
     public void getEventsTest() {
-        HttpServletRequest request = createNiceMock(HttpServletRequest.class);
-        expect(request.getCookies()).andReturn(new Cookie[]{}).anyTimes();
+        // Create an anonymous request (this is a mocked object)
+        HttpServletRequest request = createRequestWithCookies(new Cookie[]{});
         replay(request);
 
+        // Execute the method (endpoint) to be tested
         Response response = eventsFacade.getEvents(request, null, 0, 10, null, null, null, null, null, null);
-        int status = response.getStatus();
-        assertEquals(Response.Status.OK.getStatusCode(), status);
+        // Check that the request succeeded
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        // Fetch the entity object. This can be anything, so we declare it first as Object
         Object entityObject = response.getEntity();
+        // Check that the entity object is not null.
         assertNotNull(entityObject);
+        // We could/should also check its type, but we know what type it should be, so we can just (un)safely cast it
         @SuppressWarnings("unchecked") ResultsWrapper<IsaacEventPageDTO> entity = (ResultsWrapper<IsaacEventPageDTO>) entityObject;
+        // This should be unnecessary, but you never know, check this again just in case the cast fails or something
         assertNotNull(entity);
         List<IsaacEventPageDTO> results = entity.getResults();
-        assertNotNull(entity);
+        // Check that we retrieved the expected amount of results
         assertEquals(7, results.size());
+        // NOTE: We may end up having more events in the dataset than the limit specified in the call.
+        //       In this case, we need to check for the limit up here and then check if the response object tells us
+        //       that there are more, and how many there are.
     }
 
     @Test
+    // GET    /events/bookings/{booking_id}      -> EventsFacade::getEventBookingsById(request, bookingId)
+    // POST   /events/{event_id}/booking         -> EventsFacade::createBookingForMe(request, eventId, additionalInformation)
+    // DELETE /events/{event_id}/bookings/cancel -> EventsFacade::cancelBooking(request, eventId)
     public void getBookingByIdTest() throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException, AuthenticationProviderMappingException, IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException, MFARequiredButNotConfiguredException, SQLException {
         // --- Login as a student
         LoginResult studentLogin = loginAs(httpSession, properties.getProperty("TEST_STUDENT_EMAIL"), properties.getProperty("TEST_STUDENT_PASSWORD"));
@@ -80,15 +93,18 @@ public class EventsFacadeTest extends IsaacE2ETest {
         HttpServletRequest createBookingRequest = createRequestWithCookies(new Cookie[] { studentLogin.cookie });
         replay(createBookingRequest);
         Response createBookingResponse = eventsFacade.createBookingForMe(createBookingRequest, "_regular_test_event", null);
-
         // Check that the booking was created successfully
         assertEquals(Response.Status.OK.getStatusCode(), createBookingResponse.getStatus());
         EventBookingDTO eventBookingDTO = null;
-        if (null != createBookingResponse.getEntity() && createBookingResponse.getEntity() instanceof EventBookingDTO) {
+        assertNotNull(createBookingResponse.getEntity());
+        if (createBookingResponse.getEntity() instanceof EventBookingDTO) {
             eventBookingDTO = (EventBookingDTO) createBookingResponse.getEntity();
             // Check that the returned entity is an EventBookingDTO and the ID of the user who created the booking matches
             assertEquals(studentLogin.user.getId(), ((EventBookingDTO) createBookingResponse.getEntity()).getUserBooked().getId());
+        } else {
+            fail("The returned entity is not an instance of EventBookingDTO.");
         }
+        // This is probably redundant at this point, but we use this object later so might as well.
         assertNotNull(eventBookingDTO);
 
         // --- Check whether what we get as event managers contains the right amount of information
@@ -109,6 +125,8 @@ public class EventsFacadeTest extends IsaacE2ETest {
 
         // --- Tear down
         // This should not be necessary, but we don't actually remove cancelled bookings from the database.
+        // NOTE: This is necessary whenever we modify the database so that we leave the test case with the database
+        //       in a predictable state for the next test case.
         PreparedStatement pst = postgresSqlDb.getDatabaseConnection().prepareStatement("DELETE FROM event_bookings WHERE id = ?;");
         pst.setLong(1, ((EventBookingDTO) createBookingResponse.getEntity()).getBookingId());
         pst.executeUpdate();
@@ -116,41 +134,37 @@ public class EventsFacadeTest extends IsaacE2ETest {
 
     // events/{event_id}/bookings
     @Test
+    // GET /events/{event_id}/bookings -> EventsFacade::adminGetEventBookingByEventId(request, eventId)
     public void getEventBookingsByEventIdTest() throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException, AuthenticationProviderMappingException, IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
         // Get event bookings by event id as an anonymous user (should fail)
-        HttpServletRequest getEventBookingsAsAnonymous_Request = createNiceMock(HttpServletRequest.class);
-        replay(getEventBookingsAsAnonymous_Request);
+        HttpServletRequest getEventBookingsAsAnonymous_Request = createRequestWithCookies(new Cookie[]{});
         Response getEventBookingsAsAnonymous_Response = eventsFacade.adminGetEventBookingByEventId(getEventBookingsAsAnonymous_Request, "_regular_test_event");
         assertNotEquals(Response.Status.OK.getStatusCode(), getEventBookingsAsAnonymous_Response.getStatus());
 
         // Get event bookings by event id as a student (should fail)
         LoginResult studentLogin = loginAs(httpSession, properties.getProperty("TEST_STUDENT_EMAIL"), properties.getProperty("TEST_STUDENT_PASSWORD"));
-        HttpServletRequest getEventBookingsAsStudent_Request = createNiceMock(HttpServletRequest.class);
-        expect(getEventBookingsAsStudent_Request.getCookies()).andReturn(new Cookie[] { studentLogin.cookie }).atLeastOnce();
+        HttpServletRequest getEventBookingsAsStudent_Request = createRequestWithCookies(new Cookie[] { studentLogin.cookie });
         replay(getEventBookingsAsStudent_Request);
         Response getEventBookingsAsStudent_Response = eventsFacade.adminGetEventBookingByEventId(getEventBookingsAsStudent_Request, "_regular_test_event");
         assertNotEquals(Response.Status.OK.getStatusCode(), getEventBookingsAsStudent_Response.getStatus());
 
         // Get event bookings by event id as a teacher (should fail)
         LoginResult teacherLogin = loginAs(httpSession, properties.getProperty("TEST_TEACHER_EMAIL"), properties.getProperty("TEST_TEACHER_PASSWORD"));
-        HttpServletRequest getEventBookingsAsTeacher_Request = createNiceMock(HttpServletRequest.class);
-        expect(getEventBookingsAsTeacher_Request.getCookies()).andReturn(new Cookie[] { teacherLogin.cookie }).atLeastOnce();
+        HttpServletRequest getEventBookingsAsTeacher_Request = createRequestWithCookies(new Cookie[] { teacherLogin.cookie });
         replay(getEventBookingsAsTeacher_Request);
         Response getEventBookingsAsTeacher_Response = eventsFacade.adminGetEventBookingByEventId(getEventBookingsAsTeacher_Request, "_regular_test_event");
         assertNotEquals(Response.Status.OK.getStatusCode(), getEventBookingsAsTeacher_Response.getStatus());
 
         // Get event bookings by event id as a teacher (should fail)
         LoginResult editorLogin = loginAs(httpSession, properties.getProperty("TEST_EDITOR_EMAIL"), properties.getProperty("TEST_EDITOR_PASSWORD"));
-        HttpServletRequest getEventBookingsAsEditor_Request = createNiceMock(HttpServletRequest.class);
-        expect(getEventBookingsAsEditor_Request.getCookies()).andReturn(new Cookie[] { editorLogin.cookie }).atLeastOnce();
+        HttpServletRequest getEventBookingsAsEditor_Request = createRequestWithCookies(new Cookie[] { editorLogin.cookie });
         replay(getEventBookingsAsEditor_Request);
         Response getEventBookingsAsEditor_Response = eventsFacade.adminGetEventBookingByEventId(getEventBookingsAsEditor_Request, "_regular_test_event");
         assertNotEquals(Response.Status.OK.getStatusCode(), getEventBookingsAsEditor_Response.getStatus());
 
         // Get event bookings by event id as an event manager (should succeed)
         LoginResult eventManagerLogin = loginAs(httpSession, properties.getProperty("TEST_EVENTMANAGER_EMAIL"), properties.getProperty("TEST_EVENTMANAGER_PASSWORD"));
-        HttpServletRequest getEventBookingsAsEventManager_Request = createNiceMock(HttpServletRequest.class);
-        expect(getEventBookingsAsEventManager_Request.getCookies()).andReturn(new Cookie[] { eventManagerLogin.cookie }).atLeastOnce();
+        HttpServletRequest getEventBookingsAsEventManager_Request = createRequestWithCookies(new Cookie[] { eventManagerLogin.cookie });
         replay(getEventBookingsAsEventManager_Request);
         Response getEventBookingsAsEventManager_Response = eventsFacade.adminGetEventBookingByEventId(getEventBookingsAsEventManager_Request, "_regular_test_event");
         assertEquals(Response.Status.OK.getStatusCode(), getEventBookingsAsEventManager_Response.getStatus());
@@ -164,14 +178,15 @@ public class EventsFacadeTest extends IsaacE2ETest {
 
         // Get event bookings by event id as an admin (should succeed)
         // NOTE: I was going to test as an admin too (same code as for Event Managers) but logging in with MFA is a
-        // nightmare I'm not prepared to face yet. Plus, if we have people who obtained the ADMIN role, we have
-        // bigger problems anyway.
+        //       nightmare I'm not prepared to face yet. Plus, if we have people who obtained the ADMIN role, we have
+        //       bigger problems anyway.
     }
 
     @Test
+    // GET /events/{event_id}/groups_bookings
     public void getEventBookingForAllGroupsTest() throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException, AuthenticationProviderMappingException, IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
         // Get event bookings by event id as an anonymous user (should fail)
-        HttpServletRequest anonymous_Request = createNiceMock(HttpServletRequest.class);
+        HttpServletRequest anonymous_Request = createRequestWithCookies(new Cookie[] {});
         replay(anonymous_Request);
         Response anonymous_Response = eventsFacade.getEventBookingForAllGroups(anonymous_Request, "_regular_test_event");
         assertNotEquals(Response.Status.OK.getStatusCode(), anonymous_Response.getStatus());
@@ -183,15 +198,16 @@ public class EventsFacadeTest extends IsaacE2ETest {
         Response student_Response = eventsFacade.getEventBookingForAllGroups(student_Request, "_regular_test_event");
         assertNotEquals(Response.Status.OK.getStatusCode(), student_Response.getStatus());
 
+        // Get event bookings by event id as a teacher (should succeed)
         LoginResult teacherLogin = loginAs(httpSession, properties.getProperty("TEST_TEACHER_EMAIL"), properties.getProperty("TEST_TEACHER_PASSWORD"));
         HttpServletRequest teacher_Request = createRequestWithCookies(new Cookie[] { teacherLogin.cookie });
         replay(teacher_Request);
         Response teacher_Response = eventsFacade.getEventBookingForAllGroups(teacher_Request, "_regular_test_event");
         assertEquals(Response.Status.OK.getStatusCode(), teacher_Response.getStatus());
         assertNotNull(teacher_Response.getEntity());
+
         // Make sure the EventBookingDTOs contain UserSummaryDTOs, thus not leaking information
         assertTrue(teacher_Response.getEntity() instanceof List);
-
         List<?> teacherEntity = (List<?>) teacher_Response.getEntity();
         for (Object o : teacherEntity) {
             assertEquals(EventBookingDTO.class.getCanonicalName(), o.getClass().getCanonicalName());
@@ -204,6 +220,7 @@ public class EventsFacadeTest extends IsaacE2ETest {
         // Charlie is not associated with Teacher and is not booked for this event => Charlie should not be present
         assertFalse(teacherCharlie.isPresent());
 
+        // Try logging in with another teacher account and see if we are sending the wrong information to the wrong teachers
         LoginResult daveLogin = loginAs(httpSession, "dave-teacher@test.com", properties.getProperty("TEST_TEACHER_PASSWORD"));
         HttpServletRequest dave_Request = createRequestWithCookies(new Cookie[] { daveLogin.cookie });
         replay(dave_Request);
@@ -226,6 +243,7 @@ public class EventsFacadeTest extends IsaacE2ETest {
     }
 
     @Test
+    // GET /events/{event_id}/bookings/for_group/{group_id} -> EventFacade::getEventBookingForGivenGroup(request, eventId, groupId)
     public void getEventBookingsByEventIdForGroup() throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException, AuthenticationProviderMappingException, IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
         // Anonymous users MUST NOT be able to get event bookings by event id and group id
         HttpServletRequest anonymous_Request = createNiceMock(HttpServletRequest.class);
