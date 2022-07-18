@@ -669,6 +669,13 @@
     <!-- Profiles configuration -->
     <profiles>
         <profile>
+            <id>production</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+        </profile>
+
+        <profile>
             <id>local</id>
             <properties>
                 <build.profile.id>local</build.profile.id>
