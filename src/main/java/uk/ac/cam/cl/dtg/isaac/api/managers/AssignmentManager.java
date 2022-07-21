@@ -61,7 +61,7 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
      * @param emailService
      *            - service for sending specific emails.
      * @param gameManager
- *            - the game manager object
+     *            - the game manager object
      */
     @Inject
     public AssignmentManager(final IAssignmentPersistenceManager assignmentPersistenceManager,
@@ -146,13 +146,17 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
         newAssignment.setCreationDate(new Date());
         newAssignment.setId(this.assignmentPersistenceManager.saveAssignment(newAssignment));
 
+        // Get assignment gameboard in order to generate URL which will be added to the notification email
         GameboardDTO gameboard = gameManager.getGameboard(newAssignment.getGameboardId());
-
         final String gameboardURL = String.format("https://%s/assignment/%s", properties.getProperty(HOST_NAME),
-            gameboard.getId());
+                gameboard.getId());
 
-        emailService.sendAssignmentEmailToGroup(newAssignment, gameboard, ImmutableMap.of("gameboardURL", gameboardURL) ,
-            "email-template-group-assignment");
+        // If there is no date to schedule the assignment for...
+        if (null == newAssignment.getScheduledStartDate()) {
+            // Send the notification email immediately
+            emailService.sendAssignmentEmailToGroup(newAssignment, gameboard, ImmutableMap.of("gameboardURL", gameboardURL),
+                    "email-template-group-assignment");
+        }
 
         return newAssignment;
     }
