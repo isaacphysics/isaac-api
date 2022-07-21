@@ -896,48 +896,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     }
 
     /**
-     * Allows a user to get all groups that have been assigned to a given list of boards.
-     *
-     * @param request
-     *            - so that we can identify the current user.
-     * @param gameboardIdsQueryParam
-     *            - The comma seperated list of gameboard ids.
-     * @return the assignment object.
-     */
-    @GET
-    @Path("/assign/groups")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @ApiOperation(value = "List all groups assigned boards from a list of boards.",
-                  notes = "The list of boards should be comma separated.")
-    public Response getAssignedGroupsByGameboards(@Context final HttpServletRequest request,
-                                                  @QueryParam("gameboard_ids") final String gameboardIdsQueryParam) {
-        try {
-
-            if (null == gameboardIdsQueryParam || gameboardIdsQueryParam.isEmpty()) {
-                return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a comma separated list of gameboard_ids in the query param")
-                        .toResponse();
-            }
-
-            RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
-            Map<String, Object> gameboardGroups = Maps.newHashMap();
-
-
-            for (String gameboardId : gameboardIdsQueryParam.split(",")) {
-                gameboardGroups.put(gameboardId, assignmentManager.findGroupsByGameboard(currentlyLoggedInUser, gameboardId));
-            }
-
-            return Response.ok(gameboardGroups)
-                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (SegueDatabaseException e) {
-            log.error("Database error while trying to assign work", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unknown database error.").toResponse();
-        }
-    }
-
-    /**
      * Allows a user to assign a gameboard to one or more groups of users. We assume that each partial AssignmentDTO object has
      * the same gameboardId, notes and dueDate to make validation easier, but this could be changed in theory, given a more
      * flexible front-end.
