@@ -1061,6 +1061,12 @@ ALTER TABLE ONLY public.user_streak_targets
 
 
 --
+-- Name: assignments_by_id; Type: INDEX; Schema: public; Owner: rutherford
+--
+
+CREATE INDEX assignments_by_id ON public.assignments USING btree (id);
+
+--
 -- Name: assignments_group_id; Type: INDEX; Schema: public; Owner: rutherford
 --
 
