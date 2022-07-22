@@ -157,6 +157,7 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
             emailService.sendAssignmentEmailToGroup(newAssignment, gameboard, ImmutableMap.of("gameboardURL", gameboardURL),
                     "email-template-group-assignment");
         }
+        // Otherwise, the assignment email will be scheduled by a Quartz job on the hour of the scheduledStartDate
 
         return newAssignment;
     }
