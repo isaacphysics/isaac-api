@@ -1035,7 +1035,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     eventDetails.put(Constants.GAMEBOARD_ID_FKEY, assignmentWithID.getGameboardId());
                     eventDetails.put(GROUP_FK, assignmentWithID.getGroupId());
                     eventDetails.put(ASSIGNMENT_FK, assignmentWithID.getId());
-                    eventDetails.put(ASSIGNMENT_DUEDATE_FK, assignmentWithID.getDueDate());
+                    eventDetails.put(ASSIGNMENT_DUEDATE, assignmentWithID.getDueDate());
+                    eventDetails.put(ASSIGNMENT_SCHEDULED_START_DATE, assignmentWithID.getScheduledStartDate());
                     this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacServerLogType.SET_NEW_ASSIGNMENT, eventDetails);
 
                     this.userBadgeManager.updateBadge(currentlyLoggedInUser,

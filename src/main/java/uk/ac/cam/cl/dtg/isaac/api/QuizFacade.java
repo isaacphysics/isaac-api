@@ -88,7 +88,6 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -740,7 +739,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                 QUIZ_ID_FKEY, quizAttempt.getQuizId(),
                 QUIZ_ATTEMPT_FK, quizAttempt.getId(),
                 QUIZ_ASSIGNMENT_FK, assignment != null ? assignment.getId().toString() : "FREE_ATTEMPT",
-                ASSIGNMENT_DUEDATE_FK, assignment == null || assignment.getDueDate() == null ? "NO_DUE_DATE" : assignment.getDueDate(),
+                ASSIGNMENT_DUEDATE, assignment == null || assignment.getDueDate() == null ? "NO_DUE_DATE" : assignment.getDueDate(),
                 QUIZ_SECTION, sectionNumber
             );
 
@@ -947,7 +946,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                 QUIZ_ID_FKEY, assignmentWithID.getQuizId(),
                 GROUP_FK, assignmentWithID.getGroupId(),
                 QUIZ_ASSIGNMENT_FK, assignmentWithID.getId(),
-                ASSIGNMENT_DUEDATE_FK, assignmentWithID.getDueDate() == null ? "NO_DUE_DATE" : assignmentWithID.getDueDate()
+                ASSIGNMENT_DUEDATE, assignmentWithID.getDueDate() == null ? "NO_DUE_DATE" : assignmentWithID.getDueDate()
             );
 
             this.getLogManager().logEvent(currentlyLoggedInUser, request, Constants.IsaacServerLogType.SET_NEW_QUIZ_ASSIGNMENT, eventDetails);
@@ -1554,7 +1553,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                         GROUP_FK, assignment.getGroupId(),
                         QUIZ_ASSIGNMENT_FK, assignment.getId(),
                         QUIZ_OLD_DUEDATE, assignment.getDueDate(),
-                        ASSIGNMENT_DUEDATE_FK, clientQuizAssignment.getDueDate()
+                        ASSIGNMENT_DUEDATE, clientQuizAssignment.getDueDate()
                 );
                 this.getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.UPDATE_QUIZ_DEADLINE, eventDetails);
             } else if (assignment.getDueDate() == null && clientQuizAssignment.getDueDate() != null) {
@@ -1563,7 +1562,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                         GROUP_FK, assignment.getGroupId(),
                         QUIZ_ASSIGNMENT_FK, assignment.getId(),
                         QUIZ_OLD_DUEDATE, "NO_DUE_DATE",
-                        ASSIGNMENT_DUEDATE_FK, clientQuizAssignment.getDueDate()
+                        ASSIGNMENT_DUEDATE, clientQuizAssignment.getDueDate()
                 );
                 this.getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.UPDATE_QUIZ_DEADLINE, eventDetails);
             }
@@ -1627,7 +1626,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             Map<String, Object> eventDetails = ImmutableMap.of(
                     QUIZ_ID_FKEY, assignment.getQuizId(),
                     QUIZ_ASSIGNMENT_FK, assignment.getId().toString(),
-                    ASSIGNMENT_DUEDATE_FK, assignment.getDueDate() == null ? "NO_DUE_DATE" : assignment.getDueDate()
+                    ASSIGNMENT_DUEDATE, assignment.getDueDate() == null ? "NO_DUE_DATE" : assignment.getDueDate()
             );
             getLogManager().logEvent(user, httpServletRequest, Constants.IsaacServerLogType.DELETE_QUIZ_ASSIGNMENT, eventDetails);
 
