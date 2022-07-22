@@ -12,7 +12,9 @@ COPY --from=target /isaac-api/target/isaac-api.war /var/lib/jetty/webapps/isaac-
 RUN chmod 755 /var/lib/jetty/webapps/*
 RUN chown jetty /var/lib/jetty/webapps/*
 
-#RUN sed -i -e 's#dev/random#dev/./urandom#g' $JAVA_HOME/jre/lib/security/java.security
+# The Jetty Docker image provides a version of JavaMail incompatible with JDK11,
+# remove the bundled version:
+RUN rm -r /usr/local/jetty/lib/mail
 
 # prepare things so that jetty runs in the docker entrypoint
 USER jetty
