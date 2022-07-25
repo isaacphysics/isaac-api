@@ -130,6 +130,7 @@ import uk.ac.cam.cl.dtg.segue.scheduler.jobs.DeleteEventAdditionalBookingInforma
 import uk.ac.cam.cl.dtg.segue.scheduler.jobs.DeleteEventAdditionalBookingInformationOneYearJob;
 import uk.ac.cam.cl.dtg.segue.scheduler.jobs.EventFeedbackEmailJob;
 import uk.ac.cam.cl.dtg.segue.scheduler.jobs.EventReminderEmailJob;
+import uk.ac.cam.cl.dtg.segue.scheduler.jobs.ScheduledAssignmentsEmailJob;
 import uk.ac.cam.cl.dtg.segue.scheduler.jobs.SegueScheduledSyncMailjetUsersJob;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
@@ -968,14 +969,29 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                 new EventFeedbackEmailJob()
             );
 
+            SegueScheduledJob scheduledAssignmentsEmail = SegueScheduledJob.createCustomJob(
+                    "scheduledAssignmentsEmail",
+                    "JavaJob",
+                    "Send scheduled assignment notification emails to groups",
+                    "0 0 * ? * * *",
+                    Maps.newHashMap(),
+                    new ScheduledAssignmentsEmailJob()
+            );
+
             SegueScheduledJob syncMailjetUsers = new SegueScheduledSyncMailjetUsersJob(
                     "syncMailjetUsersJob",
                     "JavaJob",
                     "Sync users to mailjet",
                     "0 0 0/4 ? * * *");
 
-            List<SegueScheduledJob> configuredScheduledJobs = new ArrayList<>(Arrays.asList(PIISQLJob, cleanUpOldAnonymousUsers,
-                    cleanUpExpiredReservations, deleteEventAdditionalBookingInformation, deleteEventAdditionalBookingInformationOneYearJob));
+            List<SegueScheduledJob> configuredScheduledJobs = new ArrayList<>(Arrays.asList(
+                    PIISQLJob,
+                    cleanUpOldAnonymousUsers,
+                    cleanUpExpiredReservations,
+                    deleteEventAdditionalBookingInformation,
+                    deleteEventAdditionalBookingInformationOneYearJob,
+                    scheduledAssignmentsEmail
+            ));
 
             if (mailjetKey != null && mailjetSecret != null) {
                 configuredScheduledJobs.add(syncMailjetUsers);
