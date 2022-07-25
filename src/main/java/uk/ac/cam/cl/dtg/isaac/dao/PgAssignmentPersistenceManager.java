@@ -270,6 +270,34 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
         }
     }
 
+    public List<AssignmentDTO> getAssignmentsScheduledForHour(final Date timestamp) throws SegueDatabaseException {
+        String query = "SELECT * FROM assignments WHERE scheduled_start_date IS NOT NULL AND scheduled_start_date BETWEEN ? - interval '10 minute' AND ? + interval '60 minute';";
+
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
+            if (timestamp != null) {
+                pst.setTimestamp(1, new java.sql.Timestamp(timestamp.getTime()));
+                pst.setTimestamp(2, new java.sql.Timestamp(timestamp.getTime()));
+            } else {
+                pst.setNull(1, Types.TIMESTAMP);
+                pst.setNull(2, Types.TIMESTAMP);
+            }
+
+            try (ResultSet results = pst.executeQuery()) {
+                List<AssignmentDTO> listOfResults = Lists.newArrayList();
+
+                while (results.next()) {
+                    listOfResults.add(this.convertToAssignmentDTO(this.convertFromSQLToAssignmentDO(results)));
+                }
+
+                return listOfResults;
+            }
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Unable to find scheduled assignments", e);
+        }
+    }
+
     @Override
     public void deleteAssignment(final Long id) throws SegueDatabaseException {
         String query = "DELETE FROM assignments WHERE id = ?";
