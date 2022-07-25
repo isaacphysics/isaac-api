@@ -23,6 +23,7 @@ import com.google.inject.Inject;
 import com.opencsv.CSVWriter;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
@@ -171,7 +172,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                                    @QueryParam("assignmentStatus") final GameboardState assignmentStatus) {
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
-            Collection<AssignmentDTO> assignments = this.assignmentManager.getAssignments(currentlyLoggedInUser);
+            Collection<AssignmentDTO> assignments = this.assignmentManager.getAssignments(currentlyLoggedInUser)
+                    .stream().filter(a -> null == a.getScheduledStartDate() || !a.getScheduledStartDate().before(new Date()))
+                    .collect(Collectors.toList());
 
             // Gather all gameboards we need to augment for the assignments in a single query
             List<String> gameboardIds = assignments.stream().map(AssignmentDTO::getGameboardId).collect(Collectors.toList());
@@ -254,7 +257,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             if (null == groupIdOfInterest) {
                 List<UserGroupDTO> allGroupsOwnedAndManagedByUser = this.groupManager.getAllGroupsOwnedAndManagedByUser(currentlyLoggedInUser, false);
-                return Response.ok(this.assignmentManager.getAllAssignmentsForSpecificGroups(allGroupsOwnedAndManagedByUser))
+                return Response.ok(this.assignmentManager.getAllAssignmentsForSpecificGroups(allGroupsOwnedAndManagedByUser, false))
                         .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
             } else {
                 UserGroupDTO group = this.groupManager.getGroupById(groupIdOfInterest);
@@ -637,7 +640,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             // Fetch all assignments set to the requested group:
             List<AssignmentDTO> assignments;
-            assignments = this.assignmentManager.getAllAssignmentsForSpecificGroups(Collections.singletonList(group));
+            assignments = this.assignmentManager.getAllAssignmentsForSpecificGroups(Collections.singletonList(group), false);
 
             // Fetch the members of the requested group
             List<RegisteredUserDTO> groupMembers;

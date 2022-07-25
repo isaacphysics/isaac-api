@@ -180,18 +180,21 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
      * Get all assignments for a list of groups.
      *
      * @param groups to include in the search
+     * @param includeAssignmentsScheduledInFuture
      * @return a list of assignments set to the group ids provided.
      * @throws SegueDatabaseException
      *             - if we cannot complete a required database operation.
      */
-    public List<AssignmentDTO> getAllAssignmentsForSpecificGroups(final Collection<UserGroupDTO> groups) throws SegueDatabaseException {
+    public List<AssignmentDTO> getAllAssignmentsForSpecificGroups(final Collection<UserGroupDTO> groups, final boolean includeAssignmentsScheduledInFuture) throws SegueDatabaseException {
         Validate.notNull(groups);
         // TODO - Is there a better way of doing this empty list check? Database method explodes if given it.
         if (groups.isEmpty()) {
             return new ArrayList<>();
         }
         List<Long> groupIds = groups.stream().map(UserGroupDTO::getId).collect(Collectors.toList());
-        return this.assignmentPersistenceManager.getAssignmentsByGroupList(groupIds);
+        return this.assignmentPersistenceManager.getAssignmentsByGroupList(groupIds)
+                .stream().filter(a -> includeAssignmentsScheduledInFuture || (null == a.getScheduledStartDate() || !a.getScheduledStartDate().before(new Date())))
+                .collect(Collectors.toList());
     }
 
     /**
@@ -251,7 +254,7 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
         Validate.notBlank(gameboardId);
 
         List<UserGroupDTO> allGroupsForUser = this.groupManager.getAllGroupsOwnedAndManagedByUser(user, false);
-        List<AssignmentDTO> allAssignmentsForMyGroups = this.getAllAssignmentsForSpecificGroups(allGroupsForUser);
+        List<AssignmentDTO> allAssignmentsForMyGroups = this.getAllAssignmentsForSpecificGroups(allGroupsForUser, true);
 
         List<UserGroupDTO> groups = Lists.newArrayList();
 
