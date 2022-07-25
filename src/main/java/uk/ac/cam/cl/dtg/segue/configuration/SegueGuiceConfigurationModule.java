@@ -590,8 +590,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                 properties.getProperty(HOST_NAME)));
         globalTokens.put("myAssignmentsURL", String.format("https://%s/assignments",
                 properties.getProperty(HOST_NAME)));
-        globalTokens.put("myQuizzesURL", String.format("https://%s/quizzes",
-            properties.getProperty(HOST_NAME)));
+        String myQuizzesURL = String.format("https://%s/tests", properties.getProperty(HOST_NAME));
+        globalTokens.put("myQuizzesURL", myQuizzesURL);
+        globalTokens.put("myTestsURL", myQuizzesURL);
         globalTokens.put("myBookedEventsURL", String.format("https://%s/events?show_booked_only=true",
                 properties.getProperty(HOST_NAME)));
         globalTokens.put("contactUsURL", String.format("https://%s/contact",
