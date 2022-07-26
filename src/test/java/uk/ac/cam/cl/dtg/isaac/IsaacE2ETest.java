@@ -163,15 +163,7 @@ public class IsaacE2ETest {
         }
 
         try {
-            properties = new PropertiesLoader(configLocation) {
-                final Map<String, String> propertyOverrides = ImmutableMap.of(
-                        "SEARCH_CLUSTER_NAME", "isaac"
-                );
-                @Override
-                public String getProperty(String key) {
-                    return propertyOverrides.getOrDefault(key, super.getProperty(key));
-                }
-            };
+            properties = new PropertiesLoader(configLocation);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
