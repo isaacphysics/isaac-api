@@ -1,7 +1,6 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import uk.ac.cam.cl.dtg.isaac.IsaacE2ETest;
