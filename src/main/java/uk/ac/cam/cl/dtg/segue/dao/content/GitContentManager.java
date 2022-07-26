@@ -265,32 +265,6 @@ public class GitContentManager implements IContentManager {
     }
 
     @Override
-    public ResultsWrapper<ContentDTO> getAllByTypeRegEx(final String regex, final int startIndex,
-                                                        final int limit) throws ContentManagerException {
-
-        String k = "getAllByTypeRegEx~" + getCurrentContentSHA() + "~" + regex + "~" + startIndex + "~" + limit;
-
-        if (!cache.asMap().containsKey(k)) {
-
-            ResultsWrapper<String> searchHits = this.searchProvider.findByRegEx(
-                    contentIndex,
-                    CONTENT_TYPE,
-                    Constants.TYPE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
-                    regex,
-                    startIndex,
-                    limit,
-                    this.getBaseFilters()
-            );
-
-            List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
-
-            cache.put(k, new ResultsWrapper<>(mapper.getDTOByDOList(searchResults), searchHits.getTotalResults()));
-        }
-
-        return (ResultsWrapper<ContentDTO>) cache.getIfPresent(k);
-    }
-
-    @Override
     public final ResultsWrapper<ContentDTO> searchForContent(
             final String searchString, @Nullable final Map<String, List<String>> fieldsThatMustMatch,
             final Integer startIndex, final Integer limit) throws ContentManagerException {
@@ -492,44 +466,6 @@ public class GitContentManager implements IContentManager {
 
     public final ByteArrayOutputStream getFileBytes(final String filename) throws IOException {
         return database.getFileByCommitSHA(getCurrentContentSHA(), filename);
-    }
-
-    @Override
-    public final List<String> listAvailableContentSHAs() {
-
-        List<String> result = new ArrayList<>();
-        for (RevCommit rc : database.listCommits()) {
-            result.add(rc.getName());
-        }
-
-        return result;
-    }
-    
-    @Override
-    public final boolean isValidContentSHA(final String contentSHA) {
-        return !(null == contentSHA || contentSHA.isEmpty()) && this.database.verifyCommitExists(contentSHA);
-    }
-
-    @Override
-    public final int compareTo(final String contentSHA, final String otherContentSHA) {
-        Validate.notBlank(contentSHA);
-        Validate.notBlank(otherContentSHA);
-
-        int contentSHAEpoch;
-        try {
-            contentSHAEpoch = this.database.getCommitTime(contentSHA);
-        } catch (NotFoundException e) {
-            contentSHAEpoch = 0; // We didn't find it in the repo, so this commit is VERY old for all useful purposes.
-        }
-
-        int otherContentSHAEpoch;
-        try {
-            otherContentSHAEpoch = this.database.getCommitTime(otherContentSHA);
-        } catch (NotFoundException e) {
-            otherContentSHAEpoch = 0; // We didn't find it in the repo, so this commit is VERY old for all useful purposes.
-        }
-
-        return contentSHAEpoch - otherContentSHAEpoch;
     }
 
     @Override

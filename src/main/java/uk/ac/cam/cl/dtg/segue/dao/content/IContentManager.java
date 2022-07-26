@@ -249,16 +249,6 @@ public interface IContentManager {
      *             if failed IO occurs.
      */
     ByteArrayOutputStream getFileBytes(String filename) throws IOException;
-
-    /**
-     * Provide a list of all possible versions from the underlying database
-     * 
-     * This method will only work on IContentManagers that store snapshots with attached version numbers.
-     * 
-     * @return the list of available versions
-     */
-    List<String> listAvailableContentSHAs();
-
     /**
      * Get the latest version number from the database.
      * 
@@ -290,28 +280,6 @@ public interface IContentManager {
      * @return A set of all of the version id's which are currently available without reindexing.
      */
     Set<String> getCachedContentSHAList();
-    
-    /**
-     * Utility method that will check whether a version number supplied validates.
-     * 
-     * @param version
-     *            - version to validate.
-     * @return true if the version specified is valid and can potentially be indexed, false if it cannot.
-     */
-    boolean isValidContentSHA(String version);
-
-    /**
-     * This method will compare two versions to determine which is the newer.
-     * 
-     * @param version1
-     *            - Version 1 to compare.
-     * @param version2
-     *            - Version 2 to compare.
-     * 
-     * @return a positive number if version1 is newer, zero if they are the same, and a negative number if version 2 is
-     *         newer.
-     */
-    int compareTo(String version1, String version2);
 
     /**
      * Get the problem map for a particular version.
@@ -331,21 +299,6 @@ public interface IContentManager {
      *             - if there is an error retrieving the content requested.
      */
     ContentDTO populateRelatedContent(ContentDTO contentDTO) throws ContentManagerException;
-
-    /**
-     * Allows us to find things by type (regex).
-     * @param regex
-     *            - regex to search for.
-     * @param startIndex
-     *            - start index for results
-     * @param limit
-     *            - the maximum number of results to return -1 will attempt to return all results.
-     * @return ResultsWrapper of objects that match the id prefix.
-     * @throws ContentManagerException
-     *             - if there is an error retrieving the content requested.
-     */
-    ResultsWrapper<ContentDTO> getAllByTypeRegEx(String regex, int startIndex, int limit)
-            throws ContentManagerException;
 
     /**
      * Get the SHA for the current content being presented.
