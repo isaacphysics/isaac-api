@@ -80,6 +80,7 @@ import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v1;
 import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v2;
 import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v3;
+import uk.ac.cam.cl.dtg.segue.auth.SegueSCryptv1;
 import uk.ac.cam.cl.dtg.segue.auth.SegueTOTPAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.TwitterAuthenticator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicator;
@@ -543,14 +544,16 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     private static SegueLocalAuthenticator getSegueLocalAuthenticator(final IUserDataManager database, final IPasswordDataManager passwordDataManager,
                                                                       final PropertiesLoader properties) {
-        ISegueHashingAlgorithm preferredAlgorithm = new SeguePBKDF2v3();
+        ISegueHashingAlgorithm preferredAlgorithm = new SegueSCryptv1();
         ISegueHashingAlgorithm oldAlgorithm1 = new SeguePBKDF2v1();
         ISegueHashingAlgorithm oldAlgorithm2 = new SeguePBKDF2v2();
+        ISegueHashingAlgorithm oldAlgorithm3 = new SeguePBKDF2v3();
 
         Map<String, ISegueHashingAlgorithm> possibleAlgorithms = ImmutableMap.of(
-                        preferredAlgorithm.hashingAlgorithmName(), preferredAlgorithm,
-                        oldAlgorithm1.hashingAlgorithmName(), oldAlgorithm1,
-                        oldAlgorithm2.hashingAlgorithmName(), oldAlgorithm2
+                preferredAlgorithm.hashingAlgorithmName(), preferredAlgorithm,
+                oldAlgorithm1.hashingAlgorithmName(), oldAlgorithm1,
+                oldAlgorithm2.hashingAlgorithmName(), oldAlgorithm2,
+                oldAlgorithm3.hashingAlgorithmName(), oldAlgorithm3
         );
 
         return new SegueLocalAuthenticator(database, passwordDataManager, properties, possibleAlgorithms, preferredAlgorithm);
@@ -587,8 +590,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                 properties.getProperty(HOST_NAME)));
         globalTokens.put("myAssignmentsURL", String.format("https://%s/assignments",
                 properties.getProperty(HOST_NAME)));
-        globalTokens.put("myQuizzesURL", String.format("https://%s/quizzes",
-            properties.getProperty(HOST_NAME)));
+        String myQuizzesURL = String.format("https://%s/tests", properties.getProperty(HOST_NAME));
+        globalTokens.put("myQuizzesURL", myQuizzesURL);
+        globalTokens.put("myTestsURL", myQuizzesURL);
         globalTokens.put("myBookedEventsURL", String.format("https://%s/events?show_booked_only=true",
                 properties.getProperty(HOST_NAME)));
         globalTokens.put("contactUsURL", String.format("https://%s/contact",

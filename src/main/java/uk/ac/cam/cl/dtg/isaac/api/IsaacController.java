@@ -284,6 +284,7 @@ public class IsaacController extends AbstractIsaacFacade {
                 break;
 
             case "jpg":
+            case "jpeg":
                 mimeType = "image/jpeg";
                 break;
 

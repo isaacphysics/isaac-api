@@ -28,30 +28,30 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dos.AudienceContext;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardContentDescriptor;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
+import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
+import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuickQuestionDTO;
-import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
-import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
-import uk.ac.cam.cl.dtg.isaac.dos.AudienceContext;
-import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
-import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
-import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
+import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
@@ -303,6 +303,39 @@ public class GameManager {
     }
 
     /**
+     * Get a list of gameboards by their ids, augmented with attempt information.
+     *
+     * Note: These gameboards WILL be augmented with user attempt information, but not whether the gameboard is saved
+     * to the user's boards.
+     *
+     * @param gameboardIds
+     *            - to look up.
+     * @param user
+     *            - the user to augment the gameboard for.
+     * @return the gameboards or null.
+     * @throws SegueDatabaseException
+     *             - if there is a problem retrieving the gameboards in the database.
+     * @throws ContentManagerException
+     *             - if there is a problem resolving content
+     */
+    public final List<GameboardDTO> getGameboardsWithAttempts(final List<String> gameboardIds, final RegisteredUserDTO user)
+            throws SegueDatabaseException, ContentManagerException {
+        if (null == gameboardIds || gameboardIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<GameboardDTO> gameboardsByIds = this.gameboardPersistenceManager.getGameboardsByIds(gameboardIds);
+        List<String> questionPageIds = gameboardsByIds.stream().map(GameboardDTO::getContents).flatMap(Collection::stream).map(GameboardItem::getId).collect(Collectors.toList());
+        Map<String, Map<String, List<LightweightQuestionValidationResponse>>> userQuestionAttempts =
+                questionManager.getMatchingQuestionAttempts(user, questionPageIds);
+        for (GameboardDTO gb : gameboardsByIds) {
+            augmentGameboardWithQuestionAttemptInformation(gb, userQuestionAttempts);
+        }
+
+        return gameboardsByIds;
+    }
+
+    /**
      * Get a gameboard by its id.
      * 
      * @param gameboardId
@@ -367,12 +400,13 @@ public class GameManager {
         Validate.notNull(user);
 
         List<GameboardDTO> usersGameboards = this.gameboardPersistenceManager.getGameboardsByUserId(user);
-        Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser = questionManager
-                .getQuestionAttemptsByUser(user);
-
         if (null == usersGameboards || usersGameboards.isEmpty()) {
             return new GameboardListDTO();
         }
+
+        List<String> questionPageIds = usersGameboards.stream().map(GameboardDTO::getContents).flatMap(Collection::stream).map(GameboardItem::getId).collect(Collectors.toList());
+        Map<String, Map<String, List<LightweightQuestionValidationResponse>>> questionAttemptsFromUser =
+                questionManager.getMatchingQuestionAttempts(user, questionPageIds);
 
         List<GameboardDTO> resultToReturn = Lists.newArrayList();
 
@@ -734,7 +768,7 @@ public class GameManager {
      *             - if there is an error retrieving the content requested.
      */
     private GameboardDTO augmentGameboardWithQuestionAttemptInformation(final GameboardDTO gameboardDTO,
-                                                                        final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser)
+                                                                        final Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> questionAttemptsFromUser)
             throws ContentManagerException {
         if (null == gameboardDTO) {
             return null;

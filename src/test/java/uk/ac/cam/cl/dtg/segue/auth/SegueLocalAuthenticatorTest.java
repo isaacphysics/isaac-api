@@ -18,6 +18,8 @@ package uk.ac.cam.cl.dtg.segue.auth;
 import com.google.common.collect.ImmutableMap;
 import org.junit.Before;
 import org.junit.Test;
+import uk.ac.cam.cl.dtg.isaac.dos.users.LocalUserCredential;
+import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
@@ -25,8 +27,6 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IPasswordDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
-import uk.ac.cam.cl.dtg.isaac.dos.users.LocalUserCredential;
-import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.security.NoSuchAlgorithmException;
@@ -45,24 +45,26 @@ import static org.junit.Assert.fail;
  * 
  */
 public class SegueLocalAuthenticatorTest {
-	
-	private IUserDataManager userDataManager;
-	private IPasswordDataManager passwordDataManager;
-	private PropertiesLoader propertiesLoader;
 
-	private ISegueHashingAlgorithm preferredAlgorithm = new SeguePBKDF2v3();
-	private ISegueHashingAlgorithm oldAlgorithm1 = new SeguePBKDF2v1();
+    private IUserDataManager userDataManager;
+    private IPasswordDataManager passwordDataManager;
+    private PropertiesLoader propertiesLoader;
+
+    private ISegueHashingAlgorithm preferredAlgorithm = new SegueSCryptv1();
+    private ISegueHashingAlgorithm oldAlgorithm1 = new SeguePBKDF2v1();
     private ISegueHashingAlgorithm oldAlgorithm2 = new SeguePBKDF2v2();
+    private ISegueHashingAlgorithm oldAlgorithm3 = new SeguePBKDF2v3();
 
     Map<String, ISegueHashingAlgorithm> possibleAlgorithms = ImmutableMap.of(
             preferredAlgorithm.hashingAlgorithmName(), preferredAlgorithm,
             oldAlgorithm1.hashingAlgorithmName(), oldAlgorithm1,
-            oldAlgorithm2.hashingAlgorithmName(), oldAlgorithm2
+            oldAlgorithm2.hashingAlgorithmName(), oldAlgorithm2,
+            oldAlgorithm3.hashingAlgorithmName(), oldAlgorithm3
     );
 
 	/**
 	 * Initial configuration of tests.
-	 * 
+	 *
 	 * @throws Exception
 	 *             - test exception
 	 */

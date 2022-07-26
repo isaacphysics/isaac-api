@@ -172,12 +172,10 @@ public class AssignmentFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
             Collection<AssignmentDTO> assignments = this.assignmentManager.getAssignments(currentlyLoggedInUser);
-            Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsByUser = this.questionManager
-                    .getQuestionAttemptsByUser(currentlyLoggedInUser);
 
             // Gather all gameboards we need to augment for the assignments in a single query
             List<String> gameboardIds = assignments.stream().map(AssignmentDTO::getGameboardId).collect(Collectors.toList());
-            Map<String, GameboardDTO> gameboardsMap = this.gameManager.getGameboards(gameboardIds, questionAttemptsByUser)
+            Map<String, GameboardDTO> gameboardsMap = this.gameManager.getGameboardsWithAttempts(gameboardIds, currentlyLoggedInUser)
                     .stream().collect(Collectors.toMap(GameboardDTO::getId, Function.identity()));
 
             // we want to populate gameboard details for the assignment DTO.

@@ -56,10 +56,9 @@ public class UserAlertsWebSocketServlet extends WebSocketServlet {
             return;
         }
 
-        // WebSockets are not protected by the CORS filters in /override-api-web.xml so we must check the origin
-        // explicitly here:
+        // WebSockets are not protected by CORS, so we must check the origin explicitly here:
         String origin = request.getHeader("Origin");
-        if (!hostName.contains("localhost") && (null == origin || !(origin.equals("https://" + hostName) || origin.equals("https://old." + hostName)))) { // FIXME: remove old!
+        if (!hostName.contains("localhost") && (null == origin || !origin.equals("https://" + hostName))) {
             // If we have no origin, or an origin not matching the current hostname; abort the Upgrade request with
             // a HTTP Forbidden. Allow an API running on localhost to bypass these origin checks.
             log.warn("WebSocket Upgrade request has unexpected Origin: '" + origin + "'. Blocking access to: "

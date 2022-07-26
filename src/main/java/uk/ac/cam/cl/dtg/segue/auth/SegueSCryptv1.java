@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 James Sharkey
+ * Copyright 2022 James Sharkey
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,24 +15,21 @@
  */
 package uk.ac.cam.cl.dtg.segue.auth;
 
-/**
- * Represents an instance of a hashing scheme used in Segue.
- *
- */
-@Deprecated
-public class SeguePBKDF2v3 extends SeguePBKDF2 implements ISegueHashingAlgorithm {
-    private static final String CRYPTO_ALGORITHM = "PBKDF2WithHmacSHA512";
+public class SegueSCryptv1 extends SegueSCrypt implements ISegueHashingAlgorithm {
+    private static final Integer ITERATIONS = 65536;
+    private static final Integer BLOCK_SIZE = 8;
+    private static final Integer PARALLELISM_FACTOR = 1;
+    private static final Integer KEY_LENGTH = 64;  // bytes
     private static final String SALTING_ALGORITHM = "SHA1PRNG";
-    private static final Integer ITERATIONS = 150000;
-    private static final Integer KEY_LENGTH = 512;
-    private static final int SALT_SIZE = 16;
+    private static final int SALT_SIZE = 16;  // bytes
 
-    public SeguePBKDF2v3() {
-        super(CRYPTO_ALGORITHM, KEY_LENGTH, ITERATIONS, SALTING_ALGORITHM, SALT_SIZE);
+    public SegueSCryptv1() {
+        super(ITERATIONS, BLOCK_SIZE, PARALLELISM_FACTOR, KEY_LENGTH, SALTING_ALGORITHM, SALT_SIZE);
     }
 
     @Override
     public String hashingAlgorithmName() {
-        return "SeguePBKDF2v3";
+        return "SegueSCryptv1";
     }
+
 }

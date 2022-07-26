@@ -53,7 +53,9 @@ public interface IQuestionAttemptManager {
      * @param userIds
      *            - list of user ids to look up results for.
      * @param questionPage
-     *            - list of question page ids (prefixes to question ids) that we should look up.
+     *            - list of question page ids (prefixes to question ids) that we should look up. If this list is
+     *              too long, it may be ignored and all attempts returned for the relevant users to avoid expensive
+     *              additional filtering.
      * @return a Map of userId --> Map of question_page --> Map of Question_id --> List of lightweight users attempts
      *          (without the actual question attempt values).
      * @throws SegueDatabaseException

@@ -143,7 +143,7 @@ public class GroupChangedService implements IGroupObserver {
         if (existingQuizzes != null && !existingQuizzes.isEmpty()) {
             htmlSB.append("<br>");
             plainTextSB.append("\n");
-            formatAssignmentLikeList(htmlSB, plainTextSB, existingQuizzes, "quizzes", quizAssignmentManager);
+            formatAssignmentLikeList(htmlSB, plainTextSB, existingQuizzes, "tests", quizAssignmentManager);
         }
     }
 
