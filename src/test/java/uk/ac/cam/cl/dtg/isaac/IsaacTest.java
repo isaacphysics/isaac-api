@@ -17,7 +17,6 @@ package uk.ac.cam.cl.dtg.isaac;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.inject.AbstractModule;
 import org.junit.Before;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionBase;
@@ -59,7 +58,7 @@ import static org.powermock.api.easymock.PowerMock.replay;
 import static org.powermock.api.easymock.PowerMock.reset;
 import static org.powermock.api.easymock.PowerMock.verify;
 
-public class IsaacTest extends AbstractModule {
+public class IsaacTest {
     protected static Date somePastDate = new Date(System.currentTimeMillis() - 7*24*60*60*1000);
     protected static Date someFurtherPastDate = new Date(System.currentTimeMillis() - 14*24*60*60*1000);
     protected static Date someFutureDate = new Date(System.currentTimeMillis() + 7*24*60*60*1000);
