@@ -72,10 +72,10 @@ public class EventsFacadeTest extends IsaacE2ETest {
         replay(httpSession);
 
         // --- Login as a student
-        LoginResult studentLogin = loginAs(httpSession, properties.getProperty("TEST_STUDENT_EMAIL"), properties.getProperty("TEST_STUDENT_PASSWORD"));
+        LoginResult studentLogin = loginAs(httpSession, Constants.TEST_STUDENT_EMAIL, Constants.TEST_STUDENT_PASSWORD);
 
         // --- Login as an event manager
-        LoginResult eventManagerLogin = loginAs(httpSession, properties.getProperty("TEST_EVENTMANAGER_EMAIL"), properties.getProperty("TEST_EVENTMANAGER_PASSWORD"));
+        LoginResult eventManagerLogin = loginAs(httpSession, Constants.TEST_EVENTMANAGER_EMAIL, Constants.TEST_EVENTMANAGER_PASSWORD);
 
         // --- Create a booking as a logged in student
         HttpServletRequest createBookingRequest = createNiceMock(HttpServletRequest.class);
