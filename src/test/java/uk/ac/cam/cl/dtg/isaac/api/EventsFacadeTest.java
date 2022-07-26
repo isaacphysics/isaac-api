@@ -89,7 +89,7 @@ public class EventsFacadeTest extends IsaacE2ETest {
         if (null != createBookingResponse.getEntity() && createBookingResponse.getEntity() instanceof EventBookingDTO) {
             eventBookingDTO = (EventBookingDTO) createBookingResponse.getEntity();
             // Check that the returned entity is an EventBookingDTO and the ID of the user who created the booking matches
-            assertEquals(studentLogin.user.getId(), ((EventBookingDTO) createBookingResponse.getEntity()).getUserBooked().getId());
+            assertEquals(studentLogin.user.getId(), eventBookingDTO.getUserBooked().getId());
         }
         assertNotNull(eventBookingDTO);
 
