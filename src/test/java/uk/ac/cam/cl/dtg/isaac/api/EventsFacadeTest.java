@@ -10,6 +10,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.DetailedEventBookingDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AdditionalAuthenticationRequiredException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
@@ -38,6 +39,8 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+
 
 //@RunWith(PowerMockRunner.class)
 @PowerMockIgnore("javax.net.ssl.*")
@@ -84,9 +87,9 @@ public class EventsFacadeTest extends IsaacE2ETest {
     // DELETE /events/{event_id}/bookings/cancel -> EventsFacade::cancelBooking(request, eventId)
     public void getBookingByIdTest() throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException, AuthenticationProviderMappingException, IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException, MFARequiredButNotConfiguredException, SQLException {
         // --- Login as a student
-        LoginResult studentLogin = loginAs(httpSession, properties.getProperty("TEST_STUDENT_EMAIL"), properties.getProperty("TEST_STUDENT_PASSWORD"));
+        LoginResult studentLogin = loginAs(httpSession, Constants.TEST_STUDENT_EMAIL, Constants.TEST_STUDENT_PASSWORD);
         // --- Login as an event manager
-        LoginResult eventManagerLogin = loginAs(httpSession, properties.getProperty("TEST_EVENTMANAGER_EMAIL"), properties.getProperty("TEST_EVENTMANAGER_PASSWORD"));
+        LoginResult eventManagerLogin = loginAs(httpSession, Constants.TEST_EVENTMANAGER_EMAIL, Constants.TEST_EVENTMANAGER_PASSWORD);
 
         // --- Create a booking as a logged in student
         HttpServletRequest createBookingRequest = createRequestWithCookies(new Cookie[] { studentLogin.cookie });
@@ -99,7 +102,7 @@ public class EventsFacadeTest extends IsaacE2ETest {
         if (createBookingResponse.getEntity() instanceof EventBookingDTO) {
             eventBookingDTO = (EventBookingDTO) createBookingResponse.getEntity();
             // Check that the returned entity is an EventBookingDTO and the ID of the user who created the booking matches
-            assertEquals(studentLogin.user.getId(), ((EventBookingDTO) createBookingResponse.getEntity()).getUserBooked().getId());
+            assertEquals(studentLogin.user.getId(), eventBookingDTO.getUserBooked().getId());
         } else {
             fail("The returned entity is not an instance of EventBookingDTO.");
         }

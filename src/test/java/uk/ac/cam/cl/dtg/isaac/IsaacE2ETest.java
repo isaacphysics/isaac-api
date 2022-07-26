@@ -3,7 +3,6 @@ package uk.ac.cam.cl.dtg.isaac;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.api.client.util.Maps;
-import com.google.common.collect.ImmutableMap;
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.SystemUtils;
 import org.easymock.Capture;
@@ -131,7 +130,7 @@ public class IsaacE2ETest {
         // TODO It would be nice if we could pull the version from pom.xml
         elasticsearch = new ElasticsearchContainer(DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch:7.14.2"))
                 .withCopyFileToContainer(MountableFile.forClasspathResource("isaac-test-es-data.tar.gz"), "/usr/share/elasticsearch/isaac-test-es-data.tar.gz")
-                 .withCopyFileToContainer(MountableFile.forClasspathResource("isaac-test-es-docker-entrypoint.sh", 0100775), "/usr/local/bin/docker-entrypoint.sh")
+                .withCopyFileToContainer(MountableFile.forClasspathResource("isaac-test-es-docker-entrypoint.sh", 0100775), "/usr/local/bin/docker-entrypoint.sh")
                 .withExposedPorts(9200, 9300)
                 .withEnv("cluster.name", "isaac")
                 .withEnv("node.name", "localhost")
@@ -167,15 +166,7 @@ public class IsaacE2ETest {
         }
 
         try {
-            properties = new PropertiesLoader(configLocation) {
-                final Map<String, String> propertyOverrides = ImmutableMap.of(
-                        "SEARCH_CLUSTER_NAME", "isaac"
-                );
-                @Override
-                public String getProperty(String key) {
-                    return propertyOverrides.getOrDefault(key, super.getProperty(key));
-                }
-            };
+            properties = new PropertiesLoader(configLocation);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -233,7 +224,6 @@ public class IsaacE2ETest {
         PgAssociationDataManager pgAssociationDataManager = new PgAssociationDataManager(postgresSqlDb);
         PgUserGroupPersistenceManager pgUserGroupPersistenceManager = new PgUserGroupPersistenceManager(postgresSqlDb);
 
-        // PLEASE CHECK: Is "latest" the right content index here?
         GameboardPersistenceManager gameboardPersistenceManager = new GameboardPersistenceManager(postgresSqlDb, contentManager, mapperFacade, objectMapper, new URIManager(properties), "latest");
         gameManager = new GameManager(contentManager, gameboardPersistenceManager, mapperFacade, questionManager, "latest");
         groupManager = new GroupManager(pgUserGroupPersistenceManager, userAccountManager, gameManager, mapperFacade);
