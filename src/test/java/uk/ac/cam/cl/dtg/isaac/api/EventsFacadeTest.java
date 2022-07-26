@@ -31,6 +31,7 @@ import static org.easymock.EasyMock.expect;
 import static org.junit.Assert.assertEquals;
 import static org.easymock.EasyMock.replay;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 //@RunWith(PowerMockRunner.class)
 @PowerMockIgnore("javax.net.ssl.*")
@@ -99,9 +100,12 @@ public class EventsFacadeTest extends IsaacE2ETest {
         replay(getEventBookingsByIdRequest);
 
         Response getEventBookingsByIdResponse = eventsFacade.getEventBookingsById(getEventBookingsByIdRequest, eventBookingDTO.getBookingId().toString());
-        if (null != getEventBookingsByIdResponse.getEntity() && getEventBookingsByIdResponse.getEntity() instanceof EventBookingDTO) {
+        assertNotNull(getEventBookingsByIdResponse.getEntity());
+        if (getEventBookingsByIdResponse.getEntity() instanceof EventBookingDTO) {
             assertNotNull(((EventBookingDTO) getEventBookingsByIdResponse.getEntity()).getUserBooked());
             assertEquals(((EventBookingDTO) getEventBookingsByIdResponse.getEntity()).getUserBooked().getClass(), UserSummaryWithEmailAddressDTO.class);
+        } else {
+            fail("The returned entity is not of type EventBookingDTO");
         }
     }
 }
