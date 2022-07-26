@@ -29,7 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
@@ -57,7 +57,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class InfoFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(InfoFacade.class);
 
-    private final IContentManager contentManager;
+    private final GitContentManager contentManager;
     private final SegueJobService segueJobService;
 
     /**
@@ -69,7 +69,7 @@ public class InfoFacade extends AbstractSegueFacade {
      *            - for logging events using the logging api.
      */
     @Inject
-    public InfoFacade(final PropertiesLoader properties, final IContentManager contentManager,
+    public InfoFacade(final PropertiesLoader properties, final GitContentManager contentManager,
                       final SegueJobService segueJobService,
                       final ILogManager logManager) {
         super(properties, logManager);

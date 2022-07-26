@@ -44,7 +44,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dto.ContentEmailDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
@@ -86,7 +86,7 @@ public class EmailFacade extends AbstractSegueFacade {
     
     private final EmailManager emailManager;
     private final UserAccountManager userManager;
-    private final IContentManager contentManager;
+    private final GitContentManager contentManager;
     private final IMisuseMonitor misuseMonitor;
 
     /**
@@ -107,8 +107,8 @@ public class EmailFacade extends AbstractSegueFacade {
      */
     @Inject
     public EmailFacade(final PropertiesLoader properties, final ILogManager logManager,
-            final EmailManager emailManager, final UserAccountManager userManager,
-                       final IContentManager contentManager, final IMisuseMonitor misuseMonitor) {
+                       final EmailManager emailManager, final UserAccountManager userManager,
+                       final GitContentManager contentManager, final IMisuseMonitor misuseMonitor) {
 		super(properties, logManager);
         this.contentManager = contentManager;
 		this.emailManager = emailManager;

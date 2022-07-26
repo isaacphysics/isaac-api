@@ -53,7 +53,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
@@ -106,7 +106,7 @@ import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdF
 @Path("/quiz")
 @Api(value = "/quiz")
 public class QuizFacade extends AbstractIsaacFacade {
-    private final IContentManager contentManager;
+    private final GitContentManager contentManager;
     private final QuizManager quizManager;
     private final UserAccountManager userManager;
     private final UserAssociationManager associationManager;
@@ -145,7 +145,7 @@ public class QuizFacade extends AbstractIsaacFacade {
      */
     @Inject
     public QuizFacade(final PropertiesLoader properties, final ILogManager logManager,
-                      final IContentManager contentManager, final QuizManager quizManager,
+                      final GitContentManager contentManager, final QuizManager quizManager,
                       final UserAccountManager userManager, final UserAssociationManager associationManager,
                       final GroupManager groupManager, final QuizAssignmentManager quizAssignmentManager,
                       final AssignmentService assignmentService, final QuizAttemptManager quizAttemptManager,

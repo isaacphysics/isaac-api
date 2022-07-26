@@ -53,7 +53,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
@@ -131,7 +131,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
     private final GroupManager groupManager;
 
-    private final IContentManager contentManager;
+    private final GitContentManager contentManager;
     private final String contentIndex;
     private final UserBadgeManager userBadgeManager;
     private final UserAssociationManager userAssociationManager;
@@ -156,7 +156,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Inject
     public EventsFacade(final PropertiesLoader properties, final ILogManager logManager,
                         final EventBookingManager bookingManager,
-                        final UserAccountManager userManager, final IContentManager contentManager,
+                        final UserAccountManager userManager, final GitContentManager contentManager,
                         @Named(Constants.CONTENT_INDEX) final String contentIndex,
                         final UserBadgeManager userBadgeManager,
                         final UserAssociationManager userAssociationManager,

@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
@@ -60,7 +60,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class SegueContentFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(SegueContentFacade.class);
 
-    private final IContentManager contentManager;
+    private final GitContentManager contentManager;
     private final String contentIndex;
     private final ContentService contentService;
 
@@ -74,7 +74,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
 
      */
     @Inject
-    public SegueContentFacade(final PropertiesLoader properties, final IContentManager contentManager,
+    public SegueContentFacade(final PropertiesLoader properties, final GitContentManager contentManager,
                               @Named(CONTENT_INDEX) final String contentIndex,
                               final ILogManager logManager, final ContentService contentService) {
         super(properties, logManager);
@@ -98,7 +98,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
      * @return Response containing a ResultsWrapper<ContentDTO> or a Response containing null if none found.
      */
     public final ResultsWrapper<ContentDTO> findMatchingContent(final String version,
-            final List<IContentManager.BooleanSearchClause> fieldsToMatch,
+            final List<GitContentManager.BooleanSearchClause> fieldsToMatch,
             @Nullable final Integer startIndex, @Nullable final Integer limit) throws ContentManagerException {
 
         return contentService.findMatchingContent(version, fieldsToMatch, startIndex, limit);
@@ -122,7 +122,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
      * @return Response containing a ResultsWrapper<ContentDTO> or a Response containing null if none found.
      */
     public final ResultsWrapper<ContentDTO> findMatchingContentRandomOrder(
-            @Nullable final String version, final List<IContentManager.BooleanSearchClause> fieldsToMatch,
+            @Nullable final String version, final List<GitContentManager.BooleanSearchClause> fieldsToMatch,
             final Integer startIndex, final Integer limit) {
         return this.findMatchingContentRandomOrder(version, fieldsToMatch, startIndex, limit, null);
     }
@@ -144,7 +144,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
      * @return Response containing a ResultsWrapper<ContentDTO> or a Response containing null if none found.
      */
     public final ResultsWrapper<ContentDTO> findMatchingContentRandomOrder(
-            @Nullable final String version, final List<IContentManager.BooleanSearchClause> fieldsToMatch,
+            @Nullable final String version, final List<GitContentManager.BooleanSearchClause> fieldsToMatch,
             final Integer startIndex, final Integer limit, final Long randomSeed) {
 
         String newVersion = this.contentIndex;

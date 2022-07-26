@@ -41,7 +41,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
@@ -85,7 +85,7 @@ public class GameboardPersistenceManager {
     private final MapperFacade mapper; // used for content object mapping.
     private final ObjectMapper objectMapper; // used for json serialisation
 
-    private final IContentManager contentManager;
+    private final GitContentManager contentManager;
     private final String contentIndex;
 
     private final URIManager uriManager;
@@ -106,7 +106,7 @@ public class GameboardPersistenceManager {
      *            - so we can generate appropriate content URIs.
      */
     @Inject
-    public GameboardPersistenceManager(final PostgresSqlDb database, final IContentManager contentManager,
+    public GameboardPersistenceManager(final PostgresSqlDb database, final GitContentManager contentManager,
                                        final MapperFacade mapper, final ObjectMapper objectMapper, final URIManager uriManager, @Named(CONTENT_INDEX) final String contentIndex) {
         this.database = database;
         this.mapper = mapper;
@@ -408,13 +408,13 @@ public class GameboardPersistenceManager {
         GameboardDO gameboardDO = this.convertToGameboardDO(gameboardDTO);
 
         // build query the db to get full question information
-        List<IContentManager.BooleanSearchClause> fieldsToMap = Lists.newArrayList();
+        List<GitContentManager.BooleanSearchClause> fieldsToMap = Lists.newArrayList();
 
-        fieldsToMap.add(new IContentManager.BooleanSearchClause(
+        fieldsToMap.add(new GitContentManager.BooleanSearchClause(
             Constants.ID_FIELDNAME + '.' + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Constants.BooleanOperator.OR,
                 gameboardDO.getContents().stream().map(GameboardContentDescriptor::getId).collect(Collectors.toList())));
 
-        fieldsToMap.add(new IContentManager.BooleanSearchClause(
+        fieldsToMap.add(new GitContentManager.BooleanSearchClause(
                 TYPE_FIELDNAME, Constants.BooleanOperator.OR, Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE)));
 
         // Search for questions that match the ids.       

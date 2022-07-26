@@ -25,7 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
@@ -56,7 +56,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class GlossaryFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(GlossaryFacade.class);
 
-    private final IContentManager contentManager;
+    private final GitContentManager contentManager;
     private final String contentIndex;
 
     /**
@@ -66,7 +66,7 @@ public class GlossaryFacade extends AbstractSegueFacade {
      * @param logManager     - for logging events using the logging api.
      */
     @Inject
-    public GlossaryFacade(final PropertiesLoader properties, final IContentManager contentManager,
+    public GlossaryFacade(final PropertiesLoader properties, final GitContentManager contentManager,
                           @Named(CONTENT_INDEX) final String contentIndex,
                           final ILogManager logManager) {
         super(properties, logManager);
@@ -89,8 +89,8 @@ public class GlossaryFacade extends AbstractSegueFacade {
     public final Response getTerms(@QueryParam("start_index") final String startIndex,
                                    @QueryParam("limit") final String limit) {
 
-        List<IContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
-        fieldsToMatch.add(new IContentManager.BooleanSearchClause(
+        List<GitContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
+        fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
                 TYPE_FIELDNAME, BooleanOperator.AND, Collections.singletonList("glossaryTerm")));
 
         ResultsWrapper<ContentDTO> c;

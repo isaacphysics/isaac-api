@@ -24,7 +24,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserNotification;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserNotification.NotificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserNotifications;
@@ -49,7 +49,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
  */
 public class NotificationPicker {
     private IUserNotifications notifications;
-    private final IContentManager contentManager;
+    private final GitContentManager contentManager;
     private final String contentIndex;
 
     /**
@@ -59,7 +59,7 @@ public class NotificationPicker {
      *            - the DAO allowing the recording of which notifications have been shown to whom.
      */
     @Inject
-    public NotificationPicker(final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex,
+    public NotificationPicker(final GitContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex,
                               final PgUserNotifications notifications) {
         this.contentManager = contentManager;
         this.contentIndex = contentIndex;
@@ -80,8 +80,8 @@ public class NotificationPicker {
     public List<ContentDTO> getAvailableNotificationsForUser(final RegisteredUserDTO user)
             throws ContentManagerException, SegueDatabaseException {
         // get users notification record
-        List<IContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
-        fieldsToMatch.add(new IContentManager.BooleanSearchClause(
+        List<GitContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
+        fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
                 TYPE_FIELDNAME, BooleanOperator.AND, Collections.singletonList("notification")));
 
         ResultsWrapper<ContentDTO> allContentNotifications = this.contentManager
@@ -170,8 +170,7 @@ public class NotificationPicker {
      */
     public void recordNotificationAction(final RegisteredUserDTO user, final String notificationId,
             final NotificationStatus status) throws SegueDatabaseException, ContentManagerException {
-        ContentDTO notification = this.contentManager.getContentById(
-                notificationId);
+        ContentDTO notification = this.contentManager.getContentById(notificationId);
 
         if (null == notification) {
             throw new ResourceNotFoundException(String.format(
@@ -194,8 +193,7 @@ public class NotificationPicker {
     public ContentDTO getNotificationById(final String notificationId) throws ContentManagerException,
             ResourceNotFoundException {
         // get available notifications that still can be displayed
-        ContentDTO notification = this.contentManager.getContentById(
-                notificationId);
+        ContentDTO notification = this.contentManager.getContentById(notificationId);
 
         if (notification instanceof NotificationDTO) {
             return notification;

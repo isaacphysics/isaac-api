@@ -10,7 +10,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
@@ -33,7 +33,7 @@ public class QuizManagerTest extends AbstractManagerTest {
         properties = createMock(PropertiesLoader.class);
 
         ContentService contentService = createMock(ContentService.class);
-        IContentManager contentManager = createMock(IContentManager.class);
+        GitContentManager contentManager = createMock(GitContentManager.class);
         ContentSummarizerService contentSummarizerService = createMock(ContentSummarizerService.class);
         ContentMapper mapper = createMock(ContentMapper.class);
         quizManager = new QuizManager(properties, contentService, contentManager, contentSummarizerService, mapper);

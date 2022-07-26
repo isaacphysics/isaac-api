@@ -8,7 +8,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.IUserBadgePolicy;
 import uk.ac.cam.cl.dtg.isaac.dos.ITransaction;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
@@ -23,11 +23,11 @@ import java.util.Map;
 public class TeacherCpdBadgePolicy implements IUserBadgePolicy {
 
     private final EventBookingManager bookingManager;
-    private final IContentManager contentManager;
+    private final GitContentManager contentManager;
     private final String contentIndex;
 
     public TeacherCpdBadgePolicy(EventBookingManager bookingManager,
-                                 IContentManager contentManager,
+                                 GitContentManager contentManager,
                                  String contentIndex) {
         this.bookingManager = bookingManager;
         this.contentManager = contentManager;

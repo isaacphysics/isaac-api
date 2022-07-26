@@ -40,7 +40,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
@@ -86,7 +86,7 @@ public class QuestionFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(QuestionFacade.class);
 
     private final ContentMapper mapper;
-    private final IContentManager contentManager;
+    private final GitContentManager contentManager;
     private final String contentIndex;
     private final UserAccountManager userManager;
     private final QuestionManager questionManager;
@@ -114,7 +114,7 @@ public class QuestionFacade extends AbstractSegueFacade {
      */
     @Inject
     public QuestionFacade(final PropertiesLoader properties, final ContentMapper mapper,
-                          final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final UserAccountManager userManager,
+                          final GitContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final UserAccountManager userManager,
                           final QuestionManager questionManager,
                           final ILogManager logManager, final IMisuseMonitor misuseMonitor,
                           final UserBadgeManager userBadgeManager,

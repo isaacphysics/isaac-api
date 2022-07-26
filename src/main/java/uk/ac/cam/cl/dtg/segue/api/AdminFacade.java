@@ -53,7 +53,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.LocationManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
@@ -118,7 +118,7 @@ public class AdminFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(AdminFacade.class);
 
     private final UserAccountManager userManager;
-    private final IContentManager contentManager;
+    private final GitContentManager contentManager;
     private final String contentIndex;
 
     private final StatisticsManager statsManager;
@@ -157,7 +157,7 @@ public class AdminFacade extends AbstractSegueFacade {
      */
     @Inject
     public AdminFacade(final PropertiesLoader properties, final UserAccountManager userManager,
-                       final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final ILogManager logManager,
+                       final GitContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final ILogManager logManager,
                        final StatisticsManager statsManager, final LocationManager locationManager,
                        final SchoolListReader schoolReader, final AbstractUserPreferenceManager userPreferenceManager,
                        final EventBookingManager eventBookingManager, final SegueJobService segueJobService,
@@ -677,8 +677,7 @@ public class AdminFacade extends AbstractSegueFacade {
             if (partialContentWithErrors.getId() != null) {
                 try {
                     
-                    boolean success = this.contentManager.getContentById(
-                            partialContentWithErrors.getId(),
+                    boolean success = this.contentManager.getContentById(partialContentWithErrors.getId(),
                             true) != null;
                     
                     errorRecord.put("successfulIngest", success);

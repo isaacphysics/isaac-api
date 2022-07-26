@@ -21,7 +21,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 import java.util.Arrays;
@@ -38,7 +38,7 @@ public class EventBookingPersistenceManager {
     private final PostgresSqlDb database;
     private final EventBookings dao;
     private final UserAccountManager userManager;
-    private final IContentManager contentManager;
+    private final GitContentManager contentManager;
 
     /**
      * EventBookingPersistenceManager.
@@ -54,7 +54,7 @@ public class EventBookingPersistenceManager {
      */
     @Inject
     public EventBookingPersistenceManager(final PostgresSqlDb database, final UserAccountManager userManager,
-                                          final IContentManager contentManager, final ObjectMapper objectMapper) {
+                                          final GitContentManager contentManager, final ObjectMapper objectMapper) {
         this.database = database;
         this.userManager = userManager;
         this.contentManager = contentManager;
@@ -348,8 +348,7 @@ public class EventBookingPersistenceManager {
      */
     private DetailedEventBookingDTO convertToDTO(final EventBooking eb) throws SegueDatabaseException {
         try {
-            ContentDTO c = this.contentManager.getContentById(
-                    eb.getEventId(), true);
+            ContentDTO c = this.contentManager.getContentById(eb.getEventId(), true);
 
             if (null == c) {
                 // The event this booking relates to has disappeared so treat it as though it never existed.

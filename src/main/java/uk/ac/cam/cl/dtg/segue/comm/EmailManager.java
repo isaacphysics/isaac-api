@@ -32,7 +32,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.UserPreference;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ExternalReference;
@@ -67,7 +67,7 @@ import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.QUEUED_EMAIL;
 public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationMessage> {
     private final AbstractUserPreferenceManager userPreferenceManager;
     private final PropertiesLoader globalProperties;
-    private final IContentManager contentManager;
+    private final GitContentManager contentManager;
 
     private final ILogManager logManager;
 
@@ -93,7 +93,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      */
     @Inject
     public EmailManager(final EmailCommunicator communicator, final AbstractUserPreferenceManager userPreferenceManager,
-                        final PropertiesLoader globalProperties, final IContentManager contentManager,
+                        final PropertiesLoader globalProperties, final GitContentManager contentManager,
                         final ILogManager logManager, final Map<String, String> globalStringTokens) {
         super(communicator);
         this.userPreferenceManager = userPreferenceManager;
@@ -670,8 +670,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      */
     private ContentDTO getContentDTO(final String id)
             throws ContentManagerException, ResourceNotFoundException {
-        ContentDTO c = this.contentManager.getContentById(
-                id);
+        ContentDTO c = this.contentManager.getContentById(id);
 
         if (null == c) {
             throw new ResourceNotFoundException(String.format("E-mail template %s does not exist!", id));
@@ -693,8 +692,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      */
     public EmailTemplateDTO getEmailTemplateDTO(final String id) throws ContentManagerException,
             ResourceNotFoundException {
-        ContentDTO c = this.contentManager.getContentById(
-                id);
+        ContentDTO c = this.contentManager.getContentById(id);
 
         if (null == c) {
             throw new ResourceNotFoundException(String.format("E-mail template %s does not exist!", id));

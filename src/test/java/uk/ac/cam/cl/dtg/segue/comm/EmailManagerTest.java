@@ -30,6 +30,11 @@ import org.easymock.IAnswer;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+import org.powermock.api.easymock.PowerMock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,7 +47,7 @@ import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.UserPreference;
@@ -56,6 +61,8 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
  * Test class for the EmailManager class.
  * 
  */
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(GitContentManager.class)
 public class EmailManagerTest {
     private final String CONTENT_VERSION = "liveVersion";
 
@@ -67,7 +74,7 @@ public class EmailManagerTest {
     private static final Logger log = LoggerFactory.getLogger(EmailManagerTest.class);
     private EmailCommunicationMessage email = null;
     private PropertiesLoader mockPropertiesLoader;
-    private IContentManager mockContentManager;
+    private GitContentManager mockContentManager;
     private Capture<EmailCommunicationMessage> capturedArgument;
     private SegueLocalAuthenticator mockAuthenticator;
     private AbstractUserPreferenceManager userPreferenceManager;
@@ -129,7 +136,7 @@ public class EmailManagerTest {
 
 
         // Create content manager
-        mockContentManager = EasyMock.createMock(IContentManager.class);
+        mockContentManager = PowerMock.createMock(GitContentManager.class);
 
         // Create log manager
         logManager = EasyMock.createMock(ILogManager.class);
@@ -484,7 +491,7 @@ public class EmailManagerTest {
         EmailTemplateDTO template = createDummyEmailTemplate("this is a template with no tags");
 
         // Create content manager
-        IContentManager mockContentManager = EasyMock.createMock(IContentManager.class);
+        GitContentManager mockContentManager = PowerMock.createMock(GitContentManager.class);
 
         ContentDTO htmlTemplate = createDummyContentTemplate("{{content}}");
         try {
@@ -500,7 +507,7 @@ public class EmailManagerTest {
 
             EasyMock.expect(mockContentManager.getCurrentContentSHA()).andReturn(CONTENT_VERSION).atLeastOnce();
 
-            EasyMock.replay(mockContentManager);
+            PowerMock.replay(mockContentManager);
         } catch (ContentManagerException e) {
             e.printStackTrace();
             Assert.fail();

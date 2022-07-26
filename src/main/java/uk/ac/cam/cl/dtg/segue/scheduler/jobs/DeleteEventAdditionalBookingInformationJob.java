@@ -12,7 +12,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
@@ -41,7 +41,7 @@ public class DeleteEventAdditionalBookingInformationJob implements Job {
 
     private final PropertiesLoader properties;
     private final PostgresSqlDb database;
-    private final IContentManager contentManager;
+    private final GitContentManager contentManager;
 
     /**
      * This class is required by quartz and must be executable by any instance of the segue api relying only on the
@@ -50,7 +50,7 @@ public class DeleteEventAdditionalBookingInformationJob implements Job {
     public DeleteEventAdditionalBookingInformationJob() {
         Injector injector = SegueGuiceConfigurationModule.getGuiceInjector();
         properties = injector.getInstance(PropertiesLoader.class);
-        contentManager = injector.getInstance(IContentManager.class);
+        contentManager = injector.getInstance(GitContentManager.class);
         database = injector.getInstance(PostgresSqlDb.class);
 
     }
