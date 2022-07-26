@@ -71,8 +71,6 @@ public class InfoFacadeTest extends IsaacE2ETest {
             ImmutableMap<String, String> entity = (ImmutableMap<String, String>) response.getEntity();
             assertNotNull(entity);
             assertNotNull(entity.get("liveVersion"));
-            // TODO: with a live content manager, this is going to be a fun test case to keep up to date.
-            // assertEquals(entity.get("liveVersion", "someRandomStringWeMocked"));
         }
     }
 
