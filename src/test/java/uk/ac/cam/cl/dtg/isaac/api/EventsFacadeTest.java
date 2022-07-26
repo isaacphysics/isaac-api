@@ -144,28 +144,28 @@ public class EventsFacadeTest extends IsaacE2ETest {
         assertNotEquals(Response.Status.OK.getStatusCode(), getEventBookingsAsAnonymous_Response.getStatus());
 
         // Get event bookings by event id as a student (should fail)
-        LoginResult studentLogin = loginAs(httpSession, properties.getProperty("TEST_STUDENT_EMAIL"), properties.getProperty("TEST_STUDENT_PASSWORD"));
+        LoginResult studentLogin = loginAs(httpSession, Constants.TEST_STUDENT_EMAIL, Constants.TEST_STUDENT_PASSWORD);
         HttpServletRequest getEventBookingsAsStudent_Request = createRequestWithCookies(new Cookie[] { studentLogin.cookie });
         replay(getEventBookingsAsStudent_Request);
         Response getEventBookingsAsStudent_Response = eventsFacade.adminGetEventBookingByEventId(getEventBookingsAsStudent_Request, "_regular_test_event");
         assertNotEquals(Response.Status.OK.getStatusCode(), getEventBookingsAsStudent_Response.getStatus());
 
         // Get event bookings by event id as a teacher (should fail)
-        LoginResult teacherLogin = loginAs(httpSession, properties.getProperty("TEST_TEACHER_EMAIL"), properties.getProperty("TEST_TEACHER_PASSWORD"));
+        LoginResult teacherLogin = loginAs(httpSession, Constants.TEST_TEACHER_EMAIL, Constants.TEST_TEACHER_PASSWORD);
         HttpServletRequest getEventBookingsAsTeacher_Request = createRequestWithCookies(new Cookie[] { teacherLogin.cookie });
         replay(getEventBookingsAsTeacher_Request);
         Response getEventBookingsAsTeacher_Response = eventsFacade.adminGetEventBookingByEventId(getEventBookingsAsTeacher_Request, "_regular_test_event");
         assertNotEquals(Response.Status.OK.getStatusCode(), getEventBookingsAsTeacher_Response.getStatus());
 
         // Get event bookings by event id as a teacher (should fail)
-        LoginResult editorLogin = loginAs(httpSession, properties.getProperty("TEST_EDITOR_EMAIL"), properties.getProperty("TEST_EDITOR_PASSWORD"));
+        LoginResult editorLogin = loginAs(httpSession, Constants.TEST_EDITOR_EMAIL, Constants.TEST_EDITOR_PASSWORD);
         HttpServletRequest getEventBookingsAsEditor_Request = createRequestWithCookies(new Cookie[] { editorLogin.cookie });
         replay(getEventBookingsAsEditor_Request);
         Response getEventBookingsAsEditor_Response = eventsFacade.adminGetEventBookingByEventId(getEventBookingsAsEditor_Request, "_regular_test_event");
         assertNotEquals(Response.Status.OK.getStatusCode(), getEventBookingsAsEditor_Response.getStatus());
 
         // Get event bookings by event id as an event manager (should succeed)
-        LoginResult eventManagerLogin = loginAs(httpSession, properties.getProperty("TEST_EVENTMANAGER_EMAIL"), properties.getProperty("TEST_EVENTMANAGER_PASSWORD"));
+        LoginResult eventManagerLogin = loginAs(httpSession, Constants.TEST_EVENTMANAGER_EMAIL, Constants.TEST_EVENTMANAGER_PASSWORD);
         HttpServletRequest getEventBookingsAsEventManager_Request = createRequestWithCookies(new Cookie[] { eventManagerLogin.cookie });
         replay(getEventBookingsAsEventManager_Request);
         Response getEventBookingsAsEventManager_Response = eventsFacade.adminGetEventBookingByEventId(getEventBookingsAsEventManager_Request, "_regular_test_event");
@@ -194,14 +194,14 @@ public class EventsFacadeTest extends IsaacE2ETest {
         assertNotEquals(Response.Status.OK.getStatusCode(), anonymous_Response.getStatus());
 
         // Get event bookings by event id as a student (should fail)
-        LoginResult studentLogin = loginAs(httpSession, properties.getProperty("TEST_STUDENT_EMAIL"), properties.getProperty("TEST_STUDENT_PASSWORD"));
+        LoginResult studentLogin = loginAs(httpSession, Constants.TEST_STUDENT_EMAIL, Constants.TEST_STUDENT_PASSWORD);
         HttpServletRequest student_Request = createRequestWithCookies(new Cookie[] { studentLogin.cookie });
         replay(student_Request);
         Response student_Response = eventsFacade.getEventBookingForAllGroups(student_Request, "_regular_test_event");
         assertNotEquals(Response.Status.OK.getStatusCode(), student_Response.getStatus());
 
         // Get event bookings by event id as a teacher (should succeed)
-        LoginResult teacherLogin = loginAs(httpSession, properties.getProperty("TEST_TEACHER_EMAIL"), properties.getProperty("TEST_TEACHER_PASSWORD"));
+        LoginResult teacherLogin = loginAs(httpSession, Constants.TEST_TEACHER_EMAIL, Constants.TEST_TEACHER_PASSWORD);
         HttpServletRequest teacher_Request = createRequestWithCookies(new Cookie[] { teacherLogin.cookie });
         replay(teacher_Request);
         Response teacher_Response = eventsFacade.getEventBookingForAllGroups(teacher_Request, "_regular_test_event");
@@ -223,7 +223,7 @@ public class EventsFacadeTest extends IsaacE2ETest {
         assertFalse(teacherCharlie.isPresent());
 
         // Try logging in with another teacher account and see if we are sending the wrong information to the wrong teachers
-        LoginResult daveLogin = loginAs(httpSession, "dave-teacher@test.com", properties.getProperty("TEST_TEACHER_PASSWORD"));
+        LoginResult daveLogin = loginAs(httpSession, "dave-teacher@test.com", Constants.TEST_TEACHER_PASSWORD);
         HttpServletRequest dave_Request = createRequestWithCookies(new Cookie[] { daveLogin.cookie });
         replay(dave_Request);
         Response dave_Response = eventsFacade.getEventBookingForAllGroups(dave_Request, "_regular_test_event");
@@ -254,7 +254,7 @@ public class EventsFacadeTest extends IsaacE2ETest {
         assertNotEquals(Response.Status.OK.getStatusCode(), anonymous_Response.getStatus());
 
         // Teachers MUST be able to get event bookings by event id and group id if and only if they own the given group
-        LoginResult teacherLogin = loginAs(httpSession, properties.getProperty("TEST_TEACHER_EMAIL"), properties.getProperty("TEST_TEACHER_PASSWORD"));
+        LoginResult teacherLogin = loginAs(httpSession, Constants.TEST_TEACHER_EMAIL, Constants.TEST_TEACHER_PASSWORD);
         HttpServletRequest teacher_Request = createRequestWithCookies(new Cookie[] { teacherLogin.cookie });
         replay(teacher_Request);
         Response teacher_Response = eventsFacade.getEventBookingForGivenGroup(teacher_Request, "_regular_test_event", "1");
@@ -265,7 +265,7 @@ public class EventsFacadeTest extends IsaacE2ETest {
         assertFalse(bookedUserIds.contains(9L)); // User 9 is booked but is not in Teacher's group.
 
         // Students MUST NOT be able to get event bookings by event id and group id
-        LoginResult studentLogin = loginAs(httpSession, properties.getProperty("TEST_STUDENT_EMAIL"), properties.getProperty("TEST_STUDENT_PASSWORD"));
+        LoginResult studentLogin = loginAs(httpSession, Constants.TEST_STUDENT_EMAIL, Constants.TEST_STUDENT_PASSWORD);
         HttpServletRequest student_Request = createRequestWithCookies(new Cookie[] { studentLogin.cookie });
         replay(student_Request);
         Response student_Response = eventsFacade.getEventBookingForGivenGroup(student_Request, "_regular_test_event", "2");
@@ -274,14 +274,14 @@ public class EventsFacadeTest extends IsaacE2ETest {
 
         // A student MUST NOT be able to get event bookings by event id and group id EVEN IF they belong in the group
         // Alice is part of group id 1
-        LoginResult aliceLogin = loginAs(httpSession, "alice-student@test.com", properties.getProperty("TEST_STUDENT_PASSWORD"));
+        LoginResult aliceLogin = loginAs(httpSession, "alice-student@test.com", Constants.TEST_STUDENT_PASSWORD);
         HttpServletRequest alice_Request = createRequestWithCookies(new Cookie[] { aliceLogin.cookie });
         replay(alice_Request);
         Response alice_Response = eventsFacade.getEventBookingForGivenGroup(alice_Request, "_regular_test_event", "1");
         // The student does not own the group so this should not succeed
         assertNotEquals(Response.Status.OK.getStatusCode(), alice_Response.getStatus());
 
-        LoginResult eventManagerLogin = loginAs(httpSession, properties.getProperty("TEST_EVENTMANAGER_EMAIL"), properties.getProperty("TEST_EVENTMANAGER_PASSWORD"));
+        LoginResult eventManagerLogin = loginAs(httpSession, Constants.TEST_EVENTMANAGER_EMAIL, Constants.TEST_EVENTMANAGER_PASSWORD);
         HttpServletRequest eventManager_Request = createRequestWithCookies(new Cookie[] { eventManagerLogin.cookie });
         replay(eventManager_Request);
         Response eventManager_Response = eventsFacade.getEventBookingForGivenGroup(eventManager_Request, "_regular_test_event", "2");
