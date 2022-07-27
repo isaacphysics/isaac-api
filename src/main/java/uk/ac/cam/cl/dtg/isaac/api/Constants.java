@@ -145,6 +145,7 @@ public final class Constants {
         VIEW_ASSIGNMENT_PROGRESS,
         VIEW_CONCEPT,
         VIEW_GROUPS_ASSIGNMENTS,
+        VIEW_ASSIGNMENT,
         VIEW_MY_BOARDS_PAGE,
         VIEW_PAGE,
         VIEW_PAGE_FRAGMENT,
