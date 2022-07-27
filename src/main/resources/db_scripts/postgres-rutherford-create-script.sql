@@ -17,19 +17,17 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: public; Type: SCHEMA; Schema: -; Owner: rutherford
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner:
 --
 
-CREATE SCHEMA public;
+CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 
-
-ALTER SCHEMA public OWNER TO rutherford;
 
 --
--- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: rutherford
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner:
 --
 
-COMMENT ON SCHEMA public IS 'standard public schema';
+COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
 
 SET default_tablespace = '';
 
