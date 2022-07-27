@@ -33,8 +33,6 @@ import static org.easymock.EasyMock.replay;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
-//@RunWith(PowerMockRunner.class)
-@PowerMockIgnore("javax.net.ssl.*")
 public class EventsFacadeTest extends IsaacE2ETest {
 
     private EventsFacade eventsFacade;
