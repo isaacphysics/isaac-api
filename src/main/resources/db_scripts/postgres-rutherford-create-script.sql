@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 13rc1 (Debian 13~rc1-1.pgdg100+1)
--- Dumped by pg_dump version 13rc1 (Debian 13~rc1-1.pgdg100+1)
+-- Dumped from database version 13.5 (Debian 13.5-1.pgdg110+1)
+-- Dumped by pg_dump version 13.5 (Debian 13.5-1.pgdg110+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -17,17 +17,19 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
+-- Name: public; Type: SCHEMA; Schema: -; Owner: rutherford
 --
 
-CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
+CREATE SCHEMA public;
 
+
+ALTER SCHEMA public OWNER TO rutherford;
 
 --
--- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
+-- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: rutherford
 --
 
-COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
+COMMENT ON SCHEMA public IS 'standard public schema';
 
 SET default_tablespace = '';
 
@@ -70,18 +72,6 @@ ALTER TABLE public.assignments_id_seq OWNER TO rutherford;
 
 ALTER SEQUENCE public.assignments_id_seq OWNED BY public.assignments.id;
 
---
--- Name: scheduled_emails; Type: TABLE; Schema: public; Owner: rutherford
---
-
-CREATE TABLE public.scheduled_emails (
-    email_id TEXT NOT NULL,
-    sent TIMESTAMP WITHOUT TIME ZONE,
-    CONSTRAINT scheduled_emails_pk PRIMARY KEY (email_id)
-);
-
-
-ALTER TABLE public.scheduled_emails OWNER TO rutherford;
 
 --
 -- Name: event_bookings; Type: TABLE; Schema: public; Owner: rutherford
@@ -474,6 +464,19 @@ ALTER TABLE public.quiz_question_attempts_id_seq OWNER TO rutherford;
 --
 
 ALTER SEQUENCE public.quiz_question_attempts_id_seq OWNED BY public.quiz_question_attempts.id;
+
+
+--
+-- Name: scheduled_emails; Type: TABLE; Schema: public; Owner: rutherford
+--
+
+CREATE TABLE public.scheduled_emails (
+    email_id text NOT NULL,
+    sent timestamp without time zone
+);
+
+
+ALTER TABLE public.scheduled_emails OWNER TO rutherford;
 
 
 --
@@ -957,6 +960,14 @@ ALTER TABLE ONLY public.quiz_question_attempts
 
 
 --
+-- Name: scheduled_emails scheduled_emails_pk; Type: CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY public.scheduled_emails
+    ADD CONSTRAINT scheduled_emails_pk PRIMARY KEY (email_id);
+
+
+--
 -- Name: temporary_user_store temporary_user_store_pk; Type: CONSTRAINT; Schema: public; Owner: rutherford
 --
 
@@ -1065,6 +1076,7 @@ ALTER TABLE ONLY public.user_streak_targets
 --
 
 CREATE INDEX assignments_by_id ON public.assignments USING btree (id);
+
 
 --
 -- Name: assignments_group_id; Type: INDEX; Schema: public; Owner: rutherford
@@ -1202,6 +1214,7 @@ CREATE UNIQUE INDEX user_alerts_id_uindex ON public.user_alerts USING btree (id)
 --
 -- Name: user_associations_by_receiving; Type: INDEX; Schema: public; Owner: rutherford
 --
+
 CREATE INDEX user_associations_by_receiving ON public.user_associations USING btree (user_id_receiving_permission);
 
 
