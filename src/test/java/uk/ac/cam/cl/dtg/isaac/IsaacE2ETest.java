@@ -68,6 +68,7 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -136,6 +137,7 @@ public class IsaacE2ETest {
                 .withExposedPorts(9200, 9300)
                 .withEnv("cluster.name", "isaac")
                 .withEnv("node.name", "localhost")
+                .withStartupTimeout(Duration.ofSeconds(120));
         ;
 
         postgres.start();
