@@ -38,7 +38,7 @@ import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
@@ -90,7 +90,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     private final UserAccountManager userManager;
     private final URIManager uriManager;
     private final QuestionManager questionManager;
-    private final IContentManager contentManager;
+    private final GitContentManager contentManager;
 
     private final GameManager gameManager;
     private final String contentIndex;
@@ -121,7 +121,7 @@ public class PagesFacade extends AbstractIsaacFacade {
      */
     @Inject
     public PagesFacade(final ContentService api, final PropertiesLoader propertiesLoader,
-                       final ILogManager logManager, final MapperFacade mapper, final IContentManager contentManager,
+                       final ILogManager logManager, final MapperFacade mapper, final GitContentManager contentManager,
                        final UserAccountManager userManager, final URIManager uriManager, final QuestionManager questionManager,
                        final GameManager gameManager, @Named(CONTENT_INDEX) final String contentIndex) {
         super(propertiesLoader, logManager);
@@ -505,8 +505,8 @@ public class PagesFacade extends AbstractIsaacFacade {
 
         try {
             // Load the summary page:
-            Content contentDOById = this.contentManager.getContentDOById(this.contentManager.getCurrentContentSHA(), summaryPageId);
-            ContentDTO contentDTOById = this.contentManager.getContentById(this.contentManager.getCurrentContentSHA(), summaryPageId);
+            Content contentDOById = this.contentManager.getContentDOById(summaryPageId);
+            ContentDTO contentDTOById = this.contentManager.getContentById(summaryPageId);
 
             if (!(contentDOById instanceof IsaacTopicSummaryPage && contentDTOById instanceof IsaacTopicSummaryPageDTO)) {
                 return SegueErrorResponse.getResourceNotFoundResponse(String.format(
@@ -734,7 +734,7 @@ public class PagesFacade extends AbstractIsaacFacade {
                                                         @Nullable final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts)
             throws ContentManagerException {
 
-        ContentDTO augmentedDTO = this.contentManager.populateRelatedContent(version, contentToAugment);
+        ContentDTO augmentedDTO = this.contentManager.populateRelatedContent(contentToAugment);
 
         if (usersQuestionAttempts != null) {
             this.augmentRelatedQuestionsWithAttemptInformation(augmentedDTO, usersQuestionAttempts);
