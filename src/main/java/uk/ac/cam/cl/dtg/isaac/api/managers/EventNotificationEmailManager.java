@@ -111,8 +111,8 @@ public class EventNotificationEmailManager {
 
         try {
             ResultsWrapper<ContentDTO> findByFieldNames = this.contentManager.findByFieldNames(
-                    ContentService.generateDefaultFieldToMatch(fieldsToMatch),
-                startIndex, limit, sortInstructions, filterInstructions);
+                    ContentService.generateDefaultFieldToMatch(fieldsToMatch), startIndex, limit, sortInstructions,
+                    filterInstructions);
             for (ContentDTO contentResult : findByFieldNames.getResults()) {
                 if (contentResult instanceof IsaacEventPageDTO) {
                     IsaacEventPageDTO event = (IsaacEventPageDTO) contentResult;
@@ -144,14 +144,14 @@ public class EventNotificationEmailManager {
         ZonedDateTime now = ZonedDateTime.now();
         ZonedDateTime sixtyDaysAgo = now.plusDays(-60);
 
-        DateRangeFilterInstruction
-            eventsInLastSixtyDays = new DateRangeFilterInstruction(Date.from(sixtyDaysAgo.toInstant()), new Date());
+        DateRangeFilterInstruction eventsInLastSixtyDays = new DateRangeFilterInstruction(
+                Date.from(sixtyDaysAgo.toInstant()), new Date());
         filterInstructions.put(DATE_FIELDNAME, eventsInLastSixtyDays);
 
         try {
             ResultsWrapper<ContentDTO> findByFieldNames = this.contentManager.findByFieldNames(
-                    ContentService.generateDefaultFieldToMatch(fieldsToMatch),
-                startIndex, limit, sortInstructions, filterInstructions);
+                    ContentService.generateDefaultFieldToMatch(fieldsToMatch), startIndex, limit, sortInstructions,
+                    filterInstructions);
             for (ContentDTO contentResult : findByFieldNames.getResults()) {
                 if (contentResult instanceof IsaacEventPageDTO) {
                     IsaacEventPageDTO event = (IsaacEventPageDTO) contentResult;

@@ -291,8 +291,8 @@ public class EventsFacade extends AbstractIsaacFacade {
                 }
             } else {
                 findByFieldNames = this.contentManager.findByFieldNames(
-                        ContentService.generateDefaultFieldToMatch(fieldsToMatch),
-                    newStartIndex, newLimit, sortInstructions, filterInstructions);
+                        ContentService.generateDefaultFieldToMatch(fieldsToMatch), newStartIndex, newLimit,
+                        sortInstructions, filterInstructions);
 
                 // augment (maybe slow for large numbers of bookings)
                 for (ContentDTO c : findByFieldNames.getResults()) {

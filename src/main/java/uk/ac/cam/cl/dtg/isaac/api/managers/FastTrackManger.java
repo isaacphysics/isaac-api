@@ -47,8 +47,8 @@ public class FastTrackManger {
      *            - the current content index of interest.
      */
     @Inject
-    public FastTrackManger(final PropertiesLoader properties, final GitContentManager contentManager, final GameManager gameboardManager,
-                           @Named(CONTENT_INDEX) final String contentIndex) {
+    public FastTrackManger(final PropertiesLoader properties, final GitContentManager contentManager,
+                           final GameManager gameboardManager, @Named(CONTENT_INDEX) final String contentIndex) {
 
         this.contentManager = contentManager;
         this.contentIndex = contentIndex;
@@ -97,7 +97,8 @@ public class FastTrackManger {
      */
     public final List<GameboardItem> getConceptProgress(
             final GameboardDTO gameboard, final List<FASTTRACK_LEVEL> levelFilters,
-            final String conceptTitle, final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts
+            final String conceptTitle, final Map<String, Map<String,
+            List<QuestionValidationResponse>>> userQuestionAttempts
     ) throws ContentManagerException {
         List<ContentDTO> fastTrackAssociatedQuestions =
                 this.getFastTrackConceptQuestions(gameboard.getId(), levelFilters, conceptTitle);
@@ -123,7 +124,8 @@ public class FastTrackManger {
         fieldsToMap.add(new GitContentManager.BooleanSearchClause(
                 TYPE_FIELDNAME, Constants.BooleanOperator.OR, Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE)));
         fieldsToMap.add(new GitContentManager.BooleanSearchClause(
-                TITLE_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Constants.BooleanOperator.AND, Collections.singletonList(conceptTitle)));
+                TITLE_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Constants.BooleanOperator.AND,
+                Collections.singletonList(conceptTitle)));
         fieldsToMap.add(new GitContentManager.BooleanSearchClause(
                 TAGS_FIELDNAME, Constants.BooleanOperator.AND, Collections.singletonList(boardTag)));
         fieldsToMap.add(new GitContentManager.BooleanSearchClause(
@@ -132,7 +134,8 @@ public class FastTrackManger {
         Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
         sortInstructions.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Constants.SortOrder.ASC);
 
-        return this.contentManager.findByFieldNames(
-                fieldsToMap, 0, SEARCH_MAX_WINDOW_SIZE, sortInstructions).getResults();
+        return this.contentManager
+                .findByFieldNames(fieldsToMap, 0, SEARCH_MAX_WINDOW_SIZE, sortInstructions)
+                .getResults();
     }
 }
