@@ -173,7 +173,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
             Collection<AssignmentDTO> assignments = this.assignmentManager.getAssignments(currentlyLoggedInUser)
-                    .stream().filter(a -> null == a.getScheduledStartDate() || !a.getScheduledStartDate().before(new Date()))
+                    .stream().filter(a -> null == a.getScheduledStartDate() || a.getScheduledStartDate().before(new Date()))
                     .collect(Collectors.toList());
 
             // Gather all gameboards we need to augment for the assignments in a single query
