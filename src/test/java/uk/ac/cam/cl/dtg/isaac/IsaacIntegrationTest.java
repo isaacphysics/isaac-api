@@ -86,7 +86,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_LINUX_CONFIG_LOCATION
 import static uk.ac.cam.cl.dtg.segue.api.Constants.EMAIL_SIGNATURE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
-public class IsaacE2ETest {
+public class IsaacIntegrationTest {
 
     protected static final HttpSession httpSession;
     protected static final PostgreSQLContainer postgres;
@@ -124,10 +124,10 @@ public class IsaacE2ETest {
         postgres = new PostgreSQLContainer<>("postgres:12")
                 .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust")
                 .withUsername("rutherford")
-                .withFileSystemBind(IsaacE2ETest.class.getClassLoader().getResource("db_scripts/postgres-rutherford-create-script.sql").getPath(), "/docker-entrypoint-initdb.d/00-isaac-create.sql")
-                .withFileSystemBind(IsaacE2ETest.class.getClassLoader().getResource("db_scripts/postgres-rutherford-functions.sql").getPath(), "/docker-entrypoint-initdb.d/01-isaac-functions.sql")
-                .withFileSystemBind(IsaacE2ETest.class.getClassLoader().getResource("db_scripts/quartz_scheduler_create_script.sql").getPath(), "/docker-entrypoint-initdb.d/02-isaac-quartz.sql")
-                .withFileSystemBind(IsaacE2ETest.class.getClassLoader().getResource("test-postgres-rutherford-data-dump.sql").getPath(), "/docker-entrypoint-initdb.d/03-data-dump.sql")
+                .withFileSystemBind(IsaacIntegrationTest.class.getClassLoader().getResource("db_scripts/postgres-rutherford-create-script.sql").getPath(), "/docker-entrypoint-initdb.d/00-isaac-create.sql")
+                .withFileSystemBind(IsaacIntegrationTest.class.getClassLoader().getResource("db_scripts/postgres-rutherford-functions.sql").getPath(), "/docker-entrypoint-initdb.d/01-isaac-functions.sql")
+                .withFileSystemBind(IsaacIntegrationTest.class.getClassLoader().getResource("db_scripts/quartz_scheduler_create_script.sql").getPath(), "/docker-entrypoint-initdb.d/02-isaac-quartz.sql")
+                .withFileSystemBind(IsaacIntegrationTest.class.getClassLoader().getResource("test-postgres-rutherford-data-dump.sql").getPath(), "/docker-entrypoint-initdb.d/03-data-dump.sql")
         ;
 
         // TODO It would be nice if we could pull the version from pom.xml

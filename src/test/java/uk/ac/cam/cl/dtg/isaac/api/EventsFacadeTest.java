@@ -2,8 +2,7 @@ package uk.ac.cam.cl.dtg.isaac.api;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import uk.ac.cam.cl.dtg.isaac.IsaacE2ETest;
+import uk.ac.cam.cl.dtg.isaac.IsaacIntegrationTest;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.DetailedEventBookingDTO;
@@ -40,7 +39,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class EventsFacadeTest extends IsaacE2ETest {
+public class EventsFacadeTest extends IsaacIntegrationTest {
 
     private EventsFacade eventsFacade;
 
