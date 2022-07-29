@@ -18,7 +18,6 @@ package uk.ac.cam.cl.dtg.segue.search;
 import java.util.Date;
 
 import jakarta.annotation.Nullable;
-// import jakarta.annotation.concurrent.Immutable;
 
 /**
  * DateRangeFilterInstruction.
@@ -27,7 +26,6 @@ import jakarta.annotation.Nullable;
  * 
  * @author sac92
  */
-// @Immutable
 public class DateRangeFilterInstruction extends AbstractFilterInstruction {
     private Date fromDate;
     private Date toDate;
