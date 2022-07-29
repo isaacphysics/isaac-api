@@ -95,7 +95,6 @@ import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.associations.PgAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.IUserBadgePersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.PgUserBadgePersistenceManager;
@@ -354,9 +353,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      * Deals with application data managers.
      */
     private void configureApplicationManagers() {
-        // Allows GitDb to take over content Management
-        bind(IContentManager.class).to(GitContentManager.class);
-
         bind(LocationHistory.class).to(PgLocationHistory.class);
 
         bind(PostCodeLocationResolver.class).to(PostCodeIOLocationResolver.class);
@@ -582,7 +578,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Singleton
     private static EmailManager getMessageCommunicationQueue(final PropertiesLoader properties, final EmailCommunicator emailCommunicator,
                                                              final AbstractUserPreferenceManager userPreferenceManager,
-                                                             final IContentManager contentManager,
+                                                             final GitContentManager contentManager,
                                                              final ILogManager logManager) {
 
         Map<String, String> globalTokens = Maps.newHashMap();
@@ -591,8 +587,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                 properties.getProperty(HOST_NAME)));
         globalTokens.put("myAssignmentsURL", String.format("https://%s/assignments",
                 properties.getProperty(HOST_NAME)));
-        globalTokens.put("myQuizzesURL", String.format("https://%s/quizzes",
-            properties.getProperty(HOST_NAME)));
+        String myQuizzesURL = String.format("https://%s/tests", properties.getProperty(HOST_NAME));
+        globalTokens.put("myQuizzesURL", myQuizzesURL);
+        globalTokens.put("myTestsURL", myQuizzesURL);
         globalTokens.put("myBookedEventsURL", String.format("https://%s/events?show_booked_only=true",
                 properties.getProperty(HOST_NAME)));
         globalTokens.put("contactUsURL", String.format("https://%s/contact",
@@ -891,7 +888,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     private static StatisticsManager getStatsManager(final UserAccountManager userManager,
                                                      final ILogManager logManager, final SchoolListReader schoolManager,
-                                                     final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final LocationManager locationHistoryManager,
+                                                     final GitContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final LocationManager locationHistoryManager,
                                                      final GroupManager groupManager, final QuestionManager questionManager,
                                                      final ContentSummarizerService contentSummarizerService,
                                                      final IUserStreaksManager userStreaksManager) {
@@ -1082,7 +1079,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     private static GameboardPersistenceManager getGameboardPersistenceManager(final PostgresSqlDb database,
-                                                                              final IContentManager contentManager, final MapperFacade mapper, final ObjectMapper objectMapper,
+                                                                              final GitContentManager contentManager, final MapperFacade mapper, final ObjectMapper objectMapper,
                                                                               final URIManager uriManager, @Named(CONTENT_INDEX) final String contentIndex) {
         if (null == gameboardPersistenceManager) {
             gameboardPersistenceManager = new GameboardPersistenceManager(database, contentManager, mapper,
