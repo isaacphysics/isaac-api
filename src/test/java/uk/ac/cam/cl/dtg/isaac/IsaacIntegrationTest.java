@@ -49,7 +49,6 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.PgAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgAnonymousUsers;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgPasswordDataManager;
@@ -106,7 +105,7 @@ public class IsaacIntegrationTest {
     protected static final GroupManager groupManager;
     protected static final EventBookingManager eventBookingManager;
     protected static final ILogManager logManager;
-    protected static final IContentManager contentManager;
+    protected static final GitContentManager contentManager;
     protected static final UserBadgeManager userBadgeManager;
     protected static final UserAssociationManager userAssociationManager;
 
