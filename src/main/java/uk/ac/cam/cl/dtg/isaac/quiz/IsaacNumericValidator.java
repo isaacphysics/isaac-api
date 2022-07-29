@@ -546,7 +546,7 @@ public class IsaacNumericValidator implements IValidator {
     }
 
     /**
-     * Format a number in string form such that Java BigDecimal can parse it.
+     * Format a number in string form such that Java BigDecimal can parse it. Trims leading ad trailing spaces.
      *
      * Replace "x10^(...)" with "e(...)", allowing many common unambiguous cases, and fix uses of Unicode minus signs,
      * and allow bare powers of ten.
@@ -555,7 +555,7 @@ public class IsaacNumericValidator implements IValidator {
      * @return - number in engineering standard form e.g. "3.4e3"
      */
     private String reformatNumberForParsing(final String numberToFormat) {
-        String reformattedNumber = numberToFormat.replace("−", "-");
+        String reformattedNumber = numberToFormat.trim().replace("−", "-");
         reformattedNumber = reformattedNumber.replaceFirst(PREFIXED_POWER_OF_TEN_REGEX, "e${exp1}${exp2}");
         reformattedNumber = reformattedNumber.replaceFirst(BARE_POWER_OF_TEN_REGEX, "1e${exp1}${exp2}");
         return reformattedNumber;
