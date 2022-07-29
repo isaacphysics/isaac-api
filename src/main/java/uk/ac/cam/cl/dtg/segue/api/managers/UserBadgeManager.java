@@ -8,7 +8,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.IUserBadgePersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.teacherBadges.TeacherAssignmentsBadgePolicy;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.teacherBadges.TeacherBookPagesBadgePolicy;
@@ -58,7 +58,7 @@ public class UserBadgeManager {
     @Inject
     public UserBadgeManager(IUserBadgePersistenceManager userBadgePersistenceManager, GroupManager groupManager,
                             EventBookingManager bookingManager, AssignmentManager assignmentManager, GameManager gameManager,
-                            IContentManager contentManager, @Named(CONTENT_INDEX) String contentIndex,
+                            GitContentManager contentManager, @Named(CONTENT_INDEX) String contentIndex,
                             ITransactionManager transactionManager) {
 
         this.userBadgePersistenceManager = userBadgePersistenceManager;

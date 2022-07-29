@@ -11,7 +11,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
@@ -32,7 +32,7 @@ public class FastTrackManger {
     private static final Logger log = LoggerFactory.getLogger(FastTrackManger.class);
 
     private final String contentIndex;
-    private final IContentManager contentManager;
+    private final GitContentManager contentManager;
     private final GameManager gameboardManager;
     private final Set<String> fastTrackGamebaordIds;
 
@@ -47,8 +47,8 @@ public class FastTrackManger {
      *            - the current content index of interest.
      */
     @Inject
-    public FastTrackManger(final PropertiesLoader properties, final IContentManager contentManager, final GameManager gameboardManager,
-                           @Named(CONTENT_INDEX) final String contentIndex) {
+    public FastTrackManger(final PropertiesLoader properties, final GitContentManager contentManager,
+                           final GameManager gameboardManager, @Named(CONTENT_INDEX) final String contentIndex) {
 
         this.contentManager = contentManager;
         this.contentIndex = contentIndex;
@@ -76,7 +76,7 @@ public class FastTrackManger {
         Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
         fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(FAST_TRACK_QUESTION_TYPE));
         fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(questionId));
-        ResultsWrapper<ContentDTO> resultsList = contentManager.findByFieldNames(contentIndex,
+        ResultsWrapper<ContentDTO> resultsList = contentManager.findByFieldNames(
                 ContentService.generateDefaultFieldToMatch(fieldsToMatch), 0, DEFAULT_RESULTS_LIMIT);
 
         String upperConceptTitle = "";
@@ -97,7 +97,8 @@ public class FastTrackManger {
      */
     public final List<GameboardItem> getConceptProgress(
             final GameboardDTO gameboard, final List<FASTTRACK_LEVEL> levelFilters,
-            final String conceptTitle, final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts
+            final String conceptTitle, final Map<String, Map<String,
+            List<QuestionValidationResponse>>> userQuestionAttempts
     ) throws ContentManagerException {
         List<ContentDTO> fastTrackAssociatedQuestions =
                 this.getFastTrackConceptQuestions(gameboard.getId(), levelFilters, conceptTitle);
@@ -119,20 +120,22 @@ public class FastTrackManger {
     ) throws ContentManagerException {
         List<String> stringLevelFilters = levelFilters.stream().map(FASTTRACK_LEVEL::name).collect(Collectors.toList());
 
-        List<IContentManager.BooleanSearchClause> fieldsToMap = Lists.newArrayList();
-        fieldsToMap.add(new IContentManager.BooleanSearchClause(
+        List<GitContentManager.BooleanSearchClause> fieldsToMap = Lists.newArrayList();
+        fieldsToMap.add(new GitContentManager.BooleanSearchClause(
                 TYPE_FIELDNAME, Constants.BooleanOperator.OR, Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE)));
-        fieldsToMap.add(new IContentManager.BooleanSearchClause(
-                TITLE_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Constants.BooleanOperator.AND, Collections.singletonList(conceptTitle)));
-        fieldsToMap.add(new IContentManager.BooleanSearchClause(
+        fieldsToMap.add(new GitContentManager.BooleanSearchClause(
+                TITLE_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Constants.BooleanOperator.AND,
+                Collections.singletonList(conceptTitle)));
+        fieldsToMap.add(new GitContentManager.BooleanSearchClause(
                 TAGS_FIELDNAME, Constants.BooleanOperator.AND, Collections.singletonList(boardTag)));
-        fieldsToMap.add(new IContentManager.BooleanSearchClause(
+        fieldsToMap.add(new GitContentManager.BooleanSearchClause(
                 TAGS_FIELDNAME, Constants.BooleanOperator.OR, stringLevelFilters));
 
         Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
         sortInstructions.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Constants.SortOrder.ASC);
 
-        return this.contentManager.findByFieldNames(
-                this.contentIndex, fieldsToMap, 0, SEARCH_MAX_WINDOW_SIZE, sortInstructions).getResults();
+        return this.contentManager
+                .findByFieldNames(fieldsToMap, 0, SEARCH_MAX_WINDOW_SIZE, sortInstructions)
+                .getResults();
     }
 }
