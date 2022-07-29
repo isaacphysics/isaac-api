@@ -546,7 +546,7 @@ public class IsaacNumericValidator implements IValidator {
     }
 
     /**
-     * Format a number in string form such that Java BigDecimal can parse it. Trims leading ad trailing spaces.
+     * Format a number in string form such that Java BigDecimal can parse it. Trims leading and trailing spaces.
      *
      * Replace "x10^(...)" with "e(...)", allowing many common unambiguous cases, and fix uses of Unicode minus signs,
      * and allow bare powers of ten.
