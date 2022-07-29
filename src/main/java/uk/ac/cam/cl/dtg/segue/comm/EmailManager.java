@@ -42,7 +42,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.EmailTemplateDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Collection;

@@ -15,14 +15,13 @@
  */
 package uk.ac.cam.cl.dtg.segue.etl;
 
-import com.google.inject.Guice;
 import com.google.inject.Injector;
 import io.swagger.jaxrs.config.BeanConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import javax.ws.rs.core.Application;
+import jakarta.ws.rs.core.Application;
 import java.util.HashSet;
 import java.util.Set;
 

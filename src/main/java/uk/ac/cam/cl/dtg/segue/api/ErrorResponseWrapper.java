@@ -17,7 +17,7 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 public class ErrorResponseWrapper extends Exception {
     private static final long serialVersionUID = 776713551334466191L;

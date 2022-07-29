@@ -139,8 +139,8 @@ import uk.ac.cam.cl.dtg.util.locations.IPLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeIOLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeLocationResolver;
 
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.UnknownHostException;

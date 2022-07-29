@@ -94,7 +94,7 @@ public class GroupManagerTest {
 		someGroupOwner.setId(5339L);
 		someGroupOwner.setEmail("test@test.com");
 		Set<Long> someSetOfManagers = Sets.newHashSet();
-		Capture<UserGroup> capturedGroup = new Capture<UserGroup>();
+		Capture<UserGroup> capturedGroup = Capture.newInstance();
 
 		List<RegisteredUserDTO> someListOfUsers = Lists.newArrayList();
 		List<UserSummaryWithEmailAddressDTO> someListOfUsersDTOs = Lists.newArrayList();

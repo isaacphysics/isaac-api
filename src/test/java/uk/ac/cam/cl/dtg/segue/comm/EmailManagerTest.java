@@ -146,7 +146,7 @@ public class EmailManagerTest {
         // Create user manager
         userManager = EasyMock.createMock(UserAccountManager.class);
 
-        capturedArgument = new Capture<EmailCommunicationMessage>();
+        capturedArgument = Capture.newInstance();
 
         // Mock the emailCommunicator methods so we can see what is sent
         try {

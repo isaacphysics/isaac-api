@@ -21,8 +21,8 @@ import org.apache.commons.lang3.Validate;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.util.Mailer;
 
-import javax.mail.MessagingException;
-import javax.mail.internet.InternetAddress;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.InternetAddress;
 import java.io.UnsupportedEncodingException;
 
 /**

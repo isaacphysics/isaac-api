@@ -33,9 +33,9 @@ import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import javax.ws.rs.core.EntityTag;
-import javax.ws.rs.core.Request;
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.EntityTag;
+import jakarta.ws.rs.core.Request;
+import jakarta.ws.rs.core.Response.Status;
 
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.expect;

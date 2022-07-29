@@ -42,7 +42,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.UserGroup;
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 
 /**
  * PgUserGroupPersistenceManager.

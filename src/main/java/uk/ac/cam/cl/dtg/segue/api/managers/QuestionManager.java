@@ -63,8 +63,8 @@ import uk.ac.cam.cl.dtg.isaac.quiz.SpecifiesWith;
 import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
 import uk.ac.cam.cl.dtg.isaac.quiz.ValidatorUnavailableException;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;

@@ -18,7 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import java.util.Date;
 
 /**

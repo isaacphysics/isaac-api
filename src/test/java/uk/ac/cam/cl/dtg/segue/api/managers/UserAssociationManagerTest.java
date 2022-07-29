@@ -389,7 +389,7 @@ public class UserAssociationManagerTest {
 		expect(dummyGroupDataManager.isValidGroup(someAssociatedGroupId)).andReturn(true).anyTimes();
 		// This line means we'll get a new token each time we run generateAssociationToken:
 		expect(dummyAssociationDataManager.getAssociationTokenByGroupId(someAssociatedGroupId)).andReturn(null).anyTimes();
-		final Capture<AssociationToken> associationTokenCapture = new Capture<>();
+		final Capture<AssociationToken> associationTokenCapture = Capture.newInstance();
 		// This was a lambda that overrode saveAssociationToken using andAnswer to return its only argument. IntelliJ
 		// simplified this to associationTokenCapture::getValue which apparently does the same thing . . .
 		expect(dummyAssociationDataManager.saveAssociationToken(capture(associationTokenCapture))).andAnswer(
