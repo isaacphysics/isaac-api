@@ -149,6 +149,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -189,6 +190,17 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     private static Collection<Class<? extends ServletContextListener>> contextListeners;
     private static final Map<String, Reflections> reflections = com.google.common.collect.Maps.newHashMap();
+
+    /**
+     * A setter method that is mostly useful for testing. It populates the global properties static value if it has not
+     * previously been set.
+     * @param globalProperties PropertiesLoader object to be used for loading properties (if it has not previously been set).
+     */
+    public static void setGlobalPropertiesIfNotSet(final PropertiesLoader globalProperties) {
+        if (SegueGuiceConfigurationModule.globalProperties == null) {
+            SegueGuiceConfigurationModule.globalProperties = globalProperties;
+        }
+    }
 
     /**
      * Create a SegueGuiceConfigurationModule.

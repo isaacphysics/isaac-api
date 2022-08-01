@@ -27,8 +27,10 @@ jobs:
         key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
         restore-keys: |
           ${{ runner.os }}-maven-  
+    - name: Fetch ES data
+      run: wget -O src/test/resources/isaac-test-es-data.tar.gz https://cdn.isaacscience.org/test/isaac-test-es-data.tar.gz
     - name: Build with Maven
-      run: mvn -B package --file pom.xml
+      run: mvn -B package -DskipTests --file pom.xml
     - name: Test with Maven
-      run: mvn -B test --file pom.xml
+      run: mvn -B test -Dtest.config.location=src/test/resources/segue-e2e-test-config.properties --file pom.xml
     - uses: codecov/codecov-action@v2
