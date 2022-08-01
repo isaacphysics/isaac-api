@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
@@ -185,8 +186,11 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
         if (groups.isEmpty()) {
             return new ArrayList<>();
         }
-        List<Long> groupIds = groups.stream().map(UserGroupDTO::getId).collect(Collectors.toList());
-        return this.assignmentPersistenceManager.getAssignmentsByGroupList(groupIds);
+        // Augment AssignmentDTOs with group names (useful for displaying group related stuff in the front-end)
+        Map<Long, String> groupIdToName = groups.stream().collect(Collectors.toMap(UserGroupDTO::getId, UserGroupDTO::getGroupName));
+        List<AssignmentDTO> assignments = this.assignmentPersistenceManager.getAssignmentsByGroupList(groupIdToName.keySet());
+        assignments.forEach(assignment -> assignment.setGroupName(groupIdToName.get(assignment.getGroupId())));
+        return assignments;
     }
 
     /**

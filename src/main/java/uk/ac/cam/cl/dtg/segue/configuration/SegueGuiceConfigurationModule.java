@@ -95,7 +95,6 @@ import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.associations.PgAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.IUserBadgePersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.PgUserBadgePersistenceManager;
@@ -150,6 +149,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -190,6 +190,17 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     private static Collection<Class<? extends ServletContextListener>> contextListeners;
     private static final Map<String, Reflections> reflections = com.google.common.collect.Maps.newHashMap();
+
+    /**
+     * A setter method that is mostly useful for testing. It populates the global properties static value if it has not
+     * previously been set.
+     * @param globalProperties PropertiesLoader object to be used for loading properties (if it has not previously been set).
+     */
+    public static void setGlobalPropertiesIfNotSet(final PropertiesLoader globalProperties) {
+        if (SegueGuiceConfigurationModule.globalProperties == null) {
+            SegueGuiceConfigurationModule.globalProperties = globalProperties;
+        }
+    }
 
     /**
      * Create a SegueGuiceConfigurationModule.
@@ -353,9 +364,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      * Deals with application data managers.
      */
     private void configureApplicationManagers() {
-        // Allows GitDb to take over content Management
-        bind(IContentManager.class).to(GitContentManager.class);
-
         bind(LocationHistory.class).to(PgLocationHistory.class);
 
         bind(PostCodeLocationResolver.class).to(PostCodeIOLocationResolver.class);
@@ -581,7 +589,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Singleton
     private static EmailManager getMessageCommunicationQueue(final PropertiesLoader properties, final EmailCommunicator emailCommunicator,
                                                              final AbstractUserPreferenceManager userPreferenceManager,
-                                                             final IContentManager contentManager,
+                                                             final GitContentManager contentManager,
                                                              final ILogManager logManager) {
 
         Map<String, String> globalTokens = Maps.newHashMap();
@@ -891,7 +899,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     private static StatisticsManager getStatsManager(final UserAccountManager userManager,
                                                      final ILogManager logManager, final SchoolListReader schoolManager,
-                                                     final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final LocationManager locationHistoryManager,
+                                                     final GitContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final LocationManager locationHistoryManager,
                                                      final GroupManager groupManager, final QuestionManager questionManager,
                                                      final ContentSummarizerService contentSummarizerService,
                                                      final IUserStreaksManager userStreaksManager) {
@@ -1067,7 +1075,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     private static GameboardPersistenceManager getGameboardPersistenceManager(final PostgresSqlDb database,
-                                                                              final IContentManager contentManager, final MapperFacade mapper, final ObjectMapper objectMapper,
+                                                                              final GitContentManager contentManager, final MapperFacade mapper, final ObjectMapper objectMapper,
                                                                               final URIManager uriManager, @Named(CONTENT_INDEX) final String contentIndex) {
         if (null == gameboardPersistenceManager) {
             gameboardPersistenceManager = new GameboardPersistenceManager(database, contentManager, mapper,

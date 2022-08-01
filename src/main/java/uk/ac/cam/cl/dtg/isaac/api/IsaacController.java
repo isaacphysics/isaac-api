@@ -36,7 +36,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
@@ -88,7 +88,7 @@ public class IsaacController extends AbstractIsaacFacade {
     private final UserAccountManager userManager;
     private final UserAssociationManager associationManager;
     private final String contentIndex;
-    private final IContentManager contentManager;
+    private final GitContentManager contentManager;
     private final UserBadgeManager userBadgeManager;
     private final IUserStreaksManager userStreaksManager;
     private final ContentSummarizerService contentSummarizerService;
@@ -137,7 +137,7 @@ public class IsaacController extends AbstractIsaacFacade {
     @Inject
     public IsaacController(final PropertiesLoader propertiesLoader,
                            final ILogManager logManager, final IStatisticsManager statsManager,
-                           final UserAccountManager userManager, final IContentManager contentManager,
+                           final UserAccountManager userManager, final GitContentManager contentManager,
                            final UserAssociationManager associationManager,
                            @Named(CONTENT_INDEX) final String contentIndex,
                            final IUserStreaksManager userStreaksManager,
@@ -213,7 +213,7 @@ public class IsaacController extends AbstractIsaacFacade {
             }
 
             ResultsWrapper<ContentDTO> searchResults = this.contentManager.siteWideSearch(
-                    this.contentIndex, searchString, documentTypes, showHiddenContent, startIndex, limit);
+                    searchString, documentTypes, showHiddenContent, startIndex, limit);
 
             ImmutableMap<String, String> logMap = new ImmutableMap.Builder<String, String>()
                     .put(TYPE_FIELDNAME, types)
@@ -306,7 +306,7 @@ public class IsaacController extends AbstractIsaacFacade {
         }
 
         try {
-            fileContent = this.contentManager.getFileBytes(sha, path);
+            fileContent = this.contentManager.getFileBytes(path);
         } catch (IOException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Error reading from file repository", e);
@@ -383,7 +383,7 @@ public class IsaacController extends AbstractIsaacFacade {
                     return error.toResponse(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, false), etag);
             }
 
-            fileContent = this.contentManager.getFileBytes(sha, path);
+            fileContent = this.contentManager.getFileBytes(path);
             if (null == fileContent) {
                 String refererHeader = httpServletRequest.getHeader("Referer");
                 SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the file: " + path);

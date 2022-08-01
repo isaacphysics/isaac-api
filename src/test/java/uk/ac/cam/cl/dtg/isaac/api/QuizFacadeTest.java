@@ -20,6 +20,9 @@ import com.google.common.collect.ImmutableMap;
 import org.easymock.IAnswer;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 import uk.ac.cam.cl.dtg.isaac.api.managers.DueBeforeNowException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateAssignmentException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAssignmentManager;
@@ -38,7 +41,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
@@ -73,6 +76,8 @@ import static org.powermock.api.easymock.PowerMock.expectLastCall;
 import static org.powermock.api.easymock.PowerMock.replay;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(GitContentManager.class)
 public class QuizFacadeTest extends AbstractFacadeTest {
 
     private QuizFacade quizFacade;
@@ -98,7 +103,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
 
         PropertiesLoader properties = createMock(PropertiesLoader.class);
         logManager = createNiceMock(ILogManager.class); // Nice mock because we're not generally bothered about logging.
-        IContentManager contentManager = createMock(IContentManager.class);
+        GitContentManager contentManager = createMock(GitContentManager.class);
         ContentSummarizerService contentSummarizerService = createMock(ContentSummarizerService.class);
         quizAssignmentManager = createMock(QuizAssignmentManager.class);
         quizAttemptManager = createMock(QuizAttemptManager.class);
@@ -163,9 +168,9 @@ public class QuizFacadeTest extends AbstractFacadeTest {
         expect(contentManager.getCurrentContentSHA()).andStubReturn(currentSHA);
         expect(contentSummarizerService.extractContentSummary(studentQuiz, QuizSummaryDTO.class)).andStubReturn(studentQuizSummary);
         expect(contentSummarizerService.extractContentSummary(teacherQuiz, QuizSummaryDTO.class)).andStubReturn(teacherQuizSummary);
-        expect(contentManager.getContentDOById(currentSHA, questionDO.getId())).andStubReturn(questionDO);
-        expect(contentManager.getContentDOById(currentSHA, studentQuizDO.getId())).andStubReturn(studentQuizDO);
-        expect(contentManager.getContentDOById(currentSHA, questionPageQuestionDO.getId())).andStubReturn(questionPageQuestionDO);
+        expect(contentManager.getContentDOById(questionDO.getId())).andStubReturn(questionDO);
+        expect(contentManager.getContentDOById(studentQuizDO.getId())).andStubReturn(studentQuizDO);
+        expect(contentManager.getContentDOById(questionPageQuestionDO.getId())).andStubReturn(questionPageQuestionDO);
 
         replay(requestForCaching, properties, logManager, contentManager, contentSummarizerService, quizManager, groupManager, quizAssignmentManager,
             assignmentService, quizAttemptManager, quizQuestionManager, associationManager);

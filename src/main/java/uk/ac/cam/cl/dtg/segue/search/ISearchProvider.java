@@ -18,7 +18,7 @@ package uk.ac.cam.cl.dtg.segue.search;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 
 import javax.annotation.Nullable;
@@ -71,7 +71,7 @@ public interface ISearchProvider {
      */
     ResultsWrapper<String> matchSearch(
             final String indexBase, final String indexType,
-            final List<IContentManager.BooleanSearchClause> fieldsToMatch, final int startIndex, final int limit,
+            final List<GitContentManager.BooleanSearchClause> fieldsToMatch, final int startIndex, final int limit,
             final Map<String, Constants.SortOrder> sortInstructions,
             @Nullable final Map<String, AbstractFilterInstruction> filterInstructions
     ) throws SegueSearchException;
@@ -159,7 +159,7 @@ public interface ISearchProvider {
      * @return results in a random order for a given match search.
      */
     ResultsWrapper<String> randomisedMatchSearch(
-            String indexBase, String indexType, List<IContentManager.BooleanSearchClause> fieldsToMatch,
+            String indexBase, String indexType, List<GitContentManager.BooleanSearchClause> fieldsToMatch,
             int startIndex, int limit, Long randomSeed, Map<String, AbstractFilterInstruction> filterInstructions
     ) throws SegueSearchException;
 
