@@ -44,7 +44,8 @@ CREATE TABLE public.assignments (
     owner_user_id integer,
     notes text,
     creation_date timestamp without time zone,
-    due_date timestamp with time zone
+    due_date timestamp with time zone,
+    scheduled_start_date timestamp with time zone
 );
 
 
