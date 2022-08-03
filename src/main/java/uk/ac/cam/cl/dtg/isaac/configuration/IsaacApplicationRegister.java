@@ -155,7 +155,7 @@ public class IsaacApplicationRegister extends Application {
                 .termsOfService(String.format("%s/terms", serverUrl));
         OpenAPI openApi = new OpenAPI()
                 .info(apiInfo)
-                .servers(ImmutableList.of(new Server().url(String.format("%s/api", serverUrl))));
+                .servers(ImmutableList.of(new Server().description("Isaac API").url("./")));
         SwaggerConfiguration swaggerConfig = new SwaggerConfiguration()
                 .openAPI(openApi)
                 .sortOutput(true)
