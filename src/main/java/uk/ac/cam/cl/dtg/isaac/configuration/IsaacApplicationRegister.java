@@ -126,7 +126,7 @@ public class IsaacApplicationRegister extends Application {
         result.add(RestEasyJacksonConfiguration.class);
         result.add(OpenApiResource.class);
         result.add(AcceptHeaderOpenApiResource.class);
-        
+
         return result;
     }
     
@@ -136,16 +136,26 @@ public class IsaacApplicationRegister extends Application {
     private void setupSwaggerApiAdvertiser(final ServletConfig servletConfig) {
         PropertiesLoader propertiesLoader = injector.getInstance(PropertiesLoader.class);
         String hostName = propertiesLoader.getProperty(HOST_NAME);
+        String httpScheme;
+        if (hostName.contains("localhost")) {
+            httpScheme = "http://";
+        } else {
+            httpScheme = "https://";
+        }
+        String serverUrl = httpScheme + hostName;
 
         Info apiInfo = new Info()
                 .title("Isaac API")
                 .version(propertiesLoader.getProperty(SEGUE_APP_VERSION))
                 .description("API for the Isaac platform. Automated use may violate our Terms of Service.")
-                .contact(new Contact().url(String.format("https://%s/contact", hostName)).email(propertiesLoader.getProperty(SERVER_ADMIN_ADDRESS)))
-                .termsOfService(String.format("https://%s/terms", hostName));
+                .contact(new Contact()
+                        .name(propertiesLoader.getProperty(MAIL_NAME))
+                        .url(String.format("%s/contact", serverUrl))
+                        .email(propertiesLoader.getProperty(SERVER_ADMIN_ADDRESS)))
+                .termsOfService(String.format("%s/terms", serverUrl));
         OpenAPI openApi = new OpenAPI()
                 .info(apiInfo)
-                .servers(ImmutableList.of(new Server().url(String.format("%s/api", hostName))));
+                .servers(ImmutableList.of(new Server().url(String.format("%s/api", serverUrl))));
         SwaggerConfiguration swaggerConfig = new SwaggerConfiguration()
                 .openAPI(openApi)
                 .sortOutput(true)
