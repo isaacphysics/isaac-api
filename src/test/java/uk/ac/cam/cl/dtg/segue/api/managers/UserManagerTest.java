@@ -82,7 +82,7 @@ import static org.junit.Assert.fail;
  * Test class for the user manager class.
  * 
  */
-@PowerMockIgnore({ "javax.ws.*" })
+@PowerMockIgnore({"jakarta.ws.*"})
 public class UserManagerTest {
     private QuestionManager dummyQuestionDatabase;
     private IUserDataManager dummyDatabase;

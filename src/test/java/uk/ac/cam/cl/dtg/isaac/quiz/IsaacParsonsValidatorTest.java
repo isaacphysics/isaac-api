@@ -42,7 +42,7 @@ import static org.junit.Assert.assertTrue;
  * Test class for the Parsons Question Validator class.
  *
  */
-@PowerMockIgnore({"javax.ws.*"})
+@PowerMockIgnore({"jakarta.ws.*"})
 public class IsaacParsonsValidatorTest {
     private IsaacParsonsValidator validator;
     private IsaacParsonsQuestion someParsonsQuestion;

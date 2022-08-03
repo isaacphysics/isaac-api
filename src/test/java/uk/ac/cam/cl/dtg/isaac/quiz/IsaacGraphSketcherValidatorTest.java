@@ -33,7 +33,7 @@ import static org.junit.Assert.assertTrue;
  * Test class for the Graph Sketcher Validator class.
  *
  */
-@PowerMockIgnore({"javax.ws.*"})
+@PowerMockIgnore({"jakarta.ws.*"})
 public class IsaacGraphSketcherValidatorTest {
     private IsaacGraphSketcherValidator validator;
 

@@ -89,7 +89,7 @@ public class GameboardsFacadeTest {
 	 * @throws ContentManagerException
 	 */
 	@Test
-	@PowerMockIgnore({ "javax.ws.*" })
+	@PowerMockIgnore({ "jakarta.ws.*" })
 	public final void isaacEndPoint_checkEmptyGameboardCausesErrorNoUser_SegueErrorResponseShouldBeReturned()
 			throws NoWildcardException, SegueDatabaseException, NoUserLoggedInException,
 			ContentManagerException {

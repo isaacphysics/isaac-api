@@ -47,7 +47,7 @@ import static org.junit.Assert.fail;
  * Test class for the user manager class.
  * 
  */
-@PowerMockIgnore({ "javax.ws.*" })
+@PowerMockIgnore({"jakarta.ws.*"})
 public class GroupManagerTest {
 
 	private PropertiesLoader dummyPropertiesLoader;

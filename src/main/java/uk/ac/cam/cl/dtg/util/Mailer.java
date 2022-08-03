@@ -246,7 +246,7 @@ public class Mailer {
         p.put("mail.smtp.from", envelopeFrom);  // Used for Return-Path
         p.put("mail.from", fromAddress.getAddress()); // Should only affect Message-ID, since From overridden below
 
-        // Create the javax.mail.Session object needed to send the email.
+        // Create the jakarta.mail.Session object needed to send the email.
         // These are expensive to create so cache them based on the properties
         // they are configured with (using fact that hashcodes are equal only if objects equal):
         Integer propertiesHash = p.hashCode();

@@ -81,7 +81,7 @@ import static org.powermock.api.easymock.PowerMock.verifyAll;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({UserAccountManager.class})
-@PowerMockIgnore({ "javax.ws.*", "javax.management.*", "javax.script.*" })
+@PowerMockIgnore({ "jakarta.ws.*", "jakarta.management.*", "jakarta.script.*" })
 abstract public class AbstractFacadeTest extends IsaacTest {
     protected HttpServletRequest request;
     protected UserAccountManager userManager;

@@ -38,7 +38,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
  * Test class for the user Association class.
  * 
  */
-@PowerMockIgnore({ "javax.ws.*" })
+@PowerMockIgnore({"jakarta.ws.*"})
 public class UserAssociationManagerTest {
 	private IAssociationDataManager dummyAssociationDataManager;
 	private GroupManager dummyGroupDataManager;
