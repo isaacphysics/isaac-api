@@ -22,16 +22,16 @@ SET row_security = off;
 
 COPY public.users (id, _id, family_name, given_name, email, role, date_of_birth, gender, registration_date, school_id, school_other, registered_contexts, registered_contexts_last_confirmed, last_updated, email_verification_status, last_seen, email_to_verify, email_verification_token, session_token, deleted) FROM stdin;
 11	\N	Student	Erika	erika-student@test.com	STUDENT	\N	FEMALE	2022-07-03 17:34:07		A Manually Entered School	{}	\N	2022-07-05 17:34:31	VERIFIED	\N	erika-student@test.com	\N	0	f
+2	\N	Test	Test Admin	test-admin@test.com	ADMIN	\N	OTHER	2019-08-01 12:40:16.738	\N	A Manually Entered School	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"all\\"}"}	2022-07-06 10:48:59.527	2022-07-06 10:48:59.673	VERIFIED	2022-08-03 12:07:08.761	test-admin@test.com	AwrblcwVoRFMWxJtV2TXAalOeA7a84TpD3rO2RmE	0	f
 9	\N	Student	Charlie	charlie-student@test.com	STUDENT	\N	MALE	2022-07-05 17:34:07	130615	\N	{}	\N	2022-07-05 17:34:31	VERIFIED	\N	charlie-student@test.com	\N	0	f
 4	\N	Editor	Test Editor	test-editor@test.com	CONTENT_EDITOR	\N	PREFER_NOT_TO_SAY	2019-08-01 12:50:32.631	133801	\N	{}	\N	2021-03-09 16:46:26.28	VERIFIED	2021-03-09 17:09:32.472	test-editor@test.com	nAAK4xSBuAPRejM4YPNfTKRDGK4Oa1VuL3EMmJburjE	0	f
 3	\N	Event Manager	Test Event	test-event@test.com	EVENT_MANAGER	\N	OTHER	2019-08-01 12:43:14.583	133801	\N	{}	\N	2021-03-09 16:47:03.77	VERIFIED	2021-03-09 17:10:04.552	test-event@test.com	QlIS3PVS33I8jmMo3JPQgIn2xaKe4gFgwXfH4qiI8	0	f
-5	\N	Teacher	Test Teacher	test-teacher@test.com	TEACHER	\N	FEMALE	2019-08-01 12:51:05.416	\N	A Manually Entered School	{}	\N	2021-03-31 10:19:04.939	VERIFIED	2021-06-17 16:51:29.977	test-teacher@test.com	m9A8P0VbpFQnzOdXOywx75lpaWSpssLmQ779ij2b5LQ	0	f
 1	\N	Progress	Test Progress	test-progress@test.com	STUDENT	\N	FEMALE	2019-08-01 12:28:22.869	130615	\N	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"ocr\\"}"}	2021-10-04 14:10:37.441	2021-11-05 10:52:13.018	VERIFIED	2021-11-05 10:52:13.14	test-progress@test.com	scIF1UJeYyGRGwGrwGNUyIWuZxKBrQHd8evcAeZk	0	f
 6	\N	Student	Test Student	test-student@test.com	STUDENT	\N	MALE	2019-08-01 12:51:39.981	110158	\N	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"ocr\\"}"}	2021-10-04 14:12:13.351	2021-10-04 14:12:13.384	VERIFIED	2022-03-22 15:37:44.585	test-student@test.com	ZMUU7NbjhUSawOClEzb1KPEMcUA93QCkxuGejMwmE	0	f
+5	\N	Teacher	Test Teacher	test-teacher@test.com	TEACHER	\N	FEMALE	2019-08-01 12:51:05.416	\N	A Manually Entered School	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"all\\"}"}	2022-08-03 12:08:57.662	2022-08-03 12:08:57.741	VERIFIED	2022-08-03 12:08:57.851	test-teacher@test.com	m9A8P0VbpFQnzOdXOywx75lpaWSpssLmQ779ij2b5LQ	0	f
 7	\N	Student	Alice	alice-student@test.com	STUDENT	1991-01-01	FEMALE	2022-07-05 17:31:12	\N	A Manually Entered School	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"all\\"}"}	2022-07-06 10:52:35.922	2022-07-06 10:52:36.056	VERIFIED	2022-07-06 10:52:36.163	alice-student@test.com	\N	0	f
 8	\N	Student	Bob	bob-student@test.com	STUDENT	\N	MALE	2022-07-05 17:32:41	110158	\N	{}	\N	2022-07-05 17:32:57	VERIFIED	2022-07-06 10:55:53.905	bob-student@test.com	\N	0	f
 10	\N	Teacher	Dave	dave-teacher@test.com	TEACHER	\N	MALE	2022-07-06 15:15:00	110158	\N	{}	\N	\N	VERIFIED	\N	dave-teacher@test.com	\N	0	f
-2	\N	Test	Test Admin	test-admin@test.com	ADMIN	\N	OTHER	2019-08-01 12:40:16.738	\N	A Manually Entered School	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"all\\"}"}	2022-07-06 10:48:59.527	2022-07-06 10:48:59.673	VERIFIED	2022-07-06 15:38:56.023	test-admin@test.com	AwrblcwVoRFMWxJtV2TXAalOeA7a84TpD3rO2RmE	0	f
 \.
 
 
@@ -40,6 +40,7 @@ COPY public.users (id, _id, family_name, given_name, email, role, date_of_birth,
 --
 
 COPY public.gameboards (id, title, contents, wildcard, wildcard_position, game_filter, owner_user_id, creation_method, creation_date, tags) FROM stdin;
+9313cadd-d4ce-420f-9331-300e3067b45f	Test Teacher's gameboard 1	{"{\\"id\\": \\"_regression_test_\\", \\"context\\": {\\"role\\": null, \\"stage\\": null, \\"examBoard\\": null, \\"difficulty\\": null}, \\"contentType\\": \\"isaacQuestionPage\\"}","{\\"id\\": \\"f2d24c70-9b6b-4a46-ad2a-002886dff84e\\", \\"context\\": {\\"role\\": null, \\"stage\\": null, \\"examBoard\\": null, \\"difficulty\\": null}, \\"contentType\\": \\"isaacQuestionPage\\"}"}	{"id": "0d1c84b9-d77d-4dd0-9d05-ea91e49d7adb", "url": "https://isaacphysics.org", "tags": ["computer_science"], "type": "isaacWildcard", "level": null, "title": "Isaac Physics", "value": null, "author": "jsharkey13", "layout": null, "display": null, "version": null, "audience": null, "children": [], "encoding": null, "subtitle": null, "published": false, "deprecated": null, "expandable": null, "attribution": null, "description": "Check out our sister site!", "relatedContent": null, "searchableContent": null, "canonicalSourceFile": "content/isaac-physics-demo-page/example_wildcard.json"}	0	{"fields": [], "levels": [], "stages": [], "topics": [], "concepts": [], "subjects": ["computer_science"], "examBoards": [], "difficulties": [], "questionCategories": []}	5	BUILDER	2022-08-03 12:09:47.537	[]
 \.
 
 
@@ -57,7 +58,8 @@ COPY public.groups (id, group_name, owner_id, created, archived, group_status, l
 -- Data for Name: assignments; Type: TABLE DATA; Schema: public; Owner: rutherford
 --
 
-COPY public.assignments (id, gameboard_id, group_id, owner_user_id, notes, creation_date, due_date) FROM stdin;
+COPY public.assignments (id, gameboard_id, group_id, owner_user_id, notes, creation_date, due_date, scheduled_start_date) FROM stdin;
+2	9313cadd-d4ce-420f-9331-300e3067b45f	1	5	\N	2022-08-03 12:14:50.134	\N	\N
 \.
 
 
@@ -217,21 +219,6 @@ BCTOK9	9	2
 --
 
 COPY public.user_badges (user_id, badge, state) FROM stdin;
-2	TEACHER_GROUPS_CREATED	{"groups": []}
-2	TEACHER_ASSIGNMENTS_SET	{"assignments": []}
-2	TEACHER_BOOK_PAGES_SET	{"assignments": []}
-2	TEACHER_GAMEBOARDS_CREATED	{"gameboards": []}
-2	TEACHER_CPD_EVENTS_ATTENDED	{"cpdEvents": []}
-7	TEACHER_GROUPS_CREATED	{"groups": []}
-7	TEACHER_ASSIGNMENTS_SET	{"assignments": []}
-7	TEACHER_BOOK_PAGES_SET	{"assignments": []}
-7	TEACHER_GAMEBOARDS_CREATED	{"gameboards": []}
-7	TEACHER_CPD_EVENTS_ATTENDED	{"cpdEvents": []}
-8	TEACHER_GROUPS_CREATED	{"groups": []}
-8	TEACHER_ASSIGNMENTS_SET	{"assignments": []}
-8	TEACHER_BOOK_PAGES_SET	{"assignments": []}
-8	TEACHER_GAMEBOARDS_CREATED	{"gameboards": []}
-8	TEACHER_CPD_EVENTS_ATTENDED	{"cpdEvents": []}
 \.
 
 
@@ -241,16 +228,16 @@ COPY public.user_badges (user_id, badge, state) FROM stdin;
 
 COPY public.user_credentials (user_id, password, secure_salt, security_scheme, reset_token, reset_expiry, created, last_updated) FROM stdin;
 1	Qkq8HUWI3BiMTtIXOLQHrimVHDHibm/Sv+b7l9R+MQTB4QZQZsELGz1sugaUUYEGTz/+s1yOHJA4+3/vtvcRqg==	quqt4W6AXeWYnarqPFPJFg==	SeguePBKDF2v3	\N	\N	2019-08-01 12:28:23.463026+00	2021-06-17 15:50:44.66+00
-2	6iUsE3Dm/W83KE+fKWex9kDS4nCsV1sxWVXXAo7toS4WcKf2h6V5RVgQgvAgsBkxSXuQc6CaV2pyOAQq+MtuWg==	HaP5yiXzyfxjKotGKPDVQQ==	SeguePBKDF2v3	\N	\N	2019-08-01 12:40:17.294925+00	2021-01-25 15:12:43.876+00
 3	oyjyh9eOb9g/7oDphjUjZxhIYNVplFTcVbkR6IrUfstgUu3Uai0H+5523IWJy6q0ZEg03TJ9D5yov2EtQ/b+vg==	wrf9iczzodG4X9+2buuqiw==	SeguePBKDF2v3	\N	\N	2019-08-01 12:43:15.133957+00	2021-01-25 15:11:19.331+00
 4	C58FZjuY6HMDjmIbsCcS4cLQTU5Raee+qMraexPoDZ434RLmP59EJ+Tn0c4QVkMjZMqvZPwLWM4VyumEgJW7kg==	NFBFqQ+DwCwUNp6YFq8x6g==	SeguePBKDF2v3	\N	\N	2019-08-01 12:50:33.329901+00	2021-01-25 15:11:09.825+00
-5	ak86hEtKZzGppIDDaPBOIftJ5rrI/lSKz30q3hkX0utfxsv+f5rzb1RfEEi5rbfIEaseGs18Aj6X3zYV/ZRNwQ==	EXNmh521xIMQBh11ayfawg==	SeguePBKDF2v3	\N	\N	2019-08-01 12:51:05.940811+00	2021-01-25 15:11:02.617+00
 6	ak86hEtKZzGppIDDaPBOIftJ5rrI/lSKz30q3hkX0utfxsv+f5rzb1RfEEi5rbfIEaseGs18Aj6X3zYV/ZRNwQ==	EXNmh521xIMQBh11ayfawg==	SeguePBKDF2v3	\N	\N	2019-08-01 12:51:05.940811+00	2021-01-25 15:11:02.617+00
 7	ak86hEtKZzGppIDDaPBOIftJ5rrI/lSKz30q3hkX0utfxsv+f5rzb1RfEEi5rbfIEaseGs18Aj6X3zYV/ZRNwQ==	EXNmh521xIMQBh11ayfawg==	SeguePBKDF2v3	\N	\N	2019-08-01 12:51:05.940811+00	2021-01-25 15:11:02.617+00
 8	ak86hEtKZzGppIDDaPBOIftJ5rrI/lSKz30q3hkX0utfxsv+f5rzb1RfEEi5rbfIEaseGs18Aj6X3zYV/ZRNwQ==	EXNmh521xIMQBh11ayfawg==	SeguePBKDF2v3	\N	\N	2019-08-01 12:51:05.940811+00	2021-01-25 15:11:02.617+00
 9	ak86hEtKZzGppIDDaPBOIftJ5rrI/lSKz30q3hkX0utfxsv+f5rzb1RfEEi5rbfIEaseGs18Aj6X3zYV/ZRNwQ==	EXNmh521xIMQBh11ayfawg==	SeguePBKDF2v3	\N	\N	2019-08-01 12:51:05.940811+00	2021-01-25 15:11:02.617+00
 10	ak86hEtKZzGppIDDaPBOIftJ5rrI/lSKz30q3hkX0utfxsv+f5rzb1RfEEi5rbfIEaseGs18Aj6X3zYV/ZRNwQ==	EXNmh521xIMQBh11ayfawg==	SeguePBKDF2v3	\N	\N	2019-08-01 12:51:05.940811+00	2021-01-25 15:11:02.617+00
 11	ak86hEtKZzGppIDDaPBOIftJ5rrI/lSKz30q3hkX0utfxsv+f5rzb1RfEEi5rbfIEaseGs18Aj6X3zYV/ZRNwQ==	EXNmh521xIMQBh11ayfawg==	SeguePBKDF2v3	\N	\N	2019-08-01 12:51:05.940811+00	2021-01-25 15:11:02.617+00
+2	r5qdcuA2J1vVh46iBkAndMO4yKAaaUFHKGCrxfe5wGru29+jEoe0laMGAwEqOzg0Nqk3zDbcWPVeIXudxsA/iA==	W3IupoCouzIf0fDjYSB2Tg==	SegueSCryptv1	\N	\N	2019-08-01 12:40:17.294925+00	2022-08-03 10:06:36.86+00
+5	S+VthIPxGTotnrVn2de1ju8njdPCle+XSBgRMeuBQ/NO3yg2RCWIankd0CqfJMo8EJ4E1O3knzWGQMWIRg7aTQ==	JfZKaJzTUH9VzWwwU4w8XA==	SegueSCryptv1	\N	\N	2019-08-01 12:51:05.940811+00	2022-08-03 10:08:26.604+00
 \.
 
 
@@ -267,6 +254,7 @@ COPY public.user_email_preferences (user_id, email_preference, email_preference_
 --
 
 COPY public.user_gameboards (user_id, gameboard_id, created, last_visited) FROM stdin;
+5	9313cadd-d4ce-420f-9331-300e3067b45f	2022-08-03 12:09:47.916	2022-08-03 12:09:49.959
 \.
 
 
@@ -289,6 +277,12 @@ COPY public.user_preferences (user_id, preference_type, preference_name, prefere
 2	EMAIL_PREFERENCE	EVENTS	f	2022-07-06 10:48:59.821444
 2	DISPLAY_SETTING	HIDE_NON_AUDIENCE_CONTENT	t	2022-07-06 10:48:59.821444
 7	DISPLAY_SETTING	HIDE_NON_AUDIENCE_CONTENT	t	2022-07-06 10:52:36.096292
+5	EMAIL_PREFERENCE	ASSIGNMENTS	t	2022-08-03 12:08:57.777349
+5	EMAIL_PREFERENCE	NEWS_AND_UPDATES	f	2022-08-03 12:08:57.777349
+5	EMAIL_PREFERENCE	EVENTS	f	2022-08-03 12:08:57.777349
+5	BOOLEAN_NOTATION	ENG	f	2022-08-03 12:08:57.777349
+5	BOOLEAN_NOTATION	MATH	t	2022-08-03 12:08:57.777349
+5	DISPLAY_SETTING	HIDE_NON_AUDIENCE_CONTENT	t	2022-08-03 12:08:57.777349
 \.
 
 
@@ -327,6 +321,7 @@ SegueScheduler	cleanAnonymousUsers	SQLMaintenance	SQL scheduled job that deletes
 SegueScheduler	cleanUpExpiredReservations	SQLMaintenence	SQL scheduled job that deletes expired reservations for the event booking system	uk.ac.cam.cl.dtg.segue.scheduler.DatabaseScriptExecutionJob	f	f	f	f	\\xaced0005737200156f72672e71756172747a2e4a6f62446174614d61709fb083e8bfa9b0cb020000787200266f72672e71756172747a2e7574696c732e537472696e674b65794469727479466c61674d61708208e8c3fbc55d280200015a0013616c6c6f77735472616e7369656e74446174617872001d6f72672e71756172747a2e7574696c732e4469727479466c61674d617013e62ead28760ace0200025a000564697274794c00036d617074000f4c6a6176612f7574696c2f4d61703b787000737200116a6176612e7574696c2e486173684d61700507dac1c31660d103000246000a6c6f6164466163746f724900097468726573686f6c6478703f4000000000000c7708000000100000000174000753514c46696c6574003664625f736372697074732f7363686564756c65642f657870697265642d7265736572766174696f6e732d636c65616e2d75702e73716c7800
 SegueScheduler	deleteEventAdditionalBookingInformation	JavaJob	Delete event additional booking information a given period after an event has taken place	uk.ac.cam.cl.dtg.segue.scheduler.jobs.DeleteEventAdditionalBookingInformationJob	f	f	f	f	\\xaced0005737200156f72672e71756172747a2e4a6f62446174614d61709fb083e8bfa9b0cb020000787200266f72672e71756172747a2e7574696c732e537472696e674b65794469727479466c61674d61708208e8c3fbc55d280200015a0013616c6c6f77735472616e7369656e74446174617872001d6f72672e71756172747a2e7574696c732e4469727479466c61674d617013e62ead28760ace0200025a000564697274794c00036d617074000f4c6a6176612f7574696c2f4d61703b787000737200116a6176612e7574696c2e486173684d61700507dac1c31660d103000246000a6c6f6164466163746f724900097468726573686f6c6478703f40000000000010770800000010000000007800
 SegueScheduler	deleteEventAdditionalBookingInformationOneYear	JavaJob	Delete event additional booking information a year after an event has taken place if not already removed	uk.ac.cam.cl.dtg.segue.scheduler.jobs.DeleteEventAdditionalBookingInformationOneYearJob	f	f	f	f	\\xaced0005737200156f72672e71756172747a2e4a6f62446174614d61709fb083e8bfa9b0cb020000787200266f72672e71756172747a2e7574696c732e537472696e674b65794469727479466c61674d61708208e8c3fbc55d280200015a0013616c6c6f77735472616e7369656e74446174617872001d6f72672e71756172747a2e7574696c732e4469727479466c61674d617013e62ead28760ace0200025a000564697274794c00036d617074000f4c6a6176612f7574696c2f4d61703b787000737200116a6176612e7574696c2e486173684d61700507dac1c31660d103000246000a6c6f6164466163746f724900097468726573686f6c6478703f40000000000010770800000010000000007800
+SegueScheduler	scheduledAssignmentsEmail	JavaJob	Send scheduled assignment notification emails to groups	uk.ac.cam.cl.dtg.segue.scheduler.jobs.ScheduledAssignmentsEmailJob	f	f	f	f	\\xaced0005737200156f72672e71756172747a2e4a6f62446174614d61709fb083e8bfa9b0cb020000787200266f72672e71756172747a2e7574696c732e537472696e674b65794469727479466c61674d61708208e8c3fbc55d280200015a0013616c6c6f77735472616e7369656e74446174617872001d6f72672e71756172747a2e7574696c732e4469727479466c61674d617013e62ead28760ace0200025a000564697274794c00036d617074000f4c6a6176612f7574696c2f4d61703b787000737200116a6176612e7574696c2e486173684d61700507dac1c31660d103000246000a6c6f6164466163746f724900097468726573686f6c6478703f40000000000010770800000010000000007800
 \.
 
 
@@ -335,11 +330,12 @@ SegueScheduler	deleteEventAdditionalBookingInformationOneYear	JavaJob	Delete eve
 --
 
 COPY quartz_cluster.qrtz_triggers (sched_name, trigger_name, trigger_group, job_name, job_group, description, next_fire_time, prev_fire_time, priority, trigger_state, trigger_type, start_time, end_time, calendar_name, misfire_instr, job_data) FROM stdin;
-SegueScheduler	PIIDeleteScheduledJob_trigger	SQLMaintenance	PIIDeleteScheduledJob	SQLMaintenance	\N	1658883600000	-1	5	WAITING	CRON	1658830292000	0	\N	0	\\x
-SegueScheduler	cleanAnonymousUsers_trigger	SQLMaintenance	cleanAnonymousUsers	SQLMaintenance	\N	1658885400000	-1	5	WAITING	CRON	1658830292000	0	\N	0	\\x
-SegueScheduler	cleanUpExpiredReservations_trigger	SQLMaintenence	cleanUpExpiredReservations	SQLMaintenence	\N	1658901600000	-1	5	WAITING	CRON	1658830292000	0	\N	0	\\x
-SegueScheduler	deleteEventAdditionalBookingInformation_trigger	JavaJob	deleteEventAdditionalBookingInformation	JavaJob	\N	1658901600000	-1	5	WAITING	CRON	1658830292000	0	\N	0	\\x
-SegueScheduler	deleteEventAdditionalBookingInformationOneYear_trigger	JavaJob	deleteEventAdditionalBookingInformationOneYear	JavaJob	\N	1658901600000	-1	5	WAITING	CRON	1658830292000	0	\N	0	\\x
+SegueScheduler	PIIDeleteScheduledJob_trigger	SQLMaintenance	PIIDeleteScheduledJob	SQLMaintenance	\N	1659571200000	-1	5	WAITING	CRON	1659521095000	0	\N	0	\\x
+SegueScheduler	cleanAnonymousUsers_trigger	SQLMaintenance	cleanAnonymousUsers	SQLMaintenance	\N	1659573000000	-1	5	WAITING	CRON	1659521095000	0	\N	0	\\x
+SegueScheduler	cleanUpExpiredReservations_trigger	SQLMaintenence	cleanUpExpiredReservations	SQLMaintenence	\N	1659589200000	-1	5	WAITING	CRON	1659521095000	0	\N	0	\\x
+SegueScheduler	deleteEventAdditionalBookingInformation_trigger	JavaJob	deleteEventAdditionalBookingInformation	JavaJob	\N	1659589200000	-1	5	WAITING	CRON	1659521095000	0	\N	0	\\x
+SegueScheduler	deleteEventAdditionalBookingInformationOneYear_trigger	JavaJob	deleteEventAdditionalBookingInformationOneYear	JavaJob	\N	1659589200000	-1	5	WAITING	CRON	1659521095000	0	\N	0	\\x
+SegueScheduler	scheduledAssignmentsEmail_trigger	JavaJob	scheduledAssignmentsEmail	JavaJob	\N	1659528000000	1659524400000	5	WAITING	CRON	1659521095000	0	\N	0	\\x
 \.
 
 
@@ -364,11 +360,12 @@ COPY quartz_cluster.qrtz_calendars (sched_name, calendar_name, calendar) FROM st
 --
 
 COPY quartz_cluster.qrtz_cron_triggers (sched_name, trigger_name, trigger_group, cron_expression, time_zone_id) FROM stdin;
-SegueScheduler	PIIDeleteScheduledJob_trigger	SQLMaintenance	0 0 2 * * ?	Europe/London
-SegueScheduler	cleanAnonymousUsers_trigger	SQLMaintenance	0 30 2 * * ?	Europe/London
-SegueScheduler	cleanUpExpiredReservations_trigger	SQLMaintenence	0 0 7 * * ?	Europe/London
-SegueScheduler	deleteEventAdditionalBookingInformation_trigger	JavaJob	0 0 7 * * ?	Europe/London
-SegueScheduler	deleteEventAdditionalBookingInformationOneYear_trigger	JavaJob	0 0 7 * * ?	Europe/London
+SegueScheduler	PIIDeleteScheduledJob_trigger	SQLMaintenance	0 0 2 * * ?	Europe/Rome
+SegueScheduler	cleanAnonymousUsers_trigger	SQLMaintenance	0 30 2 * * ?	Europe/Rome
+SegueScheduler	cleanUpExpiredReservations_trigger	SQLMaintenence	0 0 7 * * ?	Europe/Rome
+SegueScheduler	deleteEventAdditionalBookingInformation_trigger	JavaJob	0 0 7 * * ?	Europe/Rome
+SegueScheduler	deleteEventAdditionalBookingInformationOneYear_trigger	JavaJob	0 0 7 * * ?	Europe/Rome
+SegueScheduler	scheduledAssignmentsEmail_trigger	JavaJob	0 0 * ? * * *	Europe/Rome
 \.
 
 
@@ -403,7 +400,7 @@ COPY quartz_cluster.qrtz_paused_trigger_grps (sched_name, trigger_group) FROM st
 --
 
 COPY quartz_cluster.qrtz_scheduler_state (sched_name, instance_name, last_checkin_time, checkin_interval) FROM stdin;
-SegueScheduler	192.168.1.1271658830292355	1658830833246	20000
+SegueScheduler	ettore-2211659521094860	1659526038443	20000
 \.
 
 
@@ -427,7 +424,7 @@ COPY quartz_cluster.qrtz_simprop_triggers (sched_name, trigger_name, trigger_gro
 -- Name: assignments_id_seq; Type: SEQUENCE SET; Schema: public; Owner: rutherford
 --
 
-SELECT pg_catalog.setval('public.assignments_id_seq', 1, true);
+SELECT pg_catalog.setval('public.assignments_id_seq', 2, true);
 
 
 --
@@ -455,14 +452,14 @@ SELECT pg_catalog.setval('public.ip_location_history_id_seq', 1, false);
 -- Name: logged_events_id_seq; Type: SEQUENCE SET; Schema: public; Owner: rutherford
 --
 
-SELECT pg_catalog.setval('public.logged_events_id_seq', 412, true);
+SELECT pg_catalog.setval('public.logged_events_id_seq', 1, true);
 
 
 --
 -- Name: question_attempts_id_seq; Type: SEQUENCE SET; Schema: public; Owner: rutherford
 --
 
-SELECT pg_catalog.setval('public.question_attempts_id_seq', 25, true);
+SELECT pg_catalog.setval('public.question_attempts_id_seq', 1, true);
 
 
 --
