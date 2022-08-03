@@ -17,8 +17,8 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.EmailValidator;
 import org.slf4j.Logger;
@@ -51,7 +51,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * Contact Facade.
  */
 @Path("/contact")
-@Api(value = "/contact")
+@Tag(name = "/contact")
 public class ContactFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(ContactFacade.class);
 
@@ -92,7 +92,7 @@ public class ContactFacade extends AbstractSegueFacade {
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Submit a contact form request.")
+    @Operation(summary = "Submit a contact form request.")
     public Response contactUs(final Map<String, String> form, @Context final HttpServletRequest request) {
         if (StringUtils.isEmpty(form.get("firstName")) || StringUtils.isEmpty(form.get("lastName")) || StringUtils.isEmpty(form.get("emailAddress"))
                 || StringUtils.isEmpty(form.get("subject")) || StringUtils.isEmpty(form.get("message"))) {

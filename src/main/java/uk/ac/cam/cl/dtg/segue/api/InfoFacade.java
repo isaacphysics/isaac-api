@@ -18,8 +18,8 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
@@ -53,7 +53,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * 
  */
 @Path("/info")
-@Api(value = "/info")
+@Tag(name = "/info")
 public class InfoFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(InfoFacade.class);
 
@@ -85,7 +85,7 @@ public class InfoFacade extends AbstractSegueFacade {
     @GET
     @Path("segue_version")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Get the currently running API build version.")
+    @Operation(summary = "Get the currently running API build version.")
     public final Response getSegueAppVersion() {
         ImmutableMap<String, String> result = new ImmutableMap.Builder<String, String>().put("segueVersion",
                 SegueGuiceConfigurationModule.getSegueVersion()).build();
@@ -104,7 +104,7 @@ public class InfoFacade extends AbstractSegueFacade {
     @Path("segue_environment")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Get the mode that the API is currently running in: DEV or PROD.")
+    @Operation(summary = "Get the mode that the API is currently running in: DEV or PROD.")
     public final Response getSegueEnvironment(@Context final Request request) {
         EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + "");
         Response cachedResponse = generateCachedResponse(request, etag, NUMBER_SECONDS_IN_THIRTY_DAYS);
@@ -127,7 +127,7 @@ public class InfoFacade extends AbstractSegueFacade {
     @GET
     @Path("content_versions/live_version")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Get the current content version commit SHA.")
+    @Operation(summary = "Get the current content version commit SHA.")
     public final Response getLiveVersionInfo() {
         ImmutableMap<String, String> result = new ImmutableMap.Builder<String, String>().put("liveVersion",
                 this.contentManager.getCurrentContentSHA()).build();
@@ -143,7 +143,7 @@ public class InfoFacade extends AbstractSegueFacade {
     @GET
     @Path("content_versions/cached")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Get all currently indexed content commit SHAs.")
+    @Operation(summary = "Get all currently indexed content commit SHAs.")
     public final Response getCachedVersions() {
 
         ImmutableMap<String, Collection<String>> result = new ImmutableMap.Builder<String, Collection<String>>().put(
@@ -160,7 +160,7 @@ public class InfoFacade extends AbstractSegueFacade {
     @GET
     @Path("symbolic_checker/ping")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Check whether the symbolic question checker is running.")
+    @Operation(summary = "Check whether the symbolic question checker is running.")
     public Response pingEqualityChecker() {
 
         HttpClient httpClient = new DefaultHttpClient();
@@ -190,7 +190,7 @@ public class InfoFacade extends AbstractSegueFacade {
     @GET
     @Path("chemistry_checker/ping")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Check whether the chemistry question checker is running.")
+    @Operation(summary = "Check whether the chemistry question checker is running.")
     public Response pingChemistryChecker() {
 
         HttpClient httpClient = new DefaultHttpClient();
@@ -220,7 +220,7 @@ public class InfoFacade extends AbstractSegueFacade {
     @GET
     @Path("etl/ping")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Check whether the content indexer is running.")
+    @Operation(summary = "Check whether the content indexer is running.")
     public Response pingETLServer() {
         HttpClient httpClient = new DefaultHttpClient();
         HttpGet httpGet = new HttpGet("http://" + getProperties().getProperty("ETL_HOSTNAME") + ":"
@@ -249,7 +249,7 @@ public class InfoFacade extends AbstractSegueFacade {
     @GET
     @Path("elasticsearch/ping")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Check whether elasticsearch is running.")
+    @Operation(summary = "Check whether elasticsearch is running.")
     public Response pingElasticSearch() {
 
         HttpClient httpClient = new DefaultHttpClient();
@@ -281,7 +281,7 @@ public class InfoFacade extends AbstractSegueFacade {
     @GET
     @Path("quartz/ping")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Check whether Quartz job scheduler is running.")
+    @Operation(summary = "Check whether Quartz job scheduler is running.")
     public Response pingQuartzScheduler() {
         if (segueJobService.isStarted()) {
             return Response.ok(ImmutableMap.of("success", true)).build();

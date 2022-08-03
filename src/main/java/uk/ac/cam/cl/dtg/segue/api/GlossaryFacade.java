@@ -19,8 +19,8 @@ package uk.ac.cam.cl.dtg.segue.api;
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -52,7 +52,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  *
  */
 @Path("/glossary")
-@Api(value = "/glossary")
+@Tag(name = "/glossary")
 public class GlossaryFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(GlossaryFacade.class);
 
@@ -85,7 +85,7 @@ public class GlossaryFacade extends AbstractSegueFacade {
     @GET
     @Path("terms")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Get all the glossary terms that are indexed.")
+    @Operation(summary = "Get all the glossary terms that are indexed.")
     public final Response getTerms(@QueryParam("start_index") final String startIndex,
                                    @QueryParam("limit") final String limit) {
 
@@ -131,7 +131,7 @@ public class GlossaryFacade extends AbstractSegueFacade {
     @GET
     @Path("terms/{term_id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Get the term with the given id.")
+    @Operation(summary = "Get the term with the given id.")
     public final Response getTermById(@PathParam("term_id") final String term_id) {
 
         if (null == term_id) {

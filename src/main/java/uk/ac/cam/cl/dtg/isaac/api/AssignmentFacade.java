@@ -21,8 +21,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.opencsv.CSVWriter;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
@@ -95,7 +95,7 @@ import static uk.ac.cam.cl.dtg.util.NameFormatter.getFilteredGroupNameFromGroup;
  *
  */
 @Path("/assignments")
-@Api(value = "/assignments")
+@Tag(name = "/assignments")
 public class AssignmentFacade extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(AssignmentFacade.class);
 
@@ -166,7 +166,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "List all boards assigned to the current user.")
+    @Operation(summary = "List all boards assigned to the current user.")
     public Response getAssignments(@Context final HttpServletRequest request,
                                    @QueryParam("assignmentStatus") final GameboardState assignmentStatus) {
         try {
@@ -246,7 +246,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Path("/assign")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "List all assignments set by the current user if no group param specified.")
+    @Operation(summary = "List all assignments set by the current user if no group param specified.")
     public Response getAssigned(@Context final HttpServletRequest request,
                                 @QueryParam("group") final Long groupIdOfInterest) {
         try {
@@ -318,7 +318,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Path("/assign/{assignment_id}/progress")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "View the progress of a specific assignment.")
+    @Operation(summary = "View the progress of a specific assignment.")
     public Response getAssignmentProgress(@Context final HttpServletRequest request,
                                           @PathParam("assignment_id") final Long assignmentId) {
         try {
@@ -404,7 +404,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Produces("text/csv")
     @GZIP
     @Consumes(MediaType.WILDCARD)
-    @ApiOperation(value = "Download the progress of a specific assignment.")
+    @Operation(summary = "Download the progress of a specific assignment.")
     public Response getAssignmentProgressDownloadCSV(@Context final HttpServletRequest request,
                                                      @PathParam("assignment_id") final Long assignmentId,
                                                      @QueryParam("format") final String formatMode) {
@@ -614,7 +614,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Produces("text/csv")
     @GZIP
     @Consumes(MediaType.WILDCARD)
-    @ApiOperation(value = "Download the progress of a group on all assignments set.")
+    @Operation(summary = "Download the progress of a group on all assignments set.")
     public Response getGroupAssignmentsProgressDownloadCSV(@Context final HttpServletRequest request,
                                                            @PathParam("group_id") final Long groupId,
                                                            @QueryParam("format") final String formatMode) {
@@ -908,8 +908,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Path("/assign/groups")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "List all groups assigned boards from a list of boards.",
-                  notes = "The list of boards should be comma separated.")
+    @Operation(summary = "List all groups assigned boards from a list of boards.",
+                  description = "The list of boards should be comma separated.")
     public Response getAssignedGroupsByGameboards(@Context final HttpServletRequest request,
                                                   @QueryParam("gameboard_ids") final String gameboardIdsQueryParam) {
         try {
@@ -951,7 +951,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Path("/assign_bulk")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Create one or more new assignment(s).")
+    @Operation(summary = "Create one or more new assignment(s).")
     public Response assignGameBoards(@Context final HttpServletRequest request,
                                     final List<AssignmentDTO> assignmentDTOsFromClient) {
         try {
@@ -1079,7 +1079,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @Deprecated
-    @ApiOperation(value = "Create a new assignment.")
+    @Operation(summary = "Create a new assignment.")
     public Response assignGameBoard(@Context final HttpServletRequest request,
                                     final AssignmentDTO assignmentDTOFromClient) {
         return this.assignGameBoards(request, Collections.singletonList(assignmentDTOFromClient));
@@ -1100,7 +1100,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Path("/assign/{gameboard_id}/{group_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Delete an assignment by board ID and group ID.")
+    @Operation(summary = "Delete an assignment by board ID and group ID.")
     public Response deleteAssignment(@Context final HttpServletRequest request,
                                      @PathParam("gameboard_id") final String gameboardId, @PathParam("group_id") final Long groupId) {
 

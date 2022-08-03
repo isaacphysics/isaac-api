@@ -1,8 +1,8 @@
 package uk.ac.cam.cl.dtg.segue.etl;
 
 import com.google.inject.Inject;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.AbstractSegueFacade;
@@ -22,7 +22,7 @@ import jakarta.ws.rs.core.Response;
  * Created by Ian on 17/10/2016.
  */
 @Path("/etl")
-@Api(value = "/etl")
+@Tag(name = "/etl")
 public class ETLFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(ETLFacade.class);
 
@@ -42,8 +42,8 @@ public class ETLFacade extends AbstractSegueFacade {
     @POST
     @Path("/set_version_alias/{alias}/{version}")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Update a content version alias.",
-                  notes = "This is primarily used to set the 'live' content version.")
+    @Operation(summary = "Update a content version alias.",
+                  description = "This is primarily used to set the 'live' content version.")
     public Response setLiveVersion(@PathParam("alias") final String alias, @PathParam("version") final String version) {
 
         try {
@@ -62,7 +62,7 @@ public class ETLFacade extends AbstractSegueFacade {
     @Path("/new_version_alert/{version}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Notify the ETL server of a new content version to index.")
+    @Operation(summary = "Notify the ETL server of a new content version to index.")
     public Response newVersionAlert(@PathParam("version") final String newVersion) {
         etlManager.notifyNewVersion(newVersion);
         log.info("Finished processing ETL request");
@@ -72,7 +72,7 @@ public class ETLFacade extends AbstractSegueFacade {
     @GET
     @Path("/ping")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Check the status of the ETL server.")
+    @Operation(summary = "Check the status of the ETL server.")
     public Response statusCheck() {
         return Response.ok().entity("{\"code\" : 200}").build();
     }

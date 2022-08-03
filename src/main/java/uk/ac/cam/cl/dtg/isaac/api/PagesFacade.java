@@ -19,8 +19,8 @@ import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import ma.glasnost.orika.MapperFacade;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
@@ -81,7 +81,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * This class specifically caters for displaying isaac specific content pages.
  */
 @Path("/pages")
-@Api(value = "/pages")
+@Tag(name = "/pages")
 public class PagesFacade extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(PagesFacade.class);
 
@@ -156,7 +156,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Path("/concepts")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "List all concept page objects matching the provided criteria.")
+    @Operation(summary = "List all concept page objects matching the provided criteria.")
     public final Response getConceptList(@Context final Request request, @QueryParam("ids") final String ids,
             @QueryParam("tags") final String tags,
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
@@ -225,7 +225,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Path("/concepts/{concept_page_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Get a concept page object by ID.")
+    @Operation(summary = "Get a concept page object by ID.")
     public final Response getConcept(@Context final Request request, @Context final HttpServletRequest servletRequest,
                                      @PathParam("concept_page_id") final String conceptId) {
         if (null == conceptId || conceptId.isEmpty()) {
@@ -297,7 +297,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Path("/questions")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "List all question page objects matching the provided criteria.")
+    @Operation(summary = "List all question page objects matching the provided criteria.")
     public final Response getQuestionList(@Context final Request request,
             @QueryParam("ids") final String ids, @QueryParam("searchString") final String searchString,
             @QueryParam("tags") final String tags, @QueryParam("levels") final String level,
@@ -407,7 +407,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Path("/questions/{question_page_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Get a question page object by ID.")
+    @Operation(summary = "Get a question page object by ID.")
     public final Response getQuestion(@Context final Request request,
             @Context final HttpServletRequest httpServletRequest, 
             @PathParam("question_page_id") final String questionId) {
@@ -488,7 +488,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Path("topics/{topic_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Get a topic summary with a list of related material.")
+    @Operation(summary = "Get a topic summary with a list of related material.")
     public final Response getTopicSummaryPage(@Context final Request request,
                                                  @Context final HttpServletRequest httpServletRequest, @PathParam("topic_id") final String topicId) {
 
@@ -576,7 +576,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Path("/{page}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Get a content page object by ID.")
+    @Operation(summary = "Get a content page object by ID.")
     public final Response getPage(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
             @PathParam("page") final String pageId) {
 
@@ -640,7 +640,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Path("/fragments/{fragment_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Get a content page fragment by ID.")
+    @Operation(summary = "Get a content page fragment by ID.")
     public final Response getPageFragment(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
             @PathParam("fragment_id") final String fragmentId) {
         try {
@@ -686,7 +686,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Path("/pods/{subject}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "List pods matching the subject provided.")
+    @Operation(summary = "List pods matching the subject provided.")
     public final Response getPodList(@Context final Request request,
                                      @PathParam("subject") final String subject) {
         // Calculate the ETag on current live version of the content

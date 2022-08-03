@@ -21,8 +21,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,7 +80,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * 
  */
 @Path("/")
-@Api(value = "/")
+@Tag(name = "/")
 public class IsaacController extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(IsaacController.class);
 
@@ -175,7 +175,7 @@ public class IsaacController extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/search")
     @GZIP
-    @ApiOperation(value = "Search for content objects matching the provided criteria.")
+    @Operation(summary = "Search for content objects matching the provided criteria.")
     public final Response search(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
             @QueryParam("query") final String searchString,
             @DefaultValue(DEFAULT_TYPE_FILTER) @QueryParam("types") final String types,
@@ -257,8 +257,8 @@ public class IsaacController extends AbstractIsaacFacade {
     @Produces("*/*")
     @Path("images/{path:.*}")
     @GZIP
-    @ApiOperation(value = "Get a binary object from the current content version.",
-                  notes = "This can only be used to get images from the content database.")
+    @Operation(summary = "Get a binary object from the current content version.",
+                  description = "This can only be used to get images from the content database.")
     public final Response getImageByPath(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
                                          @PathParam("path") final String path) {
         if (null == path || Files.getFileExtension(path).isEmpty()) {
@@ -345,8 +345,8 @@ public class IsaacController extends AbstractIsaacFacade {
     @Produces("*/*")
     @Path("documents/{path:.*}")
     @GZIP
-    @ApiOperation(value = "Get a binary object from the current content version.",
-                  notes = "This can only be used to get PDF documents from the content database.")
+    @Operation(summary = "Get a binary object from the current content version.",
+                  description = "This can only be used to get PDF documents from the content database.")
     public final Response getDocumentByPath(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
                                          @PathParam("path") final String path) {
         if (null == path || Files.getFileExtension(path).isEmpty()) {
@@ -425,7 +425,7 @@ public class IsaacController extends AbstractIsaacFacade {
     @Path("users/current_user/progress")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Get progress information for the current user.")
+    @Operation(summary = "Get progress information for the current user.")
     public final Response getCurrentUserProgressInformation(@Context final HttpServletRequest request) {
         RegisteredUserDTO user;
         try {
@@ -448,7 +448,7 @@ public class IsaacController extends AbstractIsaacFacade {
     @Path("users/current_user/snapshot")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Get snapshot for the current user.")
+    @Operation(summary = "Get snapshot for the current user.")
     public final Response getCurrentUserSnapshot(@Context final HttpServletRequest request) {
         RegisteredUserDTO user;
         try {
@@ -487,7 +487,7 @@ public class IsaacController extends AbstractIsaacFacade {
     @Path("users/{user_id}/progress")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Get progress information for a specified user.")
+    @Operation(summary = "Get progress information for a specified user.")
     public final Response getUserProgressInformation(@Context final HttpServletRequest request,
             @PathParam("user_id") final Long userIdOfInterest) {
         RegisteredUserDTO user;

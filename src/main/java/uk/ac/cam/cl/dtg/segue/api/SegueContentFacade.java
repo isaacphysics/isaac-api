@@ -17,8 +17,8 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,7 +56,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * 
  */
 @Path("/content")
-@Api(value = "/content")
+@Tag(name = "/content")
 public class SegueContentFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(SegueContentFacade.class);
 
@@ -214,7 +214,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
     @Path("tags")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "List all tags currently in use.")
+    @Operation(summary = "List all tags currently in use.")
     public final Response getTagListByLiveVersion(@Context final Request request) {
         // Calculate the ETag on last modified date of tags list
         EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode()
@@ -242,7 +242,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
     @Path("units")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "List all units currently in use by numeric questions.")
+    @Operation(summary = "List all units currently in use by numeric questions.")
     public final Response getAllUnitsByLiveVersion(@Context final Request request) {
         // Calculate the ETag on last modified date of tags list
         EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode()

@@ -16,8 +16,8 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
 import com.google.inject.Inject;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
@@ -50,7 +50,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * database.
  */
 @Path("/log")
-@Api(value = "/log")
+@Tag(name = "/log")
 public class LogEventFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(LogEventFacade.class);
 
@@ -90,8 +90,8 @@ public class LogEventFacade extends AbstractSegueFacade {
     @POST
     @Path("/")
     @Consumes(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Record a new log event from the current user.",
-                  notes = "The 'type' field must be provided and must not be a reserved value.")
+    @Operation(summary = "Record a new log event from the current user.",
+                  description = "The 'type' field must be provided and must not be a reserved value.")
     public Response postLog(@Context final HttpServletRequest httpRequest, final Map<String, Object> eventJSON) {
         if (null == eventJSON || eventJSON.get(TYPE_FIELDNAME) == null) {
             log.error("Error during log operation, no event type specified. Event: " + eventJSON);
