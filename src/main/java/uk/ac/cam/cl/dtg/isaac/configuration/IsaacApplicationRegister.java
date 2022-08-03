@@ -152,9 +152,6 @@ public class IsaacApplicationRegister extends Application {
                 .resourcePackages(ImmutableSet.of("uk.ac.cam.cl.dtg"))
                 .prettyPrint(true);
 
-        OpenApiResource openApiResource = new OpenApiResource();
-        openApiResource.openApiConfiguration(swaggerConfig);
-
         try {
             new JaxrsOpenApiContextBuilder<>()
                     .servletConfig(servletConfig)
