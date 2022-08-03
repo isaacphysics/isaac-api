@@ -60,7 +60,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class IsaacApplicationRegister extends Application {
     private final Set<Object> singletons;
     
-    public static Injector injector;
+    private static Injector injector;
     
     /**
      * Default constructor.
