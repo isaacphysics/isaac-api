@@ -53,7 +53,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
@@ -88,7 +88,6 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -107,7 +106,7 @@ import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdF
 @Path("/quiz")
 @Api(value = "/quiz")
 public class QuizFacade extends AbstractIsaacFacade {
-    private final IContentManager contentManager;
+    private final GitContentManager contentManager;
     private final QuizManager quizManager;
     private final UserAccountManager userManager;
     private final UserAssociationManager associationManager;
@@ -146,7 +145,7 @@ public class QuizFacade extends AbstractIsaacFacade {
      */
     @Inject
     public QuizFacade(final PropertiesLoader properties, final ILogManager logManager,
-                      final IContentManager contentManager, final QuizManager quizManager,
+                      final GitContentManager contentManager, final QuizManager quizManager,
                       final UserAccountManager userManager, final UserAssociationManager associationManager,
                       final GroupManager groupManager, final QuizAssignmentManager quizAssignmentManager,
                       final AssignmentService assignmentService, final QuizAttemptManager quizAttemptManager,
@@ -740,7 +739,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                 QUIZ_ID_FKEY, quizAttempt.getQuizId(),
                 QUIZ_ATTEMPT_FK, quizAttempt.getId(),
                 QUIZ_ASSIGNMENT_FK, assignment != null ? assignment.getId().toString() : "FREE_ATTEMPT",
-                ASSIGNMENT_DUEDATE_FK, assignment == null || assignment.getDueDate() == null ? "NO_DUE_DATE" : assignment.getDueDate(),
+                ASSIGNMENT_DUEDATE, assignment == null || assignment.getDueDate() == null ? "NO_DUE_DATE" : assignment.getDueDate(),
                 QUIZ_SECTION, sectionNumber
             );
 
@@ -798,7 +797,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             Content contentBasedOnId;
             try {
-                contentBasedOnId = this.contentManager.getContentDOById(this.contentManager.getCurrentContentSHA(), questionId);
+                contentBasedOnId = this.contentManager.getContentDOById(questionId);
             } catch (ContentManagerException e1) {
                 SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Error locating the version requested",
                     e1);
@@ -947,7 +946,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                 QUIZ_ID_FKEY, assignmentWithID.getQuizId(),
                 GROUP_FK, assignmentWithID.getGroupId(),
                 QUIZ_ASSIGNMENT_FK, assignmentWithID.getId(),
-                ASSIGNMENT_DUEDATE_FK, assignmentWithID.getDueDate() == null ? "NO_DUE_DATE" : assignmentWithID.getDueDate()
+                ASSIGNMENT_DUEDATE, assignmentWithID.getDueDate() == null ? "NO_DUE_DATE" : assignmentWithID.getDueDate()
             );
 
             this.getLogManager().logEvent(currentlyLoggedInUser, request, Constants.IsaacServerLogType.SET_NEW_QUIZ_ASSIGNMENT, eventDetails);
@@ -1554,7 +1553,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                         GROUP_FK, assignment.getGroupId(),
                         QUIZ_ASSIGNMENT_FK, assignment.getId(),
                         QUIZ_OLD_DUEDATE, assignment.getDueDate(),
-                        ASSIGNMENT_DUEDATE_FK, clientQuizAssignment.getDueDate()
+                        ASSIGNMENT_DUEDATE, clientQuizAssignment.getDueDate()
                 );
                 this.getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.UPDATE_QUIZ_DEADLINE, eventDetails);
             } else if (assignment.getDueDate() == null && clientQuizAssignment.getDueDate() != null) {
@@ -1563,7 +1562,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                         GROUP_FK, assignment.getGroupId(),
                         QUIZ_ASSIGNMENT_FK, assignment.getId(),
                         QUIZ_OLD_DUEDATE, "NO_DUE_DATE",
-                        ASSIGNMENT_DUEDATE_FK, clientQuizAssignment.getDueDate()
+                        ASSIGNMENT_DUEDATE, clientQuizAssignment.getDueDate()
                 );
                 this.getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.UPDATE_QUIZ_DEADLINE, eventDetails);
             }
@@ -1627,7 +1626,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             Map<String, Object> eventDetails = ImmutableMap.of(
                     QUIZ_ID_FKEY, assignment.getQuizId(),
                     QUIZ_ASSIGNMENT_FK, assignment.getId().toString(),
-                    ASSIGNMENT_DUEDATE_FK, assignment.getDueDate() == null ? "NO_DUE_DATE" : assignment.getDueDate()
+                    ASSIGNMENT_DUEDATE, assignment.getDueDate() == null ? "NO_DUE_DATE" : assignment.getDueDate()
             );
             getLogManager().logEvent(user, httpServletRequest, Constants.IsaacServerLogType.DELETE_QUIZ_ASSIGNMENT, eventDetails);
 

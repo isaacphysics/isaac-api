@@ -134,7 +134,7 @@ public class GroupChangedService implements IGroupObserver {
     }
 
     private void formatGroupAssignmentsInfo(UserGroupDTO userGroup, StringBuilder htmlSB, StringBuilder plainTextSB) throws SegueDatabaseException, ContentManagerException {
-        final List<AssignmentDTO> existingAssignments = this.assignmentManager.getAllAssignmentsForSpecificGroups(Collections.singletonList(userGroup));
+        final List<AssignmentDTO> existingAssignments = this.assignmentManager.getAllAssignmentsForSpecificGroups(Collections.singletonList(userGroup), false);
 
         formatAssignmentLikeList(htmlSB, plainTextSB, existingAssignments, "assignments", assignmentManager);
 
@@ -143,7 +143,7 @@ public class GroupChangedService implements IGroupObserver {
         if (existingQuizzes != null && !existingQuizzes.isEmpty()) {
             htmlSB.append("<br>");
             plainTextSB.append("\n");
-            formatAssignmentLikeList(htmlSB, plainTextSB, existingQuizzes, "quizzes", quizAssignmentManager);
+            formatAssignmentLikeList(htmlSB, plainTextSB, existingQuizzes, "tests", quizAssignmentManager);
         }
     }
 

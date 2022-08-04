@@ -525,7 +525,8 @@ public final class Constants {
 
     public static final String GROUP_FK = "groupId";
     public static final String ASSIGNMENT_FK = "assignmentId";
-    public static final String ASSIGNMENT_DUEDATE_FK = "dueDate";
+    public static final String ASSIGNMENT_DUEDATE = "dueDate";
+    public static final String ASSIGNMENT_SCHEDULED_START_DATE = "scheduledStartDate";
 
     public static final String QUIZ_ATTEMPT_FK = "quizAttemptId";
     public static final String QUIZ_ASSIGNMENT_FK = "quizAssignmentId";
@@ -545,6 +546,19 @@ public final class Constants {
     public enum SegueUserPreferences {
         EMAIL_PREFERENCE
     }
+
+    // Integration test constants
+    public static final String TEST_STUDENT_EMAIL = "test-student@test.com";
+    public static final String TEST_STUDENT_PASSWORD = "test1234";
+    public static final String TEST_TEACHER_EMAIL = "test-teacher@test.com";
+    public static final String TEST_TEACHER_PASSWORD = "test1234";
+    public static final String TEST_EVENTMANAGER_EMAIL = "test-event@test.com";
+    public static final String TEST_EVENTMANAGER_PASSWORD = "test1234";
+    public static final String TEST_EDITOR_EMAIL = "test-editor@test.com";
+    public static final String TEST_EDITOR_PASSWORD = "test1234";
+    public static final String TEST_ADMIN_EMAIL = "test-admin@test.com";
+    public static final String TEST_ADMIN_PASSWORD = "test1234";
+
 
     /**
      * Private constructor to prevent this class being created.

@@ -53,7 +53,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
@@ -131,7 +131,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
     private final GroupManager groupManager;
 
-    private final IContentManager contentManager;
+    private final GitContentManager contentManager;
     private final String contentIndex;
     private final UserBadgeManager userBadgeManager;
     private final UserAssociationManager userAssociationManager;
@@ -156,7 +156,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Inject
     public EventsFacade(final PropertiesLoader properties, final ILogManager logManager,
                         final EventBookingManager bookingManager,
-                        final UserAccountManager userManager, final IContentManager contentManager,
+                        final UserAccountManager userManager, final GitContentManager contentManager,
                         @Named(Constants.CONTENT_INDEX) final String contentIndex,
                         final UserBadgeManager userBadgeManager,
                         final UserAssociationManager userAssociationManager,
@@ -291,8 +291,8 @@ public class EventsFacade extends AbstractIsaacFacade {
                 }
             } else {
                 findByFieldNames = this.contentManager.findByFieldNames(
-                    this.contentIndex, ContentService.generateDefaultFieldToMatch(fieldsToMatch),
-                    newStartIndex, newLimit, sortInstructions, filterInstructions);
+                        ContentService.generateDefaultFieldToMatch(fieldsToMatch), newStartIndex, newLimit,
+                        sortInstructions, filterInstructions);
 
                 // augment (maybe slow for large numbers of bookings)
                 for (ContentDTO c : findByFieldNames.getResults()) {
@@ -1491,7 +1491,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             ResultsWrapper<ContentDTO> findByFieldNames = null;
 
             findByFieldNames = this.contentManager.findByFieldNames(
-                    this.contentIndex, ContentService.generateDefaultFieldToMatch(fieldsToMatch),
+                    ContentService.generateDefaultFieldToMatch(fieldsToMatch),
                     newStartIndex, newLimit, sortInstructions, filterInstructions);
 
             List<Map<String, Object>> resultList = Lists.newArrayList();
@@ -1613,7 +1613,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         try {
             ResultsWrapper<ContentDTO> findByFieldNames = null;
 
-            findByFieldNames = this.contentManager.findByFieldNames(this.contentIndex,
+            findByFieldNames = this.contentManager.findByFieldNames(
                     ContentService.generateDefaultFieldToMatch(fieldsToMatch),
                     newStartIndex, newLimit, sortInstructions, filterInstructions);
 
@@ -1674,7 +1674,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     private IsaacEventPageDTO getRawEventDTOById(final String eventId)
             throws ContentManagerException, SegueDatabaseException {
 
-        ContentDTO possibleEvent = this.contentManager.getContentById(this.contentManager.getCurrentContentSHA(), eventId);
+        ContentDTO possibleEvent = this.contentManager.getContentById(eventId);
 
         if (null == possibleEvent) {
             throw new ResourceNotFoundException(String.format("Unable to locate the event with id; %s", eventId));

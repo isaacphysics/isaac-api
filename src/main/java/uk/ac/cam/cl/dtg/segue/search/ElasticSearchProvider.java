@@ -53,7 +53,7 @@ import org.elasticsearch.transport.client.PreBuiltTransportClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 
 import javax.annotation.Nullable;
@@ -114,7 +114,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 
     @Override
     public ResultsWrapper<String> matchSearch(final String indexBase, final String indexType,
-                                              final List<IContentManager.BooleanSearchClause> fieldsToMatch, final int startIndex,
+                                              final List<GitContentManager.BooleanSearchClause> fieldsToMatch, final int startIndex,
                                               final int limit, final Map<String, Constants.SortOrder> sortInstructions,
                                               @Nullable final Map<String, AbstractFilterInstruction> filterInstructions) throws SegueSearchException {
         // build up the query from the fieldsToMatch map
@@ -129,7 +129,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 
     @Override
     public final ResultsWrapper<String> randomisedMatchSearch(final String indexBase, final String indexType,
-                                                              final List<IContentManager.BooleanSearchClause> fieldsToMatch, final int startIndex, final int limit,
+                                                              final List<GitContentManager.BooleanSearchClause> fieldsToMatch, final int startIndex, final int limit,
                                                               final Long randomSeed, final Map<String, AbstractFilterInstruction> filterInstructions)
             throws SegueSearchException {
         // build up the query from the fieldsToMatch map
@@ -398,8 +398,8 @@ public class ElasticSearchProvider implements ISearchProvider {
             if (fieldToFilterInstruction.getValue() instanceof SimpleFilterInstruction) {
                 SimpleFilterInstruction sfi = (SimpleFilterInstruction) fieldToFilterInstruction.getValue();
 
-                List<IContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
-                fieldsToMatch.add(new IContentManager.BooleanSearchClause(
+                List<GitContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
+                fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
                         fieldToFilterInstruction.getKey(), Constants.BooleanOperator.AND,
                         Collections.singletonList(sfi.getMustMatchValue())));
 
@@ -414,8 +414,8 @@ public class ElasticSearchProvider implements ISearchProvider {
             if (fieldToFilterInstruction.getValue() instanceof SimpleExclusionInstruction) {
                 SimpleExclusionInstruction sfi = (SimpleExclusionInstruction) fieldToFilterInstruction.getValue();
 
-                List<IContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
-                fieldsToMatch.add(new IContentManager.BooleanSearchClause(
+                List<GitContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
+                fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
                         fieldToFilterInstruction.getKey(), Constants.BooleanOperator.AND,
                         Collections.singletonList(sfi.getMustNotMatchValue())));
 
@@ -433,11 +433,11 @@ public class ElasticSearchProvider implements ISearchProvider {
      *            - the fields that the bool query should match.
      * @return a bool query configured to match the fields to match.
      */
-    private BoolQueryBuilder generateBoolMatchQuery(final List<IContentManager.BooleanSearchClause> fieldsToMatch) {
+    private BoolQueryBuilder generateBoolMatchQuery(final List<GitContentManager.BooleanSearchClause> fieldsToMatch) {
         BoolQueryBuilder masterQuery = QueryBuilders.boolQuery();
         Map<String, BoolQueryBuilder> nestedQueriesByPath = Maps.newHashMap();
 
-        for (IContentManager.BooleanSearchClause searchClause : fieldsToMatch) {
+        for (GitContentManager.BooleanSearchClause searchClause : fieldsToMatch) {
             // Each search clause is its own boolean query that gets added to the master query as a must match clause
             BoolQueryBuilder query = QueryBuilders.boolQuery();
 
@@ -597,15 +597,15 @@ public class ElasticSearchProvider implements ISearchProvider {
      *            - the map that should be converted into a suitable map for querying.
      * @return Map where each field is using the OR boolean operator.
      */
-    private List<IContentManager.BooleanSearchClause> convertToBoolMap(final Map<String, List<String>> fieldsThatMustMatch) {
+    private List<GitContentManager.BooleanSearchClause> convertToBoolMap(final Map<String, List<String>> fieldsThatMustMatch) {
         if (null == fieldsThatMustMatch) {
             return null;
         }
 
-        List<IContentManager.BooleanSearchClause> result = Lists.newArrayList();
+        List<GitContentManager.BooleanSearchClause> result = Lists.newArrayList();
 
         for (Map.Entry<String, List<String>> pair : fieldsThatMustMatch.entrySet()) {
-            result.add(new IContentManager.BooleanSearchClause(
+            result.add(new GitContentManager.BooleanSearchClause(
                     pair.getKey(), Constants.BooleanOperator.OR, pair.getValue()));
         }
 

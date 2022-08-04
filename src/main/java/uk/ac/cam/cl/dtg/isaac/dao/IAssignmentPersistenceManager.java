@@ -1,6 +1,7 @@
 package uk.ac.cam.cl.dtg.isaac.dao;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
@@ -91,6 +92,17 @@ public interface IAssignmentPersistenceManager {
      *             - if there is an error when accessing the database.
      */
     List<AssignmentDTO> getAssignmentsByGroupList(Collection<Long> groupIds) throws SegueDatabaseException;
+
+    /**
+     * Gets all assignments that are scheduled to start in the hour specified by the timestamp parameter.
+     *
+     * @param timestamp
+     *            - the hour in which to look for scheduled assignments.
+     * @return list of assignments
+     * @throws SegueDatabaseException
+     *             - if there is an error when accessing the database.
+     */
+    List<AssignmentDTO> getAssignmentsScheduledForHour(Date timestamp) throws SegueDatabaseException;
 
 
     /**

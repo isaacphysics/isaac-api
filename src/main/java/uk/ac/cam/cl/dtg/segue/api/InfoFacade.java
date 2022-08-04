@@ -18,7 +18,6 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.apache.http.HttpResponse;
@@ -30,7 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
@@ -45,7 +44,9 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Collection;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_THIRTY_DAYS;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_APP_ENVIRONMENT;
 
 /**
  * Info Facade
@@ -58,7 +59,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class InfoFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(InfoFacade.class);
 
-    private final IContentManager contentManager;
+    private final GitContentManager contentManager;
     private final SegueJobService segueJobService;
 
     /**
@@ -70,7 +71,7 @@ public class InfoFacade extends AbstractSegueFacade {
      *            - for logging events using the logging api.
      */
     @Inject
-    public InfoFacade(final PropertiesLoader properties, final IContentManager contentManager,
+    public InfoFacade(final PropertiesLoader properties, final GitContentManager contentManager,
                       final SegueJobService segueJobService,
                       final ILogManager logManager) {
         super(properties, logManager);
@@ -148,7 +149,7 @@ public class InfoFacade extends AbstractSegueFacade {
     public final Response getCachedVersions() {
 
         ImmutableMap<String, Collection<String>> result = new ImmutableMap.Builder<String, Collection<String>>().put(
-                "cachedVersions", this.contentManager.getCachedVersionList()).build();
+                "cachedVersions", this.contentManager.getCachedContentSHAList()).build();
 
         return Response.ok(result).build();
     }
