@@ -245,7 +245,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Path("/assign/{assignmentId}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Fetch an assignment object populated with gameboard and quesiton information, if the user "
+    @Operation(summary = "Fetch an assignment object populated with gameboard and quesiton information, if the user "
                         + "owns the group that the assignment is set to.")
     public Response getSingleAssigned(@Context final HttpServletRequest request,
                                 @PathParam("assignmentId") final Long assignmentId) {
