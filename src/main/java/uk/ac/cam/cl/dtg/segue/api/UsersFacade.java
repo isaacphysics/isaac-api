@@ -21,8 +21,8 @@ import com.google.api.client.util.Maps;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,22 +61,22 @@ import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.EntityTag;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Request;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.EntityTag;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Request;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
@@ -96,7 +96,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  *
  */
 @Path("/")
-@Api(value = "/users")
+@Tag(name = "/users")
 public class UsersFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(UsersFacade.class);
     private final UserAccountManager userManager;
@@ -151,7 +151,7 @@ public class UsersFacade extends AbstractSegueFacade {
     @Path("users/current_user")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Get information about the current user.")
+    @Operation(summary = "Get information about the current user.")
     public Response getCurrentUserEndpoint(@Context final Request request,
                                            @Context final HttpServletRequest httpServletRequest,
                                            @Context final HttpServletResponse response) {
@@ -197,7 +197,7 @@ public class UsersFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Create a new user or update an existing user.")
+    @Operation(summary = "Create a new user or update an existing user.")
     public Response createOrUpdateUserSettings(@Context final HttpServletRequest request,
                                                @Context final HttpServletResponse response,
                                                final String userObjectString) throws InvalidKeySpecException, NoSuchAlgorithmException {
@@ -273,7 +273,7 @@ public class UsersFacade extends AbstractSegueFacade {
     @Path("users/user_preferences")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Get the user preferences of the current user.")
+    @Operation(summary = "Get the user preferences of the current user.")
     public Response getUserPreferences(@Context final HttpServletRequest httpServletRequest) {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
@@ -313,7 +313,7 @@ public class UsersFacade extends AbstractSegueFacade {
     @Path("users/{user_id}/resetpassword")
     @Consumes(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Request password reset for another user.")
+    @Operation(summary = "Request password reset for another user.")
     public Response generatePasswordResetTokenForOtherUser(@Context final Request request,
                                                            @Context final HttpServletRequest httpServletRequest,
                                                            @PathParam("user_id") final Long userIdOfInterest) {
@@ -385,8 +385,8 @@ public class UsersFacade extends AbstractSegueFacade {
     @Path("users/resetpassword")
     @Consumes(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Request password reset for an email address.",
-                  notes = "The email address must be provided as a RegisteredUserDTO object, although only the 'email' field is required.")
+    @Operation(summary = "Request password reset for an email address.",
+                  description = "The email address must be provided as a RegisteredUserDTO object, although only the 'email' field is required.")
     public Response generatePasswordResetToken(final RegisteredUserDTO userObject,
                                                @Context final HttpServletRequest request) {
         if (null == userObject || null == userObject.getEmail() || userObject.getEmail().isEmpty()) {
@@ -440,7 +440,7 @@ public class UsersFacade extends AbstractSegueFacade {
     @Path("users/resetpassword/{token}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Verify a password reset token is valid for use.")
+    @Operation(summary = "Verify a password reset token is valid for use.")
     public Response validatePasswordResetRequest(@PathParam("token") final String token) {
         try {
             if (userManager.validatePasswordResetToken(token)) {
@@ -473,8 +473,8 @@ public class UsersFacade extends AbstractSegueFacade {
     @Path("users/resetpassword/{token}")
     @Consumes(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Reset an account password using a reset token.",
-                  notes = "The 'token' should be generated using one of the endpoints for requesting a password reset.")
+    @Operation(summary = "Reset an account password using a reset token.",
+                  description = "The 'token' should be generated using one of the endpoints for requesting a password reset.")
     public Response resetPassword(@PathParam("token") final String token, final Map<String, String> clientResponse,
                                   @Context final HttpServletRequest request)
             throws InvalidKeySpecException, NoSuchAlgorithmException {
@@ -515,7 +515,7 @@ public class UsersFacade extends AbstractSegueFacade {
      */
     @GET
     @Path("users/current_user/mfa/new_secret")
-    @ApiOperation(value = "Generate a new 2FA secret for the current user.")
+    @Operation(summary = "Generate a new 2FA secret for the current user.")
     @Produces(MediaType.APPLICATION_JSON)
     public final Response generateMFACode(@Context final HttpServletRequest request) {
         try {
@@ -537,7 +537,7 @@ public class UsersFacade extends AbstractSegueFacade {
      */
     @GET
     @Path("users/current_user/mfa")
-    @ApiOperation(value = "Does the current user have MFA enabled?.")
+    @Operation(summary = "Does the current user have MFA enabled?.")
     @Produces(MediaType.APPLICATION_JSON)
     public final Response getAccountMFAStatus(@Context final HttpServletRequest request) {
         try {
@@ -563,7 +563,7 @@ public class UsersFacade extends AbstractSegueFacade {
      */
     @POST
     @Path("users/current_user/mfa")
-    @ApiOperation(value = "Setup MFA based on successful challenge / response")
+    @Operation(summary = "Setup MFA based on successful challenge / response")
     @Produces(MediaType.APPLICATION_JSON)
     public final Response setupMFA(@Context final HttpServletRequest request, final Map<String, String> mfaResponse) {
         try {
@@ -601,7 +601,7 @@ public class UsersFacade extends AbstractSegueFacade {
      */
     @DELETE
     @Path("users/{user_id}/mfa")
-    @ApiOperation(value = "Admin endpoint for disabling MFA for a user")
+    @Operation(summary = "Admin endpoint for disabling MFA for a user")
     @Produces(MediaType.APPLICATION_JSON)
     public final Response deleteMFASettingsForAccount(@Context final HttpServletRequest request,
                                                       @PathParam("user_id") final Long userIdOfInterest) {
@@ -652,7 +652,7 @@ public class UsersFacade extends AbstractSegueFacade {
     @Path("users/school_lookup")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Get the school information of specified users.")
+    @Operation(summary = "Get the school information of specified users.")
     public Response getUserIdToSchoolMap(@Context final HttpServletRequest httpServletRequest,
                                          @QueryParam("user_ids") final String userIdsQueryParam) {
         try {

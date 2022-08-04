@@ -62,7 +62,7 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
      * @param emailService
      *            - service for sending specific emails.
      * @param gameManager
- *            - the game manager object
+     *            - the game manager object
      */
     @Inject
     public AssignmentManager(final IAssignmentPersistenceManager assignmentPersistenceManager,
@@ -147,13 +147,18 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
         newAssignment.setCreationDate(new Date());
         newAssignment.setId(this.assignmentPersistenceManager.saveAssignment(newAssignment));
 
+        // Get assignment gameboard in order to generate URL which will be added to the notification email
         GameboardDTO gameboard = gameManager.getGameboard(newAssignment.getGameboardId());
-
         final String gameboardURL = String.format("https://%s/assignment/%s", properties.getProperty(HOST_NAME),
-            gameboard.getId());
+                gameboard.getId());
 
-        emailService.sendAssignmentEmailToGroup(newAssignment, gameboard, ImmutableMap.of("gameboardURL", gameboardURL) ,
-            "email-template-group-assignment");
+        // If there is no date to schedule the assignment for...
+        if (null == newAssignment.getScheduledStartDate()) {
+            // Send the notification email immediately
+            emailService.sendAssignmentEmailToGroup(newAssignment, gameboard, ImmutableMap.of("gameboardURL", gameboardURL),
+                    "email-template-group-assignment");
+        }
+        // Otherwise, the assignment email will be scheduled by a Quartz job on the hour of the scheduledStartDate
 
         return newAssignment;
     }
@@ -176,19 +181,23 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
      * Get all assignments for a list of groups.
      *
      * @param groups to include in the search
+     * @param includeAssignmentsScheduledInFuture
      * @return a list of assignments set to the group ids provided.
      * @throws SegueDatabaseException
      *             - if we cannot complete a required database operation.
      */
-    public List<AssignmentDTO> getAllAssignmentsForSpecificGroups(final Collection<UserGroupDTO> groups) throws SegueDatabaseException {
+    public List<AssignmentDTO> getAllAssignmentsForSpecificGroups(final Collection<UserGroupDTO> groups, final boolean includeAssignmentsScheduledInFuture) throws SegueDatabaseException {
         Validate.notNull(groups);
         // TODO - Is there a better way of doing this empty list check? Database method explodes if given it.
         if (groups.isEmpty()) {
             return new ArrayList<>();
         }
-        // Augment AssignmentDTOs with group names (useful for displaying group related stuff in the front-end)
+        // Filter out assignments that haven't started yet, and augment AssignmentDTOs with group names (useful for
+        // displaying group related stuff in the front-end)
         Map<Long, String> groupIdToName = groups.stream().collect(Collectors.toMap(UserGroupDTO::getId, UserGroupDTO::getGroupName));
-        List<AssignmentDTO> assignments = this.assignmentPersistenceManager.getAssignmentsByGroupList(groupIdToName.keySet());
+        List<AssignmentDTO> assignments = this.assignmentPersistenceManager.getAssignmentsByGroupList(groupIdToName.keySet())
+                .stream().filter(a -> includeAssignmentsScheduledInFuture || (null == a.getScheduledStartDate() || a.getScheduledStartDate().before(new Date())))
+                .collect(Collectors.toList());
         assignments.forEach(assignment -> assignment.setGroupName(groupIdToName.get(assignment.getGroupId())));
         return assignments;
     }
@@ -250,7 +259,7 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
         Validate.notBlank(gameboardId);
 
         List<UserGroupDTO> allGroupsForUser = this.groupManager.getAllGroupsOwnedAndManagedByUser(user, false);
-        List<AssignmentDTO> allAssignmentsForMyGroups = this.getAllAssignmentsForSpecificGroups(allGroupsForUser);
+        List<AssignmentDTO> allAssignmentsForMyGroups = this.getAllAssignmentsForSpecificGroups(allGroupsForUser, true);
 
         List<UserGroupDTO> groups = Lists.newArrayList();
 

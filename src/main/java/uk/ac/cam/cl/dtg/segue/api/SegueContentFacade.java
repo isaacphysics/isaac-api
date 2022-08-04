@@ -17,8 +17,8 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,16 +31,16 @@ import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import javax.annotation.Nullable;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.EntityTag;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Request;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import jakarta.annotation.Nullable;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.EntityTag;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Request;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -56,7 +56,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * 
  */
 @Path("/content")
-@Api(value = "/content")
+@Tag(name = "/content")
 public class SegueContentFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(SegueContentFacade.class);
 
@@ -214,7 +214,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
     @Path("tags")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "List all tags currently in use.")
+    @Operation(summary = "List all tags currently in use.")
     public final Response getTagListByLiveVersion(@Context final Request request) {
         // Calculate the ETag on last modified date of tags list
         EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode()
@@ -242,7 +242,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
     @Path("units")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "List all units currently in use by numeric questions.")
+    @Operation(summary = "List all units currently in use by numeric questions.")
     public final Response getAllUnitsByLiveVersion(@Context final Request request) {
         // Calculate the ETag on last modified date of tags list
         EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode()

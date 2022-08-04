@@ -38,7 +38,7 @@ import static org.junit.Assert.assertTrue;
  * Test class for the String Match Validator class.
  *
  */
-@PowerMockIgnore({"javax.ws.*"})
+@PowerMockIgnore({"jakarta.ws.*"})
 public class IsaacStringMatchValidatorTest {
     private IsaacStringMatchValidator validator;
     private IsaacStringMatchQuestion someStringMatchQuestion;

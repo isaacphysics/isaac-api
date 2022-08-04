@@ -18,7 +18,7 @@ package uk.ac.cam.cl.dtg.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  *  A utility class to extract IP addresses from HTTP requests.

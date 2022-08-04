@@ -36,7 +36,7 @@ import static org.junit.Assert.fail;
  * Test class for the GitContentManager class.
  * 
  */
-@PowerMockIgnore({"javax.ws.*"})
+@PowerMockIgnore({"jakarta.ws.*"})
 public class GitContentManagerTest {
 	private GitDb database;
 	private ISearchProvider searchProvider;

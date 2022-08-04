@@ -18,8 +18,8 @@ package uk.ac.cam.cl.dtg.isaac.api;
 import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,21 +47,21 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.EntityTag;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Request;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.EntityTag;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Request;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -76,7 +76,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * Games boards Facade.
  */
 @Path("/")
-@Api(value = "/gameboards")
+@Tag(name = "/gameboards")
 public class GameboardsFacade extends AbstractIsaacFacade {
     private GameManager gameManager;
     private UserAccountManager userManager;
@@ -156,7 +156,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     @Path("gameboards")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Get a temporary board of questions matching provided constraints.")
+    @Operation(summary = "Get a temporary board of questions matching provided constraints.")
     public final Response generateTemporaryGameboard(@Context final HttpServletRequest request,
             @QueryParam("title") final String title, @QueryParam("subjects") final String subjects,
             @QueryParam("fields") final String fields, @QueryParam("topics") final String topics,
@@ -231,7 +231,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     @Path("gameboards/{gameboard_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Get the details of a gameboard.")
+    @Operation(summary = "Get the details of a gameboard.")
     public final Response getGameboard(@Context final Request request,
             @Context final HttpServletRequest httpServletRequest, @PathParam("gameboard_id") final String gameboardId) {
 
@@ -292,7 +292,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     @Path("fasttrack/{gameboard_id}/concepts")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Get the progress of the current user at a FastTrack gameboard.")
+    @Operation(summary = "Get the progress of the current user at a FastTrack gameboard.")
     public final Response getFastTrackConceptFromHistory(@Context final Request request,
                                                          @Context final HttpServletRequest httpServletRequest,
                                                          @PathParam("gameboard_id") final String gameboardId,
@@ -350,8 +350,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     @Path("gameboards")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Create a new gameboard from a template GameboardDTO.",
-                  notes = "Only staff users can provide custom IDs, wildcards or tags.")
+    @Operation(summary = "Create a new gameboard from a template GameboardDTO.",
+                  description = "Only staff users can provide custom IDs, wildcards or tags.")
     public final Response createGameboard(
             @Context final HttpServletRequest request,
             final GameboardDTO newGameboardObject) {
@@ -433,8 +433,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     @Path("gameboards/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Change a gameboards title and link the current user to it.",
-                  notes = "It is only possible to change the name of a gameboard.")
+    @Operation(summary = "Change a gameboards title and link the current user to it.",
+                  description = "It is only possible to change the name of a gameboard.")
     public final Response renameAndSaveGameboard(@Context final HttpServletRequest request,
             @PathParam("id") final String gameboardId, @QueryParam("title") final String newGameboardTitle) {
 
@@ -519,7 +519,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     @Path("gameboards/user_gameboards")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "List all gameboards linked to the current user.")
+    @Operation(summary = "List all gameboards linked to the current user.")
     public final Response getGameboardsByCurrentUser(@Context final HttpServletRequest request,
             @QueryParam("start_index") final String startIndex, @QueryParam("limit") final String limit,
             @QueryParam("sort") final String sortInstructions, @QueryParam("show_only") final String showCriteria) {
@@ -636,8 +636,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
      */
     @POST
     @Path("gameboards/user_gameboards/{gameboard_id}")
-    @ApiOperation(value = "Link a gameboard to the current user.",
-                  notes = "This will save a persistent copy of the gameboard if it was a temporary board.")
+    @Operation(summary = "Link a gameboard to the current user.",
+                  description = "This will save a persistent copy of the gameboard if it was a temporary board.")
     public final Response linkUserToGameboard(@Context final HttpServletRequest request,
             @PathParam("gameboard_id") final String gameboardId) {
 
@@ -691,8 +691,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     @DELETE
     @Path("gameboards/user_gameboards/{gameboard_id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Unlink the current user from one or a comma separated list of gameboards.",
-                  notes = "This will not delete or modify the gameboard.")
+    @Operation(summary = "Unlink the current user from one or a comma separated list of gameboards.",
+                  description = "This will not delete or modify the gameboard.")
     public Response unlinkUserFromGameboard(@Context final HttpServletRequest request,
             @PathParam("gameboard_id") final String gameboardIds) {
 
@@ -727,7 +727,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     @Path("gameboards/wildcards")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "List all possible gameboard wildcards.")
+    @Operation(summary = "List all possible gameboard wildcards.")
     public final Response getWildCards(@Context final Request request) {
 
         try {
