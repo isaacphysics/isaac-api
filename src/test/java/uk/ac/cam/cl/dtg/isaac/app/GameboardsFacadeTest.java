@@ -17,9 +17,9 @@ package uk.ac.cam.cl.dtg.isaac.app;
 
 import java.util.List;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 
 import static org.easymock.EasyMock.*;
 import static org.junit.Assert.*;
@@ -89,7 +89,7 @@ public class GameboardsFacadeTest {
 	 * @throws ContentManagerException
 	 */
 	@Test
-	@PowerMockIgnore({ "javax.ws.*" })
+	@PowerMockIgnore({ "jakarta.ws.*" })
 	public final void isaacEndPoint_checkEmptyGameboardCausesErrorNoUser_SegueErrorResponseShouldBeReturned()
 			throws NoWildcardException, SegueDatabaseException, NoUserLoggedInException,
 			ContentManagerException {

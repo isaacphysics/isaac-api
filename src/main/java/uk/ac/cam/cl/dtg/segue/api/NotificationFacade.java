@@ -16,8 +16,8 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
 import com.google.inject.Inject;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,16 +34,16 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import java.util.List;
 
 /**
@@ -52,7 +52,7 @@ import java.util.List;
  * Currently we support sending something like a user study participation request to all users.
  */
 @Path("/notifications")
-@Api(value = "/notifications")
+@Tag(name = "/notifications")
 public class NotificationFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(NotificationFacade.class);
 
@@ -88,8 +88,8 @@ public class NotificationFacade extends AbstractSegueFacade {
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "List any notifications for the current user.",
-                  notes = "This is the old notification delivery method. Newer notifications may be WebSocket based.")
+    @Operation(summary = "List any notifications for the current user.",
+                  description = "This is the old notification delivery method. Newer notifications may be WebSocket based.")
     public Response getMyNotifications(@Context final HttpServletRequest request) {
         try {
             List<ContentDTO> listOfNotifications;
@@ -126,8 +126,8 @@ public class NotificationFacade extends AbstractSegueFacade {
     @Path("/{notification_id}/{response_from_user}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Record user response to a notification.",
-                  notes = "The response should be one of: ACKNOWLEDGED, POSTPONED, DISABLED.")
+    @Operation(summary = "Record user response to a notification.",
+                  description = "The response should be one of: ACKNOWLEDGED, POSTPONED, DISABLED.")
     public Response updateNotificationStatus(@Context final HttpServletRequest request,
             @PathParam("notification_id") final String notificationId,
             @PathParam("response_from_user") final String responseFromUser) {

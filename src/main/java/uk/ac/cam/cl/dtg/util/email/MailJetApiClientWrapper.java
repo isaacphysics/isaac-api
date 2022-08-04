@@ -33,9 +33,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.segue.api.managers.ExternalAccountSynchronisationException;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 public class MailJetApiClientWrapper {
 

@@ -47,7 +47,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import java.io.IOException;
 import java.sql.Array;
 import java.sql.Connection;

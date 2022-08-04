@@ -19,7 +19,7 @@ import java.util.Date;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.api.client.util.Sets;

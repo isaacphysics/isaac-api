@@ -39,7 +39,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuizSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;

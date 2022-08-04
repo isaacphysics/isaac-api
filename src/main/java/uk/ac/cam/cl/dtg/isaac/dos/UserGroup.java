@@ -16,7 +16,7 @@
 package uk.ac.cam.cl.dtg.isaac.dos;
 
 import java.util.Date;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 
 /**
  * UserGroupDO - this object represents a group or collection of users

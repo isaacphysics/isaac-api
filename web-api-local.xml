@@ -27,7 +27,7 @@
         <servlet-name>Isaac</servlet-name>
         <servlet-class>org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher</servlet-class>
         <init-param>
-            <param-name>javax.ws.rs.Application</param-name>
+            <param-name>jakarta.ws.rs.Application</param-name>
             <param-value>uk.ac.cam.cl.dtg.isaac.configuration.IsaacApplicationRegister</param-value>
         </init-param>
         <init-param>

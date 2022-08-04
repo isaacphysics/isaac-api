@@ -24,12 +24,12 @@ import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import javax.annotation.Nullable;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.CacheControl;
-import javax.ws.rs.core.EntityTag;
-import javax.ws.rs.core.Request;
-import javax.ws.rs.core.Response;
+import jakarta.annotation.Nullable;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.core.CacheControl;
+import jakarta.ws.rs.core.EntityTag;
+import jakarta.ws.rs.core.Request;
+import jakarta.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.Collections;
 
