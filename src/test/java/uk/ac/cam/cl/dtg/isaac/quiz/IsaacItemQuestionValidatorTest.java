@@ -41,7 +41,7 @@ import static org.junit.Assert.assertTrue;
  * Test class for the Item Question Validator class.
  *
  */
-@PowerMockIgnore({"javax.ws.*"})
+@PowerMockIgnore({"jakarta.ws.*"})
 public class IsaacItemQuestionValidatorTest {
     private IsaacItemQuestionValidator validator;
     private IsaacItemQuestion someItemQuestion;

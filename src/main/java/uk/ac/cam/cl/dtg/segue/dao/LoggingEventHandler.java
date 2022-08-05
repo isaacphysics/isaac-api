@@ -18,7 +18,7 @@ package uk.ac.cam.cl.dtg.segue.dao;
 
 import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  *  Abstract class for handling logging events raised

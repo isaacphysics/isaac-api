@@ -18,8 +18,8 @@ package uk.ac.cam.cl.dtg.segue.api;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
@@ -47,21 +47,21 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.EntityTag;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Request;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.EntityTag;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Request;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -77,7 +77,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * @author Stephen Cummins
  */
 @Path("/groups")
-@Api(value = "/groups")
+@Tag(name = "/groups")
 public class GroupsFacade extends AbstractSegueFacade {
     private final UserAccountManager userManager;
 
@@ -127,7 +127,7 @@ public class GroupsFacade extends AbstractSegueFacade {
     @GET
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "List all groups owned or managed by the current user.")
+    @Operation(summary = "List all groups owned or managed by the current user.")
     public Response getGroupsForCurrentUser(@Context final HttpServletRequest request,
                                             @Context final Request cacheRequest, @QueryParam("archived_groups_only") final boolean archivedGroupsOnly) {
         try {
@@ -286,7 +286,7 @@ public class GroupsFacade extends AbstractSegueFacade {
     @GET
     @Path("/{user_id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "List all groups owned or managed by another user.")
+    @Operation(summary = "List all groups owned or managed by another user.")
     public Response getGroupsForGivenUser(@Context final HttpServletRequest request,
                                           @PathParam("user_id") final Long userId) {
         try {
@@ -325,8 +325,8 @@ public class GroupsFacade extends AbstractSegueFacade {
     @Path("/")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Create a new group.",
-                  notes = "The group information must be a GroupDTO object, although only 'groupName' is used.")
+    @Operation(summary = "Create a new group.",
+                  description = "The group information must be a GroupDTO object, although only 'groupName' is used.")
     public Response createGroup(@Context final HttpServletRequest request, final UserGroup groupDTO) {
         if (null == groupDTO.getGroupName() || groupDTO.getGroupName().isEmpty()) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Group name must be specified.").toResponse();
@@ -373,8 +373,8 @@ public class GroupsFacade extends AbstractSegueFacade {
     @Path("/{group_id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Update an existing group.",
-                  notes = "The 'group_id' parameter must match the group ID in the request body.")
+    @Operation(summary = "Update an existing group.",
+                  description = "The 'group_id' parameter must match the group ID in the request body.")
     public Response editGroup(@Context final HttpServletRequest request, final UserGroupDTO groupDTO,
                               @PathParam("group_id") final Long groupId) {
         if (null == groupDTO.getGroupName() || groupDTO.getGroupName().isEmpty()) {
@@ -427,7 +427,7 @@ public class GroupsFacade extends AbstractSegueFacade {
     @GET
     @Path("{group_id}/membership/")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "List all members of a group.")
+    @Operation(summary = "List all members of a group.")
     public Response getUsersInGroup(@Context final HttpServletRequest request, @Context final Request cacheRequest,
                                     @PathParam("group_id") final Long groupId) {
         if (null == groupId) {
@@ -480,8 +480,8 @@ public class GroupsFacade extends AbstractSegueFacade {
     @Path("{group_id}/membership/{user_id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Add a user to a group without approval.",
-                  notes = "This endpoint does not grant group owners access to the user's data.")
+    @Operation(summary = "Add a user to a group without approval.",
+                  description = "This endpoint does not grant group owners access to the user's data.")
     public Response addUserToGroup(@Context final HttpServletRequest request,
                                    @PathParam("group_id") final Long groupId, @PathParam("user_id") final Long userId) {
         if (null == groupId) {
@@ -524,7 +524,7 @@ public class GroupsFacade extends AbstractSegueFacade {
     @Path("{group_id}/membership/{user_id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Remove a user from a group.")
+    @Operation(summary = "Remove a user from a group.")
     public Response removeUserFromGroup(@Context final HttpServletRequest request, @Context final Request cacheRequest,
                                         @PathParam("group_id") final Long groupId, @PathParam("user_id") final Long userId) {
         if (null == groupId) {
@@ -571,7 +571,7 @@ public class GroupsFacade extends AbstractSegueFacade {
     @Path("/{group_id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Delete a group.")
+    @Operation(summary = "Delete a group.")
     public Response deleteGroup(@Context final HttpServletRequest request,
                                 @PathParam("group_id") final Long groupId) {
         if (null == groupId) {
@@ -617,8 +617,8 @@ public class GroupsFacade extends AbstractSegueFacade {
     @Path("{group_id}/manager")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Add an additional manager to a group.",
-                  notes = "The email of the user to add must be provided as 'email' in the request body and they must have a teacher account.")
+    @Operation(summary = "Add an additional manager to a group.",
+                  description = "The email of the user to add must be provided as 'email' in the request body and they must have a teacher account.")
     public Response addAdditionalManagerToGroup(@Context final HttpServletRequest request,
                                                 @PathParam("group_id") final Long groupId,
                                                 final Map<String, String> responseMap) {
@@ -687,7 +687,7 @@ public class GroupsFacade extends AbstractSegueFacade {
     @Path("{group_id}/manager/{user_id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Remove an additional manager from a group.")
+    @Operation(summary = "Remove an additional manager from a group.")
     public Response removeAdditionalManagerFromGroup(@Context final HttpServletRequest request,
                                                 @PathParam("group_id") final Long groupId,
                                                    @PathParam("user_id") final Long userIdToRemove) {
@@ -737,7 +737,7 @@ public class GroupsFacade extends AbstractSegueFacade {
     @GET
     @Path("{group_id}/progress")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Get the progress across all the assignments of the group members.")
+    @Operation(summary = "Get the progress across all the assignments of the group members.")
     public Response getGroupProgress(@Context final HttpServletRequest request,
                                      @PathParam("group_id") final Long groupId) {
         try {

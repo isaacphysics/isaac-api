@@ -2,7 +2,7 @@ package uk.ac.cam.cl.dtg.isaac.dos;
 
 import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import java.util.List;
 import java.util.stream.Collectors;
 

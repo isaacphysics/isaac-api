@@ -45,7 +45,7 @@ import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.WEBSOCKET_LATENCY
  *
  * @author Dan Underwood
  */
-@WebSocket
+@WebSocket(idleTimeout=65000)
 public class UserAlertsWebSocket implements IAlertListener {
     private static class Protocol {
         static final String HEARTBEAT = "heartbeat";

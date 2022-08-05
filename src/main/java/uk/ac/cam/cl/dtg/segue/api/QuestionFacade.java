@@ -17,14 +17,37 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuiz;
 import uk.ac.cam.cl.dtg.isaac.dos.TestCase;
 import uk.ac.cam.cl.dtg.isaac.dos.TestQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
+import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.quiz.ValidatorUnavailableException;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -41,32 +64,9 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
-import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
-import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
-import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
-import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
-import uk.ac.cam.cl.dtg.isaac.quiz.ValidatorUnavailableException;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
@@ -81,7 +81,7 @@ import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdF
  * 
  */
 @Path("/questions")
-@Api(value = "/questions")
+@Tag(name = "/questions")
 public class QuestionFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(QuestionFacade.class);
 
@@ -142,7 +142,7 @@ public class QuestionFacade extends AbstractSegueFacade {
      */
     @GET
     @Path("{question_id}/answer")
-    @ApiOperation(value = "Provide users who try to cheat with a guide to the location of our help page.")
+    @Operation(summary = "Provide users who try to cheat with a guide to the location of our help page.")
     public Response getQuestionAnswer(@Context final HttpServletRequest request, @PathParam("question_id") final String questionId) {
         String errorMessage = String.format("We do not provide answers to questions. See https://%s/solving_problems for more help!",
                                             getProperties().getProperty(HOST_NAME));
@@ -176,7 +176,7 @@ public class QuestionFacade extends AbstractSegueFacade {
     @GET
     @Path("answered_questions/{user_id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Return a count of question attempts per month.")
+    @Operation(summary = "Return a count of question attempts per month.")
     public Response getQuestionsAnswered(@Context final HttpServletRequest request,
                                       @PathParam("user_id") final Long userIdOfInterest,
                                       @QueryParam("from_date") final Long fromDate,
@@ -242,8 +242,8 @@ public class QuestionFacade extends AbstractSegueFacade {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Submit an answer to a question.",
-                  notes = "The answer must be the correct Choice subclass for the question with the provided ID.")
+    @Operation(summary = "Submit an answer to a question.",
+                  description = "The answer must be the correct Choice subclass for the question with the provided ID.")
     public Response answerQuestion(@Context final HttpServletRequest request,
             @PathParam("question_id") final String questionId, final String jsonAnswer) {
         if (null == jsonAnswer || jsonAnswer.isEmpty()) {
@@ -375,7 +375,7 @@ public class QuestionFacade extends AbstractSegueFacade {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Test a list of choices with some expected answer values")
+    @Operation(summary = "Test a list of choices with some expected answer values")
     public Response testQuestion(@Context final HttpServletRequest request,
                                  @QueryParam("type") final String questionType, final String testJson) {
         try {
@@ -408,7 +408,7 @@ public class QuestionFacade extends AbstractSegueFacade {
     @Path("generateSpecification")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Turn an answer into a question specification.")
+    @Operation(summary = "Turn an answer into a question specification.")
     public Response generateSpecification(@Context final HttpServletRequest request, final String jsonAnswer) {
         if (null == jsonAnswer || jsonAnswer.isEmpty()) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "No answer received.").toResponse();
