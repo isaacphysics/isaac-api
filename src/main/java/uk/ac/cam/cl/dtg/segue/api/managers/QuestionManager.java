@@ -34,6 +34,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacItemQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
 import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
+import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
@@ -63,8 +64,8 @@ import uk.ac.cam.cl.dtg.isaac.quiz.SpecifiesWith;
 import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
 import uk.ac.cam.cl.dtg.isaac.quiz.ValidatorUnavailableException;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -156,7 +157,7 @@ public class QuestionManager {
 
             log.debug("Validator for question validation found. Using : "
                     + questionType.getAnnotation(ValidatesWith.class).value());
-            Injector injector = IsaacApplicationRegister.injector;
+            Injector injector = SegueGuiceConfigurationModule.getGuiceInjector();
             return injector.getInstance(questionType.getAnnotation(ValidatesWith.class).value());
 
         } else if (questionType.equals(Question.class)) {
@@ -188,7 +189,7 @@ public class QuestionManager {
 
             log.debug("Specifier for specifiation creation found. Using : "
                 + choiceClass.getAnnotation(SpecifiesWith.class).value());
-            Injector injector = IsaacApplicationRegister.injector;
+            Injector injector = SegueGuiceConfigurationModule.getGuiceInjector();
             return injector.getInstance(choiceClass.getAnnotation(SpecifiesWith.class).value());
 
         } else if (choiceClass.equals(ChoiceDTO.class)) {

@@ -7,8 +7,8 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMetricsExporter;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
 import java.util.Collection;
 import java.util.List;
 

@@ -8,15 +8,14 @@ import uk.ac.cam.cl.dtg.isaac.IsaacIntegrationTest;
 import uk.ac.cam.cl.dtg.segue.api.InfoFacade;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
 
-import javax.ws.rs.core.Request;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Request;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 import static org.easymock.EasyMock.createNiceMock;
 
-@PowerMockIgnore("javax.net.ssl.*")
 // NOTE: This was a proof of concept but I'm not too sure we actually need this entire test suite.
 public class InfoFacadeTest extends IsaacIntegrationTest {
 

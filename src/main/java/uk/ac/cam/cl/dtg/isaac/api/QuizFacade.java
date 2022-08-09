@@ -20,8 +20,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.errorprone.annotations.DoNotCall;
 import com.google.inject.Inject;
 import com.opencsv.CSVWriter;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,22 +67,22 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import javax.annotation.Nullable;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.FormParam;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.EntityTag;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Request;
-import javax.ws.rs.core.Response;
+import jakarta.annotation.Nullable;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.FormParam;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.EntityTag;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Request;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -94,8 +94,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static javax.ws.rs.core.Response.Status;
-import static javax.ws.rs.core.Response.ok;
+import static jakarta.ws.rs.core.Response.Status;
+import static jakarta.ws.rs.core.Response.ok;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdFromQuestionId;
@@ -104,7 +104,7 @@ import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdF
  * Quiz Facade
  */
 @Path("/quiz")
-@Api(value = "/quiz")
+@Tag(name = "/quiz")
 public class QuizFacade extends AbstractIsaacFacade {
     private final GitContentManager contentManager;
     private final QuizManager quizManager;
@@ -173,7 +173,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @GET
     @Path("/available")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Get tests visible to this user, from index 0.")
+    @Operation(summary = "Get tests visible to this user, from index 0.")
     public final Response getAvailableQuizzes(@Context final HttpServletRequest request) {
         return getAvailableQuizzes(request, 0);
     }
@@ -189,7 +189,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/available/{startIndex}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Get tests visible to this user, from the specified index.")
+    @Operation(summary = "Get tests visible to this user, from the specified index.")
     public final Response getAvailableQuizzes(@Context final HttpServletRequest request,
                                               @PathParam("startIndex") final Integer startIndex) {
         try {
@@ -229,7 +229,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/assignments")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Get tests assigned to this user.")
+    @Operation(summary = "Get tests assigned to this user.")
     public final Response getAssignedQuizzes(@Context final HttpServletRequest request) {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(request);
@@ -264,7 +264,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/free_attempts")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Get tests freely attempted by this user.")
+    @Operation(summary = "Get tests freely attempted by this user.")
     public final Response getFreeAttempts(@Context final HttpServletRequest request) {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(request);
@@ -299,7 +299,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/{quizId}/preview")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Preview an individual test.")
+    @Operation(summary = "Preview an individual test.")
     public final Response previewQuiz(@Context final Request request,
                                       @Context final HttpServletRequest httpServletRequest,
                                       @PathParam("quizId") final String quizId) {
@@ -357,7 +357,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/assignment/{quizAssignmentId}/attempt")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Start a test attempt.")
+    @Operation(summary = "Start a test attempt.")
     public final Response startQuizAttempt(@Context final Request request,
                                            @Context final HttpServletRequest httpServletRequest,
                                            @PathParam("quizAssignmentId") final Long quizAssignmentId) {
@@ -423,7 +423,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/{quizId}/attempt")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Start a free test attempt.")
+    @Operation(summary = "Start a free test attempt.")
     public final Response startFreeQuizAttempt(@Context final Request request,
                                                @Context final HttpServletRequest httpServletRequest,
                                                @PathParam("quizId") final String quizId) {
@@ -488,7 +488,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/attempt/{quizAttemptId}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Get the QuizDTO for a test attempt.")
+    @Operation(summary = "Get the QuizDTO for a test attempt.")
     public final Response getQuizAttempt(@Context final HttpServletRequest httpServletRequest,
                                          @PathParam("quizAttemptId") final Long quizAttemptId) {
         try {
@@ -534,7 +534,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/attempt/{quizAttemptId}/feedback")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Get the feedback for a test attempt.")
+    @Operation(summary = "Get the feedback for a test attempt.")
     public final Response getQuizAttemptFeedback(@Context final HttpServletRequest httpServletRequest,
                                                  @PathParam("quizAttemptId") final Long quizAttemptId) {
         try {
@@ -596,7 +596,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/attempt/{quizAttemptId}/complete")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Mark a QuizAttempt as complete.")
+    @Operation(summary = "Mark a QuizAttempt as complete.")
     public final Response completeQuizAttempt(@Context final HttpServletRequest httpServletRequest,
                                               @PathParam("quizAttemptId") final Long quizAttemptId) {
         try {
@@ -645,7 +645,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/assignment/{quizAssignmentId}/{userId}/incomplete")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Mark a QuizAttempt as incomplete.")
+    @Operation(summary = "Mark a QuizAttempt as incomplete.")
     public final Response markIncompleteQuizAttempt(@Context final HttpServletRequest httpServletRequest,
                                                     @PathParam("quizAssignmentId") final Long quizAssignmentId,
                                                     @PathParam("userId") final Long userId) {
@@ -721,7 +721,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/attempt/{quizAttemptId}/log")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Get the QuizDTO for a test attempt.")
+    @Operation(summary = "Get the QuizDTO for a test attempt.")
     public Response logQuizSectionView(@Context final HttpServletRequest httpServletRequest,
                                        @PathParam("quizAttemptId") final Long quizAttemptId,
                                        @FormParam("sectionNumber") Integer sectionNumber) {
@@ -739,7 +739,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                 QUIZ_ID_FKEY, quizAttempt.getQuizId(),
                 QUIZ_ATTEMPT_FK, quizAttempt.getId(),
                 QUIZ_ASSIGNMENT_FK, assignment != null ? assignment.getId().toString() : "FREE_ATTEMPT",
-                ASSIGNMENT_DUEDATE_FK, assignment == null || assignment.getDueDate() == null ? "NO_DUE_DATE" : assignment.getDueDate(),
+                ASSIGNMENT_DUEDATE, assignment == null || assignment.getDueDate() == null ? "NO_DUE_DATE" : assignment.getDueDate(),
                 QUIZ_SECTION, sectionNumber
             );
 
@@ -775,8 +775,8 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Submit an answer to a question.",
-        notes = "The answer must be the correct Choice subclass for the question with the provided ID.")
+    @Operation(summary = "Submit an answer to a question.",
+        description = "The answer must be the correct Choice subclass for the question with the provided ID.")
     public Response answerQuestion(@Context final HttpServletRequest request,
                                    @PathParam("quizAttemptId") final Long quizAttemptId,
                                    @PathParam("question_id") final String questionId,
@@ -857,7 +857,7 @@ public class QuizFacade extends AbstractIsaacFacade {
      */
     @DELETE
     @Path("/attempt/{quizAttemptId}")
-    @ApiOperation(value = "Abandon a started free test attempt.")
+    @Operation(summary = "Abandon a started free test attempt.")
     public final Response abandonQuizAttempt(@Context final HttpServletRequest httpServletRequest,
                                              @PathParam("quizAttemptId") final Long quizAttemptId) {
         try {
@@ -908,7 +908,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/assignment")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Set a test to a group, with an optional due date.")
+    @Operation(summary = "Set a test to a group, with an optional due date.")
     public final Response createQuizAssignment(@Context final HttpServletRequest request,
                                                final QuizAssignmentDTO clientQuizAssignment) {
 
@@ -946,7 +946,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                 QUIZ_ID_FKEY, assignmentWithID.getQuizId(),
                 GROUP_FK, assignmentWithID.getGroupId(),
                 QUIZ_ASSIGNMENT_FK, assignmentWithID.getId(),
-                ASSIGNMENT_DUEDATE_FK, assignmentWithID.getDueDate() == null ? "NO_DUE_DATE" : assignmentWithID.getDueDate()
+                ASSIGNMENT_DUEDATE, assignmentWithID.getDueDate() == null ? "NO_DUE_DATE" : assignmentWithID.getDueDate()
             );
 
             this.getLogManager().logEvent(currentlyLoggedInUser, request, Constants.IsaacServerLogType.SET_NEW_QUIZ_ASSIGNMENT, eventDetails);
@@ -981,7 +981,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/assigned")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Get tests assigned by this user.")
+    @Operation(summary = "Get tests assigned by this user.")
     public Response getQuizAssignments(@Context HttpServletRequest request,
                                        @QueryParam("groupId") Long groupIdOfInterest) {
         try {
@@ -1035,7 +1035,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/assignment/{quizAssignmentId}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "View a test assignment.")
+    @Operation(summary = "View a test assignment.")
     public final Response getQuizAssignment(@Context final HttpServletRequest httpServletRequest,
                                             @PathParam("quizAssignmentId") Long quizAssignmentId) {
 
@@ -1110,7 +1110,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/assignment/{quizAssignmentId}/download")
     @Produces("text/csv")
     @GZIP
-    @ApiOperation(value = "Download a test assignment as a CSV.")
+    @Operation(summary = "Download a test assignment as a CSV.")
     public final Response getQuizAssignmentCSV(@Context final HttpServletRequest httpServletRequest,
                                                @PathParam("quizAssignmentId") Long quizAssignmentId,
                                                @QueryParam("format") final String formatMode) {
@@ -1227,7 +1227,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/group/{groupId}/download")
     @Produces("text/csv")
     @GZIP
-    @ApiOperation(value = "Download a CSV with all the quiz results of a given group")
+    @Operation(summary = "Download a CSV with all the quiz results of a given group")
     public final Response getQuizResultsForGroup(@Context final HttpServletRequest httpServletRequest,
                                                  @PathParam("groupId") Long groupId,
                                                  @QueryParam("format") final String formatMode) {
@@ -1426,7 +1426,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/assignment/{quizAssignmentId}/attempt/{userId}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "View a test assignment attempt.")
+    @Operation(summary = "View a test assignment attempt.")
     public final Response getQuizAssignmentAttempt(@Context final HttpServletRequest httpServletRequest,
                                                    @PathParam("quizAssignmentId") Long quizAssignmentId,
                                                    @PathParam("userId") Long userId) {
@@ -1508,7 +1508,7 @@ public class QuizFacade extends AbstractIsaacFacade {
      */
     @POST
     @Path("/assignment/{quizAssignmentId}")
-    @ApiOperation(value = "Update a test assignment (only feedbackMode and dueDate may be updated).")
+    @Operation(summary = "Update a test assignment (only feedbackMode and dueDate may be updated).")
     public final Response updateQuizAssignment(@Context final HttpServletRequest httpServletRequest,
                                                @PathParam("quizAssignmentId") Long quizAssignmentId,
                                                final QuizAssignmentDTO clientQuizAssignment) {
@@ -1553,7 +1553,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                         GROUP_FK, assignment.getGroupId(),
                         QUIZ_ASSIGNMENT_FK, assignment.getId(),
                         QUIZ_OLD_DUEDATE, assignment.getDueDate(),
-                        ASSIGNMENT_DUEDATE_FK, clientQuizAssignment.getDueDate()
+                        ASSIGNMENT_DUEDATE, clientQuizAssignment.getDueDate()
                 );
                 this.getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.UPDATE_QUIZ_DEADLINE, eventDetails);
             } else if (assignment.getDueDate() == null && clientQuizAssignment.getDueDate() != null) {
@@ -1562,7 +1562,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                         GROUP_FK, assignment.getGroupId(),
                         QUIZ_ASSIGNMENT_FK, assignment.getId(),
                         QUIZ_OLD_DUEDATE, "NO_DUE_DATE",
-                        ASSIGNMENT_DUEDATE_FK, clientQuizAssignment.getDueDate()
+                        ASSIGNMENT_DUEDATE, clientQuizAssignment.getDueDate()
                 );
                 this.getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.UPDATE_QUIZ_DEADLINE, eventDetails);
             }
@@ -1601,7 +1601,7 @@ public class QuizFacade extends AbstractIsaacFacade {
      */
     @DELETE
     @Path("/assignment/{quizAssignmentId}")
-    @ApiOperation(value = "Cancel a test assignment.")
+    @Operation(summary = "Cancel a test assignment.")
     public final Response cancelQuizAssignment(@Context final HttpServletRequest httpServletRequest,
                                                @PathParam("quizAssignmentId") Long quizAssignmentId) {
 
@@ -1626,7 +1626,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             Map<String, Object> eventDetails = ImmutableMap.of(
                     QUIZ_ID_FKEY, assignment.getQuizId(),
                     QUIZ_ASSIGNMENT_FK, assignment.getId().toString(),
-                    ASSIGNMENT_DUEDATE_FK, assignment.getDueDate() == null ? "NO_DUE_DATE" : assignment.getDueDate()
+                    ASSIGNMENT_DUEDATE, assignment.getDueDate() == null ? "NO_DUE_DATE" : assignment.getDueDate()
             );
             getLogManager().logEvent(user, httpServletRequest, Constants.IsaacServerLogType.DELETE_QUIZ_ASSIGNMENT, eventDetails);
 

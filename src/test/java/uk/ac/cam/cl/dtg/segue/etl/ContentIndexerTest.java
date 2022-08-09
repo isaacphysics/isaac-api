@@ -41,7 +41,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
  * Test class for the GitContentManager class.
  *
  */
-@PowerMockIgnore({"javax.ws.*"})
+@PowerMockIgnore({"jakarta.ws.*"})
 public class ContentIndexerTest {
     private GitDb database;
     private ElasticSearchIndexer searchProvider;

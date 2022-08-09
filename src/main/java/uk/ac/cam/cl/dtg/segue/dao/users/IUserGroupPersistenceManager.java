@@ -25,7 +25,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.GroupMembership;
 import uk.ac.cam.cl.dtg.isaac.dos.GroupMembershipStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.UserGroup;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 
 /**
  * Interface for data manager classes that deal with group data.

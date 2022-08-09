@@ -34,7 +34,7 @@ import static org.junit.Assert.fail;
  * Test class for the user manager class.
  * 
  */
-@PowerMockIgnore({ "javax.ws.*" })
+@PowerMockIgnore({"jakarta.ws.*"})
 public class MisuseMonitorTest {
     private PropertiesLoader dummyPropertiesLoader;
     private EmailManager dummyCommunicator;

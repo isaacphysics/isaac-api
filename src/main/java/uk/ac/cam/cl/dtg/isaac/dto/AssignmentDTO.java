@@ -35,6 +35,7 @@ public class AssignmentDTO implements IAssignmentLike {
     private UserSummaryDTO assignerSummary;
     private Date creationDate;
     private Date dueDate;
+    private Date scheduledStartDate;
 
     /**
      * Complete AssignmentDTO constructor with all dependencies.
@@ -43,17 +44,21 @@ public class AssignmentDTO implements IAssignmentLike {
      * @param gameboardId
      *            - The gameboard to assign as homework.
      * @param ownerUserId
-*            - User id of the owner of the gameboard.
+     *            - User id of the owner of the gameboard.
      * @param groupId
-*            - Group id who should be assigned the game board.
+     *            - Group id who should be assigned the game board.
      * @param groupName
      * @param notes
      * @param creationDate
- *            - the date the assignment was created.
+     *            - the date the assignment was created.
      * @param dueDate
+     *        - the date the assignment is due (should be completed by)
+     * @param scheduledStartDate
+     *        - the date the assignment should be shown to users/groups that it is set to
      */
     public AssignmentDTO(final Long id, final String gameboardId, final Long ownerUserId, final Long groupId,
-                         String groupName, String notes, final Date creationDate, final Date dueDate) {
+                         String groupName, String notes, final Date creationDate, final Date dueDate,
+                         final Date scheduledStartDate) {
         this.id = id;
         this.gameboardId = gameboardId;
         this.ownerUserId = ownerUserId;
@@ -62,6 +67,7 @@ public class AssignmentDTO implements IAssignmentLike {
         this.notes = notes;
         this.creationDate = creationDate;
         this.dueDate = dueDate;
+        this.scheduledStartDate = scheduledStartDate;
     }
 
     /**
@@ -273,4 +279,21 @@ public class AssignmentDTO implements IAssignmentLike {
     public void setDueDate(Date dueDate) {
         this.dueDate = dueDate;
     }
+
+    /**
+     * get the date of when the assignment should be displayed to users.
+     * @return scheduledStartDate
+     */
+    public Date getScheduledStartDate() {
+        return scheduledStartDate;
+    }
+
+    /**
+     * set the date of when the assignment should be displayed to users.
+     * @param scheduledStartDate - the scheduled start date
+     */
+    public void setScheduledStartDate(Date scheduledStartDate) {
+        this.scheduledStartDate = scheduledStartDate;
+    }
+
 }

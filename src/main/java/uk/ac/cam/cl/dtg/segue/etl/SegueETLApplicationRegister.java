@@ -15,19 +15,15 @@
  */
 package uk.ac.cam.cl.dtg.segue.etl;
 
-import com.google.inject.Guice;
 import com.google.inject.Injector;
-import io.swagger.jaxrs.config.BeanConfig;
+import io.swagger.v3.jaxrs2.integration.resources.AcceptHeaderOpenApiResource;
+import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
+import jakarta.ws.rs.core.Application;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import javax.ws.rs.core.Application;
 import java.util.HashSet;
 import java.util.Set;
-
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * This class registers the resteasy handlers. The name is important since it is used as a String in
@@ -68,8 +64,8 @@ public class SegueETLApplicationRegister extends Application {
     public final Set<Class<?>> getClasses() {
         Set<Class<?>> result = new HashSet<Class<?>>();
 
-        result.add(io.swagger.jaxrs.listing.ApiListingResource.class);
-        result.add(io.swagger.jaxrs.listing.SwaggerSerializers.class);
+        result.add(OpenApiResource.class);
+        result.add(AcceptHeaderOpenApiResource.class);
 
         return result;
     }
@@ -78,23 +74,7 @@ public class SegueETLApplicationRegister extends Application {
      * Configure and setup Swagger (advertises api endpoints via app_root/swagger.json).
      */
     private void setupSwaggerApiAdvertiser() {
-        PropertiesLoader propertiesLoader = injector.getInstance(PropertiesLoader.class);
-        String proxyPath = propertiesLoader.getProperty(PROXY_PATH);
-
-        BeanConfig beanConfig = new BeanConfig();
-        beanConfig.setVersion(propertiesLoader.getProperty(SEGUE_APP_VERSION));
-
-        if (!proxyPath.equals("")) {
-            beanConfig.setBasePath(proxyPath + "/api");
-            beanConfig.setHost("localhost:8090");//propertiesLoader.getProperty(HOST_NAME).substring(0,
-                    //propertiesLoader.getProperty(HOST_NAME).indexOf('/')));
-        } else {
-            beanConfig.setBasePath("/api");
-            beanConfig.setHost("localhost:8090"/*propertiesLoader.getProperty(HOST_NAME)*/);
-        }
-
-        beanConfig.setResourcePackage("uk.ac.cam.cl.dtg.segue.etl");
-        beanConfig.setScan(true);
+        // TODO: is this worth it?
     }
 
 }
