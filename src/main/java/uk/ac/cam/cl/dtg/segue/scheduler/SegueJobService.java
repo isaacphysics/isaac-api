@@ -16,6 +16,8 @@
 package uk.ac.cam.cl.dtg.segue.scheduler;
 
 import com.google.inject.Inject;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
 import org.quartz.CronTrigger;
 import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
@@ -28,8 +30,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
-import jakarta.servlet.ServletContextEvent;
-import jakarta.servlet.ServletContextListener;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -69,16 +69,25 @@ public class SegueJobService implements ServletContextListener {
     }
 
     /**
-     * Handy method to register a collection of Scheduled jobs
+     * Handy method to register a collection of Scheduled jobs.
+     *
      * @param allJobs to register
      * @throws SchedulerException if something goes wrong
      */
-    public void registerScheduledJobs(Collection<SegueScheduledJob> allJobs) throws SchedulerException {
+    public void registerScheduledJobs(final Collection<SegueScheduledJob> allJobs) throws SchedulerException {
         for (SegueScheduledJob s : allJobs) {
             this.registerScheduleJob(s);
         }
     }
 
+    /**
+     * Remove an already-existing job from the Scheduler's list of scheduled jobs.
+     *
+     * If the job isn't already registered, this is safe and will have no effect.
+     *
+     * @param jobToRemove the job to remove
+     * @throws SchedulerException if the job cannot be de-registered
+     */
     public void removeScheduleJob(final SegueScheduledJob jobToRemove) throws SchedulerException {
         JobDetail job = JobBuilder.newJob(jobToRemove.getExecutableTask().getClass())
                 .withIdentity(jobToRemove.getJobKey(),jobToRemove.getJobGroupName())
@@ -95,10 +104,12 @@ public class SegueJobService implements ServletContextListener {
     }
 
     /**
-     * Register or replace the trigger for a single scheduled job.
+     * Register a new job or update the trigger of an existing job.
      *
-     * @param jobToRegister
-     *            add to the queue
+     * This currently does not alter the job details!
+     *
+     * @param jobToRegister the job to schedule
+     * @throws SchedulerException if the job could not be registered
      */
     public void registerScheduleJob(final SegueScheduledJob jobToRegister) throws SchedulerException {
         CronTrigger cronTrigger = TriggerBuilder.newTrigger()
@@ -124,6 +135,11 @@ public class SegueJobService implements ServletContextListener {
         localRegisteredJobs.add(jobToRegister);
     }
 
+    /**
+     * Checks if the scheduler is already running.
+     *
+     * @return true if scheduler already started.
+     */
     public boolean isStarted() {
         try {
             return scheduler.isStarted();
@@ -144,11 +160,11 @@ public class SegueJobService implements ServletContextListener {
     }
 
     @Override
-    public void contextInitialized(ServletContextEvent servletContextEvent) {
+    public void contextInitialized(final ServletContextEvent servletContextEvent) {
     }
 
     @Override
-    public void contextDestroyed(ServletContextEvent servletContextEvent) {
+    public void contextDestroyed(final ServletContextEvent servletContextEvent) {
         try {
             log.info("Shutting down Segue Job Service");
             this.scheduler.shutdown(true);
