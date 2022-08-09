@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.scheduler;
 
 import com.google.inject.Inject;
+import jakarta.annotation.Nullable;
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import org.quartz.CronTrigger;
@@ -43,16 +44,21 @@ public class SegueJobService implements ServletContextListener {
 
     private final List<SegueScheduledJob> allKnownJobs;
     private final List<SegueScheduledJob> localRegisteredJobs;
+    private final List<SegueScheduledJob> jobsToRemove;
 
     private static final Logger log = LoggerFactory.getLogger(SegueJobService.class);
 
     /**
      * A job manager that can execute jobs on a schedule or by trigger.
-     * @param allKnownJobs Collection of jobs to register
+     * @param database the Postgres database used as a job store.
+     * @param allKnownJobs collection of jobs to register
+     * @param jobsToRemove collection of possibly-existing jobs to remove/deregister
      */
     @Inject
-    public SegueJobService(List<SegueScheduledJob> allKnownJobs, PostgresSqlDb database) {
+    public SegueJobService(final PostgresSqlDb database, final List<SegueScheduledJob> allKnownJobs,
+                           @Nullable final List<SegueScheduledJob> jobsToRemove) {
         this.allKnownJobs = allKnownJobs;
+        this.jobsToRemove =jobsToRemove;
         this.localRegisteredJobs = new ArrayList<>();
         StdSchedulerFactory stdSchedulerFactory = new StdSchedulerFactory();
 
@@ -90,17 +96,30 @@ public class SegueJobService implements ServletContextListener {
      */
     public void removeScheduleJob(final SegueScheduledJob jobToRemove) throws SchedulerException {
         JobDetail job = JobBuilder.newJob(jobToRemove.getExecutableTask().getClass())
-                .withIdentity(jobToRemove.getJobKey(),jobToRemove.getJobGroupName())
+                .withIdentity(jobToRemove.getJobKey(), jobToRemove.getJobGroupName())
                 .setJobData(new JobDataMap(jobToRemove.getExecutionContext()))
                 .withDescription(jobToRemove.getJobDescription()).build();
 
         scheduler.getContext().remove(jobToRemove.getExecutableTask().getClass().getName(), jobToRemove.getExecutionContext());
 
-        scheduler.deleteJob(job.getKey());
+        boolean deletionNeeded = scheduler.deleteJob(job.getKey());
 
         localRegisteredJobs.remove(jobToRemove);
 
-        log.info(String.format("Fully removed job: %s", jobToRemove.getJobKey()));
+        if (deletionNeeded) {
+            log.info(String.format("Removed existing job: %s", jobToRemove.getJobKey()));
+        } else {
+            log.info(String.format("Skipping removal of non-registered job: %s", jobToRemove.getJobKey()));
+        }
+    }
+
+    public void removeScheduledJobs(final List<SegueScheduledJob> jobsToRemoveList) throws SchedulerException {
+        if (jobsToRemoveList == null) {
+            return;
+        }
+        for (SegueScheduledJob jobToRemove : jobsToRemoveList) {
+            this.removeScheduleJob(jobToRemove);
+        }
     }
 
     /**
@@ -117,7 +136,7 @@ public class SegueJobService implements ServletContextListener {
                 .withSchedule(cronSchedule(jobToRegister.getCronString())).build();
 
         JobDetail job = JobBuilder.newJob(jobToRegister.getExecutableTask().getClass())
-                .withIdentity(jobToRegister.getJobKey(),jobToRegister.getJobGroupName())
+                .withIdentity(jobToRegister.getJobKey(), jobToRegister.getJobGroupName())
                 .setJobData(new JobDataMap(jobToRegister.getExecutionContext()))
                 .withDescription(jobToRegister.getJobDescription()).build();
 
@@ -149,11 +168,13 @@ public class SegueJobService implements ServletContextListener {
     }
 
     /**
-     *  Attempt to register all known jobs and start the scheduler service.
+     *  Attempt to register configured jobs, remove any jobs marked for removal, then start scheduler.
      */
     public synchronized void initialiseService() throws SchedulerException {
         if (!isStarted()) {
             this.registerScheduledJobs(allKnownJobs);
+            this.removeScheduledJobs(jobsToRemove);
+
             scheduler.start();
             log.info("Segue Job Service started.");
         }

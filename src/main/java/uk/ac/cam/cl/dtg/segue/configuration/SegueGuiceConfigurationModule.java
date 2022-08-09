@@ -1011,18 +1011,18 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                 configuredScheduledJobs.add(eventFeedbackEmail);
             }
 
-            segueJobService = new SegueJobService(configuredScheduledJobs, database);
-
-            // Simply removing the following jobs from the configuredScheduledJobs wouldn't remove them from the qrtz_job_details
-            // page so they need properly removing.
+            // Simply removing jobs from configuredScheduledJobs won't de-register them if they
+            // are currently configured, so the constructor takes a list of jobs to remove too.
+            List<SegueScheduledJob> scheduledJobsToRemove = new ArrayList<>();
             if (mailjetKey == null && mailjetSecret == null) {
-                segueJobService.removeScheduleJob(syncMailjetUsers);
+                scheduledJobsToRemove.add(syncMailjetUsers);
             }
 
             if (!eventPrePostEmailsEnabled) {
-                segueJobService.removeScheduleJob(eventReminderEmail);
-                segueJobService.removeScheduleJob(eventFeedbackEmail);
+                scheduledJobsToRemove.add(eventReminderEmail);
+                scheduledJobsToRemove.add(eventFeedbackEmail);
             }
+            segueJobService = new SegueJobService(database, configuredScheduledJobs, scheduledJobsToRemove);
 
         }
 
