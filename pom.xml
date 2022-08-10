@@ -10,7 +10,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <segue.version>v2.25.1-SNAPSHOT</segue.version>
+        <segue.version>v3.0.1-SNAPSHOT</segue.version>
         <log4j.version>2.18.0</log4j.version>
         <resteasy.version>6.0.3.Final</resteasy.version>
         <guice.version>5.1.0</guice.version>
@@ -23,7 +23,7 @@
         <jetty-version>11.0.11</jetty-version>
         <jetty.port.api>8080</jetty.port.api>
         <jetty.port.etl>8090</jetty.port.etl>
-        <testcontainers.version>1.17.2</testcontainers.version>
+        <testcontainers.version>1.17.3</testcontainers.version>
         <web.xml>web-api-live.xml</web.xml>
         <web.xml.etl>web-etl.xml</web.xml.etl>
         <web.xml.local>web-api-local.xml</web.xml.local>
@@ -338,7 +338,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.3.3</version>
+            <version>42.4.1</version>
         </dependency>
 
         <dependency>
