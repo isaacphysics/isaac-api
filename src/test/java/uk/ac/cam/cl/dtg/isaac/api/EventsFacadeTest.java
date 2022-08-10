@@ -65,7 +65,7 @@ public class EventsFacadeTest extends IsaacIntegrationTest {
         assertNotNull(entityObject);
         // We could/should also check its type, but we know what type it should be, so we can just (un)safely cast it
         @SuppressWarnings("unchecked") ResultsWrapper<IsaacEventPageDTO> entity = (ResultsWrapper<IsaacEventPageDTO>) entityObject;
-        // This should be unnecessary, but you never know, check this again just in case the cast fails or something
+        // Check this again just in case the cast fails or something
         assertNotNull(entity);
         List<IsaacEventPageDTO> results = entity.getResults();
         // Check that we retrieved the expected amount of results
@@ -120,9 +120,8 @@ public class EventsFacadeTest extends IsaacIntegrationTest {
         assertEquals(Response.Status.NO_CONTENT.getStatusCode(), cancelBookingResponse.getStatus());
 
         // --- Tear down
-        // This should not be necessary, but we don't actually remove cancelled bookings from the database.
-        // NOTE: This is necessary whenever we modify the database so that we leave the test case with the database
-        //       in a predictable state for the next test case.
+        // BEWARE: Because we don't actually remove the cancelled reservation records from the database, this would
+        //         leave lingering state that may lead to unexpected behaviour in other test cases (e.g., wrong counts).
         PreparedStatement pst = postgresSqlDb.getDatabaseConnection().prepareStatement("DELETE FROM event_bookings WHERE id = ?;");
         pst.setLong(1, ((EventBookingDTO) createBookingResponse.getEntity()).getBookingId());
         pst.executeUpdate();
