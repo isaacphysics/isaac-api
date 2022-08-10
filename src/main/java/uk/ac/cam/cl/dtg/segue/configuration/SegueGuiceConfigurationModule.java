@@ -1001,23 +1001,20 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                     scheduledAssignmentsEmail
             ));
 
+            // Simply removing jobs from configuredScheduledJobs won't de-register them if they
+            // are currently configured, so the constructor takes a list of jobs to remove too.
+            List<SegueScheduledJob> scheduledJobsToRemove = new ArrayList<>();
+
             if (mailjetKey != null && mailjetSecret != null) {
                 configuredScheduledJobs.add(syncMailjetUsers);
+            } else {
+                scheduledJobsToRemove.add(syncMailjetUsers);
             }
 
             if (eventPrePostEmailsEnabled) {
                 configuredScheduledJobs.add(eventReminderEmail);
                 configuredScheduledJobs.add(eventFeedbackEmail);
-            }
-
-            // Simply removing jobs from configuredScheduledJobs won't de-register them if they
-            // are currently configured, so the constructor takes a list of jobs to remove too.
-            List<SegueScheduledJob> scheduledJobsToRemove = new ArrayList<>();
-            if (mailjetKey == null && mailjetSecret == null) {
-                scheduledJobsToRemove.add(syncMailjetUsers);
-            }
-
-            if (!eventPrePostEmailsEnabled) {
+            } else {
                 scheduledJobsToRemove.add(eventReminderEmail);
                 scheduledJobsToRemove.add(eventFeedbackEmail);
             }
