@@ -3,7 +3,6 @@ package uk.ac.cam.cl.dtg.isaac;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.api.client.util.Maps;
-import com.google.common.collect.ImmutableMap;
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.SystemUtils;
 import org.easymock.Capture;
@@ -22,6 +21,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.quiz.PgQuestionAttempts;
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.PgTransactionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
@@ -35,6 +35,7 @@ import uk.ac.cam.cl.dtg.segue.auth.ISecondFactorAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISegueHashingAlgorithm;
 import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v3;
+import uk.ac.cam.cl.dtg.segue.auth.SegueSCryptv1;
 import uk.ac.cam.cl.dtg.segue.auth.SegueTOTPAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AdditionalAuthenticationRequiredException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
@@ -67,6 +68,7 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -74,6 +76,7 @@ import java.util.Map;
 import static org.easymock.EasyMock.and;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.capture;
+import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
@@ -83,7 +86,9 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_LINUX_CONFIG_LOCATION
 import static uk.ac.cam.cl.dtg.segue.api.Constants.EMAIL_SIGNATURE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
-public class IsaacE2ETest {
+public class IsaacIntegrationTest {
+
+    protected static final HttpSession httpSession;
     protected static final PostgreSQLContainer postgres;
     protected static final ElasticsearchContainer elasticsearch;
     protected static final PropertiesLoader properties;
@@ -119,10 +124,10 @@ public class IsaacE2ETest {
         postgres = new PostgreSQLContainer<>("postgres:12")
                 .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust")
                 .withUsername("rutherford")
-                .withFileSystemBind(IsaacE2ETest.class.getClassLoader().getResource("db_scripts/postgres-rutherford-create-script.sql").getPath(), "/docker-entrypoint-initdb.d/00-isaac-create.sql")
-                .withFileSystemBind(IsaacE2ETest.class.getClassLoader().getResource("db_scripts/postgres-rutherford-functions.sql").getPath(), "/docker-entrypoint-initdb.d/01-isaac-functions.sql")
-                .withFileSystemBind(IsaacE2ETest.class.getClassLoader().getResource("db_scripts/quartz_scheduler_create_script.sql").getPath(), "/docker-entrypoint-initdb.d/02-isaac-quartz.sql")
-                .withFileSystemBind(IsaacE2ETest.class.getClassLoader().getResource("test-postgres-rutherford-data-dump.sql").getPath(), "/docker-entrypoint-initdb.d/03-data-dump.sql")
+                .withFileSystemBind(IsaacIntegrationTest.class.getClassLoader().getResource("db_scripts/postgres-rutherford-create-script.sql").getPath(), "/docker-entrypoint-initdb.d/00-isaac-create.sql")
+                .withFileSystemBind(IsaacIntegrationTest.class.getClassLoader().getResource("db_scripts/postgres-rutherford-functions.sql").getPath(), "/docker-entrypoint-initdb.d/01-isaac-functions.sql")
+                .withFileSystemBind(IsaacIntegrationTest.class.getClassLoader().getResource("db_scripts/quartz_scheduler_create_script.sql").getPath(), "/docker-entrypoint-initdb.d/02-isaac-quartz.sql")
+                .withFileSystemBind(IsaacIntegrationTest.class.getClassLoader().getResource("test-postgres-rutherford-data-dump.sql").getPath(), "/docker-entrypoint-initdb.d/03-data-dump.sql")
         ;
 
         // TODO It would be nice if we could pull the version from pom.xml
@@ -132,6 +137,7 @@ public class IsaacE2ETest {
                 .withExposedPorts(9200, 9300)
                 .withEnv("cluster.name", "isaac")
                 .withEnv("node.name", "localhost")
+                .withStartupTimeout(Duration.ofSeconds(120));
         ;
 
         postgres.start();
@@ -192,8 +198,8 @@ public class IsaacE2ETest {
 
         // The following may need some actual authentication providers...
         Map<AuthenticationProvider, IAuthenticator> providersToRegister = new HashMap<>();
-        Map<String, ISegueHashingAlgorithm> algorithms = Collections.singletonMap("SeguePBKDF2v3", new SeguePBKDF2v3());
-        providersToRegister.put(AuthenticationProvider.SEGUE, new SegueLocalAuthenticator(pgUsers, passwordDataManager, properties, algorithms, algorithms.get("SeguePBKDF2v3")));
+        Map<String, ISegueHashingAlgorithm> algorithms = new HashMap<>(Map.of("SeguePBKDF2v3", new SeguePBKDF2v3(), "SegueSCryptv1", new SegueSCryptv1()));
+        providersToRegister.put(AuthenticationProvider.SEGUE, new SegueLocalAuthenticator(pgUsers, passwordDataManager, properties, algorithms, algorithms.get("SegueSCryptv1")));
 
         EmailCommunicator communicator = new EmailCommunicator("localhost", "default@localhost", "Howdy!");
         AbstractUserPreferenceManager userPreferenceManager = new PgUserPreferenceManager(postgresSqlDb);
@@ -206,7 +212,7 @@ public class IsaacE2ETest {
         emailManager = new EmailManager(communicator, userPreferenceManager, properties, contentManager, logManager, globalTokens);
 
         userAuthenticationManager = new UserAuthenticationManager(pgUsers, properties, providersToRegister, emailManager);
-        ISecondFactorAuthenticator secondFactorManager = createNiceMock(SegueTOTPAuthenticator.class);
+        ISecondFactorAuthenticator secondFactorManager = createMock(SegueTOTPAuthenticator.class);
         // We don't care for MFA here so we can safely disable it
         try {
             expect(secondFactorManager.has2FAConfigured(anyObject())).andReturn(false).atLeastOnce();
@@ -230,6 +236,12 @@ public class IsaacE2ETest {
         eventBookingManager = new EventBookingManager(bookingPersistanceManager, emailManager, userAssociationManager, properties, groupManager, userAccountManager, pgTransactionManager);
         userBadgeManager = createNiceMock(UserBadgeManager.class);
         schoolListReader = createNiceMock(SchoolListReader.class);
+
+        String someSegueAnonymousUserId = "9284723987anonymous83924923";
+        httpSession = createNiceMock(HttpSession.class);
+        expect(httpSession.getAttribute(Constants.ANONYMOUS_USER)).andReturn(null).anyTimes();
+        expect(httpSession.getId()).andReturn(someSegueAnonymousUserId).anyTimes();
+        replay(httpSession);
 
         // NOTE: The next part is commented out until we figure out a way of actually using Guice to do the heavy lifting for us..
         /*
@@ -264,5 +276,11 @@ public class IsaacE2ETest {
         RegisteredUserDTO user = userAccountManager.authenticateWithCredentials(userLoginRequest, userLoginResponse, AuthenticationProvider.SEGUE.toString(), username, password, false);
 
         return new LoginResult(user, capturedUserCookie.getValue());
+    }
+
+    protected HttpServletRequest createRequestWithCookies(final Cookie[] cookies) {
+        HttpServletRequest request = createNiceMock(HttpServletRequest.class);
+        expect(request.getCookies()).andReturn(cookies).anyTimes();
+        return request;
     }
 }
