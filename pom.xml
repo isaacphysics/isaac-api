@@ -526,11 +526,11 @@
                         <webInfIncludeJarPattern>^$</webInfIncludeJarPattern>
                         <containerIncludeJarPattern>^$</containerIncludeJarPattern>
                     </webApp>
+                    <httpConnector>
+                        <!-- This port configuration only applies when using jetty:run and not in production. -->
+                        <port>${jetty.port.api}</port>
+                    </httpConnector>
                     <systemProperties>
-                        <systemProperty>
-                            <name>jetty.port</name>
-                            <value>${jetty.port.api}</value>
-                        </systemProperty>
                         <systemProperty>
                             <name>segue.version</name>
                             <value>${segue.version}</value>
@@ -682,11 +682,11 @@
                                 <webInfIncludeJarPattern>^$</webInfIncludeJarPattern>
                                 <containerIncludeJarPattern>^$</containerIncludeJarPattern>
                             </webApp>
+                            <httpConnector>
+                                <!-- This port configuration only applies when using jetty:run and not in production. -->
+                                <port>${jetty.port.etl}</port>
+                            </httpConnector>
                             <systemProperties>
-                                <systemProperty>
-                                    <name>jetty.http.port</name>
-                                    <value>${jetty.port.etl}</value>
-                                </systemProperty>
                                 <systemProperty>
                                     <name>segue.version</name>
                                     <value>${segue.version}</value>
