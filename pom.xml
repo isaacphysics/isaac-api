@@ -684,7 +684,7 @@
                             </webApp>
                             <systemProperties>
                                 <systemProperty>
-                                    <name>jetty.port</name>
+                                    <name>jetty.http.port</name>
                                     <value>${jetty.port.etl}</value>
                                 </systemProperty>
                                 <systemProperty>
