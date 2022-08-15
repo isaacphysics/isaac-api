@@ -87,6 +87,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -1643,12 +1644,22 @@ public class QuizFacade extends AbstractIsaacFacade {
     }
 
     @Nullable
-    private QuizAssignmentDTO checkQuizAssignmentNotCancelledOrOverdue(QuizAttemptDTO quizAttempt) throws SegueDatabaseException, AssignmentCancelledException, ErrorResponseWrapper {
+    private QuizAssignmentDTO checkQuizAssignmentNotCancelledOrOverdue(final QuizAttemptDTO quizAttempt) throws SegueDatabaseException, AssignmentCancelledException, ErrorResponseWrapper {
         // Relying on the side-effects of getting the assignment.
         QuizAssignmentDTO quizAssignment = getQuizAssignment(quizAttempt);
 
-        if (quizAssignment != null && quizAssignment.getDueDate() != null && quizAssignment.getDueDate().before(new Date())) {
-            throw new ErrorResponseWrapper(new SegueErrorResponse(Status.FORBIDDEN, "The due date for this test has passed."));
+        if (quizAssignment != null && quizAssignment.getDueDate() != null) {
+            // Push due date to 12am of that day (start of the next day) - doesn't assume the due date is rounded to a day
+            Calendar c = Calendar.getInstance();
+            c.setTime(quizAssignment.getDueDate());
+            c.add(Calendar.DATE, 1);
+            c.set(Calendar.HOUR, 0);
+            c.set(Calendar.MINUTE, 0);
+            c.set(Calendar.SECOND, 0);
+            c.set(Calendar.MILLISECOND, 0);
+            if (c.getTime().before(new Date())) {
+                throw new ErrorResponseWrapper(new SegueErrorResponse(Status.FORBIDDEN, "The due date for this test has passed."));
+            }
         }
 
         return quizAssignment;
