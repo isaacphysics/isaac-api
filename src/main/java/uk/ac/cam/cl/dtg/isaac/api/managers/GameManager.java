@@ -998,7 +998,7 @@ public class GameManager {
      * @throws ContentManagerException
      *             - if there is a problem accessing the content repository.
      */
-    private List<GameboardItem> getNextQuestionsForFilter(final GameFilter gameFilter, final int index,
+    public List<GameboardItem> getNextQuestionsForFilter(final GameFilter gameFilter, final int index,
             final Long randomSeed) throws ContentManagerException {
         // get some questions
         List<GitContentManager.BooleanSearchClause> fieldsToMap = Lists.newArrayList();
@@ -1315,9 +1315,13 @@ public class GameManager {
         }
 
         // handle exclusions
-        List<String> tagsToExclude = Lists.newArrayList();
-        tagsToExclude.add(HIDE_FROM_FILTER_TAG); // add no filter constraint
-        fieldsToMatch.add(new GitContentManager.BooleanSearchClause(TAGS_FIELDNAME, BooleanOperator.NOT, tagsToExclude));
+        // exclude questions with no-filter tag
+        fieldsToMatch.add(new GitContentManager.BooleanSearchClause(TAGS_FIELDNAME, BooleanOperator.NOT,
+                Collections.singletonList(HIDE_FROM_FILTER_TAG)));
+
+        // exclude questions marked deprecated
+        fieldsToMatch.add(new GitContentManager.BooleanSearchClause(DEPRECATED_FIELDNAME, BooleanOperator.NOT,
+                Collections.singletonList("true")));
 
         return fieldsToMatch;
     }
