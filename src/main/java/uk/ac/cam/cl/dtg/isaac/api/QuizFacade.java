@@ -1206,7 +1206,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             headerBuilder.append(stringWriter.toString());
             // get game manager completion information for this assignment.
             return Response.ok(headerBuilder.toString())
-                    .header("Content-Disposition", "attachment; filename=quiz_results.csv")
+                    .header("Content-Disposition", "attachment; filename=test_results.csv")
                     .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
@@ -1366,7 +1366,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             headerBuilder.append(stringWriter.toString());
             return Response.ok(headerBuilder.toString())
-                    .header("Content-Disposition", "attachment; filename=quiz_results.csv")
+                    .header("Content-Disposition", "attachment; filename=group_test_results.csv")
                     .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
 
         } catch (NoUserLoggedInException e) {
