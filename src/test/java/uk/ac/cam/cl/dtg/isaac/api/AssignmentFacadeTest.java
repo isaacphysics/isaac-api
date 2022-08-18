@@ -151,6 +151,7 @@ public class AssignmentFacadeTest extends IsaacIntegrationTest {
         AssignmentDTO assignment = new AssignmentDTO();
         assignment.setGameboardId(IntegrationTestConstants.ASSIGNMENTS_TEST_GAMEBOARD_ID);
         assignment.setGroupId(IntegrationTestConstants.TEST_TEACHERS_AB_GROUP_ID);
+        assignment.setDueDate(dueDateCalendar.getTime());
 
         // Act
         // make request
