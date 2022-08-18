@@ -32,5 +32,8 @@ jobs:
     - name: Build with Maven
       run: mvn -B package -DskipTests --file pom.xml
     - name: Test with Maven
-      run: mvn -B test -Dtest.config.location=src/test/resources/segue-integration-test-config.properties --file pom.xml
+      run: |
+        echo $MAVEN_OPTS
+        export MAVEN_OPTS="-Xmx1g -Xmx4g"
+        mvn -B test -Dtest.config.location=src/test/resources/segue-integration-test-config.properties --file pom.xml
     - uses: codecov/codecov-action@v2
