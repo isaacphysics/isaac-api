@@ -12,11 +12,15 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
+import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
+import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
 import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.IAssignmentPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.PgAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
@@ -109,6 +113,8 @@ public class IsaacIntegrationTest {
     protected static final GitContentManager contentManager;
     protected static final UserBadgeManager userBadgeManager;
     protected static final UserAssociationManager userAssociationManager;
+    protected static final AssignmentManager assignmentManager;
+    protected static final QuestionManager questionManager;
 
     protected class LoginResult {
         public RegisteredUserDTO user;
@@ -192,7 +198,7 @@ public class IsaacIntegrationTest {
 
         ContentMapper contentMapper = new ContentMapper(new Reflections("uk.ac.cam.cl.dtg"));
         PgQuestionAttempts pgQuestionAttempts = new PgQuestionAttempts(postgresSqlDb, contentMapper);
-        QuestionManager questionManager = new QuestionManager(contentMapper, pgQuestionAttempts);
+        questionManager = new QuestionManager(contentMapper, pgQuestionAttempts);
 
         mapperFacade = contentMapper.getAutoMapper();
 
@@ -227,6 +233,7 @@ public class IsaacIntegrationTest {
         EventBookingPersistenceManager bookingPersistanceManager = new EventBookingPersistenceManager(postgresSqlDb, userAccountManager, contentManager, objectMapper);
         PgAssociationDataManager pgAssociationDataManager = new PgAssociationDataManager(postgresSqlDb);
         PgUserGroupPersistenceManager pgUserGroupPersistenceManager = new PgUserGroupPersistenceManager(postgresSqlDb);
+        IAssignmentPersistenceManager assignmentPersistenceManager = new PgAssignmentPersistenceManager(postgresSqlDb, mapperFacade);
 
         GameboardPersistenceManager gameboardPersistenceManager = new GameboardPersistenceManager(postgresSqlDb, contentManager, mapperFacade, objectMapper, new URIManager(properties), "latest");
         gameManager = new GameManager(contentManager, gameboardPersistenceManager, mapperFacade, questionManager, "latest");
@@ -235,6 +242,7 @@ public class IsaacIntegrationTest {
         PgTransactionManager pgTransactionManager = new PgTransactionManager(postgresSqlDb);
         eventBookingManager = new EventBookingManager(bookingPersistanceManager, emailManager, userAssociationManager, properties, groupManager, userAccountManager, pgTransactionManager);
         userBadgeManager = createNiceMock(UserBadgeManager.class);
+        assignmentManager = new AssignmentManager(assignmentPersistenceManager, groupManager, new EmailService(emailManager, groupManager, userAccountManager), gameManager, properties);
         schoolListReader = createNiceMock(SchoolListReader.class);
 
         String someSegueAnonymousUserId = "9284723987anonymous83924923";
