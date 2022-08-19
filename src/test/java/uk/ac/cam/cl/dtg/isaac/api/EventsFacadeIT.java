@@ -2,7 +2,6 @@ package uk.ac.cam.cl.dtg.isaac.api;
 
 import org.junit.Before;
 import org.junit.Test;
-import uk.ac.cam.cl.dtg.isaac.IsaacIntegrationTest;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.DetailedEventBookingDTO;
@@ -37,7 +36,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class EventsFacadeTest extends IsaacIntegrationTest {
+public class EventsFacadeIT extends IsaacIntegrationTest {
 
     private EventsFacade eventsFacade;
 

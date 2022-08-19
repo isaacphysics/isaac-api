@@ -3,8 +3,6 @@ package uk.ac.cam.cl.dtg.isaac.api;
 import com.google.common.collect.ImmutableMap;
 import org.junit.Before;
 import org.junit.Test;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import uk.ac.cam.cl.dtg.isaac.IsaacIntegrationTest;
 import uk.ac.cam.cl.dtg.segue.api.InfoFacade;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
 
@@ -17,7 +15,7 @@ import static junit.framework.TestCase.assertNotNull;
 import static org.easymock.EasyMock.createNiceMock;
 
 // NOTE: This was a proof of concept but I'm not too sure we actually need this entire test suite.
-public class InfoFacadeTest extends IsaacIntegrationTest {
+public class InfoFacadeIT extends IsaacIntegrationTest {
 
     public InfoFacade infoFacade;
 

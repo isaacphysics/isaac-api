@@ -27,7 +27,6 @@ import org.powermock.api.easymock.PowerMock;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-import uk.ac.cam.cl.dtg.isaac.IsaacIntegrationTest;
 import uk.ac.cam.cl.dtg.isaac.api.services.AssignmentService;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentStatusDTO;
@@ -54,7 +53,7 @@ import static org.junit.Assert.*;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({Date.class, AssignmentFacade.class})
 @PowerMockIgnore({"javax.xml.datatype.*", "javax.management.*", "javax.crypto.*"})
-public class AssignmentFacadeTest extends IsaacIntegrationTest {
+public class AssignmentFacadeIT extends IsaacIntegrationTest {
 
     private AssignmentFacade assignmentFacade;
 
@@ -85,7 +84,7 @@ public class AssignmentFacadeTest extends IsaacIntegrationTest {
         PowerMock.reset(Date.class);
         PowerMock.reset(userBadgeManager);
 
-        // reset assignments in DB, so we may re-use them
+        // reset assignments in DB, so the same assignment can be re-used across tests
         PreparedStatement pst = postgresSqlDb.getDatabaseConnection().prepareStatement(
                 "DELETE FROM assignments WHERE gameboard_id in (?,?);");
         pst.setString(1, IntegrationTestConstants.ASSIGNMENTS_TEST_GAMEBOARD_ID);

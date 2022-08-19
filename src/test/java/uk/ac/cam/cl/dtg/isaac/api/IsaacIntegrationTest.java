@@ -1,4 +1,20 @@
-package uk.ac.cam.cl.dtg.isaac;
+/*
+ * Copyright 2022 Matthew Trew
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * You may obtain a copy of the License at
+ * 		http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package uk.ac.cam.cl.dtg.isaac.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -7,6 +23,7 @@ import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.SystemUtils;
 import org.easymock.Capture;
 import org.eclipse.jgit.api.Git;
+import org.junit.BeforeClass;
 import org.reflections.Reflections;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
@@ -73,7 +90,6 @@ import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.time.Duration;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -92,29 +108,29 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
 public class IsaacIntegrationTest {
 
-    protected static final HttpSession httpSession;
-    protected static final PostgreSQLContainer postgres;
-    protected static final ElasticsearchContainer elasticsearch;
-    protected static final PropertiesLoader properties;
-    protected static final Map<String, String> globalTokens;
-    protected static final PostgresSqlDb postgresSqlDb;
-    protected static final ElasticSearchProvider elasticSearchProvider;
-    protected static final SchoolListReader schoolListReader;
-    protected static final MapperFacade mapperFacade;
+    protected static HttpSession httpSession;
+    protected static PostgreSQLContainer postgres;
+    protected static ElasticsearchContainer elasticsearch;
+    protected static PropertiesLoader properties;
+    protected static Map<String, String> globalTokens;
+    protected static PostgresSqlDb postgresSqlDb;
+    protected static ElasticSearchProvider elasticSearchProvider;
+    protected static SchoolListReader schoolListReader;
+    protected static MapperFacade mapperFacade;
 
     // Managers
-    protected static final EmailManager emailManager;
-    protected static final UserAuthenticationManager userAuthenticationManager;
-    protected static final UserAccountManager userAccountManager;
-    protected static final GameManager gameManager;
-    protected static final GroupManager groupManager;
-    protected static final EventBookingManager eventBookingManager;
-    protected static final ILogManager logManager;
-    protected static final GitContentManager contentManager;
-    protected static final UserBadgeManager userBadgeManager;
-    protected static final UserAssociationManager userAssociationManager;
-    protected static final AssignmentManager assignmentManager;
-    protected static final QuestionManager questionManager;
+    protected static EmailManager emailManager;
+    protected static UserAuthenticationManager userAuthenticationManager;
+    protected static UserAccountManager userAccountManager;
+    protected static GameManager gameManager;
+    protected static GroupManager groupManager;
+    protected static EventBookingManager eventBookingManager;
+    protected static ILogManager logManager;
+    protected static GitContentManager contentManager;
+    protected static UserBadgeManager userBadgeManager;
+    protected static UserAssociationManager userAssociationManager;
+    protected static AssignmentManager assignmentManager;
+    protected static QuestionManager questionManager;
 
     protected class LoginResult {
         public RegisteredUserDTO user;
@@ -126,7 +142,8 @@ public class IsaacIntegrationTest {
         }
     }
 
-    static {
+    @BeforeClass
+    public static void setUpClass() {
         postgres = new PostgreSQLContainer<>("postgres:12")
                 .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust")
                 .withUsername("rutherford")
@@ -143,6 +160,7 @@ public class IsaacIntegrationTest {
                 .withExposedPorts(9200, 9300)
                 .withEnv("cluster.name", "isaac")
                 .withEnv("node.name", "localhost")
+                // .withEnv("ES_JAVA_OPTS", String.format("-Xmx%sm", ES_MAX_JVM_HEAP_SIZE_MB))
                 .withStartupTimeout(Duration.ofSeconds(120));
         ;
 
