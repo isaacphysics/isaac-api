@@ -250,14 +250,16 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     public Response getSingleAssigned(@Context final HttpServletRequest request,
                                 @PathParam("assignmentId") final Long assignmentId) {
         if (null == assignmentId) {
-            return new SegueErrorResponse(Status.NOT_FOUND, "Please specify an assignment id to search for.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Please specify an assignment id to search for.").toResponse();
         }
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
 
             AssignmentDTO assignment = this.assignmentManager.getAssignmentById(assignmentId);
+            if (null == assignment) {
+                return new SegueErrorResponse(Status.NOT_FOUND, String.format("Assignment with id %d not found.", assignmentId)).toResponse();
+            }
             UserGroupDTO group = this.groupManager.getGroupById(assignment.getGroupId());
-
             if (null == group) {
                 return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while locating the specified assignment.").toResponse();
             }
