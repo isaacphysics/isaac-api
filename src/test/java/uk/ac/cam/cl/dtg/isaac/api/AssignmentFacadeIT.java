@@ -87,8 +87,8 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
         // reset assignments in DB, so the same assignment can be re-used across tests
         PreparedStatement pst = postgresSqlDb.getDatabaseConnection().prepareStatement(
                 "DELETE FROM assignments WHERE gameboard_id in (?,?);");
-        pst.setString(1, IntegrationTestConstants.ASSIGNMENTS_TEST_GAMEBOARD_ID);
-        pst.setString(2, IntegrationTestConstants.ASSIGNMENTS_DATE_TEST_GAMEBOARD_ID);
+        pst.setString(1, ITConstants.ASSIGNMENTS_TEST_GAMEBOARD_ID);
+        pst.setString(2, ITConstants.ASSIGNMENTS_DATE_TEST_GAMEBOARD_ID);
         pst.executeUpdate();
     }
 
@@ -101,15 +101,15 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
 
         // Arrange
         // log in as Teacher, create request
-        LoginResult teacherLogin = loginAs(httpSession, IntegrationTestConstants.TEST_TEACHER_EMAIL,
-                IntegrationTestConstants.TEST_TEACHER_PASSWORD);
+        LoginResult teacherLogin = loginAs(httpSession, ITConstants.TEST_TEACHER_EMAIL,
+                ITConstants.TEST_TEACHER_PASSWORD);
         HttpServletRequest assignGameboardsRequest = createRequestWithCookies(new Cookie[]{teacherLogin.cookie});
         replay(assignGameboardsRequest);
 
         // build assignment
         AssignmentDTO assignment = new AssignmentDTO();
-        assignment.setGameboardId(IntegrationTestConstants.ASSIGNMENTS_TEST_GAMEBOARD_ID);
-        assignment.setGroupId(IntegrationTestConstants.TEST_TEACHERS_AB_GROUP_ID);
+        assignment.setGameboardId(ITConstants.ASSIGNMENTS_TEST_GAMEBOARD_ID);
+        assignment.setGroupId(ITConstants.TEST_TEACHERS_AB_GROUP_ID);
 
         // Act
         // make request
@@ -141,15 +141,15 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
         dueDateCalendar.set(Calendar.YEAR, 2050);
 
         // log in as Teacher, create request
-        LoginResult teacherLogin = loginAs(httpSession, IntegrationTestConstants.TEST_TEACHER_EMAIL,
-                IntegrationTestConstants.TEST_TEACHER_PASSWORD);
+        LoginResult teacherLogin = loginAs(httpSession, ITConstants.TEST_TEACHER_EMAIL,
+                ITConstants.TEST_TEACHER_PASSWORD);
         HttpServletRequest assignGameboardsRequest = createRequestWithCookies(new Cookie[]{teacherLogin.cookie});
         replay(assignGameboardsRequest);
 
         // build assignment
         AssignmentDTO assignment = new AssignmentDTO();
-        assignment.setGameboardId(IntegrationTestConstants.ASSIGNMENTS_TEST_GAMEBOARD_ID);
-        assignment.setGroupId(IntegrationTestConstants.TEST_TEACHERS_AB_GROUP_ID);
+        assignment.setGameboardId(ITConstants.ASSIGNMENTS_TEST_GAMEBOARD_ID);
+        assignment.setGroupId(ITConstants.TEST_TEACHERS_AB_GROUP_ID);
         assignment.setDueDate(dueDateCalendar.getTime());
 
         // Act
@@ -182,15 +182,15 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
         dueDateCalendar.set(Calendar.YEAR, 2049);
 
         // log in as Teacher, create request
-        LoginResult teacherLogin = loginAs(httpSession, IntegrationTestConstants.TEST_TEACHER_EMAIL,
-                IntegrationTestConstants.TEST_TEACHER_PASSWORD);
+        LoginResult teacherLogin = loginAs(httpSession, ITConstants.TEST_TEACHER_EMAIL,
+                ITConstants.TEST_TEACHER_PASSWORD);
         HttpServletRequest assignGameboardsRequest = createRequestWithCookies(new Cookie[]{teacherLogin.cookie});
         replay(assignGameboardsRequest);
 
         // build assignment
         AssignmentDTO assignment = new AssignmentDTO();
-        assignment.setGameboardId(IntegrationTestConstants.ASSIGNMENTS_TEST_GAMEBOARD_ID);
-        assignment.setGroupId(IntegrationTestConstants.TEST_TEACHERS_AB_GROUP_ID);
+        assignment.setGameboardId(ITConstants.ASSIGNMENTS_TEST_GAMEBOARD_ID);
+        assignment.setGroupId(ITConstants.TEST_TEACHERS_AB_GROUP_ID);
         assignment.setDueDate(dueDateCalendar.getTime());
 
         // Act
@@ -220,15 +220,15 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
         scheduledDateCalendar.set(Calendar.YEAR, 2050);
 
         // log in as Teacher, create request
-        LoginResult teacherLogin = loginAs(httpSession, IntegrationTestConstants.TEST_TEACHER_EMAIL,
-                IntegrationTestConstants.TEST_TEACHER_PASSWORD);
+        LoginResult teacherLogin = loginAs(httpSession, ITConstants.TEST_TEACHER_EMAIL,
+                ITConstants.TEST_TEACHER_PASSWORD);
         HttpServletRequest assignGameboardsRequest = createRequestWithCookies(new Cookie[]{teacherLogin.cookie});
         replay(assignGameboardsRequest);
 
         // build assignment
         AssignmentDTO assignment = new AssignmentDTO();
-        assignment.setGameboardId(IntegrationTestConstants.ASSIGNMENTS_DATE_TEST_GAMEBOARD_ID);
-        assignment.setGroupId(IntegrationTestConstants.TEST_TEACHERS_AB_GROUP_ID);
+        assignment.setGameboardId(ITConstants.ASSIGNMENTS_DATE_TEST_GAMEBOARD_ID);
+        assignment.setGroupId(ITConstants.TEST_TEACHERS_AB_GROUP_ID);
         assignment.setScheduledStartDate(scheduledDateCalendar.getTime());
 
         // Act
@@ -265,15 +265,15 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
         dueDateCalendar.set(Calendar.YEAR, 2050);
 
         // log in as Teacher, create request
-        LoginResult teacherLogin = loginAs(httpSession, IntegrationTestConstants.TEST_TEACHER_EMAIL,
-                IntegrationTestConstants.TEST_TEACHER_PASSWORD);
+        LoginResult teacherLogin = loginAs(httpSession, ITConstants.TEST_TEACHER_EMAIL,
+                ITConstants.TEST_TEACHER_PASSWORD);
         HttpServletRequest assignGameboardsRequest = createRequestWithCookies(new Cookie[]{teacherLogin.cookie});
         replay(assignGameboardsRequest);
 
         // build assignment
         AssignmentDTO assignment = new AssignmentDTO();
-        assignment.setGameboardId(IntegrationTestConstants.ASSIGNMENTS_DATE_TEST_GAMEBOARD_ID);
-        assignment.setGroupId(IntegrationTestConstants.TEST_TEACHERS_AB_GROUP_ID);
+        assignment.setGameboardId(ITConstants.ASSIGNMENTS_DATE_TEST_GAMEBOARD_ID);
+        assignment.setGroupId(ITConstants.TEST_TEACHERS_AB_GROUP_ID);
         assignment.setDueDate(dueDateCalendar.getTime());
         assignment.setScheduledStartDate(scheduledDateCalendar.getTime());
 

@@ -16,7 +16,10 @@
 
 package uk.ac.cam.cl.dtg.isaac.api;
 
-public final class IntegrationTestConstants {
+/**
+ * Constants for use with IsaacIntegrationTests.
+ */
+public final class ITConstants {
 
     // Users
     public static final String TEST_ADMIN_EMAIL = "test-admin@test.com";

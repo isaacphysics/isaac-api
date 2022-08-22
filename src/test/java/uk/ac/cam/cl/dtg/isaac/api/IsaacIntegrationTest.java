@@ -90,7 +90,14 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_LINUX_CONFIG_LOCATION
 import static uk.ac.cam.cl.dtg.segue.api.Constants.EMAIL_SIGNATURE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
-public class IsaacIntegrationTest {
+/**
+ * Abstract superclass for integration tests, providing them with dependencies including ElasticSearch and PostgreSQL
+ * (as docker containers) and other managers (some of which are mocked). These dependencies are created before and
+ * destroyed after every test class.
+ *
+ * Subclasses should be named "*IT.java" so Maven Failsafe detects them. They are runnable via the "verify" Maven target.
+ */
+public abstract class IsaacIntegrationTest {
 
     protected static HttpSession httpSession;
     protected static PostgreSQLContainer postgres;

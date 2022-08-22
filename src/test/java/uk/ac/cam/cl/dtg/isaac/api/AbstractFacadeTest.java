@@ -78,11 +78,13 @@ import static org.powermock.api.easymock.PowerMock.verifyAll;
  *         );
  *     }
  * }</pre>
+ *
+ * @deprecated in favour of IsaacIntegrationTest
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({UserAccountManager.class})
 @PowerMockIgnore({ "jakarta.ws.*", "jakarta.management.*", "jakarta.script.*" })
-@Deprecated(since="In favour of IsaacIntegrationTest")
+@Deprecated
 abstract public class AbstractFacadeTest extends IsaacTest {
     protected HttpServletRequest request;
     protected UserAccountManager userManager;
