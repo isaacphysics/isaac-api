@@ -63,6 +63,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(GitContentManager.class)
+@PowerMockIgnore("javax.management.*")
 public class EmailManagerTest {
     private final String CONTENT_VERSION = "liveVersion";
 

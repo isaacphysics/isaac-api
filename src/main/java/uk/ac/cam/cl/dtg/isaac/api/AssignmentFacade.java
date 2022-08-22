@@ -956,10 +956,21 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     continue;
                 }
 
+                if (null != assignmentDTO.getDueDate()) {
+                    if (assignmentDTO.getDueDate().before(new Date())) {
+                        assigmentStatuses.add(new AssignmentStatusDTO(assignmentDTO.getGroupId(), "The assignment cannot be due in the past."));
+                        continue;
+                    }
+                }
+
                 if (null != assignmentDTO.getScheduledStartDate()) {
                     Date oneYearInFuture = DateUtils.addYears(new Date(), 1);
                     if (assignmentDTO.getScheduledStartDate().after(oneYearInFuture)) {
                         assigmentStatuses.add(new AssignmentStatusDTO(assignmentDTO.getGroupId(), "The assignment cannot be scheduled to begin more than one year in the future."));
+                        continue;
+                    }
+                    if (null != assignmentDTO.getDueDate() && assignmentDTO.getScheduledStartDate().after(assignmentDTO.getDueDate())) {
+                        assigmentStatuses.add(new AssignmentStatusDTO(assignmentDTO.getGroupId(), "The assignment cannot be scheduled to begin after it is due."));
                         continue;
                     }
                 }

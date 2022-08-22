@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.6 (Debian 12.6-1.pgdg100+1)
--- Dumped by pg_dump version 12.6 (Debian 12.6-1.pgdg100+1)
+-- Dumped from database version 12.9 (Debian 12.9-1.pgdg110+1)
+-- Dumped by pg_dump version 12.9 (Debian 12.9-1.pgdg110+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -22,7 +22,6 @@ SET row_security = off;
 
 COPY public.users (id, _id, family_name, given_name, email, role, date_of_birth, gender, registration_date, school_id, school_other, registered_contexts, registered_contexts_last_confirmed, last_updated, email_verification_status, last_seen, email_to_verify, email_verification_token, session_token, deleted) FROM stdin;
 2	\N	Test	Test Admin	test-admin@test.com	ADMIN	\N	OTHER	2019-08-01 12:40:16.738	\N	A Manually Entered School	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"all\\"}"}	2022-07-06 10:48:59.527	2022-07-06 10:48:59.673	VERIFIED	2022-08-03 12:07:08.761	test-admin@test.com	AwrblcwVoRFMWxJtV2TXAalOeA7a84TpD3rO2RmE	0	f
-5	\N	Teacher	Test Teacher	test-teacher@test.com	TEACHER	\N	FEMALE	2019-08-01 12:51:05.416	\N	A Manually Entered School	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"all\\"}"}	2022-08-03 12:08:57.662	2022-08-03 12:08:57.741	VERIFIED	2022-08-09 10:53:23.573	test-teacher@test.com	m9A8P0VbpFQnzOdXOywx75lpaWSpssLmQ779ij2b5LQ	0	f
 11	\N	Student	Erika	erika-student@test.com	STUDENT	\N	FEMALE	2022-07-03 17:34:07		A Manually Entered School	{}	\N	2022-07-05 17:34:31	VERIFIED	2022-08-09 10:53:44.547	erika-student@test.com	\N	0	f
 9	\N	Student	Charlie	charlie-student@test.com	STUDENT	\N	MALE	2022-07-05 17:34:07	130615	\N	{}	\N	2022-07-05 17:34:31	VERIFIED	2022-08-09 10:54:15.741	charlie-student@test.com	\N	0	f
 4	\N	Editor	Test Editor	test-editor@test.com	CONTENT_EDITOR	\N	PREFER_NOT_TO_SAY	2019-08-01 12:50:32.631	133801	\N	{}	\N	2021-03-09 16:46:26.28	VERIFIED	2022-08-09 10:54:30.095	test-editor@test.com	nAAK4xSBuAPRejM4YPNfTKRDGK4Oa1VuL3EMmJburjE	0	f
@@ -32,6 +31,7 @@ COPY public.users (id, _id, family_name, given_name, email, role, date_of_birth,
 10	\N	Teacher	Dave	dave-teacher@test.com	TEACHER	\N	MALE	2022-07-06 15:15:00	110158	\N	{}	\N	\N	VERIFIED	2022-08-09 10:55:35.591	dave-teacher@test.com	\N	0	f
 7	\N	Student	Alice	alice-student@test.com	STUDENT	1991-01-01	FEMALE	2022-07-05 17:31:12	\N	A Manually Entered School	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"all\\"}"}	2022-07-06 10:52:35.922	2022-07-06 10:52:36.056	VERIFIED	2022-08-09 10:56:00.055	alice-student@test.com	\N	0	f
 8	\N	Student	Bob	bob-student@test.com	STUDENT	\N	MALE	2022-07-05 17:32:41	110158	\N	{}	\N	2022-07-05 17:32:57	VERIFIED	2022-08-09 10:56:12.965	bob-student@test.com	\N	0	f
+5	\N	Teacher	Test Teacher	test-teacher@test.com	TEACHER	\N	FEMALE	2019-08-01 12:51:05.416	\N	A Manually Entered School	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"all\\"}"}	2022-08-03 12:08:57.662	2022-08-03 12:08:57.741	VERIFIED	2022-08-17 10:54:22.763	test-teacher@test.com	m9A8P0VbpFQnzOdXOywx75lpaWSpssLmQ779ij2b5LQ	0	f
 \.
 
 
@@ -41,6 +41,8 @@ COPY public.users (id, _id, family_name, given_name, email, role, date_of_birth,
 
 COPY public.gameboards (id, title, contents, wildcard, wildcard_position, game_filter, owner_user_id, creation_method, creation_date, tags) FROM stdin;
 9313cadd-d4ce-420f-9331-300e3067b45f	Test Teacher's gameboard 1	{"{\\"id\\": \\"_regression_test_\\", \\"context\\": {\\"role\\": null, \\"stage\\": null, \\"examBoard\\": null, \\"difficulty\\": null}, \\"contentType\\": \\"isaacQuestionPage\\"}","{\\"id\\": \\"f2d24c70-9b6b-4a46-ad2a-002886dff84e\\", \\"context\\": {\\"role\\": null, \\"stage\\": null, \\"examBoard\\": null, \\"difficulty\\": null}, \\"contentType\\": \\"isaacQuestionPage\\"}"}	{"id": "0d1c84b9-d77d-4dd0-9d05-ea91e49d7adb", "url": "https://isaacphysics.org", "tags": ["computer_science"], "type": "isaacWildcard", "level": null, "title": "Isaac Physics", "value": null, "author": "jsharkey13", "layout": null, "display": null, "version": null, "audience": null, "children": [], "encoding": null, "subtitle": null, "published": false, "deprecated": null, "expandable": null, "attribution": null, "description": "Check out our sister site!", "relatedContent": null, "searchableContent": null, "canonicalSourceFile": "content/isaac-physics-demo-page/example_wildcard.json"}	0	{"fields": [], "levels": [], "stages": [], "topics": [], "concepts": [], "subjects": ["computer_science"], "examBoards": [], "difficulties": [], "questionCategories": []}	5	BUILDER	2022-08-03 12:09:47.537	[]
+865072ab-9223-495f-a809-5ee2b98252e4	Test Teacher's gameboard 2 (for /assignment testing)	{"{\\"id\\": \\"_regression_test_\\", \\"context\\": {\\"role\\": null, \\"stage\\": null, \\"examBoard\\": null, \\"difficulty\\": null}, \\"contentType\\": \\"isaacQuestionPage\\"}"}	{"id": "wildcard_placeholder", "url": "/about", "tags": ["computer_science"], "type": "isaacWildcard", "level": null, "title": "About us", "value": null, "author": null, "layout": null, "display": null, "version": null, "audience": null, "children": [], "encoding": null, "subtitle": null, "published": true, "deprecated": null, "expandable": null, "attribution": null, "description": "Learn about Isaac Computer Science", "relatedContent": null, "searchableContent": null, "canonicalSourceFile": "content/placeholder_wildcard.json"}	0	{"fields": [], "levels": [], "stages": [], "topics": [], "concepts": [], "subjects": ["computer_science"], "examBoards": [], "difficulties": [], "questionCategories": []}	5	BUILDER	2022-08-17 10:55:34.835	[]
+5acb113a-4d8b-4a6d-9714-6992e7e3dc35	Test Teacher's gameboard 3 (for /assignment due date testing)	{"{\\"id\\": \\"_regression_test_\\", \\"context\\": {\\"role\\": null, \\"stage\\": null, \\"examBoard\\": null, \\"difficulty\\": null}, \\"contentType\\": \\"isaacQuestionPage\\"}"}	{"id": "wildcard_placeholder", "url": "/about", "tags": ["computer_science"], "type": "isaacWildcard", "level": null, "title": "About us", "value": null, "author": null, "layout": null, "display": null, "version": null, "audience": null, "children": [], "encoding": null, "subtitle": null, "published": true, "deprecated": null, "expandable": null, "attribution": null, "description": "Learn about Isaac Computer Science", "relatedContent": null, "searchableContent": null, "canonicalSourceFile": "content/placeholder_wildcard.json"}	0	{"fields": [], "levels": [], "stages": [], "topics": [], "concepts": [], "subjects": ["computer_science"], "examBoards": [], "difficulties": [], "questionCategories": []}	5	BUILDER	2022-08-17 10:56:35.958	[]
 \.
 
 
@@ -255,6 +257,8 @@ COPY public.user_email_preferences (user_id, email_preference, email_preference_
 
 COPY public.user_gameboards (user_id, gameboard_id, created, last_visited) FROM stdin;
 5	9313cadd-d4ce-420f-9331-300e3067b45f	2022-08-03 12:09:47.916	2022-08-03 12:09:49.959
+5	865072ab-9223-495f-a809-5ee2b98252e4	2022-08-17 10:55:34.931	2022-08-17 10:55:34.931
+5	5acb113a-4d8b-4a6d-9714-6992e7e3dc35	2022-08-17 10:56:36.076	2022-08-17 10:56:40.053
 \.
 
 

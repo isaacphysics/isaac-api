@@ -548,19 +548,6 @@ public final class Constants {
         EMAIL_PREFERENCE
     }
 
-    // Integration test constants
-    public static final String TEST_STUDENT_EMAIL = "test-student@test.com";
-    public static final String TEST_STUDENT_PASSWORD = "test1234";
-    public static final String TEST_TEACHER_EMAIL = "test-teacher@test.com";
-    public static final String TEST_TEACHER_PASSWORD = "test1234";
-    public static final String TEST_EVENTMANAGER_EMAIL = "test-event@test.com";
-    public static final String TEST_EVENTMANAGER_PASSWORD = "test1234";
-    public static final String TEST_EDITOR_EMAIL = "test-editor@test.com";
-    public static final String TEST_EDITOR_PASSWORD = "test1234";
-    public static final String TEST_ADMIN_EMAIL = "test-admin@test.com";
-    public static final String TEST_ADMIN_PASSWORD = "test1234";
-
-
     /**
      * Private constructor to prevent this class being created.
      */
