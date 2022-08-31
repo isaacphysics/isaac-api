@@ -154,10 +154,35 @@ public class GitContentManager {
         this.contentIndex = null;
     }
 
+    /**
+     *  Get a DTO object by its ID or return null.
+     *
+     *  This may return a cached object, and will temporarily cache the object.
+     *  Do not modify the returned DTO object.
+     *  The object will be retrieved in DO form, and mapped to a DTO. Both versions will be
+     *  locally cached to avoid re-querying the data store and the deserialization costs.
+     *
+     * @param id the content object ID.
+     * @return the content DTO object.
+     * @throws ContentManagerException on failure to return the object or null.
+     */
     public final ContentDTO getContentById(final String id) throws ContentManagerException {
         return getContentById(id, false);
     }
 
+    /**
+     *  Get a DTO object by its ID or return null.
+     *
+     *  This may return a cached object, and will temporarily cache the object.
+     *  Do not modify the returned DTO object.
+     *  The object will be retrieved in DO form, and mapped to a DTO. Both versions will be
+     *  locally cached to avoid re-querying the data store and the deserialization costs.
+     *
+     * @param id the content object ID.
+     * @param failQuietly whether to log a warning if the content cannot be found.
+     * @return the content DTO object.
+     * @throws ContentManagerException on failure to return the object or null.
+     */
     public final ContentDTO getContentById(final String id, final boolean failQuietly) throws ContentManagerException {
         String k = "getContentById~" + getCurrentContentSHA() + "~" + id;
         if (!cache.asMap().containsKey(k)) {
@@ -170,10 +195,33 @@ public class GitContentManager {
         return (ContentDTO) cache.getIfPresent(k);
     }
 
+    /**
+     *  Get a DO object by its ID or return null.
+     *
+     *  This may return a cached object, and will temporarily cache the object
+     *  to avoid re-querying the data store and the deserialization costs.
+     *  Do not modify the returned DO object.
+     *
+     * @param id the content object ID.
+     * @return the content DTO object.
+     * @throws ContentManagerException on failure to return the object or null.
+     */
     public final Content getContentDOById(final String id) throws ContentManagerException {
         return getContentDOById(id, false);
     }
 
+    /**
+     *  Get a DO object by its ID or return null.
+     *
+     *  This may return a cached object, and will temporarily cache the object
+     *  to avoid re-querying the data store and the deserialization costs.
+     *  Do not modify the returned DO object.
+     *
+     * @param id the content object ID.
+     * @param failQuietly whether to log a warning if the content cannot be found.
+     * @return the content DTO object.
+     * @throws ContentManagerException on failure to return the object or null.
+     */
     public final Content getContentDOById(final String id, final boolean failQuietly) throws ContentManagerException {
         if (null == id || id.equals("")) {
             return null;
@@ -203,6 +251,19 @@ public class GitContentManager {
 
     }
 
+    /**
+     *  Retrieve all DTO content matching an ID prefix.
+     *
+     *  This may return cached objects, and will temporarily cache the objects
+     *  to avoid re-querying the data store and the deserialization costs.
+     *  Do not modify the returned DTO objects.
+     *
+     * @param idPrefix the content object ID prefix.
+     * @param startIndex the integer start index for pagination.
+     * @param limit the limit for pagination.
+     * @return a ResultsWrapper of the matching content.
+     * @throws ContentManagerException on failure to return the objects.
+     */
     public ResultsWrapper<ContentDTO> getByIdPrefix(final String idPrefix, final int startIndex,
                                                     final int limit) throws ContentManagerException {
 
@@ -221,6 +282,19 @@ public class GitContentManager {
         return (ResultsWrapper<ContentDTO>) cache.getIfPresent(k);
     }
 
+    /**
+     *  Get a list of DTO objects by their IDs.
+     *
+     *  This may return cached objects, and will temporarily cache the objects
+     *  to avoid re-querying the data store and the deserialization costs.
+     *  Do not modify the returned DTO objects.
+     *
+     * @param ids the list of content object IDs.
+     * @param startIndex the integer start index for pagination.
+     * @param limit the limit for pagination.
+     * @return a ResultsWrapper of the matching content.
+     * @throws ContentManagerException on failure to return the objects.
+     */
     public ResultsWrapper<ContentDTO> getContentMatchingIds(final Collection<String> ids,
                                                             final int startIndex, final int limit)
             throws ContentManagerException {
