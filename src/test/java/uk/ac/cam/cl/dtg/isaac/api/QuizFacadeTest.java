@@ -180,7 +180,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
 
     @Test
     public void availableQuizzes() {
-        forEndpoint(() -> quizFacade.getAvailableQuizzes(request),
+        forEndpoint(() -> quizFacade.getAvailableQuizzes(httpServletRequest),
             requiresLogin(),
             as(anyOf(student, secondStudent),
                 check((response) ->
@@ -196,7 +196,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
     @Test
     public void getAssignedQuizzes() {
         List<QuizAssignmentDTO> noAssignments = Collections.emptyList();
-        forEndpoint(() -> quizFacade.getAssignedQuizzes(request),
+        forEndpoint(() -> quizFacade.getAssignedQuizzes(httpServletRequest),
             requiresLogin(),
             as(student,
                 prepare(assignmentService, m -> m.augmentAssignerSummaries(studentAssignments)),
@@ -214,7 +214,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
     @Test
     public void getFreeAttempts() {
         List<QuizAttemptDTO> noAttempts = Collections.emptyList();
-        forEndpoint(() -> quizFacade.getFreeAttempts(request),
+        forEndpoint(() -> quizFacade.getFreeAttempts(httpServletRequest),
             requiresLogin(),
             as(student,
                 prepare(quizManager, m -> m.augmentWithQuizSummary(studentOwnAttempts)),
@@ -229,7 +229,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
     public void getQuizAssignment() {
         QuizFeedbackDTO studentFeedback = new QuizFeedbackDTO();
         QuizFeedbackDTO otherStudentFeedback = new QuizFeedbackDTO();
-        forEndpoint(() -> quizFacade.getQuizAssignment(request, studentAssignment.getId()),
+        forEndpoint(() -> quizFacade.getQuizAssignment(httpServletRequest, studentAssignment.getId()),
             requiresLogin(),
             as(studentsTeachersOrAdmin(),
                 prepare(quizAssignmentManager, m -> expect(m.getGroupForAssignment(studentAssignment)).andReturn(studentGroup)),
@@ -278,7 +278,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
     @Test
     public void getQuizAssignmentAttempt() {
         QuizAttemptDTO augmentedQuiz = new QuizAttemptDTO();
-        forEndpoint(() -> quizFacade.getQuizAssignmentAttempt(request, studentAssignment.getId(), student.getId()),
+        forEndpoint(() -> quizFacade.getQuizAssignmentAttempt(httpServletRequest, studentAssignment.getId(), student.getId()),
             requiresLogin(),
             as(studentsTeachersOrAdmin(),
                 prepare(quizAssignmentManager, m -> expect(m.getGroupForAssignment(studentAssignment)).andReturn(studentGroup)),
@@ -313,7 +313,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
     public void createQuizAssignment() {
         QuizAssignmentDTO newAssignment = new QuizAssignmentDTO(0xB8003111799L, otherQuiz.getId(), null, studentGroup.getId(), null, someFutureDate, QuizFeedbackMode.OVERALL_MARK);
         QuizAssignmentDTO assignmentRequest = new QuizAssignmentDTO(null, otherQuiz.getId(), null, studentGroup.getId(), null, someFutureDate, QuizFeedbackMode.OVERALL_MARK);
-        forEndpoint((QuizAssignmentDTO assignment) -> () -> quizFacade.createQuizAssignment(request, assignment),
+        forEndpoint((QuizAssignmentDTO assignment) -> () -> quizFacade.createQuizAssignment(httpServletRequest, assignment),
             with(assignmentRequest,
                 requiresLogin(),
                 as(studentsTeachersOrAdmin(),
@@ -341,7 +341,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
 
     @Test
     public void cancelQuizAssignment() {
-        forEndpoint(() -> quizFacade.cancelQuizAssignment(request, studentAssignment.getId()),
+        forEndpoint(() -> quizFacade.cancelQuizAssignment(httpServletRequest, studentAssignment.getId()),
             requiresLogin(),
             as(studentsTeachersOrAdmin(),
                 prepare(quizAssignmentManager, m -> m.cancelAssignment(studentAssignment)),
@@ -366,7 +366,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
 
         QuizAssignmentDTO illegalUpdate = new QuizAssignmentDTO();
         illegalUpdate.setCreationDate(new Date());
-        forEndpoint((updates) -> () -> quizFacade.updateQuizAssignment(request, studentAssignment.getId(), updates),
+        forEndpoint((updates) -> () -> quizFacade.updateQuizAssignment(httpServletRequest, studentAssignment.getId(), updates),
             with(legalFeedbackUpdate,
                 requiresLogin(),
                 as(studentsTeachersOrAdmin(),
@@ -399,7 +399,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
 
     @Test
     public void previewQuiz() {
-        forEndpoint(() -> quizFacade.previewQuiz(requestForCaching, request, studentQuiz.getId()),
+        forEndpoint(() -> quizFacade.previewQuiz(requestForCaching, httpServletRequest, studentQuiz.getId()),
             requiresLogin(),
             as(student, failsWith(SegueErrorResponse.getIncorrectRoleResponse())),
             as(teacher, respondsWith(studentQuiz))
@@ -414,7 +414,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
         IsaacQuizDTO testQuiz = new IsaacQuizDTO();
 
         forEndpoint(
-            (assignment) -> () -> quizFacade.startQuizAttempt(requestForCaching, request, assignment.getId()),
+            (assignment) -> () -> quizFacade.startQuizAttempt(requestForCaching, httpServletRequest, assignment.getId()),
             with(studentAssignment,
                 requiresLogin(),
                 as(anyOf(student, secondStudent),
@@ -442,7 +442,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
         attempt.setQuizId(testQuizId);
         IsaacQuizDTO testQuiz = new IsaacQuizDTO();
 
-        forEndpoint((quiz) -> () -> quizFacade.startFreeQuizAttempt(requestForCaching, request, quiz.getId()),
+        forEndpoint((quiz) -> () -> quizFacade.startFreeQuizAttempt(requestForCaching, httpServletRequest, quiz.getId()),
             with(studentQuiz,
                 requiresLogin(),
                 as(secondStudent,
@@ -470,7 +470,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
     @Test
     public void getQuizAttempt() {
         IsaacQuizDTO augmentedQuiz = new IsaacQuizDTO();
-        forEndpoint((attempt) -> () -> quizFacade.getQuizAttempt(request, attempt.getId()),
+        forEndpoint((attempt) -> () -> quizFacade.getQuizAttempt(httpServletRequest, attempt.getId()),
             with(studentAttempt,
                 requiresLogin(),
                 as(secondStudent,
@@ -503,7 +503,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
     @Test
     public void getQuizAttemptFeedback() {
         QuizAttemptDTO augmentedAttempt = new QuizAttemptDTO();
-        forEndpoint((attempt) -> () -> quizFacade.getQuizAttemptFeedback(request, attempt.getId()),
+        forEndpoint((attempt) -> () -> quizFacade.getQuizAttemptFeedback(httpServletRequest, attempt.getId()),
             with(studentAttempt,
                 requiresLogin(),
                 forbiddenForEveryoneElse()
@@ -552,7 +552,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
     @Test
     public void completeQuizAttempt() {
         QuizAttemptDTO updatedAttempt = new QuizAttemptDTO();
-        forEndpoint((attempt) -> () -> quizFacade.completeQuizAttempt(request, attempt.getId()),
+        forEndpoint((attempt) -> () -> quizFacade.completeQuizAttempt(httpServletRequest, attempt.getId()),
             with(studentAttempt,
                 requiresLogin(),
                 as(student,
@@ -574,7 +574,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
     @Test
     public void completeQuizAttemptMarkIncompleteByTeacher() {
         QuizAttemptDTO updatedAttempt = new QuizAttemptDTO();
-        forEndpoint((user) -> () -> quizFacade.markIncompleteQuizAttempt(request, studentAssignment.getId(), user.getId()),
+        forEndpoint((user) -> () -> quizFacade.markIncompleteQuizAttempt(httpServletRequest, studentAssignment.getId(), user.getId()),
             with(student,
                 requiresLogin(),
                 as(studentsTeachersOrAdmin(),
@@ -622,7 +622,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                 )
             )
         );
-        forEndpoint(() -> quizFacade.markIncompleteQuizAttempt(request, overdueAssignment.getId(), student.getId()),
+        forEndpoint(() -> quizFacade.markIncompleteQuizAttempt(httpServletRequest, overdueAssignment.getId(), student.getId()),
             as(studentsTeachersOrAdmin(),
                 failsWith(Status.BAD_REQUEST)
             ),
@@ -638,7 +638,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
         ChoiceDTO choice = new ChoiceDTO();
         QuestionValidationResponseDTO validationResponse = new QuestionValidationResponseDTO();
 
-        forEndpoint((attempt) -> () -> quizFacade.answerQuestion(request, attempt.getId(), question.getId(), jsonAnswer),
+        forEndpoint((attempt) -> () -> quizFacade.answerQuestion(httpServletRequest, attempt.getId(), question.getId(), jsonAnswer),
             with(studentAttempt,
                 requiresLogin(),
                 as(student,
@@ -669,7 +669,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
     public void answerQuestionOnWrongQuiz() {
         String jsonAnswer = "jsonAnswer";
 
-        forEndpoint(() -> quizFacade.answerQuestion(request, otherAttempt.getId(), question.getId(), jsonAnswer),
+        forEndpoint(() -> quizFacade.answerQuestion(httpServletRequest, otherAttempt.getId(), question.getId(), jsonAnswer),
             as(student,
                 failsWith(Status.BAD_REQUEST)
             )
@@ -680,7 +680,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
     public void answerQuestionOnNonQuiz() {
         String jsonAnswer = "jsonAnswer";
 
-        forEndpoint(() -> quizFacade.answerQuestion(request, studentAttempt.getId(), questionPageQuestion.getId(), jsonAnswer),
+        forEndpoint(() -> quizFacade.answerQuestion(httpServletRequest, studentAttempt.getId(), questionPageQuestion.getId(), jsonAnswer),
             as(student,
                 failsWith(Status.BAD_REQUEST)
             )
@@ -689,7 +689,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
 
     @Test
     public void abandonQuizAttempt() {
-        forEndpoint((attempt) -> () -> quizFacade.abandonQuizAttempt(request, attempt.getId()),
+        forEndpoint((attempt) -> () -> quizFacade.abandonQuizAttempt(httpServletRequest, attempt.getId()),
             with(studentAttempt,
                 requiresLogin(),
                 as(everyone,
@@ -714,11 +714,11 @@ public class QuizFacadeTest extends AbstractFacadeTest {
     @Test
     public void logQuizSectionView() {
         int sectionNumber = 3;
-        forEndpoint(() -> quizFacade.logQuizSectionView(request, studentAttempt.getId(), sectionNumber),
+        forEndpoint(() -> quizFacade.logQuizSectionView(httpServletRequest, studentAttempt.getId(), sectionNumber),
             requiresLogin(),
             as(student,
                 prepare(logManager, m -> {
-                    m.logEvent(eq(student), eq(request), eq(Constants.IsaacServerLogType.VIEW_QUIZ_SECTION), anyObject());
+                    m.logEvent(eq(student), eq(httpServletRequest), eq(Constants.IsaacServerLogType.VIEW_QUIZ_SECTION), anyObject());
                     expectLastCall().andAnswer(() -> {
                         Object[] arguments = getCurrentArguments();
                         Map<String, Object> event = (Map<String, Object>) arguments[3];
@@ -736,7 +736,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
     public void getAllQuizAssignments() {
         List<UserGroupDTO> studentGroups = ImmutableList.of(studentGroup, studentInactiveGroup);
         ImmutableList<QuizAssignmentDTO> inactiveGroupAssignments = ImmutableList.of(studentInactiveAssignment, studentInactiveIgnoredAssignment);
-        forEndpoint((Long groupIdOfInterest) -> () -> quizFacade.getQuizAssignments(request, groupIdOfInterest),
+        forEndpoint((Long groupIdOfInterest) -> () -> quizFacade.getQuizAssignments(httpServletRequest, groupIdOfInterest),
             with(null,
                 requiresLogin(),
                 as(anyOf(teacher, secondTeacher),

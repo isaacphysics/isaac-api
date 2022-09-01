@@ -89,7 +89,7 @@ public class QuestionFacadeTest extends AbstractFacadeTest {
     @Test
     public void answerQuestionNotAvailableForQuizQuestions() {
         String jsonAnswer = "jsonAnswer";
-        forEndpoint((questionId) -> () -> questionFacade.answerQuestion(request, questionId, jsonAnswer),
+        forEndpoint((questionId) -> () -> questionFacade.answerQuestion(httpServletRequest, questionId, jsonAnswer),
             with(question.getId(),
                 beforeUserCheck(
                     failsWith(Status.FORBIDDEN)
