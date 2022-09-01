@@ -910,6 +910,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
      */
     @POST
     @Path("/assign_bulk")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @Operation(summary = "Create one or more new assignment(s).")
@@ -1057,6 +1058,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
      */
     @POST
     @Path("/assign/")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @Deprecated
