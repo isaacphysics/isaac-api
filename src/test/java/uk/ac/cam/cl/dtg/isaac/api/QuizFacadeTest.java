@@ -180,7 +180,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
 
     @Test
     public void availableQuizzes() {
-        forEndpoint(() -> quizFacade.getAvailableQuizzes(httpServletRequest),
+        forEndpoint(() -> quizFacade.getAvailableQuizzes(request, httpServletRequest),
             requiresLogin(),
             as(anyOf(student, secondStudent),
                 check((response) ->
