@@ -496,6 +496,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     @POST
     @Path("/mfa/challenge")
     @Operation(summary = "Continuation of login flow for users who have 2FA enabled")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public final Response mfaCompleteAuthentication(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                     final MFAResponseDTO mfaResponse) {

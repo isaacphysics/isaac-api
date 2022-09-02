@@ -242,36 +242,6 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
                 "Duplicate Assignment (group: %s) (gameboard: %s) Exception: %s", groupId, gameboardId, assignments));
     }
 
-    /**
-     * findGroupsByGameboard.
-     * 
-     * @param user
-     *            - owner of assignments (teacher)
-     * @param gameboardId
-     *            - the gameboard id to query
-     * @return Empty List if none or a List or groups.
-     * @throws SegueDatabaseException
-     *             - If something goes wrong with database access.
-     */
-    public List<UserGroupDTO> findGroupsByGameboard(final RegisteredUserDTO user, final String gameboardId)
-            throws SegueDatabaseException {
-        Validate.notNull(user);
-        Validate.notBlank(gameboardId);
-
-        List<UserGroupDTO> allGroupsForUser = this.groupManager.getAllGroupsOwnedAndManagedByUser(user, false);
-        List<AssignmentDTO> allAssignmentsForMyGroups = this.getAllAssignmentsForSpecificGroups(allGroupsForUser, true);
-
-        List<UserGroupDTO> groups = Lists.newArrayList();
-
-        for (AssignmentDTO assignment : allAssignmentsForMyGroups) {
-            if (assignment.getGameboardId().equals(gameboardId)) {
-                groups.add(groupManager.getGroupById(assignment.getGroupId()));
-            }
-        }
-
-        return groups;
-    }
-
     @Override
     public String getAssignmentLikeName(AssignmentDTO existingAssignment) throws SegueDatabaseException {
         GameboardDTO gameboard = gameManager.getGameboard(existingAssignment.getGameboardId());

@@ -87,6 +87,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -1205,7 +1206,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             headerBuilder.append(stringWriter.toString());
             // get game manager completion information for this assignment.
             return Response.ok(headerBuilder.toString())
-                    .header("Content-Disposition", "attachment; filename=quiz_results.csv")
+                    .header("Content-Disposition", "attachment; filename=test_results.csv")
                     .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
@@ -1365,7 +1366,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             headerBuilder.append(stringWriter.toString());
             return Response.ok(headerBuilder.toString())
-                    .header("Content-Disposition", "attachment; filename=quiz_results.csv")
+                    .header("Content-Disposition", "attachment; filename=group_test_results.csv")
                     .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
 
         } catch (NoUserLoggedInException e) {
@@ -1643,12 +1644,22 @@ public class QuizFacade extends AbstractIsaacFacade {
     }
 
     @Nullable
-    private QuizAssignmentDTO checkQuizAssignmentNotCancelledOrOverdue(QuizAttemptDTO quizAttempt) throws SegueDatabaseException, AssignmentCancelledException, ErrorResponseWrapper {
+    private QuizAssignmentDTO checkQuizAssignmentNotCancelledOrOverdue(final QuizAttemptDTO quizAttempt) throws SegueDatabaseException, AssignmentCancelledException, ErrorResponseWrapper {
         // Relying on the side-effects of getting the assignment.
         QuizAssignmentDTO quizAssignment = getQuizAssignment(quizAttempt);
 
-        if (quizAssignment != null && quizAssignment.getDueDate() != null && quizAssignment.getDueDate().before(new Date())) {
-            throw new ErrorResponseWrapper(new SegueErrorResponse(Status.FORBIDDEN, "The due date for this test has passed."));
+        if (quizAssignment != null && quizAssignment.getDueDate() != null) {
+            // Push due date to 12am of that day (start of the next day) - doesn't assume the due date is rounded to a day
+            Calendar c = Calendar.getInstance();
+            c.setTime(quizAssignment.getDueDate());
+            c.add(Calendar.DATE, 1);
+            c.set(Calendar.HOUR, 0);
+            c.set(Calendar.MINUTE, 0);
+            c.set(Calendar.SECOND, 0);
+            c.set(Calendar.MILLISECOND, 0);
+            if (c.getTime().before(new Date())) {
+                throw new ErrorResponseWrapper(new SegueErrorResponse(Status.FORBIDDEN, "The due date for this test has passed."));
+            }
         }
 
         return quizAssignment;

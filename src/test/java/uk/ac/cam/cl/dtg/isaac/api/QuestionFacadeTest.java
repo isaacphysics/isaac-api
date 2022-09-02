@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.api;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
@@ -45,6 +46,7 @@ import static org.powermock.api.easymock.PowerMock.replayAll;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(GitContentManager.class)
+@PowerMockIgnore("javax.management.*")
 public class QuestionFacadeTest extends AbstractFacadeTest {
 
     private QuestionFacade questionFacade;

@@ -42,6 +42,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -159,6 +160,13 @@ public class GroupChangedService implements IGroupObserver {
 
             for (int i = 0; i < existingAssignments.size(); i++) {
                 A existingAssignment = existingAssignments.get(i);
+                Date assignmentStartDate = null;
+                if (existingAssignment instanceof AssignmentDTO) {
+                    assignmentStartDate = ((AssignmentDTO) existingAssignment).getScheduledStartDate();
+                }
+                if (assignmentStartDate == null) {
+                    assignmentStartDate = existingAssignment.getCreationDate();
+                }
                 String name = assignmentDetailsService.getAssignmentLikeName(existingAssignment);
                 String url = assignmentDetailsService.getAssignmentLikeUrl(existingAssignment);
 
@@ -168,10 +176,10 @@ public class GroupChangedService implements IGroupObserver {
                 }
 
                 htmlSB.append(String.format("%d. <a href='%s'>%s</a> (set on %s%s)<br>", i + 1, url,
-                    name, DATE_FORMAT.format(existingAssignment.getCreationDate()), dueDate));
+                    name, DATE_FORMAT.format(assignmentStartDate), dueDate));
 
                 plainTextSB.append(String.format("%d. %s (set on %s%s)\n", i + 1, name,
-                    DATE_FORMAT.format(existingAssignment.getCreationDate()), dueDate));
+                    DATE_FORMAT.format(assignmentStartDate), dueDate));
             }
         } else if (existingAssignments != null) {
             htmlSB.append("No " + typeOfAssignment + " have been set yet.<br>");

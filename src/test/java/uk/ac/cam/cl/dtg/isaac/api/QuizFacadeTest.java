@@ -21,6 +21,7 @@ import org.easymock.IAnswer;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import uk.ac.cam.cl.dtg.isaac.api.managers.DueBeforeNowException;
@@ -78,6 +79,7 @@ import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(GitContentManager.class)
+@PowerMockIgnore("javax.management.*")
 public class QuizFacadeTest extends AbstractFacadeTest {
 
     private QuizFacade quizFacade;

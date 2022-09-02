@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.isaac;
+package uk.ac.cam.cl.dtg.isaac.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -7,16 +7,21 @@ import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.SystemUtils;
 import org.easymock.Capture;
 import org.eclipse.jgit.api.Git;
+import org.junit.BeforeClass;
 import org.reflections.Reflections;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
+import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
+import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
 import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.IAssignmentPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.PgAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
@@ -69,7 +74,6 @@ import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.time.Duration;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -86,29 +90,38 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_LINUX_CONFIG_LOCATION
 import static uk.ac.cam.cl.dtg.segue.api.Constants.EMAIL_SIGNATURE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
-public class IsaacIntegrationTest {
+/**
+ * Abstract superclass for integration tests, providing them with dependencies including ElasticSearch and PostgreSQL
+ * (as docker containers) and other managers (some of which are mocked). These dependencies are created before and
+ * destroyed after every test class.
+ *
+ * Subclasses should be named "*IT.java" so Maven Failsafe detects them. They are runnable via the "verify" Maven target.
+ */
+public abstract class IsaacIntegrationTest {
 
-    protected static final HttpSession httpSession;
-    protected static final PostgreSQLContainer postgres;
-    protected static final ElasticsearchContainer elasticsearch;
-    protected static final PropertiesLoader properties;
-    protected static final Map<String, String> globalTokens;
-    protected static final PostgresSqlDb postgresSqlDb;
-    protected static final ElasticSearchProvider elasticSearchProvider;
-    protected static final SchoolListReader schoolListReader;
-    protected static final MapperFacade mapperFacade;
+    protected static HttpSession httpSession;
+    protected static PostgreSQLContainer postgres;
+    protected static ElasticsearchContainer elasticsearch;
+    protected static PropertiesLoader properties;
+    protected static Map<String, String> globalTokens;
+    protected static PostgresSqlDb postgresSqlDb;
+    protected static ElasticSearchProvider elasticSearchProvider;
+    protected static SchoolListReader schoolListReader;
+    protected static MapperFacade mapperFacade;
 
     // Managers
-    protected static final EmailManager emailManager;
-    protected static final UserAuthenticationManager userAuthenticationManager;
-    protected static final UserAccountManager userAccountManager;
-    protected static final GameManager gameManager;
-    protected static final GroupManager groupManager;
-    protected static final EventBookingManager eventBookingManager;
-    protected static final ILogManager logManager;
-    protected static final GitContentManager contentManager;
-    protected static final UserBadgeManager userBadgeManager;
-    protected static final UserAssociationManager userAssociationManager;
+    protected static EmailManager emailManager;
+    protected static UserAuthenticationManager userAuthenticationManager;
+    protected static UserAccountManager userAccountManager;
+    protected static GameManager gameManager;
+    protected static GroupManager groupManager;
+    protected static EventBookingManager eventBookingManager;
+    protected static ILogManager logManager;
+    protected static GitContentManager contentManager;
+    protected static UserBadgeManager userBadgeManager;
+    protected static UserAssociationManager userAssociationManager;
+    protected static AssignmentManager assignmentManager;
+    protected static QuestionManager questionManager;
 
     protected class LoginResult {
         public RegisteredUserDTO user;
@@ -120,7 +133,8 @@ public class IsaacIntegrationTest {
         }
     }
 
-    static {
+    @BeforeClass
+    public static void setUpClass() {
         postgres = new PostgreSQLContainer<>("postgres:12")
                 .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust")
                 .withUsername("rutherford")
@@ -192,7 +206,7 @@ public class IsaacIntegrationTest {
 
         ContentMapper contentMapper = new ContentMapper(new Reflections("uk.ac.cam.cl.dtg"));
         PgQuestionAttempts pgQuestionAttempts = new PgQuestionAttempts(postgresSqlDb, contentMapper);
-        QuestionManager questionManager = new QuestionManager(contentMapper, pgQuestionAttempts);
+        questionManager = new QuestionManager(contentMapper, pgQuestionAttempts);
 
         mapperFacade = contentMapper.getAutoMapper();
 
@@ -227,6 +241,7 @@ public class IsaacIntegrationTest {
         EventBookingPersistenceManager bookingPersistanceManager = new EventBookingPersistenceManager(postgresSqlDb, userAccountManager, contentManager, objectMapper);
         PgAssociationDataManager pgAssociationDataManager = new PgAssociationDataManager(postgresSqlDb);
         PgUserGroupPersistenceManager pgUserGroupPersistenceManager = new PgUserGroupPersistenceManager(postgresSqlDb);
+        IAssignmentPersistenceManager assignmentPersistenceManager = new PgAssignmentPersistenceManager(postgresSqlDb, mapperFacade);
 
         GameboardPersistenceManager gameboardPersistenceManager = new GameboardPersistenceManager(postgresSqlDb, contentManager, mapperFacade, objectMapper, new URIManager(properties), "latest");
         gameManager = new GameManager(contentManager, gameboardPersistenceManager, mapperFacade, questionManager, "latest");
@@ -235,6 +250,7 @@ public class IsaacIntegrationTest {
         PgTransactionManager pgTransactionManager = new PgTransactionManager(postgresSqlDb);
         eventBookingManager = new EventBookingManager(bookingPersistanceManager, emailManager, userAssociationManager, properties, groupManager, userAccountManager, pgTransactionManager);
         userBadgeManager = createNiceMock(UserBadgeManager.class);
+        assignmentManager = new AssignmentManager(assignmentPersistenceManager, groupManager, new EmailService(emailManager, groupManager, userAccountManager), gameManager, properties);
         schoolListReader = createNiceMock(SchoolListReader.class);
 
         String someSegueAnonymousUserId = "9284723987anonymous83924923";

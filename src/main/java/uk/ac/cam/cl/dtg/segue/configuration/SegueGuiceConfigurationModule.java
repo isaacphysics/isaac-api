@@ -29,6 +29,8 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.SystemUtils;
 import org.elasticsearch.client.Client;
@@ -52,9 +54,19 @@ import uk.ac.cam.cl.dtg.isaac.dao.PgAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgQuizAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgQuizAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgQuizQuestionAttemptPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
+import uk.ac.cam.cl.dtg.isaac.dos.IUserAlerts;
+import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
+import uk.ac.cam.cl.dtg.isaac.dos.LocationHistory;
+import uk.ac.cam.cl.dtg.isaac.dos.PgLocationHistory;
+import uk.ac.cam.cl.dtg.isaac.dos.PgUserAlerts;
+import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
+import uk.ac.cam.cl.dtg.isaac.dos.PgUserStreakManager;
+import uk.ac.cam.cl.dtg.isaac.quiz.IQuestionAttemptManager;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicChemistryValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicLogicValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicValidator;
+import uk.ac.cam.cl.dtg.isaac.quiz.PgQuestionAttempts;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.ExternalAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
@@ -112,16 +124,6 @@ import uk.ac.cam.cl.dtg.segue.dao.users.PgUserGroupPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgUsers;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
-import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
-import uk.ac.cam.cl.dtg.isaac.dos.IUserAlerts;
-import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
-import uk.ac.cam.cl.dtg.isaac.dos.LocationHistory;
-import uk.ac.cam.cl.dtg.isaac.dos.PgLocationHistory;
-import uk.ac.cam.cl.dtg.isaac.dos.PgUserAlerts;
-import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
-import uk.ac.cam.cl.dtg.isaac.dos.PgUserStreakManager;
-import uk.ac.cam.cl.dtg.isaac.quiz.IQuestionAttemptManager;
-import uk.ac.cam.cl.dtg.isaac.quiz.PgQuestionAttempts;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueScheduledDatabaseScriptJob;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueScheduledJob;
@@ -140,8 +142,6 @@ import uk.ac.cam.cl.dtg.util.locations.IPLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeIOLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeLocationResolver;
 
-import jakarta.servlet.ServletContextEvent;
-import jakarta.servlet.ServletContextListener;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.UnknownHostException;
@@ -150,7 +150,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -1002,27 +1001,24 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                     scheduledAssignmentsEmail
             ));
 
+            // Simply removing jobs from configuredScheduledJobs won't de-register them if they
+            // are currently configured, so the constructor takes a list of jobs to remove too.
+            List<SegueScheduledJob> scheduledJobsToRemove = new ArrayList<>();
+
             if (mailjetKey != null && mailjetSecret != null) {
                 configuredScheduledJobs.add(syncMailjetUsers);
+            } else {
+                scheduledJobsToRemove.add(syncMailjetUsers);
             }
 
             if (eventPrePostEmailsEnabled) {
                 configuredScheduledJobs.add(eventReminderEmail);
                 configuredScheduledJobs.add(eventFeedbackEmail);
+            } else {
+                scheduledJobsToRemove.add(eventReminderEmail);
+                scheduledJobsToRemove.add(eventFeedbackEmail);
             }
-
-            segueJobService = new SegueJobService(configuredScheduledJobs, database);
-
-            // Simply removing the following jobs from the configuredScheduledJobs wouldn't remove them from the qrtz_job_details
-            // page so they need properly removing.
-            if (mailjetKey == null && mailjetSecret == null) {
-                segueJobService.removeScheduleJob(syncMailjetUsers);
-            }
-
-            if (!eventPrePostEmailsEnabled) {
-                segueJobService.removeScheduleJob(eventReminderEmail);
-                segueJobService.removeScheduleJob(eventFeedbackEmail);
-            }
+            segueJobService = new SegueJobService(database, configuredScheduledJobs, scheduledJobsToRemove);
 
         }
 
