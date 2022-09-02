@@ -271,22 +271,18 @@ public class QuestionFacade extends AbstractSegueFacade {
             return error.toResponse();
         }
 
-        if (this.getProperties().getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(Constants.EnvironmentType.DEV.name())) {
-            // FIXME: Currently this is in development only to as to not accidentally break live.
-            // Once quizzes roll out this needs to run in PROD too.
-
-            String questionPageId = extractPageIdFromQuestionId(questionId);
-            Content pageContent;
-            try {
-                pageContent = this.contentManager.getContentDOById(questionPageId);
-                if (pageContent instanceof IsaacQuiz) {
-                    return new SegueErrorResponse(Status.FORBIDDEN, "This question is part of a quiz").toResponse();
-                }
-            } catch (ContentManagerException e) {
-                // This doesn't make sense, so we'll log and continue.
-                SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Question without page found", e);
-                log.error(error.getErrorMessage(), e);
+        // Prevent attempting a question through this endpoint if this question is part of a quiz.
+        String questionPageId = extractPageIdFromQuestionId(questionId);
+        Content pageContent;
+        try {
+            pageContent = this.contentManager.getContentDOById(questionPageId);
+            if (pageContent instanceof IsaacQuiz) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "This question is part of a quiz").toResponse();
             }
+        } catch (ContentManagerException e) {
+            // This doesn't make sense, so we'll log and continue.
+            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Question without page found", e);
+            log.error(error.getErrorMessage(), e);
         }
 
         try {
