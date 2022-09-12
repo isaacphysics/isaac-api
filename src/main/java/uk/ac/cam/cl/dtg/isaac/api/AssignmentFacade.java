@@ -245,8 +245,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Path("/assign/{assignmentId}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @Operation(summary = "Fetch an assignment object populated with gameboard and quesiton information, if the user "
-                        + "owns the group that the assignment is set to.")
+    @Operation(summary = "Fetch an assignment object populated with gameboard and question information.")
     public Response getSingleAssigned(@Context final HttpServletRequest request,
                                 @PathParam("assignmentId") final Long assignmentId) {
         if (null == assignmentId) {
@@ -275,9 +274,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             Map<String, Map<String, List<QuestionValidationResponse>>> fakeQuestionAttemptMap = new HashMap<>();
 
             assignment.setGameboard(this.gameManager.getGameboard(assignment.getGameboardId(), currentlyLoggedInUser, fakeQuestionAttemptMap));
-
-            this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacServerLogType.VIEW_ASSIGNMENT,
-                    ImmutableMap.of("assignmentId", assignmentId));
 
             return Response.ok(assignment)
                     .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
@@ -344,9 +340,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 for (AssignmentDTO assignment : allAssignmentsSetToGroup) {
                     assignment.setGameboard(gameboards.get(assignment.getGameboardId()));
                 }
-
-                this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacServerLogType.VIEW_GROUPS_ASSIGNMENTS,
-                        ImmutableMap.of("groupId", group.getId()));
 
                 return Response.ok(allAssignmentsSetToGroup)
                         .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
