@@ -17,6 +17,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
+import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
 import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
 import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
@@ -108,6 +109,7 @@ public abstract class IsaacIntegrationTest {
     protected static ElasticSearchProvider elasticSearchProvider;
     protected static SchoolListReader schoolListReader;
     protected static MapperFacade mapperFacade;
+    protected static ContentSummarizerService contentSummarizerService;
 
     // Managers
     protected static EmailManager emailManager;
@@ -258,6 +260,8 @@ public abstract class IsaacIntegrationTest {
         expect(httpSession.getAttribute(Constants.ANONYMOUS_USER)).andReturn(null).anyTimes();
         expect(httpSession.getId()).andReturn(someSegueAnonymousUserId).anyTimes();
         replay(httpSession);
+
+        contentSummarizerService = new ContentSummarizerService(mapperFacade, new URIManager(properties));
 
         // NOTE: The next part is commented out until we figure out a way of actually using Guice to do the heavy lifting for us..
         /*

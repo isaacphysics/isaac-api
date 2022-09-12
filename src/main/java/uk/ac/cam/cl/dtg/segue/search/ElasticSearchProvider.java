@@ -156,8 +156,7 @@ public class ElasticSearchProvider implements ISearchProvider {
     @Override
     public ResultsWrapper<String> nestedMatchSearch(
             final String indexBase, final String indexType, final Integer startIndex, final Integer limit,
-            final String searchString, @NotNull final BooleanMatchInstruction matchInstruction,
-            @Nullable final Map<String, AbstractFilterInstruction> filterInstructions
+            final String searchString, @NotNull final BooleanMatchInstruction matchInstruction
     ) throws SegueSearchException {
         if (null == indexBase || null == indexType || null == searchString) {
             log.warn("A required field is missing. Unable to execute search.");
@@ -165,9 +164,6 @@ public class ElasticSearchProvider implements ISearchProvider {
         }
 
         BoolQueryBuilder query = (BoolQueryBuilder) this.processMatchInstructions(matchInstruction);
-        if (filterInstructions != null) {
-            query.filter(generateFilterQuery(filterInstructions));
-        }
         query.minimumShouldMatch(1);
         return this.executeBasicQuery(indexBase, indexType, query, startIndex, limit);
     }

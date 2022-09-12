@@ -61,6 +61,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -206,9 +207,9 @@ public class IsaacController extends AbstractIsaacFacade {
             if (currentUser instanceof RegisteredUserDTO) {
                 showHiddenContent = isUserStaff(userManager, (RegisteredUserDTO) currentUser);
             }
-            List<String> documentTypes = !types.isEmpty() ? Arrays.asList(types.split(",")) : null;
+            List<String> documentTypes = !types.isEmpty() ? Arrays.asList(types.split(",")) : new ArrayList<>();
             // Return an error if any of the proposed document types are invalid
-            if (documentTypes != null && !SITE_WIDE_SEARCH_VALID_DOC_TYPES.containsAll(documentTypes)) {
+            if (!SITE_WIDE_SEARCH_VALID_DOC_TYPES.containsAll(documentTypes)) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid document types.").toResponse();
             }
 
