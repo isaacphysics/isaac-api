@@ -144,7 +144,6 @@ public final class Constants {
         UPDATE_QUIZ_FEEDBACK_MODE,
         VIEW_ASSIGNMENT_PROGRESS,
         VIEW_CONCEPT,
-        VIEW_GROUPS_ASSIGNMENTS,
         VIEW_MY_BOARDS_PAGE,
         VIEW_PAGE,
         VIEW_PAGE_FRAGMENT,
