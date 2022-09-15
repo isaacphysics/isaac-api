@@ -274,7 +274,7 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
         if (null == timestamp) {
             throw new SegueDatabaseException("Parameter timestamp is null, cannot search for scheduled assignments!");
         }
-        String query = "SELECT * FROM assignments WHERE scheduled_start_date IS NOT NULL AND scheduled_start_date BETWEEN ((?)::timestamp - interval '10 minute') AND ((?)::timestamp + interval '60 minute');";
+        String query = "SELECT * FROM assignments WHERE scheduled_start_date IS NOT NULL AND scheduled_start_date BETWEEN ((?)::timestamp - INTERVAL '10 minute') AND ((?)::timestamp + INTERVAL '59 minute');";
 
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
