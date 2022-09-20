@@ -440,7 +440,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                         .toResponse();
             }
 
-            return Response.ok(bookingManager.getBookingById(Long.parseLong(bookingId))).build();
+            return Response.ok(bookingManager.getDetailedBookingById(Long.parseLong(bookingId))).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (NumberFormatException e) {
