@@ -10,20 +10,23 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <segue.version>v2.22.4-SNAPSHOT</segue.version>
-        <log4j.version>2.17.1</log4j.version>
-        <resteasy.version>4.7.6.Final</resteasy.version>
-        <guice.version>4.2.3</guice.version>
+        <segue.version>v3.1.1-SNAPSHOT</segue.version>
+        <log4j.version>2.18.0</log4j.version>
+        <resteasy.version>6.0.3.Final</resteasy.version>
+        <guice.version>5.1.0</guice.version>
         <oauth-client.version>1.33.3</oauth-client.version>
-        <jackson.version>2.13.3</jackson.version>
-        <jackson-databind.version>2.13.3</jackson-databind.version>
-        <powermock.version>2.0.4</powermock.version>
-        <swagger-ui-version>3.19.5</swagger-ui-version>
+        <jackson.version>2.13.4</jackson.version>
+        <jackson-databind.version>2.13.4</jackson-databind.version>
+        <powermock.version>2.0.9</powermock.version>
+        <swagger-ui-version>4.13.2</swagger-ui-version>
         <prometheus.version>0.8.0</prometheus.version>
-        <jetty-version>9.4.46.v20220331</jetty-version>
+        <jetty-version>11.0.11</jetty-version>
         <jetty.port.api>8080</jetty.port.api>
         <jetty.port.etl>8090</jetty.port.etl>
-        <web.xml>override-api-web.xml</web.xml>
+        <testcontainers.version>1.17.3</testcontainers.version>
+        <web.xml>web-api-live.xml</web.xml>
+        <web.xml.etl>web-etl.xml</web.xml.etl>
+        <web.xml.local>web-api-local.xml</web.xml.local>
         <netty.version>4.1.77.Final</netty.version>
         <dependency-check.version>7.1.0</dependency-check.version>
         <ossindex.version>3.2.0</ossindex.version>
@@ -31,12 +34,13 @@
 
     <repositories>
         <repository>
-            <id>codedance on Github</id>
-            <url>https://github.com/codedance/maven-repository/raw/master</url>
-        </repository>
-        <repository>
             <id>jgit-repository</id>
             <url>https://repo.eclipse.org/content/groups/releases/</url>
+        </repository>
+        <repository>
+            <id>central</id>
+            <name>Maven Central</name>
+            <url>https://repo1.maven.org/maven2/</url>
         </repository>
     </repositories>
     <dependencies>
@@ -53,11 +57,11 @@
         </dependency>
 
         <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
-            <version>4.0.1</version>
-            <scope>provided</scope>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <version>5.0.0</version>
         </dependency>
+
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-servlets</artifactId>
@@ -85,12 +89,6 @@
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-jaxb-provider</artifactId>
             <version>${resteasy.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.sun.activation</groupId>
-                    <artifactId>jakarta.activation</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
@@ -109,24 +107,8 @@
         </dependency>
 
         <dependency>
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-guice</artifactId>
-            <version>${resteasy.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>jakarta.inject</groupId>
-                    <artifactId>jakarta.inject-api</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
             <groupId>com.google.inject</groupId>
             <artifactId>guice</artifactId>
-            <version>${guice.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.google.inject.extensions</groupId>
-            <artifactId>guice-multibindings</artifactId>
             <version>${guice.version}</version>
         </dependency>
 
@@ -140,7 +122,6 @@
             <artifactId>org.eclipse.jgit.ssh.apache</artifactId>
             <version>5.13.0.202109080827-r</version>
         </dependency>
-
 
         <dependency>
             <groupId>ma.glasnost.orika</groupId>
@@ -163,12 +144,6 @@
             <groupId>com.google.oauth-client</groupId>
             <artifactId>google-oauth-client-servlet</artifactId>
             <version>${oauth-client.version}</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>servlet-api</artifactId>
-                    <groupId>javax.servlet</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
@@ -207,29 +182,38 @@
         </dependency>
 
         <dependency>
-            <groupId>io.swagger</groupId>
-            <artifactId>swagger-jaxrs</artifactId>
-            <version>1.6.2</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>reflections</artifactId>
-                    <groupId>org.reflections</groupId>
-                </exclusion>
-                <exclusion>
-                    <artifactId>jsr311-api</artifactId>
-                    <groupId>javax.ws.rs</groupId>
-                </exclusion>
-                <exclusion>
-                    <artifactId>validation-api</artifactId>
-                    <groupId>javax.validation</groupId>
-                </exclusion>
-            </exclusions>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-jaxrs2-jakarta</artifactId>
+            <version>2.2.1</version>
+        </dependency>
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-annotations-jakarta</artifactId>
+            <version>2.2.1</version>
         </dependency>
 
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.13.1</version>
+            <version>4.13.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>elasticsearch</artifactId>
+            <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -248,10 +232,15 @@
         <dependency>
             <groupId>org.easymock</groupId>
             <artifactId>easymock</artifactId>
-            <version>3.6</version>
+            <version>4.3</version>
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.36</version>
+        </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
@@ -349,7 +338,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.3.3</version>
+            <version>42.4.1</version>
         </dependency>
 
         <dependency>
@@ -384,33 +373,25 @@
         <dependency>
             <groupId>com.mailjet</groupId>
             <artifactId>mailjet-client</artifactId>
-            <version>5.2.0</version>
+            <version>5.2.1</version>
         </dependency>
 
-        <!--Jetty JSR-356 Websocket server side dependency -->
         <dependency>
             <groupId>org.eclipse.jetty.websocket</groupId>
-            <artifactId>javax-websocket-server-impl</artifactId>
+            <artifactId>websocket-jetty-api</artifactId>
             <version>${jetty-version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>javax.websocket</groupId>
-                    <artifactId>javax.websocket-client-api</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
-        <!--Jetty Websocket API server side dependency -->
         <dependency>
             <groupId>org.eclipse.jetty.websocket</groupId>
-            <artifactId>websocket-server</artifactId>
+            <artifactId>websocket-jetty-server</artifactId>
             <version>${jetty-version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>javax.annotation</groupId>
-                    <artifactId>javax.annotation-api</artifactId>
-                </exclusion>
-            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+            <version>2.1.0</version>
         </dependency>
 
         <!-- Graph checker code -->
@@ -424,6 +405,12 @@
                     <artifactId>resteasy-jaxrs</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15on</artifactId>
+            <version>1.70</version>
         </dependency>
 
         <!-- These two don't need to be included in the war package so their scope is "provided" which means we
@@ -479,10 +466,9 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.3.2</version>
+                <version>3.10.1</version>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <release>11</release>
                 </configuration>
             </plugin>
             <plugin>
@@ -499,14 +485,37 @@
                 <version>2.22.1</version>
                 <configuration>
                     <forkCount>3</forkCount>
-                    <reuseForks>false</reuseForks>
+                    <reuseForks>true</reuseForks>
                     <systemPropertyVariables>
                         <segue.version>${segue.version}</segue.version>
                     </systemPropertyVariables>
                     <useSystemClassLoader>false</useSystemClassLoader>
+                    <argLine>${surefire.jacoco.args}</argLine>
                 </configuration>
             </plugin>
-
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>3.0.0-M7</version>
+                <configuration>
+                    <forkCount>1</forkCount>
+                    <reuseForks>false</reuseForks>
+                    <systemPropertyVariables>
+                        <segue.version>${segue.version}</segue.version>
+                        <test.config.location>src/test/resources/segue-integration-test-config.properties</test.config.location>
+                    </systemPropertyVariables>
+                    <useSystemClassLoader>false</useSystemClassLoader>
+                    <argLine>${failsafe.jacoco.args}</argLine>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
                 <version>2.6</version>
@@ -536,15 +545,15 @@
                 <configuration>
                     <webApp>
                         <contextPath>/isaac-api</contextPath>
-                        <overrideDescriptor>override-api-web.xml</overrideDescriptor>
+                        <overrideDescriptor>${web.xml}</overrideDescriptor>
                         <webInfIncludeJarPattern>^$</webInfIncludeJarPattern>
                         <containerIncludeJarPattern>^$</containerIncludeJarPattern>
                     </webApp>
+                    <httpConnector>
+                        <!-- This port configuration only applies when using jetty:run and not in production. -->
+                        <port>${jetty.port.api}</port>
+                    </httpConnector>
                     <systemProperties>
-                        <systemProperty>
-                            <name>jetty.port</name>
-                            <value>${jetty.port.api}</value>
-                        </systemProperty>
                         <systemProperty>
                             <name>segue.version</name>
                             <value>${segue.version}</value>
@@ -558,16 +567,76 @@
                 <version>0.8.4</version>
                 <executions>
                     <execution>
+                        <id>before-unit-test-execution</id>
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
+                        <configuration>
+                            <destFile>${project.build.directory}/jacoco-output/jacoco-unit-tests.exec</destFile>
+                            <propertyName>surefire.jacoco.args</propertyName>
+                        </configuration>
                     </execution>
                     <execution>
-                        <id>report</id>
+                        <id>after-unit-test-execution</id>
                         <phase>test</phase>
                         <goals>
                             <goal>report</goal>
                         </goals>
+                        <configuration>
+                            <dataFile>${project.build.directory}/jacoco-output/jacoco-unit-tests.exec</dataFile>
+                            <outputDirectory>${project.reporting.outputDirectory}/jacoco-unit-test-coverage-report</outputDirectory>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>before-integration-test-execution</id>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                        <configuration>
+                            <destFile>${project.build.directory}/jacoco-output/jacoco-integration-tests.exec</destFile>
+                            <propertyName>failsafe.jacoco.args</propertyName>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>after-integration-test-execution</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                        <configuration>
+                            <dataFile>${project.build.directory}/jacoco-output/jacoco-integration-tests.exec</dataFile>
+                            <outputDirectory>${project.reporting.outputDirectory}/jacoco-integration-test-coverage-report</outputDirectory>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>merge-unit-and-integration-tests</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>merge</goal>
+                        </goals>
+                        <configuration>
+                            <fileSets>
+                                <fileSet>
+                                    <directory>${project.build.directory}/jacoco-output/</directory>
+                                    <includes>
+                                        <include>*.exec</include>
+                                    </includes>
+                                </fileSet>
+                            </fileSets>
+                            <destFile>${project.build.directory}/jacoco-output/merged.exec</destFile>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>create-merged-report</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                        <configuration>
+                            <dataFile>${project.build.directory}/jacoco-output/merged.exec</dataFile>
+                            <outputDirectory>${project.reporting.outputDirectory}/jacoco-merged-test-coverage-report</outputDirectory>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -589,7 +658,7 @@
             <dependency>
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-core</artifactId>
-                <version>3.8.5</version>
+                <version>3.8.6</version>
             </dependency>
 
             <dependency>
@@ -600,7 +669,7 @@
             <dependency>
                 <groupId>com.google.http-client</groupId>
                 <artifactId>google-http-client-gson</artifactId>
-                <version>1.41.8</version>
+                <version>1.42.2</version>
             </dependency>
 
             <dependency>
@@ -661,30 +730,27 @@
     <!-- Profiles configuration -->
     <profiles>
         <profile>
-            <id>local</id>
-            <!-- local profile is active by default to help eclipse know what is going
-                on -->
+            <id>production</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
+        </profile>
+
+        <profile>
+            <id>local</id>
             <properties>
                 <build.profile.id>local</build.profile.id>
+                <!-- Override the web.xml property locally: -->
+                <web.xml>${web.xml.local}</web.xml>
             </properties>
-            <build>
-                <resources>
-                    <resource>
-                        <filtering>true</filtering>
-                        <directory>src/main/resources</directory>
-                    </resource>
-                </resources>
-            </build>
         </profile>
 
         <profile>
             <id>etl</id>
             <properties>
                 <build.profile.id>etl</build.profile.id>
-                <web.xml>override-etl-web.xml</web.xml>
+                <!-- Override the web.xml property for ETL: -->
+                <web.xml>${web.xml.etl}</web.xml>
             </properties>
             <build>
                 <plugins>
@@ -695,15 +761,15 @@
                         <configuration>
                             <webApp>
                                 <contextPath>/isaac-api</contextPath>
-                                <overrideDescriptor>override-etl-web.xml</overrideDescriptor>
+                                <overrideDescriptor>${web.xml}</overrideDescriptor>
                                 <webInfIncludeJarPattern>^$</webInfIncludeJarPattern>
                                 <containerIncludeJarPattern>^$</containerIncludeJarPattern>
                             </webApp>
+                            <httpConnector>
+                                <!-- This port configuration only applies when using jetty:run and not in production. -->
+                                <port>${jetty.port.etl}</port>
+                            </httpConnector>
                             <systemProperties>
-                                <systemProperty>
-                                    <name>jetty.port</name>
-                                    <value>${jetty.port.etl}</value>
-                                </systemProperty>
                                 <systemProperty>
                                     <name>segue.version</name>
                                     <value>${segue.version}</value>
@@ -719,7 +785,6 @@
             <id>generate-types</id>
             <properties>
                 <build.profile.id>generate-types</build.profile.id>
-                <web.xml>override-api-web.xml</web.xml>
             </properties>
             <build>
                 <plugins>

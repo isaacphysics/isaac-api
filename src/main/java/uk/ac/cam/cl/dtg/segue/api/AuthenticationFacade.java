@@ -19,8 +19,8 @@ import com.google.api.client.util.Maps;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
@@ -52,19 +52,19 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.net.URI;
 import java.security.NoSuchAlgorithmException;
@@ -79,7 +79,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * @author Stephen Cummins
  */
 @Path("/auth")
-@Api(value = "/auth")
+@Tag(name = "/auth")
 public class AuthenticationFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(AuthenticationFacade.class);
 
@@ -117,7 +117,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     @GET
     @Path("/user_authentication_settings")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "The current users authentication settings, e.g. linked accounts and whether they have segue or not")
+    @Operation(summary = "The current users authentication settings, e.g. linked accounts and whether they have segue or not")
     public final Response getCurrentUserAuthorisationSettings(@Context final HttpServletRequest request) {
 
         return this.getCurrentUserAuthorisationSettings(request, null);
@@ -134,7 +134,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     @GET
     @Path("/user_authentication_settings/{user_id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "The current users authentication settings, e.g. linked accounts and whether they have segue or not")
+    @Operation(summary = "The current users authentication settings, e.g. linked accounts and whether they have segue or not")
     public final Response getCurrentUserAuthorisationSettings(@Context final HttpServletRequest request, @PathParam("user_id") Long userId) {
         try {
             RegisteredUserDTO currentRegisteredUser = this.userManager.getCurrentRegisteredUser(request);
@@ -178,7 +178,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     @GET
     @Path("/{provider}/authenticate")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Get the SSO login redirect URL for an authentication provider.")
+    @Operation(summary = "Get the SSO login redirect URL for an authentication provider.")
     public final Response authenticate(@Context final HttpServletRequest request,
             @PathParam("provider") final String signinProvider) {
         
@@ -220,8 +220,8 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     @GET
     @Path("/{provider}/link")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Get the SSO redirect URL for an authentication provider.",
-                  notes = "Very similar to the login case, but records this is a link request not an account creation request.")
+    @Operation(summary = "Get the SSO redirect URL for an authentication provider.",
+                  description = "Very similar to the login case, but records this is a link request not an account creation request.")
     public final Response linkExistingUserToProvider(@Context final HttpServletRequest request,
             @PathParam("provider") final String authProviderAsString) {
         if (!this.userManager.isRegisteredUserLoggedIn(request)) {
@@ -260,7 +260,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     @DELETE
     @Path("/{provider}/link")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Remove an SSO provider from the current user's account.")
+    @Operation(summary = "Remove an SSO provider from the current user's account.")
     public final Response unlinkUserFromProvider(@Context final HttpServletRequest request,
             @PathParam("provider") final String authProviderAsString) {
         try {
@@ -297,7 +297,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/{provider}/callback")
-    @ApiOperation(value = "SSO callback URL for a given provider.")
+    @Operation(summary = "SSO callback URL for a given provider.")
     public final Response authenticationCallback(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response, @PathParam("provider") final String signinProvider) {
 
@@ -357,8 +357,8 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     @Path("/{provider}/authenticate")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Initiate login with an email address and password.",
-                  notes = "Optionally, a rememberMe flag can be provided for a longer session duration.")
+    @Operation(summary = "Initiate login with an email address and password.",
+                  description = "Optionally, a rememberMe flag can be provided for a longer session duration.")
     public final Response authenticateWithCredentials(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response, @PathParam("provider") final String signinProvider,
             final LocalAuthDTO localAuthDTO) throws InvalidKeySpecException, NoSuchAlgorithmException {
@@ -434,7 +434,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.WILDCARD)
     @Path("/logout")
-    @ApiOperation(value = "Initiate logout for the current user.")
+    @Operation(summary = "Initiate logout for the current user.")
     public final Response userLogout(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response) {
         try {
@@ -465,7 +465,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.WILDCARD)
     @Path("/logout/everywhere")
-    @ApiOperation(value = "Invalidate all sessions for the current user.")
+    @Operation(summary = "Invalidate all sessions for the current user.")
     public final Response userLogoutEverywhere(@Context final HttpServletRequest request,
                                                @Context final HttpServletResponse response) {
         try {
@@ -495,7 +495,8 @@ public class AuthenticationFacade extends AbstractSegueFacade {
      */
     @POST
     @Path("/mfa/challenge")
-    @ApiOperation(value = "Continuation of login flow for users who have 2FA enabled")
+    @Operation(summary = "Continuation of login flow for users who have 2FA enabled")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public final Response mfaCompleteAuthentication(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                     final MFAResponseDTO mfaResponse) {

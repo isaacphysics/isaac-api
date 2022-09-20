@@ -15,7 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.comm;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import java.util.List;
 
 /**

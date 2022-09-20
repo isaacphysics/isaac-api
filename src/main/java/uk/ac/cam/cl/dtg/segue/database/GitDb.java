@@ -24,7 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 
 import org.apache.commons.lang3.Validate;
 import org.eclipse.jgit.api.Git;
@@ -141,19 +141,55 @@ public class GitDb {
             return null;
         }
 
-        ObjectId objectId = this.findGitObject(sha, fullFilePath);
+        Repository repository = gitHandle.getRepository();
+        // This may or may not help with concurrent repo update issues:
+        repository.scanForRepoChanges();
+
+        ObjectId commitId = repository.resolve(sha);
+
+        RevWalk revWalk = new RevWalk(repository);
+        RevCommit commit = revWalk.parseCommit(commitId);
+
+        RevTree tree = commit.getTree();
+
+        TreeWalk treeWalk = new TreeWalk(repository);
+        treeWalk.addTree(tree);
+        treeWalk.setRecursive(true);
+        treeWalk.setFilter(PathFilter.create(fullFilePath));
+
+        int count = 0;
+        ObjectId objectId = null;
+        String path = null;
+        while (treeWalk.next()) {
+            count++;
+            if (null == objectId) {
+                objectId = treeWalk.getObjectId(0);
+                path = treeWalk.getPathString();
+            } else if (count > 1) {
+                // throw exception if we find that there is more than one that matches the search.
+                StringBuilder sb = new StringBuilder();
+                sb.append("Multiple results have been found in the git repository for the following search: ");
+                sb.append(fullFilePath).append(".");
+                sb.append(" in ");
+                sb.append(sha);
+                sb.append(" Unable to decide which one to return.");
+                throw new UnsupportedOperationException(sb.toString());
+            }
+        }
 
         if (null == objectId) {
             return null;
         }
 
-        Repository repository = gitHandle.getRepository();
+        revWalk.dispose();
+        log.debug("Retrieved Commit Id: " + commitId.getName() + " Searching for: " + fullFilePath + " found: " + path);
         ObjectLoader loader = repository.open(objectId);
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         loader.copyTo(out);
 
-        repository.close();
+        // TODO: Calling close seems to be unnecessary when not writing to the repo, and prints an error frequently.
+        //repository.close();
         return out;
     }
 
@@ -201,26 +237,6 @@ public class GitDb {
      */
     public Repository getGitRepository() {
         return gitHandle.getRepository();
-    }
-
-    /**
-     * Attempt to verify if an object exists in the git repository for a given sha and full path.
-     * 
-     * @param sha
-     *            - the version that to search within.
-     * @param fullfilePath
-     *            - the full path of the file in git.
-     * @return True if we can successfully find the object, false if not. False if we encounter an exception.
-     */
-    public boolean verifyGitObject(final String sha, final String fullfilePath) {
-        try {
-            if (findGitObject(sha, fullfilePath) != null) {
-                return true;
-            }
-        } catch (UnsupportedOperationException | IOException e) {
-            return false;
-        }
-        return false;
     }
 
     /**
@@ -380,69 +396,6 @@ public class GitDb {
             log.error("Error getting the head from the repository.", e);
         }
         return result;
-    }
-
-    /**
-     * Will find an object from the git repository if given a sha and a full git path.
-     * 
-     * @param sha
-     *            - to search for.
-     * @param filename
-     *            - of the file in git to locate.
-     * @return ObjectId which will allow you to access information about the node.
-     * @throws IOException
-     *             - if we cannot access the repo location.
-     * @throws UnsupportedOperationException
-     *             - if git does not support the operation requested.
-     */
-    private ObjectId findGitObject(final String sha, final String filename) throws IOException,
-            UnsupportedOperationException {
-        if (null == sha || null == filename) {
-            return null;
-        }
-
-        Repository repository = gitHandle.getRepository();
-
-        ObjectId commitId = repository.resolve(sha);
-
-        RevWalk revWalk = new RevWalk(repository);
-        RevCommit commit = revWalk.parseCommit(commitId);
-
-        RevTree tree = commit.getTree();
-
-        TreeWalk treeWalk = new TreeWalk(repository);
-        treeWalk.addTree(tree);
-        treeWalk.setRecursive(true);
-        treeWalk.setFilter(PathFilter.create(filename));
-
-        int count = 0;
-        ObjectId objectId = null;
-        String path = null;
-        while (treeWalk.next()) {
-            count++;
-            if (null == objectId) {
-                objectId = treeWalk.getObjectId(0);
-                path = treeWalk.getPathString();
-            } else if (count > 1) {
-                // throw exception if we find that there is more than one that
-                // matches the search.
-                StringBuilder sb = new StringBuilder();
-                sb.append("Multiple results have been found in the git repository for the following search: ");
-                sb.append(filename + ".");
-                sb.append(" in ");
-                sb.append(sha);
-                sb.append(" Unable to decide which one to return.");
-                throw new UnsupportedOperationException(sb.toString());
-            }
-        }
-
-        if (null == objectId) {
-            return null;
-        }
-
-        revWalk.dispose();
-        log.debug("Retrieved Commit Id: " + commitId.getName() + " Searching for: " + filename + " found: " + path);
-        return objectId;
     }
 
     /**

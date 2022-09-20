@@ -21,7 +21,7 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.DateRangeFilterInstruction;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -42,7 +42,7 @@ public class EventNotificationEmailManager {
     private static final Logger log = LoggerFactory.getLogger(EventNotificationEmailManager.class);
 
     private final PropertiesLoader properties;
-    private final IContentManager contentManager;
+    private final GitContentManager contentManager;
     private final EventBookingManager bookingManager;
     private final UserAccountManager userAccountManager;
     private final EmailManager emailManager;
@@ -55,7 +55,7 @@ public class EventNotificationEmailManager {
      */
     @Inject
     public EventNotificationEmailManager(final PropertiesLoader properties,
-                                         final IContentManager contentManager,
+                                         final GitContentManager contentManager,
                                          final EventBookingManager bookingManager,
                                          final UserAccountManager userAccountManager,
                                          final EmailManager emailManager,
@@ -111,8 +111,8 @@ public class EventNotificationEmailManager {
 
         try {
             ResultsWrapper<ContentDTO> findByFieldNames = this.contentManager.findByFieldNames(
-                properties.getProperty(CONTENT_INDEX), ContentService.generateDefaultFieldToMatch(fieldsToMatch),
-                startIndex, limit, sortInstructions, filterInstructions);
+                    ContentService.generateDefaultFieldToMatch(fieldsToMatch), startIndex, limit, sortInstructions,
+                    filterInstructions);
             for (ContentDTO contentResult : findByFieldNames.getResults()) {
                 if (contentResult instanceof IsaacEventPageDTO) {
                     IsaacEventPageDTO event = (IsaacEventPageDTO) contentResult;
@@ -144,14 +144,14 @@ public class EventNotificationEmailManager {
         ZonedDateTime now = ZonedDateTime.now();
         ZonedDateTime sixtyDaysAgo = now.plusDays(-60);
 
-        DateRangeFilterInstruction
-            eventsInLastSixtyDays = new DateRangeFilterInstruction(Date.from(sixtyDaysAgo.toInstant()), new Date());
+        DateRangeFilterInstruction eventsInLastSixtyDays = new DateRangeFilterInstruction(
+                Date.from(sixtyDaysAgo.toInstant()), new Date());
         filterInstructions.put(DATE_FIELDNAME, eventsInLastSixtyDays);
 
         try {
             ResultsWrapper<ContentDTO> findByFieldNames = this.contentManager.findByFieldNames(
-                properties.getProperty(CONTENT_INDEX), ContentService.generateDefaultFieldToMatch(fieldsToMatch),
-                startIndex, limit, sortInstructions, filterInstructions);
+                    ContentService.generateDefaultFieldToMatch(fieldsToMatch), startIndex, limit, sortInstructions,
+                    filterInstructions);
             for (ContentDTO contentResult : findByFieldNames.getResults()) {
                 if (contentResult instanceof IsaacEventPageDTO) {
                     IsaacEventPageDTO event = (IsaacEventPageDTO) contentResult;

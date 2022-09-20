@@ -2,7 +2,7 @@ package uk.ac.cam.cl.dtg.segue.api.services;
 
 import com.google.inject.Inject;
 
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.UriInfo;
 import java.util.List;
 import java.util.Map;
 

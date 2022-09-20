@@ -6,13 +6,11 @@ COPY . /isaac-api
 RUN mvn package -Dmaven.test.skip=true
 
 # create clean jetty docker container
-FROM jetty:9.4.46-jre8 as server
+FROM jetty:11.0.11-jdk11-eclipse-temurin as server
 USER root
 COPY --from=target /isaac-api/target/isaac-api.war /var/lib/jetty/webapps/isaac-api.war
 RUN chmod 755 /var/lib/jetty/webapps/*
 RUN chown jetty /var/lib/jetty/webapps/*
-
-#RUN sed -i -e 's#dev/random#dev/./urandom#g' $JAVA_HOME/jre/lib/security/java.security
 
 # prepare things so that jetty runs in the docker entrypoint
 USER jetty

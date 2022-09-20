@@ -21,8 +21,22 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.opencsv.CSVWriter;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
@@ -31,12 +45,17 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateAssignmentException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.services.AssignmentService;
+import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
+import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentStatusDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -46,26 +65,8 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
-import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
-import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.text.DecimalFormat;
@@ -95,7 +96,7 @@ import static uk.ac.cam.cl.dtg.util.NameFormatter.getFilteredGroupNameFromGroup;
  *
  */
 @Path("/assignments")
-@Api(value = "/assignments")
+@Tag(name = "/assignments")
 public class AssignmentFacade extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(AssignmentFacade.class);
 
@@ -166,18 +167,18 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "List all boards assigned to the current user.")
+    @Operation(summary = "List all boards assigned to the current user.")
     public Response getAssignments(@Context final HttpServletRequest request,
                                    @QueryParam("assignmentStatus") final GameboardState assignmentStatus) {
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
-            Collection<AssignmentDTO> assignments = this.assignmentManager.getAssignments(currentlyLoggedInUser);
-            Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsByUser = this.questionManager
-                    .getQuestionAttemptsByUser(currentlyLoggedInUser);
+            Collection<AssignmentDTO> assignments = this.assignmentManager.getAssignments(currentlyLoggedInUser)
+                    .stream().filter(a -> null == a.getScheduledStartDate() || a.getScheduledStartDate().before(new Date()))
+                    .collect(Collectors.toList());
 
             // Gather all gameboards we need to augment for the assignments in a single query
             List<String> gameboardIds = assignments.stream().map(AssignmentDTO::getGameboardId).collect(Collectors.toList());
-            Map<String, GameboardDTO> gameboardsMap = this.gameManager.getGameboards(gameboardIds, questionAttemptsByUser)
+            Map<String, GameboardDTO> gameboardsMap = this.gameManager.getGameboardsWithAttempts(gameboardIds, currentlyLoggedInUser)
                     .stream().collect(Collectors.toMap(GameboardDTO::getId, Function.identity()));
 
             // we want to populate gameboard details for the assignment DTO.
@@ -233,6 +234,59 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     }
 
     /**
+     * Allows the user to fetch a single assignment that they own (or are a group manager of). Returned assignment
+     * will contain gameboard and question information.
+     *
+     * @param request - so that we can identify the current user.
+     * @param assignmentId - id of assignment to fetch
+     * @return AssignmentDTO containing extra information about the gameboard and questions
+     */
+    @GET
+    @Path("/assign/{assignmentId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @Operation(summary = "Fetch an assignment object populated with gameboard and question information.")
+    public Response getSingleAssigned(@Context final HttpServletRequest request,
+                                @PathParam("assignmentId") final Long assignmentId) {
+        if (null == assignmentId) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Please specify an assignment id to search for.").toResponse();
+        }
+        try {
+            RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
+
+            AssignmentDTO assignment = this.assignmentManager.getAssignmentById(assignmentId);
+            if (null == assignment) {
+                return new SegueErrorResponse(Status.NOT_FOUND, String.format("Assignment with id %d not found.", assignmentId)).toResponse();
+            }
+            UserGroupDTO group = this.groupManager.getGroupById(assignment.getGroupId());
+            if (null == group) {
+                return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while locating the specified assignment.").toResponse();
+            }
+
+            if (!GroupManager.isOwnerOrAdditionalManager(group, currentlyLoggedInUser.getId())
+                    && !isUserAnAdmin(userManager, currentlyLoggedInUser)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You are not the owner or manager of this assignment.").toResponse();
+            }
+
+            // In order to get all the information about parts and pass marks, which is needed for Assignment Progress,
+            // we need to use the method which augments a gameboard with user attempt information.
+            // But we don't _want_ the attempt information itself for real, so we won't load it from the database:
+            Map<String, Map<String, List<QuestionValidationResponse>>> fakeQuestionAttemptMap = new HashMap<>();
+
+            assignment.setGameboard(this.gameManager.getGameboard(assignment.getGameboardId(), currentlyLoggedInUser, fakeQuestionAttemptMap));
+
+            return Response.ok(assignment)
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while locating the specified assignment.").toResponse();
+        } catch (ContentManagerException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while populating the specified assignment object.").toResponse();
+        }
+    }
+
+    /**
      * Allows a user to get all assignments they have set in light weight objects.
      *
      * If the user specifies a group ID to narrow the search full objects including questions in gameboards will be returned.
@@ -248,7 +302,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Path("/assign")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "List all assignments set by the current user if no group param specified.")
+    @Operation(summary = "List all assignments set by the current user if no group param specified.")
     public Response getAssigned(@Context final HttpServletRequest request,
                                 @QueryParam("group") final Long groupIdOfInterest) {
         try {
@@ -256,7 +310,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             if (null == groupIdOfInterest) {
                 List<UserGroupDTO> allGroupsOwnedAndManagedByUser = this.groupManager.getAllGroupsOwnedAndManagedByUser(currentlyLoggedInUser, false);
-                return Response.ok(this.assignmentManager.getAllAssignmentsForSpecificGroups(allGroupsOwnedAndManagedByUser))
+                return Response.ok(this.assignmentManager.getAllAssignmentsForSpecificGroups(allGroupsOwnedAndManagedByUser, true))
                         .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
             } else {
                 UserGroupDTO group = this.groupManager.getGroupById(groupIdOfInterest);
@@ -286,9 +340,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 for (AssignmentDTO assignment : allAssignmentsSetToGroup) {
                     assignment.setGameboard(gameboards.get(assignment.getGameboardId()));
                 }
-
-                this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacServerLogType.VIEW_GROUPS_ASSIGNMENTS,
-                        ImmutableMap.of("groupId", group.getId()));
 
                 return Response.ok(allAssignmentsSetToGroup)
                         .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
@@ -320,7 +371,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Path("/assign/{assignment_id}/progress")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "View the progress of a specific assignment.")
+    @Operation(summary = "View the progress of a specific assignment.")
     public Response getAssignmentProgress(@Context final HttpServletRequest request,
                                           @PathParam("assignment_id") final Long assignmentId) {
         try {
@@ -348,6 +399,10 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             final String resultsString = "results";
             final String correctPartString = "correctPartResults";
             final String incorrectPartString = "incorrectPartResults";
+
+            if (gameboard.getContents().isEmpty()) {
+                return new SegueErrorResponse(Status.NOT_FOUND, "Assignment gameboard has no questions, or its questions no longer exist. Cannot fetch assignment progress.").toResponse();
+            }
 
             for (ImmutablePair<RegisteredUserDTO, List<GameboardItem>> userGameboardItems : this.gameManager
                     .gatherGameProgressData(groupMembers, gameboard)) {
@@ -406,7 +461,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Produces("text/csv")
     @GZIP
     @Consumes(MediaType.WILDCARD)
-    @ApiOperation(value = "Download the progress of a specific assignment.")
+    @Operation(summary = "Download the progress of a specific assignment.")
     public Response getAssignmentProgressDownloadCSV(@Context final HttpServletRequest request,
                                                      @PathParam("assignment_id") final Long assignmentId,
                                                      @QueryParam("format") final String formatMode) {
@@ -616,7 +671,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Produces("text/csv")
     @GZIP
     @Consumes(MediaType.WILDCARD)
-    @ApiOperation(value = "Download the progress of a group on all assignments set.")
+    @Operation(summary = "Download the progress of a group on all assignments set.")
     public Response getGroupAssignmentsProgressDownloadCSV(@Context final HttpServletRequest request,
                                                            @PathParam("group_id") final Long groupId,
                                                            @QueryParam("format") final String formatMode) {
@@ -639,7 +694,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             // Fetch all assignments set to the requested group:
             List<AssignmentDTO> assignments;
-            assignments = this.assignmentManager.getAllAssignmentsForSpecificGroups(Collections.singletonList(group));
+            assignments = this.assignmentManager.getAllAssignmentsForSpecificGroups(Collections.singletonList(group), false);
 
             // Fetch the members of the requested group
             List<RegisteredUserDTO> groupMembers;
@@ -898,48 +953,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     }
 
     /**
-     * Allows a user to get all groups that have been assigned to a given list of boards.
-     *
-     * @param request
-     *            - so that we can identify the current user.
-     * @param gameboardIdsQueryParam
-     *            - The comma seperated list of gameboard ids.
-     * @return the assignment object.
-     */
-    @GET
-    @Path("/assign/groups")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @ApiOperation(value = "List all groups assigned boards from a list of boards.",
-                  notes = "The list of boards should be comma separated.")
-    public Response getAssignedGroupsByGameboards(@Context final HttpServletRequest request,
-                                                  @QueryParam("gameboard_ids") final String gameboardIdsQueryParam) {
-        try {
-
-            if (null == gameboardIdsQueryParam || gameboardIdsQueryParam.isEmpty()) {
-                return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a comma separated list of gameboard_ids in the query param")
-                        .toResponse();
-            }
-
-            RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
-            Map<String, Object> gameboardGroups = Maps.newHashMap();
-
-
-            for (String gameboardId : gameboardIdsQueryParam.split(",")) {
-                gameboardGroups.put(gameboardId, assignmentManager.findGroupsByGameboard(currentlyLoggedInUser, gameboardId));
-            }
-
-            return Response.ok(gameboardGroups)
-                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (SegueDatabaseException e) {
-            log.error("Database error while trying to assign work", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unknown database error.").toResponse();
-        }
-    }
-
-    /**
      * Allows a user to assign a gameboard to one or more groups of users. We assume that each partial AssignmentDTO object has
      * the same gameboardId, notes and dueDate to make validation easier, but this could be changed in theory, given a more
      * flexible front-end.
@@ -951,9 +964,10 @@ public class AssignmentFacade extends AbstractIsaacFacade {
      */
     @POST
     @Path("/assign_bulk")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Create one or more new assignment(s).")
+    @Operation(summary = "Create one or more new assignment(s).")
     public Response assignGameBoards(@Context final HttpServletRequest request,
                                     final List<AssignmentDTO> assignmentDTOsFromClient) {
         try {
@@ -997,6 +1011,25 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     continue;
                 }
 
+                if (null != assignmentDTO.getDueDate()) {
+                    if (assignmentDTO.getDueDate().before(new Date())) {
+                        assigmentStatuses.add(new AssignmentStatusDTO(assignmentDTO.getGroupId(), "The assignment cannot be due in the past."));
+                        continue;
+                    }
+                }
+
+                if (null != assignmentDTO.getScheduledStartDate()) {
+                    Date oneYearInFuture = DateUtils.addYears(new Date(), 1);
+                    if (assignmentDTO.getScheduledStartDate().after(oneYearInFuture)) {
+                        assigmentStatuses.add(new AssignmentStatusDTO(assignmentDTO.getGroupId(), "The assignment cannot be scheduled to begin more than one year in the future."));
+                        continue;
+                    }
+                    if (null != assignmentDTO.getDueDate() && assignmentDTO.getScheduledStartDate().after(assignmentDTO.getDueDate())) {
+                        assigmentStatuses.add(new AssignmentStatusDTO(assignmentDTO.getGroupId(), "The assignment cannot be scheduled to begin after it is due."));
+                        continue;
+                    }
+                }
+
                 try {
                     // Get the gameboard:
                     // The `computeIfAbsent` Map function won't work because of checked SegueDatabaseException (for getGameboard/getGroupById)
@@ -1037,7 +1070,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     eventDetails.put(Constants.GAMEBOARD_ID_FKEY, assignmentWithID.getGameboardId());
                     eventDetails.put(GROUP_FK, assignmentWithID.getGroupId());
                     eventDetails.put(ASSIGNMENT_FK, assignmentWithID.getId());
-                    eventDetails.put(ASSIGNMENT_DUEDATE_FK, assignmentWithID.getDueDate());
+                    eventDetails.put(ASSIGNMENT_DUEDATE, assignmentWithID.getDueDate());
+                    eventDetails.put(ASSIGNMENT_SCHEDULED_START_DATE, assignmentWithID.getScheduledStartDate());
                     this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacServerLogType.SET_NEW_ASSIGNMENT, eventDetails);
 
                     this.userBadgeManager.updateBadge(currentlyLoggedInUser,
@@ -1078,10 +1112,11 @@ public class AssignmentFacade extends AbstractIsaacFacade {
      */
     @POST
     @Path("/assign/")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @Deprecated
-    @ApiOperation(value = "Create a new assignment.")
+    @Operation(summary = "Create a new assignment.")
     public Response assignGameBoard(@Context final HttpServletRequest request,
                                     final AssignmentDTO assignmentDTOFromClient) {
         return this.assignGameBoards(request, Collections.singletonList(assignmentDTOFromClient));
@@ -1102,7 +1137,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Path("/assign/{gameboard_id}/{group_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Delete an assignment by board ID and group ID.")
+    @Operation(summary = "Delete an assignment by board ID and group ID.")
     public Response deleteAssignment(@Context final HttpServletRequest request,
                                      @PathParam("gameboard_id") final String gameboardId, @PathParam("group_id") final Long groupId) {
 

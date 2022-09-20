@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
  */
 public class IsaacClozeValidator implements IValidator {
     private static final Logger log = LoggerFactory.getLogger(IsaacClozeValidator.class);
+    private static final String NULL_CLOZE_ITEM_ID = "NULL_CLOZE_ITEM";
 
     @Override
     public final QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
@@ -87,6 +88,7 @@ public class IsaacClozeValidator implements IValidator {
         if (null != submittedChoice.getItems() && null != clozeQuestion.getItems()) {
             submittedItemIdSet = submittedChoice.getItems().stream().map(Item::getId).collect(Collectors.toSet());
             allowedItemIds = clozeQuestion.getItems().stream().map(Item::getId).collect(Collectors.toSet());
+            allowedItemIds.add(NULL_CLOZE_ITEM_ID);
             if (!allowedItemIds.containsAll(submittedItemIdSet)) {
                 feedback = new Content("You did not provide a valid answer; it contained unrecognised items");
             }

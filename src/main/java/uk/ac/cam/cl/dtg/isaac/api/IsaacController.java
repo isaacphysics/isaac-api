@@ -21,8 +21,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +36,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
@@ -46,19 +46,19 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.EntityTag;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Request;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.EntityTag;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Request;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
@@ -80,7 +80,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * 
  */
 @Path("/")
-@Api(value = "/")
+@Tag(name = "/")
 public class IsaacController extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(IsaacController.class);
 
@@ -88,7 +88,7 @@ public class IsaacController extends AbstractIsaacFacade {
     private final UserAccountManager userManager;
     private final UserAssociationManager associationManager;
     private final String contentIndex;
-    private final IContentManager contentManager;
+    private final GitContentManager contentManager;
     private final UserBadgeManager userBadgeManager;
     private final IUserStreaksManager userStreaksManager;
     private final ContentSummarizerService contentSummarizerService;
@@ -137,7 +137,7 @@ public class IsaacController extends AbstractIsaacFacade {
     @Inject
     public IsaacController(final PropertiesLoader propertiesLoader,
                            final ILogManager logManager, final IStatisticsManager statsManager,
-                           final UserAccountManager userManager, final IContentManager contentManager,
+                           final UserAccountManager userManager, final GitContentManager contentManager,
                            final UserAssociationManager associationManager,
                            @Named(CONTENT_INDEX) final String contentIndex,
                            final IUserStreaksManager userStreaksManager,
@@ -175,7 +175,7 @@ public class IsaacController extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/search")
     @GZIP
-    @ApiOperation(value = "Search for content objects matching the provided criteria.")
+    @Operation(summary = "Search for content objects matching the provided criteria.")
     public final Response search(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
             @QueryParam("query") final String searchString,
             @DefaultValue(DEFAULT_TYPE_FILTER) @QueryParam("types") final String types,
@@ -213,7 +213,7 @@ public class IsaacController extends AbstractIsaacFacade {
             }
 
             ResultsWrapper<ContentDTO> searchResults = this.contentManager.siteWideSearch(
-                    this.contentIndex, searchString, documentTypes, showHiddenContent, startIndex, limit);
+                    searchString, documentTypes, showHiddenContent, startIndex, limit);
 
             ImmutableMap<String, String> logMap = new ImmutableMap.Builder<String, String>()
                     .put(TYPE_FIELDNAME, types)
@@ -257,8 +257,8 @@ public class IsaacController extends AbstractIsaacFacade {
     @Produces("*/*")
     @Path("images/{path:.*}")
     @GZIP
-    @ApiOperation(value = "Get a binary object from the current content version.",
-                  notes = "This can only be used to get images from the content database.")
+    @Operation(summary = "Get a binary object from the current content version.",
+                  description = "This can only be used to get images from the content database.")
     public final Response getImageByPath(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
                                          @PathParam("path") final String path) {
         if (null == path || Files.getFileExtension(path).isEmpty()) {
@@ -284,6 +284,7 @@ public class IsaacController extends AbstractIsaacFacade {
                 break;
 
             case "jpg":
+            case "jpeg":
                 mimeType = "image/jpeg";
                 break;
 
@@ -305,7 +306,7 @@ public class IsaacController extends AbstractIsaacFacade {
         }
 
         try {
-            fileContent = this.contentManager.getFileBytes(sha, path);
+            fileContent = this.contentManager.getFileBytes(path);
         } catch (IOException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Error reading from file repository", e);
@@ -344,8 +345,8 @@ public class IsaacController extends AbstractIsaacFacade {
     @Produces("*/*")
     @Path("documents/{path:.*}")
     @GZIP
-    @ApiOperation(value = "Get a binary object from the current content version.",
-                  notes = "This can only be used to get PDF documents from the content database.")
+    @Operation(summary = "Get a binary object from the current content version.",
+                  description = "This can only be used to get PDF documents from the content database.")
     public final Response getDocumentByPath(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
                                          @PathParam("path") final String path) {
         if (null == path || Files.getFileExtension(path).isEmpty()) {
@@ -382,7 +383,7 @@ public class IsaacController extends AbstractIsaacFacade {
                     return error.toResponse(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, false), etag);
             }
 
-            fileContent = this.contentManager.getFileBytes(sha, path);
+            fileContent = this.contentManager.getFileBytes(path);
             if (null == fileContent) {
                 String refererHeader = httpServletRequest.getHeader("Referer");
                 SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the file: " + path);
@@ -424,7 +425,7 @@ public class IsaacController extends AbstractIsaacFacade {
     @Path("users/current_user/progress")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Get progress information for the current user.")
+    @Operation(summary = "Get progress information for the current user.")
     public final Response getCurrentUserProgressInformation(@Context final HttpServletRequest request) {
         RegisteredUserDTO user;
         try {
@@ -447,7 +448,7 @@ public class IsaacController extends AbstractIsaacFacade {
     @Path("users/current_user/snapshot")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Get snapshot for the current user.")
+    @Operation(summary = "Get snapshot for the current user.")
     public final Response getCurrentUserSnapshot(@Context final HttpServletRequest request) {
         RegisteredUserDTO user;
         try {
@@ -486,7 +487,7 @@ public class IsaacController extends AbstractIsaacFacade {
     @Path("users/{user_id}/progress")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Get progress information for a specified user.")
+    @Operation(summary = "Get progress information for a specified user.")
     public final Response getUserProgressInformation(@Context final HttpServletRequest request,
             @PathParam("user_id") final Long userIdOfInterest) {
         RegisteredUserDTO user;

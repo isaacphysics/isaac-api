@@ -28,34 +28,33 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dos.AudienceContext;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardContentDescriptor;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
+import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
+import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuickQuestionDTO;
-import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
-import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
-import uk.ac.cam.cl.dtg.isaac.dos.AudienceContext;
-import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
-import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
-import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
+import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -87,7 +86,7 @@ public class GameManager {
     private final Random randomGenerator;
     private final MapperFacade mapper;
 
-    private final IContentManager contentManager;
+    private final GitContentManager contentManager;
     private final String contentIndex;
 
     private final QuestionManager questionManager;
@@ -107,7 +106,7 @@ public class GameManager {
      *            - the current content index of interest.
      */
     @Inject
-    public GameManager(final IContentManager contentManager,
+    public GameManager(final GitContentManager contentManager,
                        final GameboardPersistenceManager gameboardPersistenceManager, final MapperFacade mapper,
                        final QuestionManager questionManager, @Named(CONTENT_INDEX) final String contentIndex) {
         this.contentManager = contentManager;
@@ -304,6 +303,39 @@ public class GameManager {
     }
 
     /**
+     * Get a list of gameboards by their ids, augmented with attempt information.
+     *
+     * Note: These gameboards WILL be augmented with user attempt information, but not whether the gameboard is saved
+     * to the user's boards.
+     *
+     * @param gameboardIds
+     *            - to look up.
+     * @param user
+     *            - the user to augment the gameboard for.
+     * @return the gameboards or null.
+     * @throws SegueDatabaseException
+     *             - if there is a problem retrieving the gameboards in the database.
+     * @throws ContentManagerException
+     *             - if there is a problem resolving content
+     */
+    public final List<GameboardDTO> getGameboardsWithAttempts(final List<String> gameboardIds, final RegisteredUserDTO user)
+            throws SegueDatabaseException, ContentManagerException {
+        if (null == gameboardIds || gameboardIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<GameboardDTO> gameboardsByIds = this.gameboardPersistenceManager.getGameboardsByIds(gameboardIds);
+        List<String> questionPageIds = gameboardsByIds.stream().map(GameboardDTO::getContents).flatMap(Collection::stream).map(GameboardItem::getId).collect(Collectors.toList());
+        Map<String, Map<String, List<LightweightQuestionValidationResponse>>> userQuestionAttempts =
+                questionManager.getMatchingQuestionAttempts(user, questionPageIds);
+        for (GameboardDTO gb : gameboardsByIds) {
+            augmentGameboardWithQuestionAttemptInformation(gb, userQuestionAttempts);
+        }
+
+        return gameboardsByIds;
+    }
+
+    /**
      * Get a gameboard by its id.
      * 
      * @param gameboardId
@@ -368,12 +400,13 @@ public class GameManager {
         Validate.notNull(user);
 
         List<GameboardDTO> usersGameboards = this.gameboardPersistenceManager.getGameboardsByUserId(user);
-        Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser = questionManager
-                .getQuestionAttemptsByUser(user);
-
         if (null == usersGameboards || usersGameboards.isEmpty()) {
             return new GameboardListDTO();
         }
+
+        List<String> questionPageIds = usersGameboards.stream().map(GameboardDTO::getContents).flatMap(Collection::stream).map(GameboardItem::getId).collect(Collectors.toList());
+        Map<String, Map<String, List<LightweightQuestionValidationResponse>>> questionAttemptsFromUser =
+                questionManager.getMatchingQuestionAttempts(user, questionPageIds);
 
         List<GameboardDTO> resultToReturn = Lists.newArrayList();
 
@@ -634,16 +667,16 @@ public class GameManager {
      *             - if we cannot access the content requested.
      */
     public List<IsaacWildcard> getWildcards() throws NoWildcardException, ContentManagerException {
-        List<IContentManager.BooleanSearchClause> fieldsToMap = Lists.newArrayList();
+        List<GitContentManager.BooleanSearchClause> fieldsToMap = Lists.newArrayList();
 
-        fieldsToMap.add(new IContentManager.BooleanSearchClause(
+        fieldsToMap.add(new GitContentManager.BooleanSearchClause(
                 TYPE_FIELDNAME, BooleanOperator.OR, Collections.singletonList(WILDCARD_TYPE)));
 
         Map<String, SortOrder> sortInstructions = Maps.newHashMap();
         sortInstructions.put(TITLE_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, SortOrder.ASC);
 
         ResultsWrapper<ContentDTO> wildcardResults = this.contentManager.findByFieldNames(
-                this.contentIndex, fieldsToMap, 0, -1, sortInstructions);
+                fieldsToMap, 0, -1, sortInstructions);
 
         if (wildcardResults.getTotalResults() == 0) {
             throw new NoWildcardException();
@@ -673,8 +706,7 @@ public class GameManager {
         Validate.notBlank(questionPageId);
 
         // do a depth first traversal of the question page to get the correct order of questions
-        ContentDTO questionPage = this.contentManager.getContentById(this.contentManager.getCurrentContentSHA(),
-                questionPageId);
+        ContentDTO questionPage = this.contentManager.getContentById(questionPageId);
         return getAllMarkableQuestionPartsDFSOrder(questionPage);
     }
 
@@ -735,7 +767,7 @@ public class GameManager {
      *             - if there is an error retrieving the content requested.
      */
     private GameboardDTO augmentGameboardWithQuestionAttemptInformation(final GameboardDTO gameboardDTO,
-                                                                        final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser)
+                                                                        final Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> questionAttemptsFromUser)
             throws ContentManagerException {
         if (null == gameboardDTO) {
             return null;
@@ -966,18 +998,18 @@ public class GameManager {
      * @throws ContentManagerException
      *             - if there is a problem accessing the content repository.
      */
-    private List<GameboardItem> getNextQuestionsForFilter(final GameFilter gameFilter, final int index,
+    public List<GameboardItem> getNextQuestionsForFilter(final GameFilter gameFilter, final int index,
             final Long randomSeed) throws ContentManagerException {
         // get some questions
-        List<IContentManager.BooleanSearchClause> fieldsToMap = Lists.newArrayList();
-        fieldsToMap.add(new IContentManager.BooleanSearchClause(
+        List<GitContentManager.BooleanSearchClause> fieldsToMap = Lists.newArrayList();
+        fieldsToMap.add(new GitContentManager.BooleanSearchClause(
                 TYPE_FIELDNAME, BooleanOperator.AND, Collections.singletonList(QUESTION_TYPE)));
         fieldsToMap.addAll(generateFieldToMatchForQuestionFilter(gameFilter));
 
         // Search for questions that match the fields to map variable.
 
         ResultsWrapper<ContentDTO> results = this.contentManager.findByFieldNamesRandomOrder(
-                this.contentIndex, fieldsToMap, index, MAX_QUESTIONS_TO_SEARCH, randomSeed);
+                fieldsToMap, index, MAX_QUESTIONS_TO_SEARCH, randomSeed);
 
         List<ContentDTO> questionsForGameboard = results.getResults();
 
@@ -1033,8 +1065,7 @@ public class GameManager {
         int questionPartsNotAttempted = 0;
         String questionPageId = gameItem.getId();
 
-        IsaacQuestionPageDTO questionPage = (IsaacQuestionPageDTO) this.contentManager.getContentById(
-                this.contentManager.getCurrentContentSHA(), questionPageId);
+        IsaacQuestionPageDTO questionPage = (IsaacQuestionPageDTO) this.contentManager.getContentById(questionPageId);
         // get all question parts in the question page: depends on each question
         // having an id that starts with the question page id.
         Collection<QuestionDTO> listOfQuestionParts = getAllMarkableQuestionPartsDFSOrder(questionPage);
@@ -1128,14 +1159,14 @@ public class GameManager {
      */
     private IsaacWildcard getRandomWildcard(final MapperFacade mapper, final List<String> subjectsList) throws NoWildcardException,
             ContentManagerException {
-        List<IContentManager.BooleanSearchClause> fieldsToMap = Lists.newArrayList();
+        List<GitContentManager.BooleanSearchClause> fieldsToMap = Lists.newArrayList();
 
-        fieldsToMap.add(new IContentManager.BooleanSearchClause(
+        fieldsToMap.add(new GitContentManager.BooleanSearchClause(
                 TYPE_FIELDNAME, BooleanOperator.OR, Collections.singletonList(WILDCARD_TYPE)));
 
         // FIXME - the 999 is a magic number because using NO_SEARCH_LIMIT doesn't work for all elasticsearch queries!
         ResultsWrapper<ContentDTO> wildcardResults = this.contentManager.findByFieldNamesRandomOrder(
-                this.contentIndex, fieldsToMap, 0, 999);
+                fieldsToMap, 0, 999);
 
         // try to increase randomness of wildcard results.
         Collections.shuffle(wildcardResults.getResults());
@@ -1183,7 +1214,7 @@ public class GameManager {
         fieldsToMap.put(immutableEntry(BooleanOperator.AND, ID_FIELDNAME), Collections.singletonList(id));
         fieldsToMap.put(immutableEntry(BooleanOperator.AND, TYPE_FIELDNAME), Collections.singletonList(WILDCARD_TYPE));
 
-        Content wildcardResults = this.contentManager.getContentDOById(this.contentManager.getCurrentContentSHA(), id);
+        Content wildcardResults = this.contentManager.getContentDOById(id);
 
         return mapper.map(wildcardResults, IsaacWildcard.class);
     }
@@ -1197,7 +1228,7 @@ public class GameManager {
      *            - filter object containing all the filter information used to make this board.
      * @return A map ready to be passed to a content provider
      */
-    private static List<IContentManager.BooleanSearchClause> generateFieldToMatchForQuestionFilter(
+    private static List<GitContentManager.BooleanSearchClause> generateFieldToMatchForQuestionFilter(
             final GameFilter gameFilter) {
 
         // Validate that the field sizes are as we expect for tags
@@ -1206,11 +1237,11 @@ public class GameManager {
             throw new IllegalArgumentException("Error validating filter query.");
         }
 
-        List<IContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
+        List<GitContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
 
         // handle question categories
         if (null != gameFilter.getQuestionCategories()) {
-            fieldsToMatch.add(new IContentManager.BooleanSearchClause(
+            fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
                     TAGS_FIELDNAME, BooleanOperator.OR, gameFilter.getQuestionCategories()));
         }
 
@@ -1248,10 +1279,10 @@ public class GameManager {
 
         // deal with adding overloaded tags field for subjects, fields and topics
         if (tagAnds.size() > 0) {
-            fieldsToMatch.add(new IContentManager.BooleanSearchClause(TAGS_FIELDNAME, BooleanOperator.AND, tagAnds));
+            fieldsToMatch.add(new GitContentManager.BooleanSearchClause(TAGS_FIELDNAME, BooleanOperator.AND, tagAnds));
         }
         if (tagOrs.size() > 0) {
-            fieldsToMatch.add(new IContentManager.BooleanSearchClause(TAGS_FIELDNAME, BooleanOperator.OR, tagOrs));
+            fieldsToMatch.add(new GitContentManager.BooleanSearchClause(TAGS_FIELDNAME, BooleanOperator.OR, tagOrs));
         }
 
         // now deal with levels
@@ -1260,33 +1291,37 @@ public class GameManager {
             for (Integer levelInt : gameFilter.getLevels()) {
                 levelsAsStrings.add(levelInt.toString());
             }
-            fieldsToMatch.add(new IContentManager.BooleanSearchClause(LEVEL_FIELDNAME, BooleanOperator.OR, levelsAsStrings));
+            fieldsToMatch.add(new GitContentManager.BooleanSearchClause(LEVEL_FIELDNAME, BooleanOperator.OR, levelsAsStrings));
         }
 
         // Handle the nested audience fields: stage, difficulty and examBoard
         if (null != gameFilter.getStages()) {
-            fieldsToMatch.add(new IContentManager.BooleanSearchClause(
+            fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
                     STAGE_FIELDNAME, BooleanOperator.OR, gameFilter.getStages()));
         }
         if (null != gameFilter.getDifficulties()) {
-            fieldsToMatch.add(new IContentManager.BooleanSearchClause(
+            fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
                     DIFFICULTY_FIELDNAME, BooleanOperator.OR, gameFilter.getDifficulties()));
         }
         if (null != gameFilter.getExamBoards()) {
-            fieldsToMatch.add(new IContentManager.BooleanSearchClause(
+            fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
                     EXAM_BOARD_FIELDNAME, BooleanOperator.OR, gameFilter.getExamBoards()));
         }
 
         // handle concepts
         if (null != gameFilter.getConcepts()) {
-            fieldsToMatch.add(new IContentManager.BooleanSearchClause(
+            fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
                     RELATED_CONTENT_FIELDNAME, BooleanOperator.OR, gameFilter.getConcepts()));
         }
 
         // handle exclusions
-        List<String> tagsToExclude = Lists.newArrayList();
-        tagsToExclude.add(HIDE_FROM_FILTER_TAG); // add no filter constraint
-        fieldsToMatch.add(new IContentManager.BooleanSearchClause(TAGS_FIELDNAME, BooleanOperator.NOT, tagsToExclude));
+        // exclude questions with no-filter tag
+        fieldsToMatch.add(new GitContentManager.BooleanSearchClause(TAGS_FIELDNAME, BooleanOperator.NOT,
+                Collections.singletonList(HIDE_FROM_FILTER_TAG)));
+
+        // exclude questions marked deprecated
+        fieldsToMatch.add(new GitContentManager.BooleanSearchClause(DEPRECATED_FIELDNAME, BooleanOperator.NOT,
+                Collections.singletonList("true")));
 
         return fieldsToMatch;
     }

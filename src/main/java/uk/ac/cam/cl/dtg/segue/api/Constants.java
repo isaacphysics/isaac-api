@@ -424,6 +424,7 @@ public final class Constants {
     public static final String SEARCHABLE_CONTENT_FIELDNAME = "searchableContent";
     public static final String VISIBLE_TO_STUDENTS_FIELDNAME = "visibleToStudents";
     public static final String HIDDEN_FROM_ROLES_FIELDNAME = "hiddenFromRoles";
+    public static final String DEPRECATED_FIELDNAME = "deprecated";
 
     public static final String STAGE_FIELDNAME = "audience.stage";
     public static final String DIFFICULTY_FIELDNAME = "audience.difficulty";
@@ -525,7 +526,8 @@ public final class Constants {
 
     public static final String GROUP_FK = "groupId";
     public static final String ASSIGNMENT_FK = "assignmentId";
-    public static final String ASSIGNMENT_DUEDATE_FK = "dueDate";
+    public static final String ASSIGNMENT_DUEDATE = "dueDate";
+    public static final String ASSIGNMENT_SCHEDULED_START_DATE = "scheduledStartDate";
 
     public static final String QUIZ_ATTEMPT_FK = "quizAttemptId";
     public static final String QUIZ_ASSIGNMENT_FK = "quizAssignmentId";

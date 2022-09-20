@@ -21,8 +21,8 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.lang3.EnumUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
@@ -44,7 +44,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dto.ContentEmailDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
@@ -53,17 +53,17 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.EmailTemplateDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -80,13 +80,13 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  *
  */
 @Path("/")
-@Api(value = "/email")
+@Tag(name = "/email")
 public class EmailFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(EmailFacade.class);
     
     private final EmailManager emailManager;
     private final UserAccountManager userManager;
-    private final IContentManager contentManager;
+    private final GitContentManager contentManager;
     private final IMisuseMonitor misuseMonitor;
 
     /**
@@ -107,8 +107,8 @@ public class EmailFacade extends AbstractSegueFacade {
      */
     @Inject
     public EmailFacade(final PropertiesLoader properties, final ILogManager logManager,
-            final EmailManager emailManager, final UserAccountManager userManager,
-                       final IContentManager contentManager, final IMisuseMonitor misuseMonitor) {
+                       final EmailManager emailManager, final UserAccountManager userManager,
+                       final GitContentManager contentManager, final IMisuseMonitor misuseMonitor) {
 		super(properties, logManager);
         this.contentManager = contentManager;
 		this.emailManager = emailManager;
@@ -134,8 +134,8 @@ public class EmailFacade extends AbstractSegueFacade {
     @Path("/email/viewinbrowser/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Get an email by ID.",
-                  notes =  "The details of the current user will be used to fill in template fields.")
+    @Operation(summary = "Get an email by ID.",
+                  description =  "The details of the current user will be used to fill in template fields.")
     public final Response getEmailInBrowserById(@Context final HttpServletRequest request,
             @PathParam("id") final String id) {
     	
@@ -150,7 +150,7 @@ public class EmailFacade extends AbstractSegueFacade {
 
         // Deserialize object into POJO of specified type, provided one exists.
         try {
-            c = this.contentManager.getContentById(this.contentManager.getCurrentContentSHA(), id);
+            c = this.contentManager.getContentById(id);
 
             if (null == c) {
                 SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "No content found with id: " + id);
@@ -236,7 +236,7 @@ public class EmailFacade extends AbstractSegueFacade {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Verify an email verification token is valid for use.")
+    @Operation(summary = "Verify an email verification token is valid for use.")
     public Response validateEmailVerificationRequest(@PathParam("userid") final Long userId,
                                                      @PathParam("token") final String token) {
 
@@ -274,8 +274,8 @@ public class EmailFacade extends AbstractSegueFacade {
     @Path("/users/verifyemail")
     @Consumes(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Initiate an email verification request.",
-                  notes = "The email to verify must be provided as 'email' in the request body.")
+    @Operation(summary = "Initiate an email verification request.",
+                  description = "The email to verify must be provided as 'email' in the request body.")
     public Response generateEmailVerificationToken(@Context final HttpServletRequest request,
                                                    final Map<String, String> payload) {
         try {
@@ -332,7 +332,7 @@ public class EmailFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Send an email to all users of a specific role.")
+    @Operation(summary = "Send an email to all users of a specific role.")
     public final Response sendEmails(@Context final HttpServletRequest request,
 		    		@PathParam("contentid") final String contentId, 
 		    		@PathParam("emailtype") final String emailTypeString,
@@ -417,7 +417,7 @@ public class EmailFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Send an email to a list of user IDs.")
+    @Operation(summary = "Send an email to a list of user IDs.")
     public final Response sendEmailsToUserIds(@Context final HttpServletRequest request,
             @PathParam("contentid") final String contentId, @PathParam("emailtype") final String emailTypeString,
             final List<Long> userIds) {
@@ -512,7 +512,7 @@ public class EmailFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Send an email to a list of user IDs.")
+    @Operation(summary = "Send an email to a list of user IDs.")
     public final Response sendProvidedEmailWithUserIds(@Context final HttpServletRequest request,
                                               @PathParam("emailtype") final String emailTypeString,
                                               final ContentEmailDTO providedTemplate) {

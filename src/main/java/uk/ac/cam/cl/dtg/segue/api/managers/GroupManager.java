@@ -701,8 +701,15 @@ public class GroupManager {
 
             GroupMembershipDTO membershipRecord = groupIdToUserMembershipInfoMap.get(assignment.getGroupId()).get(userId);
             // if they are inactive and they became inactive before the assignment was sent we want to skip the assignment.
+            Date assignmentStartDate = null;
+            if (assignment instanceof AssignmentDTO) {
+                assignmentStartDate = ((AssignmentDTO) assignment).getScheduledStartDate();
+            }
+            if (assignmentStartDate == null) {
+                assignmentStartDate = assignment.getCreationDate();
+            }
             if (GroupMembershipStatus.INACTIVE.equals(membershipRecord.getStatus())
-                && membershipRecord.getUpdated().before(assignment.getCreationDate()) ) {
+                && membershipRecord.getUpdated().before(assignmentStartDate)) {
                 continue;
             }
 

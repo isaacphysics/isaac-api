@@ -18,6 +18,8 @@ import org.eclipse.jgit.treewalk.TreeWalk;
 import org.elasticsearch.action.ActionRequestValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacCard;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacCardDeck;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacEventPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuiz;
@@ -42,7 +44,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -304,10 +306,10 @@ public class ContentIndexer {
                             // therefore log an error
                             log.debug("Resource with duplicate ID (" + content.getId()
                                     + ") detected in cache. Skipping " + treeWalk.getPathString());
-                            this.registerContentProblem(flattenedContent,
-                                    "Index failure - Duplicate ID found in file " + treeWalk.getPathString() + " and "
-                                            + contentCache.get(flattenedContent.getId()).getCanonicalSourceFile()
-                                            + " only one will be available", indexProblemCache);
+                            this.registerContentProblem(flattenedContent, String.format(
+                                    "Index failure - Duplicate ID (%s) found in files (%s) and (%s): only one will be available.",
+                                    content.getId(), treeWalk.getPathString(), contentCache.get(flattenedContent.getId()).getCanonicalSourceFile()),
+                                indexProblemCache);
                         }
                     }
                 } catch (JsonMappingException e) {
@@ -394,6 +396,13 @@ public class ContentIndexer {
             Choice choice = (Choice) content;
             this.augmentChildContent((Content) choice.getExplanation(), canonicalSourceFile,
                     newParentId, parentPublished);
+        }
+
+        // hack to get cards to count as children:
+        if (content instanceof IsaacCardDeck) {
+            for (IsaacCard card : ((IsaacCardDeck) content).getCards()) {
+                this.augmentChildContent(card, canonicalSourceFile, newParentId, parentPublished);
+            }
         }
 
         // TODO: hack to get hints to apply as children

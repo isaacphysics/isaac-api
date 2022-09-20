@@ -1,18 +1,18 @@
 package uk.ac.cam.cl.dtg.segue.api.userAlerts;
 
 import com.google.inject.Injector;
-import org.eclipse.jetty.websocket.servlet.WebSocketServlet;
-import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
+import org.eclipse.jetty.websocket.server.JettyWebSocketServlet;
+import org.eclipse.jetty.websocket.server.JettyWebSocketServletFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueContextNotifier;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collections;
 
@@ -24,7 +24,7 @@ import static uk.ac.cam.cl.dtg.util.RequestIPExtractor.getClientIpAddr;
  */
 
 @WebServlet(name = "UserAlertsWebSocketServlet", urlPatterns = { "/api/user-alerts/*" })
-public class UserAlertsWebSocketServlet extends WebSocketServlet {
+public class UserAlertsWebSocketServlet extends JettyWebSocketServlet {
 
     private static final Logger log = LoggerFactory.getLogger(UserAlertsWebSocketServlet.class);
     private static final int BAD_REQUEST = 400;
@@ -33,7 +33,7 @@ public class UserAlertsWebSocketServlet extends WebSocketServlet {
     private final String hostName = injector.getInstance(PropertiesLoader.class).getProperty(HOST_NAME);
 
     @Override
-    public void configure(WebSocketServletFactory factory) {
+    public void configure(JettyWebSocketServletFactory factory) {
 
         factory.setCreator((servletUpgradeRequest, servletUpgradeResponse) -> SegueContextNotifier.injector.getInstance(UserAlertsWebSocket.class));
 
@@ -56,10 +56,9 @@ public class UserAlertsWebSocketServlet extends WebSocketServlet {
             return;
         }
 
-        // WebSockets are not protected by the CORS filters in /override-api-web.xml so we must check the origin
-        // explicitly here:
+        // WebSockets are not protected by CORS, so we must check the origin explicitly here:
         String origin = request.getHeader("Origin");
-        if (!hostName.contains("localhost") && (null == origin || !(origin.equals("https://" + hostName) || origin.equals("https://old." + hostName)))) { // FIXME: remove old!
+        if (!hostName.contains("localhost") && (null == origin || !origin.equals("https://" + hostName))) {
             // If we have no origin, or an origin not matching the current hostname; abort the Upgrade request with
             // a HTTP Forbidden. Allow an API running on localhost to bypass these origin checks.
             log.warn("WebSocket Upgrade request has unexpected Origin: '" + origin + "'. Blocking access to: "

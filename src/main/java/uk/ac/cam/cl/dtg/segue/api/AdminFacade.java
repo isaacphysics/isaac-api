@@ -24,8 +24,8 @@ import com.google.common.collect.ImmutableMap.Builder;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
@@ -53,7 +53,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.LocationManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
@@ -74,25 +74,25 @@ import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 import uk.ac.cam.cl.dtg.util.locations.LocationServerException;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeRadius;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.EntityTag;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Request;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.EntityTag;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Request;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -113,12 +113,12 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * 
  */
 @Path("/admin")
-@Api(value = "/admin")
+@Tag(name = "/admin")
 public class AdminFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(AdminFacade.class);
 
     private final UserAccountManager userManager;
-    private final IContentManager contentManager;
+    private final GitContentManager contentManager;
     private final String contentIndex;
 
     private final StatisticsManager statsManager;
@@ -157,7 +157,7 @@ public class AdminFacade extends AbstractSegueFacade {
      */
     @Inject
     public AdminFacade(final PropertiesLoader properties, final UserAccountManager userManager,
-                       final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final ILogManager logManager,
+                       final GitContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final ILogManager logManager,
                        final StatisticsManager statsManager, final LocationManager locationManager,
                        final SchoolListReader schoolReader, final AbstractUserPreferenceManager userPreferenceManager,
                        final EventBookingManager eventBookingManager, final SegueJobService segueJobService,
@@ -373,8 +373,8 @@ public class AdminFacade extends AbstractSegueFacade {
     @Path("/users/change_email_verification_status/delivery_failed")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Update a list of possible account emails as delivery failed.",
-            notes = "This endpoint requires a Bearer token in the Authorization header and not a Segue cookie.")
+    @Operation(summary = "Update a list of possible account emails as delivery failed.",
+            description = "This endpoint requires a Bearer token in the Authorization header and not a Segue cookie.")
     public synchronized Response setUsersEmailVerificationStatusFailed(
             @Context final HttpServletRequest request,
             @HeaderParam("Authorization") final String providedAuthHeader,
@@ -423,8 +423,8 @@ public class AdminFacade extends AbstractSegueFacade {
     @Path("/users/delivery_failed_notification")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Update a possible account email as delivery failed.",
-            notes = "This endpoint requires a valid HMAC from MailGun.")
+    @Operation(summary = "Update a possible account email as delivery failed.",
+            description = "This endpoint requires a valid HMAC from MailGun.")
     public Response notifySingleDeliveryFailure(@Context final HttpServletRequest request,
                                                 final Map<String, Object> webhookPayload) {
 
@@ -473,8 +473,8 @@ public class AdminFacade extends AbstractSegueFacade {
     @Path("/users/delivery_failed_notification/{providerToken}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Update a list of possible account emails as delivery failed.",
-            notes = "This endpoint expects the body to be in MailJet format.")
+    @Operation(summary = "Update a list of possible account emails as delivery failed.",
+            description = "This endpoint expects the body to be in MailJet format.")
     public Response notifyExternalDeliveryFailure(@Context final HttpServletRequest request,
                                                 @PathParam("providerToken") final String providerToken,
                                                 final List<Map<String, Object>> eventDetailsList) {
@@ -527,8 +527,8 @@ public class AdminFacade extends AbstractSegueFacade {
     @Path("/users/unsubscription_notification/{providerToken}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Unsubscribe a list of possible account emails from an email type.",
-            notes = "This endpoint expects the body to be in MailJet format.")
+    @Operation(summary = "Unsubscribe a list of possible account emails from an email type.",
+            description = "This endpoint expects the body to be in MailJet format.")
     public Response notifyExternalUnsubscriptionEvent(@Context final HttpServletRequest request,
                                                 @PathParam("providerToken") final String providerToken,
                                                 final List<Map<String, Object>> eventDetailsList) {
@@ -630,7 +630,7 @@ public class AdminFacade extends AbstractSegueFacade {
     public Response getContentProblems(@Context final HttpServletRequest request,
             @Context final Request requestForCaching) {
         Map<Content, List<String>> problemMap = this.contentManager.getProblemMap(
-                this.contentIndex);
+        );
 
         if (this.getProperties().getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(EnvironmentType.PROD.name())) {
             try {
@@ -677,9 +677,7 @@ public class AdminFacade extends AbstractSegueFacade {
             if (partialContentWithErrors.getId() != null) {
                 try {
                     
-                    boolean success = this.contentManager.getContentById(
-                            this.contentManager.getCurrentContentSHA(),
-                            partialContentWithErrors.getId(),
+                    boolean success = this.contentManager.getContentById(partialContentWithErrors.getId(),
                             true) != null;
                     
                     errorRecord.put("successfulIngest", success);
@@ -1254,7 +1252,7 @@ public class AdminFacade extends AbstractSegueFacade {
     @POST
     @Path("/reset_misuse_monitor/{event_label}")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Reset a misuse monitor counter to zero.")
+    @Operation(summary = "Reset a misuse monitor counter to zero.")
     public Response resetMisuseMonitor(@Context final HttpServletRequest request,
                                        @PathParam("event_label") final String eventLabel,
                                        final String agentIdentifier) {
@@ -1281,7 +1279,7 @@ public class AdminFacade extends AbstractSegueFacade {
      */
     @POST
     @Path("/sync_external_accounts")
-    @ApiOperation(value = "Trigger an update for external providers where account details have changed.")
+    @Operation(summary = "Trigger an update for external providers where account details have changed.")
     public Response syncExternalAccounts(@Context final HttpServletRequest httpServletRequest) {
         //TODO - automate this with Quartz, then review if this is still necessary?
         try {
@@ -1304,7 +1302,7 @@ public class AdminFacade extends AbstractSegueFacade {
     @POST
     @Path("/start_quartz")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Start the Quartz Job Scheduler service if not already started.")
+    @Operation(summary = "Start the Quartz Job Scheduler service if not already started.")
     public Response startQuartzJobService(@Context final HttpServletRequest request) {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);

@@ -20,11 +20,11 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 
@@ -34,11 +34,11 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.NESTED_FIELDS;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
 
 public class ContentService {
-    private final IContentManager contentManager;
+    private final GitContentManager contentManager;
     private final String contentIndex;
 
     @Inject
-    public ContentService(final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex) {
+    public ContentService(final GitContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex) {
         this.contentManager = contentManager;
         this.contentIndex = contentIndex;
     }
@@ -53,7 +53,7 @@ public class ContentService {
      * @return Response containing a ResultsWrapper<ContentDTO> or a Response containing null if none found.
      */
     public final ResultsWrapper<ContentDTO> findMatchingContent(
-            final String version, final List<IContentManager.BooleanSearchClause> fieldsToMatch,
+            final String version, final List<GitContentManager.BooleanSearchClause> fieldsToMatch,
             @Nullable final Integer startIndex, @Nullable final Integer limit
     ) throws ContentManagerException {
 
@@ -71,7 +71,7 @@ public class ContentService {
             newStartIndex = startIndex;
         }
 
-        return this.contentManager.findByFieldNames(newVersion, fieldsToMatch, newStartIndex, newLimit);
+        return this.contentManager.findByFieldNames(fieldsToMatch, newStartIndex, newLimit);
     }
 
     /**
@@ -106,7 +106,7 @@ public class ContentService {
             newStartIndex = startIndex;
         }
 
-        return this.contentManager.searchForContent(newVersion, searchString, fieldsThatMustMatch, newStartIndex, newLimit);
+        return this.contentManager.searchForContent(searchString, fieldsThatMustMatch, newStartIndex, newLimit);
     }
 
     /**
@@ -118,7 +118,7 @@ public class ContentService {
      *            - expects a map of the form fieldname -> list of queries to match
      * @return A list of boolean search clauses to be passed to a content provider
      */
-    public static List<IContentManager.BooleanSearchClause> generateDefaultFieldToMatch(final Map<String, List<String>> fieldsToMatch) {
+    public static List<GitContentManager.BooleanSearchClause> generateDefaultFieldToMatch(final Map<String, List<String>> fieldsToMatch) {
         return ContentService.generateDefaultFieldToMatch(fieldsToMatch, null);
     }
 
@@ -136,27 +136,27 @@ public class ContentService {
      *              for the given fields
      * @return A list of boolean search clauses to be passed to a content provider
      */
-    public static List<IContentManager.BooleanSearchClause> generateDefaultFieldToMatch(final Map<String, List<String>> fieldsToMatch,
-                @Nullable final Map<String, Constants.BooleanOperator> booleanOperatorOverrideMap) {
-        List<IContentManager.BooleanSearchClause> fieldsToMatchOutput = Lists.newArrayList();
+    public static List<GitContentManager.BooleanSearchClause> generateDefaultFieldToMatch(final Map<String, List<String>> fieldsToMatch,
+                                                                                          @Nullable final Map<String, Constants.BooleanOperator> booleanOperatorOverrideMap) {
+        List<GitContentManager.BooleanSearchClause> fieldsToMatchOutput = Lists.newArrayList();
 
         for (Map.Entry<String, List<String>> pair : fieldsToMatch.entrySet()) {
             // First check if the field needs to be forced to a particular kind of matching
             if (null != booleanOperatorOverrideMap && booleanOperatorOverrideMap.containsKey(pair.getKey())) {
-                fieldsToMatchOutput.add(new IContentManager.BooleanSearchClause(
+                fieldsToMatchOutput.add(new GitContentManager.BooleanSearchClause(
                         pair.getKey(), booleanOperatorOverrideMap.get(pair.getKey()), pair.getValue()));
             } else if (pair.getKey().equals(ID_FIELDNAME)) {
-                fieldsToMatchOutput.add(new IContentManager.BooleanSearchClause(
+                fieldsToMatchOutput.add(new GitContentManager.BooleanSearchClause(
                         pair.getKey(), Constants.BooleanOperator.OR, pair.getValue()));
             } else if (pair.getKey().equals(TYPE_FIELDNAME) && pair.getValue().size() > 1) {
                 // special case of when you want to allow more than one
-                fieldsToMatchOutput.add(new IContentManager.BooleanSearchClause(
+                fieldsToMatchOutput.add(new GitContentManager.BooleanSearchClause(
                         pair.getKey(), Constants.BooleanOperator.OR, pair.getValue()));
             } else if (NESTED_FIELDS.contains(pair.getKey())) { // these should match if either are true
-                fieldsToMatchOutput.add(new IContentManager.BooleanSearchClause(
+                fieldsToMatchOutput.add(new GitContentManager.BooleanSearchClause(
                         pair.getKey(), Constants.BooleanOperator.OR, pair.getValue()));
             } else {
-                fieldsToMatchOutput.add(new IContentManager.BooleanSearchClause(
+                fieldsToMatchOutput.add(new GitContentManager.BooleanSearchClause(
                         pair.getKey(), Constants.BooleanOperator.AND, pair.getValue()));
             }
         }

@@ -25,7 +25,6 @@ import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.util.*;
 
@@ -37,7 +36,7 @@ import static org.junit.Assert.fail;
  * Test class for the GitContentManager class.
  * 
  */
-@PowerMockIgnore({"javax.ws.*"})
+@PowerMockIgnore({"jakarta.ws.*"})
 public class GitContentManagerTest {
 	private GitDb database;
 	private ISearchProvider searchProvider;
@@ -61,76 +60,6 @@ public class GitContentManagerTest {
 
 		this.defaultGCM = new GitContentManager(database, searchProvider, contentMapper);
 	}
-
-	/**
-	 * Test that the compareTo method returns the correct result when V1 is
-	 * newer than V2.
-	 */
-	@Test
-	public void compareTo_checkV1NewerThanV2_checkPositiveNumberReturned() {
-		final int v1Year = 2010;
-		final int v2Year = 2000;
-		assertTrue(compareTo_getResult(v1Year, v2Year) > 0);
-	}
-
-	/**
-	 * Test that the compareTo method returns the correct result when V2 is
-	 * newer than V1.
-	 */
-	@Test
-	public void compareTo_checkV2NewerThanV1_checkNegativeNumberReturned() {
-		final int v1Year = 2000;
-		final int v2Year = 2010;
-		assertTrue(compareTo_getResult(v1Year, v2Year) < 0);
-	}
-
-	/**
-	 * Test that the compareTo method returns the correct result when V1 is the
-	 * same age as V2.
-	 */
-	@Test
-	public void compareTo_checkV2SameAgeAsV1_checkZeroReturned() {
-		final int v1Year = 2000;
-		final int v2Year = 2000;
-		assertTrue(compareTo_getResult(v1Year, v2Year) == 0);
-	}
-
-	/**
-	 * This method will evaluate the result of the compareTo method using the
-	 * years provided as the arguments for timestamps. The rest of the timestamp
-	 * will read 1st January 00:00:00
-	 * 
-	 * @param v1Year
-	 *            - The year for v1
-	 * @param v2Year
-	 *            - The year for v2
-	 * @return the result of comparing the two dates using the
-	 *         GitContentManager.compareTo method
-	 */
-	private int compareTo_getResult(final int v1Year, final int v2Year) {
-		final long millisecondsPerSecond = 1000L;
-		final String v1Hash = "V1";
-		final String v2Hash = "V2";
-
-		Calendar cal = Calendar.getInstance();
-		cal.setTimeInMillis(0);
-		cal.set(v1Year, 0, 1, 0, 0, 0);
-		int v1Date = (int) (cal.getTimeInMillis() / millisecondsPerSecond);
-		cal.set(v2Year, 0, 1, 0, 0, 0);
-		int v2Date = (int) (cal.getTimeInMillis() / millisecondsPerSecond);
-
-		expect(database.getCommitTime(v1Hash)).andReturn(v1Date).once();
-		expect(database.getCommitTime(v2Hash)).andReturn(v2Date).once();
-
-		replay(database);
-
-		int result = defaultGCM.compareTo(v1Hash, v2Hash);
-
-		verify(database);
-
-		return result;
-	}
-
 	/**
 	 * Test that the getById method returns null if it is passed a null id.
 	 */
@@ -138,7 +67,7 @@ public class GitContentManagerTest {
 	public void getById_invalidId_checkNullReturned() {
 		String id = null;
 		try {
-			assertTrue(defaultGCM.getContentDOById(INITIAL_VERSION, id) == null);
+			assertTrue(defaultGCM.getContentDOById(id) == null);
 		} catch (ContentManagerException e) {
 			fail("Null should be returned");
 		}

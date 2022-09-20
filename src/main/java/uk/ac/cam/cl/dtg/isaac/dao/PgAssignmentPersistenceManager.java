@@ -67,8 +67,8 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
     public Long saveAssignment(final AssignmentDTO assignment) throws SegueDatabaseException {
         AssignmentDO assignmentToSave = mapper.map(assignment, AssignmentDO.class);
 
-        String query = "INSERT INTO assignments(gameboard_id, group_id, owner_user_id, creation_date, due_date, notes)" +
-                " VALUES (?, ?, ?, ?, ?, ?);";
+        String query = "INSERT INTO assignments(gameboard_id, group_id, owner_user_id, creation_date, due_date, notes, scheduled_start_date)" +
+                " VALUES (?, ?, ?, ?, ?, ?, ?);";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
         ) {
@@ -92,6 +92,12 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
                 pst.setString(6, assignmentToSave.getNotes());
             } else {
                 pst.setNull(6, Types.VARCHAR);
+            }
+
+            if (assignment.getScheduledStartDate() != null) {
+                pst.setTimestamp(7, new java.sql.Timestamp(assignmentToSave.getScheduledStartDate().getTime()));
+            } else {
+                pst.setNull(7, Types.TIMESTAMP);
             }
 
             if (pst.executeUpdate() == 0) {
@@ -264,6 +270,32 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
         }
     }
 
+    public List<AssignmentDTO> getAssignmentsScheduledForHour(final Date timestamp) throws SegueDatabaseException {
+        if (null == timestamp) {
+            throw new SegueDatabaseException("Parameter timestamp is null, cannot search for scheduled assignments!");
+        }
+        String query = "SELECT * FROM assignments WHERE scheduled_start_date IS NOT NULL AND scheduled_start_date BETWEEN ((?)::timestamp - INTERVAL '10 minute') AND ((?)::timestamp + INTERVAL '59 minute');";
+
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
+            pst.setTimestamp(1, new java.sql.Timestamp(timestamp.getTime()));
+            pst.setTimestamp(2, new java.sql.Timestamp(timestamp.getTime()));
+
+            try (ResultSet results = pst.executeQuery()) {
+                List<AssignmentDTO> listOfResults = Lists.newArrayList();
+
+                while (results.next()) {
+                    listOfResults.add(this.convertToAssignmentDTO(this.convertFromSQLToAssignmentDO(results)));
+                }
+
+                return listOfResults;
+            }
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Unable to find scheduled assignments", e);
+        }
+    }
+
     @Override
     public void deleteAssignment(final Long id) throws SegueDatabaseException {
         String query = "DELETE FROM assignments WHERE id = ?";
@@ -305,9 +337,13 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
         if (sqlResults.getTimestamp("due_date") != null) {
             preciseDueDate = new java.util.Date(sqlResults.getTimestamp("due_date").getTime());
         }
+        java.util.Date preciseScheduledStartDate = null;
+        if (sqlResults.getTimestamp("scheduled_start_date") != null) {
+            preciseScheduledStartDate = new java.util.Date(sqlResults.getTimestamp("scheduled_start_date").getTime());
+        }
 
         return new AssignmentDO(sqlResults.getLong("id"), sqlResults.getString("gameboard_id"),
                 sqlResults.getLong("owner_user_id"), sqlResults.getLong("group_id"), sqlResults.getString("notes"), preciseDate,
-                preciseDueDate);
+                preciseDueDate, preciseScheduledStartDate);
     }
 }

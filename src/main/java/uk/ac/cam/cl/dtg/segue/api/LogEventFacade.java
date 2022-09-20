@@ -16,8 +16,8 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
 import com.google.inject.Inject;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
@@ -32,14 +32,14 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import java.util.Map;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
@@ -50,7 +50,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * database.
  */
 @Path("/log")
-@Api(value = "/log")
+@Tag(name = "/log")
 public class LogEventFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(LogEventFacade.class);
 
@@ -90,8 +90,8 @@ public class LogEventFacade extends AbstractSegueFacade {
     @POST
     @Path("/")
     @Consumes(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Record a new log event from the current user.",
-                  notes = "The 'type' field must be provided and must not be a reserved value.")
+    @Operation(summary = "Record a new log event from the current user.",
+                  description = "The 'type' field must be provided and must not be a reserved value.")
     public Response postLog(@Context final HttpServletRequest httpRequest, final Map<String, Object> eventJSON) {
         if (null == eventJSON || eventJSON.get(TYPE_FIELDNAME) == null) {
             log.error("Error during log operation, no event type specified. Event: " + eventJSON);

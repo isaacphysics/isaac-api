@@ -18,7 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.dao;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;

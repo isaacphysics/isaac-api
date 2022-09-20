@@ -43,7 +43,7 @@ import static org.junit.Assert.assertTrue;
  * Test class for the user manager class.
  *
  */
-@PowerMockIgnore({"javax.ws.*"})
+@PowerMockIgnore({"jakarta.ws.*"})
 public class IsaacNumericValidatorTest {
     private IsaacNumericValidator validator;
     private IsaacNumericQuestion numericQuestionNoUnits;

@@ -19,7 +19,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.ITransaction;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import java.util.Map;
 
 /**

@@ -34,7 +34,7 @@ import static org.junit.Assert.fail;
  * Test class for the user manager class.
  * 
  */
-@PowerMockIgnore({ "javax.ws.*" })
+@PowerMockIgnore({"jakarta.ws.*"})
 public class MisuseMonitorTest {
     private PropertiesLoader dummyPropertiesLoader;
     private EmailManager dummyCommunicator;
@@ -73,7 +73,7 @@ public class MisuseMonitorTest {
         expectLastCall();
         replay(this.dummyCommunicator);
 
-        for (int i = 1; i < tokenOwnerLookupMisuseHandler.getSoftThreshold(); i++) {
+        for (int i = 0; i < tokenOwnerLookupMisuseHandler.getSoftThreshold(); i++) {
             try {
                 misuseMonitor.notifyEvent(userId, event);
 
@@ -83,15 +83,16 @@ public class MisuseMonitorTest {
             }
         }
 
-        for (int i = TokenOwnerLookupMisuseHandler.SOFT_THRESHOLD; i < TokenOwnerLookupMisuseHandler.HARD_THRESHOLD; i++) {
+        for (int i = TokenOwnerLookupMisuseHandler.SOFT_THRESHOLD; i <= TokenOwnerLookupMisuseHandler.HARD_THRESHOLD + 1; i++) {
             try {
                 misuseMonitor.notifyEvent(userId, event);
-                if (i > TokenOwnerLookupMisuseHandler.HARD_THRESHOLD) {
-                    fail("Exception have been thrown after " + TokenOwnerLookupMisuseHandler.HARD_THRESHOLD
-                            + " attempts");
+                if (i >= TokenOwnerLookupMisuseHandler.HARD_THRESHOLD) {
+                    fail(String.format("Exception not thrown after %s attempts, over limit of %s!", i, TokenOwnerLookupMisuseHandler.HARD_THRESHOLD));
                 }
             } catch (SegueResourceMisuseException e) {
-
+                if (i < TokenOwnerLookupMisuseHandler.HARD_THRESHOLD) {
+                    fail(String.format("Exception thrown before %s attempts, under limit of %s!", i, TokenOwnerLookupMisuseHandler.HARD_THRESHOLD));
+                }
             }
         }
 
