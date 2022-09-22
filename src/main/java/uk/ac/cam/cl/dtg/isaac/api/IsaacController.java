@@ -83,6 +83,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 @Tag(name = "/")
 public class IsaacController extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(IsaacController.class);
+    private static final String ETAG_SEPARATOR = "/";
 
     private final IStatisticsManager statsManager;
     private final UserAccountManager userManager;
@@ -266,15 +267,22 @@ public class IsaacController extends AbstractIsaacFacade {
             return error.toResponse();
         }
 
-        // determine if we can use the cache if so return cached response.
+        // Determine if we can use the cache; this has two parts: a "quick and cheap" early check that does not need
+        // the file contents, and a more thorough check using the actual file contents.
+        // The ETag has two halves, separated by an ETAG_SEPARATOR.
         String sha = this.contentManager.getCurrentContentSHA();
-        EntityTag etag = new EntityTag(sha.hashCode() + path.hashCode() + "");
-        Response cachedResponse = generateCachedResponse(request, etag, NUMBER_SECONDS_IN_ONE_DAY);
+        String earlyCacheCheckTag = String.valueOf(sha.hashCode() + path.hashCode());
 
-        if (cachedResponse != null) {
-            return cachedResponse;
+        String rawETagHeader = httpServletRequest.getHeader("If-None-Match");
+        String rawETag = null != rawETagHeader ? rawETagHeader.replaceAll("\"", "") : null;
+
+        // If the "early" cache check based on the path and content SHA matches, the file cannot have changed and
+        // we don't need to load it to return a 304 Not Modified:
+        if (null != rawETag && earlyCacheCheckTag.equals(rawETag.split(ETAG_SEPARATOR)[0])) {
+            return Response.notModified().cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, true)).tag(rawETag).build();
         }
 
+        // If the content version has changed, we do need to load the file to see if it has been modified:
         ByteArrayOutputStream fileContent;
         String mimeType;
 
@@ -297,24 +305,20 @@ public class IsaacController extends AbstractIsaacFacade {
                 break;
 
             default:
-                // if it is an unknown type return an error as they shouldn't be
-                // using this endpoint.
-                SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
-                        "Invalid file extension requested");
+                // Unsupported filetype, don't allow this.
+                SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid file extension requested");
                 log.debug(error.getErrorMessage());
-                return error.toResponse(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, false), etag);
+                return error.toResponse();
         }
 
         try {
             fileContent = this.contentManager.getFileBytes(path);
         } catch (IOException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Error reading from file repository", e);
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error reading from file repository", e);
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         } catch (UnsupportedOperationException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Multiple files match the search path provided.", e);
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Multiple files match the search path provided.", e);
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         }
@@ -323,10 +327,20 @@ public class IsaacController extends AbstractIsaacFacade {
             String refererHeader = httpServletRequest.getHeader("Referer");
             SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the file: " + path);
             log.warn(String.format("Unable to locate the file: (%s). Referer: (%s)", path, refererHeader));
-            return error.toResponse(getCacheControl(NUMBER_SECONDS_IN_TEN_MINUTES, false), etag);
+            return error.toResponse();
         }
 
-        return Response.ok(fileContent.toByteArray()).type(mimeType)
+        byte[] fileContentBytes = fileContent.toByteArray();
+
+        // If the "late" cache check based on the file contents matches, the file still has not changed:
+        String lateCacheCheckTag = String.valueOf(Arrays.hashCode(fileContentBytes));
+        if (null != rawETag && rawETag.contains(ETAG_SEPARATOR) && lateCacheCheckTag.equals(rawETag.split(ETAG_SEPARATOR)[1])) {
+            return Response.notModified().cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, true)).tag(rawETag).build();
+        }
+
+        // Otherwise, just return the full image to the client:
+        EntityTag etag = new EntityTag(earlyCacheCheckTag + ETAG_SEPARATOR + lateCacheCheckTag);
+        return Response.ok(fileContentBytes).type(mimeType)
                 .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, true))
                 .tag(etag).build();
     }
