@@ -8,9 +8,7 @@ public class DetailedEventBookingDTO extends EventBookingDTO {
     public DetailedEventBookingDTO() {
 
     }
-
-
-
+    
     /**
      * Get additional event booking information.
      *
