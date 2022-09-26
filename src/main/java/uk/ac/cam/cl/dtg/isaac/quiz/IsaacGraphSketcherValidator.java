@@ -33,7 +33,7 @@ public class IsaacGraphSketcherValidator implements IValidator, ISpecifier {
     private static final Logger log = LoggerFactory.getLogger(IsaacGraphSketcherValidator.class);
 
     private static final AnswerToInput answerToInput = new AnswerToInput();
-    private static final Features features = new Features();
+    private static final Features features = new Features(new IsaacGraphSketcherSettings());
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
@@ -88,7 +88,6 @@ public class IsaacGraphSketcherValidator implements IValidator, ISpecifier {
 
             Input input = answerToInput.apply(graphAnswer);
 
-            // Sort the choices so that we match incorrect choices last, taking precedence over correct ones.
             List<Choice> orderedChoices = getOrderedChoices(graphSketcherQuestion.getChoices());
 
             // For all the choices on this question...
