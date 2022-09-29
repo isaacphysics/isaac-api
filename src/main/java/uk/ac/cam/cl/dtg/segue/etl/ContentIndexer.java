@@ -770,7 +770,11 @@ public class ContentIndexer {
             }
 
             // content type specific checks
+            try {
             this.recordContentTypeSpecificError(sha, c, indexProblemCache);
+            } catch (NullPointerException e) {
+                log.warn("Failed processing content errors in file: " + c.getCanonicalSourceFile());
+            }
         }
 
         // Find all references to missing content.
