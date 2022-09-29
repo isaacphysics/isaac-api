@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacCard;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacCardDeck;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacClozeQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacEventPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuiz;
@@ -34,6 +35,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.isaac.dos.content.EmailTemplate;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Formula;
+import uk.ac.cam.cl.dtg.isaac.dos.content.ItemChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Media;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Quantity;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
@@ -771,7 +773,7 @@ public class ContentIndexer {
 
             // content type specific checks
             try {
-            this.recordContentTypeSpecificError(sha, c, indexProblemCache);
+                this.recordContentTypeSpecificError(sha, c, indexProblemCache);
             } catch (NullPointerException e) {
                 log.warn("Failed processing content errors in file: " + c.getCanonicalSourceFile());
             }
@@ -1065,6 +1067,27 @@ public class ContentIndexer {
                         this.registerContentProblem(content, "Chemistry Question: " + q.getId() + " has non-ChemicalFormula Choice ("
                                 + choice.getValue() + "). It must be deleted and a new ChemicalFormula Choice created.", indexProblemCache);
                     }
+                }
+            }
+        }
+
+        if (content instanceof IsaacClozeQuestion) {
+            IsaacClozeQuestion q = (IsaacClozeQuestion) content;
+            Integer numberItems = null;
+            for (Choice choice : q.getChoices()) {
+                if (choice instanceof ItemChoice) {
+                    ItemChoice c = (ItemChoice) choice;
+                    if (null == c.getItems() || c.getItems().isEmpty()) {
+                        this.registerContentProblem(content, "Cloze Question: " + q.getId() + " has choice with missing items!", indexProblemCache);
+                        continue;
+                    }
+                    int items = c.getItems().size();
+                    if (numberItems != null && items != numberItems) {
+                        this.registerContentProblem(content, "Cloze Question: " + q.getId() + " has choice with incorrect number of items!"
+                                + " (Expected " + numberItems + ", got " + items + "!)", indexProblemCache);
+                        continue;
+                    }
+                    numberItems = items;
                 }
             }
         }
