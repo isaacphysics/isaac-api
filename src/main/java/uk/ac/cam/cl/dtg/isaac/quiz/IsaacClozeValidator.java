@@ -127,7 +127,16 @@ public class IsaacClozeValidator implements IValidator {
 
                 // ... look for a match to the submitted answer.
                 if (trustedChoiceItemIds.size() != submittedItemIds.size()) {
-                    feedback = new Content("You did not provide a valid answer; it does not contain an item for each gap.");
+                    if (itemChoice.isCorrect()) {
+                        // Assume a correct choice has correct number of gaps. (Legacy incorrect options may be missing items!).
+                        // It should not be possible to cause this size mismatch from a compliant frontend; it should submit null placeholders.
+                        if (trustedChoiceItemIds.size() > submittedItemIds.size()) {
+                            feedback = new Content("You did not provide a valid answer; it does not contain an item for each gap.");
+                        } else {
+                            feedback = new Content("You did not provide a valid answer; it contains more items than gaps.");
+                        }
+                    }
+                    // If the lengths aren't equal, we can't compare to this choice:
                     continue;
                 }
 
