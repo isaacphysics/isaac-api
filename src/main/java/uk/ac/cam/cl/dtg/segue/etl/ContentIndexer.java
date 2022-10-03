@@ -984,7 +984,9 @@ public class ContentIndexer {
 
         if (content instanceof IsaacEventPage) {
             IsaacEventPage e = (IsaacEventPage) content;
-            if (e.getEndDate() != null && e.getEndDate().before(e.getDate())) {
+            if (e.getEndDate() == null) {
+                this.registerContentProblem(content, "Event has no end date", indexProblemCache);
+            } else if (e.getEndDate().before(e.getDate())) {
                 this.registerContentProblem(content, "Event has end date before start date", indexProblemCache);
             }
         }
