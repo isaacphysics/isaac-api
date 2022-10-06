@@ -15,8 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.users;
 
-import java.io.IOException;
-
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
@@ -24,13 +22,15 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
-import uk.ac.cam.cl.dtg.segue.dao.content.ChoiceDeserializer;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentBaseDeserializer;
+import uk.ac.cam.cl.dtg.isaac.dos.ClozeValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuantityValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
+import uk.ac.cam.cl.dtg.segue.dao.content.ChoiceDeserializer;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentBaseDeserializer;
+
+import java.io.IOException;
 
 /**
  * QuestionValidationResponse deserializer
@@ -80,6 +80,9 @@ public class QuestionValidationResponseDeserializer extends JsonDeserializer<Que
         String questionResponseType = root.get("answer").get("type").textValue();
         if (questionResponseType.equals("quantity")) {
             return mapper.readValue(jsonString, QuantityValidationResponse.class);
+        } else if (root.hasNonNull("itemsCorrect")) {
+            // We use ItemChoice's for both Item Questions and Cloze questions, so this is the best we can do...
+            return mapper.readValue(jsonString, ClozeValidationResponse.class);
         } else {
             return mapper.readValue(jsonString, QuestionValidationResponse.class);
         }

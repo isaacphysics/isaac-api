@@ -17,11 +17,13 @@ package uk.ac.cam.cl.dtg.segue.dao.users;
 
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.metadata.Type;
-import uk.ac.cam.cl.dtg.segue.dao.content.AbstractPolymorphicBidirectionalConverter;
+import uk.ac.cam.cl.dtg.isaac.dos.ClozeValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuantityValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.isaac.dto.ClozeValidationResponseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuantityValidationResponseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
+import uk.ac.cam.cl.dtg.segue.dao.content.AbstractPolymorphicBidirectionalConverter;
 
 /**
  * QuestionValidationResponseOrikaConverter A specialist converter class to work with the Orika automapper library.
@@ -50,6 +52,8 @@ public class QuestionValidationResponseOrikaConverter extends
 
         if (source instanceof QuantityValidationResponse) {
             return super.mapperFacade.map(source, QuantityValidationResponseDTO.class);
+        } else if (source instanceof ClozeValidationResponse) {
+            return super.mapperFacade.map(source, ClozeValidationResponseDTO.class);
         } else {
             // I would have expected this to cause an infinite loop / stack
             // overflow but apparently it doesn't.
@@ -69,6 +73,8 @@ public class QuestionValidationResponseOrikaConverter extends
 
         if (source instanceof QuantityValidationResponseDTO) {
             return super.mapperFacade.map(source, QuantityValidationResponse.class);
+        } else if (source instanceof ClozeValidationResponseDTO) {
+            return super.mapperFacade.map(source, ClozeValidationResponse.class);
         } else {
             // I would have expected this to cause an infinite loop / stack
             // overflow but apparently it doesn't.
