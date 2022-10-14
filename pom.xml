@@ -20,7 +20,7 @@
         <powermock.version>2.0.9</powermock.version>
         <swagger-ui-version>4.13.2</swagger-ui-version>
         <prometheus.version>0.8.0</prometheus.version>
-        <jetty-version>11.0.11</jetty-version>
+        <jetty-version>11.0.12</jetty-version>
         <jetty.port.api>8080</jetty.port.api>
         <jetty.port.etl>8090</jetty.port.etl>
         <testcontainers.version>1.17.3</testcontainers.version>
