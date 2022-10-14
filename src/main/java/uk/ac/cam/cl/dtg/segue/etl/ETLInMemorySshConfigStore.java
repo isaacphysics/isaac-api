@@ -34,6 +34,11 @@ public class ETLInMemorySshConfigStore implements SshConfigStore {
         return inMemoryHostConfig;
     }
 
+    @Override
+    public HostConfig lookupDefault(final String hostName, final int port, final String userName) {
+        return inMemoryHostConfig;
+    }
+
     /**
      * A HostConfig that ignores config options on disk, instead using those passed in via the constructor.
      */
