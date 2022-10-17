@@ -349,6 +349,19 @@ public class GameManager {
     }
 
     /**
+     * Get a list of gameboards by their ids.
+     *
+     * @param gameboardId
+     *            - the ids to find.
+     * @return a list of lite gameboards without their question data fully expanded.
+     * @throws SegueDatabaseException
+     *             - a database error has occurred.
+     */
+    public List<GameboardDTO> getLiteGameboards(final Collection<String> gameboardId) throws SegueDatabaseException {
+        return this.gameboardPersistenceManager.getLiteGameboardsByIds(gameboardId);
+    }
+
+    /**
      * Get a gameboard by its id and augment with user information.
      * 
      * @param gameboardId
