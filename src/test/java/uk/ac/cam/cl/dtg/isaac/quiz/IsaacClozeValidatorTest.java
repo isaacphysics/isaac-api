@@ -18,9 +18,8 @@ package uk.ac.cam.cl.dtg.isaac.quiz;
 import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableList;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import uk.ac.cam.cl.dtg.isaac.dos.ClozeValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacClozeQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuickQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
@@ -146,6 +145,33 @@ public class IsaacClozeValidatorTest {
     }
 
     /*
+    Test that known incorrect answers can be matched.
+*/
+    @Test
+    public final void isaacClozeValidator_KnownIncorrectDetailedFeedback_IncorrectResponseShouldBeReturned() {
+        // Set up the question object:
+        IsaacClozeQuestion clozeQuestion = new IsaacClozeQuestion();
+        clozeQuestion.setItems(ImmutableList.of(item1, item2, item3));
+        clozeQuestion.setDetailedItemFeedback(true);
+
+        ItemChoice someCorrectAnswer = new ItemChoice();
+        someCorrectAnswer.setItems(ImmutableList.of(item1, item3));
+        someCorrectAnswer.setCorrect(true);
+        clozeQuestion.setChoices(ImmutableList.of(someCorrectAnswer));
+
+        // Set up user answer:
+        ItemChoice c = new ItemChoice();
+        c.setItems(ImmutableList.of(item1, item2));
+
+        // Test response:
+        QuestionValidationResponse response = validator.validateQuestionResponse(clozeQuestion, c);
+        assertFalse(response.isCorrect());
+        assertTrue(response instanceof ClozeValidationResponse);
+        ClozeValidationResponse clozeResponse = (ClozeValidationResponse) response;
+        assertEquals(ImmutableList.of(true, false), clozeResponse.getItemsCorrect());
+    }
+
+    /*
          Test that all null-placeholder answers are rejected.
     */
     @Test
@@ -171,6 +197,20 @@ public class IsaacClozeValidatorTest {
         QuestionValidationResponse response = validator.validateQuestionResponse(someClozeQuestion, c);
         assertFalse(response.isCorrect());
         assertTrue(response.getExplanation().getValue().contains("does not contain an item for each gap"));
+    }
+
+    /*
+        Test that answers with too many items are rejected.
+    */
+    @Test
+    public final void isaacClozeValidator_TooManyItems_IncorrectResponseShouldBeReturned() {
+        ItemChoice c = new ItemChoice();
+        c.setItems(ImmutableList.of(item1, item2, item3));
+
+        // Test response:
+        QuestionValidationResponse response = validator.validateQuestionResponse(someClozeQuestion, c);
+        assertFalse(response.isCorrect());
+        assertTrue(response.getExplanation().getValue().contains("contains more items than gaps"));
     }
 
     /*
@@ -215,7 +255,7 @@ public class IsaacClozeValidatorTest {
     }
 
     /*
-        Test that missing choices are detected.
+        Test that default feedback is returned.
     */
     @Test
     public final void isaacClozeValidator_DefaultFeedbackReturned() {
