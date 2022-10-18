@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,7 +21,7 @@ import jakarta.ws.rs.ext.Provider;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
+import com.fasterxml.jackson.jakarta.rs.json.JacksonJsonProvider;
 
 /**
  * This class modifies the RestEasyJackson Configuration globally for all end points.
@@ -31,7 +31,7 @@ import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
  */
 @Provider
 @Produces(MediaType.APPLICATION_JSON)
-public class RestEasyJacksonConfiguration extends JacksonJaxbJsonProvider {
+public class RestEasyJacksonConfiguration extends JacksonJsonProvider {
 
     /**
      * Constructor.
