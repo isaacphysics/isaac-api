@@ -264,10 +264,6 @@ public class GameManager {
      *             link table.
      */
     public final List<GameboardDTO> getGameboards(final List<String> gameboardIds) throws SegueDatabaseException {
-        if (null == gameboardIds || gameboardIds.isEmpty()) {
-            return null;
-        }
-
         return this.gameboardPersistenceManager.getGameboardsByIds(gameboardIds);
     }
 

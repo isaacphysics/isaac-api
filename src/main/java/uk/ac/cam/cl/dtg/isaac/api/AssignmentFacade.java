@@ -723,12 +723,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             Map<RegisteredUserDTO, Map<GameboardDTO, Map<String, Integer>>> grandTable = new HashMap<>();
             // Retrieve each user's progress data and cram everything into a Grand Table for later consumption
             List<String> gameboardsIds = assignments.stream().map(AssignmentDTO::getGameboardId).collect(Collectors.toList());
-            List<GameboardDTO> gameboards;
-            if (gameboardsIds.isEmpty()) {
-                gameboards = new ArrayList<>();
-            } else {
-                gameboards = gameManager.getGameboards(gameboardsIds);
-            }
+            List<GameboardDTO> gameboards = gameManager.getGameboards(gameboardsIds);
+
             Map<String, GameboardDTO> gameboardsIdMap = gameboards.stream().collect(Collectors.toMap(GameboardDTO::getId, Function.identity()));
 
             Map<AssignmentDTO, GameboardDTO> assignmentGameboards = new HashMap<>();

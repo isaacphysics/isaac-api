@@ -58,6 +58,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -818,7 +819,7 @@ public class GameboardPersistenceManager {
     private List<GameboardDTO> getGameboardsByIds(final Collection<String> gameboardIds, final boolean fullyPopulate)
             throws SegueDatabaseException {
         if (null == gameboardIds || gameboardIds.isEmpty()) {
-            return null;
+            return Collections.emptyList();
         }
 
         // First, try temporary storage
