@@ -53,6 +53,7 @@
         <param-name>resteasy.providers</param-name>
         <param-value>
             uk.ac.cam.cl.dtg.isaac.configuration.exceptionMappers.UnhandledExceptionMapper,
+            uk.ac.cam.cl.dtg.isaac.configuration.exceptionMappers.OptionsMethodExceptionMapper,
             uk.ac.cam.cl.dtg.isaac.configuration.exceptionMappers.MethodNotAllowedExceptionMapper,
             uk.ac.cam.cl.dtg.segue.configuration.exceptionMappers.JacksonInvalidFormatExceptionMapper
         </param-value>
