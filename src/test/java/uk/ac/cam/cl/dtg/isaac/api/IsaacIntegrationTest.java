@@ -50,6 +50,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
+import uk.ac.cam.cl.dtg.segue.comm.MailGunEmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.PgAssociationDataManager;
@@ -111,6 +112,7 @@ public abstract class IsaacIntegrationTest {
 
     // Managers
     protected static EmailManager emailManager;
+    protected static MailGunEmailManager mailGunEmailManager;
     protected static UserAuthenticationManager userAuthenticationManager;
     protected static UserAccountManager userAccountManager;
     protected static GameManager gameManager;
@@ -238,6 +240,7 @@ public abstract class IsaacIntegrationTest {
         userAccountManager = new UserAccountManager(pgUsers, questionManager, properties, providersToRegister, mapperFacade, emailManager, pgAnonymousUsers, logManager, userAuthenticationManager, secondFactorManager, userPreferenceManager);
 
         ObjectMapper objectMapper = new ObjectMapper();
+        mailGunEmailManager = new MailGunEmailManager(objectMapper, globalTokens, properties, userPreferenceManager);
         EventBookingPersistenceManager bookingPersistanceManager = new EventBookingPersistenceManager(postgresSqlDb, userAccountManager, contentManager, objectMapper);
         PgAssociationDataManager pgAssociationDataManager = new PgAssociationDataManager(postgresSqlDb);
         PgUserGroupPersistenceManager pgUserGroupPersistenceManager = new PgUserGroupPersistenceManager(postgresSqlDb);
@@ -250,7 +253,7 @@ public abstract class IsaacIntegrationTest {
         PgTransactionManager pgTransactionManager = new PgTransactionManager(postgresSqlDb);
         eventBookingManager = new EventBookingManager(bookingPersistanceManager, emailManager, userAssociationManager, properties, groupManager, userAccountManager, pgTransactionManager);
         userBadgeManager = createNiceMock(UserBadgeManager.class);
-        assignmentManager = new AssignmentManager(assignmentPersistenceManager, groupManager, new EmailService(emailManager, groupManager, userAccountManager), gameManager, properties);
+        assignmentManager = new AssignmentManager(assignmentPersistenceManager, groupManager, new EmailService(emailManager, groupManager, userAccountManager, mailGunEmailManager), gameManager, properties);
         schoolListReader = createNiceMock(SchoolListReader.class);
 
         String someSegueAnonymousUserId = "9284723987anonymous83924923";

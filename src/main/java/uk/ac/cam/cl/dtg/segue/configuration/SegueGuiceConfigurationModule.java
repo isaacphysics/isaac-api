@@ -98,6 +98,7 @@ import uk.ac.cam.cl.dtg.segue.auth.TwitterAuthenticator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
+import uk.ac.cam.cl.dtg.segue.comm.MailGunEmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.LocationManager;
 import uk.ac.cam.cl.dtg.segue.dao.LogManagerEventPublisher;
@@ -178,6 +179,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     private static LogManagerEventPublisher logManager;
     private static EmailManager emailCommunicationQueue = null;
+    private static MailGunEmailManager mailGunEmailManager = null;
     private static IMisuseMonitor misuseMonitor = null;
     private static IMetricsExporter metricsExporter = null;
     private static StatisticsManager statsManager = null;
@@ -615,6 +617,48 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             log.info("Creating singleton of EmailCommunicationQueue");
         }
         return emailCommunicationQueue;
+    }
+
+    /**
+     * This provides a singleton of the MailGun e-mail manager class, which manages bulk sending of certain emails
+     * via the MailGun RESTful API.
+     *
+     * @param properties
+     * 			- the properties so we can generate emails
+     * @param objectMapper
+     *          - Jackson object mapper to convert user (and other) objects to Map objects
+     * @param userPreferenceManager
+     *          - Used to check email preferences of users
+     * @return the singleton instance of MailGunEmailManager
+     */
+    @Inject
+    @Provides
+    @Singleton
+    private static MailGunEmailManager getMailGunEmailManager(final PropertiesLoader properties,
+                                                              final ObjectMapper objectMapper,
+                                                              final AbstractUserPreferenceManager userPreferenceManager) {
+        Map<String, String> globalTokens = Maps.newHashMap();
+        globalTokens.put("sig", properties.getProperty(EMAIL_SIGNATURE));
+        globalTokens.put("emailPreferencesURL", String.format("https://%s/account#emailpreferences",
+                properties.getProperty(HOST_NAME)));
+        globalTokens.put("myAssignmentsURL", String.format("https://%s/assignments",
+                properties.getProperty(HOST_NAME)));
+        String myQuizzesURL = String.format("https://%s/tests", properties.getProperty(HOST_NAME));
+        globalTokens.put("myQuizzesURL", myQuizzesURL);
+        globalTokens.put("myTestsURL", myQuizzesURL);
+        globalTokens.put("myBookedEventsURL", String.format("https://%s/events?show_booked_only=true",
+                properties.getProperty(HOST_NAME)));
+        globalTokens.put("contactUsURL", String.format("https://%s/contact",
+                properties.getProperty(HOST_NAME)));
+        globalTokens.put("accountURL", String.format("https://%s/account",
+                properties.getProperty(HOST_NAME)));
+        globalTokens.put("siteBaseURL", String.format("https://%s", properties.getProperty(HOST_NAME)));
+
+        if (null == mailGunEmailManager) {
+            mailGunEmailManager = new MailGunEmailManager(objectMapper, globalTokens, properties, userPreferenceManager);
+            log.info("Creating singleton of MailGunEmailManager");
+        }
+        return mailGunEmailManager;
     }
 
     /**
