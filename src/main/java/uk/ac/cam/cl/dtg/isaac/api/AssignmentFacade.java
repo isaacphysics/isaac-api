@@ -73,6 +73,7 @@ import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -1038,7 +1039,10 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                         assigmentStatuses.add(new AssignmentStatusDTO(assignmentDTO.getGroupId(), "The assignment cannot be scheduled to begin more than one year in the future."));
                         continue;
                     }
-                    if (null != assignmentDTO.getDueDate() && assignmentDTO.getScheduledStartDate().after(assignmentDTO.getDueDate())) {
+                    Calendar cal = Calendar.getInstance();
+                    cal.setTimeInMillis(assignmentDTO.getScheduledStartDate().getTime());
+                    cal.set(Calendar.HOUR_OF_DAY, 0);
+                    if (null != assignmentDTO.getDueDate() && cal.getTime().compareTo(assignmentDTO.getDueDate()) > 0) {
                         assigmentStatuses.add(new AssignmentStatusDTO(assignmentDTO.getGroupId(), "The assignment cannot be scheduled to begin after it is due."));
                         continue;
                     }
