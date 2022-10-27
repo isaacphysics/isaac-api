@@ -64,8 +64,15 @@ public class SchoolListReader {
     public SchoolListReader(final ISearchProvider searchProvider) {
         this.searchProvider = searchProvider;
 
-        dataSourceModificationDate = searchProvider.getById(
-                SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.METADATA.toString(), "sourceFile").getSource().get("lastModified").toString();
+        String modificationDate;
+        try {
+            modificationDate = searchProvider.getById(
+                    SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.METADATA.toString(), "sourceFile").getSource().get("lastModified").toString();
+        } catch (SegueSearchException e) {
+            log.error("Failed to retrieve school list modification date", e);
+            modificationDate = "unknown";
+        }
+        dataSourceModificationDate = modificationDate;
     }
 
     /**

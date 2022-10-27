@@ -20,29 +20,35 @@ services:
   elasticsearch:
     network_mode: bridge
     container_name: elasticsearch
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.14.2
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.6
     environment:
       - cluster.name=isaac
       - "network.host=0.0.0.0"
       - node.name=localhost
       - cluster.initial_master_nodes=localhost
+      - http.max_content_length=512mb
+      - xpack.security.enabled=true
+      - ELASTIC_PASSWORD=elastic
     ports:
       - "9200:9200"
       - "9300:9300"
-    mem_limit: 3G
+    mem_limit: 6G
   cs-elasticsearch:
     network_mode: bridge
     container_name: cs-elasticsearch
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.14.2
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.6
     environment:
       - cluster.name=cs-isaac
       - "network.host=0.0.0.0"
       - node.name=localhost
       - cluster.initial_master_nodes=localhost
+      - http.max_content_length=512mb
+      - xpack.security.enabled=true
+      - ELASTIC_PASSWORD=elastic
     ports:
       - "9201:9200"
       - "9301:9300"
-    mem_limit: 3G
+    mem_limit: 6G
   postgres:
     network_mode: bridge
     container_name: postgres
