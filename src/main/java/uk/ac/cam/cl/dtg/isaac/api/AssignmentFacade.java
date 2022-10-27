@@ -81,6 +81,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -310,8 +311,25 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             if (null == groupIdOfInterest) {
                 List<UserGroupDTO> allGroupsOwnedAndManagedByUser = this.groupManager.getAllGroupsOwnedAndManagedByUser(currentlyLoggedInUser, false);
-                return Response.ok(this.assignmentManager.getAllAssignmentsForSpecificGroups(allGroupsOwnedAndManagedByUser, true))
-                        .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
+                List<AssignmentDTO> assignments = this.assignmentManager.getAllAssignmentsForSpecificGroups(allGroupsOwnedAndManagedByUser, true);
+                Set<String> gameboardIds = assignments.stream().map(AssignmentDTO::getGameboardId).collect(Collectors.toSet());
+                List<GameboardDTO> liteGameboards = this.gameManager.getLiteGameboards(gameboardIds);
+                // Remove unneeded data from the gameboards - very messy but not as messy as feasible alternatives
+                liteGameboards.forEach(g -> {
+                    g.setContents(null);
+                    g.setWildCard(null);
+                    g.setWildCardPosition(null);
+                    g.setGameFilter(null);
+                    g.setLastVisited(null);
+                    g.setPercentageCompleted(null);
+                    g.setCreationMethod(null);
+                    g.setCreationDate(null);
+                });
+                Map<String, GameboardDTO> liteGameboardLookup = liteGameboards.stream().collect(Collectors.toMap(GameboardDTO::getId, Function.identity()));
+                // Add lightweight gameboard to each assignment
+                assignments.forEach(a -> a.setGameboard(liteGameboardLookup.get(a.getGameboardId())));
+                // TODO perhaps augment the assignments with assigner information if the assigner isn't the current user
+                return Response.ok(assignments).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
             } else {
                 UserGroupDTO group = this.groupManager.getGroupById(groupIdOfInterest);
 
@@ -705,12 +723,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             Map<RegisteredUserDTO, Map<GameboardDTO, Map<String, Integer>>> grandTable = new HashMap<>();
             // Retrieve each user's progress data and cram everything into a Grand Table for later consumption
             List<String> gameboardsIds = assignments.stream().map(AssignmentDTO::getGameboardId).collect(Collectors.toList());
-            List<GameboardDTO> gameboards;
-            if (gameboardsIds.isEmpty()) {
-                gameboards = new ArrayList<>();
-            } else {
-                gameboards = gameManager.getGameboards(gameboardsIds);
-            }
+            List<GameboardDTO> gameboards = gameManager.getGameboards(gameboardsIds);
+
             Map<String, GameboardDTO> gameboardsIdMap = gameboards.stream().collect(Collectors.toMap(GameboardDTO::getId, Function.identity()));
 
             Map<AssignmentDTO, GameboardDTO> assignmentGameboards = new HashMap<>();

@@ -264,10 +264,6 @@ public class GameManager {
      *             link table.
      */
     public final List<GameboardDTO> getGameboards(final List<String> gameboardIds) throws SegueDatabaseException {
-        if (null == gameboardIds || gameboardIds.isEmpty()) {
-            return null;
-        }
-
         return this.gameboardPersistenceManager.getGameboardsByIds(gameboardIds);
     }
 
@@ -346,6 +342,19 @@ public class GameManager {
      */
     public GameboardDTO getLiteGameboard(final String gameboardId) throws SegueDatabaseException {
         return this.gameboardPersistenceManager.getLiteGameboardById(gameboardId);
+    }
+
+    /**
+     * Get a list of gameboards by their ids.
+     *
+     * @param gameboardId
+     *            - the ids to find.
+     * @return a list of lite gameboards without their question data fully expanded.
+     * @throws SegueDatabaseException
+     *             - a database error has occurred.
+     */
+    public List<GameboardDTO> getLiteGameboards(final Collection<String> gameboardId) throws SegueDatabaseException {
+        return this.gameboardPersistenceManager.getLiteGameboardsByIds(gameboardId);
     }
 
     /**

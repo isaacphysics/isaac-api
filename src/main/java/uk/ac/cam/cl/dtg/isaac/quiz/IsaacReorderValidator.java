@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Chris Purdy
+ * Copyright 2022 Chris Purdy, James Sharkey
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,11 @@ import uk.ac.cam.cl.dtg.isaac.dos.IsaacReorderQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
-import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ItemChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
  */
 public class IsaacReorderValidator implements IValidator {
     private static final Logger log = LoggerFactory.getLogger(IsaacReorderValidator.class);
+    private static final int NO_MATCH = -1;
 
     @Override
     public final QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
@@ -46,7 +47,7 @@ public class IsaacReorderValidator implements IValidator {
 
         if (!(question instanceof IsaacReorderQuestion)) {
             throw new IllegalArgumentException(String.format(
-                    "This validator only works with IsaacReorderQuestion (%s is not ReorderQuestion)", question.getId()));
+                    "This validator only works with IsaacReorderQuestions (%s is not ReorderQuestion)", question.getId()));
         }
 
         if (!(answer instanceof ItemChoice)) {
@@ -61,15 +62,15 @@ public class IsaacReorderValidator implements IValidator {
         IsaacReorderQuestion reorderQuestion = (IsaacReorderQuestion) question;
         ItemChoice submittedChoice = (ItemChoice) answer;
 
+        List<String> submittedItemIds = Collections.emptyList();
+
         // STEP 0: Is it even possible to answer this question?
 
         if (null == reorderQuestion.getChoices() || reorderQuestion.getChoices().isEmpty()) {
             log.error("Question does not have any answers. " + question.getId() + " src: "
                     + question.getCanonicalSourceFile());
             feedback = new Content("This question does not have any correct answers!");
-        }
-
-        if (null == reorderQuestion.getItems() || reorderQuestion.getItems().isEmpty()) {
+        } else if (null == reorderQuestion.getItems() || reorderQuestion.getItems().isEmpty()) {
             log.error("ReorderQuestion does not have any items. " + question.getId() + " src: "
                     + question.getCanonicalSourceFile());
             feedback = new Content("This question does not have any items to choose from!");
@@ -77,60 +78,75 @@ public class IsaacReorderValidator implements IValidator {
 
         // STEP 1: Did they provide a valid answer?
 
-        if (null == feedback && (null == submittedChoice.getItems() || submittedChoice.getItems().isEmpty())) {
-            feedback = new Content("You did not provide an answer.");
-        }
-
-        Set<String> submittedItemIdSet = null;
-        Set<String> allowedItemIds;
-        if (null != submittedChoice.getItems() && null != reorderQuestion.getItems()) {
-            submittedItemIdSet = submittedChoice.getItems().stream().map(Item::getId).collect(Collectors.toSet());
-            allowedItemIds = reorderQuestion.getItems().stream().map(Item::getId).collect(Collectors.toSet());
-            if (!allowedItemIds.containsAll(submittedItemIdSet)) {
-                feedback = new Content("You did not provide a valid answer; it contained unrecognised items!");
+        if (null == feedback) {
+            if (null == submittedChoice.getItems() || submittedChoice.getItems().isEmpty()) {
+                feedback = new Content("You did not provide an answer.");
+            } else if (submittedChoice.getItems().stream().anyMatch(i -> i.getClass() != Item.class)) {
+                feedback = new Content("Your answer is not in a recognised format!");
+            } else {
+                Set<String> allowedItemIds = reorderQuestion.getItems().stream().map(Item::getId).collect(Collectors.toSet());
+                submittedItemIds = submittedChoice.getItems().stream().map(Item::getId).collect(Collectors.toList());
+                if (!allowedItemIds.containsAll(submittedItemIds)) {
+                    feedback = new Content("Your answer contained unrecognised items.");
+                }
             }
         }
 
         // STEP 2: If they did, does their answer match a known answer?
 
-        if (null == feedback && null != submittedItemIdSet) {
-            // Sort the choices so that we match incorrect choices last, taking precedence over correct ones.
+        if (null == feedback) {
+            // Sort the choices:
             List<Choice> orderedChoices = getOrderedChoices(reorderQuestion.getChoices());
 
             // For all the choices on this question...
             for (Choice c : orderedChoices) {
 
-                // ... that are ItemChoices ...
-                if (!(c instanceof ItemChoice)) {
-                    log.error(String.format(
-                            "Validator for question (%s) expected there to be an ItemChoice. Instead it found a %s.",
-                            reorderQuestion.getId(), c.getClass().toString()));
+                // ... that are ItemChoices (and not subclasses) ...
+                if (!ItemChoice.class.equals(c.getClass())) {
+                    log.error(String.format("Expected ItemChoice in question (%s), instead found %s!", reorderQuestion.getId(), c.getClass().toString()));
                     continue;
                 }
 
                 ItemChoice itemChoice = (ItemChoice) c;
+                boolean allowSubsetMatch = null != itemChoice.isAllowSubsetMatch() && itemChoice.isAllowSubsetMatch();
 
-                // ... and that have items ...
+                // ... and that have valid items ...
                 if (null == itemChoice.getItems() || itemChoice.getItems().isEmpty()) {
-                    log.error("Expected list of Items, but none found in choice for question id: "
-                            + reorderQuestion.getId());
+                    log.error(String.format("Expected list of Items, but none found in choice for question id (%s)!", reorderQuestion.getId()));
                     continue;
                 }
+                if (itemChoice.getItems().stream().anyMatch(i -> i.getClass() != Item.class)) {
+                    log.error(String.format("Expected list of Items, but something else found in choice for question id (%s)!", reorderQuestion.getId()));
+                    continue;
+                }
+                List<String> trustedChoiceItemIds = itemChoice.getItems().stream().map(Item::getId).collect(Collectors.toList());
 
                 // ... look for a match to the submitted answer.
 
-                // Skip choices with different numbers of items, they definitely won't match
-                if (itemChoice.getItems().size() != submittedChoice.getItems().size()) {
-                    continue;
-                }
-
-                List<String> submittedItemIds = submittedChoice.getItems().stream().map(ContentBase::getId).collect(Collectors.toList());
-                List<String> choiceItemIds = itemChoice.getItems().stream().map(ContentBase::getId).collect(Collectors.toList());
-
-                if (choiceItemIds.equals(submittedItemIds)) {
-                    responseCorrect = itemChoice.isCorrect();
-                    feedback = (Content) itemChoice.getExplanation();
-                    break;
+                if (allowSubsetMatch) {
+                    // The indexOfSubList method is O(n^2) brute-force, but will work correctly if the lists are equal, too.
+                    // If the submission contains the trusted choice, and we allow subset matching, we have a match:
+                    int indexOfMatch = Collections.indexOfSubList(submittedItemIds, trustedChoiceItemIds);
+                    if (indexOfMatch > NO_MATCH) {
+                        responseCorrect = itemChoice.isCorrect();
+                        feedback = (Content) itemChoice.getExplanation();
+                        // We probably can't do better than this match, so stop looking:
+                        break;
+                    }
+                } else {
+                    if (trustedChoiceItemIds.equals(submittedItemIds)) {
+                        responseCorrect = itemChoice.isCorrect();
+                        feedback = (Content) itemChoice.getExplanation();
+                        // This is an exact match, the best we can do, so stop looking:
+                        break;
+                    } else if (submittedItemIds.size() != trustedChoiceItemIds.size() && itemChoice.isCorrect()) {
+                        // We might later find a better match, but this might be useful feedback if not:
+                        if (submittedItemIds.size() < trustedChoiceItemIds.size()) {
+                            feedback = new Content("Your answer does not contain enough items.");
+                        } else {
+                            feedback = new Content("Your answer contains too many items.");
+                        }
+                    }
                 }
             }
         }

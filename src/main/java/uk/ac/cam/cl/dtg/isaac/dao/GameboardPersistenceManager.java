@@ -58,6 +58,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -127,7 +128,7 @@ public class GameboardPersistenceManager {
      * @throws SegueDatabaseException  - if there is a problem accessing the database.
      */
     public GameboardDTO getGameboardById(final String gameboardId) throws SegueDatabaseException {
-        return getGameboardById(gameboardId, true);
+        return this.getGameboardById(gameboardId, true);
     }
 
     /**
@@ -139,7 +140,7 @@ public class GameboardPersistenceManager {
      * @throws SegueDatabaseException  - if there is a problem accessing the database.
      */
     public List<GameboardDTO> getGameboardsByIds(final List<String> gameboardIds) throws SegueDatabaseException {
-        return getGameboardsByIds(gameboardIds, true);
+        return this.getGameboardsByIds(gameboardIds, true);
     }
     
     /**
@@ -154,7 +155,22 @@ public class GameboardPersistenceManager {
      *             - if there are problems with the database.
      */
     public GameboardDTO getLiteGameboardById(final String gameboardId) throws SegueDatabaseException {
-        return getGameboardById(gameboardId, false);
+        return this.getGameboardById(gameboardId, false);
+    }
+
+    /**
+     * getLiteGameboardsByIds. This method will get a list of gameboards by their ids but not
+     * resolve any fine grain details about the boards. E.g. no question details
+     * will be retrieved.
+     *
+     * @param gameboardIds
+     *            - to retrieve.
+     * @return a list of lightly populated gameboards.
+     * @throws SegueDatabaseException
+     *             - if there are problems with the database.
+     */
+    public List<GameboardDTO> getLiteGameboardsByIds(final Collection<String> gameboardIds) throws SegueDatabaseException {
+        return this.getGameboardsByIds(gameboardIds, false);
     }
 
     /**
@@ -800,10 +816,10 @@ public class GameboardPersistenceManager {
      * @throws SegueDatabaseException
      *             - if there is a problem with the database
      */
-    private List<GameboardDTO> getGameboardsByIds(final List<String> gameboardIds, final boolean fullyPopulate)
+    private List<GameboardDTO> getGameboardsByIds(final Collection<String> gameboardIds, final boolean fullyPopulate)
             throws SegueDatabaseException {
         if (null == gameboardIds || gameboardIds.isEmpty()) {
-            return null;
+            return Collections.emptyList();
         }
 
         // First, try temporary storage
