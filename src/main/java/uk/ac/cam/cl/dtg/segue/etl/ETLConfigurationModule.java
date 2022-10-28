@@ -140,13 +140,14 @@ class ETLConfigurationModule extends AbstractModule {
      * This provides a singleton of the elasticSearch client that can be used by Guice.
      *
      * The client is threadsafe so we don't need to keep creating new ones.
-     *
-     * @param clusterName
-     *            - The name of the cluster to create.
      * @param address
      *            - address of the cluster to create.
      * @param port
      *            - port of the custer to create.
+     * @param username
+     *            - username for cluster user.
+     * @param password
+     *            - password for cluster user.
      * @return Client to be injected into ElasticSearch Provider.
      */
     @Inject

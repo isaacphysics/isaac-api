@@ -421,6 +421,10 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *            - address of the cluster to create.
      * @param port
      *            - port of the cluster to create.
+     * @param username
+     *            - username for cluster user.
+     * @param password
+     *            - password for cluster user.
      * @return Client to be injected into ElasticSearch Provider.
      */
     @Inject
