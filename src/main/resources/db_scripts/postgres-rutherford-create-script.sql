@@ -1113,6 +1113,13 @@ CREATE INDEX group_additional_managers_group_id ON public.group_additional_manag
 
 
 --
+-- Name: group_memberships_user_status; Type: INDEX; Schema: public; Owner: rutherford
+--
+
+CREATE INDEX group_memberships_user_status ON public.group_memberships USING btree (user_id, status);
+
+
+--
 -- Name: groups_owner_id; Type: INDEX; Schema: public; Owner: rutherford
 --
 

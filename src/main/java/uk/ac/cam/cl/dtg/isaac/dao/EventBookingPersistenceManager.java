@@ -90,7 +90,7 @@ public class EventBookingPersistenceManager {
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    public EventBookingDTO getBookingById(final Long bookingId) throws SegueDatabaseException {
+    public DetailedEventBookingDTO getDetailedBookingById(final Long bookingId) throws SegueDatabaseException {
         return this.convertToDTO(dao.findBookingById(bookingId));
     }
 

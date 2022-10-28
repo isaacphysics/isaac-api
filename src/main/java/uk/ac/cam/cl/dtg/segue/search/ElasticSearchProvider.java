@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.segue.search;
 
-import com.carrotsearch.hppc.cursors.ObjectObjectCursor;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.common.base.CaseFormat;
@@ -24,19 +23,22 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
+import org.apache.http.HttpHost;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
-import org.elasticsearch.action.admin.indices.settings.get.GetSettingsResponse;
-import org.elasticsearch.action.admin.indices.stats.IndicesStatsRequest;
-import org.elasticsearch.action.get.GetRequestBuilder;
+import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.MatchQueryBuilder;
@@ -47,9 +49,10 @@ import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.index.query.functionscore.RandomScoreFunctionBuilder;
 import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
-import org.elasticsearch.transport.client.PreBuiltTransportClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
@@ -58,6 +61,8 @@ import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
+
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -83,10 +88,12 @@ public class ElasticSearchProvider implements ISearchProvider {
     private static final Logger log = LoggerFactory.getLogger(ElasticSearchProvider.class);
     private static final String ES_FIELD_CONNECTOR = ".";
 
-    protected final Client client;
+    protected final RestHighLevelClient client;
 
     // to try and improve performance of searches with a -1 limit.
     private static final int LARGE_LIMIT = 100;
+
+    private static final int DEFAULT_MAX_WINDOW_SIZE = 10000;
 
     // used to optimise index setting retrieval as these probably don't change every request.
     private final Cache<String, String> settingsCache;
@@ -102,7 +109,7 @@ public class ElasticSearchProvider implements ISearchProvider {
      *            - the client that the provider should be using.
      */
     @Inject
-    public ElasticSearchProvider(final Client searchClient) {
+    public ElasticSearchProvider(final RestHighLevelClient searchClient) {
         this.client = searchClient;
         this.settingsCache = CacheBuilder.newBuilder().softValues().expireAfterWrite(10, TimeUnit.MINUTES).build();
     }
@@ -252,21 +259,32 @@ public class ElasticSearchProvider implements ISearchProvider {
 
     /**
      * This method will create a threadsafe client that can be used to talk to an Elastic Search cluster.
-     *
-     * @param clusterName
-     *            - the name of the cluster to connect to.
      * @param address
      *            - address of the cluster to connect to.
      * @param port
      *            - port that the cluster is running on.
+     * @param username
+     *            - username for cluster user.
+     * @param password
+     *            - password for cluster user.
+     *
      * @return Defaults to http client creation.
      */
-    public static Client getTransportClient(final String clusterName, final String address, final int port) throws UnknownHostException {
-        TransportClient client = new PreBuiltTransportClient(Settings.builder().put("cluster.name", clusterName)
-                .put("client.transport.ping_timeout", "180s").build())
-                .addTransportAddress(new TransportAddress(InetAddress.getByName(address), port));
+    public static RestHighLevelClient getClient(final String address, final int port, final String username,
+                                                final String password) throws UnknownHostException {
+        final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+        credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(username, password));
 
-        log.info("Elastic Search Transport client created: " + address + ":" + port);
+        RestHighLevelClient client = new RestHighLevelClient(
+                RestClient.builder(
+                        new HttpHost(InetAddress.getByName(address), port, "http")
+                )
+                .setHttpClientConfigCallback(
+                        httpAsyncClientBuilder -> httpAsyncClientBuilder.setDefaultCredentialsProvider(credentialsProvider)
+                )
+        );
+
+        log.info("Elastic Search client created: " + address + ":" + port);
         return client;
     }
 
@@ -275,12 +293,22 @@ public class ElasticSearchProvider implements ISearchProvider {
         Validate.notNull(indexBase);
         Validate.notNull(indexType);
         String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
-        return client.admin().indices().exists(new IndicesExistsRequest(typedIndex)).actionGet().isExists();
+        try {
+            return client.indices().exists(new GetIndexRequest(typedIndex), RequestOptions.DEFAULT);
+        } catch (IOException e) {
+            log.error(String.format("Failed to check existence of index %s", typedIndex), e);
+            return false;
+        }
     }
 
     @Override
     public Collection<String> getAllIndices() {
-        return client.admin().indices().stats(new IndicesStatsRequest()).actionGet().getIndices().keySet();
+        try {
+            return List.of(client.indices().get(new GetIndexRequest("*"), RequestOptions.DEFAULT).getIndices());
+        } catch (IOException e) {
+            log.error("Exception while retrieving all indices", e);
+            return Collections.emptyList();
+        }
     }
 
     @Override
@@ -346,7 +374,7 @@ public class ElasticSearchProvider implements ISearchProvider {
      *            - the instructions to augment.
      * @return the augmented search request with sort instructions included.
      */
-    private SearchRequestBuilder addSortInstructions(final SearchRequestBuilder searchRequest,
+    private SearchSourceBuilder addSortInstructions(final SearchSourceBuilder searchRequest,
                                                      final Map<String, Constants.SortOrder> sortInstructions) {
         // deal with sorting of results
         for (Map.Entry<String, Constants.SortOrder> entry : sortInstructions.entrySet()) {
@@ -354,10 +382,10 @@ public class ElasticSearchProvider implements ISearchProvider {
             Constants.SortOrder sortOrder = entry.getValue();
 
             if (sortOrder == Constants.SortOrder.ASC) {
-                searchRequest.addSort(SortBuilders.fieldSort(sortField).order(SortOrder.ASC).missing("_last"));
+                searchRequest.sort(SortBuilders.fieldSort(sortField).order(SortOrder.ASC).missing("_last"));
 
             } else {
-                searchRequest.addSort(SortBuilders.fieldSort(sortField).order(SortOrder.DESC).missing("_last"));
+                searchRequest.sort(SortBuilders.fieldSort(sortField).order(SortOrder.DESC).missing("_last"));
             }
         }
 
@@ -527,15 +555,14 @@ public class ElasticSearchProvider implements ISearchProvider {
             newLimit = LARGE_LIMIT;
         }
 
-        SearchRequestBuilder configuredSearchRequestBuilder = client.prepareSearch(typedIndex).setTypes(indexType)
-                .setQuery(query).setSize(newLimit).setFrom(startIndex);
+        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder().query(query).size(newLimit).from(startIndex);
 
         if (sortInstructions != null) {
-            this.addSortInstructions(configuredSearchRequestBuilder, sortInstructions);
+            this.addSortInstructions(sourceBuilder, sortInstructions);
         }
 
-        log.debug("Building Query: " + configuredSearchRequestBuilder);
-        ResultsWrapper<String> results = executeQuery(configuredSearchRequestBuilder);
+        log.debug("Building Query: " + sourceBuilder);
+        ResultsWrapper<String> results = executeQuery(typedIndex, sourceBuilder);
 
         // execute another query to get all results as this is an unlimited
         // query.
@@ -546,10 +573,8 @@ public class ElasticSearchProvider implements ISearchProvider {
                         this.getMaxResultSize(indexBase, indexType)));
             }
 
-            configuredSearchRequestBuilder = client.prepareSearch(typedIndex).setTypes(indexType).setQuery(query)
-                    .setSize(results.getTotalResults().intValue()).setFrom(startIndex);
-
-            results = executeQuery(configuredSearchRequestBuilder);
+            sourceBuilder = new SearchSourceBuilder().query(query).size(results.getTotalResults().intValue()).from(startIndex);
+            results = executeQuery(typedIndex, sourceBuilder);
 
             log.debug("Unlimited Search - had to make a second round trip to elasticsearch.");
         }
@@ -559,30 +584,30 @@ public class ElasticSearchProvider implements ISearchProvider {
 
     /**
      * A general method for getting the results of a search.
-     *
-     * @param configuredSearchRequestBuilder
+     * @param typedIndex
+     *            - the index within which to search
+     * @param searchSourceBuilder
      *            - the search request to send to the cluster.
      * @return List of the search results.
      */
-    private ResultsWrapper<String> executeQuery(final SearchRequestBuilder configuredSearchRequestBuilder)
-            throws SegueSearchException{
+    private ResultsWrapper<String> executeQuery(final String typedIndex, final SearchSourceBuilder searchSourceBuilder)
+            throws SegueSearchException {
         try {
-            SearchResponse response = configuredSearchRequestBuilder.execute().actionGet();
+            SearchResponse response = client.search(new SearchRequest(typedIndex).source(searchSourceBuilder), RequestOptions.DEFAULT);
 
             List<SearchHit> hitAsList = Arrays.asList(response.getHits().getHits());
             List<String> resultList = new ArrayList<>();
 
             log.debug("TOTAL SEARCH HITS " + response.getHits().getTotalHits());
-            log.debug("Search Request: " + configuredSearchRequestBuilder);
+            log.debug("Search Request: " + searchSourceBuilder);
             for (SearchHit item : hitAsList) {
                 resultList.add(item.getSourceAsString());
             }
 
             return new ResultsWrapper<>(resultList, response.getHits().getTotalHits().value);
-        } catch (ElasticsearchException e) {
+        } catch (ElasticsearchException | IOException e) {
             throw new SegueSearchException("Error while trying to search", e);
         }
-
     }
 
 
@@ -668,15 +693,24 @@ public class ElasticSearchProvider implements ISearchProvider {
         }
     }
 
-    public GetResponse getById(final String indexBase, final String indexType, final String id) {
+    public GetResponse getById(final String indexBase, final String indexType, final String id) throws SegueSearchException {
         String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
-        GetRequestBuilder grb = client.prepareGet(typedIndex, indexType, id).setFetchSource(true);
-        return grb.execute().actionGet();
+        try {
+            return client.get(new GetRequest(typedIndex, id).fetchSourceContext(FetchSourceContext.FETCH_SOURCE),
+                    RequestOptions.DEFAULT);
+        } catch (IOException e) {
+            throw new SegueSearchException(String.format("Failed to get content with ID %s from index %s", id, typedIndex), e);
+        }
     }
 
-    public SearchResponse getAllByType(final String indexBase, final String indexType) {
+    public SearchResponse getAllFromIndex(final String indexBase, final String indexType) throws SegueSearchException {
         String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
-        return client.prepareSearch(typedIndex).setTypes(indexType).setSize(10000).setFetchSource(true).execute().actionGet();
+        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder().size(10000).fetchSource(true);
+        try {
+            return client.search(new SearchRequest(typedIndex).source(sourceBuilder), RequestOptions.DEFAULT);
+        } catch (IOException e) {
+            throw new SegueSearchException(String.format("Failed to retrieve all data from index %s", typedIndex), e);
+        }
     }
 
     /**
@@ -693,21 +727,24 @@ public class ElasticSearchProvider implements ISearchProvider {
      */
     private int getMaxResultSize(final String indexBase, final String indexType) {
         final String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
-        final String MAX_WINDOW_SIZE_KEY = typedIndex + "_" + "MAX_WINDOW_SIZE";
-        String max_window_size = this.settingsCache.getIfPresent(MAX_WINDOW_SIZE_KEY);
-        if (null == max_window_size) {
-            GetSettingsResponse response = client.admin().indices()
-                    .prepareGetSettings(typedIndex).get();
-            for (ObjectObjectCursor<String, Settings> cursor : response.getIndexToSettings()) {
-                Settings settings = cursor.value;
-                if (null == settings) {
-                    continue;
+        try {
+            final String MAX_WINDOW_SIZE_KEY = typedIndex + "_" + "MAX_WINDOW_SIZE";
+            String max_window_size = this.settingsCache.getIfPresent(MAX_WINDOW_SIZE_KEY);
+            if (null == max_window_size) {
+                Map<String, Settings> response = client.indices().get(new GetIndexRequest(typedIndex), RequestOptions.DEFAULT).getSettings();
+                for (Settings settings : response.values()) {
+                    if (null == settings) {
+                        continue;
+                    }
+                    this.settingsCache.put(MAX_WINDOW_SIZE_KEY, settings.get(typedIndex + ".max_result_window",
+                            Integer.toString(SEARCH_MAX_WINDOW_SIZE)));
                 }
-
-                this.settingsCache.put(MAX_WINDOW_SIZE_KEY, settings.get(typedIndex + ".max_result_window",
-                        Integer.toString(SEARCH_MAX_WINDOW_SIZE)));
             }
+            return Integer.parseInt(this.settingsCache.getIfPresent(MAX_WINDOW_SIZE_KEY));
+        } catch (IOException e) {
+            log.error(String.format("Failed to retrieve max window size settings for index %s - defaulting to %d",
+                    typedIndex, DEFAULT_MAX_WINDOW_SIZE), e);
+            return DEFAULT_MAX_WINDOW_SIZE;
         }
-        return Integer.parseInt(this.settingsCache.getIfPresent(MAX_WINDOW_SIZE_KEY));
     }
 }

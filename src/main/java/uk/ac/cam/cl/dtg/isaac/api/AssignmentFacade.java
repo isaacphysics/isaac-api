@@ -81,6 +81,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -234,6 +235,59 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     }
 
     /**
+     * Allows the user to fetch a single assignment that they own (or are a group manager of). Returned assignment
+     * will contain gameboard and question information.
+     *
+     * @param request - so that we can identify the current user.
+     * @param assignmentId - id of assignment to fetch
+     * @return AssignmentDTO containing extra information about the gameboard and questions
+     */
+    @GET
+    @Path("/assign/{assignmentId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @Operation(summary = "Fetch an assignment object populated with gameboard and question information.")
+    public Response getSingleAssigned(@Context final HttpServletRequest request,
+                                @PathParam("assignmentId") final Long assignmentId) {
+        if (null == assignmentId) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Please specify an assignment id to search for.").toResponse();
+        }
+        try {
+            RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
+
+            AssignmentDTO assignment = this.assignmentManager.getAssignmentById(assignmentId);
+            if (null == assignment) {
+                return new SegueErrorResponse(Status.NOT_FOUND, String.format("Assignment with id %d not found.", assignmentId)).toResponse();
+            }
+            UserGroupDTO group = this.groupManager.getGroupById(assignment.getGroupId());
+            if (null == group) {
+                return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while locating the specified assignment.").toResponse();
+            }
+
+            if (!GroupManager.isOwnerOrAdditionalManager(group, currentlyLoggedInUser.getId())
+                    && !isUserAnAdmin(userManager, currentlyLoggedInUser)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You are not the owner or manager of this assignment.").toResponse();
+            }
+
+            // In order to get all the information about parts and pass marks, which is needed for Assignment Progress,
+            // we need to use the method which augments a gameboard with user attempt information.
+            // But we don't _want_ the attempt information itself for real, so we won't load it from the database:
+            Map<String, Map<String, List<QuestionValidationResponse>>> fakeQuestionAttemptMap = new HashMap<>();
+
+            assignment.setGameboard(this.gameManager.getGameboard(assignment.getGameboardId(), currentlyLoggedInUser, fakeQuestionAttemptMap));
+
+            return Response.ok(assignment)
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while locating the specified assignment.").toResponse();
+        } catch (ContentManagerException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while populating the specified assignment object.").toResponse();
+        }
+    }
+
+    /**
      * Allows a user to get all assignments they have set in light weight objects.
      *
      * If the user specifies a group ID to narrow the search full objects including questions in gameboards will be returned.
@@ -257,8 +311,25 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             if (null == groupIdOfInterest) {
                 List<UserGroupDTO> allGroupsOwnedAndManagedByUser = this.groupManager.getAllGroupsOwnedAndManagedByUser(currentlyLoggedInUser, false);
-                return Response.ok(this.assignmentManager.getAllAssignmentsForSpecificGroups(allGroupsOwnedAndManagedByUser, true))
-                        .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
+                List<AssignmentDTO> assignments = this.assignmentManager.getAllAssignmentsForSpecificGroups(allGroupsOwnedAndManagedByUser, true);
+                Set<String> gameboardIds = assignments.stream().map(AssignmentDTO::getGameboardId).collect(Collectors.toSet());
+                List<GameboardDTO> liteGameboards = this.gameManager.getLiteGameboards(gameboardIds);
+                // Remove unneeded data from the gameboards - very messy but not as messy as feasible alternatives
+                liteGameboards.forEach(g -> {
+                    g.setContents(null);
+                    g.setWildCard(null);
+                    g.setWildCardPosition(null);
+                    g.setGameFilter(null);
+                    g.setLastVisited(null);
+                    g.setPercentageCompleted(null);
+                    g.setCreationMethod(null);
+                    g.setCreationDate(null);
+                });
+                Map<String, GameboardDTO> liteGameboardLookup = liteGameboards.stream().collect(Collectors.toMap(GameboardDTO::getId, Function.identity()));
+                // Add lightweight gameboard to each assignment
+                assignments.forEach(a -> a.setGameboard(liteGameboardLookup.get(a.getGameboardId())));
+                // TODO perhaps augment the assignments with assigner information if the assigner isn't the current user
+                return Response.ok(assignments).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
             } else {
                 UserGroupDTO group = this.groupManager.getGroupById(groupIdOfInterest);
 
@@ -287,9 +358,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 for (AssignmentDTO assignment : allAssignmentsSetToGroup) {
                     assignment.setGameboard(gameboards.get(assignment.getGameboardId()));
                 }
-
-                this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacServerLogType.VIEW_GROUPS_ASSIGNMENTS,
-                        ImmutableMap.of("groupId", group.getId()));
 
                 return Response.ok(allAssignmentsSetToGroup)
                         .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
@@ -349,6 +417,10 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             final String resultsString = "results";
             final String correctPartString = "correctPartResults";
             final String incorrectPartString = "incorrectPartResults";
+
+            if (gameboard.getContents().isEmpty()) {
+                return new SegueErrorResponse(Status.NOT_FOUND, "Assignment gameboard has no questions, or its questions no longer exist. Cannot fetch assignment progress.").toResponse();
+            }
 
             for (ImmutablePair<RegisteredUserDTO, List<GameboardItem>> userGameboardItems : this.gameManager
                     .gatherGameProgressData(groupMembers, gameboard)) {
@@ -651,12 +723,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             Map<RegisteredUserDTO, Map<GameboardDTO, Map<String, Integer>>> grandTable = new HashMap<>();
             // Retrieve each user's progress data and cram everything into a Grand Table for later consumption
             List<String> gameboardsIds = assignments.stream().map(AssignmentDTO::getGameboardId).collect(Collectors.toList());
-            List<GameboardDTO> gameboards;
-            if (gameboardsIds.isEmpty()) {
-                gameboards = new ArrayList<>();
-            } else {
-                gameboards = gameManager.getGameboards(gameboardsIds);
-            }
+            List<GameboardDTO> gameboards = gameManager.getGameboards(gameboardsIds);
+
             Map<String, GameboardDTO> gameboardsIdMap = gameboards.stream().collect(Collectors.toMap(GameboardDTO::getId, Function.identity()));
 
             Map<AssignmentDTO, GameboardDTO> assignmentGameboards = new HashMap<>();

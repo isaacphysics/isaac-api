@@ -175,8 +175,8 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/available")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get tests visible to this user, from index 0.")
-    public final Response getAvailableQuizzes(@Context final HttpServletRequest request) {
-        return getAvailableQuizzes(request, 0);
+    public final Response getAvailableQuizzes(@Context final Request request, @Context final HttpServletRequest httpServletRequest) {
+        return getAvailableQuizzes(request, httpServletRequest, 0);
     }
 
     /**
@@ -184,6 +184,9 @@ public class QuizFacade extends AbstractIsaacFacade {
      *
      * Anonymous users can't see quizzes.
      *
+     * @param request the Request needed for ETag checking.
+     * @param httpServletRequest the Request needed for Cookies for the current user.
+     * @param startIndex for pagination.
      * @return a Response containing a list of ContentSummaryDTO for the visible quizzes.
      */
     @GET
@@ -191,15 +194,26 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @Operation(summary = "Get tests visible to this user, from the specified index.")
-    public final Response getAvailableQuizzes(@Context final HttpServletRequest request,
+    public final Response getAvailableQuizzes(@Context final Request request,
+                                              @Context final HttpServletRequest httpServletRequest,
                                               @PathParam("startIndex") final Integer startIndex) {
         try {
-            RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(request);
+            RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
             boolean isStudent = !isUserTeacherOrAbove(userManager, user);
             String userRoleString = user.getRole().name();
 
-            EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + "");
+            // Cache the list of quizzes based on current content version, user's role, and startIndex:
+            int etagValue = this.contentManager.getCurrentContentSHA().hashCode() + user.getRole().hashCode();
+            if (null != startIndex) {
+                etagValue += startIndex;
+            }
+            EntityTag etag = new EntityTag(etagValue + "");
+            Response cachedResponse = generateCachedResponse(request, etag, NEVER_CACHE_WITHOUT_ETAG_CHECK);
+
+            if (cachedResponse != null) {
+                return cachedResponse;
+            }
 
             // FIXME: ** HARD-CODED DANGER AHEAD **
             // The limit parameter in the following call is hard-coded and should be returned to a more reasonable
@@ -207,7 +221,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             ResultsWrapper<ContentSummaryDTO> summary = this.quizManager.getAvailableQuizzes(isStudent, userRoleString, startIndex, 9000);
 
             return ok(summary).tag(etag)
-                .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, false))
+                .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
                 .build();
         } catch (ContentManagerException e) {
             String message = "ContentManagerException whilst getting available tests";

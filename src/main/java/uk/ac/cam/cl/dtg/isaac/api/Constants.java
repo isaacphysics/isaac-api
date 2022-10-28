@@ -144,7 +144,6 @@ public final class Constants {
         UPDATE_QUIZ_FEEDBACK_MODE,
         VIEW_ASSIGNMENT_PROGRESS,
         VIEW_CONCEPT,
-        VIEW_GROUPS_ASSIGNMENTS,
         VIEW_MY_BOARDS_PAGE,
         VIEW_PAGE,
         VIEW_PAGE_FRAGMENT,
@@ -180,6 +179,8 @@ public final class Constants {
         CLIENT_SIDE_ERROR,
         LOGIN_MODAL_SHOWN,
         REVIEW_TEACHER_CONNECTIONS,
+        REPORT_CONTENT_ACCORDION_SECTION,
+        REPORT_CONTENT_PAGE
     }
     public static final Set<String> ISAAC_CLIENT_LOG_TYPES = Arrays.stream(IsaacClientLogType.values()).map(IsaacClientLogType::name).collect(Collectors.toSet());
 

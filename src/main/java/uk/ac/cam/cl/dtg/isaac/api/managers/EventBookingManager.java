@@ -151,8 +151,8 @@ public class EventBookingManager {
      * @return event booking
      * @throws SegueDatabaseException - if an error occurs.
      */
-    public EventBookingDTO getBookingById(final Long bookingId) throws SegueDatabaseException {
-        return this.bookingPersistenceManager.getBookingById(bookingId);
+    public DetailedEventBookingDTO getDetailedBookingById(final Long bookingId) throws SegueDatabaseException {
+        return this.bookingPersistenceManager.getDetailedBookingById(bookingId);
     }
 
     /**

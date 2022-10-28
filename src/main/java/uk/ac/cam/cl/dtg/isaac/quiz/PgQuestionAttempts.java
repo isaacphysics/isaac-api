@@ -95,7 +95,6 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
                 pst.setString(2, objectMapper.writeValueAsString(userAttempts));
                 pst.setString(3, userId);
 
-                log.debug(pst.toString());
                 if (pst.executeUpdate() == 0) {
                     throw new SegueDatabaseException("Unable to save question attempt.");
                 }
@@ -284,7 +283,10 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
     public Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>>
             getQuestionAttemptsByUsersAndQuestionPrefix(final List<Long> userIds, final List<String> allQuestionPageIds)
             throws SegueDatabaseException {
-        Validate.notEmpty(allQuestionPageIds);
+        if (allQuestionPageIds.isEmpty()) {
+            log.error("Attempted to fetch group progress for an empty gameboard.");
+            return Maps.newHashMap();
+        }
         if (userIds.isEmpty()) {
             return Maps.newHashMap();
         }
