@@ -173,6 +173,7 @@ public final class Constants {
         VIEW_RELATED_PAGE,
         VIEW_MY_ASSIGNMENTS,
         VIEW_GAMEBOARD_BY_ID,
+        VIEW_GITHUB_CODE,
         ACCEPT_COOKIES,
         LEAVE_GAMEBOARD_BUILDER,
         SAVE_GAMEBOARD,
