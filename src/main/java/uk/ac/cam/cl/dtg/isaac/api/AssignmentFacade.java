@@ -303,7 +303,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Path("/assign")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @Operation(summary = "List all assignments set by the current user if no group param specified.")
+    @Operation(summary = "List all assignments set or managed by the current user if no group param specified.")
     public Response getAssigned(@Context final HttpServletRequest request,
                                 @QueryParam("group") final Long groupIdOfInterest) {
         try {
