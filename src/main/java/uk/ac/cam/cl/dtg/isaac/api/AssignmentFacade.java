@@ -1041,6 +1041,14 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                         assigmentStatuses.add(new AssignmentStatusDTO(assignmentDTO.getGroupId(), "The assignment cannot be scheduled to begin after it is due."));
                         continue;
                     }
+                    // If the assignment will have started in the next hour (meaning it might miss the related emails
+                    // being scheduled), then remove it so that the assignment is set immediately.
+                    Calendar cal = Calendar.getInstance();
+                    cal.setTime(new Date());
+                    cal.add(Calendar.HOUR_OF_DAY, 1);
+                    if (assignmentDTO.getScheduledStartDate().before(cal.getTime())) {
+                        assignmentDTO.setScheduledStartDate(null);
+                    }
                 }
 
                 try {
