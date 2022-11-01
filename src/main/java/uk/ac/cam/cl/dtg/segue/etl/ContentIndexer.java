@@ -945,8 +945,9 @@ public class ContentIndexer {
 
             // check that there is some alt text.
             if (f.getAltText() == null || f.getAltText().isEmpty()) {
-                if (!(f instanceof Video)) {
-                    // Videos probably don't need alt text unless there is a good reason.
+                if (!(f instanceof Video) && !f.getId().equals("eventThumbnail")) {
+                    // Videos probably don't need alt text unless there is a good reason. It's not important that event
+                    // thumbnails have alt text, so we don't record errors for those either.
                     this.registerContentProblem(content, "No altText attribute set for media element: " + f.getSrc()
                             + " in Git source file " + content.getCanonicalSourceFile(), indexProblemCache);
                 }
