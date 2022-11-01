@@ -1026,11 +1026,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     continue;
                 }
 
-                if (null != assignmentDTO.getDueDate()) {
-                    if (assignmentDTO.getDueDate().before(new Date())) {
-                        assigmentStatuses.add(new AssignmentStatusDTO(assignmentDTO.getGroupId(), "The assignment cannot be due in the past."));
-                        continue;
-                    }
+                if (null != assignmentDTO.getDueDate() && assignmentDTO.isBeforeDueDate(new Date())) {
+                    assigmentStatuses.add(new AssignmentStatusDTO(assignmentDTO.getGroupId(), "The assignment cannot be due in the past."));
+                    continue;
                 }
 
                 if (null != assignmentDTO.getScheduledStartDate()) {
@@ -1039,10 +1037,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                         assigmentStatuses.add(new AssignmentStatusDTO(assignmentDTO.getGroupId(), "The assignment cannot be scheduled to begin more than one year in the future."));
                         continue;
                     }
-                    Calendar cal = Calendar.getInstance();
-                    cal.setTimeInMillis(assignmentDTO.getScheduledStartDate().getTime());
-                    cal.set(Calendar.HOUR_OF_DAY, 0);
-                    if (null != assignmentDTO.getDueDate() && cal.getTime().compareTo(assignmentDTO.getDueDate()) > 0) {
+                    if (null != assignmentDTO.getDueDate() && assignmentDTO.isBeforeDueDate(assignmentDTO.getScheduledStartDate())) {
                         assigmentStatuses.add(new AssignmentStatusDTO(assignmentDTO.getGroupId(), "The assignment cannot be scheduled to begin after it is due."));
                         continue;
                     }

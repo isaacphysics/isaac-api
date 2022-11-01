@@ -92,7 +92,7 @@ public class QuizAssignmentManager implements IAssignmentLike.Details<QuizAssign
 
         Date now = new Date();
 
-        if (newAssignment.getDueDate() != null && newAssignment.getDueDate().before(now)) {
+        if (newAssignment.getDueDate() != null && newAssignment.isBeforeDueDate(now)) {
             throw new DueBeforeNowException();
         }
 
@@ -100,7 +100,7 @@ public class QuizAssignmentManager implements IAssignmentLike.Details<QuizAssign
             newAssignment.getGroupId());
 
         if (existingQuizAssignments.size() != 0) {
-            if (existingQuizAssignments.stream().anyMatch(qa -> qa.getDueDate() == null || qa.getDueDate().after(now))) {
+            if (existingQuizAssignments.stream().anyMatch(qa -> qa.getDueDate() == null || !qa.isBeforeDueDate(now))) {
                 log.error(String.format("Duplicated Test Assignment Exception - cannot assign the same work %s to a group %s when due date not passed",
                     newAssignment.getQuizId(), newAssignment.getGroupId()));
                 throw new DuplicateAssignmentException("You cannot reassign a test until the due date has passed.");
@@ -167,7 +167,7 @@ public class QuizAssignmentManager implements IAssignmentLike.Details<QuizAssign
 
     private List<QuizAssignmentDTO> filterActiveAssignments(List<QuizAssignmentDTO> assignments) {
         Date now = new Date();
-        return assignments.stream().filter(qa -> qa.getDueDate() == null || qa.getDueDate().after(now)).collect(Collectors.toList());
+        return assignments.stream().filter(qa -> qa.getDueDate() == null || !qa.isBeforeDueDate(now)).collect(Collectors.toList());
     }
 
     public void updateAssignment(QuizAssignmentDTO assignment, QuizAssignmentDTO updates) throws SegueDatabaseException {
