@@ -33,7 +33,7 @@ public interface IAssignmentLike {
         cal.setTimeInMillis(dueDate.getTime());
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.add(Calendar.DATE, 1);
-        return cal.getTime().before(date);
+        return date.before(cal.getTime());
     }
 
     interface Details<T extends IAssignmentLike> {
