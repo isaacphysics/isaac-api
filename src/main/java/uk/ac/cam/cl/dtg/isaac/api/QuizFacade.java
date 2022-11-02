@@ -683,8 +683,8 @@ public class QuizFacade extends AbstractIsaacFacade {
                     "You can only mark assignments incomplete for groups you own or manage.").toResponse();
             }
 
-            if (assignment.getDueDate() != null && assignment.dueDateIsAfter(new Date())) {
-                return new SegueErrorResponse(Status.BAD_REQUEST, "You cannot mark a test attempt as incomplete while it is still due.").toResponse();
+            if (assignment.getDueDate() != null && !assignment.dueDateIsAfter(new Date())) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You cannot mark a test attempt as incomplete after the due date.").toResponse();
             }
 
             RegisteredUserDTO student = userManager.getUserDTOById(userId);
@@ -1662,18 +1662,8 @@ public class QuizFacade extends AbstractIsaacFacade {
         // Relying on the side-effects of getting the assignment.
         QuizAssignmentDTO quizAssignment = getQuizAssignment(quizAttempt);
 
-        if (quizAssignment != null && quizAssignment.getDueDate() != null) {
-            // Push due date to 12am of that day (start of the next day) - doesn't assume the due date is rounded to a day
-            Calendar c = Calendar.getInstance();
-            c.setTime(quizAssignment.getDueDate());
-            c.add(Calendar.DATE, 1);
-            c.set(Calendar.HOUR, 0);
-            c.set(Calendar.MINUTE, 0);
-            c.set(Calendar.SECOND, 0);
-            c.set(Calendar.MILLISECOND, 0);
-            if (c.getTime().before(new Date())) {
-                throw new ErrorResponseWrapper(new SegueErrorResponse(Status.FORBIDDEN, "The due date for this test has passed."));
-            }
+        if (quizAssignment != null && quizAssignment.getDueDate() != null && !quizAssignment.dueDateIsAfter(new Date())) {
+            throw new ErrorResponseWrapper(new SegueErrorResponse(Status.FORBIDDEN, "The due date for this test has passed."));
         }
 
         return quizAssignment;
