@@ -393,7 +393,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             }
 
             // Check the due date hasn't passed
-            if (quizAssignment.getDueDate() != null && !quizAssignment.isBeforeDueDate(new Date())) {
+            if (quizAssignment.getDueDate() != null && !quizAssignment.dueDateIsAfter(new Date())) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "The due date for this test has passed.").toResponse();
             }
 
@@ -683,7 +683,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                     "You can only mark assignments incomplete for groups you own or manage.").toResponse();
             }
 
-            if (assignment.getDueDate() != null && assignment.isBeforeDueDate(new Date())) {
+            if (assignment.getDueDate() != null && assignment.dueDateIsAfter(new Date())) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "You cannot mark a test attempt as incomplete while it is still due.").toResponse();
             }
 
