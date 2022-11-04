@@ -23,6 +23,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  */
 public class ItemDTO extends ContentDTO {
 
+    private String altText;
+
     /**
      * Default constructor required for mapping.
      */
@@ -34,6 +36,14 @@ public class ItemDTO extends ContentDTO {
     @JsonIgnore
     public Boolean getPublished() {
         return super.getPublished();
+    }
+
+    public String getAltText() {
+        return this.altText;
+    }
+
+    public void setAltText(final String altText) {
+        this.altText = altText;
     }
 
 }
