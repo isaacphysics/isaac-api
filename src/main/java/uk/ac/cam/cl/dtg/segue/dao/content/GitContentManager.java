@@ -335,7 +335,7 @@ public class GitContentManager {
 
         Set<String> searchTerms = Set.of();
         if (searchString != null && !searchString.isBlank()) {
-            searchTerms = Arrays.stream(searchString.split("")).collect(Collectors.toSet());
+            searchTerms = Arrays.stream(searchString.split(" ")).collect(Collectors.toSet());
         }
 
         BooleanMatchInstruction matchInstruction = new IsaacSearchInstructionBuilder(searchProvider,
