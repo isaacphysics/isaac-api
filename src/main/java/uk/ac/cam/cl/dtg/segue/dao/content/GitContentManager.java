@@ -41,7 +41,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.BooleanMatchInstruction;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
-import uk.ac.cam.cl.dtg.segue.search.IsaacSearchQueryBuilder;
+import uk.ac.cam.cl.dtg.segue.search.IsaacSearchInstructionBuilder;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 import uk.ac.cam.cl.dtg.segue.search.SimpleExclusionInstruction;
 import uk.ac.cam.cl.dtg.segue.search.SimpleFilterInstruction;
@@ -52,6 +52,7 @@ import jakarta.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -60,6 +61,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.CACHE_METRICS_COLLECTOR;
@@ -324,23 +326,42 @@ public class GitContentManager {
         return (ResultsWrapper<ContentDTO>) cache.getIfPresent(k);
     }
 
-    public final ResultsWrapper<ContentDTO> searchForContent(
-            final String searchString, @Nullable final Map<String, List<String>> fieldsThatMustMatch,
-            final Integer startIndex, final Integer limit) throws ContentManagerException {
+    public final ResultsWrapper<ContentDTO> searchForContent(@Nullable final String searchString, final Set<String> ids,
+                                                             final Set<String> tags, final Set<String> levels, final Set<String> stages,
+                                                             final Set<String> difficulties, final Set<String> examBoards,
+                                                             final Set<String> contentTypes, final Integer startIndex,
+                                                             final Integer limit)
+            throws ContentManagerException {
 
-        ResultsWrapper<String> searchHits = searchProvider.fuzzySearch(
+        Set<String> searchTerms = Set.of();
+        if (searchString != null && !searchString.isBlank()) {
+            searchTerms = Arrays.stream(searchString.split("")).collect(Collectors.toSet());
+        }
+
+        BooleanMatchInstruction matchInstruction = new IsaacSearchInstructionBuilder(searchProvider,
+                this.allowOnlyPublishedContent,
+                this.hideRegressionTestContent,
+                true) // todo: this should be based on user privileges
+                .includeContentTypes(contentTypes)
+                .searchInField(Constants.LEVEL_FIELDNAME, levels)
+                .searchInField(Constants.STAGE_FIELDNAME, stages)
+                .searchInField(Constants.DIFFICULTY_FIELDNAME, difficulties)
+                .searchInField(Constants.EXAM_BOARD_FIELDNAME, examBoards)
+                .searchInField(Constants.ID_FIELDNAME, ids)
+                .searchInField(Constants.TAGS_FIELDNAME, tags)
+                .searchInField(Constants.VALUE_FIELDNAME, searchTerms, IsaacSearchInstructionBuilder.Strategy.FUZZY)
+                .searchInField(Constants.CHILDREN_FIELDNAME, searchTerms, IsaacSearchInstructionBuilder.Strategy.FUZZY)
+                .searchInField(Constants.ID_FIELDNAME, searchTerms, IsaacSearchInstructionBuilder.Priority.HIGH, IsaacSearchInstructionBuilder.Strategy.FUZZY)
+                .searchInField(Constants.TITLE_FIELDNAME, searchTerms, IsaacSearchInstructionBuilder.Priority.HIGH, IsaacSearchInstructionBuilder.Strategy.FUZZY)
+                .searchInField(Constants.TAGS_FIELDNAME, searchTerms, IsaacSearchInstructionBuilder.Priority.HIGH, IsaacSearchInstructionBuilder.Strategy.FUZZY)
+                .build();
+
+        ResultsWrapper<String> searchHits = searchProvider.nestedMatchSearch(
                 contentIndex,
                 CONTENT_TYPE,
-                searchString,
                 startIndex,
                 limit,
-                fieldsThatMustMatch,
-                this.getBaseFilters(),
-                Constants.ID_FIELDNAME,
-                Constants.TITLE_FIELDNAME,
-                Constants.TAGS_FIELDNAME,
-                Constants.VALUE_FIELDNAME,
-                Constants.CHILDREN_FIELDNAME
+                matchInstruction
         );
 
         List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
@@ -353,23 +374,19 @@ public class GitContentManager {
             final boolean includeHiddenContent, final Integer startIndex, final Integer limit
     ) throws  ContentManagerException {
 
-        BooleanMatchInstruction matchQuery = new IsaacSearchQueryBuilder(searchString, searchProvider,
-                this.allowOnlyPublishedContent, this.hideRegressionTestContent)
-                .matchFields(Set.of(
-                        Constants.TITLE_FIELDNAME,
-                        Constants.ID_FIELDNAME,
-                        Constants.SUMMARY_FIELDNAME,
-                        Constants.TAGS_FIELDNAME,
-                        Constants.SEARCHABLE_CONTENT_FIELDNAME))
-                .prioritiseFields(Set.of(
-                        Constants.TITLE_FIELDNAME,
-                        Constants.ID_FIELDNAME,
-                        Constants.SUMMARY_FIELDNAME,
-                        Constants.TAGS_FIELDNAME))
-                .matchContentTypes(
-                        Set.copyOf(documentTypes))
-                .prioritiseContentTypes(
-                        Set.of(TOPIC_SUMMARY_PAGE_TYPE))
+        BooleanMatchInstruction matchInstruction = new IsaacSearchInstructionBuilder(searchProvider,
+                this.allowOnlyPublishedContent,
+                this.hideRegressionTestContent,
+                true) // todo: based on user
+                .includeContentTypes(Set.copyOf(documentTypes))
+                .includeContentTypes(Set.of(TOPIC_SUMMARY_PAGE_TYPE), IsaacSearchInstructionBuilder.Priority.HIGH)
+                .searchInField(Constants.SEARCHABLE_CONTENT_FIELDNAME, Set.of(searchString))
+                .searchInField(Constants.ADDRESS_PSEUDO_FIELDNAME, Set.of(searchString))
+                .searchInField(Constants.TITLE_FIELDNAME, Set.of(searchString))
+                .searchInField(Constants.ID_FIELDNAME, Set.of(searchString), IsaacSearchInstructionBuilder.Priority.HIGH)
+                .searchInField(Constants.SUMMARY_FIELDNAME, Set.of(searchString), IsaacSearchInstructionBuilder.Priority.HIGH)
+                .searchInField(Constants.TAGS_FIELDNAME, Set.of(searchString), IsaacSearchInstructionBuilder.Priority.HIGH)
+                .includePastEvents(false)
                 .build();
 
         ResultsWrapper<String> searchHits = searchProvider.nestedMatchSearch(
@@ -377,8 +394,7 @@ public class GitContentManager {
                 CONTENT_TYPE,
                 startIndex,
                 limit,
-                searchString,
-                matchQuery
+                matchInstruction
         );
 
         List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
@@ -676,6 +692,12 @@ public class GitContentManager {
         }
     }
 
+    /**
+     * An abstract representation of a search clause that can be interpreted as desired by different search providers.
+     *
+     * @deprecated in favour of {@code BooleanMatchInstruction}, as an attempt to unify approaches to searching.
+     */
+    @Deprecated
     public static class BooleanSearchClause {
         private final String field;
         private final Constants.BooleanOperator operator;

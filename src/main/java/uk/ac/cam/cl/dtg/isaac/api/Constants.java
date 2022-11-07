@@ -54,6 +54,9 @@ public final class Constants {
     public static final Set<String> SITE_WIDE_SEARCH_VALID_DOC_TYPES = ImmutableSet.of(
             QUESTION_TYPE, CONCEPT_TYPE, TOPIC_SUMMARY_PAGE_TYPE, PAGE_TYPE, EVENT_TYPE);
 
+    public static final Set<String> SEARCHABLE_DOC_TYPES = ImmutableSet.of(
+            QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE, CONCEPT_TYPE, TOPIC_SUMMARY_PAGE_TYPE, PAGE_TYPE, EVENT_TYPE);
+
     public static final int NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES = 2;
 
     /*

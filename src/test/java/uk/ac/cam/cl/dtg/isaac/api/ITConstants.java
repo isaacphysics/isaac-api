@@ -44,6 +44,7 @@ public final class ITConstants {
 
     // Questions
     public static final String REGRESSION_TEST_PAGE_ID = "_regression_test_";
+    public static final String ASSIGNMENT_TEST_PAGE_ID = "_assignment_test";
 
     // Groups
     public static final long TEST_TEACHERS_AB_GROUP_ID = 1L;

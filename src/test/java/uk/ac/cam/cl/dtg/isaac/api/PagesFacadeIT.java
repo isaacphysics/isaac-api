@@ -36,6 +36,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -68,7 +69,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
 
         // Act
         // make request
-        Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), "_regression_test_", "",
+        Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), ITConstants.REGRESSION_TEST_PAGE_ID, "",
                 "", "", "", "", "", false, 0, -1);
 
         // Assert
@@ -81,5 +82,151 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
 
         Set<String> questionIDs = responseBody.getResults().stream().map(ContentSummaryDTO::getId).collect(Collectors.toSet());
         assertEquals(Set.of(ITConstants.REGRESSION_TEST_PAGE_ID), questionIDs);
+    }
+
+    @Test
+    public void getQuestionList_searchByIDOfNonQuestionPageAsStudent_doesNotReturnPage() throws NoCredentialsAvailableException,
+            NoUserException, SegueDatabaseException, AuthenticationProviderMappingException,
+            IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException,
+            NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+        // Arrange
+        // log in as Student, create request
+        LoginResult studentLogin = loginAs(httpSession, ITConstants.TEST_STUDENT_EMAIL,
+                ITConstants.TEST_STUDENT_PASSWORD);
+        HttpServletRequest searchRequest = createRequestWithCookies(new Cookie[]{studentLogin.cookie});
+        replay(searchRequest);
+
+        // Act
+        // make request
+        Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), ITConstants.SEARCH_TEST_CONCEPT_ID,
+                "", "", "", "", "", "", false, 0, -1);
+
+        // Assert
+        // check status code is OK
+        assertEquals(Response.Status.OK.getStatusCode(), searchResponse.getStatus());
+
+        // check the search returned the expected content summary
+        @SuppressWarnings("unchecked") ResultsWrapper<ContentSummaryDTO> responseBody =
+                (ResultsWrapper<ContentSummaryDTO>) searchResponse.getEntity();
+
+        Set<String> questionIDs = responseBody.getResults().stream().map(ContentSummaryDTO::getId).collect(Collectors.toSet());
+        assertEquals(Set.of(), questionIDs);
+    }
+
+    @Test
+    public void getQuestionList_searchByIDOfNonFastTrackQuestionPageAsStudentWhenFastTrackOnly_doesNotReturnPage() throws NoCredentialsAvailableException,
+            NoUserException, SegueDatabaseException, AuthenticationProviderMappingException,
+            IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException,
+            NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+        // Arrange
+        // log in as Student, create request
+        LoginResult studentLogin = loginAs(httpSession, ITConstants.TEST_STUDENT_EMAIL,
+                ITConstants.TEST_STUDENT_PASSWORD);
+        HttpServletRequest searchRequest = createRequestWithCookies(new Cookie[]{studentLogin.cookie});
+        replay(searchRequest);
+
+        // Act
+        // make request
+        Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), ITConstants.REGRESSION_TEST_PAGE_ID,
+                "", "", "", "", "", "", true, 0, -1);
+
+        // Assert
+        // check status code is OK
+        assertEquals(Response.Status.OK.getStatusCode(), searchResponse.getStatus());
+
+        // check the search returned the expected content summary
+        @SuppressWarnings("unchecked") ResultsWrapper<ContentSummaryDTO> responseBody =
+                (ResultsWrapper<ContentSummaryDTO>) searchResponse.getEntity();
+
+        Set<String> questionIDs = responseBody.getResults().stream().map(ContentSummaryDTO::getId).collect(Collectors.toSet());
+        assertEquals(Set.of(), questionIDs);
+    }
+
+    @Test
+    public void getQuestionList_searchSpecificIDsAsStudent_returnsOnlyQuestionsWithIDs() throws NoCredentialsAvailableException,
+            NoUserException, SegueDatabaseException, AuthenticationProviderMappingException,
+            IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException,
+            NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+        // Arrange
+        // log in as Student, create request
+        LoginResult studentLogin = loginAs(httpSession, ITConstants.TEST_STUDENT_EMAIL,
+                ITConstants.TEST_STUDENT_PASSWORD);
+        HttpServletRequest searchRequest = createRequestWithCookies(new Cookie[]{studentLogin.cookie});
+        replay(searchRequest);
+
+        // Act
+        // make request
+        Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class),
+                String.format("%s,%s", ITConstants.REGRESSION_TEST_PAGE_ID, ITConstants.ASSIGNMENT_TEST_PAGE_ID), "",
+                "", "", "", "", "", false, 0, -1);
+
+        // Assert
+        // check status code is OK
+        assertEquals(Response.Status.OK.getStatusCode(), searchResponse.getStatus());
+
+        // check the search returned the expected content summary
+        @SuppressWarnings("unchecked") ResultsWrapper<ContentSummaryDTO> responseBody =
+                (ResultsWrapper<ContentSummaryDTO>) searchResponse.getEntity();
+
+        Set<String> questionIDs = responseBody.getResults().stream().map(ContentSummaryDTO::getId).collect(Collectors.toSet());
+        assertEquals(Set.of(ITConstants.REGRESSION_TEST_PAGE_ID, ITConstants.ASSIGNMENT_TEST_PAGE_ID), questionIDs);
+    }
+
+    @Test
+    public void getQuestionList_searchByStringAsStudent_returnsQuestionsWithSimilarTitlesInOrder() throws NoCredentialsAvailableException,
+            NoUserException, SegueDatabaseException, AuthenticationProviderMappingException,
+            IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException,
+            NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+        // Arrange
+        // log in as Student, create request
+        LoginResult studentLogin = loginAs(httpSession, ITConstants.TEST_STUDENT_EMAIL,
+                ITConstants.TEST_STUDENT_PASSWORD);
+        HttpServletRequest searchRequest = createRequestWithCookies(new Cookie[]{studentLogin.cookie});
+        replay(searchRequest);
+
+        // Act
+        // make request
+        Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), "", "Regression Test Page",
+                "", "", "", "", "", false, 0, -1);
+
+        // Assert
+        // check status code is OK
+        assertEquals(Response.Status.OK.getStatusCode(), searchResponse.getStatus());
+
+        // check the search returned the expected content summary
+        @SuppressWarnings("unchecked") ResultsWrapper<ContentSummaryDTO> responseBody =
+                (ResultsWrapper<ContentSummaryDTO>) searchResponse.getEntity();
+
+        List<String> questionIDs = responseBody.getResults().stream().map(ContentSummaryDTO::getId).collect(Collectors.toList());
+        assertEquals(List.of(ITConstants.REGRESSION_TEST_PAGE_ID, ITConstants.ASSIGNMENT_TEST_PAGE_ID), questionIDs);
+    }
+
+    @Test
+    public void getQuestionList_limitedSearchByStringAsStudent_returnsLimitedNumberOfQuestions() throws NoCredentialsAvailableException,
+            NoUserException, SegueDatabaseException, AuthenticationProviderMappingException,
+            IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException,
+            NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+        // Arrange
+        // log in as Student, create request
+        LoginResult studentLogin = loginAs(httpSession, ITConstants.TEST_STUDENT_EMAIL,
+                ITConstants.TEST_STUDENT_PASSWORD);
+        HttpServletRequest searchRequest = createRequestWithCookies(new Cookie[]{studentLogin.cookie});
+        replay(searchRequest);
+
+        // Act
+        // make request
+        Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), "", "Regression Test Page",
+                "", "", "", "", "", false, 0, 1);
+
+        // Assert
+        // check status code is OK
+        assertEquals(Response.Status.OK.getStatusCode(), searchResponse.getStatus());
+
+        // check the search returned the expected content summary
+        @SuppressWarnings("unchecked") ResultsWrapper<ContentSummaryDTO> responseBody =
+                (ResultsWrapper<ContentSummaryDTO>) searchResponse.getEntity();
+
+        List<String> questionIDs = responseBody.getResults().stream().map(ContentSummaryDTO::getId).collect(Collectors.toList());
+        assertEquals(List.of(ITConstants.REGRESSION_TEST_PAGE_ID), questionIDs);
     }
 }

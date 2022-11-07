@@ -421,6 +421,7 @@ public final class Constants {
     public static final String SUMMARY_FIELDNAME = "summary";
     public static final String CHILDREN_FIELDNAME = "children";
     public static final String DATE_FIELDNAME = "date";
+    public static final String ADDRESS_PSEUDO_FIELDNAME = "address";
     public static final String[] ADDRESS_PATH_FIELDNAME = {"location", "address"};
     public static final String[] ADDRESS_FIELDNAMES = {"addressLine1", "addressLine2", "town", "county", "postalCode"};
     public static final String SEARCHABLE_CONTENT_FIELDNAME = "searchableContent";
