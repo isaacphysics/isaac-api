@@ -185,6 +185,8 @@ public final class Constants {
     public static final String SEARCH_CLUSTER_PORT = "SEARCH_CLUSTER_PORT";
     public static final String SEARCH_CLUSTER_INFO_PORT = "SEARCH_CLUSTER_INFO_PORT";
     public static final String SEARCH_RESULTS_HARD_LIMIT = "SEARCH_RESULTS_HARD_LIMIT";
+    public static final String SEARCH_CLUSTER_USERNAME = "SEARCH_CLUSTER_USERNAME";
+    public static final String SEARCH_CLUSTER_PASSWORD = "SEARCH_CLUSTER_PASSWORD";
 
     // Event management stuff:
     public static final String EVENT_ADMIN_EMAIL = "EVENT_ADMIN_EMAIL";

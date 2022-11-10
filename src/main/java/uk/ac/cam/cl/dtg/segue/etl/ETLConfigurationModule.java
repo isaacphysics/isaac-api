@@ -9,7 +9,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import org.apache.commons.lang3.SystemUtils;
-import org.elasticsearch.client.Client;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +33,7 @@ class ETLConfigurationModule extends AbstractModule {
     private static Injector injector = null;
     private static PropertiesLoader globalProperties = null;
     private static ContentMapper mapper = null;
-    private static Client elasticSearchClient = null;
+    private static RestHighLevelClient elasticSearchClient = null;
     private static SchoolIndexer schoolIndexer = null;
     private static ETLManager etlManager = null;
 
@@ -85,7 +85,9 @@ class ETLConfigurationModule extends AbstractModule {
 
             this.bindConstantToProperty(Constants.SEARCH_CLUSTER_NAME, globalProperties);
             this.bindConstantToProperty(Constants.SEARCH_CLUSTER_ADDRESS, globalProperties);
-            this.bindConstantToProperty(Constants.SEARCH_CLUSTER_PORT, globalProperties);
+            this.bindConstantToProperty(Constants.SEARCH_CLUSTER_INFO_PORT, globalProperties);
+            this.bindConstantToProperty(Constants.SEARCH_CLUSTER_USERNAME, globalProperties);
+            this.bindConstantToProperty(Constants.SEARCH_CLUSTER_PASSWORD, globalProperties);
             this.bindConstantToProperty(Constants.SCHOOL_CSV_LIST_PATH, globalProperties);
 
             // GitDb
@@ -138,26 +140,28 @@ class ETLConfigurationModule extends AbstractModule {
      * This provides a singleton of the elasticSearch client that can be used by Guice.
      *
      * The client is threadsafe so we don't need to keep creating new ones.
-     *
-     * @param clusterName
-     *            - The name of the cluster to create.
      * @param address
      *            - address of the cluster to create.
      * @param port
      *            - port of the custer to create.
+     * @param username
+     *            - username for cluster user.
+     * @param password
+     *            - password for cluster user.
      * @return Client to be injected into ElasticSearch Provider.
      */
     @Inject
     @Provides
     @Singleton
-    private static Client getSearchConnectionInformation(
-            @Named(Constants.SEARCH_CLUSTER_NAME) final String clusterName,
+    private static RestHighLevelClient getSearchConnectionInformation(
             @Named(Constants.SEARCH_CLUSTER_ADDRESS) final String address,
-            @Named(Constants.SEARCH_CLUSTER_PORT) final int port) {
+            @Named(Constants.SEARCH_CLUSTER_INFO_PORT) final int port,
+            @Named(Constants.SEARCH_CLUSTER_USERNAME) final String username,
+            @Named(Constants.SEARCH_CLUSTER_PASSWORD) final String password) {
 
         if (null == elasticSearchClient) {
             try {
-                elasticSearchClient = ElasticSearchIndexer.getTransportClient(clusterName, address, port);
+                elasticSearchClient = ElasticSearchIndexer.getClient(address, port, username, password);
                 log.info("Creating singleton of ElasticSearchIndexer");
             } catch (UnknownHostException e) {
                 log.error("Could not create ElasticSearchIndexer");

@@ -73,6 +73,7 @@ import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -1025,11 +1026,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     continue;
                 }
 
-                if (null != assignmentDTO.getDueDate()) {
-                    if (assignmentDTO.getDueDate().before(new Date())) {
-                        assigmentStatuses.add(new AssignmentStatusDTO(assignmentDTO.getGroupId(), "The assignment cannot be due in the past."));
-                        continue;
-                    }
+                if (null != assignmentDTO.getDueDate() && !assignmentDTO.dueDateIsAfter(new Date())) {
+                    assigmentStatuses.add(new AssignmentStatusDTO(assignmentDTO.getGroupId(), "The assignment cannot be due in the past."));
+                    continue;
                 }
 
                 if (null != assignmentDTO.getScheduledStartDate()) {
@@ -1038,9 +1037,17 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                         assigmentStatuses.add(new AssignmentStatusDTO(assignmentDTO.getGroupId(), "The assignment cannot be scheduled to begin more than one year in the future."));
                         continue;
                     }
-                    if (null != assignmentDTO.getDueDate() && assignmentDTO.getScheduledStartDate().after(assignmentDTO.getDueDate())) {
+                    if (null != assignmentDTO.getDueDate() && !assignmentDTO.dueDateIsAfter(assignmentDTO.getScheduledStartDate())) {
                         assigmentStatuses.add(new AssignmentStatusDTO(assignmentDTO.getGroupId(), "The assignment cannot be scheduled to begin after it is due."));
                         continue;
+                    }
+                    // If the assignment will have started in the next hour (meaning it might miss the related emails
+                    // being scheduled), then remove it so that the assignment is set immediately.
+                    Calendar cal = Calendar.getInstance();
+                    cal.setTime(new Date());
+                    cal.add(Calendar.HOUR_OF_DAY, 1);
+                    if (assignmentDTO.getScheduledStartDate().before(cal.getTime())) {
+                        assignmentDTO.setScheduledStartDate(null);
                     }
                 }
 

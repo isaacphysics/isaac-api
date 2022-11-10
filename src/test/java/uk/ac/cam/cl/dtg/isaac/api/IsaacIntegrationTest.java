@@ -147,12 +147,15 @@ public abstract class IsaacIntegrationTest {
         ;
 
         // TODO It would be nice if we could pull the version from pom.xml
-        elasticsearch = new ElasticsearchContainer(DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch:7.14.2"))
+        elasticsearch = new ElasticsearchContainer(DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch:7.17.6"))
                 .withCopyFileToContainer(MountableFile.forClasspathResource("isaac-test-es-data.tar.gz"), "/usr/share/elasticsearch/isaac-test-es-data.tar.gz")
                 .withCopyFileToContainer(MountableFile.forClasspathResource("isaac-test-es-docker-entrypoint.sh", 0100775), "/usr/local/bin/docker-entrypoint.sh")
                 .withExposedPorts(9200, 9300)
                 .withEnv("cluster.name", "isaac")
                 .withEnv("node.name", "localhost")
+                .withEnv("http.max_content_length", "512mb")
+                .withEnv("xpack.security.enabled", "true")
+                .withEnv("ELASTIC_PASSWORD", "elastic")
                 .withStartupTimeout(Duration.ofSeconds(120));
         ;
 
@@ -167,10 +170,12 @@ public abstract class IsaacIntegrationTest {
 
         try {
             elasticSearchProvider =
-                    new ElasticSearchProvider(ElasticSearchProvider.getTransportClient(
-                            "isaac",
+                    new ElasticSearchProvider(ElasticSearchProvider.getClient(
                             "localhost",
-                            elasticsearch.getMappedPort(9300))
+                            elasticsearch.getMappedPort(9200),
+                            "elastic",
+                            "elastic"
+                    )
                     );
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);

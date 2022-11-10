@@ -25,6 +25,8 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ItemDTO;
 @JsonContentType("item")
 public class Item extends Content {
 
+    private String altText;
+
     /**
      * Default constructor required for mapping.
      */
@@ -40,5 +42,13 @@ public class Item extends Content {
     public Item(final String id, final String value) {
         this.id = id;
         this.value = value;
+    }
+
+    public String getAltText() {
+        return this.altText;
+    }
+
+    public void setAltText(final String altText) {
+        this.altText = altText;
     }
 }
