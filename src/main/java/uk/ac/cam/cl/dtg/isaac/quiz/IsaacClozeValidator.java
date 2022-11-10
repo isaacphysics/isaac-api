@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Chris Purdy
+ * Copyright 2021 Chris Purdy, 2022 James Sharkey
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,12 @@
  */
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
+import com.google.api.client.util.Lists;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacClozeQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.ItemValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
@@ -58,9 +60,11 @@ public class IsaacClozeValidator implements IValidator {
         // These variables store the important features of the response we'll send.
         Content feedback = null;                        // The feedback we send the user
         boolean responseCorrect = false;                // Whether we're right or wrong
+        List<Boolean> itemsCorrect = null;              // Individual item feedback.
 
         IsaacClozeQuestion clozeQuestion = (IsaacClozeQuestion) question;
         ItemChoice submittedChoice = (ItemChoice) answer;
+        boolean detailedItemFeedback = clozeQuestion.getDetailedItemFeedback() != null && clozeQuestion.getDetailedItemFeedback();
 
 
         List<String> submittedItemIds = Collections.emptyList();
@@ -143,7 +147,9 @@ public class IsaacClozeValidator implements IValidator {
                 boolean allowSubsetMatch = null != itemChoice.isAllowSubsetMatch() && itemChoice.isAllowSubsetMatch();
 
                 boolean submissionMatches = true;
+                List<Boolean> itemMatches = Lists.newArrayListWithCapacity(trustedChoiceItemIds.size());
                 for (int i = 0; i < trustedChoiceItemIds.size(); i++) {
+                    boolean itemMatch = true;
                     String trustedItemId = trustedChoiceItemIds.get(i);
                     String submittedItemId = submittedItemIds.get(i);
 
@@ -151,22 +157,23 @@ public class IsaacClozeValidator implements IValidator {
                         // It doesn't matter what the submission has here, but only if we are allowed subset matching:
                         if (!allowSubsetMatch) {
                             log.error(String.format("ItemChoice does not allow subset match but contains NULL item in question (%s)!", clozeQuestion.getId()));
-                            submissionMatches = false;
-                            break;
+                            itemMatch = false;
                         }
-                    //} else if (allowSubsetMatch && NULL_CLOZE_ITEM_ID.equals(submittedItemId)) {
-                        // If the user has left a gap blank, and we are allowed subset matching, then this counts
-                        // as a match whatever the trustedChoice has here.
-                        // We have already checked above that not _all_ of the submitted items are null.
                     } else {
                         if (!trustedItemId.equals(submittedItemId)) {
-                            // Break early if the submitted item at this spot doesn't match the expected item:
-                            submissionMatches = false;
-                            break;
+                            itemMatch = false;
                         }
                     }
+                    submissionMatches = submissionMatches && itemMatch;
+                    itemMatches.add(itemMatch);
                 }
 
+                // If this is the first correct choice, the status of each item might be useful feedback:
+                if (null == itemsCorrect && itemChoice.isCorrect() && detailedItemFeedback) {
+                    itemsCorrect = itemMatches;
+                }
+
+                // Did we match this choice?
                 if (submissionMatches) {
                     responseCorrect = itemChoice.isCorrect();
                     feedback = (Content) itemChoice.getExplanation();
@@ -181,7 +188,7 @@ public class IsaacClozeValidator implements IValidator {
             feedback = clozeQuestion.getDefaultFeedback();
         }
 
-        return new QuestionValidationResponse(question.getId(), answer, responseCorrect, feedback, new Date());
+        return new ItemValidationResponse(question.getId(), answer, responseCorrect, itemsCorrect, feedback, new Date());
     }
 
     @Override
