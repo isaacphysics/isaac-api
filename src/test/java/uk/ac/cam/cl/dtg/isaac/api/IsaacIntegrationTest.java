@@ -245,7 +245,7 @@ public abstract class IsaacIntegrationTest {
         userAccountManager = new UserAccountManager(pgUsers, questionManager, properties, providersToRegister, mapperFacade, emailManager, pgAnonymousUsers, logManager, userAuthenticationManager, secondFactorManager, userPreferenceManager);
 
         ObjectMapper objectMapper = new ObjectMapper();
-        mailGunEmailManager = new MailGunEmailManager(objectMapper, globalTokens, properties, userPreferenceManager);
+        mailGunEmailManager = new MailGunEmailManager(globalTokens, properties, userPreferenceManager);
         EventBookingPersistenceManager bookingPersistanceManager = new EventBookingPersistenceManager(postgresSqlDb, userAccountManager, contentManager, objectMapper);
         PgAssociationDataManager pgAssociationDataManager = new PgAssociationDataManager(postgresSqlDb);
         PgUserGroupPersistenceManager pgUserGroupPersistenceManager = new PgUserGroupPersistenceManager(postgresSqlDb);

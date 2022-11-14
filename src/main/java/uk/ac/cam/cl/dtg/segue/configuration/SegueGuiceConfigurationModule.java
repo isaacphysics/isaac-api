@@ -659,7 +659,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         globalTokens.put("siteBaseURL", String.format("https://%s", properties.getProperty(HOST_NAME)));
 
         if (null == mailGunEmailManager) {
-            mailGunEmailManager = new MailGunEmailManager(objectMapper, globalTokens, properties, userPreferenceManager);
+            mailGunEmailManager = new MailGunEmailManager(globalTokens, properties, userPreferenceManager);
             log.info("Creating singleton of MailGunEmailManager");
         }
         return mailGunEmailManager;

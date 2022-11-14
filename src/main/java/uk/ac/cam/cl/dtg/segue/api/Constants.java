@@ -202,8 +202,9 @@ public final class Constants {
     public static final String EVENT_PRE_POST_EMAILS = "EVENT_PRE_POST_EMAILS";
 
     // MailGun Stuff:
+    public static final String MAILGUN_FROM_ADDRESS = "MAILGUN_FROM_ADDRESS";
+    public static final String MAILGUN_DOMAIN = "MAILGUN_DOMAIN";
     public static final String MAILGUN_SECRET_KEY = "MAILGUN_SECRET_KEY";
-    public static final String MAILGUN_SANDBOX_URL = "MAILGUN_SANDBOX_URL";
 
     /**
      * Suffix to append to raw fields (minus dot separator) - these are fields that the search engine should not do any

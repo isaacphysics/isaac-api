@@ -18,8 +18,10 @@ package uk.ac.cam.cl.dtg.isaac.api.services;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import feign.FeignException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.dto.IAssignmentLike;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -83,7 +85,7 @@ public class EmailService {
             String groupName = getFilteredGroupNameFromGroup(userGroupDTO);
             String assignmentOwner = getTeacherNameFromUser(assignmentOwnerDTO);
 
-            final Map<String, String> variables = ImmutableMap.<String, String>builder()
+            final Map<String, Object> variables = ImmutableMap.<String, Object>builder()
                 .put("gameboardName", name) // Legacy name
                 .put("assignmentName", name)
                 .put("assignmentDueDate", dueDate)
@@ -95,11 +97,17 @@ public class EmailService {
             mailGunEmailManager.sendBatchEmails(
                     groupManager.getUsersInGroup(userGroupDTO),
                     emailManager.getEmailTemplateDTO(templateName),
-                    variables, EmailType.ASSIGNMENTS, null);
+                    EmailType.ASSIGNMENTS,
+                    Constants.IsaacMailGunTemplate.ASSIGNMENT,
+                    variables,
+                    null
+            );
         } catch (NoUserException e) {
             log.error("Could not send assignment email because owner did not exist.", e);
         } catch (ContentManagerException | JsonProcessingException e) {
             log.error("Could not send assignment email because of content error.", e);
+        } catch (FeignException e) {
+            log.error("Error sending assignment email via MailGun API.", e);
         }
     }
 }
