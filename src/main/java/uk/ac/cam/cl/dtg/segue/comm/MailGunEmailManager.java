@@ -42,7 +42,6 @@ import javax.annotation.Nullable;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILGUN_DOMAIN;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILGUN_SECRET_KEY;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILGUN_FROM_ADDRESS;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueUserPreferences;
 
 import java.util.ArrayList;
@@ -60,7 +59,7 @@ public class MailGunEmailManager {
     private final Map<String, String> globalStringTokens;
     private static final Logger log = LoggerFactory.getLogger(EmailManager.class);
 
-    private final MailgunMessagesApi mailgunMessagesApi;
+    private MailgunMessagesApi mailgunMessagesApi;
     private final AbstractUserPreferenceManager userPreferenceManager;
     private final PropertiesLoader globalProperties;
 
@@ -69,7 +68,13 @@ public class MailGunEmailManager {
         this.globalStringTokens = globalStringTokens;
         this.userPreferenceManager = userPreferenceManager;
         this.globalProperties = globalProperties;
-        this.mailgunMessagesApi = MailgunClient.config(globalProperties.getProperty(MAILGUN_SECRET_KEY)).createApi(MailgunMessagesApi.class);
+    }
+
+    private void createMessagesApiIfNeeded() {
+        if (null == this.mailgunMessagesApi) {
+            log.info("Creating singleton MailgunMessagesApi object.");
+            this.mailgunMessagesApi = MailgunClient.config(globalProperties.getProperty(MAILGUN_SECRET_KEY)).createApi(MailgunMessagesApi.class);
+        }
     }
 
     // Will throw a FeignException object if the request fails, WHICH IT WILL if a template with the given name already exists
@@ -96,6 +101,9 @@ public class MailGunEmailManager {
                                            @Nullable final Map<String, Object> templateVariablesOrNull,
                                            @Nullable final Map<Long, Map<String, Object>> userVariablesOrNull)
             throws ContentManagerException, SegueDatabaseException, JsonProcessingException, FeignException {
+
+        // Lazily construct the MailGun messages API
+        this.createMessagesApiIfNeeded();
 
         // Ensure all relevant email variable maps are not null
         Map<Long, Map<String, Object>> userVariables = null != userVariablesOrNull ? userVariablesOrNull : Map.of();
