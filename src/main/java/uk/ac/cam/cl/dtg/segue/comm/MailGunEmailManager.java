@@ -100,7 +100,7 @@ public class MailGunEmailManager {
                                            final EmailType emailType, final IsaacMailGunTemplate templateType,
                                            @Nullable final Map<String, Object> templateVariablesOrNull,
                                            @Nullable final Map<Long, Map<String, Object>> userVariablesOrNull)
-            throws ContentManagerException, SegueDatabaseException, JsonProcessingException, FeignException {
+            throws FeignException {
 
         // Lazily construct the MailGun messages API
         this.createMessagesApiIfNeeded();

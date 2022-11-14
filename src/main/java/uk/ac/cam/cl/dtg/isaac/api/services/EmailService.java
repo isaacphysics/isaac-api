@@ -104,7 +104,7 @@ public class EmailService {
             );
         } catch (NoUserException e) {
             log.error("Could not send assignment email because owner did not exist.", e);
-        } catch (ContentManagerException | JsonProcessingException e) {
+        } catch (ContentManagerException e) {
             log.error("Could not send assignment email because of content error.", e);
         } catch (FeignException e) {
             log.error("Error sending assignment email via MailGun API.", e);
