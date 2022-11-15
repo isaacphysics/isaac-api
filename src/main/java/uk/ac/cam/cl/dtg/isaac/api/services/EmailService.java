@@ -95,12 +95,12 @@ public class EmailService {
                 .build();
 
             mailGunEmailManager.sendBatchEmails(
-                    groupManager.getUsersInGroup(userGroupDTO),
-                    emailManager.getEmailTemplateDTO(templateName),
-                    EmailType.ASSIGNMENTS,
-                    Constants.IsaacMailGunTemplate.ASSIGNMENT,
-                    variables,
-                    null
+                groupManager.getUsersInGroup(userGroupDTO),
+                emailManager.getEmailTemplateDTO(templateName),
+                EmailType.ASSIGNMENTS,
+                Constants.IsaacMailGunTemplate.ASSIGNMENT,
+                variables,
+                null
             );
         } catch (NoUserException e) {
             log.error("Could not send assignment email because owner did not exist.", e);
