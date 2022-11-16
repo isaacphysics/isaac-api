@@ -1,7 +1,3 @@
-# Note: To create certificates
-# docker compose -f compose-local-deps.yml run --rm elasticsearch bin/elasticsearch-certutil ca --silent --pass 1234 -out config/certs/ca
-# docker compose -f compose-local-deps.yml run --rm elasticsearch bin/elasticsearch-certutil cert --ca config/certs/ca --silent --ca-pass 1234 --pass 1111 --out config/certs/elastic-certificates.p12
-
 # Note: When running locally in ubuntu in order for ElasticSearch to work, you will need to run:
 # sysctl -w vm.max_map_count=262144
 
@@ -35,20 +31,12 @@ services:
       - cluster.initial_master_nodes=localhost
       - http.max_content_length=512mb
       - ELASTIC_PASSWORD=elastic
-      - xpack.security.enabled=true
-      - xpack.security.transport.ssl.enabled=true
-      - xpack.security.transport.ssl.verification_mode=certificate
-      - xpack.security.transport.ssl.client_authentication=required
-      - xpack.security.transport.ssl.keystore.path=certs/elastic-certificates.p12
-      - xpack.security.transport.ssl.truststore.path=certs/elastic-certificates.p12
-      - xpack.license.self_generated.type=basic
+      - xpack.security.enabled=false
       - ingest.geoip.downloader.enabled=false
     ports:
       - "9200:9200"
       - "9300:9300"
     mem_limit: 6G
-    volumes:
-      - es-certs:/usr/share/elasticsearch/config/certs
 
   cs-elasticsearch:
     network_mode: bridge
@@ -61,20 +49,12 @@ services:
       - cluster.initial_master_nodes=localhost
       - http.max_content_length=512mb
       - ELASTIC_PASSWORD=elastic
-      - xpack.security.enabled=true
-      - xpack.security.transport.ssl.enabled=true
-      - xpack.security.transport.ssl.verification_mode=certificate
-      - xpack.security.transport.ssl.client_authentication=required
-      - xpack.security.transport.ssl.keystore.path=certs/elastic-certificates.p12
-      - xpack.security.transport.ssl.truststore.path=certs/elastic-certificates.p12
-      - xpack.license.self_generated.type=basic
+      - xpack.security.enabled=false
       - ingest.geoip.downloader.enabled=false
     ports:
       - "9201:9200"
       - "9301:9300"
     mem_limit: 6G
-    volumes:
-      - es-certs:/usr/share/elasticsearch/config/certs
 
   postgres:
     network_mode: bridge
@@ -108,6 +88,4 @@ networks:
 
 volumes:
   pg-local:
-    external: true
-  es-certs:
     external: true
