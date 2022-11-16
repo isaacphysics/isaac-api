@@ -40,3 +40,7 @@ jobs:
         uses: github/codeql-action/analyze@v2
         with:
           category: "/language:${{ matrix.language }}"
+
+# exclude Swagger
+paths-ignore:
+  - src/main/webapp/api-docs
