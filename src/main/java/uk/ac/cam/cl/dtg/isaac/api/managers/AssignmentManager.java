@@ -152,7 +152,7 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
         final String gameboardURL = String.format("https://%s/assignment/%s", properties.getProperty(HOST_NAME),
                 gameboard.getId());
 
-        // If there is no date to schedule the assignment for...
+        // If there is no date to schedule the assignment for, or the start date is in the past...
         if (null == newAssignment.getScheduledStartDate()) {
             // Send the notification email immediately
             emailService.sendAssignmentEmailToGroup(newAssignment, gameboard, ImmutableMap.of("gameboardURL", gameboardURL),

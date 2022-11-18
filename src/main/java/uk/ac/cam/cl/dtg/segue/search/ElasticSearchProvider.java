@@ -146,6 +146,7 @@ public class ElasticSearchProvider implements ISearchProvider {
         if (null != randomSeed) {
             randomScoreFunctionBuilder = new RandomScoreFunctionBuilder();
             randomScoreFunctionBuilder.seed(randomSeed);
+            randomScoreFunctionBuilder.setField("_seq_no");
         } else {
             randomScoreFunctionBuilder = ScoreFunctionBuilders.randomFunction();
         }
