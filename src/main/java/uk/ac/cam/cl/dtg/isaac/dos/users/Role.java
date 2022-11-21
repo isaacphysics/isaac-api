@@ -19,5 +19,5 @@ package uk.ac.cam.cl.dtg.isaac.dos.users;
  * Enum of valid roles for users of Segue to have.
  */
 public enum Role {
-    STUDENT, TEACHER, EVENT_LEADER, CONTENT_EDITOR, EVENT_MANAGER, ADMIN
+    STUDENT, TUTOR, TEACHER, EVENT_LEADER, CONTENT_EDITOR, EVENT_MANAGER, ADMIN
 }
