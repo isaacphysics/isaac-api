@@ -328,8 +328,10 @@ public class UsersFacade extends AbstractSegueFacade {
             UserSummaryDTO userOfInterestSummaryObject = userManager.convertToUserSummaryObject(userOfInterest);
 
             // decide if the user is allowed to view this data.
+            // TUTOR return incorrect role error response if user is not teacher or above and is not current user
             if (!currentUser.getId().equals(userIdOfInterest)
-                    && !userAssociationManager.hasPermission(currentUser, userOfInterestSummaryObject)) {
+                    && !(isUserTeacherOrAbove(userManager, currentUser) && userAssociationManager.hasPermission(currentUser, userOfInterestSummaryObject))
+            ) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 

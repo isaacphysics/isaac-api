@@ -236,6 +236,7 @@ public class StatisticsManager implements IStatisticsManager {
 
             List<RegisteredUserDTO> teachersConnected = Lists.newArrayList();
             for (RegisteredUserDTO user : e.getValue()) {
+                // TUTOR planning on leaving this as is, we can worry about stats for Tutors later
                 if (user.getRole() != null && user.getRole().equals(Role.TEACHER)) {
                     teachersConnected.add(user);
                 }

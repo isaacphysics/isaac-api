@@ -200,7 +200,8 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
-            boolean isStudent = !isUserTeacherOrAbove(userManager, user);
+            // TUTOR TODO tutors cannot see quizzes that are invisible to students (?)
+            boolean showOnlyStudentVisibleQuizzes = !isUserTeacherOrAbove(userManager, user);
             String userRoleString = user.getRole().name();
 
             // Cache the list of quizzes based on current content version, user's role, and startIndex:
@@ -218,7 +219,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             // FIXME: ** HARD-CODED DANGER AHEAD **
             // The limit parameter in the following call is hard-coded and should be returned to a more reasonable
             // number once we have a front-end pagination/load-more system in place.
-            ResultsWrapper<ContentSummaryDTO> summary = this.quizManager.getAvailableQuizzes(isStudent, userRoleString, startIndex, 9000);
+            ResultsWrapper<ContentSummaryDTO> summary = this.quizManager.getAvailableQuizzes(showOnlyStudentVisibleQuizzes, userRoleString, startIndex, 9000);
 
             return ok(summary).tag(etag)
                 .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
@@ -321,6 +322,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
+            // TUTOR tutors should not be able to set or manage tests
             if (!(isUserTeacherOrAbove(userManager, user))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
@@ -936,6 +938,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
 
+            // TUTOR tutors should not be able to set or manage tests
             if (!(isUserTeacherOrAbove(userManager, currentlyLoggedInUser))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
@@ -1002,6 +1005,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
+            // TUTOR tutors should not be able to set or manage tests
             if (!(isUserTeacherOrAbove(userManager, user))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
@@ -1061,6 +1065,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
+            // TUTOR tutors should not be able to set or manage tests
             if (!(isUserTeacherOrAbove(userManager, user))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
@@ -1136,6 +1141,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
+            // TUTOR tutors should not be able to set or manage tests
             if (!(isUserTeacherOrAbove(userManager, user))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
@@ -1252,6 +1258,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
+            // TUTOR tutors should not be able to set or manage tests
             if (!(isUserTeacherOrAbove(userManager, user))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
@@ -1453,6 +1460,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
+            // TUTOR tutors should not be able to set or manage tests
             if (!(isUserTeacherOrAbove(userManager, user))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
@@ -1545,6 +1553,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
+            // TUTOR tutors should not be able to set or manage tests
             if (!(isUserTeacherOrAbove(userManager, user))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
@@ -1627,6 +1636,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
+            // TUTOR tutors should not be able to set or manage tests
             if (!(isUserTeacherOrAbove(userManager, user))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }

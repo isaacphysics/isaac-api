@@ -873,6 +873,8 @@ public class EventBookingManager {
         long totalBooked = 0L;
         Long studentCount = 0L;
 
+        // TUTOR TODO should tutors count towards available places or not??
+
         if (eventBookingStatusCounts.get(BookingStatus.CONFIRMED) != null) {
             for (Map.Entry<Role, Long> roleLongEntry : eventBookingStatusCounts.get(BookingStatus.CONFIRMED).entrySet()) {
                 if (Role.STUDENT.equals(roleLongEntry.getKey())) {
@@ -1187,6 +1189,7 @@ public class EventBookingManager {
         Long numberOfPlaces = getPlacesAvailable(event);
         if (numberOfPlaces != null) {
             long numberOfRequests = users.stream()
+                    // TUTOR TODO ?????
                     .filter(user -> !isStudentEvent || !Role.TEACHER.equals(user.getRole()))
                     .count();
             if (numberOfPlaces - numberOfRequests < 0) {
@@ -1217,6 +1220,7 @@ public class EventBookingManager {
         if (groupReservationLimit != null) { // This should never be null
             long numberOfRequests = users.stream()
                     // teachers don't count toward student event limits
+                    // TUTOR TODO ?????
                     .filter(user -> !isStudentEvent || !Role.TEACHER.equals(user.getRole()))
                     .count();
 

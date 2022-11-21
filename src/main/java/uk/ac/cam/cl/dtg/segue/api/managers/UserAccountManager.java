@@ -1167,6 +1167,7 @@ public class UserAccountManager implements IUserAccountManager {
         }
 
         // Send a welcome email if the user has become a teacher
+        // TUTOR TODO send a welcome email for new tutors too
         try {
             RegisteredUserDTO existingUserDTO = this.getUserDTOById(existingUser.getId());
             if (updatedUser.getRole() != existingUser.getRole()) {
@@ -1254,6 +1255,7 @@ public class UserAccountManager implements IUserAccountManager {
         RegisteredUser userToSave = this.findUserById(id);
 
         // Send welcome email if user has become teacher, otherwise, role change notification
+        // TUTOR TODO send a welcome email for new tutors too
         try {
             RegisteredUserDTO existingUserDTO = this.getUserDTOById(id);
             if (userToSave.getRole() != requestedRole) {

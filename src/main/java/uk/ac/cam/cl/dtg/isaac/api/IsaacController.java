@@ -371,9 +371,10 @@ public class IsaacController extends AbstractIsaacFacade {
         try {
 
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(httpServletRequest);
-            if (!isUserTeacherOrAbove(userManager, currentlyLoggedInUser)) {
+            // TUTOR tutors should be able to access these documents to supply to their students
+            if (!isUserTutorOrAbove(userManager, currentlyLoggedInUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
-                        "You must have a teacher account to access these resources.").toResponse();
+                        "You must have at least a tutor account to access these resources.").toResponse();
             }
 
             // determine if we can use the cache if so return cached response.

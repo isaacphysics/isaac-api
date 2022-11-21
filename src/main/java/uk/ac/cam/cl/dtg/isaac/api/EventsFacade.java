@@ -627,7 +627,8 @@ public class EventsFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
 
-            if (!isUserTeacherOrAbove(userManager, currentUser)) {
+            // TUTOR tutors should be able to see whether their groups are booked on events
+            if (!isUserTutorOrAbove(userManager, currentUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to use this endpoint.").toResponse();
             }
 
@@ -873,6 +874,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         List<RegisteredUserDTO> usersToReserve = Lists.newArrayList();
         try {
             reservingUser = userManager.getCurrentRegisteredUser(request);
+            // TUTOR tutors cannot reserve other users, so should not be added to this list
             if (!Arrays.asList(Role.TEACHER, Role.EVENT_LEADER, Role.EVENT_MANAGER, Role.ADMIN).contains(reservingUser.getRole())) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
