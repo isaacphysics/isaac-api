@@ -1256,8 +1256,7 @@ public class UserAccountManager implements IUserAccountManager {
         Validate.notNull(requestedRole);
         RegisteredUser userToSave = this.findUserById(id);
 
-        // Send welcome email if user has become teacher, otherwise, role change notification
-        // TUTOR TODO send a welcome email for new tutors too
+        // Send welcome email if user has become teacher or tutor, otherwise, role change notification
         try {
             RegisteredUserDTO existingUserDTO = this.getUserDTOById(id);
             if (userToSave.getRole() != requestedRole) {
