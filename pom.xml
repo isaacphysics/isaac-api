@@ -403,7 +403,7 @@
         <dependency>
             <artifactId>isaac-graph-checker-library</artifactId>
             <groupId>org.isaacphysics</groupId>
-            <version>1.0.1</version>
+            <version>1.1.2</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.jboss.resteasy</groupId>
