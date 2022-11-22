@@ -340,7 +340,6 @@ public class GroupsFacade extends AbstractSegueFacade {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
-            // TUTOR tutors can create groups
             if (!isUserTutorOrAbove(userManager, user)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You need at least a tutor account to create groups and set assignments!").toResponse();
             }
@@ -644,8 +643,7 @@ public class GroupsFacade extends AbstractSegueFacade {
                 return new SegueErrorResponse(Status.FORBIDDEN, "Only group owners can modify additional group managers!").toResponse();
             }
 
-
-            // TUTOR only allow teachers or above to be added as additional managers
+            // Tutors cannot be added as additional managers of a group
             if (null == userToAdd || !isUserTeacherOrAbove(userManager, userToAdd)) {
                 // deliberately be vague about whether the account exists or they don't have a teacher account to avoid account scanning.
                 return new SegueErrorResponse(Status.BAD_REQUEST, "There was a problem adding the user specified. Please make sure their email address is correct and they have a teacher account.").toResponse();

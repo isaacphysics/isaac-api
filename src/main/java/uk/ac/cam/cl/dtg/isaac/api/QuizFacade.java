@@ -201,7 +201,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
-            // TUTOR TODO tutors cannot see quizzes that are invisible to students (?)
+            // Tutors cannot see quizzes that are invisible to students
             boolean showOnlyStudentVisibleQuizzes = !isUserTeacherOrAbove(userManager, user);
             String userRoleString = user.getRole().name();
 
@@ -323,7 +323,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
-            // TUTOR tutors should be able to preview tests
+            // Tutors are able to preview student tests (but not set them)
             if (!(isUserTutorOrAbove(userManager, user))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
@@ -940,7 +940,6 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
 
-            // TUTOR tutors should not be able to set or manage tests
             if (!(isUserTeacherOrAbove(userManager, currentlyLoggedInUser))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
@@ -1007,7 +1006,6 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
-            // TUTOR tutors should not be able to set or manage tests
             if (!(isUserTeacherOrAbove(userManager, user))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
@@ -1067,7 +1065,6 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
-            // TUTOR tutors should not be able to set or manage tests
             if (!(isUserTeacherOrAbove(userManager, user))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
@@ -1143,7 +1140,6 @@ public class QuizFacade extends AbstractIsaacFacade {
 
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
-            // TUTOR tutors should not be able to set or manage tests
             if (!(isUserTeacherOrAbove(userManager, user))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
@@ -1260,7 +1256,6 @@ public class QuizFacade extends AbstractIsaacFacade {
 
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
-            // TUTOR tutors should not be able to set or manage tests
             if (!(isUserTeacherOrAbove(userManager, user))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
@@ -1462,7 +1457,6 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
-            // TUTOR tutors should not be able to set or manage tests
             if (!(isUserTeacherOrAbove(userManager, user))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
@@ -1555,7 +1549,6 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
-            // TUTOR tutors should not be able to set or manage tests
             if (!(isUserTeacherOrAbove(userManager, user))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
@@ -1638,7 +1631,6 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
-            // TUTOR tutors should not be able to set or manage tests
             if (!(isUserTeacherOrAbove(userManager, user))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }

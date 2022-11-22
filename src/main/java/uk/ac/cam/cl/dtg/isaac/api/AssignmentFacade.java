@@ -988,8 +988,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
 
-            // Assert user is allowed to set assignments
-            // TUTOR tutors can set assignments
+            // Assert user is allowed to set assignments - tutors and above are allowed to do so
             boolean userIsTutorOrAbove = isUserTutorOrAbove(userManager, currentlyLoggedInUser);
             boolean userIsStaff = isUserStaff(userManager, currentlyLoggedInUser);
             if (!userIsTutorOrAbove) {
