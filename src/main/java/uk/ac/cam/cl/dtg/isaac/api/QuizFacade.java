@@ -35,6 +35,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.QuizManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizQuestionManager;
 import uk.ac.cam.cl.dtg.isaac.api.services.AssignmentService;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
+import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizSectionDTO;
@@ -301,7 +302,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     }
 
     /**
-     * Preview a quiz. Only available to teachers and above.
+     * Preview a quiz. Only available to tutors and above.
      *
      * @param request
      *            - so we can deal with caching.
@@ -322,8 +323,8 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
-            // TUTOR tutors should not be able to set or manage tests
-            if (!(isUserTeacherOrAbove(userManager, user))) {
+            // TUTOR tutors should be able to preview tests
+            if (!(isUserTutorOrAbove(userManager, user))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
@@ -341,7 +342,8 @@ public class QuizFacade extends AbstractIsaacFacade {
             IsaacQuizDTO quiz = this.quizManager.findQuiz(quizId);
 
             // Check this user is actually allowed to preview this quiz:
-            if (null != quiz.getHiddenFromRoles() && quiz.getHiddenFromRoles().contains(user.getRole().name())) {
+            if (null != quiz.getHiddenFromRoles() && (quiz.getHiddenFromRoles().contains(user.getRole().name())
+                    || (quiz.getHiddenFromRoles().contains(Role.STUDENT.name()) && user.getRole() == Role.TUTOR))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
