@@ -1166,25 +1166,27 @@ public class UserAccountManager implements IUserAccountManager {
             authenticator.ensureValidPassword(newPassword);
         }
 
-        // Send a welcome email if the user has become a teacher
-        // TUTOR TODO send a welcome email for new tutors too
+        // Send a welcome email if the user has become a teacher or tutor, and a generic "role changed" email otherwise
         try {
             RegisteredUserDTO existingUserDTO = this.getUserDTOById(existingUser.getId());
             if (updatedUser.getRole() != existingUser.getRole()) {
-                //TODO: refactor and just use updateUserRole method for the below
-                if (updatedUser.getRole() == Role.TEACHER) {
-                    emailManager.sendTemplatedEmailToUser(existingUserDTO,
-                            emailManager.getEmailTemplateDTO("email-template-teacher-welcome"),
-                            ImmutableMap.of("oldrole", existingUserDTO.getRole().toString(),
-                                    "newrole", updatedUser.getRole().toString()),
-                            EmailType.SYSTEM);
-                } else {
-                    emailManager.sendTemplatedEmailToUser(existingUserDTO,
-                            emailManager.getEmailTemplateDTO("email-template-default-role-change"),
-                            ImmutableMap.of("oldrole", existingUserDTO.getRole().toString(),
-                                    "newrole", updatedUser.getRole().toString()),
-                            EmailType.SYSTEM);
+                //TODO: refactor and just use updateUserRole method for the below (not as easy as it seems)
+                String emailTemplate;
+                switch (updatedUser.getRole()) {
+                    case TUTOR:
+                        emailTemplate = "email-template-tutor-welcome";
+                        break;
+                    case TEACHER:
+                        emailTemplate = "email-template-teacher-welcome";
+                        break;
+                    default:
+                        emailTemplate = "email-template-default-role-change";
                 }
+                emailManager.sendTemplatedEmailToUser(existingUserDTO,
+                        emailManager.getEmailTemplateDTO(emailTemplate),
+                        ImmutableMap.of("oldrole", existingUserDTO.getRole().toString(),
+                                "newrole", updatedUser.getRole().toString()),
+                        EmailType.SYSTEM);
             }
         } catch (ContentManagerException | NoUserException e) {
             log.error("ContentManagerException during sendTeacherWelcome " + e.getMessage());
@@ -1259,22 +1261,22 @@ public class UserAccountManager implements IUserAccountManager {
         try {
             RegisteredUserDTO existingUserDTO = this.getUserDTOById(id);
             if (userToSave.getRole() != requestedRole) {
+                String emailTemplate;
                 switch (requestedRole) {
+                    case TUTOR:
+                        emailTemplate = "email-template-tutor-welcome";
+                        break;
                     case TEACHER:
-                        emailManager.sendTemplatedEmailToUser(existingUserDTO,
-                                emailManager.getEmailTemplateDTO("email-template-teacher-welcome"),
-                                ImmutableMap.of("oldrole", existingUserDTO.getRole().toString(),
-                                        "newrole", requestedRole.toString()),
-                                EmailType.SYSTEM);
+                        emailTemplate = "email-template-teacher-welcome";
                         break;
                     default:
-                        emailManager.sendTemplatedEmailToUser(existingUserDTO,
-                                emailManager.getEmailTemplateDTO("email-template-default-role-change"),
-                                ImmutableMap.of("oldrole", existingUserDTO.getRole().toString(),
-                                        "newrole", requestedRole.toString()),
-                                EmailType.SYSTEM);
-                        break;
+                        emailTemplate = "email-template-default-role-change";
                 }
+                emailManager.sendTemplatedEmailToUser(existingUserDTO,
+                        emailManager.getEmailTemplateDTO(emailTemplate),
+                        ImmutableMap.of("oldrole", existingUserDTO.getRole().toString(),
+                                "newrole", requestedRole.toString()),
+                        EmailType.SYSTEM);
             }
         } catch (ContentManagerException | NoUserException e) {
             log.debug("ContentManagerException during sendTeacherWelcome " + e.getMessage());
