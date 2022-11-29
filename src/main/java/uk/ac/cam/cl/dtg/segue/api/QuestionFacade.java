@@ -199,9 +199,10 @@ public class QuestionFacade extends AbstractSegueFacade {
             RegisteredUserDTO userOfInterest = this.userManager.getUserDTOById(userIdOfInterest);
             UserSummaryDTO userOfInterestSummaryObject = userManager.convertToUserSummaryObject(userOfInterest);
 
-            // decide if the user is allowed to view this data.
+            // decide if the user is allowed to view this data. If user isn't viewing their own data, user viewing
+            // must have a valid connection with the user of interest and be at least a teacher.
             if (!currentUser.getId().equals(userIdOfInterest)
-                    && !userAssociationManager.hasPermission(currentUser, userOfInterestSummaryObject)) {
+                    && !(userAssociationManager.hasPermission(currentUser, userOfInterestSummaryObject) && isUserTeacherOrAbove(userManager, currentUser))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
