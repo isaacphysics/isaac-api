@@ -32,6 +32,8 @@ import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
 public class IsaacClozeQuestion extends IsaacItemQuestion {
 
     private Boolean withReplacement;
+    // Detailed feedback option not needed in the client so not in DTO:
+    private Boolean detailedItemFeedback;
 
     public Boolean getWithReplacement() {
         return withReplacement;
@@ -39,5 +41,13 @@ public class IsaacClozeQuestion extends IsaacItemQuestion {
 
     public void setWithReplacement(final Boolean withReplacement) {
         this.withReplacement = withReplacement;
+    }
+
+    public Boolean getDetailedItemFeedback() {
+        return detailedItemFeedback;
+    }
+
+    public void setDetailedItemFeedback(final Boolean detailedItemFeedback) {
+        this.detailedItemFeedback = detailedItemFeedback;
     }
 }
