@@ -411,6 +411,45 @@ public class GroupManager {
     }
 
     /**
+     * Transfer group ownership from the group owner to another user.
+     *
+     * @param group - group to affect
+     * @param newOwner - user to promote to owner of the group
+     * @param oldOwner - user (must be previous group owner) to demote to additional manager status
+     * @return The group DTO
+     * @throws SegueDatabaseException if there is a db error
+     * @throws IllegalAccessException if oldOwner is not the current owner of the group
+     */
+    public UserGroupDTO promoteUserToOwner(final UserGroupDTO group, final RegisteredUserDTO newOwner, final RegisteredUserDTO oldOwner) throws SegueDatabaseException, IllegalAccessException {
+        Validate.notNull(group);
+        Validate.notNull(newOwner);
+        Validate.notNull(oldOwner);
+
+        // Old owner must actually be the old (current) owner of the group
+        if (!oldOwner.getId().equals(group.getOwnerId())) {
+            throw new IllegalAccessException("The user with id: " + oldOwner.getId() + " is not the current owner of the group with id: " + group.getId() + "!");
+        }
+
+        if (newOwner.getId().equals(oldOwner.getId())) {
+            // No ownership change
+            return group;
+        }
+
+        // Change old and new owners additional manager status if appropriate
+        if (!group.getAdditionalManagersUserIds().contains(oldOwner.getId())) {
+            this.groupDatabase.addUserAdditionalManagerList(oldOwner.getId(), group.getId());
+        }
+        if (group.getAdditionalManagersUserIds().contains(newOwner.getId())) {
+            this.groupDatabase.removeUserFromAdditionalManagerList(newOwner.getId(), group.getId());
+        }
+
+        // ! We are mutating this group object, but this particular mutation should be safe !
+        group.setOwnerId(newOwner.getId());
+
+        return this.editUserGroup(group);
+    }
+
+    /**
      * Remove a user from the list of additional managers who are allowed to manage the group.
      *
      * @param group - group to affect

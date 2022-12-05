@@ -676,6 +676,74 @@ public class GroupsFacade extends AbstractSegueFacade {
     }
 
     /**
+     * Promote an additional manager to the owner of a group. Transfers ownership of the group to the additional
+     * manager, demoting the current owner to additional manager status.
+     *
+     * @param request - for authentication
+     * @param groupId - group to promote the manager of
+     * @param userIdToPromote - the additional manager to promote to transfer ownership of group to
+     * @return No Content response or error response
+     */
+    @POST
+    @Path("{group_id}/manager/promote/{user_id}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Promote an additional manager to owner of group.")
+    public Response promoteAdditionalManagerToOwner(@Context final HttpServletRequest request,
+                                                     @PathParam("group_id") final Long groupId,
+                                                     @PathParam("user_id") final Long userIdToPromote) {
+        if (null == groupId) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "The group ID must be specified.").toResponse();
+        }
+
+        if (null == userIdToPromote) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "The ID of the user to promote must be specified.").toResponse();
+        }
+
+        try {
+            RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+
+            RegisteredUserDTO userToPromote = userManager.getUserDTOById(userIdToPromote);
+            UserGroupDTO group = groupManager.getGroupById(groupId);
+            RegisteredUserDTO groupOwner = userManager.getUserDTOById(group.getOwnerId());
+
+            boolean userIsGroupOwner = groupOwner.getId().equals(user.getId());
+            if (!userIsGroupOwner && !isUserAnAdmin(userManager, user)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "Only group owners can modify additional group managers!").toResponse();
+            }
+
+            boolean userToPromoteIsAdditionalManager = GroupManager.isInAdditionalManagerList(group, userIdToPromote);
+            if (!userToPromoteIsAdditionalManager) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "Only an additional manager of a group can be promoted to group owner!").toResponse();
+            }
+
+            // Don't allow current owner to be promoted to owner - doesn't make sense (this shouldn't be possible in the UI anyway)
+            if (groupOwner.getId().equals(userIdToPromote)) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "The user being promoted is already the owner of this group!").toResponse();
+            }
+
+            this.getLogManager().logEvent(user, request, SegueServerLogType.PROMOTE_GROUP_MANAGER_TO_OWNER,
+                    ImmutableMap.of(GROUP_FK, group.getId(),
+                            USER_ID_FKEY_FIELDNAME, userIdToPromote,
+                            OLD_USER_ID_FKEY_FIELDNAME, groupOwner.getId()
+                    ));
+
+            return Response.ok(groupManager.promoteUserToOwner(group, userToPromote, groupOwner)).build();
+        } catch (SegueDatabaseException e) {
+            log.error("Database error while trying to promote manager to owner of group. ", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (NoUserException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "User specified does not exist.").toResponse();
+        } catch (IllegalAccessException e) {
+            // If this error occurs in this endpoint, something very odd is happening.
+            log.error("Illegal access error while trying to promote manager to owner of group. ", e);
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Error: ", e).toResponse();
+        }
+    }
+
+    /**
      * Delete an additional manager from a group.
      *
      * @param request - for authentication
