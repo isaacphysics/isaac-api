@@ -400,9 +400,19 @@ public class GroupsFacade extends AbstractSegueFacade {
                 return new SegueErrorResponse(Status.NOT_FOUND, "Group specified does not exist.").toResponse();
             }
 
+            // If user is not the owner...
             if (!existingGroup.getOwnerId().equals(user.getId())) {
-                return new SegueErrorResponse(Status.FORBIDDEN,
-                        "You are not the owner of the group. You cannot edit this group.").toResponse();
+                // Check if an additional manager with privileges is allowed to make these changes
+                boolean ownerOnlyFieldChanged = !existingGroup.getOwnerId().equals(groupDTO.getOwnerId())
+                        || existingGroup.isAdditionalManagerPrivileges() != groupDTO.isAdditionalManagerPrivileges()
+                        || !existingGroup.getCreated().equals(groupDTO.getCreated());
+                boolean additionalManagerCanMakeChange = !ownerOnlyFieldChanged && existingGroup.isAdditionalManagerPrivileges();
+
+                // And that the user is an additional manager with privileges. If not, return an error response
+                if (!(GroupManager.isOwnerOrAdditionalManager(existingGroup, user.getId()) && additionalManagerCanMakeChange)) {
+                    return new SegueErrorResponse(Status.FORBIDDEN,
+                            "You do not have permission to edit this group.").toResponse();
+                }
             }
 
             UserGroupDTO group = groupManager.editUserGroup(groupDTO);
