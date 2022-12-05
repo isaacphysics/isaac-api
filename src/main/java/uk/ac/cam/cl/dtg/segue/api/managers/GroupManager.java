@@ -17,7 +17,6 @@ package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Sets;
-import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import ma.glasnost.orika.MapperFacade;
@@ -123,7 +122,7 @@ public class GroupManager {
 
     /**
      * createAssociationGroup.
-     * 
+     *
      * @param groupToEdit
      *            - group to edit.
      * @return modified group.
@@ -134,7 +133,18 @@ public class GroupManager {
         Validate.notNull(groupToEdit);
         UserGroup userGroup = dtoMapper.map(groupToEdit, UserGroup.class);
         userGroup.setLastUpdated(new Date());
-        return this.convertGroupToDTO(groupDatabase.editGroup(userGroup));
+
+        UserGroup existingGroup = groupDatabase.findGroupById(groupToEdit.getId());
+        UserGroupDTO group = this.convertGroupToDTO(groupDatabase.editGroup(userGroup));
+
+        if (existingGroup.isAdditionalManagerPrivileges() != group.isAdditionalManagerPrivileges()) {
+            // Notify observers of change in additional manager privileges
+            for (IGroupObserver interestedParty : this.groupsObservers) {
+                interestedParty.onAdditionalManagerPrivilegesChanged(group);
+            }
+        }
+
+        return group;
     }
 
     /**
@@ -445,6 +455,11 @@ public class GroupManager {
 
         // ! We are mutating this group object, but this particular mutation should be safe !
         group.setOwnerId(newOwner.getId());
+
+        // Notify observers of ownership change
+        for (IGroupObserver interestedParty : this.groupsObservers) {
+            interestedParty.onAdditionalManagerPromotedToOwner(group, newOwner);
+        }
 
         return this.editUserGroup(group);
     }

@@ -225,4 +225,75 @@ public class GroupChangedService implements IGroupObserver {
             log.error("Unable to send group additional manager e-mail due to a database error. Failing silently.", e);
         }
     }
+
+    @Override
+    public void onAdditionalManagerPromotedToOwner(final UserGroupDTO group, final RegisteredUserDTO newOwner) {
+        Validate.notNull(group);
+        Validate.notNull(newOwner);
+
+        String groupName = "Unknown";
+        if (group.getGroupName() != null && !group.getGroupName().isEmpty()) {
+            groupName = group.getGroupName();
+        }
+
+        Map<String, Object> emailProperties = new ImmutableMap.Builder<String, Object>()
+                .put("groupName", groupName)
+                .build();
+
+        try {
+            emailManager.sendTemplatedEmailToUser(newOwner,
+                    emailManager.getEmailTemplateDTO("email-template-group-manager-promoted"),
+                    emailProperties,
+                    EmailType.SYSTEM);
+        } catch (ContentManagerException e) {
+            log.info("Could not send group additional manager promotion to owner email ", e);
+        } catch (SegueDatabaseException e) {
+            log.error("Unable to send group additional manager promotion to owner e-mail due to a database error. Failing silently.", e);
+        }
+    }
+
+    @Override
+    public void onAdditionalManagerPrivilegesChanged(final UserGroupDTO group) {
+        Validate.notNull(group);
+
+        try {
+            RegisteredUserDTO groupOwner = this.userManager.getUserDTOById(group.getOwnerId());
+
+            String groupOwnerName = getTeacherNameFromUser(groupOwner);
+            String groupOwnerEmail = "Unknown";
+            if (groupOwner != null && groupOwner.getEmail() != null && !groupOwner.getEmail().isEmpty()) {
+                groupOwnerEmail = groupOwner.getEmail();
+            }
+            String groupName = "Unknown";
+            if (group.getGroupName() != null && !group.getGroupName().isEmpty()) {
+                groupName = group.getGroupName();
+            }
+            String nowOrNoLonger;
+            if (group.isAdditionalManagerPrivileges()) {
+                nowOrNoLonger = "now";
+            } else {
+                nowOrNoLonger = "no longer";
+            }
+
+            Map<String, Object> emailProperties = new ImmutableMap.Builder<String, Object>()
+                    .put("ownerName", groupOwnerName)
+                    .put("ownerEmail", groupOwnerEmail)
+                    .put("groupName", groupName)
+                    .put("nowOrNoLonger", nowOrNoLonger)
+                    .build();
+            for (Long additionalManagerId : group.getAdditionalManagersUserIds()) {
+                RegisteredUserDTO additionalManagerUser = userManager.getUserDTOById(additionalManagerId);
+                emailManager.sendTemplatedEmailToUser(additionalManagerUser,
+                        emailManager.getEmailTemplateDTO("email-template-group-manager-privileges"),
+                        emailProperties,
+                        EmailType.SYSTEM);
+            }
+        } catch (ContentManagerException e) {
+            log.info("Could not send group additional manager privileges modified email ", e);
+        } catch (NoUserException e) {
+            log.info(String.format("Could not find owner user object of group %s", group.getId()), e);
+        } catch (SegueDatabaseException e) {
+            log.error("Unable to send group additional manager privileges modified e-mail due to a database error. Failing silently.", e);
+        }
+    }
 }
