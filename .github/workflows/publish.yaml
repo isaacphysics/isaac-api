@@ -30,8 +30,7 @@ jobs:
         with:
           context: .
           push: true
-          tags:
-            - ghcr.io/${{ github.repository }}
+          tags: ghcr.io/${{ github.repository }}
       - name: Build and push etl Docker image
         uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
         with:
@@ -39,5 +38,4 @@ jobs:
           push: true
           build-args: |
             MVN_PACKAGE_PARAM="-P etl"
-          tags:
-            - ghcr.io/${{ github.repository }}-etl
+          tags: ghcr.io/${{ github.repository }}-etl
