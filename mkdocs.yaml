@@ -1,5 +1,5 @@
 site_name: isaac-api
-site_description: saac platform API server documentation
+site_description: isaac platform API server documentation
 nav:
   - Root: README.md
 
