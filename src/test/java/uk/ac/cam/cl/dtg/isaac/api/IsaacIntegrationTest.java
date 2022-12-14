@@ -34,6 +34,10 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
+import uk.ac.cam.cl.dtg.segue.api.monitors.GroupManagerLookupMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
+import uk.ac.cam.cl.dtg.segue.api.monitors.InMemoryMisuseMonitor;
+import uk.ac.cam.cl.dtg.segue.api.monitors.TokenOwnerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISecondFactorAuthenticator;
@@ -108,6 +112,7 @@ public abstract class IsaacIntegrationTest {
     protected static ElasticSearchProvider elasticSearchProvider;
     protected static SchoolListReader schoolListReader;
     protected static MapperFacade mapperFacade;
+    protected static IMisuseMonitor misuseMonitor;
 
     // Managers
     protected static EmailManager emailManager;
@@ -255,8 +260,13 @@ public abstract class IsaacIntegrationTest {
         PgTransactionManager pgTransactionManager = new PgTransactionManager(postgresSqlDb);
         eventBookingManager = new EventBookingManager(bookingPersistanceManager, emailManager, userAssociationManager, properties, groupManager, userAccountManager, pgTransactionManager);
         userBadgeManager = createNiceMock(UserBadgeManager.class);
+        replay(userBadgeManager);
         assignmentManager = new AssignmentManager(assignmentPersistenceManager, groupManager, new EmailService(emailManager, groupManager, userAccountManager), gameManager, properties);
         schoolListReader = createNiceMock(SchoolListReader.class);
+
+        misuseMonitor = new InMemoryMisuseMonitor();
+        misuseMonitor.registerHandler(GroupManagerLookupMisuseHandler.class.getSimpleName(), new GroupManagerLookupMisuseHandler(emailManager, properties));
+        // todo: more handlers as required by different endpoints
 
         String someSegueAnonymousUserId = "9284723987anonymous83924923";
         httpSession = createNiceMock(HttpSession.class);
