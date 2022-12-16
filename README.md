@@ -8,3 +8,5 @@
 `isaac-api` is the server and API for the [Isaac Physics](https://isaacphysics.org/about) and [Isaac Computer Science](https://isaaccomputerscience.org/about) projects. Together with [`isaac-react-app`](https://github.com/isaacphysics/isaac-react-app), it forms the core stack of the Isaac platform.
 
 The API runs on Jetty, and runs in [Docker](https://www.docker.com/) in production.
+
+[docs](./docs)
