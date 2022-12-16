@@ -22,13 +22,16 @@ import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dto.MisuseStatisticDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.google.common.collect.Maps.immutableEntry;
 
@@ -157,7 +160,23 @@ public class InMemoryMisuseMonitor implements IMisuseMonitor {
         
         existingHistory.remove(eventLabel);
     }
-    
+
+    @Override
+    public List<MisuseStatisticDTO> getMisuseStatistics(final String agentIdentifier) {
+        Map<String, Entry<Date, Integer>> existingHistory = nonPersistentDatabase.getIfPresent(agentIdentifier);
+        if (null == handlerMap) {
+            return List.of();
+        }
+        return handlerMap.keySet().stream()
+                .map(eventLabel -> {
+                    Entry<Date, Integer> historyEntry = existingHistory == null ? immutableEntry(null, 0) : existingHistory.getOrDefault(eventLabel, immutableEntry(null, 0));
+                    return new MisuseStatisticDTO(eventLabel, hasMisused(agentIdentifier, eventLabel),
+                            historyEntry.getKey(), historyEntry.getValue(),
+                            handlerMap.get(eventLabel).getSoftThreshold(),
+                            handlerMap.get(eventLabel).getHardThreshold());
+                }).collect(Collectors.toList());
+    }
+
     /**
      * Helper to work out whether we can reset the counter or not.
      * 

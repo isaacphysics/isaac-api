@@ -1250,25 +1250,21 @@ public class AdminFacade extends AbstractSegueFacade {
      * @return Confirmation of success, or error message on incorrect role.
      */
     @POST
-    @Path("/reset_misuse_monitor/{event_label}")
+    @Path("/reset_misuse_monitor/{event_label}/{agent_identifier}")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Reset a misuse monitor counter to zero.")
     public Response resetMisuseMonitor(@Context final HttpServletRequest request,
                                        @PathParam("event_label") final String eventLabel,
-                                       final String agentIdentifier) {
+                                       @PathParam("agent_identifier") final String agentIdentifier) {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
             if (!isUserAnAdmin(userManager, user)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
-            if (misuseMonitor.hasMisused(agentIdentifier, eventLabel)) {
-                misuseMonitor.resetMisuseCount(agentIdentifier, eventLabel);
-                log.info(String.format("Admin user (%s) reset misuse monitor '%s' for user (%s)!", user.getEmail(),
-                        eventLabel, agentIdentifier));
-                return Response.ok(ImmutableMap.of("status", "Reset successfully!")).build();
-            } else {
-                return Response.ok(ImmutableMap.of("status", "Nothing to reset.")).build();
-            }
+            misuseMonitor.resetMisuseCount(agentIdentifier, eventLabel);
+            log.info(String.format("Admin user (%s) reset misuse monitor '%s' for user (%s)!", user.getEmail(),
+                    eventLabel, agentIdentifier));
+            return Response.ok().build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
@@ -1320,6 +1316,25 @@ public class AdminFacade extends AbstractSegueFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SchedulerException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, e.getMessage()).toResponse();
+        }
+    }
+
+    @GET
+    @Path("/misuse_stats/{agent_identifier}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Get the site misuse stats for a given user.")
+    public Response getUserMisuseStatistics(@Context final HttpServletRequest request,
+                                            @PathParam("agent_identifier") final String agentIdentifier) {
+        try {
+            RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+            if (!isUserAnAdmin(userManager, user)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
+            return Response.ok(misuseMonitor.getMisuseStatistics(agentIdentifier)).build();
+
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
         }
     }
 }
