@@ -1,4 +1,4 @@
-name: Publish Docker image
+name: Publish ETL Docker image
 
 on:
   push:
@@ -10,7 +10,7 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build-and-push-image:
+  build-and-push-etl-image:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -24,20 +24,22 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Docker meta
-        id: meta
+      - name: Docker meta etl
+        id: meta-etl
         uses: docker/metadata-action@v4
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: ghcr.io/${{ github.repository }}-etl
           tags: |
             # set latest tag for default branch
             type=raw,value=latest,enable={{is_default_branch}}
             # tag event
             type=ref,event=tag
-      - name: Build and push Docker image
+      - name: Build and push etl Docker image
         uses: docker/build-push-action@v3
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            MVN_PACKAGE_PARAM=-P etl
+          tags: ${{ steps.meta-etl.outputs.tags }}
+          labels: ${{ steps.meta-etl.outputs.labels }}
