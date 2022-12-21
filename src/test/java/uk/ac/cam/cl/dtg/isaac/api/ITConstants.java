@@ -58,4 +58,7 @@ public final class ITConstants {
     // Gameboards
     public static final String ASSIGNMENTS_TEST_GAMEBOARD_ID = "865072ab-9223-495f-a809-5ee2b98252e4";
     public static final String ASSIGNMENTS_DATE_TEST_GAMEBOARD_ID = "5acb113a-4d8b-4a6d-9714-6992e7e3dc35";
+
+    // Quizzes
+    public static final String QUIZ_TEST_QUIZ_ID = "_quiz_test";
 }

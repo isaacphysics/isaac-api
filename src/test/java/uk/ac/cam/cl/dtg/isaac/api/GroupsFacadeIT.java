@@ -104,9 +104,9 @@ public class GroupsFacadeIT extends IsaacIntegrationTest {
             NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
         // Arrange
         // log in as Tutor, create request
-        LoginResult teacherLogin = loginAs(httpSession, TEST_TUTOR_EMAIL,
+        LoginResult tutorLogin = loginAs(httpSession, TEST_TUTOR_EMAIL,
                 TEST_TUTOR_PASSWORD);
-        HttpServletRequest createGroupRequest = createRequestWithCookies(new Cookie[]{teacherLogin.cookie});
+        HttpServletRequest createGroupRequest = createRequestWithCookies(new Cookie[]{tutorLogin.cookie});
         replay(createGroupRequest);
 
         UserGroup userGroup = new UserGroup(null, "Test Tutor's New Group", TEST_TUTOR_ID,
@@ -194,9 +194,9 @@ public class GroupsFacadeIT extends IsaacIntegrationTest {
             MFARequiredButNotConfiguredException {
         // Arrange
         // log in as Tutor, create request
-        LoginResult teacherLogin = loginAs(httpSession, TEST_TUTOR_EMAIL,
+        LoginResult tutorLogin = loginAs(httpSession, TEST_TUTOR_EMAIL,
                 TEST_TUTOR_PASSWORD);
-        HttpServletRequest addManagerRequest = createRequestWithCookies(new Cookie[]{teacherLogin.cookie});
+        HttpServletRequest addManagerRequest = createRequestWithCookies(new Cookie[]{tutorLogin.cookie});
         replay(addManagerRequest);
 
         Map<String, String> responseMap = new HashMap<>();
