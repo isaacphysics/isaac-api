@@ -1,11 +1,12 @@
 FROM maven:3.8.6-eclipse-temurin-11 as base
 #Set to "-P etl" for etl build
 ARG MVN_PACKAGE_PARAM=""
+ARG BUILD_VERSION=""
 WORKDIR /isaac-api
 COPY pom.xml .
-
+RUN mvn dependency:go-offline
 COPY . /isaac-api
-RUN mvn package -Dmaven.test.skip=true $MVN_PACKAGE_PARAM
+RUN mvn package -Dmaven.test.skip=true -Dsegue.version=$BUILD_VERSION $MVN_PACKAGE_PARAM
 
 FROM jetty:11.0.12-jdk11-eclipse-temurin
 USER root

@@ -144,13 +144,9 @@ import uk.ac.cam.cl.dtg.util.locations.PostCodeLocationResolver;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType.*;
@@ -161,6 +157,8 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType.*;
  */
 public class SegueGuiceConfigurationModule extends AbstractModule implements ServletContextListener {
     private static final Logger log = LoggerFactory.getLogger(SegueGuiceConfigurationModule.class);
+
+    private static String version = null;
 
     private static Injector injector = null;
 
@@ -847,7 +845,23 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      * @return segue version currently running.
      */
     public static String getSegueVersion() {
-        return System.getProperty("segue.version");
+        if (SegueGuiceConfigurationModule.version != null) {
+            return SegueGuiceConfigurationModule.version;
+        }
+        String version = "unknown";
+        try {
+            Properties p = new Properties();
+            InputStream is = SegueGuiceConfigurationModule.class.getResourceAsStream("/version.properties");
+            if (is != null) {
+                p.load(is);
+                version = p.getProperty("version", "");
+            }
+            is.close();
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
+        SegueGuiceConfigurationModule.version = version;
+        return version;
     }
 
     /**

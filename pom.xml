@@ -539,10 +539,10 @@
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>${basedir}/src/main/webapp/api-docs</outputDirectory>
+                            <outputDirectory>${project.build.directory}/isaac-api/WEB-INF/classes/</outputDirectory>
                             <resources>
                                 <resource>
-                                    <directory>${project.build.directory}/src/main/webapp/api-docs</directory>
+                                    <directory>src/main/resource-templates</directory>
                                     <filtering>true</filtering>
                                 </resource>
                             </resources>
