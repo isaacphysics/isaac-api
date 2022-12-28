@@ -146,7 +146,7 @@ public class IsaacApplicationRegister extends Application {
 
         Info apiInfo = new Info()
                 .title("Isaac API")
-                .version(propertiesLoader.getProperty(SEGUE_APP_VERSION))
+                .version(SegueGuiceConfigurationModule.getSegueVersion())
                 .description("API for the Isaac platform. Automated use may violate our Terms of Service.")
                 .contact(new Contact()
                         .name(propertiesLoader.getProperty(MAIL_NAME))
