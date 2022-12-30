@@ -37,16 +37,22 @@ public class EmailCommunicator implements ICommunicator<EmailCommunicationMessag
 	 * Creates an instance of an email communicator that can send e-mails.
 	 * 
 	 * @param smtpAddress
-	 *            the smtp server to use to send e-mails. Must be open for this
+	 *            The smtp server to use to send e-mails. Must be open for this
 	 *            implementation.
 	 * @param defaultFromAddress
-	 *            - The email address to show as the from address.
+	 *            The email address to show as the from address.
+	 * @param mailJetApiKey
+	 *            The Mailjet API key.
+	 * @param mailJetApiSecret
+	 *            The Mailjet API secret.
 	 * @param mailName
-	 *            - The name email will be sent from.
+	 *            The name email will be sent from.
 	 */
 	@Inject
 	public EmailCommunicator(@Named(Constants.MAILER_SMTP_SERVER) final String smtpAddress,
 							 @Named(Constants.MAIL_FROM_ADDRESS) final String defaultFromAddress,
+							 @Named(Constants.MAILJET_API_KEY) final String mailJetApiKey,
+							 @Named(Constants.MAILJET_API_SECRET) final String mailJetApiSecret,
 							 @Named(Constants.MAIL_NAME) final String mailName) {
 		Validate.notNull(smtpAddress);
 		Validate.notNull(defaultFromAddress);
@@ -56,7 +62,11 @@ public class EmailCommunicator implements ICommunicator<EmailCommunicationMessag
 
 		// Construct a new instance of the mailer object
         if (mailer == null) {
-            mailer = new Mailer(smtpAddress, defaultFromAddress);
+					if (smtpAddress.contains("mailjet")) {
+						mailer = new Mailer(smtpAddress, defaultFromAddress, null, mailJetApiKey, mailJetApiSecret);
+					} else {
+						mailer = new Mailer(smtpAddress, defaultFromAddress, null, null, null);
+					}
         }
 	}
 
