@@ -129,8 +129,9 @@ public final class Constants {
      */
     public static final String SEGUE_APP_ENVIRONMENT = "SEGUE_APP_ENVIRONMENT";
     public static final String DEFAULT_LINUX_CONFIG_LOCATION = "/local/data/rutherford/conf/segue-config.properties";
+    public static final String MAILER_SMTP_PORT = "MAILER_SMTP_PORT";
 
-    /**
+  /**
      * Enum to describe types of server environment / profile.
      */
     public enum EnvironmentType {

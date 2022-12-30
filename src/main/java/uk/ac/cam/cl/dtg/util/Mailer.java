@@ -17,10 +17,12 @@ package uk.ac.cam.cl.dtg.util;
 
 import jakarta.activation.DataHandler;
 import jakarta.annotation.Nullable;
+import jakarta.mail.Authenticator;
 import jakarta.mail.Message;
 import jakarta.mail.Message.RecipientType;
 import jakarta.mail.MessagingException;
 import jakarta.mail.Multipart;
+import jakarta.mail.PasswordAuthentication;
 import jakarta.mail.Session;
 import jakarta.mail.Transport;
 import jakarta.mail.internet.AddressException;
@@ -34,7 +36,6 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.comm.EmailAttachment;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -196,12 +197,7 @@ public class Mailer {
 
       // Configure the SMTP server settings:
       p.put("mail.smtp.host", smtpAddress);
-      if (null != smtpPort) {
-        p.put("mail.smtp.port", smtpPort);
-      }
       p.put("mail.smtp.starttls.enable", "true");
-      Optional.ofNullable(mailJetApiKey).ifPresent(key -> p.put("mail.smtp.user", key));
-      Optional.ofNullable(mailJetApiSecret).ifPresent(secret -> p.put("mail.smtp.password", secret));
 
       // Configure the email headers and routing:
       String envelopeFrom = mailAddress;
@@ -211,13 +207,26 @@ public class Mailer {
       p.put("mail.smtp.from", envelopeFrom);  // Used for Return-Path
       p.put("mail.from", fromAddress.getAddress()); // Should only affect Message-ID, since From overridden below
 
+      // Conditionally configure to use Mailjet SMTP relay
+      boolean useMailjet = smtpAddress.contains("mailjet");
+      if (useMailjet) {
+        p.put("mail.smtp.port", smtpPort);
+        p.put("mail.smtp.auth", "true");
+      }
       // Create the jakarta.mail.Session object needed to send the email.
       // These are expensive to create so cache them based on the properties
       // they are configured with (using fact that hashcodes are equal only if objects equal):
       Integer propertiesHash = p.hashCode();
       Session s = sessionCache.computeIfAbsent(propertiesHash, k -> {
         log.info(String.format("Creating new mail Session with properties: %s", p));
-        return Session.getInstance(p);
+        return useMailjet ?
+            Session.getInstance(p, new Authenticator() {
+              @Override
+              protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication(mailJetApiKey, mailJetApiSecret);
+              }
+            })
+            : Session.getInstance(p);
       });
       // Create the message and set the recipients:
       Message msg = new MimeMessage(s);
