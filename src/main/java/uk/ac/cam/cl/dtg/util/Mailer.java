@@ -68,9 +68,9 @@ public class Mailer {
 	 */
 	public Mailer(final String smtpAddress,
                 final String mailAddress,
-                @Nullable final String smtpPort,
-                @Nullable final String mailJetApiKey,
-                @Nullable final String mailJetApiSecret) {
+                final String smtpPort,
+                final String mailJetApiKey,
+                final String mailJetApiSecret) {
 		this.smtpAddress = smtpAddress;
 		this.mailAddress = mailAddress;
 		this.smtpPort = smtpPort;
