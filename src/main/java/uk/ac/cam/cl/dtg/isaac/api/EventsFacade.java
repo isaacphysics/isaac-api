@@ -711,7 +711,8 @@ public class EventsFacade extends AbstractIsaacFacade {
                 String schoolId = resultRegisteredUser.getSchoolId();
                 Map<String, String> resultAdditionalInformation = booking.getAdditionalInformation();
                 BookingStatus resultBookingStatus = booking.getBookingStatus();
-                resultRow.add(resultUser.getGivenName() + " " + resultUser.getFamilyName());
+                resultRow.add(resultUser.getFamilyName());
+                resultRow.add(resultUser.getGivenName());
                 resultRow.add(resultRegisteredUser.getRole().toString());
                 if (schoolId != null) {
                     School school = schoolListReader.findSchoolById(schoolId);
@@ -741,7 +742,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             }
 
             rows.add(totalsRow.toArray(new String[0]));
-            rows.add(("Name,Role,School,Booking status,Booking date,Last updated date,Year group,Job title," +  // lgtm [java/missing-space-in-concatenation]
+            rows.add(("Family name,Given name,Role,School,Booking status,Booking date,Last updated date,Year group,Job title," +  // lgtm [java/missing-space-in-concatenation]
                     "Stages,Exam boards,Level of teaching experience,Medical/dietary requirements,Accessibility requirements,Emergency name,Emergency number").split(","));
             rows.addAll(resultRows);
             csvWriter.writeAll(rows);
