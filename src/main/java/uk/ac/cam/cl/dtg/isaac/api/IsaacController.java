@@ -198,8 +198,8 @@ public class IsaacController extends AbstractIsaacFacade {
                 this.contentIndex.hashCode()
                         + searchString.hashCode()
                         + types.hashCode()
-                        + startIndex
-                        + limit
+                        + startIndex.hashCode()
+                        + limit.hashCode()
                         + ""
         );
 
