@@ -381,7 +381,8 @@ public class PagesFacade extends AbstractIsaacFacade {
                     fieldsToMatch.getOrDefault(EXAM_BOARD_FIELDNAME, Set.of()),
                     fieldsToMatch.getOrDefault(TYPE_FIELDNAME, Set.of(QUESTION_TYPE)),
                     newStartIndex,
-                    newLimit
+                    newLimit,
+                    false
             );
 
             ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<>(

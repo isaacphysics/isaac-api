@@ -204,9 +204,9 @@ public class IsaacController extends AbstractIsaacFacade {
 
         try {
             AbstractSegueUserDTO currentUser = userManager.getCurrentUser(httpServletRequest);
-            boolean showHiddenContent = false;
+            boolean showNoFilterContent = false;
             if (currentUser instanceof RegisteredUserDTO) {
-                showHiddenContent = isUserStaff(userManager, (RegisteredUserDTO) currentUser);
+                showNoFilterContent = isUserStaff(userManager, (RegisteredUserDTO) currentUser);
             }
             List<String> documentTypes = !types.isEmpty() ? Arrays.asList(types.split(",")) : new ArrayList<>();
             // Return an error if any of the proposed document types are invalid
@@ -215,7 +215,7 @@ public class IsaacController extends AbstractIsaacFacade {
             }
 
             ResultsWrapper<ContentDTO> searchResults = this.contentManager.siteWideSearch(
-                    searchString, documentTypes, showHiddenContent, startIndex, limit);
+                    searchString, documentTypes, showNoFilterContent, startIndex, limit);
 
             ImmutableMap<String, String> logMap = new ImmutableMap.Builder<String, String>()
                     .put(TYPE_FIELDNAME, types)

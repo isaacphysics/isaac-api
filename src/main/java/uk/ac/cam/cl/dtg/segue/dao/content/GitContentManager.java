@@ -79,7 +79,7 @@ public class GitContentManager {
     private final ContentMapper mapper;
     private final ISearchProvider searchProvider;
     private final PropertiesLoader globalProperties;
-    private final boolean allowOnlyPublishedContent;
+    private final boolean showOnlyPublishedContent;
     private final boolean hideRegressionTestContent;
 
     private final Cache<Object, Object> cache;
@@ -108,9 +108,9 @@ public class GitContentManager {
         this.searchProvider = searchProvider;
         this.globalProperties = globalProperties;
 
-        this.allowOnlyPublishedContent = Boolean.parseBoolean(
+        this.showOnlyPublishedContent = Boolean.parseBoolean(
                 globalProperties.getProperty(Constants.SHOW_ONLY_PUBLISHED_CONTENT));
-        if (this.allowOnlyPublishedContent) {
+        if (this.showOnlyPublishedContent) {
             log.info("API Configured to only allow published content to be returned.");
         }
 
@@ -144,7 +144,7 @@ public class GitContentManager {
         this.mapper = contentMapper;
         this.searchProvider = searchProvider;
         this.globalProperties = null;
-        this.allowOnlyPublishedContent = false;
+        this.showOnlyPublishedContent = false;
         this.hideRegressionTestContent = false;
         this.cache = CacheBuilder.newBuilder().softValues().expireAfterAccess(1, TimeUnit.DAYS).build();
         this.contentShaCache = CacheBuilder.newBuilder().softValues().expireAfterWrite(1, TimeUnit.MINUTES).build();
@@ -330,7 +330,7 @@ public class GitContentManager {
                                                              final Set<String> tags, final Set<String> levels, final Set<String> stages,
                                                              final Set<String> difficulties, final Set<String> examBoards,
                                                              final Set<String> contentTypes, final Integer startIndex,
-                                                             final Integer limit)
+                                                             final Integer limit, final boolean showNoFilterContent)
             throws ContentManagerException {
 
         Set<String> searchTerms = Set.of();
@@ -339,9 +339,9 @@ public class GitContentManager {
         }
 
         BooleanMatchInstruction matchInstruction = new IsaacSearchInstructionBuilder(searchProvider,
-                this.allowOnlyPublishedContent,
+                this.showOnlyPublishedContent,
                 this.hideRegressionTestContent,
-                true) // todo: this should be based on user privileges
+                !showNoFilterContent)
                 .includeContentTypes(contentTypes)
                 .searchInField(Constants.LEVEL_FIELDNAME, levels)
                 .searchInField(Constants.STAGE_FIELDNAME, stages)
@@ -371,13 +371,13 @@ public class GitContentManager {
 
     public final ResultsWrapper<ContentDTO> siteWideSearch(
             final String searchString, final List<String> documentTypes,
-            final boolean includeHiddenContent, final Integer startIndex, final Integer limit
+            final boolean showNoFilterContent, final Integer startIndex, final Integer limit
     ) throws  ContentManagerException {
 
         BooleanMatchInstruction matchInstruction = new IsaacSearchInstructionBuilder(searchProvider,
-                this.allowOnlyPublishedContent,
+                this.showOnlyPublishedContent,
                 this.hideRegressionTestContent,
-                true) // todo: based on user
+                !showNoFilterContent)
                 .includeContentTypes(Set.copyOf(documentTypes))
                 .includeContentTypes(Set.of(TOPIC_SUMMARY_PAGE_TYPE), IsaacSearchInstructionBuilder.Priority.HIGH)
                 .searchInField(Constants.SEARCHABLE_CONTENT_FIELDNAME, Set.of(searchString))
@@ -643,7 +643,7 @@ public class GitContentManager {
      * @return either null or a map setup with filter/exclusion instructions, based on environment properties.
      */
     private Map<String, AbstractFilterInstruction> getBaseFilters() {
-        if (!this.hideRegressionTestContent && !this.allowOnlyPublishedContent) {
+        if (!this.hideRegressionTestContent && !this.showOnlyPublishedContent) {
             return null;
         }
 
@@ -652,7 +652,7 @@ public class GitContentManager {
         if (this.hideRegressionTestContent) {
             filters.put("tags", new SimpleExclusionInstruction("regression_test"));
         }
-        if (this.allowOnlyPublishedContent) {
+        if (this.showOnlyPublishedContent) {
             filters.put("published", new SimpleFilterInstruction("true"));
         }
         return ImmutableMap.copyOf(filters);
