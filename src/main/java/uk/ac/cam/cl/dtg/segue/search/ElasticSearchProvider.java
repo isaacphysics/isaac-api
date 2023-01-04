@@ -489,7 +489,7 @@ public class ElasticSearchProvider implements ISearchProvider {
                 query.minimumShouldMatch(1);
             }
 
-            if (!Constants.NESTED_FIELDS.contains(searchClause.getField())) {
+            if (!Constants.NESTED_QUERY_FIELDS.contains(searchClause.getField())) {
                 masterQuery.must(query);
             } else {
                 // Nested fields need to use a nested query which specifies the path of the nested field.

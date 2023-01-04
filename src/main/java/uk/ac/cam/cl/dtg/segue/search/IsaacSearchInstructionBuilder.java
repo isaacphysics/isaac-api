@@ -51,9 +51,11 @@ public class IsaacSearchInstructionBuilder {
     private final List<SearchInField> searchesInFields;
     private static final Long FIELD_BOOST = 5L;
     private static final Long FIELD_BOOST_FUZZY = 1L;
+    private static final Long WILDCARD_FIELD_BOOST = 1L;
 
     private static final Long HIGH_PRIORITY_FIELD_BOOST = 10L;
     private static final Long HIGH_PRIORITY_FIELD_BOOST_FUZZY = 3L;
+    private static final Long HIGH_PRIORITY_WILDCARD_FIELD_BOOST = 2L;
 
     private static final Long EVENT_ADDRESS_FIELD_BOOST = 3L;
     private static final Long EVENT_ADDRESS_FIELD_BOOST_FUZZY = 1L;
@@ -90,14 +92,14 @@ public class IsaacSearchInstructionBuilder {
     }
 
     /**
-     * Builds the base search instructions. The base instructions exclude no-filter content, content marked deprecated,
-     * unpublished content (depending on config properties) and content tagged with "regression-test" (depending on
-     * config properties).
+     * Builds the base search instructions. The base instructions exclude content marked deprecated, no-filter content
+     * (depending on role), unpublished content (depending on config properties) and content tagged with
+     * "regression-test" (depending on config properties).
      *
      * @param instruction The existing instruction to augment with these base instructions.
      * @return The augmented instruction.
      */
-    final BooleanMatchInstruction buildBaseSearchQuery(final BooleanMatchInstruction instruction) {
+    public BooleanMatchInstruction buildBaseSearchQuery(final BooleanMatchInstruction instruction) {
         // Exclude unpublished content (based on config)
         if (this.includeOnlyPublishedContent) {
             instruction.mustNot(new MustMatchInstruction(Constants.PUBLISHED_FIELDNAME, "false"));
@@ -108,7 +110,7 @@ public class IsaacSearchInstructionBuilder {
             instruction.mustNot(new MustMatchInstruction(Constants.TAGS_FIELDNAME, "false"));
         }
 
-        // Exclude "no-filter" content
+        // Exclude "no-filter" content (based on user role)
         if (this.excludeNofilterContent) {
             instruction.mustNot(new MustMatchInstruction(Constants.TAGS_FIELDNAME, HIDE_FROM_FILTER_TAG));
         }
@@ -290,8 +292,10 @@ public class IsaacSearchInstructionBuilder {
                                 true));
                     }
                 }
-            } else if (Constants.NESTED_FIELDS.contains(searchInField.getField())) {
+            } else if (Constants.NESTED_QUERY_FIELDS.contains(searchInField.getField())) {
                 // Nested fields
+                /* (This has a specific meaning in ES -
+                see https://www.elastic.co/guide/en/elasticsearch/reference/7.17/query-dsl-nested-query.html) */
                 // Ensure nested field queries are grouped together
                 for (String term : searchInField.getTerms()) {
                     String nestedPath = searchInField.getField().split("\\.")[0];
@@ -312,11 +316,11 @@ public class IsaacSearchInstructionBuilder {
                         }
                     } else if (searchInField.getStrategy() == Strategy.FUZZY) {
                         if (searchInField.getPriority() == Priority.HIGH) {
-                            instructions.should(new ShouldMatchInstruction(searchInField.getField(), term, 2L, true));
-                            instructions.should(new WildcardMatchInstruction(searchInField.getField(), "*" + term + "*", 2L));
+                            instructions.should(new ShouldMatchInstruction(searchInField.getField(), term, HIGH_PRIORITY_WILDCARD_FIELD_BOOST, true));
+                            instructions.should(new WildcardMatchInstruction(searchInField.getField(), "*" + term + "*", HIGH_PRIORITY_WILDCARD_FIELD_BOOST));
                         } else if (searchInField.getPriority() == Priority.NORMAL) {
-                            instructions.should(new ShouldMatchInstruction(searchInField.getField(), term, 1L, true));
-                            instructions.should(new WildcardMatchInstruction(searchInField.getField(), "*" + term + "*", 1L));
+                            instructions.should(new ShouldMatchInstruction(searchInField.getField(), term, WILDCARD_FIELD_BOOST, true));
+                            instructions.should(new WildcardMatchInstruction(searchInField.getField(), "*" + term + "*", WILDCARD_FIELD_BOOST));
                         }
                         instructions.should(new MultiMatchInstruction(searchInField.getField(), searchInField.getTerms().toArray(String[]::new), 2L));
                     }

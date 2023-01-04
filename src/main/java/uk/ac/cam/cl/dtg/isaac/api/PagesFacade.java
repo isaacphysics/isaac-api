@@ -367,17 +367,12 @@ public class PagesFacade extends AbstractIsaacFacade {
             return cachedResponse;
         }
 
-        String newSearchString;
-        if (searchString.isBlank()) {
-            newSearchString = null;
-        } else {
-            newSearchString = searchString;
-        }
+        String validatedSearchString = searchString.isBlank() ? null : searchString;
 
         try {
             ResultsWrapper<ContentDTO> c;
             c = contentManager.searchForContent(
-                    newSearchString,
+                    validatedSearchString,
                     fieldsToMatch.getOrDefault(ID_FIELDNAME, Set.of()),
                     fieldsToMatch.getOrDefault(TAGS_FIELDNAME, Set.of()),
                     fieldsToMatch.getOrDefault(LEVEL_FIELDNAME, Set.of()),

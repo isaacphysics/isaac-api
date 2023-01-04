@@ -433,7 +433,7 @@ public final class Constants {
     public static final String STAGE_FIELDNAME = "audience.stage";
     public static final String DIFFICULTY_FIELDNAME = "audience.difficulty";
     public static final String EXAM_BOARD_FIELDNAME = "audience.examBoard";
-    public static final Set<String> NESTED_FIELDS =
+    public static final Set<String> NESTED_QUERY_FIELDS =
             ImmutableSet.of(STAGE_FIELDNAME, DIFFICULTY_FIELDNAME, EXAM_BOARD_FIELDNAME);
 
     public static final String USER_ID_FKEY_FIELDNAME = "userId";

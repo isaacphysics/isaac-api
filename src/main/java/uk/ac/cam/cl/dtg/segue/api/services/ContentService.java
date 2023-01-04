@@ -30,7 +30,7 @@ import java.util.Map;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ID_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NESTED_FIELDS;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NESTED_QUERY_FIELDS;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
 
 public class ContentService {
@@ -117,7 +117,7 @@ public class ContentService {
                 // special case of when you want to allow more than one
                 fieldsToMatchOutput.add(new GitContentManager.BooleanSearchClause(
                         pair.getKey(), Constants.BooleanOperator.OR, pair.getValue()));
-            } else if (NESTED_FIELDS.contains(pair.getKey())) { // these should match if either are true
+            } else if (NESTED_QUERY_FIELDS.contains(pair.getKey())) { // these should match if either are true
                 fieldsToMatchOutput.add(new GitContentManager.BooleanSearchClause(
                         pair.getKey(), Constants.BooleanOperator.OR, pair.getValue()));
             } else {
