@@ -194,8 +194,14 @@ public class IsaacController extends AbstractIsaacFacade {
 
         // Calculate the ETag on current live version of the content
         // NOTE: Assumes that the latest version of the content is being used.
-        EntityTag etag = new EntityTag(this.contentIndex.hashCode() + searchString.hashCode()
-                + types.hashCode() + "");
+        EntityTag etag = new EntityTag(
+                this.contentIndex.hashCode()
+                        + searchString.hashCode()
+                        + types.hashCode()
+                        + startIndex
+                        + limit
+                        + ""
+        );
 
         Response cachedResponse = generateCachedResponse(request, etag);
         if (cachedResponse != null) {
