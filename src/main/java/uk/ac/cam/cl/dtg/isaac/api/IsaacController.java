@@ -214,7 +214,7 @@ public class IsaacController extends AbstractIsaacFacade {
             if (currentUser instanceof RegisteredUserDTO) {
                 showNoFilterContent = isUserStaff(userManager, (RegisteredUserDTO) currentUser);
             }
-            List<String> documentTypes = !types.isEmpty() ? Arrays.asList(types.split(",")) : new ArrayList<>();
+            List<String> documentTypes = !types.isEmpty() ? Arrays.asList(types.split(",")) : List.copyOf(SITE_WIDE_SEARCH_VALID_DOC_TYPES);
             // Return an error if any of the proposed document types are invalid
             if (!SITE_WIDE_SEARCH_VALID_DOC_TYPES.containsAll(documentTypes)) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid document types.").toResponse();
