@@ -198,7 +198,6 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    @Ignore("Skipping as this fails - we should decide what the expectations are here.")
     public void previewQuizEndpoint_previewInvisibleToStudentQuizAsTutor_fails() throws NoCredentialsAvailableException,
             NoUserException, SegueDatabaseException, AuthenticationProviderMappingException,
             IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException,
