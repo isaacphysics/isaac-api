@@ -343,7 +343,9 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             // Check this user is actually allowed to preview this quiz:
             if (null != quiz.getHiddenFromRoles() && (quiz.getHiddenFromRoles().contains(user.getRole().name())
-                    || (quiz.getHiddenFromRoles().contains(Role.STUDENT.name()) && user.getRole() == Role.TUTOR))) {
+                    || (quiz.getHiddenFromRoles().contains(Role.STUDENT.name()) && user.getRole() == Role.TUTOR)
+                    || (quiz.getVisibleToStudents()  && user.getRole() == Role.TUTOR)
+                    || (quiz.getHiddenFromRoles().contains(Role.TEACHER.name()) && user.getRole() == Role.TUTOR))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
