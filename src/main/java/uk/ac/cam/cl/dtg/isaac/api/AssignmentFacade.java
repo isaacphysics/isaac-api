@@ -992,7 +992,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             boolean userIsTutorOrAbove = isUserTutorOrAbove(userManager, currentlyLoggedInUser);
             boolean userIsStaff = isUserStaff(userManager, currentlyLoggedInUser);
             if (!userIsTutorOrAbove) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You need at least a tutor account to create groups and set assignments!").toResponse();
+                return new SegueErrorResponse(Status.FORBIDDEN, "You need a tutor or teacher account to create groups and set assignments!").toResponse();
             }
 
             // Assert that there is at least one assignment, and that multiple assignments are only set by staff
