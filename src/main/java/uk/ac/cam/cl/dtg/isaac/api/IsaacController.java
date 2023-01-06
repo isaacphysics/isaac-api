@@ -374,7 +374,7 @@ public class IsaacController extends AbstractIsaacFacade {
             // Tutors and above should be able to access these documents as teaching material
             if (!isUserTutorOrAbove(userManager, currentlyLoggedInUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
-                        "You must have at least a tutor account to access these resources.").toResponse();
+                        "You must have a tutor or teacher account to access these resources.").toResponse();
             }
 
             // determine if we can use the cache if so return cached response.
