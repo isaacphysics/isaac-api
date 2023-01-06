@@ -1187,6 +1187,7 @@ public class EventBookingManager {
         Long numberOfPlaces = getPlacesAvailable(event);
         if (numberOfPlaces != null) {
             long numberOfRequests = users.stream()
+                    // Consider tutors as students with regard to teacher events (for now)
                     .filter(user -> !isStudentEvent || !Role.TEACHER.equals(user.getRole()))
                     .count();
             if (numberOfPlaces - numberOfRequests < 0) {
@@ -1216,7 +1217,8 @@ public class EventBookingManager {
         Integer groupReservationLimit = event.getGroupReservationLimit();
         if (groupReservationLimit != null) { // This should never be null
             long numberOfRequests = users.stream()
-                    // teachers don't count toward student event limits
+                    // Teachers don't count toward student event limits
+                    // Consider tutors as students with regard to teacher events (for now)
                     .filter(user -> !isStudentEvent || !Role.TEACHER.equals(user.getRole()))
                     .count();
 

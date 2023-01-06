@@ -67,11 +67,6 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
         PowerMock.expectNew(Date.class).andReturn(mockCurrentDateTime.getTime()).anyTimes();
         PowerMock.replay(Date.class);
 
-        /* because EasyMock says so, we must specify the expected method calls to the mocked badge manager despite this
-         being irrelevant to the tests */
-        expect(userBadgeManager.updateBadge(anyObject(), anyObject(), anyString())).andReturn(null).anyTimes();
-        PowerMock.replay(userBadgeManager);
-
         // get an instance of the facade to test
         this.assignmentFacade = new AssignmentFacade(assignmentManager, questionManager, userAccountManager,
                 groupManager, properties, gameManager, logManager, userAssociationManager, userBadgeManager,
@@ -93,7 +88,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void assignBulkEndpoint_setSingleMinimalAndValidAssignmentAsTeacher_assignsSuccessfully() throws
+    public void assignBulkEndpoint_setValidAssignmentAsTeacher_assignsSuccessfully() throws
             NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
             AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
             AdditionalAuthenticationRequiredException, InvalidKeySpecException,
@@ -127,7 +122,41 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void assignBulkEndpoint_setSingleAssignmentWithValidDueDateAsTeacher_assignsSuccessfully() throws
+    public void assignBulkEndpoint_setValidAssignmentAsTutor_assignsSuccessfully() throws
+            NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
+            AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
+            AdditionalAuthenticationRequiredException, InvalidKeySpecException,
+            NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+
+        // Arrange
+        // log in as Tutor, create request
+        LoginResult tutorLogin = loginAs(httpSession, ITConstants.TEST_TUTOR_EMAIL,
+                ITConstants.TEST_TUTOR_PASSWORD);
+        HttpServletRequest assignGameboardsRequest = createRequestWithCookies(new Cookie[]{tutorLogin.cookie});
+        replay(assignGameboardsRequest);
+
+        // build assignment
+        AssignmentDTO assignment = new AssignmentDTO();
+        assignment.setGameboardId(ITConstants.ASSIGNMENTS_TEST_GAMEBOARD_ID);
+        assignment.setGroupId(ITConstants.TEST_TUTORS_AB_GROUP_ID);
+
+        // Act
+        // make request
+        Response assignBulkResponse = assignmentFacade.assignGameBoards(assignGameboardsRequest,
+                Collections.singletonList(assignment));
+
+        // Assert
+        // check status code is OK
+        assertEquals(Response.Status.OK.getStatusCode(), assignBulkResponse.getStatus());
+
+        // check the assignment assigned successfully
+        @SuppressWarnings("unchecked") ArrayList<AssignmentStatusDTO> responseBody =
+                (ArrayList<AssignmentStatusDTO>) assignBulkResponse.getEntity();
+        assertNull(responseBody.get(0).getErrorMessage());
+    }
+
+    @Test
+    public void assignBulkEndpoint_scheduleAssignmentWithValidDueDateAsTeacher_assignsSuccessfully() throws
             NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
             AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
             AdditionalAuthenticationRequiredException, InvalidKeySpecException,
@@ -168,7 +197,48 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void assignBulkEndpoint_setSingleAssignmentWithDueDateInPastAsTeacher_failsToAssign() throws
+    public void assignBulkEndpoint_scheduleAssignmentWithValidDueDateAsTutor_assignsSuccessfully() throws
+            NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
+            AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
+            AdditionalAuthenticationRequiredException, InvalidKeySpecException,
+            NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+
+        // Arrange
+        // build due date
+        Calendar dueDateCalendar = Calendar.getInstance();
+        dueDateCalendar.set(Calendar.DAY_OF_MONTH, 1);
+        dueDateCalendar.set(Calendar.MONTH, 1);
+        dueDateCalendar.set(Calendar.YEAR, 2050);
+
+        // log in as Tutor, create request
+        LoginResult tutorLogin = loginAs(httpSession, ITConstants.TEST_TUTOR_EMAIL,
+                ITConstants.TEST_TUTOR_PASSWORD);
+        HttpServletRequest assignGameboardsRequest = createRequestWithCookies(new Cookie[]{tutorLogin.cookie});
+        replay(assignGameboardsRequest);
+
+        // build assignment
+        AssignmentDTO assignment = new AssignmentDTO();
+        assignment.setGameboardId(ITConstants.ASSIGNMENTS_TEST_GAMEBOARD_ID);
+        assignment.setGroupId(ITConstants.TEST_TUTORS_AB_GROUP_ID);
+        assignment.setDueDate(dueDateCalendar.getTime());
+
+        // Act
+        // make request
+        Response assignBulkResponse = assignmentFacade.assignGameBoards(assignGameboardsRequest,
+                Collections.singletonList(assignment));
+
+        // Assert
+        // check status code is OK
+        assertEquals(Response.Status.OK.getStatusCode(), assignBulkResponse.getStatus());
+
+        // check the assignment assigned successfully
+        @SuppressWarnings("unchecked") ArrayList<AssignmentStatusDTO> responseBody =
+                (ArrayList<AssignmentStatusDTO>) assignBulkResponse.getEntity();
+        assertNull(responseBody.get(0).getErrorMessage());
+    }
+
+    @Test
+    public void assignBulkEndpoint_scheduleAssignmentWithDueDateInPastAsTeacher_failsToAssign() throws
             NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
             AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
             AdditionalAuthenticationRequiredException, InvalidKeySpecException,
@@ -209,7 +279,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void assignBulkEndpoint_scheduleSingleAssignmentWithScheduledDateOverAYearInFutureAsTeacher_failsToAssign() throws
+    public void assignBulkEndpoint_scheduleSingleAssignmentWithDistantScheduledDateAsTeacher_failsToAssign() throws
             Exception {
 
         // Arrange
