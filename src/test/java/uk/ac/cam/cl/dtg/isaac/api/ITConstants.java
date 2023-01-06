@@ -61,6 +61,6 @@ public final class ITConstants {
 
     // Quizzes/tests
     public static final String QUIZ_TEST_QUIZ_ID = "_quiz_test";
-    public static final String QUIZ_INVISIBLE_TO_STUDENTS_QUIZ_ID = "_invisible_to_students_quiz_test";
+    public static final String QUIZ_HIDDEN_FROM_ROLE_STUDENTS_QUIZ_ID = "_hidden_from_roles_student_quiz_test";
     public static final String QUIZ_HIDDEN_FROM_ROLE_TUTORS_QUIZ_ID = "_hidden_from_roles_tutor_quiz_test";
 }
