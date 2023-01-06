@@ -202,7 +202,7 @@ public class QuestionFacade extends AbstractSegueFacade {
             // decide if the user is allowed to view this data. If user isn't viewing their own data, user viewing
             // must have a valid connection with the user of interest and be at least a teacher.
             if (!currentUser.getId().equals(userIdOfInterest)
-                    && !(userAssociationManager.hasPermission(currentUser, userOfInterestSummaryObject) && isUserTeacherOrAbove(userManager, currentUser))) {
+                    && !userAssociationManager.hasTeacherPermission(currentUser, userOfInterestSummaryObject)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 

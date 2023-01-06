@@ -330,8 +330,7 @@ public class UsersFacade extends AbstractSegueFacade {
             // Decide if the user is allowed to view this data. User must have at least a teacher account to request
             // a password reset for another user.
             if (!currentUser.getId().equals(userIdOfInterest)
-                    && !(isUserTeacherOrAbove(userManager, currentUser) && userAssociationManager.hasPermission(currentUser, userOfInterestSummaryObject))
-            ) {
+                    && !userAssociationManager.hasTeacherPermission(currentUser, userOfInterestSummaryObject)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 

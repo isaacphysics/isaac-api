@@ -516,11 +516,9 @@ public class IsaacController extends AbstractIsaacFacade {
             }
             userOfInterestSummary = userManager.convertToUserSummaryObject(userOfInterestFull);
 
-            // If user is fetching their own progress, or the user is at least a teacher and has a valid connection
-            // with this user...
-            if (user.getId().equals(userOfInterestSummary.getId())
-                    || isUserTeacherOrAbove(userManager, user) && associationManager.hasPermission(user, userOfInterestSummary)
-            ) {
+            // If user is fetching their own progress, or the user is at least a teacher (tutors cannot see their
+            // students progress) and has a valid connection with this user...
+            if (associationManager.hasTeacherPermission(user, userOfInterestSummary)) {
                 Map<String, Object> userProgressInformation = statsManager.getUserQuestionInformation(userOfInterestFull);
 
                 // augment details with user snapshot data (perhaps one day we will replace the entire endpoint with this call)
