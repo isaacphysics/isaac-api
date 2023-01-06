@@ -37,25 +37,25 @@ public class EmailCommunicator implements ICommunicator<EmailCommunicationMessag
 	 * Creates an instance of an email communicator that can send e-mails.
 	 * 
 	 * @param smtpAddress
-	 *            the smtp server to use to send e-mails. Must be open for this
+	 *            the SMTP server to use to send e-mails. Must be open for this
 	 *            implementation.
-	 * @param defaultFromAddress
-	 *            The email address to show as the from address.
 	 * @param smtpPort
 	 *            The SMTP port.
-	 * @param mailJetApiKey
-	 *            The Mailjet API key.
-	 * @param mailJetApiSecret
-	 *            The Mailjet API secret.
+	 * @param smtpUsername
+	 *            the SMTP username to use to send e-mails.
+	 * @param smtpPassword
+	 *            the SMTP password to use to send e-mails.
+	 * @param defaultFromAddress
+	 *            The email address to show as the from address.
 	 * @param mailName
 	 *            The name email will be sent from.
 	 */
 	@Inject
 	public EmailCommunicator(@Named(Constants.MAILER_SMTP_SERVER) final String smtpAddress,
-							 @Named(Constants.MAIL_FROM_ADDRESS) final String defaultFromAddress,
 							 @Named(Constants.MAILER_SMTP_PORT) final String smtpPort,
-							 @Named(Constants.MAILJET_API_KEY) final String mailJetApiKey,
-							 @Named(Constants.MAILJET_API_SECRET) final String mailJetApiSecret,
+							 @Named(Constants.MAILER_SMTP_USERNAME) final String smtpUsername,
+							 @Named(Constants.MAILER_SMTP_PASSWORD) final String smtpPassword,
+							 @Named(Constants.MAIL_FROM_ADDRESS) final String defaultFromAddress,
 							 @Named(Constants.MAIL_NAME) final String mailName) {
 		Validate.notNull(smtpAddress);
 		Validate.notNull(defaultFromAddress);
@@ -65,7 +65,7 @@ public class EmailCommunicator implements ICommunicator<EmailCommunicationMessag
 
 		// Construct a new instance of the mailer object
         if (mailer == null) {
-					mailer = new Mailer(smtpAddress, defaultFromAddress, smtpPort, mailJetApiKey, mailJetApiSecret);
+			mailer = new Mailer(smtpAddress, smtpPort, smtpUsername, smtpPassword, defaultFromAddress);
         }
 	}
 

@@ -50,6 +50,16 @@ public final class Constants {
     public static final String MAILER_SMTP_SERVER = "MAILER_SMTP_SERVER";
 
     /**
+     * Constant representing the key for the MAILER_SMTP_USERNAME property - Username for auth to the SMTP server.
+     */
+    public static final String MAILER_SMTP_USERNAME = "MAILER_SMTP_USERNAME";
+
+    /**
+     * Constant representing the key for the MAILER_SMTP_PASSWORD property - Password for auth to the SMTP server.
+     */
+    public static final String MAILER_SMTP_PASSWORD = "MAILER_SMTP_PASSWORD";
+
+    /**
      * Constant representing the key for the MAIL_FROM_ADDRESS property - Email address to send mail from.
      */
     public static final String MAIL_FROM_ADDRESS = "MAIL_FROM_ADDRESS";
