@@ -562,6 +562,8 @@ public class UserAccountManager implements IUserAccountManager {
             RegisteredUserDTO existingUserFromDb = this.getUserDTOById(userObjectFromClient
                     .getId());
 
+            // You cannot modify role using this endpoint (an admin needs to go through the endpoint specifically for
+            // role modification)
             if (null == userObjectFromClient.getRole() || !existingUserFromDb.getRole().equals(userObjectFromClient.getRole())) {
                 return new SegueErrorResponse(Response.Status.FORBIDDEN,
                         "You cannot change a users role.").toResponse();

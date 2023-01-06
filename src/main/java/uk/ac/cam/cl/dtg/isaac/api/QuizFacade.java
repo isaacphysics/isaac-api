@@ -341,12 +341,11 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             IsaacQuizDTO quiz = this.quizManager.findQuiz(quizId);
 
-            // Check this user is actually allowed to preview this quiz:
-            if (!quiz.getVisibleToStudents() && user.getRole() == Role.TUTOR
-                || (null != quiz.getHiddenFromRoles() && (quiz.getHiddenFromRoles().contains(user.getRole().name())
+            // Check this user is actually allowed to preview this quiz. A tutor counts as both a student and teacher
+            // in this check
+            if (null != quiz.getHiddenFromRoles() && (quiz.getHiddenFromRoles().contains(user.getRole().name())
                     || (quiz.getHiddenFromRoles().contains(Role.STUDENT.name()) && user.getRole() == Role.TUTOR)
                     || (quiz.getHiddenFromRoles().contains(Role.TEACHER.name()) && user.getRole() == Role.TUTOR))
-                )
             ) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
