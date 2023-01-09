@@ -38,24 +38,38 @@ public final class ITConstants {
     public static final String TEST_TEACHER_PASSWORD = "test1234";
     public static final long TEST_TEACHER_ID = 5L;
 
+    public static final String DAVE_TEACHER_EMAIL = "dave-teacher@test.com";
+    public static final String DAVE_TEACHER_PASSWORD = "test1234";
+    public static final long DAVE_TEACHER_ID = 10L;
+
     public static final String TEST_STUDENT_EMAIL = "test-student@test.com";
     public static final String TEST_STUDENT_PASSWORD = "test1234";
     public static final long TEST_STUDENT_ID = 6L;
+
+    public static final String TEST_TUTOR_EMAIL = "test-tutor@test.com";
+    public static final String TEST_TUTOR_PASSWORD = "test1234";
+    public static final long TEST_TUTOR_ID = 12L;
+
+    // Groups
+    public static final long TEST_TEACHERS_AB_GROUP_ID = 1L;
+    public static final long DAVE_TEACHERS_BC_GROUP_ID = 2L;
+    public static final long TEST_TUTORS_AB_GROUP_ID = 4L;
 
     // Questions
     public static final String REGRESSION_TEST_PAGE_ID = "_regression_test_";
     public static final String ASSIGNMENT_TEST_PAGE_ID = "_assignment_test";
 
-    // Groups
-    public static final long TEST_TEACHERS_AB_GROUP_ID = 1L;
-    public static final long DAVE_TEACHERS_BC_GROUP_ID = 2L;
-
     // Gameboards
     public static final String ASSIGNMENTS_TEST_GAMEBOARD_ID = "865072ab-9223-495f-a809-5ee2b98252e4";
     public static final String ASSIGNMENTS_DATE_TEST_GAMEBOARD_ID = "5acb113a-4d8b-4a6d-9714-6992e7e3dc35";
 
-    // Content for testing global search
+    // Search
     public static final String SEARCH_TEST_CONCEPT_ID = "33935571-5a6c-4d42-a243-b5c01d4293e6";
     public static final String SEARCH_TEST_TOPIC_SUMMARY_ID = "f9714b47-dd81-48db-b509-cc25e1884474";
     public static final String SEARCH_TEST_EVENT_ID = "dc8686cf-be3b-4c0d-8761-1e5504146867";
+
+    // Quizzes/tests
+    public static final String QUIZ_TEST_QUIZ_ID = "_quiz_test";
+    public static final String QUIZ_HIDDEN_FROM_ROLE_STUDENTS_QUIZ_ID = "_hidden_from_roles_student_quiz_test";
+    public static final String QUIZ_HIDDEN_FROM_ROLE_TUTORS_QUIZ_ID = "_hidden_from_roles_tutor_quiz_test";
 }

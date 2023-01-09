@@ -269,6 +269,10 @@ public class AdminFacade extends AbstractSegueFacade {
                 RegisteredUserDTO user = this.userManager.getUserDTOById(userid);
                 Role oldRole = user.getRole();
                 this.userManager.updateUserRole(userid, requestedRole);
+                log.info(String.format(
+                        "ADMIN user %s has modified the role of %s [%s] to %s",
+                        requestingUser.getEmail(), user.getEmail(), user.getId(), user.getRole()
+                ));
                 this.getLogManager().logEvent(requestingUser, request, SegueServerLogType.CHANGE_USER_ROLE,
                         ImmutableMap.of(USER_ID_FKEY_FIELDNAME, user.getId(),
                                         "oldRole", oldRole,

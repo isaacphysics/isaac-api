@@ -16,13 +16,24 @@ import org.testcontainers.utility.MountableFile;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAssignmentManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAttemptManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.QuizManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.QuizQuestionManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
+import uk.ac.cam.cl.dtg.isaac.api.services.AssignmentService;
 import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
 import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
 import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.IAssignmentPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.IQuizAssignmentPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.IQuizAttemptPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.IQuizQuestionAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgAssignmentPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.PgQuizAssignmentPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.PgQuizAttemptPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.PgQuizQuestionAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
@@ -35,6 +46,10 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
+import uk.ac.cam.cl.dtg.segue.api.monitors.GroupManagerLookupMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
+import uk.ac.cam.cl.dtg.segue.api.monitors.InMemoryMisuseMonitor;
+import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISecondFactorAuthenticator;
@@ -110,6 +125,7 @@ public abstract class IsaacIntegrationTest {
     protected static SchoolListReader schoolListReader;
     protected static MapperFacade mapperFacade;
     protected static ContentSummarizerService contentSummarizerService;
+    protected static IMisuseMonitor misuseMonitor;
 
     // Managers
     protected static EmailManager emailManager;
@@ -124,6 +140,18 @@ public abstract class IsaacIntegrationTest {
     protected static UserAssociationManager userAssociationManager;
     protected static AssignmentManager assignmentManager;
     protected static QuestionManager questionManager;
+    protected static QuizManager quizManager;
+
+    // Manager dependencies
+    protected static IQuizAssignmentPersistenceManager quizAssignmentPersistenceManager;
+    protected static QuizAssignmentManager quizAssignmentManager;
+    protected static QuizAttemptManager quizAttemptManager;
+    protected static IQuizAttemptPersistenceManager quizAttemptPersistenceManager;
+    protected static IQuizQuestionAttemptPersistenceManager quizQuestionAttemptPersistenceManager;
+    protected static QuizQuestionManager quizQuestionManager;
+
+    // Services
+    protected static AssignmentService assignmentService;
 
     protected class LoginResult {
         public RegisteredUserDTO user;
@@ -257,8 +285,22 @@ public abstract class IsaacIntegrationTest {
         PgTransactionManager pgTransactionManager = new PgTransactionManager(postgresSqlDb);
         eventBookingManager = new EventBookingManager(bookingPersistanceManager, emailManager, userAssociationManager, properties, groupManager, userAccountManager, pgTransactionManager);
         userBadgeManager = createNiceMock(UserBadgeManager.class);
+        replay(userBadgeManager);
         assignmentManager = new AssignmentManager(assignmentPersistenceManager, groupManager, new EmailService(emailManager, groupManager, userAccountManager), gameManager, properties);
         schoolListReader = createNiceMock(SchoolListReader.class);
+
+        quizManager = new QuizManager(properties, new ContentService(contentManager, "latest"), contentManager, new ContentSummarizerService(mapperFacade, new URIManager(properties)), contentMapper);
+        quizAssignmentPersistenceManager =  new PgQuizAssignmentPersistenceManager(postgresSqlDb, mapperFacade);
+        quizAssignmentManager = new QuizAssignmentManager(quizAssignmentPersistenceManager, new EmailService(emailManager, groupManager, userAccountManager), quizManager, groupManager, properties);
+        assignmentService = new AssignmentService(userAccountManager);
+        quizAttemptPersistenceManager = new PgQuizAttemptPersistenceManager(postgresSqlDb, mapperFacade);
+        quizAttemptManager = new QuizAttemptManager(quizAttemptPersistenceManager);
+        quizQuestionAttemptPersistenceManager = new PgQuizQuestionAttemptPersistenceManager(postgresSqlDb, contentMapper);
+        quizQuestionManager = new QuizQuestionManager(questionManager, contentMapper, quizQuestionAttemptPersistenceManager, quizManager, quizAttemptManager);
+
+        misuseMonitor = new InMemoryMisuseMonitor();
+        misuseMonitor.registerHandler(GroupManagerLookupMisuseHandler.class.getSimpleName(), new GroupManagerLookupMisuseHandler(emailManager, properties));
+        // todo: more handlers as required by different endpoints
 
         String someSegueAnonymousUserId = "9284723987anonymous83924923";
         httpSession = createNiceMock(HttpSession.class);
