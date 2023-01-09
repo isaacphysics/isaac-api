@@ -19,6 +19,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.MisuseStatisticDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * This interface provides a mechanism for monitoring and imposing limits on resource access.
@@ -104,11 +105,11 @@ public interface IMisuseMonitor {
     void resetMisuseCount(String agentIdentifier, String eventLabel);
 
     /**
-     * Allows us to get a summary of the misuse statistics for a given agent.
+     * Allows us to get a summary of the misuse statistics for the site.
      *
-     * @param agentIdentifier
-     *            - a unique identifier for the agent using the resource
-     * @return a map from events ids to a objects containing misuse stats for each event
+     * @param n - the number of entries to return per event label. The "top" n should be returned (those with the highest
+     *            misuse counts)
+     * @return a map from event label to a list of misuse stats (of length n) for that event
      */
-    List<MisuseStatisticDTO> getMisuseStatistics(String agentIdentifier);
+    Map<String, List<MisuseStatisticDTO>> getMisuseStatistics(long n);
 }

@@ -18,23 +18,29 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 import java.util.Date;
 
 public class MisuseStatisticDTO {
+    private String agentIdentifier;
     private String eventType;
     private Boolean isMisused;
+    private Boolean isOverSoftThreshold;
     private Date lastEventTimestamp;
     private Integer currentCounter;
-    private Integer softEventCountThreshold;
-    private Integer hardEventCountThreshold;
 
-
-    public MisuseStatisticDTO(final String eventType, final Boolean isMisused, final Date lastEventTimestamp,
-                              final Integer currentCounter, final Integer softEventCountThreshold,
-                              final Integer hardEventCountThreshold) {
+    public MisuseStatisticDTO(final String agentIdentifier, final String eventType, final Boolean isMisused,
+                              final Boolean isOverSoftThreshold, final Date lastEventTimestamp, final Integer currentCounter) {
+        this.agentIdentifier = agentIdentifier;
         this.eventType = eventType;
         this.isMisused = isMisused;
+        this.isOverSoftThreshold = isOverSoftThreshold;
         this.lastEventTimestamp = lastEventTimestamp;
         this.currentCounter = currentCounter;
-        this.softEventCountThreshold = softEventCountThreshold;
-        this.hardEventCountThreshold = hardEventCountThreshold;
+    }
+
+    public String getAgentIdentifier() {
+        return agentIdentifier;
+    }
+
+    public void setAgentIdentifier(final String agentIdentifier) {
+        this.agentIdentifier = agentIdentifier;
     }
 
     public String getEventType() {
@@ -53,6 +59,14 @@ public class MisuseStatisticDTO {
         this.isMisused = isMisused;
     }
 
+    public Boolean getIsOverSoftThreshold() {
+        return isOverSoftThreshold;
+    }
+
+    public void setIsOverSoftThreshold(final Boolean isOverSoftThreshold) {
+        this.isOverSoftThreshold = isOverSoftThreshold;
+    }
+
     public Date getLastEventTimestamp() {
         return lastEventTimestamp;
     }
@@ -67,21 +81,5 @@ public class MisuseStatisticDTO {
 
     public void setCurrentCounter(final Integer currentCounter) {
         this.currentCounter = currentCounter;
-    }
-
-    public Integer getSoftEventCountThreshold() {
-        return softEventCountThreshold;
-    }
-
-    public void setSoftEventCountThreshold(final Integer softEventCountThreshold) {
-        this.softEventCountThreshold = softEventCountThreshold;
-    }
-
-    public Integer getHardEventCountThreshold() {
-        return hardEventCountThreshold;
-    }
-
-    public void setHardEventCountThreshold(final Integer hardEventCountThreshold) {
-        this.hardEventCountThreshold = hardEventCountThreshold;
     }
 }

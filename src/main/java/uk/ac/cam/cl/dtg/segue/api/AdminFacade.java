@@ -33,6 +33,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.jboss.resteasy.annotations.Body;
 import org.jboss.resteasy.annotations.GZIP;
 import org.quartz.SchedulerException;
 import org.slf4j.Logger;
@@ -100,6 +101,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -1150,6 +1152,41 @@ public class AdminFacade extends AbstractSegueFacade {
         }
     }
 
+    /**
+     * This method will reset the misuse monitor for the specified event and agent identifier.
+     *
+     * @param request
+     *            - to help determine access rights.
+     * @param details
+     *            - a map containing: the misuse monitor eventLabel (i.e. what type of misuse monitor),
+     *              and the misuse monitor agentIdentifier (i.e. which user to reset the count for)
+     * @return Confirmation of success, or error message on incorrect role or incorrect details argument.
+     */
+    @POST
+    @Path("/reset_misuse_monitor")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Reset a misuse monitor counter to zero.")
+    public Response resetMisuseMonitor(@Context final HttpServletRequest request, final Map<String, String> details) {
+        try {
+            RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+            if (!isUserAnAdmin(userManager, user)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+            if (!details.containsKey("eventLabel") || !details.containsKey("agentIdentifier")) {
+                return SegueErrorResponse.getBadRequestResponse("Request body should contain the keys 'eventLabel' and 'agentIdentifier'.");
+            }
+            String agentIdentifier = details.get("agentIdentifier");
+            String eventLabel = details.get("eventLabel");
+            misuseMonitor.resetMisuseCount(agentIdentifier, eventLabel);
+            log.info(String.format("Admin user (%s) reset misuse monitor '%s' for agent id (%s)!", user.getEmail(),
+                    eventLabel, agentIdentifier));
+            return Response.ok().build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
+    }
+
     @POST
     @Path("/new_version_alert")
     @Produces(MediaType.APPLICATION_JSON)
@@ -1239,38 +1276,6 @@ public class AdminFacade extends AbstractSegueFacade {
     }
 
     /**
-     * This method will reset the misuse monitor for the specified event and agent identifier.
-     *
-     * @param request
-     *            - to help determine access rights.
-     * @param eventLabel
-     *            - the misuse monitor eventLabel, i.e. what type of misuse monitor
-     * @param agentIdentifier
-     *            - the misuse monitor agentIdentifier, i.e. which user to reset the count for
-     * @return Confirmation of success, or error message on incorrect role.
-     */
-    @POST
-    @Path("/reset_misuse_monitor/{event_label}/{agent_identifier}")
-    @Produces(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Reset a misuse monitor counter to zero.")
-    public Response resetMisuseMonitor(@Context final HttpServletRequest request,
-                                       @PathParam("event_label") final String eventLabel,
-                                       @PathParam("agent_identifier") final String agentIdentifier) {
-        try {
-            RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
-            if (!isUserAnAdmin(userManager, user)) {
-                return SegueErrorResponse.getIncorrectRoleResponse();
-            }
-            misuseMonitor.resetMisuseCount(agentIdentifier, eventLabel);
-            log.info(String.format("Admin user (%s) reset misuse monitor '%s' for user (%s)!", user.getEmail(),
-                    eventLabel, agentIdentifier));
-            return Response.ok().build();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        }
-    }
-
-    /**
      *  Manually trigger a sync for testing or debugging purposes. Minimal success or failure reporting.
      */
     @POST
@@ -1320,19 +1325,17 @@ public class AdminFacade extends AbstractSegueFacade {
     }
 
     @GET
-    @Path("/misuse_stats/{agent_identifier}")
+    @Path("/misuse_stats")
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Get the site misuse stats for a given user.")
-    public Response getUserMisuseStatistics(@Context final HttpServletRequest request,
-                                            @PathParam("agent_identifier") final String agentIdentifier) {
+    @Operation(summary = "Get a summary of the site misuse statistics.")
+    public Response getUserMisuseStatistics(@Context final HttpServletRequest request, @QueryParam("limit") final Long limit) {
+        long defaultLimit = 5;
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
             if (!isUserAnAdmin(userManager, user)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
-
-            return Response.ok(misuseMonitor.getMisuseStatistics(agentIdentifier)).build();
-
+            return Response.ok(misuseMonitor.getMisuseStatistics(Objects.requireNonNullElse(limit, defaultLimit))).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
