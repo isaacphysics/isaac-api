@@ -51,8 +51,8 @@ public class Mailer {
 	private final String smtpAddress;
 	private final String mailAddress;
 	private final String smtpPort;
-	private final String mailJetApiKey;
-	private final String mailJetApiSecret;
+	private final String smtpUsername;
+	private final String smtpPassword;
 	private final static ConcurrentMap<Integer, Session> sessionCache = new ConcurrentHashMap<>();
 
 	/**
@@ -63,19 +63,19 @@ public class Mailer {
 	 * @param mailAddress      The Envelope-From address of the sending account - used for
 	 *                         authentication sometimes, and will receive bounce emails.
 	 * @param smtpPort         The SMTP port.
-	 * @param mailJetApiKey    The Mailjet API key.
-	 * @param mailJetApiSecret The Mailjet API secret.
+	 * @param smtpUsername     The SMTP Username.
+	 * @param smtpPassword     The SMTP Password.
 	 */
 	public Mailer(final String smtpAddress,
                 final String mailAddress,
                 final String smtpPort,
-                final String mailJetApiKey,
-                final String mailJetApiSecret) {
+                final String smtpUsername,
+                final String smtpPassword) {
 		this.smtpAddress = smtpAddress;
 		this.mailAddress = mailAddress;
 		this.smtpPort = smtpPort;
-		this.mailJetApiKey = mailJetApiKey;
-		this.mailJetApiSecret = mailJetApiSecret;
+		this.smtpUsername = smtpUsername;
+		this.smtpPassword = smtpPassword;
 	}
 
     /**
@@ -206,27 +206,20 @@ public class Mailer {
       }
       p.put("mail.smtp.from", envelopeFrom);  // Used for Return-Path
       p.put("mail.from", fromAddress.getAddress()); // Should only affect Message-ID, since From overridden below
-
-      // Conditionally configure to use Mailjet SMTP relay
-      boolean useMailjet = smtpAddress.contains("mailjet");
-      if (useMailjet) {
-        p.put("mail.smtp.port", smtpPort);
-        p.put("mail.smtp.auth", "true");
-      }
+      p.put("mail.smtp.port", smtpPort);
+      p.put("mail.smtp.auth", "true");
       // Create the jakarta.mail.Session object needed to send the email.
       // These are expensive to create so cache them based on the properties
       // they are configured with (using fact that hashcodes are equal only if objects equal):
       Integer propertiesHash = p.hashCode();
       Session s = sessionCache.computeIfAbsent(propertiesHash, k -> {
         log.info(String.format("Creating new mail Session with properties: %s", p));
-        return useMailjet ?
-            Session.getInstance(p, new Authenticator() {
+        return Session.getInstance(p, new Authenticator() {
               @Override
               protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(mailJetApiKey, mailJetApiSecret);
+                return new PasswordAuthentication(smtpUsername, smtpPassword);
               }
-            })
-            : Session.getInstance(p);
+            });
       });
       // Create the message and set the recipients:
       Message msg = new MimeMessage(s);

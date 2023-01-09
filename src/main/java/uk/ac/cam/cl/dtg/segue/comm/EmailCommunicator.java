@@ -64,9 +64,9 @@ public class EmailCommunicator implements ICommunicator<EmailCommunicationMessag
 		this.mailName = mailName;
 
 		// Construct a new instance of the mailer object
-        if (mailer == null) {
-			mailer = new Mailer(smtpAddress, smtpPort, smtpUsername, smtpPassword, defaultFromAddress);
-        }
+		if (mailer == null) {
+			mailer = new Mailer(smtpAddress, defaultFromAddress, smtpPort, smtpUsername, smtpPassword);
+		}
 	}
 
     /**
