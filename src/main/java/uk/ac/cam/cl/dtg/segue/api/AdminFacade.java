@@ -33,7 +33,6 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.jboss.resteasy.annotations.Body;
 import org.jboss.resteasy.annotations.GZIP;
 import org.quartz.SchedulerException;
 import org.slf4j.Logger;
@@ -1329,13 +1328,12 @@ public class AdminFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get a summary of the site misuse statistics.")
     public Response getUserMisuseStatistics(@Context final HttpServletRequest request, @QueryParam("limit") final Long limit) {
-        long defaultLimit = 5;
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
             if (!isUserAnAdmin(userManager, user)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
-            return Response.ok(misuseMonitor.getMisuseStatistics(Objects.requireNonNullElse(limit, defaultLimit))).build();
+            return Response.ok(misuseMonitor.getMisuseStatistics(Objects.requireNonNullElse(limit, DEFAULT_MISUSE_STATISTICS_LIMIT))).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
