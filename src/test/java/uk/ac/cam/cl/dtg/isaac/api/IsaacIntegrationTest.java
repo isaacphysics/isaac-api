@@ -220,7 +220,7 @@ public abstract class IsaacIntegrationTest {
         Map<String, ISegueHashingAlgorithm> algorithms = new HashMap<>(Map.of("SeguePBKDF2v3", new SeguePBKDF2v3(), "SegueSCryptv1", new SegueSCryptv1()));
         providersToRegister.put(AuthenticationProvider.SEGUE, new SegueLocalAuthenticator(pgUsers, passwordDataManager, properties, algorithms, algorithms.get("SegueSCryptv1")));
 
-        EmailCommunicator communicator = new EmailCommunicator("localhost", "default@localhost", null, null, null, "Howdy!");
+        EmailCommunicator communicator = new EmailCommunicator("localhost", "587", null, null, "default@localhost", "Howdy!");
         AbstractUserPreferenceManager userPreferenceManager = new PgUserPreferenceManager(postgresSqlDb);
 
         Git git = createNiceMock(Git.class);
