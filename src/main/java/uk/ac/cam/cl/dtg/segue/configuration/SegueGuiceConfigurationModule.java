@@ -81,7 +81,25 @@ import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.StubExternalAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
-import uk.ac.cam.cl.dtg.segue.api.monitors.*;
+import uk.ac.cam.cl.dtg.segue.api.monitors.AnonQuestionAttemptMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationRequestMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.GroupManagerLookupMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.IMetricsExporter;
+import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
+import uk.ac.cam.cl.dtg.segue.api.monitors.IPQuestionAttemptMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.InMemoryMisuseMonitor;
+import uk.ac.cam.cl.dtg.segue.api.monitors.LogEventMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetByEmailMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetByIPMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.PrometheusMetricsExporter;
+import uk.ac.cam.cl.dtg.segue.api.monitors.QuestionAttemptMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.RegistrationMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.SendEmailMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.TeacherPasswordResetMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.TokenOwnerLookupMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.UserSearchMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
@@ -146,10 +164,25 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_LINUX_CONFIG_LOCATION;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.EMAIL_SIGNATURE;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_PRE_POST_EMAILS;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType.DEV;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILJET_API_KEY;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILJET_API_SECRET;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILJET_EVENTS_LIST_ID;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILJET_NEWS_LIST_ID;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_APP_ENVIRONMENT;
 
 /**
  * This class is responsible for injecting configuration values for persistence related classes.
@@ -262,11 +295,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         this.bindConstantToProperty(Constants.MAILER_SMTP_SERVER, globalProperties);
         this.bindConstantToProperty(Constants.MAILER_SMTP_USERNAME, globalProperties);
         this.bindConstantToProperty(Constants.MAILER_SMTP_PASSWORD, globalProperties);
+        this.bindConstantToProperty(Constants.MAILER_SMTP_PORT, globalProperties);
         this.bindConstantToProperty(Constants.MAIL_FROM_ADDRESS, globalProperties);
         this.bindConstantToProperty(Constants.MAIL_NAME, globalProperties);
-        this.bindConstantToProperty(MAILJET_API_KEY, globalProperties);
-        this.bindConstantToProperty(MAILJET_API_SECRET, globalProperties);
-        this.bindConstantToProperty(MAILER_SMTP_PORT, globalProperties);
 
         this.bindConstantToProperty(Constants.LOGGING_ENABLED, globalProperties);
 
