@@ -220,6 +220,8 @@ public class IsaacSearchInstructionBuilder {
      * @return A BooleanMatchInstruction reflecting the builder's settings.
      */
     public BooleanInstruction build() {
+        masterInstruction.setMinimumShouldMatch(1);
+
         List<String> contentTypes = Optional.ofNullable(this.includedContentTypes)
                 .orElse(Collections.emptySet())
                 .stream()
@@ -255,8 +257,8 @@ public class IsaacSearchInstructionBuilder {
                 contentInstruction.setBoost(PRIORITY_CONTENT_BOOST);
             }
 
-            // If there are no "should"s, having a 'minimum should match' > 0 will give us no results. Otherwise, it is
-            // desirable.
+            // For a particular content type's sub-query, if there are no "should"s, having a 'minimum should match'
+            // > 0 will give us no results. Otherwise, it is desirable.
             if (!contentInstruction.getShoulds().isEmpty()) {
                 contentInstruction.setMinimumShouldMatch(1);
             }
@@ -288,9 +290,12 @@ public class IsaacSearchInstructionBuilder {
         for (SearchInField searchInField : searchesInFields) {
 
             // Special fields
-            if (Objects.equals(contentType, EVENT_TYPE) &&
-                    Arrays.stream(Constants.ADDRESS_PATH_FIELDNAME).collect(Collectors.toList()).contains(searchInField.getField())) {
+            if (Arrays.stream(Constants.ADDRESS_PATH_FIELDNAME).collect(Collectors.toList()).contains(searchInField.getField())) {
                 // Address fields
+                // Non-event content types ignore this
+                if (!Objects.equals(contentType, EVENT_TYPE)) {
+                    continue;
+                }
                 // If we're searching any "address" fields, search all of them
                 String nestedFieldConnector = searchProvider.getNestedFieldConnector();
                 String addressPath = String.join(nestedFieldConnector, Constants.ADDRESS_PATH_FIELDNAME);
