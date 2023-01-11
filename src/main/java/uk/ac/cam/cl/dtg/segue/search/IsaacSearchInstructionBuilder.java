@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -219,10 +220,6 @@ public class IsaacSearchInstructionBuilder {
      * @return A BooleanMatchInstruction reflecting the builder's settings.
      */
     public BooleanInstruction build() {
-        // at least one content-type-wise match is required from the query.
-        // todo: check what the old ES JSON object looked like for global search, and if this applied a the top level
-        this.masterInstruction.setMinimumShouldMatch(1);
-
         List<String> contentTypes = Optional.ofNullable(this.includedContentTypes)
                 .orElse(Collections.emptySet())
                 .stream()
@@ -252,10 +249,16 @@ public class IsaacSearchInstructionBuilder {
             }
 
             // Apply instructions to search for specific terms in specific fields
-            this.addSearchesInFieldsToInstruction(contentInstruction, searchesInFields);
+            this.addSearchesInFieldsToInstruction(contentInstruction, searchesInFields, contentType);
 
             if (this.priorityIncludedContentTypes.contains(contentType)) {
                 contentInstruction.setBoost(PRIORITY_CONTENT_BOOST);
+            }
+
+            // If there are no "should"s, having a 'minimum should match' > 0 will give us no results. Otherwise, it is
+            // desirable.
+            if (!contentInstruction.getShoulds().isEmpty()) {
+                contentInstruction.setMinimumShouldMatch(1);
             }
 
             this.masterInstruction.should(contentInstruction);
@@ -264,20 +267,29 @@ public class IsaacSearchInstructionBuilder {
     }
 
     /**
-     * Augments {@code instructions} with the field search instructions specified via {@code searchInField()} and friends.
+     * Augments {@code instruction} with the field search instructions specified via {@code searchInField()} and friends.
      *
-     * @param instructions A BooleanMatchInstruction for a particular content type to augment with the field-search instructions.
+     *
+     * @param instruction A BooleanMatchInstruction for a particular content type to augment with the field-search instructions.
      * @param searchesInFields A list of {@code SearchInField}s encapsulating fields and terms to search for, as well as
      *                         the strategy and priority to use for each.
+     * @param contentType The content type {@code instruction} relates to, so we can decide how/whether to process certain
+     *                    field searches.
+     *
+     *                    (todo: Consider replacing with content-type-specific implementations of this method, that process
+     *                    only fields relevant to the content type. Alternatively, this class could provide
+     *                    content-type-specific search builders to clients.)
      */
-    private void addSearchesInFieldsToInstruction(final BooleanInstruction instructions, final List<SearchInField> searchesInFields) {
+    private void addSearchesInFieldsToInstruction(final BooleanInstruction instruction, final List<SearchInField> searchesInFields,
+                                                  final String contentType) {
 
         Map<String, NestedInstruction> nestedQueriesByPath = new HashMap<>();
 
         for (SearchInField searchInField : searchesInFields) {
 
             // Special fields
-            if (Arrays.stream(Constants.ADDRESS_PATH_FIELDNAME).collect(Collectors.toList()).contains(searchInField.getField())) {
+            if (Objects.equals(contentType, EVENT_TYPE) &&
+                    Arrays.stream(Constants.ADDRESS_PATH_FIELDNAME).collect(Collectors.toList()).contains(searchInField.getField())) {
                 // Address fields
                 // If we're searching any "address" fields, search all of them
                 String nestedFieldConnector = searchProvider.getNestedFieldConnector();
@@ -286,9 +298,9 @@ public class IsaacSearchInstructionBuilder {
                 for (String addressField : Constants.ADDRESS_FIELDNAMES) {
                     for (String term : searchInField.getTerms()) {
                         String field = addressPath + nestedFieldConnector + addressField;
-                        instructions.should(new MatchInstruction(field, term, EVENT_ADDRESS_FIELD_BOOST,
+                        instruction.should(new MatchInstruction(field, term, EVENT_ADDRESS_FIELD_BOOST,
                                 false));
-                        instructions.should(new MatchInstruction(field, term, EVENT_ADDRESS_FIELD_BOOST_FUZZY,
+                        instruction.should(new MatchInstruction(field, term, EVENT_ADDRESS_FIELD_BOOST_FUZZY,
                                 true));
                     }
                 }
@@ -305,24 +317,23 @@ public class IsaacSearchInstructionBuilder {
             } else {
                 // Generic fields
                 for (String term : searchInField.getTerms()) {
-                    // todo: the Strategy pattern may be appropriate here as more strategies are added
                     if (searchInField.getStrategy() == Strategy.DEFAULT) {
                         if (searchInField.getPriority() == Priority.HIGH) {
-                            instructions.should(new MatchInstruction(searchInField.getField(), term, HIGH_PRIORITY_FIELD_BOOST, false));
-                            instructions.should(new MatchInstruction(searchInField.getField(), term, HIGH_PRIORITY_FIELD_BOOST_FUZZY, true));
+                            instruction.should(new MatchInstruction(searchInField.getField(), term, HIGH_PRIORITY_FIELD_BOOST, false));
+                            instruction.should(new MatchInstruction(searchInField.getField(), term, HIGH_PRIORITY_FIELD_BOOST_FUZZY, true));
                         } else if (searchInField.getPriority() == Priority.NORMAL) {
-                            instructions.should(new MatchInstruction(searchInField.getField(), term, FIELD_BOOST, false));
-                            instructions.should(new MatchInstruction(searchInField.getField(), term, FIELD_BOOST_FUZZY, true));
+                            instruction.should(new MatchInstruction(searchInField.getField(), term, FIELD_BOOST, false));
+                            instruction.should(new MatchInstruction(searchInField.getField(), term, FIELD_BOOST_FUZZY, true));
                         }
                     } else if (searchInField.getStrategy() == Strategy.FUZZY) {
                         if (searchInField.getPriority() == Priority.HIGH) {
-                            instructions.should(new MatchInstruction(searchInField.getField(), term, HIGH_PRIORITY_WILDCARD_FIELD_BOOST, true));
-                            instructions.should(new WildcardInstruction(searchInField.getField(), "*" + term + "*", HIGH_PRIORITY_WILDCARD_FIELD_BOOST));
+                            instruction.should(new MatchInstruction(searchInField.getField(), term, HIGH_PRIORITY_WILDCARD_FIELD_BOOST, true));
+                            instruction.should(new WildcardInstruction(searchInField.getField(), "*" + term + "*", HIGH_PRIORITY_WILDCARD_FIELD_BOOST));
                         } else if (searchInField.getPriority() == Priority.NORMAL) {
-                            instructions.should(new MatchInstruction(searchInField.getField(), term, WILDCARD_FIELD_BOOST, true));
-                            instructions.should(new WildcardInstruction(searchInField.getField(), "*" + term + "*", WILDCARD_FIELD_BOOST));
+                            instruction.should(new MatchInstruction(searchInField.getField(), term, WILDCARD_FIELD_BOOST, true));
+                            instruction.should(new WildcardInstruction(searchInField.getField(), "*" + term + "*", WILDCARD_FIELD_BOOST));
                         }
-                        instructions.should(new MultiMatchInstruction(searchInField.getField(), searchInField.getTerms().toArray(String[]::new), 2L));
+                        instruction.should(new MultiMatchInstruction(searchInField.getField(), searchInField.getTerms().toArray(String[]::new), 2L));
                     }
                 }
             }
@@ -330,7 +341,7 @@ public class IsaacSearchInstructionBuilder {
 
         // Apply grouped nested queries
         for (Map.Entry<String, NestedInstruction> entry : nestedQueriesByPath.entrySet()) {
-            instructions.must(entry.getValue());
+            instruction.must(entry.getValue());
         }
     }
 }
