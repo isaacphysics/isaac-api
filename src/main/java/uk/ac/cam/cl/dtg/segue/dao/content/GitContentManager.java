@@ -39,7 +39,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
-import uk.ac.cam.cl.dtg.segue.search.BooleanMatchInstruction;
+import uk.ac.cam.cl.dtg.segue.search.BooleanInstruction;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.IsaacSearchInstructionBuilder;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
@@ -338,7 +338,7 @@ public class GitContentManager {
             searchTerms = Arrays.stream(searchString.split(" ")).collect(Collectors.toSet());
         }
 
-        BooleanMatchInstruction matchInstruction = new IsaacSearchInstructionBuilder(searchProvider,
+        BooleanInstruction matchInstruction = new IsaacSearchInstructionBuilder(searchProvider,
                 this.showOnlyPublishedContent,
                 this.hideRegressionTestContent,
                 !showNoFilterContent)
@@ -374,7 +374,7 @@ public class GitContentManager {
             final boolean showNoFilterContent, final Integer startIndex, final Integer limit
     ) throws  ContentManagerException {
 
-        BooleanMatchInstruction matchInstruction = new IsaacSearchInstructionBuilder(searchProvider,
+        BooleanInstruction matchInstruction = new IsaacSearchInstructionBuilder(searchProvider,
                 this.showOnlyPublishedContent,
                 this.hideRegressionTestContent,
                 !showNoFilterContent)

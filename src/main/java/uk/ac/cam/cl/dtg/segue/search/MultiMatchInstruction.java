@@ -1,6 +1,6 @@
 package uk.ac.cam.cl.dtg.segue.search;
 
-public class MultiMatchInstruction extends AbstractMatchInstruction {
+public class MultiMatchInstruction extends AbstractInstruction {
     private Long boost;
     private String field;
     private String[] value;

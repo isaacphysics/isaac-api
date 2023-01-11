@@ -164,7 +164,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 
     public ResultsWrapper<String> nestedMatchSearch(
             final String indexBase, final String indexType, final Integer startIndex, final Integer limit,
-            @NotNull final BooleanMatchInstruction matchInstruction
+            @NotNull final BooleanInstruction matchInstruction
     ) throws SegueSearchException {
         if (null == indexBase || null == indexType) {
             log.warn("A required field is missing. Unable to execute search.");
@@ -172,7 +172,6 @@ public class ElasticSearchProvider implements ISearchProvider {
         }
 
         BoolQueryBuilder query = (BoolQueryBuilder) this.processMatchInstructions(matchInstruction);
-        query.minimumShouldMatch(1);
         return this.executeBasicQuery(indexBase, indexType, query, startIndex, limit);
     }
 
@@ -652,38 +651,35 @@ public class ElasticSearchProvider implements ISearchProvider {
      * @return a {@code QueryBuilder} reflecting the instructions in {@code matchInstruction}.
      * @throws SegueSearchException
      */
-    private QueryBuilder processMatchInstructions(final AbstractMatchInstruction matchInstruction)
+    private QueryBuilder processMatchInstructions(final AbstractInstruction matchInstruction)
             throws SegueSearchException {
-        if (matchInstruction instanceof BooleanMatchInstruction) {
-            BooleanMatchInstruction booleanMatch = (BooleanMatchInstruction) matchInstruction;
+        if (matchInstruction instanceof BooleanInstruction) {
+            BooleanInstruction booleanMatch = (BooleanInstruction) matchInstruction;
             BoolQueryBuilder query = QueryBuilders.boolQuery();
-            for (AbstractMatchInstruction should : booleanMatch.getShoulds()) {
+            for (AbstractInstruction should : booleanMatch.getShoulds()) {
                 query.should(processMatchInstructions(should));
             }
-            for (AbstractMatchInstruction must : booleanMatch.getMusts()) {
+            for (AbstractInstruction must : booleanMatch.getMusts()) {
                 query.must(processMatchInstructions(must));
             }
-            for (AbstractMatchInstruction mustNot : booleanMatch.getMustNots()) {
+            for (AbstractInstruction mustNot : booleanMatch.getMustNots()) {
                 query.mustNot(processMatchInstructions(mustNot));
             }
-            query.minimumShouldMatch(booleanMatch.getMinimumShouldMatch());
             if (booleanMatch.getBoost() != null) {
                 query.boost(booleanMatch.getBoost());
             }
+            query.minimumShouldMatch(booleanMatch.getMinimumShouldMatch());
             return query;
-        } else if (matchInstruction instanceof ShouldMatchInstruction) {
-            ShouldMatchInstruction shouldMatch = (ShouldMatchInstruction) matchInstruction;
+        } else if (matchInstruction instanceof MatchInstruction) {
+            MatchInstruction shouldMatch = (MatchInstruction) matchInstruction;
             MatchQueryBuilder matchQuery = QueryBuilders
                     .matchQuery(shouldMatch.getField(), shouldMatch.getValue()).boost(shouldMatch.getBoost());
             if (shouldMatch.getFuzzy()) {
                 matchQuery.fuzziness(Fuzziness.AUTO);
             }
             return matchQuery;
-        } else if (matchInstruction instanceof MustMatchInstruction) {
-            MustMatchInstruction mustMatch = (MustMatchInstruction) matchInstruction;
-            return QueryBuilders.matchQuery(mustMatch.getField(), mustMatch.getValue());
-        } else if (matchInstruction instanceof RangeMatchInstruction) {
-            RangeMatchInstruction rangeMatch = (RangeMatchInstruction) matchInstruction;
+        } else if (matchInstruction instanceof RangeInstruction) {
+            RangeInstruction rangeMatch = (RangeInstruction) matchInstruction;
             RangeQueryBuilder rangeQuery = QueryBuilders.rangeQuery(rangeMatch.getField()).boost(rangeMatch.getBoost());
             if (rangeMatch.getGreaterThan() != null) {
                 rangeQuery.gt(rangeMatch.getGreaterThan());
@@ -698,17 +694,19 @@ public class ElasticSearchProvider implements ISearchProvider {
                 rangeQuery.gt(rangeMatch.getLessThan());
             }
             return rangeQuery;
-        } else if (matchInstruction instanceof NestedMatchInstruction) {
-            BoolQueryBuilder nestedMatchQuery = QueryBuilders.boolQuery();
-            NestedMatchInstruction nestedMatch = (NestedMatchInstruction) matchInstruction;
-            for (AbstractMatchInstruction must : nestedMatch.getMusts()) {
-                MustMatchInstruction mustMatch = (MustMatchInstruction) must;
-                nestedMatchQuery.must(QueryBuilders.nestedQuery(mustMatch.getField(), processMatchInstructions(must),
-                        ScoreMode.Total));
+        } else if (matchInstruction instanceof NestedInstruction) {
+            BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+            boolQuery.minimumShouldMatch(1);
+            NestedInstruction nestedMatch = (NestedInstruction) matchInstruction;
+            for (AbstractInstruction must : nestedMatch.getMusts()) {
+                boolQuery.must(processMatchInstructions(must));
             }
-            return nestedMatchQuery;
-        } else if (matchInstruction instanceof WildcardMatchInstruction) {
-            WildcardMatchInstruction wildcardMatch = (WildcardMatchInstruction) matchInstruction;
+            for (AbstractInstruction should : nestedMatch.getShoulds()) {
+                boolQuery.should(processMatchInstructions(should));
+            }
+            return QueryBuilders.nestedQuery(nestedMatch.getPath(), boolQuery, ScoreMode.Total);
+        } else if (matchInstruction instanceof WildcardInstruction) {
+            WildcardInstruction wildcardMatch = (WildcardInstruction) matchInstruction;
             return QueryBuilders.wildcardQuery(wildcardMatch.getField(), wildcardMatch.getValue()).boost(wildcardMatch.getBoost());
         } else if (matchInstruction instanceof MultiMatchInstruction) {
             MultiMatchInstruction multiMatchInstruction = (MultiMatchInstruction) matchInstruction;

@@ -70,7 +70,7 @@ public class IsaacSearchInstructionBuilder {
         FUZZY
     }
 
-    private final BooleanMatchInstruction masterInstruction;
+    private final BooleanInstruction masterInstruction;
 
     public IsaacSearchInstructionBuilder(final ISearchProvider searchProvider, final boolean includeOnlyPublishedContent,
                                          final boolean excludeRegressionTestContent, final boolean excludeNofilterContent) {
@@ -88,7 +88,7 @@ public class IsaacSearchInstructionBuilder {
         this.excludeNofilterContent = excludeNofilterContent;
         this.includePastEvents = false;
 
-        this.masterInstruction = this.buildBaseSearchQuery(new BooleanMatchInstruction());
+        this.masterInstruction = this.buildBaseSearchQuery(new BooleanInstruction());
     }
 
     /**
@@ -99,24 +99,24 @@ public class IsaacSearchInstructionBuilder {
      * @param instruction The existing instruction to augment with these base instructions.
      * @return The augmented instruction.
      */
-    public BooleanMatchInstruction buildBaseSearchQuery(final BooleanMatchInstruction instruction) {
+    public BooleanInstruction buildBaseSearchQuery(final BooleanInstruction instruction) {
         // Exclude unpublished content (based on config)
         if (this.includeOnlyPublishedContent) {
-            instruction.mustNot(new MustMatchInstruction(Constants.PUBLISHED_FIELDNAME, "false"));
+            instruction.mustNot(new MatchInstruction(Constants.PUBLISHED_FIELDNAME, "false"));
         }
 
         // Exclude regression test content (based on config)
         if (this.excludeRegressionTestContent) {
-            instruction.mustNot(new MustMatchInstruction(Constants.TAGS_FIELDNAME, "false"));
+            instruction.mustNot(new MatchInstruction(Constants.TAGS_FIELDNAME, "false"));
         }
 
         // Exclude "no-filter" content (based on user role)
         if (this.excludeNofilterContent) {
-            instruction.mustNot(new MustMatchInstruction(Constants.TAGS_FIELDNAME, HIDE_FROM_FILTER_TAG));
+            instruction.mustNot(new MatchInstruction(Constants.TAGS_FIELDNAME, HIDE_FROM_FILTER_TAG));
         }
 
         // Exclude deprecated content
-        instruction.mustNot(new MustMatchInstruction(Constants.DEPRECATED_FIELDNAME, "true"));
+        instruction.mustNot(new MatchInstruction(Constants.DEPRECATED_FIELDNAME, "true"));
 
         return instruction;
     }
@@ -218,8 +218,10 @@ public class IsaacSearchInstructionBuilder {
      *
      * @return A BooleanMatchInstruction reflecting the builder's settings.
      */
-    public BooleanMatchInstruction build() {
-        int minimumMatchInstructions = 1;
+    public BooleanInstruction build() {
+        // at least one content-type-wise match is required from the query.
+        // todo: check what the old ES JSON object looked like for global search, and if this applied a the top level
+        this.masterInstruction.setMinimumShouldMatch(1);
 
         List<String> contentTypes = Optional.ofNullable(this.includedContentTypes)
                 .orElse(Collections.emptySet())
@@ -232,27 +234,25 @@ public class IsaacSearchInstructionBuilder {
         }
 
         for (String contentType : contentTypes) {
-            BooleanMatchInstruction contentInstruction = new BooleanMatchInstruction();
+            BooleanInstruction contentInstruction = new BooleanInstruction();
 
             // Add content type matching instruction
-            contentInstruction.must(new MustMatchInstruction(Constants.TYPE_FIELDNAME, contentType));
+            contentInstruction.must(new MatchInstruction(Constants.TYPE_FIELDNAME, contentType));
 
             // Add matching instruction for generic pages only if they are specifically tagged
             if (contentType.equals(PAGE_TYPE)) {
-                contentInstruction.must(new MustMatchInstruction(Constants.TAGS_FIELDNAME, SEARCHABLE_TAG));
+                contentInstruction.must(new MatchInstruction(Constants.TAGS_FIELDNAME, SEARCHABLE_TAG));
             }
 
             // Optionally add instruction to match only events that have not yet taken place
             if (contentType.equals(EVENT_TYPE) && !includePastEvents) {
                 LocalDate today = LocalDate.now();
                 long now = today.atStartOfDay(ZoneId.systemDefault()).toEpochSecond() * Constants.EVENT_DATE_EPOCH_MULTIPLIER;
-                contentInstruction.must(new RangeMatchInstruction<Long>(Constants.DATE_FIELDNAME).greaterThanOrEqual(now));
+                contentInstruction.must(new RangeInstruction<Long>(Constants.DATE_FIELDNAME).greaterThanOrEqual(now));
             }
 
             // Apply instructions to search for specific terms in specific fields
             this.addSearchesInFieldsToInstruction(contentInstruction, searchesInFields);
-
-            contentInstruction.setMinimumShouldMatch(minimumMatchInstructions);
 
             if (this.priorityIncludedContentTypes.contains(contentType)) {
                 contentInstruction.setBoost(PRIORITY_CONTENT_BOOST);
@@ -266,13 +266,13 @@ public class IsaacSearchInstructionBuilder {
     /**
      * Augments {@code instructions} with the field search instructions specified via {@code searchInField()} and friends.
      *
-     * @param instructions The master BooleanMatchInstruction to augment with the field-search instructions.
+     * @param instructions A BooleanMatchInstruction for a particular content type to augment with the field-search instructions.
      * @param searchesInFields A list of {@code SearchInField}s encapsulating fields and terms to search for, as well as
      *                         the strategy and priority to use for each.
      */
-    private void addSearchesInFieldsToInstruction(final BooleanMatchInstruction instructions, final List<SearchInField> searchesInFields) {
+    private void addSearchesInFieldsToInstruction(final BooleanInstruction instructions, final List<SearchInField> searchesInFields) {
 
-        Map<String, NestedMatchInstruction> nestedQueriesByPath = new HashMap<>();
+        Map<String, NestedInstruction> nestedQueriesByPath = new HashMap<>();
 
         for (SearchInField searchInField : searchesInFields) {
 
@@ -286,9 +286,9 @@ public class IsaacSearchInstructionBuilder {
                 for (String addressField : Constants.ADDRESS_FIELDNAMES) {
                     for (String term : searchInField.getTerms()) {
                         String field = addressPath + nestedFieldConnector + addressField;
-                        instructions.should(new ShouldMatchInstruction(field, term, EVENT_ADDRESS_FIELD_BOOST,
+                        instructions.should(new MatchInstruction(field, term, EVENT_ADDRESS_FIELD_BOOST,
                                 false));
-                        instructions.should(new ShouldMatchInstruction(field, term, EVENT_ADDRESS_FIELD_BOOST_FUZZY,
+                        instructions.should(new MatchInstruction(field, term, EVENT_ADDRESS_FIELD_BOOST_FUZZY,
                                 true));
                     }
                 }
@@ -299,8 +299,8 @@ public class IsaacSearchInstructionBuilder {
                 // Ensure nested field queries are grouped together
                 for (String term : searchInField.getTerms()) {
                     String nestedPath = searchInField.getField().split("\\.")[0];
-                    nestedQueriesByPath.putIfAbsent(nestedPath, new NestedMatchInstruction());
-                    nestedQueriesByPath.get(nestedPath).must(new MustMatchInstruction(searchInField.getField(), term));
+                    nestedQueriesByPath.putIfAbsent(nestedPath, new NestedInstruction(nestedPath));
+                    nestedQueriesByPath.get(nestedPath).should(new MatchInstruction(searchInField.getField(), term));
                 }
             } else {
                 // Generic fields
@@ -308,19 +308,19 @@ public class IsaacSearchInstructionBuilder {
                     // todo: the Strategy pattern may be appropriate here as more strategies are added
                     if (searchInField.getStrategy() == Strategy.DEFAULT) {
                         if (searchInField.getPriority() == Priority.HIGH) {
-                            instructions.should(new ShouldMatchInstruction(searchInField.getField(), term, HIGH_PRIORITY_FIELD_BOOST, false));
-                            instructions.should(new ShouldMatchInstruction(searchInField.getField(), term, HIGH_PRIORITY_FIELD_BOOST_FUZZY, true));
+                            instructions.should(new MatchInstruction(searchInField.getField(), term, HIGH_PRIORITY_FIELD_BOOST, false));
+                            instructions.should(new MatchInstruction(searchInField.getField(), term, HIGH_PRIORITY_FIELD_BOOST_FUZZY, true));
                         } else if (searchInField.getPriority() == Priority.NORMAL) {
-                            instructions.should(new ShouldMatchInstruction(searchInField.getField(), term, FIELD_BOOST, false));
-                            instructions.should(new ShouldMatchInstruction(searchInField.getField(), term, FIELD_BOOST_FUZZY, true));
+                            instructions.should(new MatchInstruction(searchInField.getField(), term, FIELD_BOOST, false));
+                            instructions.should(new MatchInstruction(searchInField.getField(), term, FIELD_BOOST_FUZZY, true));
                         }
                     } else if (searchInField.getStrategy() == Strategy.FUZZY) {
                         if (searchInField.getPriority() == Priority.HIGH) {
-                            instructions.should(new ShouldMatchInstruction(searchInField.getField(), term, HIGH_PRIORITY_WILDCARD_FIELD_BOOST, true));
-                            instructions.should(new WildcardMatchInstruction(searchInField.getField(), "*" + term + "*", HIGH_PRIORITY_WILDCARD_FIELD_BOOST));
+                            instructions.should(new MatchInstruction(searchInField.getField(), term, HIGH_PRIORITY_WILDCARD_FIELD_BOOST, true));
+                            instructions.should(new WildcardInstruction(searchInField.getField(), "*" + term + "*", HIGH_PRIORITY_WILDCARD_FIELD_BOOST));
                         } else if (searchInField.getPriority() == Priority.NORMAL) {
-                            instructions.should(new ShouldMatchInstruction(searchInField.getField(), term, WILDCARD_FIELD_BOOST, true));
-                            instructions.should(new WildcardMatchInstruction(searchInField.getField(), "*" + term + "*", WILDCARD_FIELD_BOOST));
+                            instructions.should(new MatchInstruction(searchInField.getField(), term, WILDCARD_FIELD_BOOST, true));
+                            instructions.should(new WildcardInstruction(searchInField.getField(), "*" + term + "*", WILDCARD_FIELD_BOOST));
                         }
                         instructions.should(new MultiMatchInstruction(searchInField.getField(), searchInField.getTerms().toArray(String[]::new), 2L));
                     }
@@ -329,7 +329,7 @@ public class IsaacSearchInstructionBuilder {
         }
 
         // Apply grouped nested queries
-        for (Map.Entry<String, NestedMatchInstruction> entry : nestedQueriesByPath.entrySet()) {
+        for (Map.Entry<String, NestedInstruction> entry : nestedQueriesByPath.entrySet()) {
             instructions.must(entry.getValue());
         }
     }

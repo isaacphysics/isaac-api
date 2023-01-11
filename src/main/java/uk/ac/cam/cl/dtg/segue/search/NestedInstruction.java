@@ -20,14 +20,32 @@ import com.google.api.client.util.Lists;
 
 import java.util.List;
 
-public class NestedMatchInstruction extends AbstractMatchInstruction {
-    private List<AbstractMatchInstruction> musts = Lists.newArrayList();
+public class NestedInstruction extends AbstractInstruction {
+    private List<AbstractInstruction> musts = Lists.newArrayList();
+    private List<AbstractInstruction> shoulds = Lists.newArrayList();
+    private String path;
 
-    public List<AbstractMatchInstruction> getMusts() {
+    public NestedInstruction(String path) {
+        this.path = path;
+    }
+
+    public List<AbstractInstruction> getMusts() {
         return musts;
     }
-    public void must(final AbstractMatchInstruction abstractMatchInstruction) {
-        musts.add(abstractMatchInstruction);
+
+    public void must(final AbstractInstruction abstractInstruction) {
+        musts.add(abstractInstruction);
     }
 
+    public List<AbstractInstruction> getShoulds() {
+        return shoulds;
+    }
+
+    public void should(final AbstractInstruction abstractInstruction) {
+        shoulds.add(abstractInstruction);
+    }
+
+    public String getPath() {
+        return path;
+    }
 }
