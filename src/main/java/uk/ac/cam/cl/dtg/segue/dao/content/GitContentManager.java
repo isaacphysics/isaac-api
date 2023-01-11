@@ -42,6 +42,8 @@ import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.BooleanInstruction;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.IsaacSearchInstructionBuilder;
+import uk.ac.cam.cl.dtg.segue.search.IsaacSearchInstructionBuilder.Priority;
+import uk.ac.cam.cl.dtg.segue.search.IsaacSearchInstructionBuilder.Strategy;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 import uk.ac.cam.cl.dtg.segue.search.SimpleExclusionInstruction;
 import uk.ac.cam.cl.dtg.segue.search.SimpleFilterInstruction;
@@ -349,11 +351,11 @@ public class GitContentManager {
                 .searchInField(Constants.EXAM_BOARD_FIELDNAME, examBoards)
                 .searchInField(Constants.ID_FIELDNAME, ids)
                 .searchInField(Constants.TAGS_FIELDNAME, tags)
-                .searchInField(Constants.VALUE_FIELDNAME, searchTerms, IsaacSearchInstructionBuilder.Strategy.FUZZY)
-                .searchInField(Constants.CHILDREN_FIELDNAME, searchTerms, IsaacSearchInstructionBuilder.Strategy.FUZZY)
-                .searchInField(Constants.ID_FIELDNAME, searchTerms, IsaacSearchInstructionBuilder.Priority.HIGH, IsaacSearchInstructionBuilder.Strategy.FUZZY)
-                .searchInField(Constants.TITLE_FIELDNAME, searchTerms, IsaacSearchInstructionBuilder.Priority.HIGH, IsaacSearchInstructionBuilder.Strategy.FUZZY)
-                .searchInField(Constants.TAGS_FIELDNAME, searchTerms, IsaacSearchInstructionBuilder.Priority.HIGH, IsaacSearchInstructionBuilder.Strategy.FUZZY)
+                .searchInField(Constants.VALUE_FIELDNAME, searchTerms, Strategy.FUZZY)
+                .searchInField(Constants.CHILDREN_FIELDNAME, searchTerms, Strategy.FUZZY)
+                .searchInField(Constants.ID_FIELDNAME, searchTerms, Priority.HIGH, Strategy.FUZZY)
+                .searchInField(Constants.TITLE_FIELDNAME, searchTerms, Priority.HIGH, Strategy.FUZZY)
+                .searchInField(Constants.TAGS_FIELDNAME, searchTerms, Priority.HIGH, Strategy.FUZZY)
                 .build();
 
         ResultsWrapper<String> searchHits = searchProvider.nestedMatchSearch(
@@ -379,13 +381,13 @@ public class GitContentManager {
                 this.hideRegressionTestContent,
                 !showNoFilterContent)
                 .includeContentTypes(Set.copyOf(documentTypes))
-                .includeContentTypes(Set.of(TOPIC_SUMMARY_PAGE_TYPE), IsaacSearchInstructionBuilder.Priority.HIGH)
+                .includeContentTypes(Set.of(TOPIC_SUMMARY_PAGE_TYPE), Priority.HIGH)
                 .searchInField(Constants.SEARCHABLE_CONTENT_FIELDNAME, Set.of(searchString))
                 .searchInField(Constants.ADDRESS_PSEUDO_FIELDNAME, Set.of(searchString))
-                .searchInField(Constants.TITLE_FIELDNAME, Set.of(searchString))
-                .searchInField(Constants.ID_FIELDNAME, Set.of(searchString), IsaacSearchInstructionBuilder.Priority.HIGH)
-                .searchInField(Constants.SUMMARY_FIELDNAME, Set.of(searchString), IsaacSearchInstructionBuilder.Priority.HIGH)
-                .searchInField(Constants.TAGS_FIELDNAME, Set.of(searchString), IsaacSearchInstructionBuilder.Priority.HIGH)
+                .searchInField(Constants.TITLE_FIELDNAME, Set.of(searchString), Priority.HIGH)
+                .searchInField(Constants.ID_FIELDNAME, Set.of(searchString), Priority.HIGH)
+                .searchInField(Constants.SUMMARY_FIELDNAME, Set.of(searchString), Priority.HIGH)
+                .searchInField(Constants.TAGS_FIELDNAME, Set.of(searchString), Priority.HIGH)
                 .includePastEvents(false)
                 .build();
 
