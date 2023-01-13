@@ -16,6 +16,7 @@
 
 package uk.ac.cam.cl.dtg.segue.search;
 
+import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;
 import com.google.common.collect.Lists;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
@@ -73,6 +74,29 @@ public class IsaacSearchInstructionBuilder {
 
     private final BooleanInstruction masterInstruction;
 
+    /**
+     * Builder for a {@code BooleanInstruction} defining a search through the content. The instruction is structured
+     * like so:
+     *
+     * > Master instruction
+     *     > Basic instruction
+     *        - Exclude any content with "deprecated" in field "tags"
+     *        - Exclude any content with "nofilter" in field "tags"
+     *        - etc.
+     *     > Content type A instruction
+     *        - Search for "hello" in field "title"
+     *        - Search for "goodbye" in field "tags", with high priority
+     *        - etc...
+     *     > Content type B instruction
+     *        - etc...
+     *     > Content type C instruction
+     *        - etc...
+     *
+     * @param searchProvider todo
+     * @param includeOnlyPublishedContent Exclude unpublished content from the results.
+     * @param excludeRegressionTestContent Exclude regression test content from the results.
+     * @param excludeNofilterContent Exclude 'nofilter' content from the results.
+     */
     public IsaacSearchInstructionBuilder(final ISearchProvider searchProvider, final boolean includeOnlyPublishedContent,
                                          final boolean excludeRegressionTestContent, final boolean excludeNofilterContent) {
         this.searchProvider = searchProvider;
@@ -82,14 +106,13 @@ public class IsaacSearchInstructionBuilder {
         includedContentTypes = Sets.newHashSet();
         priorityIncludedContentTypes = Sets.newHashSet();
 
-        // We may or may not filter some things out of all queries, depending on config options
         this.includeOnlyPublishedContent = includeOnlyPublishedContent;
         this.excludeRegressionTestContent = excludeRegressionTestContent;
 
         this.excludeNofilterContent = excludeNofilterContent;
         this.includePastEvents = false;
 
-        this.masterInstruction = this.buildBaseSearchQuery(new BooleanInstruction());
+        this.masterInstruction = this.buildBaseInstructions(new BooleanInstruction());
     }
 
     /**
@@ -97,10 +120,10 @@ public class IsaacSearchInstructionBuilder {
      * (depending on role), unpublished content (depending on config properties) and content tagged with
      * "regression-test" (depending on config properties).
      *
-     * @param instruction The existing instruction to augment with these base instructions.
+     * @param instruction The existing master instruction to augment with these base instructions.
      * @return The augmented instruction.
      */
-    public BooleanInstruction buildBaseSearchQuery(final BooleanInstruction instruction) {
+    public BooleanInstruction buildBaseInstructions(final BooleanInstruction instruction) {
         // Exclude unpublished content (based on config)
         if (this.includeOnlyPublishedContent) {
             instruction.mustNot(new MatchInstruction(Constants.PUBLISHED_FIELDNAME, "false"));
@@ -151,53 +174,15 @@ public class IsaacSearchInstructionBuilder {
     }
 
     /**
-     * Include content where {@code field} is equal to one or more of {@code terms} in the results.
+     * @param searchInField A {@code SearchInField} instance describing terms to look for in a particular field, and
+     *                      what priority resultant matches will have in the results. If no search terms are defined for
+     *                      {@code searchInField} it is ignored.
      *
-     * @param field The content field to search within
-     * @param terms The terms to match within {@code field}
      * @return This IsaacSearchQueryBuilder, to allow chained operations.
      */
-    public IsaacSearchInstructionBuilder searchInField(final String field, final Set<String> terms) {
-        return this.searchInField(field, terms, Priority.NORMAL, Strategy.DEFAULT);
-    }
-
-    /**
-     * Include content where {@code field} is equal to one or more of {@code terms} in the results.
-     *
-     * @param field The content field to search within
-     * @param terms The terms to match within {@code field}
-     * @param priority The priority of matches for this field and terms.
-     * @return This IsaacSearchQueryBuilder, to allow chained operations.
-     */
-    public IsaacSearchInstructionBuilder searchInField(final String field, final Set<String> terms, final Priority priority) {
-        return this.searchInField(field, terms, priority, Strategy.DEFAULT);
-    }
-
-    /**
-     * Include content where {@code field} is equal to one or more of {@code terms} in the results.
-     *
-     * @param field The content field to search within
-     * @param terms The terms to match within {@code field}
-     * @param strategy The strategy to use to match this field and terms.
-     * @return This IsaacSearchQueryBuilder, to allow chained operations.
-     */
-    public IsaacSearchInstructionBuilder searchInField(final String field, final Set<String> terms, final Strategy strategy) {
-        return this.searchInField(field, terms, Priority.NORMAL, strategy);
-    }
-
-    /**
-     * Include content where {@code field} is equal to one or more of {@code terms} in the results.
-     *
-     * @param field The content field to search within
-     * @param terms The terms to match within {@code field}
-     * @param priority The priority of matches for this field and terms.
-     * @param strategy The strategy to use to match this field and terms.
-     * @return This IsaacSearchQueryBuilder, to allow chained operations.
-     */
-    public IsaacSearchInstructionBuilder searchInField(final String field, final Set<String> terms, final Priority priority,
-                                                       final Strategy strategy) {
-        if (!terms.isEmpty()) {
-            this.searchesInFields.add(new SearchInField(field, terms, strategy, priority));
+    public IsaacSearchInstructionBuilder searchFor(SearchInField searchInField) {
+        if (!searchInField.getTerms().isEmpty()) {
+            this.searchesInFields.add(searchInField);
         }
         return this;
     }
@@ -206,7 +191,7 @@ public class IsaacSearchInstructionBuilder {
      * Sets whether to return events where the date field contains a date in the past. Defaults to false, and has no
      * effect if the event content type is excluded.
      *
-     * @param includePastEvents - whether to include past events.
+     * @param includePastEvents Whether to include past events.
      * @return This IsaacSearchQueryBuilder, to allow chained operations.
      */
     public IsaacSearchInstructionBuilder includePastEvents(final boolean includePastEvents) {
@@ -269,7 +254,7 @@ public class IsaacSearchInstructionBuilder {
     }
 
     /**
-     * Augments {@code instruction} with the field search instructions specified via {@code searchInField()} and friends.
+     * Augments {@code instruction} with the field search instructions specified via {@code searchFor()}.
      *
      *
      * @param instruction A BooleanMatchInstruction for a particular content type to augment with the field-search instructions.
@@ -278,16 +263,21 @@ public class IsaacSearchInstructionBuilder {
      * @param contentType The content type {@code instruction} relates to, so we can decide how/whether to process certain
      *                    field searches.
      *
-     *                    (todo: Consider replacing with content-type-specific implementations of this method, that process
+     *                    (todo: Consider replacing with content-type-specific implementations of this method that process
      *                    only fields relevant to the content type. Alternatively, this class could provide
      *                    content-type-specific search builders to clients.)
      */
     private void addSearchesInFieldsToInstruction(final BooleanInstruction instruction, final List<SearchInField> searchesInFields,
                                                   final String contentType) {
 
-        Map<String, NestedInstruction> nestedQueriesByPath = new HashMap<>();
+        // Multi-match and nested instructions are grouped together across searchInField instances.
+        Map<String, NestedInstruction> nestedInstructionsGroupedByField = Maps.newHashMap();
+        Map<String, Set<String>> multiMatchSearchesGroupedByTerm = Maps.newHashMap();
 
         for (SearchInField searchInField : searchesInFields) {
+            // This holds the instructions we generate for a particular search-in-field, so we can apply them all to
+            // the parent instruction at the end.
+            List<AbstractInstruction> generatedSubInstructions = Lists.newArrayList();
 
             // Special fields
             if (Arrays.stream(Constants.ADDRESS_PATH_FIELDNAME).collect(Collectors.toList()).contains(searchInField.getField())) {
@@ -303,50 +293,59 @@ public class IsaacSearchInstructionBuilder {
                 for (String addressField : Constants.ADDRESS_FIELDNAMES) {
                     for (String term : searchInField.getTerms()) {
                         String field = addressPath + nestedFieldConnector + addressField;
-                        instruction.should(new MatchInstruction(field, term, EVENT_ADDRESS_FIELD_BOOST,
-                                false));
-                        instruction.should(new MatchInstruction(field, term, EVENT_ADDRESS_FIELD_BOOST_FUZZY,
-                                true));
+                        generatedSubInstructions.add(new MatchInstruction(field, term, EVENT_ADDRESS_FIELD_BOOST, false));
+                        generatedSubInstructions.add(new MatchInstruction(field, term, EVENT_ADDRESS_FIELD_BOOST_FUZZY, true));
                     }
                 }
             } else if (Constants.NESTED_QUERY_FIELDS.contains(searchInField.getField())) {
                 // Nested fields
                 /* (This has a specific meaning in ES -
                 see https://www.elastic.co/guide/en/elasticsearch/reference/7.17/query-dsl-nested-query.html) */
-                // Ensure nested field queries are grouped together
+                // Ensure nested instructions for a particular top-level field are grouped together
                 for (String term : searchInField.getTerms()) {
                     String nestedPath = searchInField.getField().split("\\.")[0];
-                    nestedQueriesByPath.putIfAbsent(nestedPath, new NestedInstruction(nestedPath));
-                    nestedQueriesByPath.get(nestedPath).should(new MatchInstruction(searchInField.getField(), term));
+                    nestedInstructionsGroupedByField.putIfAbsent(nestedPath, new NestedInstruction(nestedPath));
+                    nestedInstructionsGroupedByField.get(nestedPath).should(new MatchInstruction(searchInField.getField(), term));
                 }
             } else {
                 // Generic fields
                 for (String term : searchInField.getTerms()) {
                     if (searchInField.getStrategy() == Strategy.DEFAULT) {
-                        if (searchInField.getPriority() == Priority.HIGH) {
-                            instruction.should(new MatchInstruction(searchInField.getField(), term, HIGH_PRIORITY_FIELD_BOOST, false));
-                            instruction.should(new MatchInstruction(searchInField.getField(), term, HIGH_PRIORITY_FIELD_BOOST_FUZZY, true));
-                        } else if (searchInField.getPriority() == Priority.NORMAL) {
-                            instruction.should(new MatchInstruction(searchInField.getField(), term, FIELD_BOOST, false));
-                            instruction.should(new MatchInstruction(searchInField.getField(), term, FIELD_BOOST_FUZZY, true));
-                        }
+                        Long boost = searchInField.getPriority() == Priority.HIGH ? HIGH_PRIORITY_FIELD_BOOST : FIELD_BOOST;
+                        Long fuzzy_boost = searchInField.getPriority() == Priority.HIGH ? HIGH_PRIORITY_FIELD_BOOST_FUZZY : FIELD_BOOST_FUZZY;
+
+                        generatedSubInstructions.add(new MatchInstruction(searchInField.getField(), term, boost, false));
+                        generatedSubInstructions.add(new MatchInstruction(searchInField.getField(), term, fuzzy_boost, true));
                     } else if (searchInField.getStrategy() == Strategy.FUZZY) {
-                        if (searchInField.getPriority() == Priority.HIGH) {
-                            instruction.should(new MatchInstruction(searchInField.getField(), term, HIGH_PRIORITY_WILDCARD_FIELD_BOOST, true));
-                            instruction.should(new WildcardInstruction(searchInField.getField(), "*" + term + "*", HIGH_PRIORITY_WILDCARD_FIELD_BOOST));
-                        } else if (searchInField.getPriority() == Priority.NORMAL) {
-                            instruction.should(new MatchInstruction(searchInField.getField(), term, WILDCARD_FIELD_BOOST, true));
-                            instruction.should(new WildcardInstruction(searchInField.getField(), "*" + term + "*", WILDCARD_FIELD_BOOST));
-                        }
-                        instruction.should(new MultiMatchInstruction(searchInField.getField(), searchInField.getTerms().toArray(String[]::new), 2L));
+                        Long boost = searchInField.getPriority() == Priority.HIGH ? HIGH_PRIORITY_WILDCARD_FIELD_BOOST : WILDCARD_FIELD_BOOST;
+
+                        generatedSubInstructions.add(new MatchInstruction(searchInField.getField(), term, boost, true));
+                        generatedSubInstructions.add(new WildcardInstruction(searchInField.getField(), "*" + term + "*", boost));
+                        // Ensure multi-match instructions for a particular term are grouped together
+                        multiMatchSearchesGroupedByTerm.putIfAbsent(term, Sets.newHashSet());
+                        multiMatchSearchesGroupedByTerm.get(term).add(searchInField.getField());
                     }
                 }
             }
+
+            // Add all generated sub-instructions to parent instruction as either "should" or "must" depending on the
+            // 'required' flag.
+            if (searchInField.getRequired()) {
+                generatedSubInstructions.forEach(instruction::must);
+            }
+            else {
+                generatedSubInstructions.forEach(instruction::should);
+            }
         }
 
-        // Apply grouped nested queries
-        for (Map.Entry<String, NestedInstruction> entry : nestedQueriesByPath.entrySet()) {
+        // Add grouped nested instructions to parent instruction as a single instruction.
+        for (Map.Entry<String, NestedInstruction> entry : nestedInstructionsGroupedByField.entrySet()) {
             instruction.must(entry.getValue());
+        }
+
+        // Add grouped multi-match instructions to parent instruction as single instruction.
+        for (Map.Entry<String, Set<String>> entry : multiMatchSearchesGroupedByTerm.entrySet()) {
+            instruction.should(new MultiMatchInstruction(entry.getKey(), entry.getValue().toArray(String[]::new), 2L));
         }
     }
 }

@@ -17,20 +17,59 @@
 package uk.ac.cam.cl.dtg.segue.search;
 
 import java.util.Set;
+import uk.ac.cam.cl.dtg.segue.search.IsaacSearchInstructionBuilder.Strategy;
+import uk.ac.cam.cl.dtg.segue.search.IsaacSearchInstructionBuilder.Priority;
+
 
 public class SearchInField {
 
     private final String field;
     private final Set<String> terms;
-    private final IsaacSearchInstructionBuilder.Strategy strategy;
-    private final IsaacSearchInstructionBuilder.Priority priority;
+    private Strategy strategy;
+    private Priority priority;
+    private boolean required;
 
-    public SearchInField(final String field, final Set<String> terms, final IsaacSearchInstructionBuilder.Strategy strategy,
-                         final IsaacSearchInstructionBuilder.Priority priority) {
+
+    /**
+     * Describes to {@code IsaacSearchInstructionBuilder} what terms to look for in a particular field, and what priority
+     * resultant matches will have in the results.
+     */
+    public SearchInField(final String field, final Set<String> terms) {
         this.field = field;
         this.terms = terms;
+        this.strategy = Strategy.DEFAULT;
+        this.priority = Priority.NORMAL;
+        this.required = false;
+    }
+
+    /**
+     * @param strategy - The strategy to use to match the terms in question. Determines query type used in the resultant
+     *                 instruction.
+     * @return This SearchInField instance for chained operations.
+     */
+    public SearchInField strategy(Strategy strategy) {
         this.strategy = strategy;
+        return this;
+    }
+
+    /**
+     * @param priority - The priority of any matches in the results. Determines "boost" value in the resultant instruction.
+     * @return This SearchInField instance for chained operations.
+     */
+    public SearchInField priority(Priority priority) {
         this.priority = priority;
+        return this;
+    }
+
+    /**
+     * Determines whether this clause is a "should" or "must" in the resultant instruction.
+     *
+     * @param required Whether this clause is a "should" or "must" in the resultant instruction.
+     * @return This SearchInField instance for chained operations.
+     */
+    public SearchInField required(Boolean required) {
+        this.required = required;
+        return this;
     }
 
     public String getField() {
@@ -47,5 +86,9 @@ public class SearchInField {
 
     public IsaacSearchInstructionBuilder.Priority getPriority() {
         return priority;
+    }
+
+    public boolean getRequired() {
+        return required;
     }
 }

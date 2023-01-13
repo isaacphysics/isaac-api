@@ -44,6 +44,7 @@ import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.IsaacSearchInstructionBuilder;
 import uk.ac.cam.cl.dtg.segue.search.IsaacSearchInstructionBuilder.Priority;
 import uk.ac.cam.cl.dtg.segue.search.IsaacSearchInstructionBuilder.Strategy;
+import uk.ac.cam.cl.dtg.segue.search.SearchInField;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 import uk.ac.cam.cl.dtg.segue.search.SimpleExclusionInstruction;
 import uk.ac.cam.cl.dtg.segue.search.SimpleFilterInstruction;
@@ -345,17 +346,17 @@ public class GitContentManager {
                 this.hideRegressionTestContent,
                 !showNoFilterContent)
                 .includeContentTypes(contentTypes)
-                .searchInField(Constants.LEVEL_FIELDNAME, levels)
-                .searchInField(Constants.STAGE_FIELDNAME, stages)
-                .searchInField(Constants.DIFFICULTY_FIELDNAME, difficulties)
-                .searchInField(Constants.EXAM_BOARD_FIELDNAME, examBoards)
-                .searchInField(Constants.ID_FIELDNAME, ids)
-                .searchInField(Constants.TAGS_FIELDNAME, tags)
-                .searchInField(Constants.VALUE_FIELDNAME, searchTerms, Strategy.FUZZY)
-                .searchInField(Constants.CHILDREN_FIELDNAME, searchTerms, Strategy.FUZZY)
-                .searchInField(Constants.ID_FIELDNAME, searchTerms, Priority.HIGH, Strategy.FUZZY)
-                .searchInField(Constants.TITLE_FIELDNAME, searchTerms, Priority.HIGH, Strategy.FUZZY)
-                .searchInField(Constants.TAGS_FIELDNAME, searchTerms, Priority.HIGH, Strategy.FUZZY)
+                .searchFor(new SearchInField(Constants.ID_FIELDNAME, ids))
+                .searchFor(new SearchInField(Constants.TAGS_FIELDNAME, tags))
+                .searchFor(new SearchInField(Constants.LEVEL_FIELDNAME, levels))
+                .searchFor(new SearchInField(Constants.STAGE_FIELDNAME, stages))
+                .searchFor(new SearchInField(Constants.DIFFICULTY_FIELDNAME, difficulties))
+                .searchFor(new SearchInField(Constants.EXAM_BOARD_FIELDNAME, examBoards))
+                .searchFor(new SearchInField(Constants.ID_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
+                .searchFor(new SearchInField(Constants.TITLE_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
+                .searchFor(new SearchInField(Constants.TAGS_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
+                .searchFor(new SearchInField(Constants.VALUE_FIELDNAME, searchTerms).strategy(Strategy.FUZZY))
+                .searchFor(new SearchInField(Constants.CHILDREN_FIELDNAME, searchTerms).strategy(Strategy.FUZZY))
                 .build();
 
         ResultsWrapper<String> searchHits = searchProvider.nestedMatchSearch(
@@ -382,12 +383,12 @@ public class GitContentManager {
                 !showNoFilterContent)
                 .includeContentTypes(Set.copyOf(documentTypes))
                 .includeContentTypes(Set.of(TOPIC_SUMMARY_PAGE_TYPE), Priority.HIGH)
-                .searchInField(Constants.SEARCHABLE_CONTENT_FIELDNAME, Set.of(searchString))
-                .searchInField(Constants.ADDRESS_PSEUDO_FIELDNAME, Set.of(searchString))
-                .searchInField(Constants.TITLE_FIELDNAME, Set.of(searchString), Priority.HIGH)
-                .searchInField(Constants.ID_FIELDNAME, Set.of(searchString), Priority.HIGH)
-                .searchInField(Constants.SUMMARY_FIELDNAME, Set.of(searchString), Priority.HIGH)
-                .searchInField(Constants.TAGS_FIELDNAME, Set.of(searchString), Priority.HIGH)
+                .searchFor(new SearchInField(Constants.SEARCHABLE_CONTENT_FIELDNAME, Set.of(searchString)))
+                .searchFor(new SearchInField(Constants.ADDRESS_PSEUDO_FIELDNAME, Set.of(searchString)))
+                .searchFor(new SearchInField(Constants.TITLE_FIELDNAME, Set.of(searchString)).priority(Priority.HIGH))
+                .searchFor(new SearchInField(Constants.ID_FIELDNAME, Set.of(searchString)).priority(Priority.HIGH))
+                .searchFor(new SearchInField(Constants.SUMMARY_FIELDNAME, Set.of(searchString)).priority(Priority.HIGH))
+                .searchFor(new SearchInField(Constants.TAGS_FIELDNAME, Set.of(searchString)).priority(Priority.HIGH))
                 .includePastEvents(false)
                 .build();
 
