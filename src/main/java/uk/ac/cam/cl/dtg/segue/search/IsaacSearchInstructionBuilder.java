@@ -68,6 +68,7 @@ public class IsaacSearchInstructionBuilder {
     }
 
     public enum Strategy {
+        SIMPLE,
         DEFAULT,
         FUZZY
     }
@@ -75,11 +76,11 @@ public class IsaacSearchInstructionBuilder {
     private final BooleanInstruction masterInstruction;
 
     /**
-     * Builder for a {@code BooleanInstruction} defining a search through the content. The instruction is structured
+     * Builder for a {@code BooleanInstruction} defining a search through the content. The final instruction is structured
      * like so:
      *
      * > Master instruction
-     *     > Basic instruction
+     *     > Base instruction
      *        - Exclude any content with "deprecated" in field "tags"
      *        - Exclude any content with "nofilter" in field "tags"
      *        - etc.
@@ -88,11 +89,16 @@ public class IsaacSearchInstructionBuilder {
      *        - Search for "goodbye" in field "tags", with high priority
      *        - etc...
      *     > Content type B instruction
+     *        - Search for "hello" in field "title"
+     *        - Search for "goodbye" in field "tags", with high priority
      *        - etc...
      *     > Content type C instruction
+     *        - Search for "hello" in field "title"
+     *        - Search for "goodbye" in field "tags", with high priority
      *        - etc...
      *
-     * @param searchProvider todo
+     * @param searchProvider The search provider, so we can look up implementation-specific things. It's probably going
+     *                       to be ElasticSearch at this point, let's be honest.
      * @param includeOnlyPublishedContent Exclude unpublished content from the results.
      * @param excludeRegressionTestContent Exclude regression test content from the results.
      * @param excludeNofilterContent Exclude 'nofilter' content from the results.
@@ -316,6 +322,7 @@ public class IsaacSearchInstructionBuilder {
 
                         generatedSubInstructions.add(new MatchInstruction(searchInField.getField(), term, boost, false));
                         generatedSubInstructions.add(new MatchInstruction(searchInField.getField(), term, fuzzy_boost, true));
+
                     } else if (searchInField.getStrategy() == Strategy.FUZZY) {
                         Long boost = searchInField.getPriority() == Priority.HIGH ? HIGH_PRIORITY_WILDCARD_FIELD_BOOST : WILDCARD_FIELD_BOOST;
 
@@ -324,6 +331,9 @@ public class IsaacSearchInstructionBuilder {
                         // Ensure multi-match instructions for a particular term are grouped together
                         multiMatchSearchesGroupedByTerm.putIfAbsent(term, Sets.newHashSet());
                         multiMatchSearchesGroupedByTerm.get(term).add(searchInField.getField());
+
+                    } else if (searchInField.getStrategy() == Strategy.SIMPLE) {
+                        generatedSubInstructions.add(new MatchInstruction(searchInField.getField(), term));
                     }
                 }
             }

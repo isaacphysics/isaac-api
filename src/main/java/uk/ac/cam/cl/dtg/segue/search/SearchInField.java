@@ -62,7 +62,8 @@ public class SearchInField {
     }
 
     /**
-     * Determines whether this clause is a "should" or "must" in the resultant instruction.
+     * Determines whether this clause is a "should" or "must" in the resultant instruction, i.e. the difference between
+     * influencing result ranking (required=false) / whether the result is returned at all (required=true).
      *
      * @param required Whether this clause is a "should" or "must" in the resultant instruction.
      * @return This SearchInField instance for chained operations.
