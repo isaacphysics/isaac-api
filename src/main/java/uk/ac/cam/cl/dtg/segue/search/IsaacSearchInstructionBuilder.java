@@ -211,6 +211,8 @@ public class IsaacSearchInstructionBuilder {
      * @return A BooleanMatchInstruction reflecting the builder's settings.
      */
     public BooleanInstruction build() {
+        masterInstruction.setMinimumShouldMatch(1);
+
         List<String> contentTypes = Optional.ofNullable(this.includedContentTypes)
                 .orElse(Collections.emptySet())
                 .stream()

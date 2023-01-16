@@ -347,7 +347,7 @@ public class GitContentManager {
                 this.hideRegressionTestContent,
                 !showNoFilterContent)
                 .includeContentTypes(contentTypes)
-                .searchFor(new SearchInField(Constants.ID_FIELDNAME, ids).strategy(Strategy.SIMPLE).required(true))
+                .searchFor(new SearchInField(Constants.ID_FIELDNAME, ids).strategy(Strategy.SIMPLE))
                 .searchFor(new SearchInField(Constants.TAGS_FIELDNAME, tags).strategy(Strategy.SIMPLE).required(true))
                 .searchFor(new SearchInField(Constants.LEVEL_FIELDNAME, levels).strategy(Strategy.SIMPLE).required(true))
                 .searchFor(new SearchInField(Constants.STAGE_FIELDNAME, stages).strategy(Strategy.SIMPLE).required(true))
