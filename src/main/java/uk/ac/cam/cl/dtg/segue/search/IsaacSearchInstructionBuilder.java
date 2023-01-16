@@ -181,8 +181,8 @@ public class IsaacSearchInstructionBuilder {
 
     /**
      * @param searchInField A {@code SearchInField} instance describing terms to look for in a particular field, and
-     *                      what priority resultant matches will have in the results. If no search terms are defined for
-     *                      {@code searchInField} it is ignored.
+     *                      what priority resultant matches will have in the results (in absence of any sorting applied
+     *                      elsewhere). If no search terms are defined for {@code searchInField} it is ignored.
      *
      * @return This IsaacSearchQueryBuilder, to allow chained operations.
      */
@@ -211,8 +211,6 @@ public class IsaacSearchInstructionBuilder {
      * @return A BooleanMatchInstruction reflecting the builder's settings.
      */
     public BooleanInstruction build() {
-        masterInstruction.setMinimumShouldMatch(1);
-
         List<String> contentTypes = Optional.ofNullable(this.includedContentTypes)
                 .orElse(Collections.emptySet())
                 .stream()
@@ -277,7 +275,7 @@ public class IsaacSearchInstructionBuilder {
                                                   final String contentType) {
 
         // Multi-match and nested instructions are grouped together across searchInField instances.
-        Map<String, NestedInstruction> nestedInstructionsGroupedByField = Maps.newHashMap();
+        Map<String, BooleanInstruction> nestedInstructionsGroupedByField = Maps.newHashMap();
         Map<String, Set<String>> multiMatchSearchesGroupedByTerm = Maps.newHashMap();
 
         for (SearchInField searchInField : searchesInFields) {
@@ -308,11 +306,17 @@ public class IsaacSearchInstructionBuilder {
                 /* (This has a specific meaning in ES -
                 see https://www.elastic.co/guide/en/elasticsearch/reference/7.17/query-dsl-nested-query.html) */
                 // Ensure nested instructions for a particular top-level field are grouped together
+                String nestedPath = searchInField.getField().split("\\.")[0];
+
+                BooleanInstruction nestedInstructionForField = new BooleanInstruction(1);
+
                 for (String term : searchInField.getTerms()) {
-                    String nestedPath = searchInField.getField().split("\\.")[0];
-                    nestedInstructionsGroupedByField.putIfAbsent(nestedPath, new NestedInstruction(nestedPath));
-                    nestedInstructionsGroupedByField.get(nestedPath).should(new MatchInstruction(searchInField.getField(), term));
+                    nestedInstructionForField.should(new MatchInstruction(searchInField.getField(), term));
                 }
+
+                nestedInstructionsGroupedByField.putIfAbsent(nestedPath, new BooleanInstruction());
+                nestedInstructionsGroupedByField.get(nestedPath).must(nestedInstructionForField);
+
             } else {
                 // Generic fields
                 for (String term : searchInField.getTerms()) {
@@ -328,7 +332,8 @@ public class IsaacSearchInstructionBuilder {
 
                         generatedSubInstructions.add(new MatchInstruction(searchInField.getField(), term, boost, true));
                         generatedSubInstructions.add(new WildcardInstruction(searchInField.getField(), "*" + term + "*", boost));
-                        // Ensure multi-match instructions for a particular term are grouped together
+                        // Use a multi-match instruction, and ensure multi-match instructions for a particular term are
+                        // grouped together
                         multiMatchSearchesGroupedByTerm.putIfAbsent(term, Sets.newHashSet());
                         multiMatchSearchesGroupedByTerm.get(term).add(searchInField.getField());
 
@@ -349,8 +354,8 @@ public class IsaacSearchInstructionBuilder {
         }
 
         // Add grouped nested instructions to parent instruction as a single instruction.
-        for (Map.Entry<String, NestedInstruction> entry : nestedInstructionsGroupedByField.entrySet()) {
-            instruction.must(entry.getValue());
+        for (Map.Entry<String, BooleanInstruction> entry : nestedInstructionsGroupedByField.entrySet()) {
+            instruction.must(new NestedInstruction(entry.getKey(), entry.getValue()));
         }
 
         // Add grouped multi-match instructions to parent instruction as single instruction.

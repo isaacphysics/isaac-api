@@ -21,28 +21,16 @@ import com.google.api.client.util.Lists;
 import java.util.List;
 
 public class NestedInstruction extends AbstractInstruction {
-    private List<AbstractInstruction> musts = Lists.newArrayList();
-    private List<AbstractInstruction> shoulds = Lists.newArrayList();
     private String path;
+    private AbstractInstruction instruction;
 
-    public NestedInstruction(String path) {
+    public NestedInstruction(String path, AbstractInstruction instruction) {
         this.path = path;
+        this.instruction = instruction;
     }
 
-    public List<AbstractInstruction> getMusts() {
-        return musts;
-    }
-
-    public void must(final AbstractInstruction abstractInstruction) {
-        musts.add(abstractInstruction);
-    }
-
-    public List<AbstractInstruction> getShoulds() {
-        return shoulds;
-    }
-
-    public void should(final AbstractInstruction abstractInstruction) {
-        shoulds.add(abstractInstruction);
+    public AbstractInstruction getInstruction() {
+        return instruction;
     }
 
     public String getPath() {

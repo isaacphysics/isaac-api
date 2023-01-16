@@ -43,7 +43,7 @@ public class SearchInField {
     }
 
     /**
-     * @param strategy - The strategy to use to match the terms in question. Determines query type used in the resultant
+     * @param strategy The strategy to use to match the terms in question. Determines query type used in the resultant
      *                 instruction.
      * @return This SearchInField instance for chained operations.
      */
@@ -53,7 +53,7 @@ public class SearchInField {
     }
 
     /**
-     * @param priority - The priority of any matches in the results. Determines "boost" value in the resultant instruction.
+     * @param priority The priority of any matches in the results. Determines "boost" value in the resultant instruction.
      * @return This SearchInField instance for chained operations.
      */
     public SearchInField priority(Priority priority) {

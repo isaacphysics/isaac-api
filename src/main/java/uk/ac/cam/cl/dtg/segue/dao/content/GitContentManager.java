@@ -28,6 +28,7 @@ import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
+import org.glassfish.jaxb.runtime.v2.runtime.reflect.opt.Const;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
@@ -359,12 +360,21 @@ public class GitContentManager {
                 .searchFor(new SearchInField(Constants.CHILDREN_FIELDNAME, searchTerms).strategy(Strategy.FUZZY))
                 .build();
 
+        // If no search terms were provided, sort by ascending alphabetical order of title.
+        Map<String, Constants.SortOrder> sortOrder = null;
+
+        if (searchTerms.isEmpty()) {
+            sortOrder = new HashMap<>();
+            sortOrder.put(Constants.TITLE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Constants.SortOrder.ASC);
+        }
+
         ResultsWrapper<String> searchHits = searchProvider.nestedMatchSearch(
                 contentIndex,
                 CONTENT_TYPE,
                 startIndex,
                 limit,
-                matchInstruction
+                matchInstruction,
+                sortOrder
         );
 
         List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
@@ -397,7 +407,8 @@ public class GitContentManager {
                 CONTENT_TYPE,
                 startIndex,
                 limit,
-                matchInstruction
+                matchInstruction,
+                null
         );
 
         List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());

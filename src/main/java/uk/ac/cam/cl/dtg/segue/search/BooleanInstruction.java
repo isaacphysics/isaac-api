@@ -11,6 +11,14 @@ public class BooleanInstruction extends AbstractInstruction {
     private int minimumShouldMatch = 0;
     private Float boost;
 
+    public BooleanInstruction() {
+        super();
+    }
+
+    public BooleanInstruction(int minimumShouldMatch) {
+        this.setMinimumShouldMatch(minimumShouldMatch);
+    }
+
     public List<AbstractInstruction> getMusts() {
         return musts;
     }

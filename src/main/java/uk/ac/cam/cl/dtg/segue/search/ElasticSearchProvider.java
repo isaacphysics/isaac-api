@@ -164,7 +164,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 
     public ResultsWrapper<String> nestedMatchSearch(
             final String indexBase, final String indexType, final Integer startIndex, final Integer limit,
-            @NotNull final BooleanInstruction matchInstruction
+            @NotNull final BooleanInstruction matchInstruction, @Nullable final Map<String, Constants.SortOrder> sortOrder
     ) throws SegueSearchException {
         if (null == indexBase || null == indexType) {
             log.warn("A required field is missing. Unable to execute search.");
@@ -172,7 +172,7 @@ public class ElasticSearchProvider implements ISearchProvider {
         }
 
         BoolQueryBuilder query = (BoolQueryBuilder) this.processMatchInstructions(matchInstruction);
-        return this.executeBasicQuery(indexBase, indexType, query, startIndex, limit);
+        return this.executeBasicQuery(indexBase, indexType, query, startIndex, limit, sortOrder);
     }
 
     @Override
@@ -695,16 +695,8 @@ public class ElasticSearchProvider implements ISearchProvider {
             }
             return rangeQuery;
         } else if (matchInstruction instanceof NestedInstruction) {
-            BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
-            boolQuery.minimumShouldMatch(1);
             NestedInstruction nestedMatch = (NestedInstruction) matchInstruction;
-            for (AbstractInstruction must : nestedMatch.getMusts()) {
-                boolQuery.must(processMatchInstructions(must));
-            }
-            for (AbstractInstruction should : nestedMatch.getShoulds()) {
-                boolQuery.should(processMatchInstructions(should));
-            }
-            return QueryBuilders.nestedQuery(nestedMatch.getPath(), boolQuery, ScoreMode.Total);
+            return QueryBuilders.nestedQuery(nestedMatch.getPath(), processMatchInstructions(nestedMatch.getInstruction()), ScoreMode.Total);
         } else if (matchInstruction instanceof WildcardInstruction) {
             WildcardInstruction wildcardMatch = (WildcardInstruction) matchInstruction;
             return QueryBuilders.wildcardQuery(wildcardMatch.getField(), wildcardMatch.getValue()).boost(wildcardMatch.getBoost());

@@ -110,7 +110,7 @@ public interface ISearchProvider {
 
     public ResultsWrapper<String> nestedMatchSearch(
             final String indexBase, final String indexType, final Integer startIndex, final Integer limit,
-            @NotNull final BooleanInstruction matchInstruction
+            @NotNull final BooleanInstruction matchInstruction, @Nullable final Map<String, Constants.SortOrder> sortOrder
     ) throws SegueSearchException;
 
     /**
