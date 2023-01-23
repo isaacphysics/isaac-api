@@ -14,9 +14,6 @@ RUN mkdir /isaac-logs
 RUN chmod 755 /isaac-logs
 RUN chown jetty /isaac-logs
 ADD resources/school_list_2022.tar.gz /local/data/
-COPY config-templates/content_indices.cs.properties /local/data/content-indices.properties
-RUN chmod 755 /local/data/content-indices.properties
-RUN chown jetty /local/data/content-indices.properties
 COPY --from=base /isaac-api/target/isaac-api.war /var/lib/jetty/webapps/isaac-api.war
 RUN chmod 755 /var/lib/jetty/webapps/*
 RUN chown jetty /var/lib/jetty/webapps/*
