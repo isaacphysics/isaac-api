@@ -338,7 +338,7 @@ public class EventBookingManager {
                                          final BookingStatus status)
             throws SegueDatabaseException, DuplicateBookingException, EventIsFullException, EventIsCancelledException {
         // Check if event is cancelled
-        if (event.getEventStatus().equals(EventStatus.CANCELLED)) {
+        if (EventStatus.CANCELLED.equals(event.getEventStatus())) {
             throw new EventIsCancelledException(String.format("Unable to book user (%s) onto event (%s); the event is cancelled.", user.getId(), event.getId()));
         }
 
@@ -424,7 +424,7 @@ public class EventBookingManager {
             EventIsFullException, EventDeadlineException, EventIsCancelledException {
         this.ensureValidEventAndUser(event, user, true);
 
-        if (event.getEventStatus().equals(EventStatus.CANCELLED)) {
+        if (EventStatus.CANCELLED.equals(event.getEventStatus())) {
             throw new EventIsCancelledException(String.format("Unable to book user (%s) onto event (%s); the event is cancelled.", user.getId(), event.getId()));
         }
 
@@ -497,7 +497,7 @@ public class EventBookingManager {
            SegueDatabaseException, EventIsCancelledException {
 
         // Cannot reserve spots onto a cancelled event
-        if (event.getEventStatus().equals(EventStatus.CANCELLED)) {
+        if (EventStatus.CANCELLED.equals(event.getEventStatus())) {
             throw new EventIsCancelledException(String.format("User (%s) was unable to reserve places for event (%s); the event is cancelled.", reservingUser.getId(), event.getId()));
         }
 
@@ -652,7 +652,7 @@ public class EventBookingManager {
             SegueDatabaseException, EmailMustBeVerifiedException, DuplicateBookingException,
             EventDeadlineException, EventIsNotFullException, EventIsCancelledException {
 
-        if (event.getEventStatus().equals(EventStatus.CANCELLED)) {
+        if (EventStatus.CANCELLED.equals(event.getEventStatus())) {
             throw new EventIsCancelledException(String.format("Unable to book user (%s) onto event (%s); the event is cancelled.", user.getId(), event.getId()));
         }
 
@@ -736,7 +736,7 @@ public class EventBookingManager {
     public EventBookingDTO promoteToConfirmedBooking(final IsaacEventPageDTO event, final RegisteredUserDTO userDTO)
             throws SegueDatabaseException, EventBookingUpdateException, EventIsFullException, EventIsCancelledException {
 
-        if (event.getEventStatus().equals(EventStatus.CANCELLED)) {
+        if (EventStatus.CANCELLED.equals(event.getEventStatus())) {
             throw new EventIsCancelledException(String.format("Unable to confirm user (%s) booking on event (%s); the event is cancelled.", userDTO.getId(), event.getId()));
         }
 
@@ -818,7 +818,7 @@ public class EventBookingManager {
             userDTO, final boolean attended)
             throws SegueDatabaseException, EventBookingUpdateException, EventIsCancelledException {
 
-        if (event.getEventStatus().equals(EventStatus.CANCELLED)) {
+        if (EventStatus.CANCELLED.equals(event.getEventStatus())) {
             throw new EventIsCancelledException(String.format("Unable to record user (%s) attendance for event (%s); the event is cancelled.", userDTO.getId(), event.getId()));
         }
 
@@ -1124,7 +1124,7 @@ public class EventBookingManager {
     public void resendEventEmail(final IsaacEventPageDTO event, final RegisteredUserDTO user)
             throws SegueDatabaseException, ContentManagerException, EventIsCancelledException {
 
-        if (event.getEventStatus().equals(EventStatus.CANCELLED)) {
+        if (EventStatus.CANCELLED.equals(event.getEventStatus())) {
             throw new EventIsCancelledException(String.format("Cannot resent event emails for user (%s). event (%s) is cancelled.", user.getId(), event.getId()));
         }
 
