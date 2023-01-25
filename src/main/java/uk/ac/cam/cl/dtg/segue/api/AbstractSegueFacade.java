@@ -32,6 +32,7 @@ import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * An abstract representation of a Segue CMS facade.
@@ -315,7 +316,7 @@ public abstract class AbstractSegueFacade {
     }
 
     /**
-     * Is the current user anything other than a student (i.e. a teacher or staff account).
+     * Is the current user anything other than a tutor or a student.
      *
      * @param userManager
      *            - Instance of User Manager
@@ -326,6 +327,22 @@ public abstract class AbstractSegueFacade {
      *             - if we are unable to tell because they are not logged in.
      */
     public static boolean isUserTeacherOrAbove(final UserAccountManager userManager, final RegisteredUserDTO userDTO)
+            throws NoUserLoggedInException {
+        return !userManager.checkUserRole(userDTO, List.of(Role.STUDENT, Role.TUTOR));
+    }
+
+    /**
+     * Is the current user anything other than a student (i.e. a tutor, teacher or staff account).
+     *
+     * @param userManager
+     *            - Instance of User Manager
+     * @param userDTO
+     *            - for the user of interest
+     * @return true if user is logged in as a teacher or above, false otherwise.
+     * @throws NoUserLoggedInException
+     *             - if we are unable to tell because they are not logged in.
+     */
+    public static boolean isUserTutorOrAbove(final UserAccountManager userManager, final RegisteredUserDTO userDTO)
             throws NoUserLoggedInException {
         return !userManager.checkUserRole(userDTO, Collections.singletonList(Role.STUDENT));
     }

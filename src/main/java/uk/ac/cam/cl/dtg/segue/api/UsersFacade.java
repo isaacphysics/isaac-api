@@ -327,9 +327,10 @@ public class UsersFacade extends AbstractSegueFacade {
 
             UserSummaryDTO userOfInterestSummaryObject = userManager.convertToUserSummaryObject(userOfInterest);
 
-            // decide if the user is allowed to view this data.
+            // Decide if the user is allowed to view this data. User must have at least a teacher account to request
+            // a password reset for another user.
             if (!currentUser.getId().equals(userIdOfInterest)
-                    && !userAssociationManager.hasPermission(currentUser, userOfInterestSummaryObject)) {
+                    && !userAssociationManager.hasTeacherPermission(currentUser, userOfInterestSummaryObject)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 

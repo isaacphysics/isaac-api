@@ -32,6 +32,7 @@ COPY public.users (id, _id, family_name, given_name, email, role, date_of_birth,
 7	\N	Student	Alice	alice-student@test.com	STUDENT	1991-01-01	FEMALE	2022-07-05 17:31:12	\N	A Manually Entered School	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"all\\"}"}	2022-07-06 10:52:35.922	2022-07-06 10:52:36.056	VERIFIED	2022-08-09 10:56:00.055	alice-student@test.com	\N	0	f
 8	\N	Student	Bob	bob-student@test.com	STUDENT	\N	MALE	2022-07-05 17:32:41	110158	\N	{}	\N	2022-07-05 17:32:57	VERIFIED	2022-08-09 10:56:12.965	bob-student@test.com	\N	0	f
 5	\N	Teacher	Test Teacher	test-teacher@test.com	TEACHER	\N	FEMALE	2019-08-01 12:51:05.416	\N	A Manually Entered School	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"all\\"}"}	2022-08-03 12:08:57.662	2022-08-03 12:08:57.741	VERIFIED	2022-08-17 10:54:22.763	test-teacher@test.com	m9A8P0VbpFQnzOdXOywx75lpaWSpssLmQ779ij2b5LQ	0	f
+12	\N	Tutor	Test Tutor	test-tutor@test.com	TUTOR	\N	\N	2022-12-12 14:42:02.974	\N	\N	{}	\N	2022-12-12 14:42:02.974	NOT_VERIFIED	2022-12-12 14:48:40.236	test-tutor@test.com	4V115j6oH0YctCgBYXclb3WUT8D2Bz4nIaoJCasCJs	0	f
 \.
 
 
@@ -53,6 +54,7 @@ COPY public.gameboards (id, title, contents, wildcard, wildcard_position, game_f
 COPY public.groups (id, group_name, owner_id, created, archived, group_status, last_updated) FROM stdin;
 1	AB Group (Test)	5	2022-07-06 15:36:58	f	ACTIVE	\N
 2	BC Group (Dave)	10	2022-07-06 15:37:32	f	ACTIVE	\N
+4	AB Group 2 (Test Tutor)	12	2022-12-12 14:48:40.245	f	ACTIVE	2022-12-12 14:48:40.245
 \.
 
 
@@ -101,6 +103,8 @@ COPY public.group_memberships (group_id, user_id, created, updated, status) FROM
 1	8	\N	2022-07-06 14:38:17.286686+00	ACTIVE
 2	8	\N	2022-07-06 14:38:36.064903+00	ACTIVE
 2	9	\N	2022-07-06 14:38:36.064903+00	ACTIVE
+4	7	2022-12-12 14:48:52.043	2022-12-12 14:48:52.043+00	ACTIVE
+4	8	2022-12-12 14:49:25.081	2022-12-12 14:49:25.082+00	ACTIVE
 \.
 
 
@@ -201,6 +205,8 @@ COPY public.user_associations (user_id_granting_permission, user_id_receiving_pe
 8	5	2022-07-06 16:05:46
 8	10	2022-07-06 16:06:03
 9	10	2022-07-06 16:06:11
+7	12	2022-12-12 14:48:52.006
+8	12	2022-12-12 14:49:25.033
 \.
 
 
@@ -213,6 +219,7 @@ ABTOK7	7	1
 ABTOK8	8	1
 BCTOK8	8	2
 BCTOK9	9	2
+VJ94X2	12	4
 \.
 
 
@@ -240,6 +247,7 @@ COPY public.user_credentials (user_id, password, secure_salt, security_scheme, r
 10	Xzw8SAqDSTScpgVxzzzock2DbPpBd9XwquaTtNnI622i9Nf89m6l3cCy5YM4z//9ALorAg7geuqGOrTLg/GWyA==	ULVBTRSdyYvJLZH6dyOTog==	SegueSCryptv1	\N	\N	2019-08-01 12:51:05.940811+00	2022-08-09 08:55:35.544+00
 7	gOOQ4j/Ioy2BSS8AUOb1DWUkKnEGL9p8/k9je1FrKkoje48xpE762L7C/VoEjsWo0s4nrk+xE/Uo2+/EgYaygA==	nR+oCwVdXVBykk04RfzTJA==	SegueSCryptv1	\N	\N	2019-08-01 12:51:05.940811+00	2022-08-09 08:56:00+00
 8	U7s5oE17P649t7pDrB9biUsV8vdHLiAIHP/74PiiVY/Ma+RL0lnEKdCcnQtuhlxhvZWRaLr8kz0JubC/qNa0NA==	qHoZcgNTNdilJSp5k3WLrg==	SegueSCryptv1	\N	\N	2019-08-01 12:51:05.940811+00	2022-08-09 08:56:12.918+00
+12	dbPapTuZ+jEHYN3ZzS2yJfEZ4OFN4PenY53a2vgCB5E3jtQgR4A3cMQs3rgowD6ZtLRZS2pZLP3fq/bo9nRsZg==	1E4RZF4KVPhmci10DG8A4w==	SegueSCryptv1	\N	\N	2022-12-12 14:42:03.618265+00	2022-12-12 14:42:03.615+00
 \.
 
 
@@ -421,7 +429,7 @@ SELECT pg_catalog.setval('public.event_bookings_id_seq', 4, true);
 -- Name: groups_id_seq; Type: SEQUENCE SET; Schema: public; Owner: rutherford
 --
 
-SELECT pg_catalog.setval('public.groups_id_seq', 1, true);
+SELECT pg_catalog.setval('public.groups_id_seq', 4, true);
 
 
 --
@@ -477,7 +485,7 @@ SELECT pg_catalog.setval('public.user_alerts_id_seq', 1, false);
 -- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: rutherford
 --
 
-SELECT pg_catalog.setval('public.users_id_seq', 1, true);
+SELECT pg_catalog.setval('public.users_id_seq', 12, true);
 
 
 --

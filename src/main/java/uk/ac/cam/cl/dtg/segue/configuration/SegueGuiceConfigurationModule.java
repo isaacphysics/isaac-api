@@ -33,7 +33,7 @@ import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.SystemUtils;
-import org.elasticsearch.client.Client;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.quartz.SchedulerException;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
@@ -170,7 +170,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static PostgresSqlDb postgresDB;
     private static ContentMapper mapper = null;
     private static GitContentManager contentManager = null;
-    private static Client elasticSearchClient = null;
+    private static RestHighLevelClient elasticSearchClient = null;
     private static UserAccountManager userManager = null;
     private static UserAuthenticationManager userAuthenticationManager = null;
     private static IQuestionAttemptManager questionPersistenceManager = null;
@@ -256,7 +256,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
         this.bindConstantToProperty(Constants.SEARCH_CLUSTER_NAME, globalProperties);
         this.bindConstantToProperty(Constants.SEARCH_CLUSTER_ADDRESS, globalProperties);
-        this.bindConstantToProperty(Constants.SEARCH_CLUSTER_PORT, globalProperties);
+        this.bindConstantToProperty(Constants.SEARCH_CLUSTER_INFO_PORT, globalProperties);
+        this.bindConstantToProperty(Constants.SEARCH_CLUSTER_USERNAME, globalProperties);
+        this.bindConstantToProperty(Constants.SEARCH_CLUSTER_PASSWORD, globalProperties);
 
         this.bindConstantToProperty(Constants.HOST_NAME, globalProperties);
         this.bindConstantToProperty(Constants.MAILER_SMTP_SERVER, globalProperties);
@@ -415,25 +417,27 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      * This provides a singleton of the elasticSearch client that can be used by Guice.
      *
      * The client is threadsafe, so we don't need to keep creating new ones.
-     *
-     * @param clusterName
-     *            - The name of the cluster to create.
      * @param address
      *            - address of the cluster to create.
      * @param port
      *            - port of the cluster to create.
+     * @param username
+     *            - username for cluster user.
+     * @param password
+     *            - password for cluster user.
      * @return Client to be injected into ElasticSearch Provider.
      */
     @Inject
     @Provides
     @Singleton
-    private static Client getSearchConnectionInformation(
-            @Named(Constants.SEARCH_CLUSTER_NAME) final String clusterName,
+    private static RestHighLevelClient getSearchConnectionInformation(
             @Named(Constants.SEARCH_CLUSTER_ADDRESS) final String address,
-            @Named(Constants.SEARCH_CLUSTER_PORT) final int port) {
+            @Named(Constants.SEARCH_CLUSTER_INFO_PORT) final int port,
+            @Named(Constants.SEARCH_CLUSTER_USERNAME) final String username,
+            @Named(Constants.SEARCH_CLUSTER_PASSWORD) final String password) {
         if (null == elasticSearchClient) {
             try {
-                elasticSearchClient = ElasticSearchProvider.getTransportClient(clusterName, address, port);
+                elasticSearchClient = ElasticSearchProvider.getClient(address, port, username, password);
                 log.info("Creating singleton of ElasticSearchProvider");
             } catch (UnknownHostException e) {
                 log.error("Could not create ElasticSearchProvider");
@@ -1252,8 +1256,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     public void contextDestroyed(final ServletContextEvent sce) {
         // Close all resources we hold.
         log.info("Segue Config Module notified of shutdown. Releasing resources");
-        elasticSearchClient.close();
-        elasticSearchClient = null;
+        try {
+            elasticSearchClient.close();
+            elasticSearchClient = null;
+        } catch (IOException e) {
+            log.error("Error releasing Elasticsearch client",  e);
+        }
 
         postgresDB.close();
         postgresDB = null;

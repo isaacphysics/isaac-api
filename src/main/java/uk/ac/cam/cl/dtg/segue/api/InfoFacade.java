@@ -43,6 +43,7 @@ import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Objects;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_THIRTY_DAYS;
@@ -90,7 +91,7 @@ public class InfoFacade extends AbstractSegueFacade {
     @Operation(summary = "Get the currently running API build version.")
     public final Response getSegueAppVersion() {
         ImmutableMap<String, String> result = new ImmutableMap.Builder<String, String>().put("segueVersion",
-                SegueGuiceConfigurationModule.getSegueVersion()).build();
+                Objects.requireNonNullElse(SegueGuiceConfigurationModule.getSegueVersion(), "unknown")).build();
 
         return Response.ok(result).build();
     }

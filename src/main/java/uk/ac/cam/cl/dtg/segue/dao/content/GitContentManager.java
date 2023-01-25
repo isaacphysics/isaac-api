@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.content;
 
+import com.google.api.client.util.Sets;
 import com.google.common.base.Functions;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -43,6 +44,7 @@ import uk.ac.cam.cl.dtg.segue.search.BooleanMatchInstruction;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.MustMatchInstruction;
 import uk.ac.cam.cl.dtg.segue.search.RangeMatchInstruction;
+import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 import uk.ac.cam.cl.dtg.segue.search.ShouldMatchInstruction;
 import uk.ac.cam.cl.dtg.segue.search.SimpleExclusionInstruction;
 import uk.ac.cam.cl.dtg.segue.search.SimpleFilterInstruction;
@@ -544,13 +546,17 @@ public class GitContentManager {
     }
 
     public final Set<String> getTagsList() {
-        List<Object> tagObjects = (List<Object>) searchProvider.getById(
-                contentIndex,
-                Constants.CONTENT_INDEX_TYPE.METADATA.toString(),
-                "tags"
-        ).getSource().get("tags");
-
-        return new HashSet<>(Lists.transform(tagObjects, Functions.toStringFunction()));
+        try {
+            List<Object> tagObjects = (List<Object>) searchProvider.getById(
+                    contentIndex,
+                    Constants.CONTENT_INDEX_TYPE.METADATA.toString(),
+                    "tags"
+            ).getSource().get("tags");
+            return new HashSet<>(Lists.transform(tagObjects, Functions.toStringFunction()));
+        } catch (SegueSearchException e) {
+            log.error("Failed to retrieve tags from search provider", e);
+            return Sets.newHashSet();
+        }
     }
 
     public final Collection<String> getAllUnits() {
@@ -558,41 +564,50 @@ public class GitContentManager {
         if (globalProperties.getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(Constants.EnvironmentType.PROD.name())) {
             unitType = Constants.CONTENT_INDEX_TYPE.PUBLISHED_UNIT.toString();
         }
-        SearchResponse r =  searchProvider.getAllByType(globalProperties.getProperty(Constants.CONTENT_INDEX), unitType);
-        SearchHits hits = r.getHits();
-        ArrayList<String> units = new ArrayList<>((int) hits.getTotalHits().value);
-        for (SearchHit hit : hits) {
-            units.add((String) hit.getSourceAsMap().get("unit"));
-        }
+        try {
+            SearchResponse r = searchProvider.getAllFromIndex(globalProperties.getProperty(Constants.CONTENT_INDEX), unitType);
+            SearchHits hits = r.getHits();
+            ArrayList<String> units = new ArrayList<>((int) hits.getTotalHits().value);
+            for (SearchHit hit : hits) {
+                units.add((String) hit.getSourceAsMap().get("unit"));
+            }
 
-        return units;
+            return units;
+        } catch (SegueSearchException e) {
+            log.error("Failed to retrieve all units from search provider", e);
+            return Collections.emptyList();
+        }
     }
 
     public final Map<Content, List<String>> getProblemMap() {
-        SearchResponse r = searchProvider.getAllByType(contentIndex,
-                Constants.CONTENT_INDEX_TYPE.CONTENT_ERROR.toString());
+        try {
+            SearchResponse r = searchProvider.getAllFromIndex(contentIndex,
+                    Constants.CONTENT_INDEX_TYPE.CONTENT_ERROR.toString());
+            SearchHits hits = r.getHits();
+            Map<Content, List<String>> map = new HashMap<>();
 
-        SearchHits hits = r.getHits();
-        Map<Content, List<String>> map = new HashMap<>();
-        for (SearchHit hit : hits) {
+            for (SearchHit hit : hits) {
+                Content partialContentWithErrors = new Content();
+                Map src = hit.getSourceAsMap();
+                partialContentWithErrors.setId((String) src.get("id"));
+                partialContentWithErrors.setTitle((String) src.get("title"));
+                //partialContentWithErrors.setTags(pair.getKey().getTags()); // TODO: Support tags
+                partialContentWithErrors.setPublished((Boolean) src.get("published"));
+                partialContentWithErrors.setCanonicalSourceFile((String) src.get("canonicalSourceFile"));
 
-            Content partialContentWithErrors = new Content();
-            Map src = hit.getSourceAsMap();
-            partialContentWithErrors.setId((String) src.get("id"));
-            partialContentWithErrors.setTitle((String) src.get("title"));
-            //partialContentWithErrors.setTags(pair.getKey().getTags()); // TODO: Support tags
-            partialContentWithErrors.setPublished((Boolean) src.get("published"));
-            partialContentWithErrors.setCanonicalSourceFile((String) src.get("canonicalSourceFile"));
+                ArrayList<String> errors = new ArrayList<>();
+                for (Object v : (List) hit.getSourceAsMap().get("errors")) {
+                    errors.add((String) v);
+                }
 
-            ArrayList<String> errors = new ArrayList<>();
-            for (Object v : (List) hit.getSourceAsMap().get("errors")) {
-                errors.add((String) v);
+                map.put(partialContentWithErrors, errors);
             }
+            return map;
 
-            map.put(partialContentWithErrors, errors);
+        } catch (SegueSearchException e) {
+            log.error("Failed to retrieve problem map from search provider", e);
+            return Maps.newHashMap();
         }
-
-        return map;
     }
 
     public ContentDTO populateRelatedContent(final ContentDTO contentDTO)
@@ -647,16 +662,21 @@ public class GitContentManager {
 
     public String getCurrentContentSHA() {
         GetResponse shaResponse = contentShaCache.getIfPresent(contentIndex);
-        if (null == shaResponse) {
-            shaResponse =
-                    searchProvider.getById(
-                            contentIndex,
-                            Constants.CONTENT_INDEX_TYPE.METADATA.toString(),
-                            "general"
-                    );
-            contentShaCache.put(contentIndex, shaResponse);
+        try {
+            if (null == shaResponse) {
+                shaResponse =
+                        searchProvider.getById(
+                                contentIndex,
+                                Constants.CONTENT_INDEX_TYPE.METADATA.toString(),
+                                "general"
+                        );
+                contentShaCache.put(contentIndex, shaResponse);
+            }
+            return (String) shaResponse.getSource().get("version");
+        } catch (SegueSearchException e) {
+            log.error("Failed to retrieve current content SHA from search provider", e);
+            return "unknown";
         }
-        return (String) shaResponse.getSource().get("version");
     }
 
     /**

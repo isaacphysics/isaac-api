@@ -240,7 +240,7 @@ public interface ISearchProvider {
     /*
      * TODO: We need to change the return type of these two methods to avoid having ES specific things
      */
-    GetResponse getById(String indexBase, String indexType, String id);
+    GetResponse getById(String indexBase, String indexType, String id) throws SegueSearchException;
 
-    SearchResponse getAllByType(String indexBase, String indexType);
+    SearchResponse getAllFromIndex(String indexBase, String indexType) throws SegueSearchException;
 }
