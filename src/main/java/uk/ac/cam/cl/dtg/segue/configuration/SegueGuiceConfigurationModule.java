@@ -88,6 +88,7 @@ import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISecondFactorAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISegueHashingAlgorithm;
+import uk.ac.cam.cl.dtg.segue.auth.RaspberryPiAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v1;
 import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v2;
@@ -353,12 +354,21 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         this.bindConstantToProperty(Constants.TWITTER_CLIENT_ID, globalProperties);
         this.bindConstantToProperty(Constants.TWITTER_CALLBACK_URI, globalProperties);
 
+        // Raspberry Pi
+        this.bindConstantToProperty(Constants.RASPBERRYPI_CLIENT_ID, globalProperties);
+        this.bindConstantToProperty(Constants.RASPBERRYPI_CLIENT_SECRET, globalProperties);
+        this.bindConstantToProperty(Constants.RASPBERRYPI_AUTHORIZATION_URI, globalProperties);
+        this.bindConstantToProperty(Constants.RASPBERRYPI_CALLBACK_URI, globalProperties);
+        this.bindConstantToProperty(Constants.RASPBERRYPI_OAUTH_SCOPES, globalProperties);
+        this.bindConstantToProperty(Constants.RASPBERRYPI_TOKEN_URI, globalProperties);
+
         // Register a map of security providers
         MapBinder<AuthenticationProvider, IAuthenticator> mapBinder = MapBinder.newMapBinder(binder(),
                 AuthenticationProvider.class, IAuthenticator.class);
         mapBinder.addBinding(AuthenticationProvider.GOOGLE).to(GoogleAuthenticator.class);
         mapBinder.addBinding(AuthenticationProvider.FACEBOOK).to(FacebookAuthenticator.class);
         mapBinder.addBinding(AuthenticationProvider.TWITTER).to(TwitterAuthenticator.class);
+        mapBinder.addBinding(AuthenticationProvider.RASPBERRYPI).to(RaspberryPiAuthenticator.class);
         mapBinder.addBinding(AuthenticationProvider.SEGUE).to(SegueLocalAuthenticator.class);
     }
 
