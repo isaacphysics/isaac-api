@@ -20,6 +20,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.Response;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,6 +31,8 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import uk.ac.cam.cl.dtg.isaac.api.services.AssignmentService;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentStatusDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AdditionalAuthenticationRequiredException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
@@ -85,6 +88,14 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
         pst.setString(1, ITConstants.ASSIGNMENTS_TEST_GAMEBOARD_ID);
         pst.setString(2, ITConstants.ASSIGNMENTS_DATE_TEST_GAMEBOARD_ID);
         pst.executeUpdate();
+    }
+
+    @AfterClass
+    public static void cleanUp() throws SegueDatabaseException {
+        // reset additional manager privileges setting for Daves group
+        UserGroupDTO davesGroup = groupManager.getGroupById(ITConstants.DAVE_TEACHERS_BC_GROUP_ID);
+        davesGroup.setAdditionalManagerPrivileges(false);
+        groupManager.editUserGroup(davesGroup);
     }
 
     @Test
@@ -361,5 +372,62 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
                 (ArrayList<AssignmentStatusDTO>) assignBulkResponse.getEntity();
         assertEquals("The assignment cannot be scheduled to begin after it is due.",
                 responseBody.get(0).getErrorMessage());
+    }
+
+
+    @Test public void deleteAssignmentEndpoint_attemptToDeleteOwnersAssignmentAsAdditionalManagerWithAdditionManagerPrivilegesOff_failsToDelete()
+            throws Exception {
+
+        // Arrange
+        // Ensure that additional manager privileges are set to false
+        UserGroupDTO davesGroup = groupManager.getGroupById(ITConstants.DAVE_TEACHERS_BC_GROUP_ID);
+        davesGroup.setAdditionalManagerPrivileges(false);
+        groupManager.editUserGroup(davesGroup);
+
+        // log in as Test teacher, create request
+        LoginResult teacherLogin = loginAs(httpSession, ITConstants.TEST_TEACHER_EMAIL,
+                ITConstants.TEST_TEACHER_PASSWORD);
+        HttpServletRequest deleteAssignmentRequest = createRequestWithCookies(new Cookie[]{teacherLogin.cookie});
+        replay(deleteAssignmentRequest);
+
+        // Act
+        // make request
+        Response deleteAssignmentResponse = assignmentFacade.deleteAssignment(deleteAssignmentRequest,
+                ITConstants.ADDITIONAL_MANAGER_TEST_GAMEBOARD_ID, ITConstants.DAVE_TEACHERS_BC_GROUP_ID);
+
+        // Assert
+        // check status code is FORBIDDEN
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), deleteAssignmentResponse.getStatus());
+
+        // ensure the deletion was forbidden because additional manager privileges aren't enabled
+        SegueErrorResponse responseBody = (SegueErrorResponse) deleteAssignmentResponse.getEntity();
+        assertEquals("You do not have permission to delete this assignment. Unable to delete it.",
+                responseBody.getErrorMessage());
+    }
+
+    @Test public void deleteAssignmentEndpoint_attemptToDeleteOwnersAssignmentAsAdditionalManagerWithAdditionManagerPrivilegesOn_succeeds()
+            throws Exception {
+        // Test Teacher (5) is additional manager of group 5, which is owned by dave teacher (10)
+
+        // Arrange
+        // Ensure that additional manager privileges are set to true
+        UserGroupDTO davesGroup = groupManager.getGroupById(ITConstants.DAVE_TEACHERS_BC_GROUP_ID);
+        davesGroup.setAdditionalManagerPrivileges(true);
+        groupManager.editUserGroup(davesGroup);
+
+        // log in as Test teacher, create request
+        LoginResult teacherLogin = loginAs(httpSession, ITConstants.TEST_TEACHER_EMAIL,
+                ITConstants.TEST_TEACHER_PASSWORD);
+        HttpServletRequest deleteAssignmentRequest = createRequestWithCookies(new Cookie[]{teacherLogin.cookie});
+        replay(deleteAssignmentRequest);
+
+        // Act
+        // make request
+        Response deleteAssignmentResponse = assignmentFacade.deleteAssignment(deleteAssignmentRequest,
+                ITConstants.ADDITIONAL_MANAGER_TEST_GAMEBOARD_ID, ITConstants.DAVE_TEACHERS_BC_GROUP_ID);
+
+        // Assert
+        // check status code is OK
+        assertEquals(Response.Status.OK.getStatusCode(), deleteAssignmentResponse.getStatus());
     }
 }
