@@ -427,7 +427,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
                 ITConstants.ADDITIONAL_MANAGER_TEST_GAMEBOARD_ID, ITConstants.DAVE_TEACHERS_BC_GROUP_ID);
 
         // Assert
-        // check status code is OK
-        assertEquals(Response.Status.OK.getStatusCode(), deleteAssignmentResponse.getStatus());
+        // check status code is NO_CONTENT (successful)
+        assertEquals(Response.Status.NO_CONTENT.getStatusCode(), deleteAssignmentResponse.getStatus());
     }
 }
