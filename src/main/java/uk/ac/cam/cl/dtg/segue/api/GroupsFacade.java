@@ -405,11 +405,14 @@ public class GroupsFacade extends AbstractSegueFacade {
                 // Check if an additional manager with privileges is allowed to make these changes
                 boolean ownerOnlyFieldChanged = !existingGroup.getOwnerId().equals(groupDTO.getOwnerId())
                         || existingGroup.isAdditionalManagerPrivileges() != groupDTO.isAdditionalManagerPrivileges()
-                        || !existingGroup.getCreated().equals(groupDTO.getCreated());
+                        || !existingGroup.getCreated().equals(groupDTO.getCreated())
+                        || !existingGroup.getLastUpdated().equals(groupDTO.getLastUpdated())
+                        || !existingGroup.getAdditionalManagersUserIds().equals(groupDTO.getAdditionalManagersUserIds())
+                        || !existingGroup.getOwnerSummary().toString().equals(groupDTO.getOwnerSummary().toString());
                 boolean additionalManagerCanMakeChange = !ownerOnlyFieldChanged && existingGroup.isAdditionalManagerPrivileges();
 
                 // And that the user is an additional manager with privileges. If not, return an error response
-                if (!(GroupManager.isOwnerOrAdditionalManager(existingGroup, user.getId()) && additionalManagerCanMakeChange)) {
+                if (!(GroupManager.isInAdditionalManagerList(existingGroup, user.getId()) && additionalManagerCanMakeChange)) {
                     return new SegueErrorResponse(Status.FORBIDDEN,
                             "You do not have permission to edit this group.").toResponse();
                 }
