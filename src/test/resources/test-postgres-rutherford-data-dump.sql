@@ -93,7 +93,7 @@ COPY public.external_accounts (user_id, provider_name, provider_user_identifier,
 --
 
 COPY public.group_additional_managers (user_id, group_id, created) FROM stdin;
-5	10	2022-07-06 15:36:58
+5	2	2022-07-06 15:36:58
 \.
 
 
