@@ -1190,9 +1190,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             // Check if user is additional manager, and if so if they are either the creator of the assignment or additional
             // manager privileges are enabled
-            if (!assigneeGroup.getOwnerId().equals(currentlyLoggedInUser.getId())
-                    && !assignmentToDelete.getOwnerUserId().equals(currentlyLoggedInUser.getId())
-                    && !assigneeGroup.isAdditionalManagerPrivileges()) {
+            if (!(assigneeGroup.getOwnerId().equals(currentlyLoggedInUser.getId())
+                    || assignmentToDelete.getOwnerUserId().equals(currentlyLoggedInUser.getId())
+                    || assigneeGroup.isAdditionalManagerPrivileges())) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You do not have permission to delete this assignment. Unable to delete it.").toResponse();
             }
