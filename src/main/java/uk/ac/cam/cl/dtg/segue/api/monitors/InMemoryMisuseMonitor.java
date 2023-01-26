@@ -20,15 +20,21 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dto.MisuseStatisticDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.google.common.collect.Maps.immutableEntry;
 
@@ -157,7 +163,34 @@ public class InMemoryMisuseMonitor implements IMisuseMonitor {
         
         existingHistory.remove(eventLabel);
     }
-    
+
+    @Override
+    public Map<String, List<MisuseStatisticDTO>> getMisuseStatistics(final long n) {
+        Map<String, Map<String, Entry<Date, Integer>>> cache = nonPersistentDatabase.asMap();
+        return handlerMap.keySet().stream()
+                .map(eventLabel -> {
+                    Integer softThreshold = handlerMap.get(eventLabel).getSoftThreshold();
+                    return Map.entry(
+                            eventLabel,
+                            cache.entrySet().stream()
+                                .map(e -> Pair.of(e.getKey(), e.getValue().get(eventLabel)))
+                                .filter(e -> null != e.getRight())
+                                .sorted(Comparator.comparingInt((Entry<String, Entry<Date, Integer>> e) -> e.getValue().getValue()).reversed())
+                                .limit(n)
+                                .map((Pair<String, Entry<Date, Integer>> e) -> {
+                                    String agentIdentifier = e.getKey();
+                                    Entry<Date, Integer> misuseEntry = e.getValue();
+                                    return new MisuseStatisticDTO(
+                                        agentIdentifier, eventLabel, hasMisused(agentIdentifier, eventLabel),
+                                        misuseEntry.getValue() >= softThreshold,
+                                        misuseEntry.getKey(), misuseEntry.getValue()
+                                    );
+                                })
+                                .collect(Collectors.toList())
+                    );
+                }).collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+    }
+
     /**
      * Helper to work out whether we can reset the counter or not.
      * 

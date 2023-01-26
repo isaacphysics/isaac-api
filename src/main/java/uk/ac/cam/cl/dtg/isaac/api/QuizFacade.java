@@ -35,6 +35,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.QuizManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizQuestionManager;
 import uk.ac.cam.cl.dtg.isaac.api.services.AssignmentService;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
+import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizSectionDTO;
@@ -200,7 +201,8 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
-            boolean isStudent = !isUserTeacherOrAbove(userManager, user);
+            // Tutors cannot see quizzes that are invisible to students
+            boolean showOnlyStudentVisibleQuizzes = !isUserTeacherOrAbove(userManager, user);
             String userRoleString = user.getRole().name();
 
             // Cache the list of quizzes based on current content version, user's role, and startIndex:
@@ -218,7 +220,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             // FIXME: ** HARD-CODED DANGER AHEAD **
             // The limit parameter in the following call is hard-coded and should be returned to a more reasonable
             // number once we have a front-end pagination/load-more system in place.
-            ResultsWrapper<ContentSummaryDTO> summary = this.quizManager.getAvailableQuizzes(isStudent, userRoleString, startIndex, 9000);
+            ResultsWrapper<ContentSummaryDTO> summary = this.quizManager.getAvailableQuizzes(showOnlyStudentVisibleQuizzes, userRoleString, startIndex, 9000);
 
             return ok(summary).tag(etag)
                 .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
@@ -300,7 +302,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     }
 
     /**
-     * Preview a quiz. Only available to teachers and above.
+     * Preview a quiz. Only available to tutors and above.
      *
      * @param request
      *            - so we can deal with caching.
@@ -321,7 +323,8 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
-            if (!(isUserTeacherOrAbove(userManager, user))) {
+            // Tutors are able to preview student tests (but not set them)
+            if (!(isUserTutorOrAbove(userManager, user))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
@@ -338,8 +341,12 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             IsaacQuizDTO quiz = this.quizManager.findQuiz(quizId);
 
-            // Check this user is actually allowed to preview this quiz:
-            if (null != quiz.getHiddenFromRoles() && quiz.getHiddenFromRoles().contains(user.getRole().name())) {
+            // Check this user is actually allowed to preview this quiz. A tutor counts as both a student and teacher
+            // in this check
+            if (null != quiz.getHiddenFromRoles() && (quiz.getHiddenFromRoles().contains(user.getRole().name())
+                    || (quiz.getHiddenFromRoles().contains(Role.STUDENT.name()) && user.getRole() == Role.TUTOR)
+                    || (quiz.getHiddenFromRoles().contains(Role.TEACHER.name()) && user.getRole() == Role.TUTOR))
+            ) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
