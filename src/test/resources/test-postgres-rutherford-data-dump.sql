@@ -65,7 +65,7 @@ COPY public.groups (id, group_name, owner_id, created, archived, group_status, l
 
 COPY public.assignments (id, gameboard_id, group_id, owner_user_id, notes, creation_date, due_date, scheduled_start_date) FROM stdin;
 2	9313cadd-d4ce-420f-9331-300e3067b45f	1	5	\N	2022-08-03 12:14:50.134	\N	\N
-2	9313cadd-d4ce-420f-9331-300e3067b45f	2	10	\N	2022-08-03 12:14:50.134	\N	\N
+3	43c3ca6d-4d1b-49df-3ec4-4ce2b306eb45	2	10	\N	2022-08-03 12:14:50.134	\N	\N
 \.
 
 
