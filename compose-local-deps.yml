@@ -1,14 +1,16 @@
-# Note: When running locally in ubuntu in order for ElasticSearch to wrok 
-# you will need to run 
+# Note: When running locally in ubuntu in order for ElasticSearch to work, you will need to run:
 # sysctl -w vm.max_map_count=262144
+
 version: '2'
 services:
+
   equality-checker:
     network_mode: bridge
     container_name: equality-checker
     image: ucamcldtg/equality-checker
     ports:
       - "5000:5000"
+
   chemistry-checker:
     network_mode: bridge
     container_name: chemistry-checker
@@ -17,6 +19,7 @@ services:
       - "5001:5000"
     volumes:
       - ../.m2:/root/.m2:rw
+
   elasticsearch:
     network_mode: bridge
     container_name: elasticsearch
@@ -27,12 +30,14 @@ services:
       - node.name=localhost
       - cluster.initial_master_nodes=localhost
       - http.max_content_length=512mb
-      - xpack.security.enabled=true
       - ELASTIC_PASSWORD=elastic
+      - xpack.security.enabled=false
+      - ingest.geoip.downloader.enabled=false
     ports:
       - "9200:9200"
       - "9300:9300"
     mem_limit: 6G
+
   cs-elasticsearch:
     network_mode: bridge
     container_name: cs-elasticsearch
@@ -43,12 +48,14 @@ services:
       - node.name=localhost
       - cluster.initial_master_nodes=localhost
       - http.max_content_length=512mb
-      - xpack.security.enabled=true
       - ELASTIC_PASSWORD=elastic
+      - xpack.security.enabled=false
+      - ingest.geoip.downloader.enabled=false
     ports:
       - "9201:9200"
       - "9301:9300"
     mem_limit: 6G
+
   postgres:
     network_mode: bridge
     container_name: postgres
@@ -63,6 +70,7 @@ services:
       POSTGRES_PASSWORD: rutherf0rd
     ports:
       - "5432:5432"
+
 #  app-physics:
 #    network_mode: bridge
 #    container_name: app-physics
@@ -72,10 +80,12 @@ services:
 #      - "../isaac-app/nginx.conf:/etc/nginx/nginx.conf:ro"
 #    ports:
 #      - "8000:80"
+
 networks:
   default:
     external:
       name: bridge
+
 volumes:
   pg-local:
     external: true

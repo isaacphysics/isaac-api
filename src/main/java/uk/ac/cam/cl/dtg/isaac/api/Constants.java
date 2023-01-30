@@ -125,6 +125,8 @@ public final class Constants {
     public static final String FRAGMENT_ID_LOG_FIELDNAME = "pageFragmentId";
     public static final String DOCUMENT_PATH_LOG_FIELDNAME = "path";
 
+    public static final Long DEFAULT_MISUSE_STATISTICS_LIMIT = 5L;
+
     /**
      * Class to represent Isaac log types.
      */

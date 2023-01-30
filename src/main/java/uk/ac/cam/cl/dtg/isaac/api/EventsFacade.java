@@ -627,6 +627,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
 
+            // Tutors cannot yet manage event bookings for their groups
             if (!isUserTeacherOrAbove(userManager, currentUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to use this endpoint.").toResponse();
             }
@@ -711,7 +712,8 @@ public class EventsFacade extends AbstractIsaacFacade {
                 String schoolId = resultRegisteredUser.getSchoolId();
                 Map<String, String> resultAdditionalInformation = booking.getAdditionalInformation();
                 BookingStatus resultBookingStatus = booking.getBookingStatus();
-                resultRow.add(resultUser.getGivenName() + " " + resultUser.getFamilyName());
+                resultRow.add(resultUser.getFamilyName());
+                resultRow.add(resultUser.getGivenName());
                 resultRow.add(resultRegisteredUser.getRole().toString());
                 if (schoolId != null) {
                     School school = schoolListReader.findSchoolById(schoolId);
@@ -741,7 +743,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             }
 
             rows.add(totalsRow.toArray(new String[0]));
-            rows.add(("Name,Role,School,Booking status,Booking date,Last updated date,Year group,Job title," +  // lgtm [java/missing-space-in-concatenation]
+            rows.add(("Family name,Given name,Role,School,Booking status,Booking date,Last updated date,Year group,Job title," +  // lgtm [java/missing-space-in-concatenation]
                     "Stages,Exam boards,Level of teaching experience,Medical/dietary requirements,Accessibility requirements,Emergency name,Emergency number").split(","));
             rows.addAll(resultRows);
             csvWriter.writeAll(rows);
@@ -873,6 +875,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         List<RegisteredUserDTO> usersToReserve = Lists.newArrayList();
         try {
             reservingUser = userManager.getCurrentRegisteredUser(request);
+            // Tutors cannot yet manage event bookings for their tutees, so shouldn't be added to this list
             if (!Arrays.asList(Role.TEACHER, Role.EVENT_LEADER, Role.EVENT_MANAGER, Role.ADMIN).contains(reservingUser.getRole())) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }

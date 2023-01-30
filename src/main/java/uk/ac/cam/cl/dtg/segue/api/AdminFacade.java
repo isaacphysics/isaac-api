@@ -100,6 +100,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -269,6 +270,10 @@ public class AdminFacade extends AbstractSegueFacade {
                 RegisteredUserDTO user = this.userManager.getUserDTOById(userid);
                 Role oldRole = user.getRole();
                 this.userManager.updateUserRole(userid, requestedRole);
+                log.info(String.format(
+                        "ADMIN user %s has modified the role of %s [%s] to %s",
+                        requestingUser.getEmail(), user.getEmail(), user.getId(), user.getRole()
+                ));
                 this.getLogManager().logEvent(requestingUser, request, SegueServerLogType.CHANGE_USER_ROLE,
                         ImmutableMap.of(USER_ID_FKEY_FIELDNAME, user.getId(),
                                         "oldRole", oldRole,
@@ -1150,6 +1155,41 @@ public class AdminFacade extends AbstractSegueFacade {
         }
     }
 
+    /**
+     * This method will reset the misuse monitor for the specified event and agent identifier.
+     *
+     * @param request
+     *            - to help determine access rights.
+     * @param details
+     *            - a map containing: the misuse monitor eventLabel (i.e. what type of misuse monitor),
+     *              and the misuse monitor agentIdentifier (i.e. which user to reset the count for)
+     * @return Confirmation of success, or error message on incorrect role or incorrect details argument.
+     */
+    @POST
+    @Path("/reset_misuse_monitor")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Reset a misuse monitor counter to zero.")
+    public Response resetMisuseMonitor(@Context final HttpServletRequest request, final Map<String, String> details) {
+        try {
+            RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+            if (!isUserAnAdmin(userManager, user)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+            if (!details.containsKey("eventLabel") || !details.containsKey("agentIdentifier")) {
+                return SegueErrorResponse.getBadRequestResponse("Request body should contain the keys 'eventLabel' and 'agentIdentifier'.");
+            }
+            String agentIdentifier = details.get("agentIdentifier");
+            String eventLabel = details.get("eventLabel");
+            misuseMonitor.resetMisuseCount(agentIdentifier, eventLabel);
+            log.info(String.format("Admin user (%s) reset misuse monitor '%s' for agent id (%s)!", user.getEmail(),
+                    eventLabel, agentIdentifier));
+            return Response.ok().build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
+    }
+
     @POST
     @Path("/new_version_alert")
     @Produces(MediaType.APPLICATION_JSON)
@@ -1239,42 +1279,6 @@ public class AdminFacade extends AbstractSegueFacade {
     }
 
     /**
-     * This method will reset the misuse monitor for the specified event and agent identifier.
-     *
-     * @param request
-     *            - to help determine access rights.
-     * @param eventLabel
-     *            - the misuse monitor eventLabel, i.e. what type of misuse monitor
-     * @param agentIdentifier
-     *            - the misuse monitor agentIdentifier, i.e. which user to reset the count for
-     * @return Confirmation of success, or error message on incorrect role.
-     */
-    @POST
-    @Path("/reset_misuse_monitor/{event_label}")
-    @Produces(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Reset a misuse monitor counter to zero.")
-    public Response resetMisuseMonitor(@Context final HttpServletRequest request,
-                                       @PathParam("event_label") final String eventLabel,
-                                       final String agentIdentifier) {
-        try {
-            RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
-            if (!isUserAnAdmin(userManager, user)) {
-                return SegueErrorResponse.getIncorrectRoleResponse();
-            }
-            if (misuseMonitor.hasMisused(agentIdentifier, eventLabel)) {
-                misuseMonitor.resetMisuseCount(agentIdentifier, eventLabel);
-                log.info(String.format("Admin user (%s) reset misuse monitor '%s' for user (%s)!", user.getEmail(),
-                        eventLabel, agentIdentifier));
-                return Response.ok(ImmutableMap.of("status", "Reset successfully!")).build();
-            } else {
-                return Response.ok(ImmutableMap.of("status", "Nothing to reset.")).build();
-            }
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        }
-    }
-
-    /**
      *  Manually trigger a sync for testing or debugging purposes. Minimal success or failure reporting.
      */
     @POST
@@ -1320,6 +1324,22 @@ public class AdminFacade extends AbstractSegueFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SchedulerException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, e.getMessage()).toResponse();
+        }
+    }
+
+    @GET
+    @Path("/misuse_stats")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Get a summary of the site misuse statistics.")
+    public Response getUserMisuseStatistics(@Context final HttpServletRequest request, @QueryParam("limit") final Long limit) {
+        try {
+            RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+            if (!isUserAnAdmin(userManager, user)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+            return Response.ok(misuseMonitor.getMisuseStatistics(Objects.requireNonNullElse(limit, DEFAULT_MISUSE_STATISTICS_LIMIT))).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
         }
     }
 }
