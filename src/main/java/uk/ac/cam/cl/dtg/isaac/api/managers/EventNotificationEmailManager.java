@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.EventStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ExternalReference;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
@@ -116,6 +117,10 @@ public class EventNotificationEmailManager {
             for (ContentDTO contentResult : findByFieldNames.getResults()) {
                 if (contentResult instanceof IsaacEventPageDTO) {
                     IsaacEventPageDTO event = (IsaacEventPageDTO) contentResult;
+                    // Skip sending emails for cancelled events
+                    if (EventStatus.CANCELLED.equals(event.getEventStatus())) {
+                        continue;
+                    }
                     String emailKey = String.format("%s@pre", event.getId());
                     // Includes the attended status in case the events team have pre-emptively marked someone as attended.
                     List<BookingStatus> bookingStatuses = Arrays.asList(BookingStatus.CONFIRMED, BookingStatus.ATTENDED);
@@ -155,6 +160,10 @@ public class EventNotificationEmailManager {
             for (ContentDTO contentResult : findByFieldNames.getResults()) {
                 if (contentResult instanceof IsaacEventPageDTO) {
                     IsaacEventPageDTO event = (IsaacEventPageDTO) contentResult;
+                    // Skip sending emails for cancelled events
+                    if (EventStatus.CANCELLED.equals(event.getEventStatus())) {
+                        continue;
+                    }
                     // Event end date (if present) is today or before, else event date is today or before
                     boolean endDateToday = event.getEndDate() != null && event.getEndDate().toInstant().isBefore(new Date().toInstant());
                     boolean noEndDateAndStartDateToday = event.getEndDate() == null && event.getDate().toInstant().isBefore(new Date().toInstant());
