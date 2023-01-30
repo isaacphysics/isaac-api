@@ -289,12 +289,12 @@ public abstract class IsaacIntegrationTest {
         eventBookingManager = new EventBookingManager(bookingPersistanceManager, emailManager, userAssociationManager, properties, groupManager, userAccountManager, pgTransactionManager);
         userBadgeManager = createNiceMock(UserBadgeManager.class);
         replay(userBadgeManager);
-        assignmentManager = new AssignmentManager(assignmentPersistenceManager, groupManager, new EmailService(emailManager, groupManager, userAccountManager, mailGunEmailManager), gameManager, properties);
+        assignmentManager = new AssignmentManager(assignmentPersistenceManager, groupManager, new EmailService(properties, emailManager, groupManager, userAccountManager, mailGunEmailManager), gameManager, properties);
         schoolListReader = createNiceMock(SchoolListReader.class);
 
         quizManager = new QuizManager(properties, new ContentService(contentManager, "latest"), contentManager, new ContentSummarizerService(mapperFacade, new URIManager(properties)), contentMapper);
         quizAssignmentPersistenceManager =  new PgQuizAssignmentPersistenceManager(postgresSqlDb, mapperFacade);
-        quizAssignmentManager = new QuizAssignmentManager(quizAssignmentPersistenceManager, new EmailService(emailManager, groupManager, userAccountManager, mailGunEmailManager), quizManager, groupManager, properties);
+        quizAssignmentManager = new QuizAssignmentManager(quizAssignmentPersistenceManager, new EmailService(properties, emailManager, groupManager, userAccountManager, mailGunEmailManager), quizManager, groupManager, properties);
         assignmentService = new AssignmentService(userAccountManager);
         quizAttemptPersistenceManager = new PgQuizAttemptPersistenceManager(postgresSqlDb, mapperFacade);
         quizAttemptManager = new QuizAttemptManager(quizAttemptPersistenceManager);

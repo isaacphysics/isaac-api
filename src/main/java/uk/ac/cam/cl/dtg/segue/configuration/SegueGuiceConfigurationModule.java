@@ -629,8 +629,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *
      * @param properties
      * 			- the properties so we can generate emails
-     * @param objectMapper
-     *          - Jackson object mapper to convert user (and other) objects to Map objects
      * @param userPreferenceManager
      *          - Used to check email preferences of users
      * @return the singleton instance of MailGunEmailManager
@@ -639,7 +637,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     private static MailGunEmailManager getMailGunEmailManager(final PropertiesLoader properties,
-                                                              final ObjectMapper objectMapper,
                                                               final AbstractUserPreferenceManager userPreferenceManager) {
         Map<String, String> globalTokens = Maps.newHashMap();
         globalTokens.put("sig", properties.getProperty(EMAIL_SIGNATURE));
