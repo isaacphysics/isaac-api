@@ -1042,7 +1042,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             }
 
             if (EventStatus.CANCELLED.equals(event.getEventStatus())) {
-                return new SegueErrorResponse(Status.BAD_REQUEST, "Sorry this event is cancelled. Please try again later.")
+                return new SegueErrorResponse(Status.BAD_REQUEST, "Sorry, this event is cancelled.")
                         .toResponse();
             }
 
