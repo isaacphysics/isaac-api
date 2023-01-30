@@ -300,6 +300,13 @@ public final class Constants {
     public static final String RASPBERRYPI_AUTHORIZATION_URI = "RASPBERRYPI_AUTHORIZATION_URI";
     public static final String RASPBERRYPI_TOKEN_URI = "RASPBERRYPI_TOKEN_URI";
 
+    /*
+    Options for OpenID Connect dynamic discovery. If set, ...AUTHORIZATION_URI and ...TOKEN_URI config entries are
+    ignored and determined at runtime (start-up) by asking the identity provider. This can cause the API to fail to
+    start if there's no network connection.
+    */
+    public static final String RASPBERRYPI_DISCOVERY_URI = "RASPBERRYPI_DISCOVERY_URI";
+
     // Local authentication specific stuff
     public static final String LOCAL_AUTH_EMAIL_FIELDNAME = "email";
     public static final String LOCAL_AUTH_EMAIL_VERIFICATION_TOKEN_FIELDNAME = "emailVerificationToken";
