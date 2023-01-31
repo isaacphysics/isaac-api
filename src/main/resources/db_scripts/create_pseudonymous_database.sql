@@ -1,42 +1,4 @@
-﻿-- Note that this may require the pg_crypto extension:
---CREATE EXTENSION pgcrypto;
-
--- The anonymous database produced may not yet be fully anonymous due to issues with gameboards!
-
-CREATE OR REPLACE FUNCTION anonymise(id TEXT, salt TEXT) RETURNS TEXT AS
-$$ BEGIN
-    RETURN encode(hmac(id, salt, 'sha256'), 'hex');
-END; $$
-LANGUAGE plpgsql;
-
-
-
-CREATE OR REPLACE FUNCTION anonymise(id BIGINT, salt TEXT) RETURNS TEXT AS
-$$ BEGIN
-    RETURN anonymise(id::TEXT, salt);
-END; $$
-LANGUAGE plpgsql;
-
--- Slightly adapted from this postgresql mailing list post
--- https://www.postgresql.org/message-id/AANLkTi%3D34m32htPtrxb%2BTUks9i2oxu0YbJ7XyPbhK6BJ%40mail.gmail.com
-CREATE OR REPLACE FUNCTION hex_to_integer(hexval varchar) RETURNS integer AS $$
-    DECLARE
-        result  integer;
-    BEGIN
-    EXECUTE 'SELECT x''' || LEFT(hexval, 8) || '''::integer' INTO result;
-    RETURN result;
-END;
-$$
-LANGUAGE plpgsql;
-
-
-CREATE OR REPLACE FUNCTION anonymise_int(id BIGINT, salt TEXT) RETURNS integer AS
-$$ BEGIN
-    RETURN hex_to_integer(anonymise(id, salt));
-END; $$
-LANGUAGE plpgsql;
-
--- Idea is to create a clone of as much the database as is needed to run. Switch the scheme over from public to anonymous
+﻿-- Idea is to create a clone of as much the database as is needed to run. Switch the scheme over from public to anonymous
 -- and run the regression tests (or test manually?) to check if it works. Maybe check for every database table that is
 -- mentioned in the codebase.
 
@@ -54,20 +16,25 @@ CREATE SCHEMA anonymous;
 CREATE TABLE anonymous.users AS
     SELECT
         id,
-        anonymise(_id, hash_salt) as _id,
+        _id,
         'FamilyName-' || id::varchar(255) as family_name,
         'GivenName-' || id::varchar(255) as given_name,
         id::varchar(255) || '@isaac-cs-anonymous-email.com' as email,
         role,
-        CASE
-            WHEN date_part('month', date_of_birth) < 9 THEN make_date((date_part('year', date_of_birth)-1)::int, 9, 1)
-            WHEN date_part('month', date_of_birth) >= 9 THEN make_date(date_part('year', date_of_birth)::int, 9, 1)
-            ELSE NULL
-        END AS date_of_birth,
+        NULL AS date_of_birth,
         'UNKNOWN' as gender,
+        NULL AS registration_date,
         school_id,
-        registration_date,
-        last_seen
+        NULL as school_other,
+        registered_contexts,
+        registered_contexts_last_confirmed,
+        last_updated,
+        email_verification_status,
+        last_seen,
+        id::varchar(255) || '@isaac-cs-anonymous-email.com' as email_to_verify,
+        NULL as email_verification_token,
+        0 as session_token,
+        deleted
     FROM public.users;
 
 -- linked_accounts ignored
@@ -163,7 +130,7 @@ CREATE TABLE anonymous.assignments AS
 CREATE TABLE anonymous.event_bookings AS
     SELECT
         id,
-        'Event-' || anonymise(event_id, hash_salt) as event_id,
+        event_id,
         created,
         user_id,
         reserved_by,
@@ -176,15 +143,7 @@ CREATE TABLE anonymous.event_bookings AS
 
 -- Question attempt related tables:
 
-CREATE TABLE anonymous.question_attempts AS
-    SELECT
-        id,
-        user_id,
-        question_id,
-        '{}'::jsonb as question_attempt,
-        correct,
-        timestamp
-    FROM public.question_attempts;
+CREATE TABLE anonymous.question_attempts AS SELECT * FROM public.question_attempts;
 
 CREATE TABLE anonymous.user_streak_freezes AS
     SELECT
@@ -210,15 +169,7 @@ CREATE TABLE anonymous.quiz_assignments AS SELECT * FROM public.quiz_assignments
 
 CREATE TABLE anonymous.quiz_attempts AS SELECT * FROM public.quiz_attempts;
 
-CREATE TABLE anonymous.quiz_question_attempts AS
-    SELECT
-        id,
-        quiz_attempt_id,
-        question_id,
-        '{}'::jsonb as question_attempt,
-        correct,
-        timestamp
-    FROM public.quiz_question_attempts;
+CREATE TABLE anonymous.quiz_question_attempts AS SELECT * FROM public.quiz_question_attempts;
 
 
 -- Logged events
@@ -226,10 +177,10 @@ CREATE TABLE anonymous.quiz_question_attempts AS
 CREATE TABLE anonymous.logged_events AS
     SELECT
         id,
-        anonymise(user_id, hash_salt) AS user_id,
+        user_id,
         anonymous_user,
         event_type,
-        '{"placeholder": "The quick, brown fox jumps over a lazy dog. DJs flock by when MTV ax quiz prog. Junk MTV quiz graced by fox whelps. Bawds jog, flick quartz, vex nymphs."}'::jsonb as event_details,
+        json_build_object('placeholder', rpad('', greatest(0, length(event_details::TEXT) - 20), 'x')) as event_details,
         '192.168.1.1'::inet as ip_address,
         timestamp
     FROM public.logged_events;
