@@ -229,69 +229,10 @@ CREATE TABLE anonymous.logged_events AS
         anonymise(user_id, hash_salt) AS user_id,
         anonymous_user,
         event_type,
-        event_details,
+        '{"placeholder": "The quick, brown fox jumps over a lazy dog. DJs flock by when MTV ax quiz prog. Junk MTV quiz graced by fox whelps. Bawds jog, flick quartz, vex nymphs."}'::jsonb as event_details,
         '192.168.1.1'::inet as ip_address,
         timestamp
-    FROM public.logged_events
-    WHERE event_type IN (
-        -- Question usage:
-        'VIEW_QUESTION', 'ANSWER_QUESTION', 'QUESTION_ATTEMPT_RATE_LIMITED', 'QUICK_QUESTION_SHOW_ANSWER',
-        'QUESTION_PART_OPEN', 'VIEW_HINT',
-        'VIEW_RELATED_CONCEPT', 'VIEW_RELATED_QUESTION',
-        'VIDEO_ENDED', 'VIDEO_PAUSE', 'VIDEO_PLAY',
-        'VIEW_SUPERSEDED_BY_QUESTION',
-        -- Concept usage:
-        'VIEW_CONCEPT', 'CONCEPT_SECTION_OPEN', 'QUICK_QUESTION_TAB_VIEW', 'VIEW_GITHUB_CODE',
-        -- Page usage:
-        'VIEW_PAGE', 'VIEW_PAGE_FRAGMENT',
-        -- Assignment usage:
-        'VIEW_MY_ASSIGNMENTS', 'VIEW_MY_BOARDS_PAGE', 'VIEW_GAMEBOARD_BY_ID',
-        -- Group and assignment related usage:
-        'CREATE_USER_ASSOCIATION', 'RELEASE_USER_ASSOCIATION', 'REVOKE_USER_ASSOCIATION',
-        'CREATE_USER_GROUP', 'DELETE_USER_GROUP', 'ADD_ADDITIONAL_GROUP_MANAGER', 'DELETE_ADDITIONAL_GROUP_MANAGER',
-        'SET_NEW_ASSIGNMENT', 'DELETE_ASSIGNMENT', 'VIEW_BOARD_BUILDER', 'CLONE_GAMEBOARD',
-        'VIEW_ASSIGNMENT_PROGRESS', 'DOWNLOAD_ASSIGNMENT_PROGRESS_CSV', 'DOWNLOAD_GROUP_PROGRESS_CSV', 'VIEW_USER_PROGRESS',
-        -- Event related usage:
-        'ADMIN_EVENT_ATTENDANCE_RECORDED', 'ADMIN_EVENT_BOOKING_CANCELLED', 'ADMIN_EVENT_BOOKING_CONFIRMED',
-        'ADMIN_EVENT_BOOKING_CREATED', 'ADMIN_EVENT_BOOKING_DELETED', 'ADMIN_EVENT_WAITING_LIST_PROMOTION',
-        'EVENT_BOOKING', 'EVENT_BOOKING_CANCELLED', 'EVENT_WAITING_LIST_BOOKING',
-        -- Other useful events:
-        'EQN_EDITOR_LOG', 'USER_REGISTRATION', 'LOG_OUT', 'CHANGE_CONTENT_VERSION', 'DELETE_USER_ACCOUNT',
-        'USER_SCHOOL_CHANGE'
-    );
-    -- Anonymise specific details:
-    -- userIds
-    WITH
-        expanded_details AS (SELECT id, jsonb_array_elements_text(event_details->'userIds') AS elements FROM anonymous.logged_events WHERE event_details->'userIds' IS NOT NULL),
-        new_details AS (SELECT id, jsonb_strip_nulls(jsonb_agg(  anonymise(elements, hash_salt)  )) AS new_event_detail FROM expanded_details GROUP BY id)
-    UPDATE anonymous.logged_events
-        SET
-            event_details=jsonb_set(event_details, '{userIds}', new_event_detail)
-        FROM new_details
-        WHERE anonymous.logged_events.id=new_details.id;
-    -- userId
-    UPDATE anonymous.logged_events
-        SET event_details=jsonb_set(event_details, '{userId}', to_jsonb(anonymise(event_details->>'userId', hash_salt)))
-        WHERE event_details->>'userId' IS NOT NULL;
-    -- groupId
-    UPDATE anonymous.logged_events
-        SET event_details=jsonb_set(event_details, '{groupId}', to_jsonb(anonymise(event_details->>'groupId', hash_salt)))
-        WHERE event_details->>'groupId' IS NOT NULL;
-    -- assignmentId
-    UPDATE anonymous.logged_events
-        SET event_details=jsonb_set(event_details, '{assignmentId}', to_jsonb(anonymise(event_details->>'assignmentId', hash_salt)))
-        WHERE event_details->>'assignmentId' IS NOT NULL;
-    -- token
-    UPDATE anonymous.logged_events
-        SET event_details=event_details - 'token'
-        WHERE event_details->>'token' IS NOT NULL;
-    -- school_other
-    UPDATE anonymous.logged_events
-    SET event_details=jsonb_strip_nulls(event_details - 'oldSchoolOther')
-    WHERE event_details->>'oldSchoolOther' IS NOT NULL;
-    UPDATE anonymous.logged_events
-    SET event_details=jsonb_strip_nulls(event_details - 'newSchoolOther')
-    WHERE event_details->>'newSchoolOther' IS NOT NULL;
+    FROM public.logged_events;
 
 RETURN true;
 END;
