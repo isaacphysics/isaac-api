@@ -53,11 +53,11 @@ CREATE SCHEMA anonymous;
 
 CREATE TABLE anonymous.users AS
     SELECT
-        anonymise_int(id, hash_salt) as id,
-        anonymise(_id, hash_salt),
-        'FamilyName-' || LEFT(anonymise(public.users.id, hash_salt), 5) as family_name,
-        'GivenName-' || LEFT(anonymise(public.users.id, hash_salt), 5) as given_name,
-        anonymise(public.users.id, hash_salt) || '@isaac-cs-anonymous-email.com' as email,
+        id,
+        anonymise(_id, hash_salt) as _id,
+        'FamilyName-' || id::varchar(255) as family_name,
+        'GivenName-' || id::varchar(255) as given_name,
+        id::varchar(255) || '@isaac-cs-anonymous-email.com' as email,
         role,
         CASE
             WHEN date_part('month', date_of_birth) < 9 THEN make_date((date_part('year', date_of_birth)-1)::int, 9, 1)
@@ -72,21 +72,9 @@ CREATE TABLE anonymous.users AS
 
 -- linked_accounts ignored
 
-CREATE TABLE anonymous.user_preferences AS
-    SELECT
-        anonymise_int(user_id, hash_salt) AS user_id,
-        preference_type,
-        preference_name,
-        preference_value,
-        last_updated
-    FROM public.user_preferences;
+CREATE TABLE anonymous.user_preferences AS SELECT * FROM public.user_preferences;
 
-CREATE TABLE anonymous.user_associations_tokens AS
-    SELECT
-        token,
-        anonymise_int(owner_user_id, hash_salt) AS owner_user_id,
-        anonymise_int(group_id, hash_salt) AS group_id,
-    FROM public.user_associations_tokens;
+CREATE TABLE anonymous.user_associations_tokens AS SELECT * FROM public.user_associations_tokens;
 
 -- external_accounts ignored
 
@@ -94,7 +82,7 @@ CREATE TABLE anonymous.user_badges AS SELECT * FROM public.user_badges;
 
 CREATE TABLE anonymous.user_credentials AS
     SELECT
-        anonymise_int(user_id, hash_salt) AS user_id,
+        user_id,
         'bflrBg4DlCjZRl/k2hn2cotSWZERu44OFBeaywz/6Gzy4bX0k6TVjh/l+uI3cF1SKyib7zsk4fOulb1Moud+4A==' as password,
         'hHdj7z1JEus5yTf6FmEznw==' as secure_salt,
         'SeguePBKDF2v2' as security_scheme,
@@ -121,39 +109,22 @@ CREATE TABLE anonymous.uk_post_codes AS SELECT * FROM public.uk_post_codes;
 
 -- Group related tables:
 
-CREATE TABLE anonymous.user_associations AS
-    SELECT
-        anonymise_int(user_id_granting_permission, hash_salt) AS user_id_granting_permission ,
-        anonymise_int(user_id_receiving_permission, hash_salt) AS user_id_receiving_permission,
-        created
-    FROM public.user_associations;
+CREATE TABLE anonymous.user_associations AS SELECT * FROM public.user_associations;
 
 CREATE TABLE anonymous.groups AS
     SELECT
-        anonymise_int(id, hash_salt) AS id,
-        'Group-' || anonymise_int(id, hash_salt)::varchar(255) as group_name,
-        anonymise_int(owner_id, hash_salt) AS owner_id,
+        id,
+        'Group-' || id::varchar(255) as group_name,
+        owner_id,
         created,
         archived,
         group_status,
         last_updated
     FROM public.groups;
 
-CREATE TABLE anonymous.group_memberships AS
-    SELECT
-        anonymise_int(group_id, hash_salt) AS group_id,
-        anonymise_int(user_id, hash_salt) AS user_id,
-        created,
-        updated,
-        status
-    FROM public.group_memberships;
+CREATE TABLE anonymous.group_memberships AS SELECT * FROM public.group_memberships;
 
-CREATE TABLE anonymous.group_additional_managers AS
-    SELECT
-        anonymise_int(user_id, hash_salt) AS user_id,
-        anonymise_int(group_id, hash_salt) AS group_id,
-        created
-    FROM public.group_additional_managers;
+CREATE TABLE anonymous.group_additional_managers AS SELECT * FROM public.group_additional_managers;
 
 
 -- Assignment related tables:
@@ -166,26 +137,20 @@ CREATE TABLE anonymous.gameboards AS
        wildcard,
        wildcard_position,
        game_filter,
-       anonymise_int(owner_user_id, hash_salt) AS owner_user_id,
+       owner_user_id,
        creation_method,
        creation_date,
        tags
     FROM public.gameboards;
 
-CREATE TABLE anonymous.user_gameboards AS
-    SELECT
-        anonymise_int(user_id, hash_salt) as user_id,
-        gameboard_id,
-        created
-        last_visited
-    FROM public.user_gameboards;
+CREATE TABLE anonymous.user_gameboards AS SELECT * FROM public.user_gameboards;
 
 CREATE TABLE anonymous.assignments AS
     SELECT
         id,
         gameboard_id,
-        anonymise_int(group_id, hash_salt) AS group_id,
-        anonymise_int(owner_user_id, hash_salt) as owner_user_id,
+        group_id,
+        owner_user_id,
         '' as notes,
         creation_date,
         due_date,
@@ -200,8 +165,8 @@ CREATE TABLE anonymous.event_bookings AS
         id,
         'Event-' || anonymise(event_id, hash_salt) as event_id,
         created,
-        anonymise_int(user_id, hash_salt) as user_id,
-        anonymise_int(reserved_by, hash_salt) as reserved_by,
+        user_id,
+        reserved_by,
         status,
         updated,
         additional_booking_information, -- might need removing (replace with {}::jsonb perhaps?)
@@ -214,7 +179,7 @@ CREATE TABLE anonymous.event_bookings AS
 CREATE TABLE anonymous.question_attempts AS
     SELECT
         id,
-        anonymise_int(user_id, hash_salt) as user_id,
+        user_id,
         question_id,
         '{}'::jsonb as question_attempt,
         correct,
@@ -223,7 +188,7 @@ CREATE TABLE anonymous.question_attempts AS
 
 CREATE TABLE anonymous.user_streak_freezes AS
     SELECT
-        anonymise_int(user_id, hash_salt) as user_id,
+        user_id,
         start_date,
         end_date,
         'Streak freeze' as comment
@@ -231,7 +196,7 @@ CREATE TABLE anonymous.user_streak_freezes AS
 
 CREATE TABLE anonymous.user_streak_targets AS
     SELECT
-        anonymise_int(user_id, hash_salt) as user_id,
+        user_id,
         target_count,
         start_date,
         end_date,
@@ -241,27 +206,9 @@ CREATE TABLE anonymous.user_streak_targets AS
 
 -- Quiz tables:
 
-CREATE TABLE anonymous.quiz_assignments AS
-    SELECT
-        id,
-        quiz_id,
-        anonymise_int(group_id, hash_salt) as group_id,
-        anonymise_int(owner_user_id, hash_salt) as owner_user_id,
-        creation_date,
-        due_date,
-        quiz_feedback_mode,
-        deleted
-    FROM public.quiz_assignments;
+CREATE TABLE anonymous.quiz_assignments AS SELECT * FROM public.quiz_assignments;
 
-CREATE TABLE anonymous.quiz_attempts AS
-    SELECT
-        id,
-        anonymise_int(user_id, hash_salt) as user_id,
-        quiz_id,
-        quiz_assignment_id,
-        start_date,
-        completed_date
-    FROM public.quiz_attempts;
+CREATE TABLE anonymous.quiz_attempts AS SELECT * FROM public.quiz_attempts;
 
 CREATE TABLE anonymous.quiz_question_attempts AS
     SELECT
