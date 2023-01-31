@@ -169,8 +169,8 @@ CREATE TABLE anonymous.event_bookings AS
         reserved_by,
         status,
         updated,
-        additional_booking_information, -- might need removing (replace with {}::jsonb perhaps?)
-        pii_removed
+        NULL as additional_booking_information,
+        TRUE as pii_removed
     FROM public.event_bookings;
 
 
