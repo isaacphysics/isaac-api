@@ -14,7 +14,7 @@ The API runs on Jetty, and runs in [Docker](https://www.docker.com/) in producti
 ## Synchronizing changes with Isaac Physics repository
 To synchronize this fork with changes from the [Isaac Physics repository](https://github.com/isaacphysics/isaac-api), this fork maintains a `master` branch for synchronizing with Isaac Physics. The process is as follows:
 * Synchronize this repo's `master` branch with the physics `master` branch by clicking on Github's "Sync Fork" button.
-* Create a new branch off of `master` for creating a pull request into `main` e.g. `git checkout -b merge-master-2023-01-01'. This branch can be deleted once the pull request merges and leave the `master` branch intact.
+* Create a new branch off of `master` for creating a pull request into `main` e.g. `git checkout -b merge-master-2023-01-01`. This branch can be deleted once the pull request merges and leave the `master` branch intact.
 * Create a pull request from the above new branch to `main`, review the changes to ensure no conflicts, and merge the pull request.
 * Here's an [example](https://github.com/isaaccomputerscience/isaac-api/pull/9) of such a pull request.
 
