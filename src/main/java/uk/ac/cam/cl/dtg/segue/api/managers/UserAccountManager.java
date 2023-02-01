@@ -562,21 +562,11 @@ public class UserAccountManager implements IUserAccountManager {
             RegisteredUserDTO existingUserFromDb = this.getUserDTOById(userObjectFromClient
                     .getId());
 
-            if (Role.EVENT_MANAGER.equals(currentlyLoggedInUser.getRole())) {
-                if (Role.ADMIN.equals(existingUserFromDb.getRole())
-                        || Role.ADMIN.equals(userObjectFromClient.getRole())) {
-                    return new SegueErrorResponse(Response.Status.FORBIDDEN,
-                            "You cannot modify admin roles.").toResponse();
-                }
-            }
-
-            // check that the user is allowed to change the role of another user
-            // if that is what they are doing.
-            if (!checkUserRole(currentlyLoggedInUser, Arrays.asList(Role.ADMIN, Role.EVENT_MANAGER))
-                    && userObjectFromClient.getRole() != null
-                    && !userObjectFromClient.getRole().equals(existingUserFromDb.getRole())) {
+            // You cannot modify role using this endpoint (an admin needs to go through the endpoint specifically for
+            // role modification)
+            if (null == userObjectFromClient.getRole() || !existingUserFromDb.getRole().equals(userObjectFromClient.getRole())) {
                 return new SegueErrorResponse(Response.Status.FORBIDDEN,
-                        "You do not have permission to change a users role.").toResponse();
+                        "You cannot change a users role.").toResponse();
             }
 
             if (registeredUserContexts != null) {
@@ -592,17 +582,6 @@ public class UserAccountManager implements IUserAccountManager {
             }
 
             RegisteredUserDTO updatedUser = updateUserObject(userObjectFromClient, newPassword);
-
-            // If the user's role has changed, record it. Check this using Objects.equals() to be null safe!
-            if (!Objects.equals(updatedUser.getRole(), existingUserFromDb.getRole())) {
-                log.info("ADMIN user " + currentlyLoggedInUser.getEmail() + " has modified the role of "
-                        + updatedUser.getEmail() + "[" + updatedUser.getId() + "]" + " to "
-                        + updatedUser.getRole());
-                this.logManager.logEvent(currentlyLoggedInUser, request, SegueServerLogType.CHANGE_USER_ROLE,
-                        ImmutableMap.of(USER_ID_FKEY_FIELDNAME, updatedUser.getId(),
-                                "oldRole", existingUserFromDb.getRole(),
-                                "newRole", updatedUser.getRole()));
-            }
 
             // If the user's school has changed, record it. Check this using Objects.equals() to be null safe!
             if (!Objects.equals(updatedUser.getSchoolId(), existingUserFromDb.getSchoolId())
@@ -1166,36 +1145,15 @@ public class UserAccountManager implements IUserAccountManager {
             authenticator.ensureValidPassword(newPassword);
         }
 
-        // Send a welcome email if the user has become a teacher
-        try {
-            RegisteredUserDTO existingUserDTO = this.getUserDTOById(existingUser.getId());
-            if (updatedUser.getRole() != existingUser.getRole()) {
-                //TODO: refactor and just use updateUserRole method for the below
-                if (updatedUser.getRole() == Role.TEACHER) {
-                    emailManager.sendTemplatedEmailToUser(existingUserDTO,
-                            emailManager.getEmailTemplateDTO("email-template-teacher-welcome"),
-                            ImmutableMap.of("oldrole", existingUserDTO.getRole().toString(),
-                                    "newrole", updatedUser.getRole().toString()),
-                            EmailType.SYSTEM);
-                } else {
-                    emailManager.sendTemplatedEmailToUser(existingUserDTO,
-                            emailManager.getEmailTemplateDTO("email-template-default-role-change"),
-                            ImmutableMap.of("oldrole", existingUserDTO.getRole().toString(),
-                                    "newrole", updatedUser.getRole().toString()),
-                            EmailType.SYSTEM);
-                }
-            }
-        } catch (ContentManagerException | NoUserException e) {
-            log.error("ContentManagerException during sendTeacherWelcome " + e.getMessage());
-        }
-
         MapperFacade mergeMapper = new DefaultMapperFactory.Builder().mapNulls(false).build().getMapperFacade();
 
         RegisteredUser userToSave = new RegisteredUser();
         mergeMapper.map(existingUser, userToSave);
         mergeMapper.map(userDTOContainingUpdates, userToSave);
+        // Don't modify email verification status, registration date, or role
         userToSave.setEmailVerificationStatus(existingUser.getEmailVerificationStatus());
         userToSave.setRegistrationDate(existingUser.getRegistrationDate());
+        userToSave.setRole(existingUser.getRole());
         userToSave.setLastUpdated(new Date());
 
         if (updatedUser.getSchoolId() == null && existingUser.getSchoolId() != null) {
@@ -1253,26 +1211,26 @@ public class UserAccountManager implements IUserAccountManager {
         Validate.notNull(requestedRole);
         RegisteredUser userToSave = this.findUserById(id);
 
-        // Send welcome email if user has become teacher, otherwise, role change notification
+        // Send welcome email if user has become teacher or tutor, otherwise, role change notification
         try {
             RegisteredUserDTO existingUserDTO = this.getUserDTOById(id);
             if (userToSave.getRole() != requestedRole) {
+                String emailTemplate;
                 switch (requestedRole) {
+                    case TUTOR:
+                        emailTemplate = "email-template-tutor-welcome";
+                        break;
                     case TEACHER:
-                        emailManager.sendTemplatedEmailToUser(existingUserDTO,
-                                emailManager.getEmailTemplateDTO("email-template-teacher-welcome"),
-                                ImmutableMap.of("oldrole", existingUserDTO.getRole().toString(),
-                                        "newrole", requestedRole.toString()),
-                                EmailType.SYSTEM);
+                        emailTemplate = "email-template-teacher-welcome";
                         break;
                     default:
-                        emailManager.sendTemplatedEmailToUser(existingUserDTO,
-                                emailManager.getEmailTemplateDTO("email-template-default-role-change"),
-                                ImmutableMap.of("oldrole", existingUserDTO.getRole().toString(),
-                                        "newrole", requestedRole.toString()),
-                                EmailType.SYSTEM);
-                        break;
+                        emailTemplate = "email-template-default-role-change";
                 }
+                emailManager.sendTemplatedEmailToUser(existingUserDTO,
+                        emailManager.getEmailTemplateDTO(emailTemplate),
+                        ImmutableMap.of("oldrole", existingUserDTO.getRole().toString(),
+                                "newrole", requestedRole.toString()),
+                        EmailType.SYSTEM);
             }
         } catch (ContentManagerException | NoUserException e) {
             log.debug("ContentManagerException during sendTeacherWelcome " + e.getMessage());

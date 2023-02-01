@@ -203,9 +203,13 @@ public class GroupManager {
      *            - list of users.
      */
     private List<RegisteredUserDTO> orderUsersByName(final List<RegisteredUserDTO> users) {
+        // Replaces apostrophes with tildes so that string containing them are ordered in the same way as in
+        // Excel. i.e. we want that "O'Sully" > "Ogbobby"
+        Comparator<String> excelStringOrder = Comparator.nullsLast((String a, String b) ->
+                String.CASE_INSENSITIVE_ORDER.compare(a.replaceAll("'", "~"), b.replaceAll("'", "~")));
         return users.stream()
-                .sorted(Comparator.comparing(RegisteredUserDTO::getGivenName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
-                .sorted(Comparator.comparing(RegisteredUserDTO::getFamilyName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
+                .sorted(Comparator.comparing(RegisteredUserDTO::getGivenName, excelStringOrder))
+                .sorted(Comparator.comparing(RegisteredUserDTO::getFamilyName, excelStringOrder))
                 .collect(Collectors.toList());
     }
 
