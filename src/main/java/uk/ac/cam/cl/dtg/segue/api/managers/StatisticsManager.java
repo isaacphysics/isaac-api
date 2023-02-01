@@ -30,7 +30,6 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.LocationManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -50,7 +49,6 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
-import uk.ac.cam.cl.dtg.util.locations.Location;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -92,9 +90,8 @@ public class StatisticsManager implements IStatisticsManager {
     private QuestionManager questionManager;
     private ContentSummarizerService contentSummarizerService;
     private IUserStreaksManager userStreaksManager;
-    
+
     private Cache<String, Object> longStatsCache;
-    private LocationManager locationHistoryManager;
 
     private static final Logger log = LoggerFactory.getLogger(StatisticsManager.class);
     private static final String GENERAL_STATS = "GENERAL_STATS";
@@ -104,10 +101,10 @@ public class StatisticsManager implements IStatisticsManager {
     private static final long LONG_STATS_MAX_ITEMS = 20;
     private static final int PROGRESS_MAX_RECENT_QUESTIONS = 5;
 
-    
+
     /**
      * StatisticsManager.
-     * 
+     *
      * @param userManager
      *            - to query user information
      * @param logManager
@@ -116,8 +113,6 @@ public class StatisticsManager implements IStatisticsManager {
      *            - to query School information
      * @param contentManager
      *            - to query live version information
-     * @param locationHistoryManager
-     *            - so that we can query our location database (ip addresses)
      * @param groupManager
      *            - so that we can see how many groups we have site wide.
      * @param questionManager
@@ -129,8 +124,8 @@ public class StatisticsManager implements IStatisticsManager {
     public StatisticsManager(final UserAccountManager userManager, final ILogManager logManager,
                              final SchoolListReader schoolManager, final GitContentManager contentManager,
                              @Named(CONTENT_INDEX) final String contentIndex,
-                             final LocationManager locationHistoryManager, final GroupManager groupManager,
-                             final QuestionManager questionManager, final ContentSummarizerService contentSummarizerService,
+                             final GroupManager groupManager, final QuestionManager questionManager,
+                             final ContentSummarizerService contentSummarizerService,
                              final IUserStreaksManager userStreaksManager) {
         this.userManager = userManager;
         this.logManager = logManager;
@@ -139,7 +134,6 @@ public class StatisticsManager implements IStatisticsManager {
         this.contentManager = contentManager;
         this.contentIndex = contentIndex;
 
-        this.locationHistoryManager = locationHistoryManager;
         this.groupManager = groupManager;
         this.questionManager = questionManager;
         this.contentSummarizerService = contentSummarizerService;
@@ -153,7 +147,7 @@ public class StatisticsManager implements IStatisticsManager {
     /**
      * Output general stats. This returns a Map of String to Object and is intended to be sent directly to a
      * serializable facade endpoint.
-     * 
+     *
      * @return ImmutableMap<String, String> (stat name, stat value)
      * @throws SegueDatabaseException - if there is a database error.
      */
@@ -189,7 +183,7 @@ public class StatisticsManager implements IStatisticsManager {
 
     /**
      * LogCount.
-     * 
+     *
      * @param logTypeOfInterest
      *            - the log event that we care about.
      * @return the number of logs of that type (or an estimate).
@@ -199,17 +193,17 @@ public class StatisticsManager implements IStatisticsManager {
     public Long getLogCount(final String logTypeOfInterest) throws SegueDatabaseException {
         return this.logManager.getLogCountByType(logTypeOfInterest);
     }
-    
+
     /**
      * Get an overview of all school performance. This is for analytics / admin users.
-     * 
+     *
      * @return list of school to statistics mapping. The object in the map is another map with keys connections,
      *         numberActiveLastThirtyDays.
-     * 
+     *
      * @throws UnableToIndexSchoolsException
      *             - if there is a problem getting school details.
      */
-    public List<Map<String, Object>> getSchoolStatistics() 
+    public List<Map<String, Object>> getSchoolStatistics()
             throws UnableToIndexSchoolsException, SegueSearchException {
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> cachedOutput = (List<Map<String, Object>>) this.longStatsCache
@@ -276,7 +270,7 @@ public class StatisticsManager implements IStatisticsManager {
 
     /**
      * Get the number of users per school.
-     * 
+     *
      * @return A map of schools to integers (representing the number of registered users)
      * @throws UnableToIndexSchoolsException as per the description
      */
@@ -315,7 +309,7 @@ public class StatisticsManager implements IStatisticsManager {
 
     /**
      * Find all users belonging to a given school.
-     * 
+     *
      * @param schoolId
      *            - that we are interested in.
      * @return list of users.
@@ -357,10 +351,10 @@ public class StatisticsManager implements IStatisticsManager {
      */
     public Map<String, Date> getLastSeenUserMap() {
         Map<String, Date> lastSeenMap = Maps.newHashMap();
-        
+
         try {
             List<RegisteredUserDTO> users = userManager.findUsers(new RegisteredUserDTO());
-            
+
             for (RegisteredUserDTO user : users) {
                 if (user.getLastSeen() != null) {
                     lastSeenMap.put(user.getId().toString(), user.getLastSeen());
@@ -368,11 +362,11 @@ public class StatisticsManager implements IStatisticsManager {
                     lastSeenMap.put(user.getId().toString(), user.getRegistrationDate());
                 }
             }
-            
+
         } catch (SegueDatabaseException e) {
             log.error("Unable to get last seen user map", e);
         }
-        
+
         return lastSeenMap;
     }
 
@@ -380,7 +374,7 @@ public class StatisticsManager implements IStatisticsManager {
      * @param qualifyingLogEvent
      *            the string event type that will be looked for.
      * @return a map of userId's to last event timestamp
-     * @throws SegueDatabaseException 
+     * @throws SegueDatabaseException
      */
     public Map<String, Date> getLastSeenUserMap(final String qualifyingLogEvent) throws SegueDatabaseException {
         return this.logManager.getLastLogDateForAllUsers(qualifyingLogEvent);
@@ -390,7 +384,7 @@ public class StatisticsManager implements IStatisticsManager {
      * getUserQuestionInformation. Produces a map that contains information about the total questions attempted,
      * (and those correct) "totalQuestionsAttempted", "totalCorrect",
      *  ,"attemptsByTag", questionAttemptsByLevelStats.
-     * 
+     *
      * @param userOfInterest
      *            - the user you wish to compile statistics for.
      * @return gets high level statistics about the questions a user has completed.
@@ -639,7 +633,7 @@ public class StatisticsManager implements IStatisticsManager {
 
     /**
      * getEventLogsByDate.
-     * 
+     *
      * @param eventTypes
      *            - of interest
      * @param fromDate
@@ -649,7 +643,7 @@ public class StatisticsManager implements IStatisticsManager {
      * @param binDataByMonth
      *            - shall we group data by the first of every month?
      * @return Map of eventType --> map of dates and frequency
-     * @throws SegueDatabaseException 
+     * @throws SegueDatabaseException
      */
     public Map<String, Map<org.joda.time.LocalDate, Long>> getEventLogsByDate(final Collection<String> eventTypes,
             final Date fromDate, final Date toDate, final boolean binDataByMonth) throws SegueDatabaseException {
@@ -670,7 +664,7 @@ public class StatisticsManager implements IStatisticsManager {
      * @param binDataByMonth
      *            - shall we group data by the first of every month?
      * @return Map of eventType --> map of dates and frequency
-     * @throws SegueDatabaseException 
+     * @throws SegueDatabaseException
      */
     public Map<String, Map<org.joda.time.LocalDate, Long>> getEventLogsByDateAndUserList(final Collection<String> eventTypes,
             final Date fromDate, final Date toDate, final List<RegisteredUserDTO> userList,
@@ -682,7 +676,7 @@ public class StatisticsManager implements IStatisticsManager {
 
     /**
      * Calculate the number of users from the list provided that meet the criteria.
-     * 
+     *
      * @param users
      *            - collection of users to consider.
      * @param lastSeenUserMap
@@ -711,37 +705,6 @@ public class StatisticsManager implements IStatisticsManager {
         return qualifyingUsers;
     }
 
-    /**
-     * getLocationInformation.
-     *
-     * @param fromDate
-     *            - date to start search
-     * @param toDate
-     *            - date to end search
-     * @return the list of all locations we know about..
-     * @throws SegueDatabaseException
-     *             if we can't read from the database.
-     */
-    @SuppressWarnings("unchecked")
-    public Collection<Location> getLocationInformation(final Date fromDate, final Date toDate) throws SegueDatabaseException {
-        SimpleDateFormat cacheFormat = new SimpleDateFormat("yyyyMMdd");
-        String cacheDateTag =  cacheFormat.format(fromDate) + cacheFormat.format(toDate);
-        if (this.longStatsCache.getIfPresent(LOCATION_STATS + cacheDateTag) != null) {
-            return (Set<Location>) this.longStatsCache.getIfPresent(LOCATION_STATS + cacheDateTag);
-        }
-
-        Set<Location> result = Sets.newHashSet();
-
-        Map<String, Location> locationsFromHistory = locationHistoryManager.getLocationsByLastAccessDate(fromDate,
-                toDate);
-
-        result.addAll(locationsFromHistory.values());
-
-        this.longStatsCache.put(LOCATION_STATS + cacheDateTag, result);
-
-        return result;
-    }
-
     @Override
     public Map<String, Object> getDetailedUserStatistics(RegisteredUserDTO userOfInterest) {
 
@@ -761,7 +724,7 @@ public class StatisticsManager implements IStatisticsManager {
 
     /**
      * Utility method to get a load of question pages by id in one go.
-     * 
+     *
      * @param ids
      *            to search for
      * @return map of id to content object.

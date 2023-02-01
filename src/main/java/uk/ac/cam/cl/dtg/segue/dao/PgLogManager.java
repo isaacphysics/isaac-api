@@ -559,6 +559,10 @@ public class PgLogManager implements ILogManager {
             logEvent.setEventDetails(eventDetails);
         }
 
+        if (ipAddress != null) {
+            logEvent.setIpAddress(ipAddress.split(",")[0]);
+        }
+
         logEvent.setTimestamp(new Date());
 
         return logEvent;

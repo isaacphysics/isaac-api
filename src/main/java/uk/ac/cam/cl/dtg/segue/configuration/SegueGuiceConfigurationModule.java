@@ -57,8 +57,6 @@ import uk.ac.cam.cl.dtg.isaac.dao.PgQuizQuestionAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserAlerts;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
-import uk.ac.cam.cl.dtg.isaac.dos.LocationHistory;
-import uk.ac.cam.cl.dtg.isaac.dos.PgLocationHistory;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserAlerts;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserStreakManager;
@@ -99,7 +97,6 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.LocationManager;
 import uk.ac.cam.cl.dtg.segue.dao.LogManagerEventPublisher;
 import uk.ac.cam.cl.dtg.segue.dao.PgLogManager;
 import uk.ac.cam.cl.dtg.segue.dao.PgLogManagerEventListener;
@@ -137,8 +134,6 @@ import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.email.MailJetApiClientWrapper;
-import uk.ac.cam.cl.dtg.util.locations.PostCodeIOLocationResolver;
-import uk.ac.cam.cl.dtg.util.locations.PostCodeLocationResolver;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -361,10 +356,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      * Deals with application data managers.
      */
     private void configureApplicationManagers() {
-        bind(LocationHistory.class).to(PgLocationHistory.class);
-
-        bind(PostCodeLocationResolver.class).to(PostCodeIOLocationResolver.class);
-
         bind(IUserDataManager.class).to(PgUsers.class);
 
         bind(IAnonymousUserDataManager.class).to(PgAnonymousUsers.class);
@@ -498,13 +489,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     private static ILogManager getLogManager(final PostgresSqlDb database,
-                                             @Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled,
-                                             final LocationManager lhm) {
+                                             @Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled) {
 
         if (null == logManager) {
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-            logManager = new PgLogManagerEventListener(new PgLogManager(database, objectMapper, loggingEnabled, lhm));
+            logManager = new PgLogManagerEventListener(new PgLogManager(database, objectMapper, loggingEnabled));
 
             log.info("Creating singleton of LogManager");
             if (loggingEnabled) {
@@ -885,8 +875,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *            - dependency
      * @param contentManager
      *            - dependency
-     * @param locationHistoryManager
-     *            - dependency
      * @param groupManager
      *            - dependency
      * @param questionManager
@@ -898,14 +886,14 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     private static StatisticsManager getStatsManager(final UserAccountManager userManager,
                                                      final ILogManager logManager, final SchoolListReader schoolManager,
-                                                     final GitContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final LocationManager locationHistoryManager,
+                                                     final GitContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex,
                                                      final GroupManager groupManager, final QuestionManager questionManager,
                                                      final ContentSummarizerService contentSummarizerService,
                                                      final IUserStreaksManager userStreaksManager) {
 
         if (null == statsManager) {
             statsManager = new StatisticsManager(userManager, logManager, schoolManager, contentManager, contentIndex,
-                    locationHistoryManager, groupManager, questionManager, contentSummarizerService, userStreaksManager);
+                    groupManager, questionManager, contentSummarizerService, userStreaksManager);
             log.info("Created Singleton of Statistics Manager");
         }
 
