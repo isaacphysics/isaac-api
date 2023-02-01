@@ -137,8 +137,6 @@ import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.email.MailJetApiClientWrapper;
-import uk.ac.cam.cl.dtg.util.locations.IPInfoDBLocationResolver;
-import uk.ac.cam.cl.dtg.util.locations.IPLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeIOLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeLocationResolver;
 
@@ -267,9 +265,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         this.bindConstantToProperty(Constants.SERVER_ADMIN_ADDRESS, globalProperties);
 
         this.bindConstantToProperty(Constants.LOGGING_ENABLED, globalProperties);
-
-        // IP address geocoding
-        this.bindConstantToProperty(Constants.IP_INFO_DB_API_KEY, globalProperties);
 
         this.bindConstantToProperty(Constants.SCHOOL_CSV_LIST_PATH, globalProperties);
 
@@ -444,11 +439,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                 return null;
             }
         }
-        // eventually we want to do something like the below to make sure we get updated clients        
+        // eventually we want to do something like the below to make sure we get updated clients
 //        if (elasticSearchClient instanceof TransportClient) {
 //            TransportClient tc = (TransportClient) elasticSearchClient;
 //            if (tc.connectedNodes().isEmpty()) {
-//                tc.close();        
+//                tc.close();
 //                log.error("The elasticsearch client is not connected to any nodes. Trying to reconnect...");
 //                elasticSearchClient = null;
 //                return getSearchConnectionInformation(clusterName, address, port);
@@ -523,7 +518,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     }
 
     /**
-     * This provides a singleton of the contentVersionController for the segue facade. 
+     * This provides a singleton of the contentVersionController for the segue facade.
      * Note: This is a singleton because this content mapper has to use reflection to register all content classes.
      *
      * @return Content version controller with associated dependencies.
@@ -1055,19 +1050,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             }
         }
         return externalAccountManager;
-    }
-
-    /**
-     * This provides a new instance of the location resolver.
-     *
-     * @param apiKey
-     *            - for using the third party service.
-     * @return The singleton instance of EmailCommunicator
-     */
-    @Inject
-    @Provides
-    private IPLocationResolver getIPLocator(@Named(Constants.IP_INFO_DB_API_KEY) final String apiKey) {
-        return new IPInfoDBLocationResolver(apiKey);
     }
 
     /**

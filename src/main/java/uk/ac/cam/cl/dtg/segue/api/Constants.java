@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 
 /**
  * Utility class to provide common segue-specific constants.
- * 
+ *
  */
 public final class Constants {
     // General Configuration stuff
@@ -53,12 +53,12 @@ public final class Constants {
      * Constant representing the key for the MAIL_FROM_ADDRESS property - Email address to send mail from.
      */
     public static final String MAIL_FROM_ADDRESS = "MAIL_FROM_ADDRESS";
-    
+
     /**
      * Constant representing reply to address for e-mails.
      */
     public static final String REPLY_TO_ADDRESS = "REPLY_TO_ADDRESS";
-    
+
     /**
      * Constant representing the mail receiver address for contact us e-mails sent by the endpoint.
      */
@@ -68,7 +68,7 @@ public final class Constants {
      * Constant representing the name emails will be sent from.
      */
     public static final String MAIL_NAME = "MAIL_NAME";
-    
+
     /**
      * Constant representing the key for the SERVER_ADMIN_ADDRESS property - Email address to send admin related emails
      * to.
@@ -212,7 +212,7 @@ public final class Constants {
 
     /**
      * Enum to represent sort orders.
-     * 
+     *
      */
     public enum SortOrder {
         ASC, DESC
@@ -220,7 +220,7 @@ public final class Constants {
 
     /**
      * Enum to represent search boolean operators.
-     * 
+     *
      */
     public enum BooleanOperator {
         AND, OR, NOT
@@ -390,9 +390,6 @@ public final class Constants {
     // Metrics Component
     public static final String API_METRICS_EXPORT_PORT = "API_METRICS_EXPORT_PORT";
 
-    // IP Geocoding stuff
-    public static final String IP_INFO_DB_API_KEY = "IP_INFO_DB_API_KEY";
-
     /*
      * Default values.
      */
@@ -499,7 +496,7 @@ public final class Constants {
 
     // cache settings
     public static final String MAX_CONTENT_CACHE_TIME = "MAX_CONTENT_CACHE_TIME";
-    
+
     public static final int NUMBER_SECONDS_IN_MINUTE = 60;
     public static final int NUMBER_SECONDS_IN_FIVE_MINUTES = NUMBER_SECONDS_IN_MINUTE * 5;
     public static final int NUMBER_SECONDS_IN_TEN_MINUTES = NUMBER_SECONDS_IN_MINUTE * 10;
