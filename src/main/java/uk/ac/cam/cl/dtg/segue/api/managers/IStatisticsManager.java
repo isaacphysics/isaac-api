@@ -160,21 +160,6 @@ public interface IStatisticsManager {
                                                                             final Map<String, Date> lastSeenUserMap, final int daysFromToday);
 
     /**
-     * getLocationInformation.
-     *
-     * @param fromDate
-     *            - date to start search
-     * @param toDate
-     *            - date to end search
-     * @return the list of all locations we know about..
-     * @throws SegueDatabaseException
-     *             if we can't read from the database.
-     */
-    @SuppressWarnings("unchecked")
-    Collection<Location> getLocationInformation(final Date fromDate, final Date toDate) throws SegueDatabaseException;
-
-
-    /**
      * Gets additional information for a user outlining their progress for teacher-based activity
      *
      * @param userOfInterest the user we want infor for
