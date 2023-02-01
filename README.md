@@ -9,9 +9,7 @@
 
 The API runs on Jetty, and runs in [Docker](https://www.docker.com/) in production.
 
-<<<<<<< Updated upstream
 [docs](./docs)
-=======
 
 ## Synchronizing changes with Isaac Physics repository
 To synchronize this fork with changes from the [Isaac Physics repository](https://github.com/isaacphysics/isaac-api), this fork maintains a `master` branch for synchronizing with Isaac Physics. The process is as follows:
@@ -21,4 +19,3 @@ To synchronize this fork with changes from the [Isaac Physics repository](https:
 * Here's an [example](https://github.com/isaaccomputerscience/isaac-api/pull/9) of such a pull request.
 
 To introduce changes in this repository back to the physics repository, branch your feature branch off of `master` and create a pull request back to the physic's `master` branch (this is the standard Github fork workflow.)
->>>>>>> Stashed changes
