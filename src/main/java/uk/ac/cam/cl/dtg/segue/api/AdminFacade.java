@@ -50,7 +50,6 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.LocationManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
@@ -71,8 +70,6 @@ import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
-import uk.ac.cam.cl.dtg.util.locations.LocationServerException;
-import uk.ac.cam.cl.dtg.util.locations.PostCodeRadius;
 
 import jakarta.annotation.Nullable;
 import javax.crypto.Mac;
@@ -108,9 +105,9 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Admin facade for segue.
- * 
+ *
  * @author Stephen Cummins
- * 
+ *
  */
 @Path("/admin")
 @Tag(name = "/admin")
@@ -123,8 +120,6 @@ public class AdminFacade extends AbstractSegueFacade {
 
     private final StatisticsManager statsManager;
 
-    private final LocationManager locationManager;
-
     private final SchoolListReader schoolReader;
 
     private final AbstractUserPreferenceManager userPreferenceManager;
@@ -135,7 +130,7 @@ public class AdminFacade extends AbstractSegueFacade {
 
     /**
      * Create an instance of the administrators facade.
-     * 
+     *
      * @param properties
      *            - the fully configured properties loader for the api.
      * @param userManager
@@ -146,8 +141,6 @@ public class AdminFacade extends AbstractSegueFacade {
      *            - So we can log events of interest.
      * @param statsManager
      *            - So we can report high level stats.
-     * @param locationManager
-     *            - for geocoding if we need it.
      * @param schoolReader
      *            - for looking up school information
      * @param eventBookingManager
@@ -158,8 +151,8 @@ public class AdminFacade extends AbstractSegueFacade {
     @Inject
     public AdminFacade(final PropertiesLoader properties, final UserAccountManager userManager,
                        final GitContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final ILogManager logManager,
-                       final StatisticsManager statsManager, final LocationManager locationManager,
-                       final SchoolListReader schoolReader, final AbstractUserPreferenceManager userPreferenceManager,
+                       final StatisticsManager statsManager, final SchoolListReader schoolReader,
+                       final AbstractUserPreferenceManager userPreferenceManager,
                        final EventBookingManager eventBookingManager, final SegueJobService segueJobService,
                        final IExternalAccountManager externalAccountManager, final IMisuseMonitor misuseMonitor) {
         super(properties, logManager);
@@ -167,7 +160,6 @@ public class AdminFacade extends AbstractSegueFacade {
         this.contentManager = contentManager;
         this.contentIndex = contentIndex;
         this.statsManager = statsManager;
-        this.locationManager = locationManager;
         this.schoolReader = schoolReader;
         this.userPreferenceManager = userPreferenceManager;
         this.eventBookingManager = eventBookingManager;
@@ -206,7 +198,7 @@ public class AdminFacade extends AbstractSegueFacade {
 
     /**
      * This method will allow users to be mass-converted to a new role.
-     * 
+     *
      * @param request
      *            - to help determine access rights.
      * @param role
@@ -229,13 +221,13 @@ public class AdminFacade extends AbstractSegueFacade {
             }
 
             Role requestedRole = Role.valueOf(role);
-            
+
             if (userIds.contains(requestingUser.getId())) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "Aborted - you cannot modify your own role.")
                 .toResponse();
             }
-            
+
             // can't promote anyone to a role higher than yourself
             if (requestedRole.ordinal() >= requestingUser.getRole().ordinal()) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
@@ -577,10 +569,10 @@ public class AdminFacade extends AbstractSegueFacade {
 
     /**
      * This method will delete all cached data from the CMS and any search indices.
-     * 
+     *
      * @param request
      *            - containing user session information.
-     * 
+     *
      * @return the latest version id that will be cached if content is requested.
      */
     @POST
@@ -614,7 +606,7 @@ public class AdminFacade extends AbstractSegueFacade {
 
     /**
      * Rest end point to allow content editors to see the content which failed to import into segue.
-     * 
+     *
      * @param request
      *            - to identify if the user is authorised.
      * @param requestForCaching
@@ -650,7 +642,7 @@ public class AdminFacade extends AbstractSegueFacade {
         if (cachedResponse != null) {
             return cachedResponse;
         }
-        
+
         if (null == problemMap) {
             return Response.ok(Maps.newHashMap()).build();
         }
@@ -660,9 +652,9 @@ public class AdminFacade extends AbstractSegueFacade {
         int failures = 0;
         Builder<String, Object> responseBuilder = ImmutableMap.builder();
         List<Map<String, Object>> errorList = Lists.newArrayList();
-        
+
         Map<String, Map<String, Object>> lookupMap = Maps.newHashMap();
-        
+
         // go through each errored content and list of errors
         for (Map.Entry<Content, List<String>> pair : problemMap.entrySet()) {
             Map<String, Object> errorRecord = Maps.newHashMap();
@@ -670,26 +662,26 @@ public class AdminFacade extends AbstractSegueFacade {
             Content partialContentWithErrors =  pair.getKey();
 
             errorRecord.put("partialContent", partialContentWithErrors);
-            
+
             errorRecord.put("successfulIngest", false);
             failures++;
-            
+
             if (partialContentWithErrors.getId() != null) {
                 try {
-                    
+
                     boolean success = this.contentManager.getContentById(partialContentWithErrors.getId(),
                             true) != null;
-                    
+
                     errorRecord.put("successfulIngest", success);
                     if (success) {
                         failures--;
                     }
-                    
+
                 } catch (ContentManagerException e) {
                     e.printStackTrace();
-                }    
+                }
             }
-            
+
             List<String> listOfErrors = Lists.newArrayList();
             for (String s : pair.getValue()) {
                 listOfErrors.add(s);
@@ -700,25 +692,25 @@ public class AdminFacade extends AbstractSegueFacade {
                 }
                 errors++;
             }
-            
+
             errorRecord.put("listOfErrors", listOfErrors);
             // we only want one error record per canonical path so batch them together if we have seen it before.
             if (lookupMap.containsKey(partialContentWithErrors.getCanonicalSourceFile())) {
-                Map<String, Object> existingErrorRecord 
+                Map<String, Object> existingErrorRecord
                     = lookupMap.get(partialContentWithErrors.getCanonicalSourceFile());
-                
+
                 if (existingErrorRecord.get("successfulIngest").equals(false)
                         || errorRecord.get("successfulIngest").equals(false)) {
                     existingErrorRecord.put("successfulIngest", false);
                 }
-                
+
                 ((List<String>) existingErrorRecord.get("listOfErrors")).addAll(listOfErrors);
             } else {
                 errorList.add(errorRecord);
                 lookupMap.put(partialContentWithErrors.getCanonicalSourceFile(), errorRecord);
             }
         }
-        
+
         responseBuilder.put("brokenFiles", lookupMap.keySet().size());
         responseBuilder.put("totalErrors", errors);
         responseBuilder.put("errorsList", errorList);
@@ -732,7 +724,7 @@ public class AdminFacade extends AbstractSegueFacade {
 
     /**
      * List users by id or email.
-     * 
+     *
      * @param httpServletRequest
      *            - for checking permissions
      * @param request
@@ -747,8 +739,6 @@ public class AdminFacade extends AbstractSegueFacade {
      *            - if searching by role
      * @param schoolOther
      *            - if searching by school other field.
-     * @param postcode
-     *            - if searching by postcode.
      * @param schoolURN
      *            - if searching by school by the URN.
      * @param subjectOfInterest
@@ -763,8 +753,6 @@ public class AdminFacade extends AbstractSegueFacade {
             @QueryParam("id") final Long userId, @QueryParam("email") @Nullable final String email,
             @QueryParam("familyName") @Nullable final String familyName, @QueryParam("role") @Nullable final Role role,
             @QueryParam("schoolOther") @Nullable final String schoolOther,
-            @QueryParam("postcode") @Nullable final String postcode,
-            @QueryParam("postcodeRadius") @Nullable final String postcodeRadius,
             @QueryParam("schoolURN") @Nullable final String schoolURN,
             @QueryParam("subjectOfInterest") @Nullable final String subjectOfInterest) {
 
@@ -777,13 +765,12 @@ public class AdminFacade extends AbstractSegueFacade {
             }
 
             misuseMonitor.notifyEvent(currentUser.getId().toString(), UserSearchMisuseHandler.class.getSimpleName());
-            
+
             if (!isUserAnAdmin(userManager, currentUser)
                     && (null == familyName || familyName.isEmpty())
                     && (null == schoolOther || schoolOther.isEmpty())
                     && (null == email || email.isEmpty())
-                    && (null == schoolURN || schoolURN.isEmpty())
-                    && (null == postcode || postcode.isEmpty())) {
+                    && (null == schoolURN || schoolURN.isEmpty())) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to do wildcard searches.")
                         .toResponse();
 
@@ -827,7 +814,7 @@ public class AdminFacade extends AbstractSegueFacade {
             if (null != schoolOther) {
                 userPrototype.setSchoolOther(schoolOther);
             }
-            
+
             if (null != schoolURN) {
                 userPrototype.setSchoolId(schoolURN);
             }
@@ -845,64 +832,6 @@ public class AdminFacade extends AbstractSegueFacade {
                 foundUsers = this.userManager.findUsers(userPrototype);
             }
             Map<Long, RegisteredUserDTO> userMapById = foundUsers.parallelStream().collect(Collectors.toMap(RegisteredUserDTO::getId, Function.identity()));
-
-            // if postcode is set, filter found users
-            if (null != postcode) {
-                try {
-                    Map<String, List<Long>> postCodeAndUserIds = Maps.newHashMap();
-                    for (RegisteredUserDTO userDTO : foundUsers) {
-                        if (userDTO.getSchoolId() != null) {
-                            School school = this.schoolReader.findSchoolById(userDTO.getSchoolId());
-                            if (school != null) {
-                                String schoolPostCode = school.getPostcode();
-                                if (null == schoolPostCode || schoolPostCode.isEmpty()) {
-                                    continue;
-                                }
-                                List<Long> ids;
-                                if (postCodeAndUserIds.containsKey(schoolPostCode)) {
-                                    ids = postCodeAndUserIds.get(schoolPostCode);
-                                } else {
-                                    ids = Lists.newArrayList();
-                                }
-                                ids.add(userDTO.getId());
-                                postCodeAndUserIds.put(schoolPostCode, ids);
-                            }
-                        }
-                    }
-
-                    PostCodeRadius radius = PostCodeRadius.valueOf(postcodeRadius);
-
-                    List<Long> userIdsWithinRadius = locationManager.getUsersWithinPostCodeDistanceOf(
-                            postCodeAndUserIds, postcode, radius);
-
-                    // Make sure the list returned is users who have schools in our postcode radius
-                    List<RegisteredUserDTO> nearbyUsers = new ArrayList<>();
-                    for (Long id : userIdsWithinRadius) {
-                        RegisteredUserDTO user = userMapById.get(id); //this.userManager.getUserDTOById(id);
-                        if (user != null) {
-                            nearbyUsers.add(user);
-                        }
-                    }
-                    foundUsers = nearbyUsers;
-
-                } catch (LocationServerException e) {
-                    log.error("Location service unavailable. ", e);
-                    return new SegueErrorResponse(Status.SERVICE_UNAVAILABLE,
-                            "Unable to process request using 3rd party location provider").toResponse();
-                } catch (UnableToIndexSchoolsException | SegueSearchException e) {
-                    log.error("Unable to get school statistics", e);
-                    return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                            "Unable to process schools information").toResponse();
-                } catch (JsonParseException | JsonMappingException e) {
-                    log.error("Problem parsing school", e);
-                    return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to read school")
-                            .toResponse();
-                } catch (IOException e) {
-                    log.error("Problem parsing school", e);
-                    return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                            "IOException while trying to communicate with the school service.").toResponse();
-                }
-            }
 
             // FIXME - this shouldn't really be in a segue class!
             if (subjectOfInterest != null && !subjectOfInterest.isEmpty()) {
@@ -957,7 +886,7 @@ public class AdminFacade extends AbstractSegueFacade {
 
     /**
      * Get a user by id or email.
-     * 
+     *
      * @param httpServletRequest
      *            - for checking permissions
      * @param userId
@@ -999,7 +928,7 @@ public class AdminFacade extends AbstractSegueFacade {
 
     /**
      * Delete all user data for a particular user account.
-     * 
+     *
      * @param httpServletRequest
      *            - for checking permissions
      * @param userId
@@ -1024,12 +953,12 @@ public class AdminFacade extends AbstractSegueFacade {
             }
 
             RegisteredUserDTO userToDelete = this.userManager.getUserDTOById(userId);
-            
+
             this.userManager.deleteUserAccount(userToDelete);
             this.eventBookingManager.deleteUsersAdditionalInformationBooking(userToDelete);
             getLogManager().logEvent(currentlyLoggedInUser, httpServletRequest, SegueServerLogType.DELETE_USER_ACCOUNT,
                     ImmutableMap.of(USER_ID_FKEY_FIELDNAME, userToDelete.getId()));
-            
+
             log.info("Admin User: " + currentlyLoggedInUser.getEmail() + " has just deleted the user account with id: "
                     + userId);
 
