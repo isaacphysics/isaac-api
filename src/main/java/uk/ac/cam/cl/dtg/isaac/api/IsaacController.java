@@ -369,12 +369,8 @@ public class IsaacController extends AbstractIsaacFacade {
         }
 
         try {
-
+            // All users with an Isaac account are allowed to access these resources
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(httpServletRequest);
-            if (!isUserTeacherOrAbove(userManager, currentlyLoggedInUser)) {
-                return new SegueErrorResponse(Status.FORBIDDEN,
-                        "You must have a teacher account to access these resources.").toResponse();
-            }
 
             // determine if we can use the cache if so return cached response.
             String sha = this.contentManager.getCurrentContentSHA();
@@ -515,7 +511,9 @@ public class IsaacController extends AbstractIsaacFacade {
             }
             userOfInterestSummary = userManager.convertToUserSummaryObject(userOfInterestFull);
 
-            if (associationManager.hasPermission(user, userOfInterestSummary)) {
+            // If user is fetching their own progress, or the user is at least a teacher (tutors cannot see their
+            // students progress) and has a valid connection with this user...
+            if (associationManager.hasTeacherPermission(user, userOfInterestSummary)) {
                 Map<String, Object> userProgressInformation = statsManager.getUserQuestionInformation(userOfInterestFull);
 
                 // augment details with user snapshot data (perhaps one day we will replace the entire endpoint with this call)

@@ -46,6 +46,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingUpdateException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventDeadlineException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventGroupReservationLimitException;
+import uk.ac.cam.cl.dtg.isaac.api.managers.EventIsCancelledException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventIsFullException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventIsNotFullException;
 import uk.ac.cam.cl.dtg.isaac.dos.EventStatus;
@@ -514,6 +515,8 @@ public class EventsFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST,
                 "The user doesn't exist, so unable to book them onto an event", e)
                 .toResponse();
+        } catch (EventIsCancelledException e) {
+            return SegueErrorResponse.getBadRequestResponse("The event is cancelled, so no bookings are being accepted.");
         }
     }
 
@@ -627,6 +630,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
 
+            // Tutors cannot yet manage event bookings for their groups
             if (!isUserTeacherOrAbove(userManager, currentUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to use this endpoint.").toResponse();
             }
@@ -836,6 +840,8 @@ public class EventsFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST,
                 "User already booked on this event. Unable to create a duplicate booking.")
                 .toResponse();
+        } catch (EventIsCancelledException e) {
+            return SegueErrorResponse.getBadRequestResponse("The event is cancelled, so no bookings are being accepted.");
         }
     }
 
@@ -874,6 +880,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         List<RegisteredUserDTO> usersToReserve = Lists.newArrayList();
         try {
             reservingUser = userManager.getCurrentRegisteredUser(request);
+            // Tutors cannot yet manage event bookings for their tutees, so shouldn't be added to this list
             if (!Arrays.asList(Role.TEACHER, Role.EVENT_LEADER, Role.EVENT_MANAGER, Role.ADMIN).contains(reservingUser.getRole())) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
@@ -926,6 +933,8 @@ public class EventsFacade extends AbstractIsaacFacade {
                     .toResponse();
         } catch (NoUserException e) {
             return SegueErrorResponse.getResourceNotFoundResponse("Unable to locate one of the users specified.");
+        } catch (EventIsCancelledException e) {
+            return SegueErrorResponse.getBadRequestResponse("The event is cancelled, so no bookings are being accepted.");
         }
     }
 
@@ -1032,6 +1041,11 @@ public class EventsFacade extends AbstractIsaacFacade {
                     .toResponse();
             }
 
+            if (EventStatus.CANCELLED.equals(event.getEventStatus())) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "Sorry, this event is cancelled.")
+                        .toResponse();
+            }
+
             if (EventStatus.WAITING_LIST_ONLY.equals(event.getEventStatus())) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "Sorry booking for this event is restricted. You can only be added to a waiting list.")
                         .toResponse();
@@ -1075,6 +1089,8 @@ public class EventsFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST,
                 "The booking deadline for this event has passed. No more bookings are being accepted.")
                 .toResponse();
+        } catch (EventIsCancelledException e) {
+            return SegueErrorResponse.getBadRequestResponse("The event is cancelled, so no bookings are being accepted.");
         }
     }
 
@@ -1131,6 +1147,8 @@ public class EventsFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.CONFLICT,
                 "There are spaces on this event and the deadline has not passed. Please use the request booking endpoint to book you on to it.")
                 .toResponse();
+        } catch (EventIsCancelledException e) {
+            return SegueErrorResponse.getBadRequestResponse("The event is cancelled, so no bookings are being accepted.");
         }
     }
 
@@ -1275,6 +1293,8 @@ public class EventsFacade extends AbstractIsaacFacade {
                     .toResponse();
         } catch (NoUserException e) {
             return SegueErrorResponse.getResourceNotFoundResponse("Unable to locate user specified.");
+        } catch (EventIsCancelledException e) {
+            return SegueErrorResponse.getBadRequestResponse("Event is cancelled, cannot resent event emails.");
         }
     }
 
@@ -1403,6 +1423,8 @@ public class EventsFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST,
                     "The user doesn't exist, so unable to book them onto an event", e)
                     .toResponse();
+        } catch (EventIsCancelledException e) {
+            return SegueErrorResponse.getBadRequestResponse("The event is cancelled, event attendance cannot be recorded.");
         }
     }
 

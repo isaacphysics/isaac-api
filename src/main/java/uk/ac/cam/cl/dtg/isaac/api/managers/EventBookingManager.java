@@ -281,7 +281,7 @@ public class EventBookingManager {
      */
     public EventBookingDTO createBookingOrAddToWaitingList(final IsaacEventPageDTO event, final RegisteredUserDTO user,
                                          final Map<String, String> additionalEventInformation)
-            throws SegueDatabaseException, DuplicateBookingException {
+            throws SegueDatabaseException, DuplicateBookingException, EventIsCancelledException {
         // check if already booked
         if (this.isUserBooked(event.getId(), user.getId())) {
             throw new DuplicateBookingException(String.format("Unable to book onto event (%s) as user (%s) is already"
@@ -336,7 +336,12 @@ public class EventBookingManager {
     public EventBookingDTO createBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user,
                                          final Map<String, String> additionalEventInformation,
                                          final BookingStatus status)
-            throws SegueDatabaseException, DuplicateBookingException, EventIsFullException {
+            throws SegueDatabaseException, DuplicateBookingException, EventIsFullException, EventIsCancelledException {
+        // Check if event is cancelled
+        if (EventStatus.CANCELLED.equals(event.getEventStatus())) {
+            throw new EventIsCancelledException(String.format("Unable to book user (%s) onto event (%s); the event is cancelled.", user.getId(), event.getId()));
+        }
+
         // check if already booked
         if (this.isUserBooked(event.getId(), user.getId())) {
             throw new DuplicateBookingException(String.format("Unable to book onto event (%s) as user (%s) is already"
@@ -416,8 +421,12 @@ public class EventBookingManager {
     public EventBookingDTO requestBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user,
                                           final Map<String, String> additionalEventInformation)
             throws SegueDatabaseException, EmailMustBeVerifiedException, DuplicateBookingException,
-            EventIsFullException, EventDeadlineException {
+            EventIsFullException, EventDeadlineException, EventIsCancelledException {
         this.ensureValidEventAndUser(event, user, true);
+
+        if (EventStatus.CANCELLED.equals(event.getEventStatus())) {
+            throw new EventIsCancelledException(String.format("Unable to book user (%s) onto event (%s); the event is cancelled.", user.getId(), event.getId()));
+        }
 
         EventBookingDTO booking;
         try (ITransaction transaction = transactionManager.getTransaction()) {
@@ -485,7 +494,12 @@ public class EventBookingManager {
     public List<EventBookingDTO> requestReservations(final IsaacEventPageDTO event, final List<RegisteredUserDTO> users,
                                                      final RegisteredUserDTO reservingUser)
     throws EventDeadlineException, DuplicateBookingException, EventIsFullException, EventGroupReservationLimitException,
-           SegueDatabaseException {
+           SegueDatabaseException, EventIsCancelledException {
+
+        // Cannot reserve spots onto a cancelled event
+        if (EventStatus.CANCELLED.equals(event.getEventStatus())) {
+            throw new EventIsCancelledException(String.format("User (%s) was unable to reserve places for event (%s); the event is cancelled.", reservingUser.getId(), event.getId()));
+        }
 
         List<RegisteredUserDTO> unreservableUsers = new ArrayList<>();
         for (RegisteredUserDTO user : users) {
@@ -636,7 +650,12 @@ public class EventBookingManager {
     public EventBookingDTO requestWaitingListBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user,
                                                      final Map<String, String> additionalInformation) throws
             SegueDatabaseException, EmailMustBeVerifiedException, DuplicateBookingException,
-            EventDeadlineException, EventIsNotFullException {
+            EventDeadlineException, EventIsNotFullException, EventIsCancelledException {
+
+        if (EventStatus.CANCELLED.equals(event.getEventStatus())) {
+            throw new EventIsCancelledException(String.format("Unable to book user (%s) onto event (%s); the event is cancelled.", user.getId(), event.getId()));
+        }
+
         final Date now = new Date();
         this.ensureValidEventAndUser(event, user, false);
 
@@ -715,7 +734,12 @@ public class EventBookingManager {
      * @throws EventBookingUpdateException  - Unable to update the event booking.
      */
     public EventBookingDTO promoteToConfirmedBooking(final IsaacEventPageDTO event, final RegisteredUserDTO userDTO)
-            throws SegueDatabaseException, EventBookingUpdateException, EventIsFullException {
+            throws SegueDatabaseException, EventBookingUpdateException, EventIsFullException, EventIsCancelledException {
+
+        if (EventStatus.CANCELLED.equals(event.getEventStatus())) {
+            throw new EventIsCancelledException(String.format("Unable to confirm user (%s) booking on event (%s); the event is cancelled.", userDTO.getId(), event.getId()));
+        }
+
         EventBookingDTO updatedStatus;
         try (ITransaction transaction = transactionManager.getTransaction()) {
             this.bookingPersistenceManager.lockEventUntilTransactionComplete(transaction, event.getId());
@@ -792,7 +816,11 @@ public class EventBookingManager {
      */
     public DetailedEventBookingDTO recordAttendance(final IsaacEventPageDTO event, final RegisteredUserDTO
             userDTO, final boolean attended)
-            throws SegueDatabaseException, EventBookingUpdateException {
+            throws SegueDatabaseException, EventBookingUpdateException, EventIsCancelledException {
+
+        if (EventStatus.CANCELLED.equals(event.getEventStatus())) {
+            throw new EventIsCancelledException(String.format("Unable to record user (%s) attendance for event (%s); the event is cancelled.", userDTO.getId(), event.getId()));
+        }
 
         DetailedEventBookingDTO updatedBooking;
         try (ITransaction transaction = transactionManager.getTransaction()) {
@@ -1094,7 +1122,12 @@ public class EventBookingManager {
      * @param user - user to be emailed.
      */
     public void resendEventEmail(final IsaacEventPageDTO event, final RegisteredUserDTO user)
-            throws SegueDatabaseException, ContentManagerException {
+            throws SegueDatabaseException, ContentManagerException, EventIsCancelledException {
+
+        if (EventStatus.CANCELLED.equals(event.getEventStatus())) {
+            throw new EventIsCancelledException(String.format("Cannot resent event emails for user (%s). event (%s) is cancelled.", user.getId(), event.getId()));
+        }
+
         EventBookingDTO booking
                 = this.bookingPersistenceManager.getBookingByEventIdAndUserId(event.getId(), user.getId());
 
@@ -1187,6 +1220,7 @@ public class EventBookingManager {
         Long numberOfPlaces = getPlacesAvailable(event);
         if (numberOfPlaces != null) {
             long numberOfRequests = users.stream()
+                    // Consider tutors as students with regard to teacher events (for now)
                     .filter(user -> !isStudentEvent || !Role.TEACHER.equals(user.getRole()))
                     .count();
             if (numberOfPlaces - numberOfRequests < 0) {
@@ -1216,7 +1250,8 @@ public class EventBookingManager {
         Integer groupReservationLimit = event.getGroupReservationLimit();
         if (groupReservationLimit != null) { // This should never be null
             long numberOfRequests = users.stream()
-                    // teachers don't count toward student event limits
+                    // Teachers don't count toward student event limits
+                    // Consider tutors as students with regard to teacher events (for now)
                     .filter(user -> !isStudentEvent || !Role.TEACHER.equals(user.getRole()))
                     .count();
 
