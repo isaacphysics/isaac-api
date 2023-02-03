@@ -87,7 +87,7 @@ public class ExternalAccountManager implements IExternalAccountManager {
                             //    Action: same as deletion? Or just remove from lists for now?
                             log.debug("Case: delivery failed.");
                             mailjetApi.updateUserSubscriptions(mailjetId, MailJetSubscriptionAction.REMOVE, MailJetSubscriptionAction.REMOVE);
-                        } else if (!accountEmail.equals(mailjetDetails.getString("Email"))) {
+                        } else if (!accountEmail.toLowerCase().equals(mailjetDetails.getString("Email"))) {
                             // Case: account email change:
                             //    Expect: non-null "mailjet_id", email in MailJet != email in database
                             //    Action: delete old email, add new user for new email
@@ -103,10 +103,11 @@ public class ExternalAccountManager implements IExternalAccountManager {
                             updateUserOnMailJet(mailjetId, userRecord);
                         }
                     } else {
-                        if (!accountEmailDeliveryFailed && !userRecord.isDeleted() && subscribedToAnyLists) {
+                        if (!accountEmailDeliveryFailed && !userRecord.isDeleted()) {
                             // Case: new to Isaac, not on MailJet:
-                            //    Expect: null "mailjet_id", not DELIVERY_FAILED, not deleted, subscribed to at least one list
+                            //    Expect: null "mailjet_id", not DELIVERY_FAILED, not deleted
                             //    Action: create MailJet ID, update details, update subscriptions, update provider_last_updated
+                            //            This will upload even users who are not subscribed to emails.
                             log.debug("Case: new to Isaac/not yet on MailJet");
                             mailjetId = mailjetApi.addNewUserOrGetUserIfExists(accountEmail);
                             updateUserOnMailJet(mailjetId, userRecord);

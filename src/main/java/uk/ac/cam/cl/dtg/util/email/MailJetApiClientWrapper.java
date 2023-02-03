@@ -34,14 +34,13 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jakarta.ws.rs.core.Response;
-
 public class MailJetApiClientWrapper {
 
     private static final Logger log = LoggerFactory.getLogger(MailJetApiClientWrapper.class);
     private final MailjetClient mailjetClient;
     private final String newsListId;
     private final String eventsListId;
+    private final String legalListId;
 
     /**
      *  Wrapper for MailjetClient class.
@@ -50,10 +49,12 @@ public class MailJetApiClientWrapper {
      *  @param mailjetApiSecret - MailJet API Client Secret
      *  @param mailjetNewsListId - MailJet list ID for NEWS_AND_UPDATES
      *  @param mailjetEventsListId - MailJet list ID for EVENTS
+     *  @param mailjetLegalListId - MailJet list ID for legal notices (all users)
      */
     @Inject
     public MailJetApiClientWrapper(final String mailjetApiKey, final String mailjetApiSecret,
-                                   final String mailjetNewsListId, final String mailjetEventsListId) {
+                                   final String mailjetNewsListId, final String mailjetEventsListId,
+                                   final String mailjetLegalListId) {
         ClientOptions options = ClientOptions.builder()
                 .apiKey(mailjetApiKey)
                 .apiSecretKey(mailjetApiSecret)
@@ -62,6 +63,7 @@ public class MailJetApiClientWrapper {
         this.mailjetClient = new MailjetClient(options);
         this.newsListId = mailjetNewsListId;
         this.eventsListId = mailjetEventsListId;
+        this.legalListId = mailjetLegalListId;
     }
 
     /**
@@ -163,6 +165,9 @@ public class MailJetApiClientWrapper {
         Validate.notNull(mailjetId);
         MailjetRequest request = new MailjetRequest(ContactManagecontactslists.resource, mailjetId)
                 .property(ContactManagecontactslists.CONTACTSLISTS, new JSONArray()
+                        .put(new JSONObject()
+                                .put(ContactslistImportList.LISTID, legalListId)
+                                .put(ContactslistImportList.ACTION, MailJetSubscriptionAction.FORCE_SUBSCRIBE.value))
                         .put(new JSONObject()
                                 .put(ContactslistImportList.LISTID, newsListId)
                                 .put(ContactslistImportList.ACTION, newsEmails.value))
