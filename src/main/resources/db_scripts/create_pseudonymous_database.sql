@@ -60,8 +60,6 @@ CREATE TABLE anonymous.user_credentials AS
     FROM public.user_credentials;
 
 -- user_totp ignored
---  It may be worth running the following post-database creation, with a valid secret key, so that admins can log in:
---   INSERT INTO user_totp SELECT id, '[ADD_SECRET_HERE]', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP FROM users WHERE role='ADMIN';
 
 -- user_email_preferences ignored
 
@@ -187,20 +185,42 @@ CREATE TABLE anonymous.logged_events AS
         timestamp
     FROM public.logged_events;
 
--- Set sequences to correct values so that database can be used:
-SELECT SETVAL('anonymous.assignments_id_seq', COALESCE(MAX(id), 1) ) FROM anonymous.assignments;
-SELECT SETVAL('anonymous.event_bookings_id_seq', COALESCE(MAX(id), 1) ) FROM anonymous.event_bookings;
-SELECT SETVAL('anonymous.groups_id_seq', COALESCE(MAX(id), 1) ) FROM anonymous.groups;
-SELECT SETVAL('anonymous.ip_location_history_id_seq', COALESCE(MAX(id), 1) ) FROM anonymous.ip_location_history;
-SELECT SETVAL('anonymous.logged_events_id_seq', COALESCE(MAX(id), 1) ) FROM anonymous.logged_events;
-SELECT SETVAL('anonymous.question_attempts_id_seq', COALESCE(MAX(id), 1) ) FROM anonymous.question_attempts;
-SELECT SETVAL('anonymous.quiz_assignments_id_seq', COALESCE(MAX(id), 1) ) FROM anonymous.quiz_assignments;
-SELECT SETVAL('anonymous.quiz_attempts_id_seq', COALESCE(MAX(id), 1) ) FROM anonymous.quiz_attempts;
-SELECT SETVAL('anonymous.quiz_question_attempts_id_seq', COALESCE(MAX(id), 1) ) FROM anonymous.quiz_question_attempts;
-SELECT SETVAL('anonymous.users_id_seq', COALESCE(MAX(id), 1) ) FROM anonymous.users;
-
-
 RETURN true;
 END;
 $$
 LANGUAGE plpgsql;
+
+
+-- TO USE THIS SCRIPT
+
+-- Create the new schema with the anonymised data in it:
+--     SELECT create_anonymous_database();
+
+-- Dump the data to file:
+--     docker exec -i postgres-live pg_dump --username=rutherford --data-only -n anonymous | gzip > anonymousdb.sql.gz
+
+-- Create a blank Isaac database as usual.
+
+-- Change the name of the schema so that the data gets loaded into the blank Isaac database:
+--     ALTER SCHEMA public RENAME TO anonymous;
+
+-- Load the data into the new database:
+--     gunzip -c anonymousdb.sql.gz | docker exec -i postgres-anon psql -U rutherford -f -
+
+-- Rename the schema back to the default value so that the API can connect to it:
+--     ALTER SCHEMA anonymous RENAME TO public;
+
+-- Set sequences to correct values so that database can be used:
+--     SELECT SETVAL('public.assignments_id_seq', COALESCE(MAX(id), 1) ) FROM public.assignments;
+--     SELECT SETVAL('public.event_bookings_id_seq', COALESCE(MAX(id), 1) ) FROM public.event_bookings;
+--     SELECT SETVAL('public.groups_id_seq', COALESCE(MAX(id), 1) ) FROM public.groups;
+--     SELECT SETVAL('public.ip_location_history_id_seq', COALESCE(MAX(id), 1) ) FROM public.ip_location_history;
+--     SELECT SETVAL('public.logged_events_id_seq', COALESCE(MAX(id), 1) ) FROM public.logged_events;
+--     SELECT SETVAL('public.question_attempts_id_seq', COALESCE(MAX(id), 1) ) FROM public.question_attempts;
+--     SELECT SETVAL('public.quiz_assignments_id_seq', COALESCE(MAX(id), 1) ) FROM public.quiz_assignments;
+--     SELECT SETVAL('public.quiz_attempts_id_seq', COALESCE(MAX(id), 1) ) FROM public.quiz_attempts;
+--     SELECT SETVAL('public.quiz_question_attempts_id_seq', COALESCE(MAX(id), 1) ) FROM public.quiz_question_attempts;
+--     SELECT SETVAL('public.users_id_seq', COALESCE(MAX(id), 1) ) FROM public.users;
+
+-- To allow admins to login, add a 2FA secret to those accounts:
+--   INSERT INTO user_totp SELECT id, '[ADD_SECRET_HERE]', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP FROM users WHERE role='ADMIN';
