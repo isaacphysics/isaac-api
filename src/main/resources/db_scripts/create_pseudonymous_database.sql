@@ -2,7 +2,7 @@
 -- and run the regression tests (or test manually?) to check if it works. Maybe check for every database table that is
 -- mentioned in the codebase.
 
-CREATE OR REPLACE FUNCTION create_anonymous_database(hash_salt TEXT) RETURNS boolean
+CREATE OR REPLACE FUNCTION create_anonymous_database() RETURNS boolean
 AS
 $$
 BEGIN
@@ -19,11 +19,11 @@ CREATE TABLE anonymous.users AS
         _id,
         'FamilyName-' || id::varchar(255) as family_name,
         'GivenName-' || id::varchar(255) as given_name,
-        id::varchar(255) || '@isaac-cs-anonymous-email.com' as email,
+        id::varchar(255) || '@noreply.isaaccomputerscience.org' as email,
         role,
         NULL AS date_of_birth,
-        'UNKNOWN' as gender,
-        NULL AS registration_date,
+        'PREFER_NOT_TO_SAY' as gender,
+        registration_date,
         school_id,
         NULL as school_other,
         registered_contexts,
@@ -31,7 +31,7 @@ CREATE TABLE anonymous.users AS
         last_updated,
         email_verification_status,
         last_seen,
-        id::varchar(255) || '@isaac-cs-anonymous-email.com' as email_to_verify,
+        NULL as email_to_verify,
         NULL as email_verification_token,
         0 as session_token,
         deleted
@@ -50,9 +50,9 @@ CREATE TABLE anonymous.user_badges AS SELECT * FROM public.user_badges;
 CREATE TABLE anonymous.user_credentials AS
     SELECT
         user_id,
-        'bflrBg4DlCjZRl/k2hn2cotSWZERu44OFBeaywz/6Gzy4bX0k6TVjh/l+uI3cF1SKyib7zsk4fOulb1Moud+4A==' as password,
-        'hHdj7z1JEus5yTf6FmEznw==' as secure_salt,
-        'SeguePBKDF2v2' as security_scheme,
+        'ihDEIMGwOldVWPsh4EFM/57OIpQIezcAVhP64KDrckPC7xwnGtiIvJW46fcDP9cov1I+5qOenqLlJwA3k+0zOg==' as password,
+        'EZgUc/oK5iydm+VsHz8ZlA==' as secure_salt,
+        'SegueSCryptv1' as security_scheme,
         NULL as reset_token,
         NULL as reset_expiry,
         created,
@@ -60,6 +60,8 @@ CREATE TABLE anonymous.user_credentials AS
     FROM public.user_credentials;
 
 -- user_totp ignored
+--  It may be worth running the following post-database creation, with a valid secret key, so that admins can log in:
+--   INSERT INTO user_totp SELECT id, '[ADD_SECRET_HERE]', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP FROM users WHERE role='ADMIN';
 
 -- user_email_preferences ignored
 
@@ -118,7 +120,7 @@ CREATE TABLE anonymous.assignments AS
         gameboard_id,
         group_id,
         owner_user_id,
-        '' as notes,
+        NULL as notes,
         creation_date,
         due_date,
         scheduled_start_date
@@ -137,7 +139,7 @@ CREATE TABLE anonymous.event_bookings AS
         status,
         updated,
         NULL as additional_booking_information,
-        TRUE as pii_removed
+        coalesce(pii_removed, CURRENT_TIMESTAMP) as pii_removed
     FROM public.event_bookings;
 
 
@@ -184,6 +186,19 @@ CREATE TABLE anonymous.logged_events AS
         '192.168.1.1'::inet as ip_address,
         timestamp
     FROM public.logged_events;
+
+-- Set sequences to correct values so that database can be used:
+SELECT SETVAL('anonymous.assignments_id_seq', COALESCE(MAX(id), 1) ) FROM anonymous.assignments;
+SELECT SETVAL('anonymous.event_bookings_id_seq', COALESCE(MAX(id), 1) ) FROM anonymous.event_bookings;
+SELECT SETVAL('anonymous.groups_id_seq', COALESCE(MAX(id), 1) ) FROM anonymous.groups;
+SELECT SETVAL('anonymous.ip_location_history_id_seq', COALESCE(MAX(id), 1) ) FROM anonymous.ip_location_history;
+SELECT SETVAL('anonymous.logged_events_id_seq', COALESCE(MAX(id), 1) ) FROM anonymous.logged_events;
+SELECT SETVAL('anonymous.question_attempts_id_seq', COALESCE(MAX(id), 1) ) FROM anonymous.question_attempts;
+SELECT SETVAL('anonymous.quiz_assignments_id_seq', COALESCE(MAX(id), 1) ) FROM anonymous.quiz_assignments;
+SELECT SETVAL('anonymous.quiz_attempts_id_seq', COALESCE(MAX(id), 1) ) FROM anonymous.quiz_attempts;
+SELECT SETVAL('anonymous.quiz_question_attempts_id_seq', COALESCE(MAX(id), 1) ) FROM anonymous.quiz_question_attempts;
+SELECT SETVAL('anonymous.users_id_seq', COALESCE(MAX(id), 1) ) FROM anonymous.users;
+
 
 RETURN true;
 END;
