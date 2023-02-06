@@ -18,7 +18,9 @@ package uk.ac.cam.cl.dtg.segue.dao.users;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.metadata.Type;
 import uk.ac.cam.cl.dtg.isaac.dos.ItemValidationResponse;
+import uk.ac.cam.cl.dtg.isaac.dos.MultiPartValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.ItemValidationResponseDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.MultiPartValidationResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dao.content.AbstractPolymorphicBidirectionalConverter;
 import uk.ac.cam.cl.dtg.isaac.dos.QuantityValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
@@ -54,6 +56,8 @@ public class QuestionValidationResponseOrikaConverter extends
             return super.mapperFacade.map(source, QuantityValidationResponseDTO.class);
         } else if (source instanceof ItemValidationResponse) {
             return super.mapperFacade.map(source, ItemValidationResponseDTO.class);
+        } else if (source instanceof MultiPartValidationResponse) {
+            return super.mapperFacade.map(source, MultiPartValidationResponseDTO.class);
         } else {
             // I would have expected this to cause an infinite loop / stack
             // overflow but apparently it doesn't.
@@ -75,6 +79,8 @@ public class QuestionValidationResponseOrikaConverter extends
             return super.mapperFacade.map(source, QuantityValidationResponse.class);
         } else if (source instanceof ItemValidationResponseDTO) {
             return super.mapperFacade.map(source, ItemValidationResponse.class);
+        } else if (source instanceof MultiPartValidationResponseDTO) {
+            return super.mapperFacade.map(source, MultiPartValidationResponse.class);
         } else {
             // I would have expected this to cause an infinite loop / stack
             // overflow but apparently it doesn't.

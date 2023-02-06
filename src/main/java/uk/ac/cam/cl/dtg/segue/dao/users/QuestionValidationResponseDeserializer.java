@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import uk.ac.cam.cl.dtg.isaac.dos.ItemValidationResponse;
+import uk.ac.cam.cl.dtg.isaac.dos.MultiPartValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuantityValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
@@ -80,6 +81,9 @@ public class QuestionValidationResponseDeserializer extends JsonDeserializer<Que
         String questionResponseType = root.get("answer").get("type").textValue();
         if (questionResponseType.equals("quantity")) {
             return mapper.readValue(jsonString, QuantityValidationResponse.class);
+        } else if (questionResponseType.equals("multiPartChoice")) {
+            // FIXME throws if the MultiPartValidationResponse contains anything but plain QuestionValidationResponses
+            return mapper.readValue(jsonString, MultiPartValidationResponse.class);
         } else if (questionResponseType.equals("itemChoice")) {
             // We don't actually use this validation response type for all ItemChoices, but it should
             // be safe to use regardless of the "true" type because the null values will be excluded.

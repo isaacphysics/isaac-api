@@ -111,7 +111,7 @@ public class QuestionManager {
      * @return A response containing a QuestionValidationResponse object.
      */
     public final Response validateAnswer(final Question question, final ChoiceDTO submittedAnswer) {
-        IValidator validator = locateValidator(question.getClass());
+        IValidator validator = IValidator.locateValidator(question.getClass());
 
         if (null == validator) {
             log.error("Unable to locate a valid validator for this question " + question.getId());
@@ -136,38 +136,6 @@ public class QuestionManager {
         return Response.ok(
                 mapper.getAutoMapper().map(validateQuestionResponse, QuestionValidationResponseDTO.class)).build();
 
-    }
-
-    /**
-     * Reflection to try and determine the associated validator for the question being answered.
-     * 
-     * @param questionType
-     *            - the type of question being answered.
-     * @return a Validator
-     */
-    @SuppressWarnings("unchecked")
-    private static IValidator locateValidator(final Class<? extends Question> questionType) {
-        // check we haven't gone too high up the superclass tree
-        if (!Question.class.isAssignableFrom(questionType)) {
-            return null;
-        }
-
-        // Does this class have the correct annotation?
-        if (questionType.isAnnotationPresent(ValidatesWith.class)) {
-
-            log.debug("Validator for question validation found. Using : "
-                    + questionType.getAnnotation(ValidatesWith.class).value());
-            Injector injector = SegueGuiceConfigurationModule.getGuiceInjector();
-            return injector.getInstance(questionType.getAnnotation(ValidatesWith.class).value());
-
-        } else if (questionType.equals(Question.class)) {
-            // so if we get here then we haven't found a ValidatesWith class, so
-            // we should just give up and return null.
-            return null;
-        }
-
-        // we will continue our search of the superclasses for the annotation
-        return locateValidator((Class<? extends Question>) questionType.getSuperclass());
     }
 
     /**
@@ -348,7 +316,7 @@ public class QuestionManager {
             }
             ChoiceQuestion testQuestion = (ChoiceQuestion) questionClass.newInstance();
             testQuestion.setChoices(testDefinition.getUserDefinedChoices());
-            IValidator questionValidator = QuestionManager.locateValidator(testQuestion.getClass());
+            IValidator questionValidator = IValidator.locateValidator(testQuestion.getClass());
             if (null == questionValidator) {
                 throw new ValidatorUnavailableException("Could not find a validator for the question");
             }

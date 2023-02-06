@@ -31,6 +31,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.GraphChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ItemChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LogicFormula;
+import uk.ac.cam.cl.dtg.isaac.dos.content.MultiPartChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ParsonsChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Quantity;
 import uk.ac.cam.cl.dtg.isaac.dos.content.StringChoice;
@@ -99,6 +100,8 @@ public class ChoiceDeserializer extends JsonDeserializer<Choice> {
                 return getSingletonChoiceMapper().readValue(root.toString(), ParsonsChoice.class);
             case "itemChoice":
                 return getSingletonChoiceMapper().readValue(root.toString(), ItemChoice.class);
+            case "multiPartChoice":
+                return getSingletonChoiceMapper().readValue(root.toString(), MultiPartChoice.class);
             default:
                 return getSingletonChoiceMapper().readValue(root.toString(), Choice.class);
         }

@@ -21,6 +21,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
+import com.google.inject.Injector;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -28,10 +29,13 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
+import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -49,6 +53,7 @@ import java.util.Map;
  *
  */
 public interface IValidator {
+    Logger log = LoggerFactory.getLogger(IValidator.class);
     
     /**
      * validateQuestionResponse This method is specifically for single field questions.
@@ -87,7 +92,6 @@ public interface IValidator {
 
         return orderedChoices;
     }
-
 
     /**
      * Make a JSON HTTP POST request to an external validator, and provide the response JSON as a HashMap.
@@ -134,5 +138,36 @@ public interface IValidator {
         boolean valueEmpty = null == feedback.getValue() || feedback.getValue().isEmpty();
         boolean childrenEmpty = null == feedback.getChildren() || feedback.getChildren().isEmpty();
         return valueEmpty && childrenEmpty;
+    }
+
+    /**
+     * Reflection to try and determine the associated validator for the question being answered.
+     *
+     * @param questionType
+     *            - the type of question being answered.
+     * @return a Validator
+     */
+    @SuppressWarnings("unchecked")
+    static IValidator locateValidator(final Class<? extends Question> questionType) {
+        // check we haven't gone too high up the superclass tree
+        if (!Question.class.isAssignableFrom(questionType)) {
+            return null;
+        }
+
+        // Does this class have the correct annotation?
+        if (questionType.isAnnotationPresent(ValidatesWith.class)) {
+            log.debug("Validator for question validation found. Using : "
+                    + questionType.getAnnotation(ValidatesWith.class).value());
+            Injector injector = SegueGuiceConfigurationModule.getGuiceInjector();
+            return injector.getInstance(questionType.getAnnotation(ValidatesWith.class).value());
+
+        } else if (questionType.equals(Question.class)) {
+            // so if we get here then we haven't found a ValidatesWith class, so
+            // we should just give up and return null.
+            return null;
+        }
+
+        // we will continue our search of the superclasses for the annotation
+        return IValidator.locateValidator((Class<? extends Question>) questionType.getSuperclass());
     }
 }
