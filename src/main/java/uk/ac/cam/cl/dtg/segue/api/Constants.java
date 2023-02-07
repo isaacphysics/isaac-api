@@ -198,6 +198,7 @@ public final class Constants {
     public static final String MAILJET_API_SECRET = "MAILJET_API_SECRET";
     public static final String MAILJET_NEWS_LIST_ID = "MAILJET_NEWS_LIST_ID";
     public static final String MAILJET_EVENTS_LIST_ID = "MAILJET_EVENTS_LIST_ID";
+    public static final String MAILJET_LEGAL_LIST_ID = "MAILJET_LEGAL_LIST_ID";
 
     public static final String EVENT_PRE_POST_EMAILS = "EVENT_PRE_POST_EMAILS";
 

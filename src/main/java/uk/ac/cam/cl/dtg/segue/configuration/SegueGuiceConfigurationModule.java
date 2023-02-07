@@ -1044,7 +1044,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                 // If MailJet is configured, initialise the sync:
                 IExternalAccountDataManager externalAccountDataManager = new PgExternalAccountPersistenceManager(database);
                 MailJetApiClientWrapper mailJetApiClientWrapper = new MailJetApiClientWrapper(mailjetKey, mailjetSecret,
-                        properties.getProperty(MAILJET_NEWS_LIST_ID), properties.getProperty(MAILJET_EVENTS_LIST_ID));
+                        properties.getProperty(MAILJET_NEWS_LIST_ID), properties.getProperty(MAILJET_EVENTS_LIST_ID),
+                        properties.getProperty(MAILJET_LEGAL_LIST_ID));
 
                 log.info("Created singleton of ExternalAccountManager.");
                 externalAccountManager = new ExternalAccountManager(mailJetApiClientWrapper, externalAccountDataManager);
