@@ -68,7 +68,6 @@ public class ExternalAccountManager implements IExternalAccountManager {
 
                     String accountEmail = userRecord.getAccountEmail();
                     boolean accountEmailDeliveryFailed = EmailVerificationStatus.DELIVERY_FAILED.equals(userRecord.getEmailVerificationStatus());
-                    boolean subscribedToAnyLists = userRecord.allowsNewsEmails() || userRecord.allowsEventsEmails();
                     String mailjetId = userRecord.getProviderUserId();
                     JSONObject mailjetDetails;
 
