@@ -30,7 +30,6 @@ public class UserGroup {
     private GroupStatus status;
     private Date created;
     private boolean archived;
-    private boolean additionalManagerPrivileges;
     private Date lastUpdated;
 
     /**
@@ -53,14 +52,13 @@ public class UserGroup {
      *            - date created.
      */
     public UserGroup(@Nullable final Long id, final String groupName, final Long ownerId, final GroupStatus status, final Date created,
-                     final boolean archived, final boolean additionalManagerPrivileges, final Date lastUpdated) {
+                     final boolean archived, final Date lastUpdated) {
         this.id = id;
         this.groupName = groupName;
         this.ownerId = ownerId;
         this.status = status;
         this.created = created;
         this.archived = archived;
-        this.additionalManagerPrivileges = additionalManagerPrivileges;
         this.lastUpdated = lastUpdated;
     }
 
@@ -191,22 +189,8 @@ public class UserGroup {
         return archived;
     }
 
-    public void setArchived(final boolean archived) {
+    public void setArchived(boolean archived) {
         this.archived = archived;
-    }
-
-    /**
-     * @return whether additional managers of this group have owner powers or not
-     */
-    public boolean isAdditionalManagerPrivileges() {
-        return this.additionalManagerPrivileges;
-    }
-
-    /**
-     * @param additionalManagerPrivileges whether additional managers of this group should have owner powers or not
-     */
-    public void setAdditionalManagerPrivileges(final boolean additionalManagerPrivileges) {
-        this.additionalManagerPrivileges = additionalManagerPrivileges;
     }
 
     /**

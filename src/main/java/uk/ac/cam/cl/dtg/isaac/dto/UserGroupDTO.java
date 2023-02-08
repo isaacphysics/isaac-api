@@ -41,7 +41,6 @@ public class UserGroupDTO {
     private Date lastUpdated;
     private String token;
     private boolean archived;
-    private boolean additionalManagerPrivileges;
     private UserSummaryWithEmailAddressDTO ownerSummary;
     private Set<UserSummaryWithEmailAddressDTO> additionalManagers;
 
@@ -231,20 +230,6 @@ public class UserGroupDTO {
      */
     public void setArchived(final boolean archived) {
         this.archived = archived;
-    }
-
-    /**
-     * @return whether additional managers of this group have owner powers or not
-     */
-    public boolean isAdditionalManagerPrivileges() {
-        return this.additionalManagerPrivileges;
-    }
-
-    /**
-     * @param additionalManagerPrivileges whether additional managers of this group should have owner powers or not
-     */
-    public void setAdditionalManagerPrivileges(final boolean additionalManagerPrivileges) {
-        this.additionalManagerPrivileges = additionalManagerPrivileges;
     }
 
     /**

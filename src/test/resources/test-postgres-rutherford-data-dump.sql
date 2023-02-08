@@ -44,7 +44,6 @@ COPY public.gameboards (id, title, contents, wildcard, wildcard_position, game_f
 9313cadd-d4ce-420f-9331-300e3067b45f	Test Teacher's gameboard 1	{"{\\"id\\": \\"_regression_test_\\", \\"context\\": {\\"role\\": null, \\"stage\\": null, \\"examBoard\\": null, \\"difficulty\\": null}, \\"contentType\\": \\"isaacQuestionPage\\"}","{\\"id\\": \\"f2d24c70-9b6b-4a46-ad2a-002886dff84e\\", \\"context\\": {\\"role\\": null, \\"stage\\": null, \\"examBoard\\": null, \\"difficulty\\": null}, \\"contentType\\": \\"isaacQuestionPage\\"}"}	{"id": "0d1c84b9-d77d-4dd0-9d05-ea91e49d7adb", "url": "https://isaacphysics.org", "tags": ["computer_science"], "type": "isaacWildcard", "level": null, "title": "Isaac Physics", "value": null, "author": "jsharkey13", "layout": null, "display": null, "version": null, "audience": null, "children": [], "encoding": null, "subtitle": null, "published": false, "deprecated": null, "expandable": null, "attribution": null, "description": "Check out our sister site!", "relatedContent": null, "searchableContent": null, "canonicalSourceFile": "content/isaac-physics-demo-page/example_wildcard.json"}	0	{"fields": [], "levels": [], "stages": [], "topics": [], "concepts": [], "subjects": ["computer_science"], "examBoards": [], "difficulties": [], "questionCategories": []}	5	BUILDER	2022-08-03 12:09:47.537	[]
 865072ab-9223-495f-a809-5ee2b98252e4	Test Teacher's gameboard 2 (for /assignment testing)	{"{\\"id\\": \\"_regression_test_\\", \\"context\\": {\\"role\\": null, \\"stage\\": null, \\"examBoard\\": null, \\"difficulty\\": null}, \\"contentType\\": \\"isaacQuestionPage\\"}"}	{"id": "wildcard_placeholder", "url": "/about", "tags": ["computer_science"], "type": "isaacWildcard", "level": null, "title": "About us", "value": null, "author": null, "layout": null, "display": null, "version": null, "audience": null, "children": [], "encoding": null, "subtitle": null, "published": true, "deprecated": null, "expandable": null, "attribution": null, "description": "Learn about Isaac Computer Science", "relatedContent": null, "searchableContent": null, "canonicalSourceFile": "content/placeholder_wildcard.json"}	0	{"fields": [], "levels": [], "stages": [], "topics": [], "concepts": [], "subjects": ["computer_science"], "examBoards": [], "difficulties": [], "questionCategories": []}	5	BUILDER	2022-08-17 10:55:34.835	[]
 5acb113a-4d8b-4a6d-9714-6992e7e3dc35	Test Teacher's gameboard 3 (for /assignment due date testing)	{"{\\"id\\": \\"_regression_test_\\", \\"context\\": {\\"role\\": null, \\"stage\\": null, \\"examBoard\\": null, \\"difficulty\\": null}, \\"contentType\\": \\"isaacQuestionPage\\"}"}	{"id": "wildcard_placeholder", "url": "/about", "tags": ["computer_science"], "type": "isaacWildcard", "level": null, "title": "About us", "value": null, "author": null, "layout": null, "display": null, "version": null, "audience": null, "children": [], "encoding": null, "subtitle": null, "published": true, "deprecated": null, "expandable": null, "attribution": null, "description": "Learn about Isaac Computer Science", "relatedContent": null, "searchableContent": null, "canonicalSourceFile": "content/placeholder_wildcard.json"}	0	{"fields": [], "levels": [], "stages": [], "topics": [], "concepts": [], "subjects": ["computer_science"], "examBoards": [], "difficulties": [], "questionCategories": []}	5	BUILDER	2022-08-17 10:56:35.958	[]
-43c3ca6d-4d1b-49df-3ec4-4ce2b306eb45	Teacher Dave's gameboard 1 (for additional manager privileges testing)	{"{\\"id\\": \\"_regression_test_\\", \\"context\\": {\\"role\\": null, \\"stage\\": null, \\"examBoard\\": null, \\"difficulty\\": null}, \\"contentType\\": \\"isaacQuestionPage\\"}"}	{"id": "wildcard_placeholder", "url": "/about", "tags": ["computer_science"], "type": "isaacWildcard", "level": null, "title": "About us", "value": null, "author": null, "layout": null, "display": null, "version": null, "audience": null, "children": [], "encoding": null, "subtitle": null, "published": true, "deprecated": null, "expandable": null, "attribution": null, "description": "Learn about Isaac Computer Science", "relatedContent": null, "searchableContent": null, "canonicalSourceFile": "content/placeholder_wildcard.json"}	0	{"fields": [], "levels": [], "stages": [], "topics": [], "concepts": [], "subjects": ["computer_science"], "examBoards": [], "difficulties": [], "questionCategories": []}	5	BUILDER	2022-08-17 10:56:35.958	[]
 \.
 
 
@@ -52,10 +51,10 @@ COPY public.gameboards (id, title, contents, wildcard, wildcard_position, game_f
 -- Data for Name: groups; Type: TABLE DATA; Schema: public; Owner: rutherford
 --
 
-COPY public.groups (id, group_name, owner_id, created, archived, group_status, last_updated, additional_manager_privileges) FROM stdin;
-1	AB Group (Test)	5	2022-07-06 15:36:58	f	ACTIVE	\N	f
-2	BC Group (Dave)	10	2022-07-06 15:37:32	f	ACTIVE	\N	f
-4	AB Group 2 (Test Tutor)	12	2022-12-12 14:48:40.245	f	ACTIVE	2022-12-12 14:48:40.245	f
+COPY public.groups (id, group_name, owner_id, created, archived, group_status, last_updated) FROM stdin;
+1	AB Group (Test)	5	2022-07-06 15:36:58	f	ACTIVE	\N
+2	BC Group (Dave)	10	2022-07-06 15:37:32	f	ACTIVE	\N
+4	AB Group 2 (Test Tutor)	12	2022-12-12 14:48:40.245	f	ACTIVE	2022-12-12 14:48:40.245
 \.
 
 
@@ -65,7 +64,6 @@ COPY public.groups (id, group_name, owner_id, created, archived, group_status, l
 
 COPY public.assignments (id, gameboard_id, group_id, owner_user_id, notes, creation_date, due_date, scheduled_start_date) FROM stdin;
 2	9313cadd-d4ce-420f-9331-300e3067b45f	1	5	\N	2022-08-03 12:14:50.134	\N	\N
-3	43c3ca6d-4d1b-49df-3ec4-4ce2b306eb45	2	10	\N	2023-01-27 12:14:50.134	\N	\N
 \.
 
 
@@ -93,7 +91,6 @@ COPY public.external_accounts (user_id, provider_name, provider_user_identifier,
 --
 
 COPY public.group_additional_managers (user_id, group_id, created) FROM stdin;
-5	2	2022-07-06 15:36:58
 \.
 
 
@@ -270,7 +267,6 @@ COPY public.user_gameboards (user_id, gameboard_id, created, last_visited) FROM 
 5	9313cadd-d4ce-420f-9331-300e3067b45f	2022-08-03 12:09:47.916	2022-08-03 12:09:49.959
 5	865072ab-9223-495f-a809-5ee2b98252e4	2022-08-17 10:55:34.931	2022-08-17 10:55:34.931
 5	5acb113a-4d8b-4a6d-9714-6992e7e3dc35	2022-08-17 10:56:36.076	2022-08-17 10:56:40.053
-10	43c3ca6d-4d1b-49df-3ec4-4ce2b306eb45	2023-01-26 10:16:37.553	2023-01-26 10:16:39.721
 \.
 
 

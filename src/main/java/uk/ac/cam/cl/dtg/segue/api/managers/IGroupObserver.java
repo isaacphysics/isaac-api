@@ -50,18 +50,4 @@ public interface IGroupObserver {
      */
     void onAdditionalManagerAddedToGroup(UserGroupDTO group, RegisteredUserDTO additionalManagerUser);
 
-    /**
-     * @param group
-     *            - the group for which the additional manager was promoted to owner
-     * @param newOwner
-     *            - the additional manager that was promoted to group owner
-     */
-    void onAdditionalManagerPromotedToOwner(UserGroupDTO group, RegisteredUserDTO newOwner);
-
-    /**
-     * @param group
-     *            - the group for which the additional manager permissions were changed
-     */
-    void onAdditionalManagerPrivilegesChanged(UserGroupDTO group);
-
 }

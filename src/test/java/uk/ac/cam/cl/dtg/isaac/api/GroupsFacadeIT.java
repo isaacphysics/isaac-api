@@ -82,7 +82,7 @@ public class GroupsFacadeIT extends IsaacIntegrationTest {
         replay(createGroupRequest);
 
         UserGroup userGroup = new UserGroup(null, "Test Teacher's New Group", TEST_TEACHER_ID,
-                GroupStatus.ACTIVE, new Date(), false, false, new Date());
+                GroupStatus.ACTIVE, new Date(), false, new Date());
 
         // Act
         // make request
@@ -110,7 +110,7 @@ public class GroupsFacadeIT extends IsaacIntegrationTest {
         replay(createGroupRequest);
 
         UserGroup userGroup = new UserGroup(null, "Test Tutor's New Group", TEST_TUTOR_ID,
-                GroupStatus.ACTIVE, new Date(), false, false, new Date());
+                GroupStatus.ACTIVE, new Date(), false, new Date());
 
         // Act
         // make request

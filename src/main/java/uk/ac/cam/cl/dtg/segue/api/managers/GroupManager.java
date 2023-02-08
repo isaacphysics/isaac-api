@@ -17,6 +17,7 @@ package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Sets;
+import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import ma.glasnost.orika.MapperFacade;
@@ -115,14 +116,14 @@ public class GroupManager {
         Validate.notNull(groupOwner);
 
         Date now = new Date();
-        UserGroup group = new UserGroup(null, groupName, groupOwner.getId(), GroupStatus.ACTIVE, now, false, false, now);
+        UserGroup group = new UserGroup(null, groupName, groupOwner.getId(), GroupStatus.ACTIVE, now, false, now);
 
         return this.convertGroupToDTO(groupDatabase.createGroup(group));
     }
 
     /**
      * createAssociationGroup.
-     *
+     * 
      * @param groupToEdit
      *            - group to edit.
      * @return modified group.
@@ -133,18 +134,7 @@ public class GroupManager {
         Validate.notNull(groupToEdit);
         UserGroup userGroup = dtoMapper.map(groupToEdit, UserGroup.class);
         userGroup.setLastUpdated(new Date());
-
-        UserGroup existingGroup = groupDatabase.findGroupById(groupToEdit.getId());
-        UserGroupDTO group = this.convertGroupToDTO(groupDatabase.editGroup(userGroup));
-
-        if (existingGroup.isAdditionalManagerPrivileges() != group.isAdditionalManagerPrivileges()) {
-            // Notify observers of change in additional manager privileges
-            for (IGroupObserver interestedParty : this.groupsObservers) {
-                interestedParty.onAdditionalManagerPrivilegesChanged(group);
-            }
-        }
-
-        return group;
+        return this.convertGroupToDTO(groupDatabase.editGroup(userGroup));
     }
 
     /**
@@ -422,50 +412,6 @@ public class GroupManager {
         }
 
         return this.getGroupById(group.getId());
-    }
-
-    /**
-     * Transfer group ownership from the group owner to another user.
-     *
-     * @param group - group to affect
-     * @param newOwner - user to promote to owner of the group
-     * @param oldOwner - user (must be previous group owner) to demote to additional manager status
-     * @return The group DTO
-     * @throws SegueDatabaseException if there is a db error
-     * @throws IllegalAccessException if oldOwner is not the current owner of the group
-     */
-    public UserGroupDTO promoteUserToOwner(final UserGroupDTO group, final RegisteredUserDTO newOwner, final RegisteredUserDTO oldOwner) throws SegueDatabaseException, IllegalAccessException {
-        Validate.notNull(group);
-        Validate.notNull(newOwner);
-        Validate.notNull(oldOwner);
-
-        // Old owner must actually be the old (current) owner of the group
-        if (!oldOwner.getId().equals(group.getOwnerId())) {
-            throw new IllegalAccessException("The user with id: " + oldOwner.getId() + " is not the current owner of the group with id: " + group.getId() + "!");
-        }
-
-        if (newOwner.getId().equals(oldOwner.getId())) {
-            // No ownership change
-            return group;
-        }
-
-        // Change old and new owners additional manager status if appropriate
-        if (!group.getAdditionalManagersUserIds().contains(oldOwner.getId())) {
-            this.groupDatabase.addUserAdditionalManagerList(oldOwner.getId(), group.getId());
-        }
-        if (group.getAdditionalManagersUserIds().contains(newOwner.getId())) {
-            this.groupDatabase.removeUserFromAdditionalManagerList(newOwner.getId(), group.getId());
-        }
-
-        // ! We are mutating this group object, but this particular mutation should be safe !
-        group.setOwnerId(newOwner.getId());
-
-        // Notify observers of ownership change
-        for (IGroupObserver interestedParty : this.groupsObservers) {
-            interestedParty.onAdditionalManagerPromotedToOwner(group, newOwner);
-        }
-
-        return this.editUserGroup(group);
     }
 
     /**
