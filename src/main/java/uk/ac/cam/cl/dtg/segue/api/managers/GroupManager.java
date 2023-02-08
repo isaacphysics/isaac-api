@@ -558,6 +558,16 @@ public class GroupManager {
     }
 
     /**
+     * Helper function to check if a user has additional permissions to modify and manage a group.
+     * @param group - dto
+     * @param userIdToCheck - user id to verify
+     * @return whether the user is an owner or an additional manager with privileges.
+     */
+    public static boolean hasAdditionalManagerPrivileges(final UserGroupDTO group, final Long userIdToCheck) {
+        return group.getOwnerId().equals(userIdToCheck) || isInAdditionalManagerList(group, userIdToCheck) && group.isAdditionalManagerPrivileges();
+    }
+
+    /**
      * @param group
      *            to convert
      * @return groupDTO

@@ -550,8 +550,8 @@ public class GroupsFacade extends AbstractSegueFacade {
 
             UserGroupDTO groupBasedOnId = groupManager.getGroupById(groupId);
 
-            if (!GroupManager.isOwnerOrAdditionalManager(groupBasedOnId, currentRegisteredUser.getId())) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You are not the owner or manager of this group").toResponse();
+            if (!GroupManager.hasAdditionalManagerPrivileges(groupBasedOnId, currentRegisteredUser.getId())) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You are neither the owner of this group, nor an additional manager with additional privileges!").toResponse();
             }
 
             RegisteredUserDTO userToRemove = userManager.getUserDTOById(userId);
