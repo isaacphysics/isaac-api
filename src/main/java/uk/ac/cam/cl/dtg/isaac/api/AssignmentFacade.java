@@ -304,7 +304,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Path("/assign")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @Operation(summary = "List all assignments set by the current user if no group param specified.")
+    @Operation(summary = "List all assignments set or managed by the current user if no group param specified.")
     public Response getAssigned(@Context final HttpServletRequest request,
                                 @QueryParam("group") final Long groupIdOfInterest) {
         try {
@@ -1186,6 +1186,15 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     !GroupManager.isInAdditionalManagerList(assigneeGroup, currentlyLoggedInUser.getId())) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You are not the owner of the group or a manager. Unable to delete it.").toResponse();
+            }
+
+            // Check if user is additional manager, and if so if they are either the creator of the assignment or additional
+            // manager privileges are enabled
+            if (!(assigneeGroup.getOwnerId().equals(currentlyLoggedInUser.getId())
+                    || assignmentToDelete.getOwnerUserId().equals(currentlyLoggedInUser.getId())
+                    || assigneeGroup.isAdditionalManagerPrivileges())) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "You do not have permission to delete this assignment. Unable to delete it.").toResponse();
             }
 
             this.assignmentManager.deleteAssignment(assignmentToDelete);

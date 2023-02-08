@@ -185,7 +185,8 @@ CREATE TABLE public.groups (
     created timestamp without time zone,
     archived boolean DEFAULT false NOT NULL,
     group_status text DEFAULT 'ACTIVE'::text,
-    last_updated timestamp without time zone
+    last_updated timestamp without time zone,
+    additional_manager_privileges boolean DEFAULT false
 );
 
 
