@@ -17,8 +17,11 @@
 package uk.ac.cam.cl.dtg.segue.auth;
 
 import com.google.api.client.json.GenericJson;
+import com.google.api.client.json.JsonFactory;
 import com.google.api.client.util.Key;
 
+import java.io.IOException;
+import java.io.Reader;
 import java.util.List;
 
 /**
@@ -64,5 +67,18 @@ public class OidcDiscoveryResponse extends GenericJson {
 
     public String getIssuer() {
         return issuer;
+    }
+
+
+    /**
+     * Alternatively, load saved OIDC IdP metadata from disk.
+     * @param jsonFactory The JSON factory to use to load the file from disk.
+     * @param reader The reader to use to load the file from disk.
+     * @return A configured {@link OidcDiscoveryResponse}.
+     * @throws IOException
+     */
+    public static OidcDiscoveryResponse load(JsonFactory jsonFactory, Reader reader)
+            throws IOException {
+        return jsonFactory.fromReader(reader, OidcDiscoveryResponse.class);
     }
 }

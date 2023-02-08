@@ -297,14 +297,13 @@ public final class Constants {
     public static final String RASPBERRYPI_CLIENT_SECRET = "RASPBERRYPI_CLIENT_SECRET";
     public static final String RASPBERRYPI_CALLBACK_URI = "RASPBERRYPI_CALLBACK_URI";
     public static final String RASPBERRYPI_OAUTH_SCOPES = "RASPBERRYPI_OAUTH_SCOPES";
-    public static final String RASPBERRYPI_AUTHORIZATION_URI = "RASPBERRYPI_AUTHORIZATION_URI";
-    public static final String RASPBERRYPI_TOKEN_URI = "RASPBERRYPI_TOKEN_URI";
 
     /*
-    Options for OpenID Connect dynamic discovery. If set, ...AUTHORIZATION_URI and ...TOKEN_URI config entries are
-    ignored and determined at runtime (start-up) by asking the identity provider. This can cause the API to fail to
-    start if there's no network connection.
+     Options for OpenID Connect dynamic discovery. If ...LOCAL_IDP_METADATA_PATH is empty, IdP metadata (relevant
+      endpoints etc.) are determined at runtime (start-up) by asking the IdP. This can cause the API to fail to
+      start if it can't contact the server at ...DISCOVERY_URI.
     */
+    public static final String RASPBERRYPI_LOCAL_IDP_METADATA_PATH = "RASPBERRYPI_LOCAL_IDP_METADATA_PATH";
     public static final String RASPBERRYPI_DISCOVERY_URI = "RASPBERRYPI_DISCOVERY_URI";
 
     // Local authentication specific stuff

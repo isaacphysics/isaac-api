@@ -19,10 +19,10 @@ package uk.ac.cam.cl.dtg.segue.auth;
 import com.google.api.client.auth.oauth2.AuthorizationCodeRequestUrl;
 import com.google.api.client.auth.oauth2.AuthorizationCodeResponseUrl;
 import com.google.api.client.auth.oauth2.AuthorizationCodeTokenRequest;
-import com.google.api.client.auth.oauth2.ClientParametersAuthentication;
 import com.google.api.client.auth.openidconnect.IdToken;
 import com.google.api.client.auth.openidconnect.IdTokenResponse;
 import com.google.api.client.auth.openidconnect.IdTokenVerifier;
+import com.google.api.client.http.BasicAuthentication;
 import com.google.api.client.http.GenericUrl;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
@@ -43,7 +43,10 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.OidcDiscoveryException;
 
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Arrays;
@@ -66,7 +69,7 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
     private final List<String> requestedScopes;
 
     // Identity provider (AKA authorization server) metadata, including URIs of auth and token endpoints
-    private final OidcDiscoveryResponse idpMetadata;
+    public final OidcDiscoveryResponse idpMetadata;
 
     // Raspberry Pi login options
     public static final String LOGIN_OPTIONS_PARAM_NAME = "login_options";
@@ -85,22 +88,32 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
             @Named(Constants.RASPBERRYPI_CLIENT_SECRET) final String clientSecret,
             @Named(Constants.RASPBERRYPI_CALLBACK_URI) final String callbackUri,
             @Named(Constants.RASPBERRYPI_OAUTH_SCOPES) final String oauthScopes,
-            @Named(Constants.RASPBERRYPI_DISCOVERY_URI) final String discoveryUri
-            ) throws AuthenticatorSecurityException, OidcDiscoveryException {
+            @Named(Constants.RASPBERRYPI_DISCOVERY_URI) final String discoveryUri,
+            @Named(Constants.RASPBERRYPI_LOCAL_IDP_METADATA_PATH) final String idpMetadataLocation
+    ) throws AuthenticatorSecurityException, OidcDiscoveryException, IOException {
 
         Validate.notBlank(clientId, "Missing resource %s", clientId);
-        Validate.notBlank(clientSecret, "Missing resource %s", clientId);
-        Validate.notBlank(discoveryUri, "Missing resource %s", clientId);
+        Validate.notBlank(clientSecret, "Missing resource %s", clientSecret);
 
         this.httpTransport = new NetHttpTransport();
         this.jsonFactory = new GsonFactory();
+
+        // If no on-disk IdP metadata is defined, use the IdP discovery endpoint to retrieve it.
+        if (idpMetadataLocation.isBlank()) {
+            this.idpMetadata = retrieveIdentityProviderMetadata(discoveryUri);
+        } else {
+            try (InputStream inputStream = new FileInputStream(idpMetadataLocation);
+                 InputStreamReader reader = new InputStreamReader(inputStream);
+            )
+            {
+                this.idpMetadata = OidcDiscoveryResponse.load(this.jsonFactory, reader);
+            }
+        }
 
         this.clientId = clientId;
         this.clientSecret = clientSecret;
         this.callbackUri = callbackUri;
         this.requestedScopes = Arrays.asList(oauthScopes.split(";"));
-
-        this.idpMetadata = getIdentityProviderMetadata(discoveryUri);
 
         if (null == credentialStore) {
             credentialStore = CacheBuilder.newBuilder().expireAfterAccess(CREDENTIAL_CACHE_TTL_MINUTES, TimeUnit.MINUTES)
@@ -108,7 +121,7 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
         }
     }
 
-    public OidcDiscoveryResponse getIdentityProviderMetadata(String discoveryUri) throws OidcDiscoveryException {
+    public OidcDiscoveryResponse retrieveIdentityProviderMetadata(String discoveryUri) throws OidcDiscoveryException {
         try {
             return new OidcDiscoveryRequest(httpTransport, jsonFactory, new GenericUrl(discoveryUri)).execute();
         } catch (IOException e) {
@@ -213,7 +226,7 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
             )
                     .setResponseClass(IdTokenResponse.class)
                     .setRedirectUri(callbackUri)
-                    .setClientAuthentication(new ClientParametersAuthentication(clientId, clientSecret)
+                    .setClientAuthentication(new BasicAuthentication(clientId, clientSecret)
             ).execute();
 
             // Store the response containing tokens and generate an ID that can be used to retrieve it later

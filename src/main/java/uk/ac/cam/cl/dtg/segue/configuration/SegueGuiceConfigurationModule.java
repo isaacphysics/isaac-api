@@ -357,11 +357,10 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         // Raspberry Pi
         this.bindConstantToProperty(Constants.RASPBERRYPI_CLIENT_ID, globalProperties);
         this.bindConstantToProperty(Constants.RASPBERRYPI_CLIENT_SECRET, globalProperties);
-        this.bindConstantToProperty(Constants.RASPBERRYPI_AUTHORIZATION_URI, globalProperties);
         this.bindConstantToProperty(Constants.RASPBERRYPI_CALLBACK_URI, globalProperties);
         this.bindConstantToProperty(Constants.RASPBERRYPI_OAUTH_SCOPES, globalProperties);
-        this.bindConstantToProperty(Constants.RASPBERRYPI_TOKEN_URI, globalProperties);
         this.bindConstantToProperty(Constants.RASPBERRYPI_DISCOVERY_URI, globalProperties);
+        this.bindConstantToProperty(Constants.RASPBERRYPI_LOCAL_IDP_METADATA_PATH, globalProperties);
 
         // Register a map of security providers
         MapBinder<AuthenticationProvider, IAuthenticator> mapBinder = MapBinder.newMapBinder(binder(),
