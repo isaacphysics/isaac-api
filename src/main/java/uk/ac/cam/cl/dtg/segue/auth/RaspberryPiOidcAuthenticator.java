@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
@@ -73,6 +74,9 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
 
     // Raspberry Pi login options
     public static final String LOGIN_OPTIONS_PARAM_NAME = "login_options";
+    // Redirect the user back to the relying party (Isaac) after the signup flow - only relevant for Hydra v1 IdP
+    public static final String LOGIN_OPTION_REDIRECT_AFTER_SIGNUP = "v1_signup";
+    // Force the signup flow rather than log in/sign up
     public static final String LOGIN_OPTION_FORCE_SIGNUP = "force_signup";
 
     // Parameters for anti-CSRF state token
@@ -156,27 +160,28 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
         }
 
         // Read claims from the ID token - no need to go to the UserInfo endpoint, as everything is here
-        String fullName = (String) idToken.getPayload().getOrDefault("name", null);
-        String email = (String) idToken.getPayload().getOrDefault("email", null);
+        String sub = (String) idToken.getPayload().get("sub");
+        String fullName = (String) idToken.getPayload().get("name");
+        String nickname = (String) idToken.getPayload().get("nickname");
+        String email = (String) idToken.getPayload().get("email");
         boolean emailVerified = (Boolean) idToken.getPayload().getOrDefault("email_verified", false);
-        String sub = (String) idToken.getPayload().getOrDefault("sub", null);
 
-        // Use the IdP's unique ID for the user ('sub') as the unique (per identity provider) user ID. If this is missing, abort.
-        if (null == sub) {
-            throw new NoUserException("User identifier missing from ID token, cannot identify user from auth provider.");
+        if (null == nickname || null == fullName || null == email || null == sub) {
+            throw new NoUserException("Required field missing from identity provider's response.");
         }
         else {
-            // Tokenise the name - this makes unreasonable assumptions about the structure of names, but it's the best we can do.
-            String[] names = fullName.split(" ");
-            String firstNames = String.join(" ", Arrays.copyOfRange(names, 0, names.length - 2));
-            String lastName = names[names.length - 1];
+            // Build a given name/family name based on the nickname and full name fields available. This makes
+            // unreasonable assumptions about the structure of names, but it's the best we can do.
+            List<String> tokenisedFullName = Arrays.asList(fullName.split(" "));
+            List<String> givenNameFamilyName = getGivenNameFamilyName(nickname, tokenisedFullName);
 
             EmailVerificationStatus emailStatus = emailVerified ? EmailVerificationStatus.VERIFIED : EmailVerificationStatus.NOT_VERIFIED;
 
+            // Use the IdP's unique ID for the user ('sub') as the unique (per identity provider) user ID.
             return new UserFromAuthProvider(
                     sub,
-                    firstNames,
-                    lastName,
+                    givenNameFamilyName.get(0),
+                    givenNameFamilyName.get(1),
                     email,
                     emailStatus,
                     null,
@@ -192,6 +197,7 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
                 .setScopes(requestedScopes)
                 .setRedirectUri(callbackUri)
                 .setState(antiForgeryStateToken)
+                .set(LOGIN_OPTIONS_PARAM_NAME, LOGIN_OPTION_REDIRECT_AFTER_SIGNUP)
                 .build();
     }
 
@@ -252,5 +258,35 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
                 .setIssuer(idpMetadata.getIssuer())
                 .build();
         return verifier.verify(token);
+    }
+
+
+    /**
+     * Based on the nickname and full name from the identity provider, try to come up with something sensible that fits
+     * our given name/family name format. There is no way to consistently get this right across name structures, so the
+     * user should have an opportunity to correct it later.
+     *
+     * @param nickname The nickname from the IdP.
+     * @param tokenisedName The tokenised full name from the IdP.
+     * @return A list with two elements: the derived given name and family name.
+     * @throws NoUserException when the derived names are not valid.
+     */
+    public List<String> getGivenNameFamilyName(String nickname, List<String> tokenisedName) throws NoUserException {
+        String givenName = nickname;
+        String familyName;
+
+        if (tokenisedName.isEmpty()) {
+            // If the full name is empty, use the nickname in both fields. Validation on the IdP side should prevent this.
+            familyName = nickname;
+        } else {
+            // Otherwise, use the last token of the full name as the family name.
+            familyName = tokenisedName.get(tokenisedName.size() - 1);
+        }
+
+        // Finally, check that the name meets validation.
+        if (!UserAccountManager.isUserNameValid(givenName) || !UserAccountManager.isUserNameValid(familyName)){
+            throw new NoUserException("The name provided by the identity provider does not meet validation.");
+        }
+        return List.of(givenName, familyName);
     }
 }

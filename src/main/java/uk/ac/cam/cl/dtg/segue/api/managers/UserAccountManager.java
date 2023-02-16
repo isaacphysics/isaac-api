@@ -109,7 +109,7 @@ public class UserAccountManager implements IUserAccountManager {
 
     private final AbstractUserPreferenceManager userPreferenceManager;
 
-    private final int USER_NAME_MAX_LENGTH = 255;
+    private static final int USER_NAME_MAX_LENGTH = 255;
     private static final Pattern USER_NAME_FORBIDDEN_CHARS_REGEX = Pattern.compile("[*<>]");
 
 
@@ -1857,7 +1857,7 @@ public class UserAccountManager implements IUserAccountManager {
      *            - the name to validate.
      * @return true if the name is valid, false otherwise.
      */
-    public final boolean isUserNameValid(final String name) {
+    public static final boolean isUserNameValid(final String name) {
         if (null == name || name.length() > USER_NAME_MAX_LENGTH || USER_NAME_FORBIDDEN_CHARS_REGEX.matcher(name).find()
                 || name.isEmpty()) {
             return false;
