@@ -174,6 +174,11 @@ public final class Constants {
     public static final String SESSION_TOKEN = "token";
 
     /**
+     *  Constant representing the validation on email addresses of users attempting to register.
+     */
+    public static final String RESTRICTED_SIGNUP_EMAIL_REGEX = "RESTRICTED_SIGNUP_EMAIL_REGEX";
+
+    /**
      * Constant representing the key for the HMAC Salt - used in HMAC calculations.
      */
     public static final String HMAC_SALT = "HMAC_SALT";
