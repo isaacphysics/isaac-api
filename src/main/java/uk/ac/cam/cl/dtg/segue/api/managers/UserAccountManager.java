@@ -559,8 +559,7 @@ public class UserAccountManager implements IUserAccountManager {
             }
 
             // check that any changes to protected fields being made are allowed.
-            RegisteredUserDTO existingUserFromDb = this.getUserDTOById(userObjectFromClient
-                    .getId());
+            RegisteredUserDTO existingUserFromDb = this.getUserDTOById(userObjectFromClient.getId());
 
             // You cannot modify role using this endpoint (an admin needs to go through the endpoint specifically for
             // role modification)
@@ -1162,6 +1161,12 @@ public class UserAccountManager implements IUserAccountManager {
         // Correctly remove school_other when it is set to be the empty string:
         if (updatedUser.getSchoolOther() == null || updatedUser.getSchoolOther().isEmpty()) {
             userToSave.setSchoolOther(null);
+        }
+
+        // Allow the user to clear their DOB, they have already confirmed they are over 11 at least once.
+        // null values are explicitly not mapped by `mergeMapper`.
+        if (updatedUser.getDateOfBirth() == null) {
+            userToSave.setDateOfBirth(null);
         }
 
         // Before save we should validate the user for mandatory fields.
