@@ -1240,6 +1240,13 @@ CREATE UNIQUE INDEX user_badges_user_id_badge_unique ON public.user_badges USING
 
 
 --
+-- Name: user_credentials_reset_tokens; Type: INDEX; Schema: public; Owner: rutherford
+--
+
+CREATE INDEX user_credentials_reset_tokens ON public.user_credentials USING btree (reset_token);
+
+
+--
 -- Name: user_email; Type: INDEX; Schema: public; Owner: rutherford
 --
 
