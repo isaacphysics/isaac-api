@@ -111,8 +111,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     private final UserBadgeManager userBadgeManager;
     private final AssignmentService assignmentService;
 
-    private final List<String> bookTags = ImmutableList.of("phys_book_gcse", "physics_skills_14", "chemistry_16");
-
     private final String NOT_SHARING = "NOT_SHARING";
 
     /**
@@ -1098,16 +1096,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     this.userBadgeManager.updateBadge(currentlyLoggedInUser,
                             UserBadgeManager.Badge.TEACHER_ASSIGNMENTS_SET, assignmentWithID.getId().toString());
 
-                    tagsLoop:
-                    for (String tag : bookTags) {
-                        for (GameboardItem item : gameboard.getContents()) {
-                            if (item.getTags().contains(tag)) {
-                                this.userBadgeManager.updateBadge(currentlyLoggedInUser,
-                                        UserBadgeManager.Badge.TEACHER_BOOK_PAGES_SET, assignmentWithID.getId().toString());
-                                break tagsLoop;
-                            }
-                        }
-                    }
                     // Assigning to this group was a success
                     assigmentStatuses.add(new AssignmentStatusDTO(assignmentWithID.getGroupId(), assignmentWithID.getId()));
                 } catch (DuplicateAssignmentException e) {
