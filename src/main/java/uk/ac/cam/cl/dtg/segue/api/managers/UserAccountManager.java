@@ -109,7 +109,8 @@ public class UserAccountManager implements IUserAccountManager {
 
     private final AbstractUserPreferenceManager userPreferenceManager;
 
-    private final int USER_NAME_MAX_LENGTH = 255;
+    private final Pattern restrictedSignupEmailRegex;
+    private static final int USER_NAME_MAX_LENGTH = 255;
     private static final Pattern USER_NAME_FORBIDDEN_CHARS_REGEX = Pattern.compile("[*<>]");
 
 
@@ -164,6 +165,13 @@ public class UserAccountManager implements IUserAccountManager {
         this.userAuthenticationManager = userAuthenticationManager;
         this.secondFactorManager = secondFactorManager;
         this.userPreferenceManager = userPreferenceManager;
+
+        String forbiddenEmailRegex = properties.getProperty(RESTRICTED_SIGNUP_EMAIL_REGEX);
+        if (null == forbiddenEmailRegex || forbiddenEmailRegex.isEmpty()) {
+            this.restrictedSignupEmailRegex = null;
+        } else {
+            this.restrictedSignupEmailRegex = Pattern.compile(forbiddenEmailRegex);
+        }
     }
 
     /**
@@ -1012,9 +1020,8 @@ public class UserAccountManager implements IUserAccountManager {
             throw new DuplicateAccountException("An account with that e-mail address already exists.");
         }
 
-        // FIXME: This is a hard-coded reference to the URL of the platform!
-        // Ensure nobody registers with Isaac email addresses. Users can change emails by verifying them however.
-        if (user.getEmail().matches(".*@isaac(physics|chemistry|maths|biology|computerscience|science)\\.org")) {
+        // Ensure nobody registers with Isaac email addresses. Users can change emails to restricted ones by verifying them, however.
+        if (null != restrictedSignupEmailRegex && restrictedSignupEmailRegex.matcher(user.getEmail()).find()) {
             log.warn("User attempted to register with Isaac email address '" + user.getEmail() + "'!");
             throw new EmailMustBeVerifiedException("You cannot register with an Isaac email address.");
         }
