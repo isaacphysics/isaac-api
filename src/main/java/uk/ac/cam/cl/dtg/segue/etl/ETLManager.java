@@ -72,9 +72,6 @@ class ETLManager {
         indexer.loadAndIndexContent(version);
         log.info("Indexed version " + version + ". Setting alias '" + alias + "'.");
         indexer.setNamedVersion(alias, version);
-
-        // Store the alias to file so that we can recover after wiping ElasticSearch.
-        this.contentIndicesStore.saveProperty(alias, version);
     }
 
     private class NewVersionIndexer implements Runnable {

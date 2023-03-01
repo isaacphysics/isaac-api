@@ -8,6 +8,7 @@ RUN mvn package -Dmaven.test.skip=true -P etl
 # create clean jetty docker container
 FROM jetty:11.0.12-jdk11-eclipse-temurin as server
 USER root
+ADD resources/school_list_2022.tar.gz /local/data/
 COPY --from=target /isaac-api/target/isaac-api.war /var/lib/jetty/webapps/isaac-api.war
 RUN chmod 755 /var/lib/jetty/webapps/*
 RUN chown jetty /var/lib/jetty/webapps/*

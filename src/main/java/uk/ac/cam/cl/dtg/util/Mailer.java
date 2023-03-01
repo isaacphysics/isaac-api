@@ -15,17 +15,14 @@
  */
 package uk.ac.cam.cl.dtg.util;
 
-import org.apache.commons.lang3.Validate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.segue.comm.EmailAttachment;
-
 import jakarta.activation.DataHandler;
 import jakarta.annotation.Nullable;
+import jakarta.mail.Authenticator;
 import jakarta.mail.Message;
 import jakarta.mail.Message.RecipientType;
 import jakarta.mail.MessagingException;
 import jakarta.mail.Multipart;
+import jakarta.mail.PasswordAuthentication;
 import jakarta.mail.Session;
 import jakarta.mail.Transport;
 import jakarta.mail.internet.AddressException;
@@ -33,6 +30,11 @@ import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeBodyPart;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
+import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.segue.comm.EmailAttachment;
+
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,24 +48,34 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class Mailer {
     private static final Logger log = LoggerFactory.getLogger(Mailer.class);
-	private String smtpAddress;
-	private String mailAddress;
-	private String smtpPort;
+	private final String smtpAddress;
+	private final String mailAddress;
+	private final String smtpPort;
+	private final String smtpUsername;
+	private final String smtpPassword;
 	private final static ConcurrentMap<Integer, Session> sessionCache = new ConcurrentHashMap<>();
 
 	/**
 	 * Mailer Class.
-	 * 
-	 * @param smtpAddress
-	 *            The address of the smtp server - this implementation assumes
-	 *            that the port is the default (25)
-	 * @param mailAddress
-	 *            The Envelope-From address of the sending account - used for
-	 *            authentication sometimes, and will receive bounce emails.
+	 *
+	 * @param smtpAddress      The address of the smtp server - this implementation assumes
+	 *                         that the port is the default (25)
+	 * @param mailAddress      The Envelope-From address of the sending account - used for
+	 *                         authentication sometimes, and will receive bounce emails.
+	 * @param smtpPort         The SMTP port.
+	 * @param smtpUsername     The SMTP Username.
+	 * @param smtpPassword     The SMTP Password.
 	 */
-	public Mailer(final String smtpAddress, final String mailAddress) {
+	public Mailer(final String smtpAddress,
+                final String mailAddress,
+                final String smtpPort,
+                final String smtpUsername,
+                final String smtpPassword) {
 		this.smtpAddress = smtpAddress;
 		this.mailAddress = mailAddress;
+		this.smtpPort = smtpPort;
+		this.smtpUsername = smtpUsername;
+		this.smtpPassword = smtpPassword;
 	}
 
     /**
@@ -160,53 +172,6 @@ public class Mailer {
         Transport.send(msg);
     }
 
-	/**
-	 * Gets the smtpAddress.
-	 * @return the smtpAddress
-	 */
-	public String getSmtpAddress() {
-		return smtpAddress;
-	}
-
-	/**
-	 * Sets the smtpAddress.
-	 * @param smtpAddress the smtpAddress to set
-	 */
-	public void setSmtpAddress(final String smtpAddress) {
-		this.smtpAddress = smtpAddress;
-	}
-
-	/**
-	 * Gets the mailAddress.
-	 * @return the mailAddress
-	 */
-	public String getMailAddress() {
-		return mailAddress;
-	}
-
-	/**
-	 * Sets the mailAddress.
-	 * @param mailAddress the mailAddress to set
-	 */
-	public void setMailAddress(final String mailAddress) {
-		this.mailAddress = mailAddress;
-	}
-	/**
-	 * Gets the smtpPort.
-	 * @return the smtpPort
-	 */
-	public String getSmtpPort() {
-		return smtpPort;
-	}
-
-	/**
-	 * Sets the smtpPort.
-	 * @param smtpPort the smtpPort to set
-	 */
-	public void setSmtpPort(final String smtpPort) {
-		this.smtpPort = smtpPort;
-	}
-	
     /**
      * @param recipient
      *            - string array of recipients that the message should be sent to
@@ -223,54 +188,56 @@ public class Mailer {
      */
     private Message setupMessage(final String[] recipient, final InternetAddress fromAddress,
                                  final String overrideEnvelopeFrom, @Nullable final InternetAddress replyTo,
-                                 final String subject)
-			throws MessagingException {
-        Validate.notEmpty(recipient);
-        Validate.notBlank(recipient[0]);
-        Validate.notNull(fromAddress);
-        
-        Properties p = new Properties();
+                                 final String subject) throws MessagingException {
+      Validate.notEmpty(recipient);
+      Validate.notBlank(recipient[0]);
+      Validate.notNull(fromAddress);
 
-        // Configure the SMTP server settings:
-        p.put("mail.smtp.host", smtpAddress);
-        if (null != smtpPort) {
-            p.put("mail.smtp.port", smtpPort);
-        }
-        p.put("mail.smtp.starttls.enable", "true");
+      Properties p = new Properties();
 
-        // Configure the email headers and routing:
-        String envelopeFrom = mailAddress;
-        if (null != overrideEnvelopeFrom) {
-            envelopeFrom = overrideEnvelopeFrom;
-        }
-        p.put("mail.smtp.from", envelopeFrom);  // Used for Return-Path
-        p.put("mail.from", fromAddress.getAddress()); // Should only affect Message-ID, since From overridden below
+      // Configure the SMTP server settings:
+      p.put("mail.smtp.host", smtpAddress);
+      p.put("mail.smtp.starttls.enable", "true");
 
-        // Create the jakarta.mail.Session object needed to send the email.
-        // These are expensive to create so cache them based on the properties
-        // they are configured with (using fact that hashcodes are equal only if objects equal):
-        Integer propertiesHash = p.hashCode();
-        Session s = sessionCache.computeIfAbsent(propertiesHash, k -> {
-            log.info(String.format("Creating new mail Session with properties: %s", p));
-            return Session.getInstance(p);
-        });
-        // Create the message and set the recipients:
-        Message msg = new MimeMessage(s);
+      // Configure the email headers and routing:
+      String envelopeFrom = mailAddress;
+      if (null != overrideEnvelopeFrom) {
+        envelopeFrom = overrideEnvelopeFrom;
+      }
+      p.put("mail.smtp.from", envelopeFrom);  // Used for Return-Path
+      p.put("mail.from", fromAddress.getAddress()); // Should only affect Message-ID, since From overridden below
+      p.put("mail.smtp.port", smtpPort);
+      p.put("mail.smtp.auth", "true");
+      // Create the jakarta.mail.Session object needed to send the email.
+      // These are expensive to create so cache them based on the properties
+      // they are configured with (using fact that hashcodes are equal only if objects equal):
+      Integer propertiesHash = p.hashCode();
+      Session s = sessionCache.computeIfAbsent(propertiesHash, k -> {
+        log.info(String.format("Creating new mail Session with properties: %s", p));
+        return Session.getInstance(p, new Authenticator() {
+              @Override
+              protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication(smtpUsername, smtpPassword);
+              }
+            });
+      });
+      // Create the message and set the recipients:
+      Message msg = new MimeMessage(s);
 
-        InternetAddress[] receivers = new InternetAddress[recipient.length];
+      InternetAddress[] receivers = new InternetAddress[recipient.length];
 
-        for (int i = 0; i < recipient.length; i++) {
-            receivers[i] = new InternetAddress(recipient[i]);
-        }
+      for (int i = 0; i < recipient.length; i++) {
+        receivers[i] = new InternetAddress(recipient[i]);
+      }
 
-		msg.setFrom(fromAddress);
-		msg.setRecipients(RecipientType.TO, receivers);
-		msg.setSubject(subject);
+      msg.setFrom(fromAddress);
+      msg.setRecipients(RecipientType.TO, receivers);
+      msg.setSubject(subject);
 
-		if (null != replyTo) {
-			msg.setReplyTo(new InternetAddress[] { replyTo });
-		}
+      if (null != replyTo) {
+        msg.setReplyTo(new InternetAddress[]{replyTo});
+      }
 
-        return msg;
+      return msg;
     }
 }

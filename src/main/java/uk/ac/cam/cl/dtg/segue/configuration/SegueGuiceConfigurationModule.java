@@ -57,8 +57,6 @@ import uk.ac.cam.cl.dtg.isaac.dao.PgQuizQuestionAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserAlerts;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
-import uk.ac.cam.cl.dtg.isaac.dos.LocationHistory;
-import uk.ac.cam.cl.dtg.isaac.dos.PgLocationHistory;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserAlerts;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserStreakManager;
@@ -81,7 +79,25 @@ import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.StubExternalAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
-import uk.ac.cam.cl.dtg.segue.api.monitors.*;
+import uk.ac.cam.cl.dtg.segue.api.monitors.AnonQuestionAttemptMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationRequestMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.GroupManagerLookupMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.IMetricsExporter;
+import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
+import uk.ac.cam.cl.dtg.segue.api.monitors.IPQuestionAttemptMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.InMemoryMisuseMonitor;
+import uk.ac.cam.cl.dtg.segue.api.monitors.LogEventMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetByEmailMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetByIPMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.PrometheusMetricsExporter;
+import uk.ac.cam.cl.dtg.segue.api.monitors.QuestionAttemptMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.RegistrationMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.SendEmailMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.TeacherPasswordResetMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.TokenOwnerLookupMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.UserSearchMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
@@ -99,7 +115,6 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.LocationManager;
 import uk.ac.cam.cl.dtg.segue.dao.LogManagerEventPublisher;
 import uk.ac.cam.cl.dtg.segue.dao.PgLogManager;
 import uk.ac.cam.cl.dtg.segue.dao.PgLogManagerEventListener;
@@ -137,25 +152,24 @@ import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.email.MailJetApiClientWrapper;
-import uk.ac.cam.cl.dtg.util.locations.IPInfoDBLocationResolver;
-import uk.ac.cam.cl.dtg.util.locations.IPLocationResolver;
-import uk.ac.cam.cl.dtg.util.locations.PostCodeIOLocationResolver;
-import uk.ac.cam.cl.dtg.util.locations.PostCodeLocationResolver;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_LINUX_CONFIG_LOCATION;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.EMAIL_SIGNATURE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_PRE_POST_EMAILS;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType.DEV;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILJET_API_KEY;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILJET_API_SECRET;
@@ -172,6 +186,8 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType.DEV;
  */
 public class SegueGuiceConfigurationModule extends AbstractModule implements ServletContextListener {
     private static final Logger log = LoggerFactory.getLogger(SegueGuiceConfigurationModule.class);
+
+    private static String version = null;
 
     private static Injector injector = null;
 
@@ -273,14 +289,13 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
         this.bindConstantToProperty(Constants.HOST_NAME, globalProperties);
         this.bindConstantToProperty(Constants.MAILER_SMTP_SERVER, globalProperties);
+        this.bindConstantToProperty(Constants.MAILER_SMTP_USERNAME, globalProperties);
+        this.bindConstantToProperty(Constants.MAILER_SMTP_PASSWORD, globalProperties);
+        this.bindConstantToProperty(Constants.MAILER_SMTP_PORT, globalProperties);
         this.bindConstantToProperty(Constants.MAIL_FROM_ADDRESS, globalProperties);
         this.bindConstantToProperty(Constants.MAIL_NAME, globalProperties);
-        this.bindConstantToProperty(Constants.SERVER_ADMIN_ADDRESS, globalProperties);
 
         this.bindConstantToProperty(Constants.LOGGING_ENABLED, globalProperties);
-
-        // IP address geocoding
-        this.bindConstantToProperty(Constants.IP_INFO_DB_API_KEY, globalProperties);
 
         this.bindConstantToProperty(Constants.SCHOOL_CSV_LIST_PATH, globalProperties);
 
@@ -377,10 +392,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      * Deals with application data managers.
      */
     private void configureApplicationManagers() {
-        bind(LocationHistory.class).to(PgLocationHistory.class);
-
-        bind(PostCodeLocationResolver.class).to(PostCodeIOLocationResolver.class);
-
         bind(IUserDataManager.class).to(PgUsers.class);
 
         bind(IAnonymousUserDataManager.class).to(PgAnonymousUsers.class);
@@ -455,11 +466,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                 return null;
             }
         }
-        // eventually we want to do something like the below to make sure we get updated clients        
+        // eventually we want to do something like the below to make sure we get updated clients
 //        if (elasticSearchClient instanceof TransportClient) {
 //            TransportClient tc = (TransportClient) elasticSearchClient;
 //            if (tc.connectedNodes().isEmpty()) {
-//                tc.close();        
+//                tc.close();
 //                log.error("The elasticsearch client is not connected to any nodes. Trying to reconnect...");
 //                elasticSearchClient = null;
 //                return getSearchConnectionInformation(clusterName, address, port);
@@ -514,13 +525,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     private static ILogManager getLogManager(final PostgresSqlDb database,
-                                             @Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled,
-                                             final LocationManager lhm) {
+                                             @Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled) {
 
         if (null == logManager) {
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-            logManager = new PgLogManagerEventListener(new PgLogManager(database, objectMapper, loggingEnabled, lhm));
+            logManager = new PgLogManagerEventListener(new PgLogManager(database, objectMapper, loggingEnabled));
 
             log.info("Creating singleton of LogManager");
             if (loggingEnabled) {
@@ -534,7 +544,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     }
 
     /**
-     * This provides a singleton of the contentVersionController for the segue facade. 
+     * This provides a singleton of the contentVersionController for the segue facade.
      * Note: This is a singleton because this content mapper has to use reflection to register all content classes.
      *
      * @return Content version controller with associated dependencies.
@@ -858,7 +868,23 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      * @return segue version currently running.
      */
     public static String getSegueVersion() {
-        return System.getProperty("segue.version");
+        if (SegueGuiceConfigurationModule.version != null) {
+            return SegueGuiceConfigurationModule.version;
+        }
+        String version = "unknown";
+        try {
+            Properties p = new Properties();
+            InputStream is = SegueGuiceConfigurationModule.class.getResourceAsStream("/version.properties");
+            if (is != null) {
+                p.load(is);
+                version = p.getProperty("version", "");
+            }
+            is.close();
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
+        SegueGuiceConfigurationModule.version = version;
+        return version;
     }
 
     /**
@@ -901,8 +927,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *            - dependency
      * @param contentManager
      *            - dependency
-     * @param locationHistoryManager
-     *            - dependency
      * @param groupManager
      *            - dependency
      * @param questionManager
@@ -914,14 +938,14 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     private static StatisticsManager getStatsManager(final UserAccountManager userManager,
                                                      final ILogManager logManager, final SchoolListReader schoolManager,
-                                                     final GitContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final LocationManager locationHistoryManager,
+                                                     final GitContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex,
                                                      final GroupManager groupManager, final QuestionManager questionManager,
                                                      final ContentSummarizerService contentSummarizerService,
                                                      final IUserStreaksManager userStreaksManager) {
 
         if (null == statsManager) {
             statsManager = new StatisticsManager(userManager, logManager, schoolManager, contentManager, contentIndex,
-                    locationHistoryManager, groupManager, questionManager, contentSummarizerService, userStreaksManager);
+                    groupManager, questionManager, contentSummarizerService, userStreaksManager);
             log.info("Created Singleton of Statistics Manager");
         }
 
@@ -1067,19 +1091,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             }
         }
         return externalAccountManager;
-    }
-
-    /**
-     * This provides a new instance of the location resolver.
-     *
-     * @param apiKey
-     *            - for using the third party service.
-     * @return The singleton instance of EmailCommunicator
-     */
-    @Inject
-    @Provides
-    private IPLocationResolver getIPLocator(@Named(Constants.IP_INFO_DB_API_KEY) final String apiKey) {
-        return new IPInfoDBLocationResolver(apiKey);
     }
 
     /**

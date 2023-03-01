@@ -63,31 +63,26 @@ public class PgLogManager implements ILogManager {
     private static final Logger log = LoggerFactory.getLogger(PgLogManager.class);
 
     private final PostgresSqlDb database;
-    private final LocationManager locationManager;
     private final boolean loggingEnabled;
     private final ObjectMapper objectMapper;
 
     /**
      * PgLogManager.
-     * 
+     *
      * @param database
      *            client for postgres.
      * @param objectMapper
      *            - so we can map event details to and from json
      * @param loggingEnabled
      *            - whether the log event should be persisted or not?
-     * @param locationManager
-     *            - Helps identify a rough location for an ip address.
      */
     @Inject
     public PgLogManager(final PostgresSqlDb database, final ObjectMapper objectMapper,
-            @Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled,
-            final LocationManager locationManager) {
+            @Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled) {
 
         this.database = database;
         this.objectMapper = objectMapper;
         this.loggingEnabled = loggingEnabled;
-        this.locationManager = locationManager;
     }
 
     @Override
@@ -288,7 +283,7 @@ public class PgLogManager implements ILogManager {
              ResultSet results = pst.executeQuery();
         ) {
             Set<String> eventTypesRecorded = Sets.newHashSet();
- 
+
             while (results.next()) {
                 eventTypesRecorded.add(results.getString("event_type"));
             }
@@ -301,7 +296,7 @@ public class PgLogManager implements ILogManager {
 
     /**
      * Creates a log event from a pg results set..
-     * 
+     *
      * @param results
      *            - result set containing the informaiton about the log event.
      * @return a log event
@@ -316,10 +311,10 @@ public class PgLogManager implements ILogManager {
 
     /**
      * getLogsCountByMonthFilteredByUserAndType.
-     * 
+     *
      * An optimised method for getting log counts data by month.
      * This relies on the database doing the binning for us.
-     * 
+     *
      * @param type
      *            - type of log event to search for.
      * @param fromDate
@@ -388,13 +383,13 @@ public class PgLogManager implements ILogManager {
             throw new SegueDatabaseException("Unable to parse date exception", e);
         }
     }
-    
+
     /**
      * getLogsByUserAndType.
-     * 
+     *
      * WARNING: This should be used with care. Do not request too much
      * TODO: add pagination
-     * 
+     *
      * @param type
      *            - type of log event to search for.
      * @param fromDate
@@ -467,7 +462,7 @@ public class PgLogManager implements ILogManager {
 
     /**
      * log an event in the database.
-     * 
+     *
      * @param userId
      *            -
      * @param anonymousUserId
@@ -528,7 +523,7 @@ public class PgLogManager implements ILogManager {
 
     /**
      * Generate a logEvent object.
-     * 
+     *
      * @param userId
      *            - owner user id
      * @param anonymousUserId
@@ -566,14 +561,6 @@ public class PgLogManager implements ILogManager {
 
         if (ipAddress != null) {
             logEvent.setIpAddress(ipAddress.split(",")[0]);
-
-            try {
-                // split based on the fact that we usually get ip addresses of the form
-                // [user_ip], [balancer/gateway_ip]
-                locationManager.refreshLocation(ipAddress.split(",")[0]);
-            } catch (SegueDatabaseException | IOException e1) {
-                log.error("Unable to record location information for ip Address: " + ipAddress, e1);
-            }
         }
 
         logEvent.setTimestamp(new Date());
