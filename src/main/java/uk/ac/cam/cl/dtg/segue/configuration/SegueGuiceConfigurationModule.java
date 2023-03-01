@@ -1009,7 +1009,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             // are currently configured, so the constructor takes a list of jobs to remove too.
             List<SegueScheduledJob> scheduledJobsToRemove = new ArrayList<>();
 
-            if (mailjetKey != null && mailjetSecret != null) {
+            if (null != mailjetKey && null != mailjetSecret && !mailjetKey.isEmpty() && !mailjetSecret.isEmpty()) {
                 configuredScheduledJobs.add(syncMailjetUsers);
             } else {
                 scheduledJobsToRemove.add(syncMailjetUsers);
