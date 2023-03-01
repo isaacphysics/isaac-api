@@ -174,8 +174,11 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILJET_API_KEY;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILJET_API_SECRET;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILJET_EVENTS_LIST_ID;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILJET_LEGAL_LIST_ID;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILJET_NEWS_LIST_ID;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_APP_ENVIRONMENT;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType.DEV;
 
 /**
  * This class is responsible for injecting configuration values for persistence related classes.
@@ -1076,7 +1079,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                 // If MailJet is configured, initialise the sync:
                 IExternalAccountDataManager externalAccountDataManager = new PgExternalAccountPersistenceManager(database);
                 MailJetApiClientWrapper mailJetApiClientWrapper = new MailJetApiClientWrapper(mailjetKey, mailjetSecret,
-                        properties.getProperty(MAILJET_NEWS_LIST_ID), properties.getProperty(MAILJET_EVENTS_LIST_ID));
+                        properties.getProperty(MAILJET_NEWS_LIST_ID), properties.getProperty(MAILJET_EVENTS_LIST_ID),
+                        properties.getProperty(MAILJET_LEGAL_LIST_ID));
 
                 log.info("Created singleton of ExternalAccountManager.");
                 externalAccountManager = new ExternalAccountManager(mailJetApiClientWrapper, externalAccountDataManager);

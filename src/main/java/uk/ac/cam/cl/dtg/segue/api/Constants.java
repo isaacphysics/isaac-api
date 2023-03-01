@@ -185,6 +185,11 @@ public final class Constants {
     public static final String SESSION_TOKEN = "token";
 
     /**
+     *  Constant representing the validation on email addresses of users attempting to register.
+     */
+    public static final String RESTRICTED_SIGNUP_EMAIL_REGEX = "RESTRICTED_SIGNUP_EMAIL_REGEX";
+
+    /**
      * Constant representing the key for the HMAC Salt - used in HMAC calculations.
      */
     public static final String HMAC_SALT = "HMAC_SALT";
@@ -209,6 +214,7 @@ public final class Constants {
     public static final String MAILJET_API_SECRET = "MAILJET_API_SECRET";
     public static final String MAILJET_NEWS_LIST_ID = "MAILJET_NEWS_LIST_ID";
     public static final String MAILJET_EVENTS_LIST_ID = "MAILJET_EVENTS_LIST_ID";
+    public static final String MAILJET_LEGAL_LIST_ID = "MAILJET_LEGAL_LIST_ID";
 
     public static final String EVENT_PRE_POST_EMAILS = "EVENT_PRE_POST_EMAILS";
 
@@ -382,6 +388,7 @@ public final class Constants {
         MERGE_USER,
         PASSWORD_RESET_REQUEST_RECEIVED,
         PASSWORD_RESET_REQUEST_SUCCESSFUL,
+        PROMOTE_GROUP_MANAGER_TO_OWNER,
         QUESTION_ATTEMPT_RATE_LIMITED,
         RELEASE_USER_ASSOCIATION,
         REMOVE_USER_FROM_GROUP,
