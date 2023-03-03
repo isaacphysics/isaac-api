@@ -19,7 +19,6 @@ package uk.ac.cam.cl.dtg.segue.auth;
 import org.junit.Before;
 import org.junit.Test;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.OidcDiscoveryException;
 
 import java.net.URL;
 import java.nio.file.Paths;

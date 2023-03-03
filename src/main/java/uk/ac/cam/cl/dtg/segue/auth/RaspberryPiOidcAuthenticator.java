@@ -42,7 +42,6 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.OidcDiscoveryException;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -93,7 +92,7 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
             @Named(Constants.RASPBERRYPI_CALLBACK_URI) final String callbackUri,
             @Named(Constants.RASPBERRYPI_OAUTH_SCOPES) final String oauthScopes,
             @Named(Constants.RASPBERRYPI_LOCAL_IDP_METADATA_PATH) final String idpMetadataLocation
-    ) throws AuthenticatorSecurityException, OidcDiscoveryException, IOException {
+    ) throws AuthenticatorSecurityException, IOException {
 
         Validate.notBlank(clientId, "Missing resource %s", clientId);
         Validate.notBlank(clientSecret, "Missing resource %s", clientSecret);
