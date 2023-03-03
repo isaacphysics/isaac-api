@@ -119,15 +119,6 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
         }
     }
 
-    public OidcDiscoveryResponse retrieveIdentityProviderMetadata(String discoveryUri) throws OidcDiscoveryException {
-        try {
-            return new OidcDiscoveryRequest(httpTransport, jsonFactory, new GenericUrl(discoveryUri)).execute();
-        } catch (IOException e) {
-            throw new OidcDiscoveryException("Failed to fetch identity provider metadata from discovery endpoint. "
-                    + "Ensure the discovery URI defined in config.properties exists.");
-        }
-    }
-
     @Override
     public AuthenticationProvider getAuthenticationProvider() {
         return AuthenticationProvider.RASPBERRYPI;
