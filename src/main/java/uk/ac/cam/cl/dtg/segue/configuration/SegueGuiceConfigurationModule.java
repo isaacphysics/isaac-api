@@ -1036,7 +1036,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             // are currently configured, so the constructor takes a list of jobs to remove too.
             List<SegueScheduledJob> scheduledJobsToRemove = new ArrayList<>();
 
-            if (mailjetKey != null && mailjetSecret != null) {
+            if (null != mailjetKey && null != mailjetSecret && !mailjetKey.isEmpty() && !mailjetSecret.isEmpty()) {
                 configuredScheduledJobs.add(syncMailjetUsers);
             } else {
                 scheduledJobsToRemove.add(syncMailjetUsers);
@@ -1071,7 +1071,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                 // If MailJet is configured, initialise the sync:
                 IExternalAccountDataManager externalAccountDataManager = new PgExternalAccountPersistenceManager(database);
                 MailJetApiClientWrapper mailJetApiClientWrapper = new MailJetApiClientWrapper(mailjetKey, mailjetSecret,
-                        properties.getProperty(MAILJET_NEWS_LIST_ID), properties.getProperty(MAILJET_EVENTS_LIST_ID));
+                        properties.getProperty(MAILJET_NEWS_LIST_ID), properties.getProperty(MAILJET_EVENTS_LIST_ID),
+                        properties.getProperty(MAILJET_LEGAL_LIST_ID));
 
                 log.info("Created singleton of ExternalAccountManager.");
                 externalAccountManager = new ExternalAccountManager(mailJetApiClientWrapper, externalAccountDataManager);

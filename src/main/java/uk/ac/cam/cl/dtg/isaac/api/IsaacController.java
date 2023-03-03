@@ -369,13 +369,8 @@ public class IsaacController extends AbstractIsaacFacade {
         }
 
         try {
-
+            // All users with an Isaac account are allowed to access these resources
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(httpServletRequest);
-            // Tutors and above should be able to access these documents as teaching material
-            if (!isUserTutorOrAbove(userManager, currentlyLoggedInUser)) {
-                return new SegueErrorResponse(Status.FORBIDDEN,
-                        "You must have a tutor or teacher account to access these resources.").toResponse();
-            }
 
             // determine if we can use the cache if so return cached response.
             String sha = this.contentManager.getCurrentContentSHA();

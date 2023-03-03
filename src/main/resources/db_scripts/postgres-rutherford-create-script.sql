@@ -185,7 +185,8 @@ CREATE TABLE public.groups (
     created timestamp without time zone,
     archived boolean DEFAULT false NOT NULL,
     group_status text DEFAULT 'ACTIVE'::text,
-    last_updated timestamp without time zone
+    last_updated timestamp without time zone,
+    additional_manager_privileges boolean DEFAULT false
 );
 
 
@@ -1236,6 +1237,13 @@ CREATE INDEX user_associations_tokens_groups ON public.user_associations_tokens 
 --
 
 CREATE UNIQUE INDEX user_badges_user_id_badge_unique ON public.user_badges USING btree (user_id, badge);
+
+
+--
+-- Name: user_credentials_reset_tokens; Type: INDEX; Schema: public; Owner: rutherford
+--
+
+CREATE INDEX user_credentials_reset_tokens ON public.user_credentials USING btree (reset_token);
 
 
 --

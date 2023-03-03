@@ -141,6 +141,7 @@ public class UserManagerTest {
         expect(this.dummyPropertiesLoader.getProperty(Constants.SESSION_EXPIRY_SECONDS_REMEMBERED)).andReturn("360")
                 .anyTimes();
         expect(this.dummyPropertiesLoader.getProperty(Constants.SEGUE_APP_ENVIRONMENT)).andReturn("DEV").anyTimes();
+        expect(this.dummyPropertiesLoader.getProperty(Constants.RESTRICTED_SIGNUP_EMAIL_REGEX)).andReturn(".*@isaacphysics\\.org").anyTimes();
         replay(this.dummyPropertiesLoader);
     }
 
