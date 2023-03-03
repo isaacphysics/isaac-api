@@ -303,14 +303,7 @@ public final class Constants {
     public static final String RASPBERRYPI_CLIENT_SECRET = "RASPBERRYPI_CLIENT_SECRET";
     public static final String RASPBERRYPI_CALLBACK_URI = "RASPBERRYPI_CALLBACK_URI";
     public static final String RASPBERRYPI_OAUTH_SCOPES = "RASPBERRYPI_OAUTH_SCOPES";
-
-    /*
-     Options for OpenID Connect dynamic discovery. If ...LOCAL_IDP_METADATA_PATH is empty, IdP metadata (relevant
-      endpoints etc.) are determined at runtime (start-up) by asking the IdP. This can cause the API to fail to
-      start if it can't contact the server at ...DISCOVERY_URI.
-    */
     public static final String RASPBERRYPI_LOCAL_IDP_METADATA_PATH = "RASPBERRYPI_LOCAL_IDP_METADATA_PATH";
-    public static final String RASPBERRYPI_DISCOVERY_URI = "RASPBERRYPI_DISCOVERY_URI";
 
     // Local authentication specific stuff
     public static final String LOCAL_AUTH_EMAIL_FIELDNAME = "email";
