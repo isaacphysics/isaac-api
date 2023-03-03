@@ -33,6 +33,7 @@ import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.SystemUtils;
+import org.apache.commons.lang3.Validate;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.quartz.SchedulerException;
 import org.reflections.Reflections;
@@ -334,6 +335,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      * Configure user security related classes.
      */
     private void configureAuthenticationProviders() {
+        MapBinder<AuthenticationProvider, IAuthenticator> mapBinder = MapBinder.newMapBinder(binder(),
+                AuthenticationProvider.class, IAuthenticator.class);
+
         this.bindConstantToProperty(Constants.HMAC_SALT, globalProperties);
 
         // Configure security providers
@@ -341,6 +345,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         this.bindConstantToProperty(Constants.GOOGLE_CLIENT_SECRET_LOCATION, globalProperties);
         this.bindConstantToProperty(Constants.GOOGLE_CALLBACK_URI, globalProperties);
         this.bindConstantToProperty(Constants.GOOGLE_OAUTH_SCOPES, globalProperties);
+        mapBinder.addBinding(AuthenticationProvider.GOOGLE).to(GoogleAuthenticator.class);
 
         // Facebook
         this.bindConstantToProperty(Constants.FACEBOOK_SECRET, globalProperties);
@@ -348,27 +353,39 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         this.bindConstantToProperty(Constants.FACEBOOK_CALLBACK_URI, globalProperties);
         this.bindConstantToProperty(Constants.FACEBOOK_OAUTH_SCOPES, globalProperties);
         this.bindConstantToProperty(Constants.FACEBOOK_USER_FIELDS, globalProperties);
+        mapBinder.addBinding(AuthenticationProvider.FACEBOOK).to(FacebookAuthenticator.class);
 
         // Twitter
         this.bindConstantToProperty(Constants.TWITTER_SECRET, globalProperties);
         this.bindConstantToProperty(Constants.TWITTER_CLIENT_ID, globalProperties);
         this.bindConstantToProperty(Constants.TWITTER_CALLBACK_URI, globalProperties);
+        mapBinder.addBinding(AuthenticationProvider.TWITTER).to(TwitterAuthenticator.class);
 
         // Raspberry Pi
-        this.bindConstantToProperty(Constants.RASPBERRYPI_CLIENT_ID, globalProperties);
-        this.bindConstantToProperty(Constants.RASPBERRYPI_CLIENT_SECRET, globalProperties);
-        this.bindConstantToProperty(Constants.RASPBERRYPI_CALLBACK_URI, globalProperties);
-        this.bindConstantToProperty(Constants.RASPBERRYPI_OAUTH_SCOPES, globalProperties);
-        this.bindConstantToProperty(Constants.RASPBERRYPI_DISCOVERY_URI, globalProperties);
-        this.bindConstantToProperty(Constants.RASPBERRYPI_LOCAL_IDP_METADATA_PATH, globalProperties);
+        try {
+            // Ensure all the required config properties are present.
+            Validate.notNull(globalProperties.getProperty(RASPBERRYPI_CLIENT_ID));
+            Validate.notNull(globalProperties.getProperty(RASPBERRYPI_CLIENT_SECRET));
+            Validate.notNull(globalProperties.getProperty(RASPBERRYPI_CALLBACK_URI));
+            Validate.notNull(globalProperties.getProperty(RASPBERRYPI_OAUTH_SCOPES));
+            Validate.notNull(globalProperties.getProperty(RASPBERRYPI_LOCAL_IDP_METADATA_PATH));
 
-        // Register a map of security providers
-        MapBinder<AuthenticationProvider, IAuthenticator> mapBinder = MapBinder.newMapBinder(binder(),
-                AuthenticationProvider.class, IAuthenticator.class);
-        mapBinder.addBinding(AuthenticationProvider.GOOGLE).to(GoogleAuthenticator.class);
-        mapBinder.addBinding(AuthenticationProvider.FACEBOOK).to(FacebookAuthenticator.class);
-        mapBinder.addBinding(AuthenticationProvider.TWITTER).to(TwitterAuthenticator.class);
-        mapBinder.addBinding(AuthenticationProvider.RASPBERRYPI).to(RaspberryPiOidcAuthenticator.class);
+            // If so, bind them to constants.
+            this.bindConstantToProperty(Constants.RASPBERRYPI_CLIENT_ID, globalProperties);
+            this.bindConstantToProperty(Constants.RASPBERRYPI_CLIENT_SECRET, globalProperties);
+            this.bindConstantToProperty(Constants.RASPBERRYPI_CALLBACK_URI, globalProperties);
+            this.bindConstantToProperty(Constants.RASPBERRYPI_OAUTH_SCOPES, globalProperties);
+            this.bindConstantToProperty(Constants.RASPBERRYPI_LOCAL_IDP_METADATA_PATH, globalProperties);
+
+            // Register the authenticator.
+            mapBinder.addBinding(AuthenticationProvider.RASPBERRYPI).to(RaspberryPiOidcAuthenticator.class);
+
+        } catch (NullPointerException e) {
+            log.error(String.format("Failed to initialise authenticator %s due to one or more absent config properties.",
+                    AuthenticationProvider.RASPBERRYPI));
+        }
+
+        // Segue local
         mapBinder.addBinding(AuthenticationProvider.SEGUE).to(SegueLocalAuthenticator.class);
     }
 

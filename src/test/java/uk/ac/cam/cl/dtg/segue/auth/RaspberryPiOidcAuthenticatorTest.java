@@ -43,7 +43,6 @@ public class RaspberryPiOidcAuthenticatorTest {
                 "test_client_secret",
                 "http://localhost:9001",
                 "openid",
-                "https://not-real-auth-v1.raspberrypi.org/.well-known/openid-configuration",
                 idpMetadataPath
         );
     }
@@ -57,38 +56,6 @@ public class RaspberryPiOidcAuthenticatorTest {
         assertEquals("https://notreal-auth-v1.raspberrypi.org/oauth2/auth", authenticator.idpMetadata.getAuthorizationEndpoint());
         assertEquals( "https://notreal-auth-v1.raspberrypi.org/oauth2/token", authenticator.idpMetadata.getTokenEndpoint());
         assertEquals( "https://notreal-auth-v1.raspberrypi.org/.well-known/jwks.json", authenticator.idpMetadata.getJwksUri());
-    }
-
-    @Test
-    public void getAuthenticator_withoutOnDiskIdpMetadataDefined_UsesDiscoveredMetadata() throws Exception {
-        // Arrange
-        // (Mocking the discovery call response when instantiating the authenticator, see next step)
-
-        // Act
-        RaspberryPiOidcAuthenticator authenticator = new RaspberryPiOidcAuthenticator(
-                "test_client_id",
-                "test_client_secret",
-                "http://localhost:9001",
-                "openid",
-                "https://not-real-auth-v1.raspberrypi.org/.well-known/openid-configuration",
-                ""
-        ){
-            @Override
-            public OidcDiscoveryResponse retrieveIdentityProviderMetadata(String discoveryUri) throws OidcDiscoveryException {
-                OidcDiscoveryResponse mockResponse = new OidcDiscoveryResponse();
-                mockResponse.set("issuer", "https://discovered-notreal-auth-v1.raspberrypi.org/");
-                mockResponse.set("authorization_endpoint", "https://discovered-notreal-auth-v1.raspberrypi.org/oauth2/auth");
-                mockResponse.set("token_endpoint", "https://discovered-notreal-auth-v1.raspberrypi.org/oauth2/token");
-                mockResponse.set("jwks_uri", "https://discovered-notreal-auth-v1.raspberrypi.org/.well-known/jwks.json");
-                return mockResponse;
-            }
-        };
-
-        // Assert
-        assertEquals("https://discovered-notreal-auth-v1.raspberrypi.org/", authenticator.idpMetadata.getIssuer());
-        assertEquals("https://discovered-notreal-auth-v1.raspberrypi.org/oauth2/auth", authenticator.idpMetadata.getAuthorizationEndpoint());
-        assertEquals( "https://discovered-notreal-auth-v1.raspberrypi.org/oauth2/token", authenticator.idpMetadata.getTokenEndpoint());
-        assertEquals( "https://discovered-notreal-auth-v1.raspberrypi.org/.well-known/jwks.json", authenticator.idpMetadata.getJwksUri());
     }
 
     /**

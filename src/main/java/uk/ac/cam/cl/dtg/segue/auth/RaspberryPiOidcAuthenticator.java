@@ -92,7 +92,6 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
             @Named(Constants.RASPBERRYPI_CLIENT_SECRET) final String clientSecret,
             @Named(Constants.RASPBERRYPI_CALLBACK_URI) final String callbackUri,
             @Named(Constants.RASPBERRYPI_OAUTH_SCOPES) final String oauthScopes,
-            @Named(Constants.RASPBERRYPI_DISCOVERY_URI) final String discoveryUri,
             @Named(Constants.RASPBERRYPI_LOCAL_IDP_METADATA_PATH) final String idpMetadataLocation
     ) throws AuthenticatorSecurityException, OidcDiscoveryException, IOException {
 
@@ -102,16 +101,11 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
         this.httpTransport = new NetHttpTransport();
         this.jsonFactory = new GsonFactory();
 
-        // If no on-disk IdP metadata is defined, use the IdP discovery endpoint to retrieve it.
-        if (idpMetadataLocation.isBlank()) {
-            this.idpMetadata = retrieveIdentityProviderMetadata(discoveryUri);
-        } else {
-            try (InputStream inputStream = new FileInputStream(idpMetadataLocation);
-                 InputStreamReader reader = new InputStreamReader(inputStream);
-            )
-            {
-                this.idpMetadata = OidcDiscoveryResponse.load(this.jsonFactory, reader);
-            }
+        try (InputStream inputStream = new FileInputStream(idpMetadataLocation);
+             InputStreamReader reader = new InputStreamReader(inputStream);
+        )
+        {
+            this.idpMetadata = OidcDiscoveryResponse.load(this.jsonFactory, reader);
         }
 
         this.clientId = clientId;
