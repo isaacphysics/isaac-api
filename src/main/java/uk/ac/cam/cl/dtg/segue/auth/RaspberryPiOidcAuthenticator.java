@@ -68,6 +68,8 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
     private final String callbackUri;
     private final List<String> requestedScopes;
 
+    private static IdTokenVerifier idTokenVerifier;
+
     // Identity provider (AKA authorization server) metadata, including URIs of auth and token endpoints
     public final OidcDiscoveryResponse idpMetadata;
 
@@ -116,6 +118,14 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
             credentialStore = CacheBuilder.newBuilder().expireAfterAccess(CREDENTIAL_CACHE_TTL_MINUTES, TimeUnit.MINUTES)
                     .build();
         }
+
+        if (null == idTokenVerifier) {
+            idTokenVerifier = new IdTokenVerifier.Builder()
+                    .setCertificatesLocation(this.idpMetadata.getJwksUri())
+                    .setAudience(Collections.singleton(this.clientId))
+                    .setIssuer(this.idpMetadata.getIssuer())
+                    .build();
+        }
     }
 
     @Override
@@ -156,8 +166,7 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
         else {
             // Build a given name/family name based on the nickname and full name fields available. This makes
             // unreasonable assumptions about the structure of names, but it's the best we can do.
-            List<String> tokenisedFullName = Arrays.asList(fullName.split(" "));
-            List<String> givenNameFamilyName = getGivenNameFamilyName(nickname, tokenisedFullName);
+            List<String> givenNameFamilyName = getGivenNameFamilyName(nickname, fullName);
 
             EmailVerificationStatus emailStatus = emailVerified ? EmailVerificationStatus.VERIFIED : EmailVerificationStatus.NOT_VERIFIED;
 
@@ -236,12 +245,7 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
             return false;
         }
         // Verify the signature using the identity provider's public key, as well as the issuer and audience.
-        IdTokenVerifier verifier = new IdTokenVerifier.Builder()
-                .setCertificatesLocation(idpMetadata.getJwksUri())
-                .setAudience(Collections.singleton(clientId))
-                .setIssuer(idpMetadata.getIssuer())
-                .build();
-        return verifier.verify(token);
+        return idTokenVerifier.verify(token);
     }
 
 
@@ -251,20 +255,22 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
      * user should have an opportunity to correct it later.
      *
      * @param nickname The nickname from the IdP.
-     * @param tokenisedName The tokenised full name from the IdP.
+     * @param fullName The full name from the IdP.
      * @return A list with two elements: the derived given name and family name.
      * @throws NoUserException when the derived names are not valid.
      */
-    public List<String> getGivenNameFamilyName(String nickname, List<String> tokenisedName) throws NoUserException {
+    public List<String> getGivenNameFamilyName(String nickname, String fullName) throws NoUserException {
         String givenName = nickname;
         String familyName;
 
-        if (tokenisedName.isEmpty()) {
+        List<String> tokenisedFullName = Arrays.asList(fullName.split(" "));
+
+        if (fullName.isBlank() || tokenisedFullName.isEmpty()) {
             // If the full name is empty, use the nickname in both fields. Validation on the IdP side should prevent this.
             familyName = nickname;
         } else {
             // Otherwise, use the last token of the full name as the family name.
-            familyName = tokenisedName.get(tokenisedName.size() - 1);
+            familyName = tokenisedFullName.get(tokenisedFullName.size() - 1);
         }
 
         // Finally, check that the name meets validation.

@@ -66,7 +66,7 @@ public class RaspberryPiOidcAuthenticatorTest {
     public void getGivenNameFamilyName_emptyTokenisedNameProvided_returnsSensibleName() throws Exception{
         // Arrange
         String idpNickname = "John";
-        List<String> idpFullName = new ArrayList<>();
+        String idpFullName = "";
 
         // Act
         List<String> givenNameFamilyName = authenticator.getGivenNameFamilyName(idpNickname, idpFullName);
@@ -80,7 +80,7 @@ public class RaspberryPiOidcAuthenticatorTest {
     public void getGivenNameFamilyName_invalidNicknameProvided_throwsException() throws Exception{
         // Arrange
         String idpNickname = "*";
-        List<String> idpFullName = List.of("John", "Smith");
+        String idpFullName = "John Smith";
 
         // Act
         authenticator.getGivenNameFamilyName(idpNickname, idpFullName);
@@ -93,7 +93,7 @@ public class RaspberryPiOidcAuthenticatorTest {
     public void getGivenNameFamilyName_nicknameAndTokenisedNameProvided_returnsSensibleName() throws Exception {
         // Arrange
         String idpNickname = "John";
-        List<String> idpFullName = List.of("John", "Smith");
+        String idpFullName = "John Smith";
 
         // Act
         List<String> givenNameFamilyName = authenticator.getGivenNameFamilyName(idpNickname, idpFullName);
@@ -107,7 +107,7 @@ public class RaspberryPiOidcAuthenticatorTest {
     public void getGivenNameFamilyName_nicknameAndTokenisedNamesProvided_returnsSensibleName() throws Exception {
         // Arrange
         String idpNickname = "John";
-        List<String> idpFullName = List.of("John", "Angus", "Smith");
+        String idpFullName = "John Angus Smith";
 
         // Act
         List<String> givenNameFamilyName = authenticator.getGivenNameFamilyName(idpNickname, idpFullName);
@@ -126,7 +126,7 @@ public class RaspberryPiOidcAuthenticatorTest {
     public void getGivenNameFamilyName_nickNameAndUnorderedTokenisedNamesProvided_returnsSensibleName() throws Exception {
         // Arrange
         String idpNickname = "Otto";
-        List<String> idpFullName = List.of("Arnold", "Stewart", "Otto", "Westland");
+        String idpFullName = "Arnold Stewart Otto Westland";
 
         // Act
         List<String> givenNameFamilyName = authenticator.getGivenNameFamilyName(idpNickname, idpFullName);
