@@ -274,14 +274,11 @@ public final class Constants {
      */
     public static final String LINK_ACCOUNT_PARAM_NAME = "LINK_ACCOUNT_PARAM_NAME";
 
-    /**
-     * This constant is used for matching against url params to prevent CSRF.
-     */
     public static final String STATE_PARAM_NAME = "state";
+    public static final String CLIENT_ID_PARAM_NAME = "client_id";
+    public static final String CALLBACK_URI_PARAM_NAME = "redirect_uri";
+    public static final String SCOPE_PARAM_NAME = "scope";
 
-    /**
-     * This constant is used for matching against url params to prevent CSRF.
-     */
     public static final String OAUTH_TOKEN_PARAM_NAME = "oauth_token";
 
     // Google properties
@@ -300,6 +297,13 @@ public final class Constants {
     public static final String TWITTER_SECRET = "TWITTER_SECRET";
     public static final String TWITTER_CLIENT_ID = "TWITTER_CLIENT_ID";
     public static final String TWITTER_CALLBACK_URI = "TWITTER_CALLBACK_URI";
+
+    // Raspberry Pi properties
+    public static final String RASPBERRYPI_CLIENT_ID = "RASPBERRYPI_CLIENT_ID";
+    public static final String RASPBERRYPI_CLIENT_SECRET = "RASPBERRYPI_CLIENT_SECRET";
+    public static final String RASPBERRYPI_CALLBACK_URI = "RASPBERRYPI_CALLBACK_URI";
+    public static final String RASPBERRYPI_OAUTH_SCOPES = "RASPBERRYPI_OAUTH_SCOPES";
+    public static final String RASPBERRYPI_LOCAL_IDP_METADATA_PATH = "RASPBERRYPI_LOCAL_IDP_METADATA_PATH";
 
     // Local authentication specific stuff
     public static final String LOCAL_AUTH_EMAIL_FIELDNAME = "email";
