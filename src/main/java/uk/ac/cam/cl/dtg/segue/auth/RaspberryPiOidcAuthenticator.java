@@ -68,7 +68,7 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
     private final String callbackUri;
     private final List<String> requestedScopes;
 
-    private static IdTokenVerifier idTokenVerifier;
+    private final IdTokenVerifier idTokenVerifier;
 
     // Identity provider (AKA authorization server) metadata, including URIs of auth and token endpoints
     public final OidcDiscoveryResponse idpMetadata;
@@ -103,7 +103,7 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
         this.jsonFactory = new GsonFactory();
 
         try (InputStream inputStream = new FileInputStream(idpMetadataLocation);
-             InputStreamReader reader = new InputStreamReader(inputStream);
+             InputStreamReader reader = new InputStreamReader(inputStream)
         )
         {
             this.idpMetadata = OidcDiscoveryResponse.load(this.jsonFactory, reader);
@@ -119,13 +119,11 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
                     .build();
         }
 
-        if (null == idTokenVerifier) {
-            idTokenVerifier = new IdTokenVerifier.Builder()
-                    .setCertificatesLocation(this.idpMetadata.getJwksUri())
-                    .setAudience(Collections.singleton(this.clientId))
-                    .setIssuer(this.idpMetadata.getIssuer())
-                    .build();
-        }
+        idTokenVerifier = new IdTokenVerifier.Builder()
+            .setCertificatesLocation(this.idpMetadata.getJwksUri())
+            .setAudience(Collections.singleton(this.clientId))
+            .setIssuer(this.idpMetadata.getIssuer())
+            .build();
     }
 
     @Override
@@ -245,7 +243,7 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
             return false;
         }
         // Verify the signature using the identity provider's public key, as well as the issuer and audience.
-        return idTokenVerifier.verify(token);
+        return this.idTokenVerifier.verify(token);
     }
 
 
