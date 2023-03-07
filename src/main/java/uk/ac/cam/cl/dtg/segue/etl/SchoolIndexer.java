@@ -50,10 +50,8 @@ class SchoolIndexer {
      */
     synchronized void indexSchoolsWithSearchProvider() throws UnableToIndexSchoolsException {
         if (es.hasIndex(SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString())) {
-            log.info("Schools index already exists. Expunging.");
-            for (SCHOOLS_INDEX_TYPE schoolIndexType : SCHOOLS_INDEX_TYPE.values()) {
-                es.expungeIndexFromSearchCache(SCHOOLS_INDEX_BASE, schoolIndexType.toString());
-            }
+            log.info("Schools index already exists");
+            return;
         }
 
         log.info("Creating schools index with search provider.");

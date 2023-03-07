@@ -58,17 +58,6 @@ public class ETLFacade extends AbstractSegueFacade {
 
     }
 
-    @POST
-    @Path("/new_version_alert/{version}")
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Notify the ETL server of a new content version to index.")
-    public Response newVersionAlert(@PathParam("version") final String newVersion) {
-        etlManager.notifyNewVersion(newVersion);
-        log.info("Finished processing ETL request");
-        return Response.ok().build();
-    }
-
     @GET
     @Path("/ping")
     @Produces(MediaType.APPLICATION_JSON)

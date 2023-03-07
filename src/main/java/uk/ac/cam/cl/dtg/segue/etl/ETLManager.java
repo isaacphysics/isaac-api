@@ -6,8 +6,8 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.util.PropertiesManager;
-
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.*;
+import java.util.*;
 
 /**
  * Created by Ian on 01/11/2016.
@@ -17,31 +17,52 @@ class ETLManager {
     private static final String LATEST_INDEX_ALIAS = "latest";
 
     private final ContentIndexer indexer;
-
-    private final ArrayBlockingQueue<String> newVersionQueue;
+    private final SchoolIndexer schoolIndexer;
+    private final GitDb database;
     private final PropertiesManager contentIndicesStore;
+    private final ScheduledExecutorService scheduler;
 
 
     @Inject
     ETLManager(final ContentIndexer indexer, final SchoolIndexer schoolIndexer, final GitDb database, final PropertiesManager contentIndicesStore) {
         this.indexer = indexer;
-        this.newVersionQueue = new ArrayBlockingQueue<>(1);
+        this.schoolIndexer = schoolIndexer;
+        this.database = database;
         this.contentIndicesStore = contentIndicesStore;
+        this.scheduler = Executors.newScheduledThreadPool(1);
 
-        // ON STARTUP
+        scheduler.schedule(new ContentIndexerTask(), 300, TimeUnit.SECONDS);
 
-        // Load the current version aliases from file and set them.
-        for (String k: contentIndicesStore.stringPropertyNames()) {
-            try {
-                this.setNamedVersion(k, contentIndicesStore.getProperty(k));
-            } catch (Exception e) {
-                log.error("Could not set content index alias " + k + " on startup.", e);
-            }
+        log.info("ETL startup complete.");
+    }
+
+    void setNamedVersion(final String alias, final String version) throws Exception {
+        log.info("Requested aliased version: " + alias + " - " + version);
+        indexer.loadAndIndexContent(version);
+        indexer.setNamedVersion(alias, version);
+        log.info("Version " + version + " with alias '" + alias + "' is successfully indexed.");
+    }
+
+    // Indexes all content in idempotent fashion. If the content is already indexed no action is taken.
+    void indexContent() {
+        // Load the current version aliases from config file, as well as latest, and set them.
+        Map<String, String> aliasVersions = new HashMap<>();
+        String latestSha = database.fetchLatestFromRemote();
+        aliasVersions.put(LATEST_INDEX_ALIAS, latestSha);
+        for (String alias: contentIndicesStore.stringPropertyNames()) {
+          aliasVersions.put(alias, contentIndicesStore.getProperty(alias));
         }
 
-        // Make sure we have indexed the latest content.
-        String latestSha = database.fetchLatestFromRemote();
-        this.newVersionQueue.offer(latestSha);
+        for (var entry : aliasVersions.entrySet()) {
+            try {
+                this.setNamedVersion(entry.getKey(), entry.getValue());
+            } catch (VersionLockedException e) {
+                log.warn("Could not index new version, lock is already held by another thread.");
+            } catch (Exception e) {
+                log.error("Indexing version " + entry.getKey() + " failed.");
+                e.printStackTrace();
+            }
+        }
 
         // Load the school list.
         try {
@@ -49,57 +70,15 @@ class ETLManager {
         } catch (UnableToIndexSchoolsException e) {
             log.error("Unable to index schools", e);
         }
-
-        // Start the indexer that will deal with new version alerts in a thread-safe way.
-        Thread t = new Thread(new NewVersionIndexer());
-        t.setDaemon(true);
-        t.start();
-
-        log.info("ETL startup complete.");
     }
 
-    void notifyNewVersion(final String version) {
-        log.info("Notified of new version: " + version);
-
-        // This is the only place we write to newVersionQueue, so the offer should always succeed.
-        this.newVersionQueue.clear();
-        this.newVersionQueue.offer(version);
-    }
-
-    void setNamedVersion(final String alias, final String version) throws Exception {
-        log.info("Requested new aliased version: " + alias + " - " + version);
-
-        indexer.loadAndIndexContent(version);
-        log.info("Indexed version " + version + ". Setting alias '" + alias + "'.");
-        indexer.setNamedVersion(alias, version);
-    }
-
-    private class NewVersionIndexer implements Runnable {
+    private class ContentIndexerTask implements Runnable {
 
         @Override
         public void run() {
-            log.info("Starting new version indexer thread.");
-
-            try {
-                while (true) {
-                    // Block here until there is something to index.
-                    log.info("Indexer going to sleep, waiting for new version alert.");
-                    String newVersion = newVersionQueue.take();
-                    log.info("Indexer got new version: " + newVersion + ". Attempting to index.");
-
-                    try {
-                        setNamedVersion(LATEST_INDEX_ALIAS, newVersion);
-                    } catch (VersionLockedException e) {
-                        log.warn("Could not index new version, someone is already indexing it. Ignoring.");
-                    } catch (Exception e) {
-                        log.warn("Indexing version " + newVersion + " failed for some reason. Moving on.");
-                        e.printStackTrace();
-                    }
-                }
-            } catch (InterruptedException e) {
-                log.error("Interrupted while waiting for new version. New versions will no longer be indexed.");
-                e.printStackTrace();
-            }
+            log.info("Starting content indexer thread.");
+            indexContent();
+            log.info("Content indexer thread complete, waiting for next scheduled run.");
         }
     }
 }
