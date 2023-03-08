@@ -31,7 +31,7 @@ class ETLManager {
         this.contentIndicesStore = contentIndicesStore;
         this.scheduler = Executors.newScheduledThreadPool(1);
 
-        scheduler.schedule(new ContentIndexerTask(), 300, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(new ContentIndexerTask(), 0, 300, TimeUnit.SECONDS);
 
         log.info("ETL startup complete.");
     }
