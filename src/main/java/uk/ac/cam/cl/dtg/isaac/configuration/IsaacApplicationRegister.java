@@ -82,6 +82,7 @@ public class IsaacApplicationRegister extends Application {
             // Registers segue singleton endpoints as /isaac/segue/api
             // invoke optional service initialisation
             this.singletons.add(injector.getInstance(SchoolLookupServiceFacade.class));
+            this.singletons.add(injector.getInstance(CountryLookupFacade.class));
 
             // initialise segue framework.
             this.singletons.add(injector.getInstance(SegueContentFacade.class));

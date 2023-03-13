@@ -69,6 +69,7 @@ import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicLogicValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.PgQuestionAttempts;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.api.managers.CountryLookupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.ExternalAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.IExternalAccountManager;
@@ -189,6 +190,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static SchoolListReader schoolListReader = null;
     private static AssignmentManager assignmentManager = null;
     private static IGroupObserver groupObserver = null;
+    private static CountryLookupManager countryLookupManager = null;
 
     private static Collection<Class<? extends ServletContextListener>> contextListeners;
     private static final Map<String, Reflections> reflections = com.google.common.collect.Maps.newHashMap();
@@ -856,6 +858,17 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         }
 
         return misuseMonitor;
+    }
+
+    @Inject
+    @Provides
+    @Singleton
+    private CountryLookupManager getCountryLookupManager() {
+        if (null == countryLookupManager) {
+            countryLookupManager = new CountryLookupManager();
+            log.info("Creating singleton of CountryLookupManager");
+        }
+        return countryLookupManager;
     }
 
     /**

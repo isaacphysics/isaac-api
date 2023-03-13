@@ -250,7 +250,7 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 			}
 
 			return new UserFromAuthProvider(userInfo.getId(), userInfo.getFirstName(),
-					userInfo.getLastName(), email, emailStatus, null, null, null);
+					userInfo.getLastName(), email, emailStatus, null, null, null, null);
 		} else {
 			throw new NoUserException("No user could be created from provider details!");
 		}
