@@ -24,6 +24,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ImageDTO;
 public class IsaacCardDTO extends ContentDTO {
     private ImageDTO image;
     private String clickUrl;
+    private String buttonText;
     private boolean disabled;
     private boolean verticalContent;
 
@@ -62,6 +63,22 @@ public class IsaacCardDTO extends ContentDTO {
      */
     public void setClickUrl(String clickUrl) {
         this.clickUrl = clickUrl;
+    }
+
+    /**
+     * Get the button text.
+     * @return the button text.
+     */
+    public String getButtonText() {
+        return buttonText;
+    }
+
+    /**
+     * Set the button text.
+     * @param buttonText the button text to set.
+     */
+    public void setButtonText(final String buttonText) {
+        this.buttonText = buttonText;
     }
 
     /**
