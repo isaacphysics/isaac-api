@@ -165,20 +165,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_LINUX_CONFIG_LOCATION;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.EMAIL_SIGNATURE;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_PRE_POST_EMAILS;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType.DEV;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILJET_API_KEY;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILJET_API_SECRET;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILJET_EVENTS_LIST_ID;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILJET_LEGAL_LIST_ID;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILJET_NEWS_LIST_ID;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_APP_ENVIRONMENT;
-
-import static uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType.DEV;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType.*;
 
 /**
  * This class is responsible for injecting configuration values for persistence related classes.
