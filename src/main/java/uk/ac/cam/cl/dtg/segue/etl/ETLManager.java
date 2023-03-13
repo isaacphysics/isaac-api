@@ -65,7 +65,7 @@ class ETLManager {
         String latestSha = database.fetchLatestFromRemote();
         aliasVersions.put(LATEST_INDEX_ALIAS, latestSha);
         for (String configKey: contentIndicesStore.stringPropertyNames()) {
-          if (configKey != TASK_PERIOD_SECONDS) {
+          if (!configKey.equals(TASK_PERIOD_SECONDS)) {
             aliasVersions.put(configKey, contentIndicesStore.getProperty(configKey));
           }
         }
