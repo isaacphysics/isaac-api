@@ -29,6 +29,8 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import com.google.inject.util.Providers;
+import jakarta.annotation.Nullable;
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import ma.glasnost.orika.MapperFacade;
@@ -151,6 +153,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -280,6 +283,10 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         this.bindConstantToProperty(CONTENT_INDEX, globalProperties);
 
         this.bindConstantToProperty(Constants.API_METRICS_EXPORT_PORT, globalProperties);
+
+        // Additional countries
+        this.bindConstantToNullableProperty(Constants.CUSTOM_COUNTRY_CODES, globalProperties);
+        this.bindConstantToNullableProperty(Constants.PRIORITY_COUNTRY_CODES, globalProperties);
 
         this.bind(String.class).toProvider(() -> {
             // Any binding to String without a matching @Named annotation will always get the empty string
@@ -863,9 +870,26 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     @Singleton
-    private CountryLookupManager getCountryLookupManager() {
+    private CountryLookupManager getCountryLookupManager(
+            @Nullable @Named(Constants.CUSTOM_COUNTRY_CODES) final String customCountryCodes,
+            @Nullable @Named(Constants.PRIORITY_COUNTRY_CODES) final String priorityCountryCodes
+    ) {
         if (null == countryLookupManager) {
-            countryLookupManager = new CountryLookupManager();
+            Map<String, String> customCountryCodesMap = new HashMap<>();
+            List<String> priorityCountryCodesList = new ArrayList<>();
+
+            if (null != customCountryCodes) {
+                for (String country : customCountryCodes.split(",")) {
+                    String[] codeAndName = country.split(":");
+                    customCountryCodesMap.put(codeAndName[0], codeAndName[1]);
+                }
+            }
+
+            if (null != priorityCountryCodes) {
+                priorityCountryCodesList = List.of(priorityCountryCodes.split(","));
+            }
+
+            countryLookupManager = new CountryLookupManager(customCountryCodesMap, priorityCountryCodesList);
             log.info("Creating singleton of CountryLookupManager");
         }
         return countryLookupManager;
@@ -1246,6 +1270,22 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      */
     private void bindConstantToProperty(final String propertyLabel, final PropertiesLoader propertyLoader) {
         bindConstant().annotatedWith(Names.named(propertyLabel)).to(propertyLoader.getProperty(propertyLabel));
+    }
+
+    /**
+     * Same as {@link this.bindConstantToProperty} but it doesn't cry if the property isn't defined.
+     *
+     * @param propertyLabel
+     *            - Key for a given property
+     * @param propertyLoader
+     *            - property loader to use
+     */
+    private void bindConstantToNullableProperty(final String propertyLabel, final PropertiesLoader propertyLoader) {
+        if (null == propertyLoader.getProperty(propertyLabel)) {
+            bind(String.class).annotatedWith(Names.named(propertyLabel)).toProvider(Providers.of(null));
+        } else {
+            bindConstantToProperty(propertyLabel, propertyLoader);
+        }
     }
 
     /**

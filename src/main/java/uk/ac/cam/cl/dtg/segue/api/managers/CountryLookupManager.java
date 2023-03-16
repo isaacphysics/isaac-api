@@ -16,23 +16,31 @@
 
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class CountryLookupManager {
 
     /**
-     * Maps of ISO country codes to display names in a particular language, keyed by language code.
+     * Map of country codes to display names.
      */
-    public Map<String, Map<String, String>> isoCountryNamesCache;
+    private static Map<String, String> allCountryCodesAndNames;
+    private static Map<String, String> priorityCountryCodesAndNames;
 
-    public CountryLookupManager() {
-        isoCountryNamesCache = new ConcurrentHashMap<>();
+
+    /**
+     * Manages the set of known countries. This set is based on ISO 3166 with the option to add custom entries.
+     *
+     * @param customCountryCodes A map of custom country codes and display names to be included, which can be empty.
+     */
+    public CountryLookupManager(Map<String, String> customCountryCodes, List<String> priorityCountryCodes) {
+        allCountryCodesAndNames = getAllCountryCodesAndNames(customCountryCodes);
+        priorityCountryCodesAndNames = getPriorityCountryCodesAndNames(allCountryCodesAndNames, priorityCountryCodes);
     }
 
     /**
@@ -42,33 +50,49 @@ public class CountryLookupManager {
      * @return true if the country code is known, false otherwise.
      */
     public static boolean isKnownCountryCode(String countryCode) {
-        return List.of(Locale.getISOCountries()).contains(countryCode);
+        return allCountryCodesAndNames.containsKey(countryCode);
     }
 
     /**
-     * Returns a sorted {@link Map} of ISO 3166 country codes to display names for a particular language.
-     * The map is cached for re-use.
+     * Returns a sorted {@link Map} of ISO 3166 country codes (plus any custom codes) to display names.
      *
-     * @param isoLanguageCode An ISO 639 language code. The returned display names will be in this language.
-     * @return A {@link Map} of ISO 3166 alpha-2 country codes to display names, sorted alphabetically by display name.
+     * @return A {@link Map} of ISO 3166 alpha-2 country codes (plus any custom codes) to display names, sorted
+     * alphabetically by display name.
      */
-    public Map<String, String> getISOCountryCodesAndNames(String isoLanguageCode) {
-        if (null == isoCountryNamesCache.get(isoLanguageCode)) {
-            isoCountryNamesCache.put(isoLanguageCode, getSortedISOCountryCodesAndNamesForLanguage(isoLanguageCode));
-        }
-        return isoCountryNamesCache.get(isoLanguageCode);
+    public Map<String, String> getCountryCodesAndNames() {
+        return allCountryCodesAndNames;
     }
 
-    private Map<String, String> getSortedISOCountryCodesAndNamesForLanguage(String isoLanguageCode) {
-        Map<String, String> countries = new HashMap<>();
+    /**
+     * Returns a sorted {@link Map} of priority ISO 3166 country codes (plus any custom codes) to display names.
+     *
+     * @return A {@link Map} of ISO 3166 alpha-2 country codes (plus any custom codes) to display names, sorted
+     * alphabetically by display name.
+     */
+    public Map<String, String> getPriorityCountryCodesAndNames() {
+        return priorityCountryCodesAndNames;
+    }
 
-        for (String countryCode : Locale.getISOCountries()) {
-            countries.put(countryCode, new Locale(isoLanguageCode, countryCode).getDisplayCountry());
-        }
-
-        // Sort alphabetically by display name, ascending
-        return countries.entrySet().stream()
+    private static Map<String, String> getAllCountryCodesAndNames(Map<String, String> customCountries) {
+        // Merge custom and ISO country maps.
+        return Stream.of(getISOCountryCodesAndNames(), customCountries)
+                .flatMap(map -> map.entrySet().stream())
                 .sorted(Map.Entry.comparingByValue())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
+    }
+
+    private static Map<String, String> getPriorityCountryCodesAndNames(Map<String, String> allCountries, List<String> priorityCountries) {
+        return allCountries.entrySet().stream()
+                .filter(entry -> priorityCountries.contains(entry.getKey()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
+    }
+
+    private static Map<String, String> getISOCountryCodesAndNames(){
+        return Arrays.stream(Locale.getISOCountries())
+                .collect(Collectors.toMap(String::new, CountryLookupManager::getDisplayNameForISOCountryCode));
+    }
+
+    private static String getDisplayNameForISOCountryCode(String code) {
+        return new Locale(Locale.ENGLISH.getLanguage(), code).getDisplayCountry();
     }
 }

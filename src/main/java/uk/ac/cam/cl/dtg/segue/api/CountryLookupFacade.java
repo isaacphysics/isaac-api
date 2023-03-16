@@ -45,8 +45,17 @@ public class CountryLookupFacade {
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @Operation(summary = "Get a sorted map of all ISO 3166 country codes and display names.")
+    @Operation(summary = "Get a sorted map of all known country codes and display names.")
     public Response countries() {
-        return Response.ok(countryLookupManager.getISOCountryCodesAndNames(Locale.ENGLISH.getLanguage())).build();
+        return Response.ok(countryLookupManager.getCountryCodesAndNames()).build();
+    }
+
+    @GET
+    @Path("/priority")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @Operation(summary = "Get a sorted map of priority country codes and display names.")
+    public Response priorityCountries() {
+        return Response.ok(countryLookupManager.getPriorityCountryCodesAndNames()).build();
     }
 }
