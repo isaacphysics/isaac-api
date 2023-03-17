@@ -438,6 +438,9 @@ public class UserAccountManager implements IUserAccountManager {
         } catch (InvalidNameException e) {
             log.warn("Invalid name provided during registration.");
             return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
+        } catch (UnknownCountryCodeException e) {
+            log.warn("Unknown country code provided during registration.");
+            return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
         }
     }
 
@@ -635,6 +638,9 @@ public class UserAccountManager implements IUserAccountManager {
                     "Unable to map to a known authenticator. The provider: is unknown").toResponse();
         } catch (InvalidNameException e) {
             log.warn("Invalid name provided during user update.");
+            return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
+        } catch (UnknownCountryCodeException e) {
+            log.warn("Unknown country code provided during user update.");
             return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
         }
     }
@@ -1011,7 +1017,7 @@ public class UserAccountManager implements IUserAccountManager {
             final HttpServletResponse response, final RegisteredUser user, final String newPassword,
                                                         final boolean rememberMe) throws InvalidPasswordException,
             MissingRequiredFieldException, SegueDatabaseException,
-            EmailMustBeVerifiedException, InvalidKeySpecException, NoSuchAlgorithmException, InvalidNameException {
+            EmailMustBeVerifiedException, InvalidKeySpecException, NoSuchAlgorithmException, InvalidNameException, UnknownCountryCodeException {
         Validate.isTrue(user.getId() == null,
                 "When creating a new user the user id must not be set.");
 
@@ -1047,12 +1053,17 @@ public class UserAccountManager implements IUserAccountManager {
         }
 
         // validate names
-        if (!this.isUserNameValid(user.getGivenName())) {
+        if (!isUserNameValid(user.getGivenName())) {
             throw new InvalidNameException("The given name provided is an invalid length or contains forbidden characters.");
         }
 
-        if (!this.isUserNameValid(user.getFamilyName())) {
+        if (!isUserNameValid(user.getFamilyName())) {
             throw new InvalidNameException("The family name provided is an invalid length or contains forbidden characters.");
+        }
+
+        // Validate country code
+        if (null != userToSave.getCountryCode() && !CountryLookupManager.isKnownCountryCode(userToSave.getCountryCode())) {
+            throw new UnknownCountryCodeException("The country provided is not known.");
         }
 
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
@@ -1113,7 +1124,7 @@ public class UserAccountManager implements IUserAccountManager {
      */
     public RegisteredUserDTO updateUserObject(final RegisteredUser updatedUser, final String newPassword)
             throws InvalidPasswordException, MissingRequiredFieldException, SegueDatabaseException,
-            InvalidKeySpecException, NoSuchAlgorithmException, InvalidNameException {
+            InvalidKeySpecException, NoSuchAlgorithmException, InvalidNameException, UnknownCountryCodeException {
         Validate.notNull(updatedUser.getId());
 
         // We want to map to DTO first to make sure that the user cannot
@@ -1134,12 +1145,17 @@ public class UserAccountManager implements IUserAccountManager {
         }
 
         // validate names
-        if (!this.isUserNameValid(updatedUser.getGivenName())) {
+        if (!isUserNameValid(updatedUser.getGivenName())) {
             throw new InvalidNameException("The given name provided is an invalid length or contains forbidden characters.");
         }
 
-        if (!this.isUserNameValid(updatedUser.getFamilyName())) {
+        if (!isUserNameValid(updatedUser.getFamilyName())) {
             throw new InvalidNameException("The family name provided is an invalid length or contains forbidden characters.");
+        }
+
+        // Validate country code
+        if (null != updatedUser.getCountryCode() && !CountryLookupManager.isKnownCountryCode(updatedUser.getCountryCode())) {
+            throw new UnknownCountryCodeException("The country provided is not known.");
         }
 
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders

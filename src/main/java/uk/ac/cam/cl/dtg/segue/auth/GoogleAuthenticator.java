@@ -248,7 +248,7 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
             }
 
             return new UserFromAuthProvider(userInfo.getId(), userInfo.getGivenName(), userInfo.getFamilyName(),
-                    email, emailStatus, null, null, null);
+                    email, emailStatus, null, null, null, null);
 
         } else {
             throw new NoUserException("No user could be created from provider details!");

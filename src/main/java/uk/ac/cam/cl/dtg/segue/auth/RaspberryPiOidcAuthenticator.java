@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.api.managers.CountryLookupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
@@ -156,7 +157,13 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
         String fullName = (String) idToken.getPayload().get("name");
         String nickname = (String) idToken.getPayload().get("nickname");
         String email = (String) idToken.getPayload().get("email");
+        String country = (String) idToken.getPayload().get("country_code");
         boolean emailVerified = (Boolean) idToken.getPayload().getOrDefault("email_verified", false);
+
+        if (null != country && !CountryLookupManager.isKnownCountryCode(country)) {
+            log.debug(String.format("Country code %s from identity provider is not known, discarding.", country));
+            country = null;
+        }
 
         if (null == nickname || null == fullName || null == email || null == sub) {
             throw new NoUserException("Required field missing from identity provider's response.");
@@ -177,7 +184,8 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
                     emailStatus,
                     null,
                     null,
-                    null
+                    null,
+                    country
             );
         }
     }
