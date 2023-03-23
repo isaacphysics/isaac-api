@@ -143,7 +143,7 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
         }
 
         // Parse and verify the ID token
-        IdToken idToken = IdToken.parse(jsonFactory, response.getIdToken());
+        IdToken idToken = RaspberryPiOidcIdToken.parse(jsonFactory, response.getIdToken());
 
         if (verifyIdToken(idToken)) {
             log.debug("Successful verification of ID token with provider.");
