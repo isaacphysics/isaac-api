@@ -561,6 +561,9 @@ public final class Constants {
         EMAIL_PREFERENCE
     }
 
+    public static final String CUSTOM_COUNTRY_CODES = "CUSTOM_COUNTRY_CODES";
+    public static final String PRIORITY_COUNTRY_CODES = "PRIORITY_COUNTRY_CODES";
+
     /**
      * Private constructor to prevent this class being created.
      */

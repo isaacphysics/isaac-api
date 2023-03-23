@@ -15,6 +15,9 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dos.users;
 
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.Null;
+
 import java.util.Date;
 
 /**
@@ -29,6 +32,7 @@ public class UserFromAuthProvider {
     private Date dateOfBirth;
     private Gender gender;
     private EmailVerificationStatus emailVerificationStatus;
+    private String countryCode;
 
     /**
      * Full constructor for the User object.
@@ -49,10 +53,13 @@ public class UserFromAuthProvider {
      *            - date of birth to help with monitoring
      * @param gender
      *            - gender of the user
+     * @param country
+     *            - country of the user (as ISO 3166 alpha-2 country code)
      */
     public UserFromAuthProvider(final String providerUserId, final String givenName, final String familyName,
-            final String email, final EmailVerificationStatus emailVerificationStatus, final Role role, 
-            final Date dateOfBirth, final Gender gender) {
+            final String email, final EmailVerificationStatus emailVerificationStatus, @Nullable final Role role,
+                                @Nullable final Date dateOfBirth, @Nullable final Gender gender,
+                                @Nullable final String country) {
         this.providerUserId = providerUserId;
         this.familyName = familyName;
         this.givenName = givenName;
@@ -60,6 +67,7 @@ public class UserFromAuthProvider {
         this.emailVerificationStatus = emailVerificationStatus;
         this.dateOfBirth = dateOfBirth;
         this.gender = gender;
+        this.countryCode = country;
     }
 
     /**
@@ -123,5 +131,14 @@ public class UserFromAuthProvider {
      */
     public Gender getGender() {
         return gender;
+    }
+
+    /**
+     * Gets the country code.
+     *
+     * @return the country code.
+     */
+    public String getCountryCode() {
+        return countryCode;
     }
 }

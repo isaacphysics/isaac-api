@@ -699,8 +699,8 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
         String query = "INSERT INTO users(family_name, given_name, email, role, date_of_birth, gender," +
                 " registration_date, school_id, school_other, last_updated, email_verification_status, last_seen," +
-                " email_verification_token, email_to_verify, registered_contexts, registered_contexts_last_confirmed)" +
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+                " email_verification_token, email_to_verify, registered_contexts, registered_contexts_last_confirmed, country_code)" +
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
         ) {
@@ -729,6 +729,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             setValueHelper(pst, 14, userToCreate.getEmailToVerify());
             pst.setArray(15, userContexts);
             setValueHelper(pst, 16, userToCreate.getRegisteredContextsLastConfirmed());
+            setValueHelper(pst, 17, userToCreate.getCountryCode());
 
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save user.");
@@ -790,7 +791,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
         String query = "UPDATE users SET family_name = ?, given_name = ?, email = ?, role = ?, date_of_birth = ?," +
                 " gender = ?, registration_date = ?, school_id = ?, school_other = ?, last_updated = ?," +
                 " email_verification_status = ?, last_seen = ?, email_verification_token = ?, email_to_verify = ?," +
-                " registered_contexts = ?, registered_contexts_last_confirmed = ? WHERE id = ?;";
+                " registered_contexts = ?, registered_contexts_last_confirmed = ?, country_code = ? WHERE id = ?;";
         try (PreparedStatement pst = conn.prepareStatement(query)) {
             // TODO: Change this to annotations or something to rely exclusively on the pojo.
             setValueHelper(pst, 1, userToCreate.getFamilyName());
@@ -815,8 +816,8 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             }
             pst.setArray(15, conn.createArrayOf("jsonb", userContextsJsonb.toArray()));
             setValueHelper(pst, 16, userToCreate.getRegisteredContextsLastConfirmed());
-
-            setValueHelper(pst, 17, userToCreate.getId());
+            setValueHelper(pst, 17, userToCreate.getCountryCode());
+            setValueHelper(pst, 18, userToCreate.getId());
 
 
             if (pst.executeUpdate() == 0) {
@@ -828,15 +829,11 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
     }
     
     /**
-     * Create a pgEventBooking from a results set.
+     * Build a {@link RegisteredUser} from a Postgres {@link ResultSet}.
      * 
-     * Assumes there is a result to read.
-     * 
-     * @param results
-     *            - the results to convert
-     * @return a new PgEventBooking
-     * @throws SQLException
-     *             - if an error occurs.
+     * @param results The results to convert
+     * @return A RegisteredUser reflecting the results.
+     * @throws SQLException If an error occurs.
      */
     private RegisteredUser buildRegisteredUser(final ResultSet results) throws SQLException, JsonProcessingException {
         if (null == results) {
@@ -886,6 +883,8 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
         u.setEmailVerificationStatus(results.getString("email_verification_status") != null ? EmailVerificationStatus
                 .valueOf(results.getString("email_verification_status")) : null);
         u.setSessionToken(results.getInt("session_token"));
+
+        u.setCountryCode(results.getString("country_code"));
 
         return u;
     }
