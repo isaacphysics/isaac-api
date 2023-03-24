@@ -1304,7 +1304,7 @@ public class AdminFacade extends AbstractSegueFacade {
     }
 
     @POST
-    @Path("/start_quartz")
+    @Path("/quartz/start")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Start the Quartz Job Scheduler service if not already started.")
     public Response startQuartzJobService(@Context final HttpServletRequest request) {
@@ -1313,12 +1313,40 @@ public class AdminFacade extends AbstractSegueFacade {
             if (!isUserAnAdmin(userManager, user)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
-            if (!segueJobService.isStarted()) {
+            if (segueJobService.isShutdown()) {
+                log.error(String.format("Admin user (%s) attempted to start shutdown Quartz scheduler!", user.getEmail()));
+                return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Quartz scheduler has been shutdown and cannot be restarted!").toResponse();
+            } else if (!segueJobService.wasStarted()) {
                 segueJobService.initialiseService();
                 log.info(String.format("Admin user (%s) started Quartz scheduler successfully.", user.getEmail()));
                 return Response.ok(ImmutableMap.of("status", "Started successfully!")).build();
             } else {
                 return Response.ok(ImmutableMap.of("status", "Already running.")).build();
+            }
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SchedulerException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, e.getMessage()).toResponse();
+        }
+    }
+
+    @POST
+    @Path("/quartz/destroy")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Permanently stop the Quartz Job Scheduler service if it is running.",
+               description = "This action is not reversible. The API must be restarted to re-initialise Quartz.")
+    public Response stopQuartzJobService(@Context final HttpServletRequest request) {
+        try {
+            RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+            if (!isUserAnAdmin(userManager, user)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+            if (segueJobService.wasStarted() && !segueJobService.isShutdown()) {
+                segueJobService.shutdownService();
+                log.info(String.format("Admin user (%s) stopped Quartz scheduler.", user.getEmail()));
+                return Response.ok(ImmutableMap.of("status", "Stopped successfully!")).build();
+            } else {
+                return Response.ok(ImmutableMap.of("status", "Not running.")).build();
             }
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
