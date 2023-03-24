@@ -542,7 +542,7 @@ public class IsaacNumericValidator implements IValidator {
                 if (questionAnswerString.toString().trim().equals(userStringForComparison.toString().trim())) {
                     Boolean unitsCorrect = null;
                     if (isaacNumericQuestion.getRequireUnits()) {
-                        unitsCorrect = wasACorrectAnswerWithUsersSelectedUnit || quantityFromQuestion.isCorrect();
+                        unitsCorrect = wasACorrectAnswerWithUsersSelectedUnit || quantityFromQuestion.getUnits().equals(answerFromUser.getUnits());
                     }
 
                     return new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
