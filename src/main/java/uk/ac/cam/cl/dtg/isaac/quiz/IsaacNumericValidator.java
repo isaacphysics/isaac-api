@@ -522,6 +522,11 @@ public class IsaacNumericValidator implements IValidator {
             if (c instanceof Quantity) {
                 Quantity quantityFromQuestion = (Quantity) c;
 
+                if (quantityFromQuestion.getUnits() == null) {
+                    log.error("Expected units and no units can be found for question id: " + isaacNumericQuestion.getId());
+                    continue;
+                }
+
                 // Record whether the units the user selected match the units of a correct answer
                 if (isaacNumericQuestion.getRequireUnits()) {
                     wasACorrectAnswerWithUsersSelectedUnit |= quantityFromQuestion.getUnits().equals(answerFromUser.getUnits()) && quantityFromQuestion.isCorrect();
