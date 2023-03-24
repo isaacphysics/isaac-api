@@ -513,10 +513,19 @@ public class IsaacNumericValidator implements IValidator {
                                                         final Quantity answerFromUser) {
 
         log.debug("\t[exactStringMatch]");
+        boolean wasACorrectAnswerWithUsersSelectedUnit = false;
 
-        for (Choice c : isaacNumericQuestion.getChoices()) {
+        // Goes through correct answers first, in order to work out whether any correct answers match the units that
+        // the user selected.
+        List<Choice> orderedChoices = getOrderedChoices(isaacNumericQuestion.getChoices());
+        for (Choice c : orderedChoices) {
             if (c instanceof Quantity) {
                 Quantity quantityFromQuestion = (Quantity) c;
+
+                // Record whether the units the user selected match the units of a correct answer
+                if (isaacNumericQuestion.getRequireUnits()) {
+                    wasACorrectAnswerWithUsersSelectedUnit |= quantityFromQuestion.getUnits().equals(answerFromUser.getUnits()) && quantityFromQuestion.isCorrect();
+                }
 
                 StringBuilder userStringForComparison = new StringBuilder();
                 userStringForComparison.append(answerFromUser.getValue().trim());
@@ -531,14 +540,14 @@ public class IsaacNumericValidator implements IValidator {
                 }
 
                 if (questionAnswerString.toString().trim().equals(userStringForComparison.toString().trim())) {
-                    Boolean unitFeedback = null;
+                    Boolean unitsCorrect = null;
                     if (isaacNumericQuestion.getRequireUnits()) {
-                        unitFeedback = quantityFromQuestion.getUnits().equals(answerFromUser.getUnits());
+                        unitsCorrect = wasACorrectAnswerWithUsersSelectedUnit || quantityFromQuestion.isCorrect();
                     }
 
                     return new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
                             quantityFromQuestion.isCorrect(), (Content) quantityFromQuestion.getExplanation(),
-                            quantityFromQuestion.isCorrect(), unitFeedback, new Date());
+                            quantityFromQuestion.isCorrect(), unitsCorrect, new Date());
                 }
             }
         }
