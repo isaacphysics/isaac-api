@@ -1,5 +1,5 @@
-/**
- * Copyright 2014 Stephen Cummins
+/*
+ * Copyright 2023 Matthew Trew
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.segue.auth;
 
-/**
- * Enum to represent the different authentication providers Segue supports.
- * 
- * This is used for identification purposes and to match api requests based on
- * the string values of the enum.
- * 
- * (I.e. if you want to authenticate against the GOOGLE provider you may pass
- * the string google to the api and this could be matched against the enum value
- * (ignoring case).
- */
-public enum AuthenticationProvider {
-	GOOGLE, FACEBOOK, TWITTER, RAVEN, TEST, SEGUE, RASPBERRYPI
+package uk.ac.cam.cl.dtg.segue.auth.exceptions;
+
+public class UnknownCountryCodeException extends Exception {
+    public UnknownCountryCodeException(final String message) {
+        super(message);
+    }
 }

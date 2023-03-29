@@ -34,14 +34,13 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jakarta.ws.rs.core.Response;
-
 public class MailJetApiClientWrapper {
 
     private static final Logger log = LoggerFactory.getLogger(MailJetApiClientWrapper.class);
     private final MailjetClient mailjetClient;
     private final String newsListId;
     private final String eventsListId;
+    private final String legalListId;
 
     /**
      *  Wrapper for MailjetClient class.
@@ -50,10 +49,12 @@ public class MailJetApiClientWrapper {
      *  @param mailjetApiSecret - MailJet API Client Secret
      *  @param mailjetNewsListId - MailJet list ID for NEWS_AND_UPDATES
      *  @param mailjetEventsListId - MailJet list ID for EVENTS
+     *  @param mailjetLegalListId - MailJet list ID for legal notices (all users)
      */
     @Inject
     public MailJetApiClientWrapper(final String mailjetApiKey, final String mailjetApiSecret,
-                                   final String mailjetNewsListId, final String mailjetEventsListId) {
+                                   final String mailjetNewsListId, final String mailjetEventsListId,
+                                   final String mailjetLegalListId) {
         ClientOptions options = ClientOptions.builder()
                 .apiKey(mailjetApiKey)
                 .apiSecretKey(mailjetApiSecret)
@@ -62,6 +63,7 @@ public class MailJetApiClientWrapper {
         this.mailjetClient = new MailjetClient(options);
         this.newsListId = mailjetNewsListId;
         this.eventsListId = mailjetEventsListId;
+        this.legalListId = mailjetLegalListId;
     }
 
     /**
@@ -114,13 +116,13 @@ public class MailJetApiClientWrapper {
             MailjetResponse response = mailjetClient.post(request);
             // Get MailJet ID out:
             JSONObject responseData = response.getData().getJSONObject(0);
-            return Integer.toString(responseData.getInt("ID"));
+            return Long.toString(responseData.getLong("ID"));
         } catch (MailjetClientRequestException e) {
             if (e.getMessage().contains("already exists")) {
                 // FIXME - we need to test that this response always comes back with "already exists" in the message
                 log.warn(String.format("Attempted to create a user with email (%s) that already existed!", email));
                 JSONObject existingMailJetAccount = getAccountByIdOrEmail(email);
-                return Integer.toString(existingMailJetAccount.getInt("ID"));
+                return Long.toString(existingMailJetAccount.getLong("ID"));
             } else {
                 log.error(String.format("Failed to create user in MailJet with email: %s", email), e);
             }
@@ -163,6 +165,9 @@ public class MailJetApiClientWrapper {
         Validate.notNull(mailjetId);
         MailjetRequest request = new MailjetRequest(ContactManagecontactslists.resource, mailjetId)
                 .property(ContactManagecontactslists.CONTACTSLISTS, new JSONArray()
+                        .put(new JSONObject()
+                                .put(ContactslistImportList.LISTID, legalListId)
+                                .put(ContactslistImportList.ACTION, MailJetSubscriptionAction.FORCE_SUBSCRIBE.value))
                         .put(new JSONObject()
                                 .put(ContactslistImportList.LISTID, newsListId)
                                 .put(ContactslistImportList.ACTION, newsEmails.value))

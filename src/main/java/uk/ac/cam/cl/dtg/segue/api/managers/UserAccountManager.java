@@ -109,9 +109,9 @@ public class UserAccountManager implements IUserAccountManager {
 
     private final AbstractUserPreferenceManager userPreferenceManager;
 
-    private final int USER_NAME_MAX_LENGTH = 255;
+    private final Pattern restrictedSignupEmailRegex;
+    private static final int USER_NAME_MAX_LENGTH = 255;
     private static final Pattern USER_NAME_FORBIDDEN_CHARS_REGEX = Pattern.compile("[*<>]");
-
 
     /**
      * Create an instance of the user manager class.
@@ -164,6 +164,13 @@ public class UserAccountManager implements IUserAccountManager {
         this.userAuthenticationManager = userAuthenticationManager;
         this.secondFactorManager = secondFactorManager;
         this.userPreferenceManager = userPreferenceManager;
+
+        String forbiddenEmailRegex = properties.getProperty(RESTRICTED_SIGNUP_EMAIL_REGEX);
+        if (null == forbiddenEmailRegex || forbiddenEmailRegex.isEmpty()) {
+            this.restrictedSignupEmailRegex = null;
+        } else {
+            this.restrictedSignupEmailRegex = Pattern.compile(forbiddenEmailRegex);
+        }
     }
 
     /**
@@ -431,6 +438,9 @@ public class UserAccountManager implements IUserAccountManager {
         } catch (InvalidNameException e) {
             log.warn("Invalid name provided during registration.");
             return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
+        } catch (UnknownCountryCodeException e) {
+            log.warn("Unknown country code provided during registration.");
+            return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
         }
     }
 
@@ -559,8 +569,7 @@ public class UserAccountManager implements IUserAccountManager {
             }
 
             // check that any changes to protected fields being made are allowed.
-            RegisteredUserDTO existingUserFromDb = this.getUserDTOById(userObjectFromClient
-                    .getId());
+            RegisteredUserDTO existingUserFromDb = this.getUserDTOById(userObjectFromClient.getId());
 
             // You cannot modify role using this endpoint (an admin needs to go through the endpoint specifically for
             // role modification)
@@ -629,6 +638,9 @@ public class UserAccountManager implements IUserAccountManager {
                     "Unable to map to a known authenticator. The provider: is unknown").toResponse();
         } catch (InvalidNameException e) {
             log.warn("Invalid name provided during user update.");
+            return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
+        } catch (UnknownCountryCodeException e) {
+            log.warn("Unknown country code provided during user update.");
             return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
         }
     }
@@ -1005,7 +1017,7 @@ public class UserAccountManager implements IUserAccountManager {
             final HttpServletResponse response, final RegisteredUser user, final String newPassword,
                                                         final boolean rememberMe) throws InvalidPasswordException,
             MissingRequiredFieldException, SegueDatabaseException,
-            EmailMustBeVerifiedException, InvalidKeySpecException, NoSuchAlgorithmException, InvalidNameException {
+            EmailMustBeVerifiedException, InvalidKeySpecException, NoSuchAlgorithmException, InvalidNameException, UnknownCountryCodeException {
         Validate.isTrue(user.getId() == null,
                 "When creating a new user the user id must not be set.");
 
@@ -1013,9 +1025,8 @@ public class UserAccountManager implements IUserAccountManager {
             throw new DuplicateAccountException("An account with that e-mail address already exists.");
         }
 
-        // FIXME: This is a hard-coded reference to the URL of the platform!
-        // Ensure nobody registers with Isaac email addresses. Users can change emails by verifying them however.
-        if (user.getEmail().matches(".*@isaac(physics|chemistry|maths|biology|computerscience|science)\\.org")) {
+        // Ensure nobody registers with Isaac email addresses. Users can change emails to restricted ones by verifying them, however.
+        if (null != restrictedSignupEmailRegex && restrictedSignupEmailRegex.matcher(user.getEmail()).find()) {
             log.warn("User attempted to register with Isaac email address '" + user.getEmail() + "'!");
             throw new EmailMustBeVerifiedException("You cannot register with an Isaac email address.");
         }
@@ -1042,12 +1053,17 @@ public class UserAccountManager implements IUserAccountManager {
         }
 
         // validate names
-        if (!this.isUserNameValid(user.getGivenName())) {
+        if (!isUserNameValid(user.getGivenName())) {
             throw new InvalidNameException("The given name provided is an invalid length or contains forbidden characters.");
         }
 
-        if (!this.isUserNameValid(user.getFamilyName())) {
+        if (!isUserNameValid(user.getFamilyName())) {
             throw new InvalidNameException("The family name provided is an invalid length or contains forbidden characters.");
+        }
+
+        // Validate country code
+        if (null != userToSave.getCountryCode() && !CountryLookupManager.isKnownCountryCode(userToSave.getCountryCode())) {
+            throw new UnknownCountryCodeException("The country provided is not known.");
         }
 
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
@@ -1108,7 +1124,7 @@ public class UserAccountManager implements IUserAccountManager {
      */
     public RegisteredUserDTO updateUserObject(final RegisteredUser updatedUser, final String newPassword)
             throws InvalidPasswordException, MissingRequiredFieldException, SegueDatabaseException,
-            InvalidKeySpecException, NoSuchAlgorithmException, InvalidNameException {
+            InvalidKeySpecException, NoSuchAlgorithmException, InvalidNameException, UnknownCountryCodeException {
         Validate.notNull(updatedUser.getId());
 
         // We want to map to DTO first to make sure that the user cannot
@@ -1129,12 +1145,17 @@ public class UserAccountManager implements IUserAccountManager {
         }
 
         // validate names
-        if (!this.isUserNameValid(updatedUser.getGivenName())) {
+        if (!isUserNameValid(updatedUser.getGivenName())) {
             throw new InvalidNameException("The given name provided is an invalid length or contains forbidden characters.");
         }
 
-        if (!this.isUserNameValid(updatedUser.getFamilyName())) {
+        if (!isUserNameValid(updatedUser.getFamilyName())) {
             throw new InvalidNameException("The family name provided is an invalid length or contains forbidden characters.");
+        }
+
+        // Validate country code
+        if (null != updatedUser.getCountryCode() && !CountryLookupManager.isKnownCountryCode(updatedUser.getCountryCode())) {
+            throw new UnknownCountryCodeException("The country provided is not known.");
         }
 
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
@@ -1162,6 +1183,12 @@ public class UserAccountManager implements IUserAccountManager {
         // Correctly remove school_other when it is set to be the empty string:
         if (updatedUser.getSchoolOther() == null || updatedUser.getSchoolOther().isEmpty()) {
             userToSave.setSchoolOther(null);
+        }
+
+        // Allow the user to clear their DOB, they have already confirmed they are over 11 at least once.
+        // null values are explicitly not mapped by `mergeMapper`.
+        if (updatedUser.getDateOfBirth() == null) {
+            userToSave.setDateOfBirth(null);
         }
 
         // Before save we should validate the user for mandatory fields.
@@ -1857,7 +1884,7 @@ public class UserAccountManager implements IUserAccountManager {
      *            - the name to validate.
      * @return true if the name is valid, false otherwise.
      */
-    public final boolean isUserNameValid(final String name) {
+    public static final boolean isUserNameValid(final String name) {
         if (null == name || name.length() > USER_NAME_MAX_LENGTH || USER_NAME_FORBIDDEN_CHARS_REGEX.matcher(name).find()
                 || name.isEmpty()) {
             return false;

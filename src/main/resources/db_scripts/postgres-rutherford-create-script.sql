@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 13.5 (Debian 13.5-1.pgdg110+1)
--- Dumped by pg_dump version 13.5 (Debian 13.5-1.pgdg110+1)
+-- Dumped from database version 12.9 (Debian 12.9-1.pgdg110+1)
+-- Dumped by pg_dump version 12.9 (Debian 12.9-1.pgdg110+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -185,7 +185,8 @@ CREATE TABLE public.groups (
     created timestamp without time zone,
     archived boolean DEFAULT false NOT NULL,
     group_status text DEFAULT 'ACTIVE'::text,
-    last_updated timestamp without time zone
+    last_updated timestamp without time zone,
+    additional_manager_privileges boolean DEFAULT false
 );
 
 
@@ -717,7 +718,8 @@ CREATE TABLE public.users (
     email_to_verify text,
     email_verification_token text,
     session_token integer DEFAULT 0 NOT NULL,
-    deleted boolean DEFAULT false NOT NULL
+    deleted boolean DEFAULT false NOT NULL,
+    country_code character varying(255) DEFAULT NULL
 );
 
 
@@ -1236,6 +1238,13 @@ CREATE INDEX user_associations_tokens_groups ON public.user_associations_tokens 
 --
 
 CREATE UNIQUE INDEX user_badges_user_id_badge_unique ON public.user_badges USING btree (user_id, badge);
+
+
+--
+-- Name: user_credentials_reset_tokens; Type: INDEX; Schema: public; Owner: rutherford
+--
+
+CREATE INDEX user_credentials_reset_tokens ON public.user_credentials USING btree (reset_token);
 
 
 --

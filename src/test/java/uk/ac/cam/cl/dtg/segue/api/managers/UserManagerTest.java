@@ -141,6 +141,7 @@ public class UserManagerTest {
         expect(this.dummyPropertiesLoader.getProperty(Constants.SESSION_EXPIRY_SECONDS_REMEMBERED)).andReturn("360")
                 .anyTimes();
         expect(this.dummyPropertiesLoader.getProperty(Constants.SEGUE_APP_ENVIRONMENT)).andReturn("DEV").anyTimes();
+        expect(this.dummyPropertiesLoader.getProperty(Constants.RESTRICTED_SIGNUP_EMAIL_REGEX)).andReturn(".*@isaacphysics\\.org").anyTimes();
         replay(this.dummyPropertiesLoader);
     }
 
@@ -191,7 +192,7 @@ public class UserManagerTest {
         String validDateString = sdf.format(calendar.getTime());
 
         RegisteredUser returnUser = new RegisteredUser(validUserId, "TestFirstName", "TestLastName", "", Role.STUDENT,
-                new Date(), Gender.MALE, new Date(), null, null, null,null);
+                new Date(), Gender.MALE, null, new Date(), null, null, null,null);
         returnUser.setId(validUserId);
         returnUser.setSessionToken(0);
 
@@ -368,7 +369,7 @@ public class UserManagerTest {
 
         // User object back from provider
         UserFromAuthProvider providerUser = new UserFromAuthProvider(someProviderUniqueUserId, "TestFirstName",
-                "TestLastName", "test@test.com", EmailVerificationStatus.VERIFIED, Role.STUDENT, new Date(), Gender.MALE);
+                "TestLastName", "test@test.com", EmailVerificationStatus.VERIFIED, Role.STUDENT, new Date(), Gender.MALE, null);
 
         // Mock get User Information from provider call
         expect(((IFederatedAuthenticator) dummyAuth).getUserInfo(someProviderGeneratedLookupValue)).andReturn(
@@ -380,7 +381,7 @@ public class UserManagerTest {
                 .atLeastOnce();
 
         RegisteredUser mappedUser = new RegisteredUser(null, "TestFirstName", "testLastName", "test@test.com", Role.STUDENT,
-                new Date(), Gender.MALE, new Date(), null, null,null, null);
+                new Date(), Gender.MALE, null, new Date(), null, null, null, null);
         mappedUser.setSessionToken(0);
 
         expect(dummyDatabase.getAuthenticationProvidersByUsers(Collections.singletonList(mappedUser)))
@@ -538,7 +539,7 @@ public class UserManagerTest {
         HttpServletRequest request = createMock(HttpServletRequest.class);
 
         RegisteredUser mappedUser = new RegisteredUser(null, "TestFirstName", "testLastName", "test@test.com", Role.STUDENT,
-                new Date(), Gender.MALE, new Date(), null, null,null, null);
+                new Date(), Gender.MALE, null, new Date(), null, null, null, null);
         mappedUser.setSessionToken(0);
 
         String validUserId = "123";
@@ -579,7 +580,7 @@ public class UserManagerTest {
         String validDateString = sdf.format(calendar.getTime());
 
         RegisteredUser mappedUser = new RegisteredUser(null, "TestFirstName", "testLastName", "test@test.com", Role.STUDENT,
-                new Date(), Gender.MALE, new Date(), null, null,null, null);
+                new Date(), Gender.MALE, null, new Date(), null, null, null, null);
         mappedUser.setSessionToken(0);
 
         Map<String, String> validSessionInformation = getSessionInformationAsAMap(authManager, validUserId,
@@ -619,7 +620,7 @@ public class UserManagerTest {
 
         String validUserId = "123";
         RegisteredUser mappedUser = new RegisteredUser(null, "TestFirstName", "testLastName", "test@test.com", Role.STUDENT,
-                new Date(), Gender.MALE, new Date(), null, null,null, null);
+                new Date(), Gender.MALE, null, new Date(), null, null, null, null);
         mappedUser.setSessionToken(0);
 
         Calendar calendar = Calendar.getInstance();
@@ -656,7 +657,7 @@ public class UserManagerTest {
 
         String validUserId = "123";
         RegisteredUser mappedUser = new RegisteredUser(null, "TestFirstName", "testLastName", "test@test.com", Role.STUDENT,
-                new Date(), Gender.MALE, new Date(), null, null,null, null);
+                new Date(), Gender.MALE, null, new Date(), null, null, null, null);
         mappedUser.setSessionToken(1);
         Integer incorrectSessionToken = 0;
 
