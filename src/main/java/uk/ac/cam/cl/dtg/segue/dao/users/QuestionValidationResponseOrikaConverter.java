@@ -37,7 +37,7 @@ public class QuestionValidationResponseOrikaConverter extends
         AbstractPolymorphicBidirectionalConverter<QuestionValidationResponse, QuestionValidationResponseDTO> {
 
     /**
-     * Constructs an Orika Converter specialises in selecting the correct subclass for choice objects.
+     * Constructs an Orika Converter specialising in selecting the correct subclass for question validation response objects.
      * 
      */
     public QuestionValidationResponseOrikaConverter() {
