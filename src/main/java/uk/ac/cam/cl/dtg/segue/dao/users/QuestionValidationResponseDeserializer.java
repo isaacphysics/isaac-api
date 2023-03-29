@@ -19,6 +19,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -27,11 +28,15 @@ import uk.ac.cam.cl.dtg.isaac.dos.MultiPartValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuantityValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.dao.content.ChoiceDeserializer;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentBaseDeserializer;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 /**
  * QuestionValidationResponse deserializer
@@ -82,8 +87,30 @@ public class QuestionValidationResponseDeserializer extends JsonDeserializer<Que
         if (questionResponseType.equals("quantity")) {
             return mapper.readValue(jsonString, QuantityValidationResponse.class);
         } else if (questionResponseType.equals("multiPartChoice")) {
-            // FIXME throws if the MultiPartValidationResponse contains anything but plain QuestionValidationResponses
-            return mapper.readValue(jsonString, MultiPartValidationResponse.class);
+            // FIXME homemade deserializer for multi-part question validation responses
+            MultiPartValidationResponse mpvr = new MultiPartValidationResponse();
+            mpvr.setAnswer(mapper.readValue(root.get("answer").toString(), Choice.class));
+            mpvr.setExplanation(mapper.readValue(root.get("explanation").toString(), Content.class));
+            mpvr.setQuestionId(root.get("questionId").textValue());
+            mpvr.setCorrect(root.get("correct").booleanValue());
+            mpvr.setDateAttempted(new Date(root.get("dateAttempted").longValue()));
+            JsonNode jsonValidationResponses = root.get("validationResponses");
+            List<QuestionValidationResponse> validationResponses = new ArrayList<>();
+            if (jsonValidationResponses.isArray()) {
+                for (JsonNode validationResponseNode : jsonValidationResponses) {
+                    String innerResponseType = validationResponseNode.get("answer").get("type").textValue();
+                    String innerJsonString = new ObjectMapper().writeValueAsString(validationResponseNode);
+                    if (innerResponseType.equals("quantity")) {
+                        validationResponses.add(mapper.readValue(innerJsonString, QuantityValidationResponse.class));
+                    } else if (innerResponseType.equals("itemChoice")) {
+                        validationResponses.add(mapper.readValue(innerJsonString, ItemValidationResponse.class));
+                    } else {
+                        validationResponses.add(mapper.readValue(innerJsonString, QuestionValidationResponse.class));
+                    }
+                }
+            }
+            mpvr.setValidationResponses(validationResponses);
+            return mpvr;
         } else if (questionResponseType.equals("itemChoice")) {
             // We don't actually use this validation response type for all ItemChoices, but it should
             // be safe to use regardless of the "true" type because the null values will be excluded.
