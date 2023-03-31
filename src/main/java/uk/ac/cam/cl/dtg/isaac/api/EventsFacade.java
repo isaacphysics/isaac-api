@@ -1056,6 +1056,14 @@ public class EventsFacade extends AbstractIsaacFacade {
                     .toResponse();
             }
 
+            if (EventStatus.RESERVATION_ONLY.equals(event.getEventStatus())
+                    && !bookingManager.hasBookingWithStatus(eventId, user.getId(), BookingStatus.RESERVED)
+                    && !isUserTeacherOrAbove(userManager, user)
+            ) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "Sorry booking for this event is restricted, unless you are a teacher. You can only be reserved a place by your group manager.")
+                        .toResponse();
+            }
+
             // reservedBy is null. If there is a reservation for me, it will be updated to CONFIRMED.
             EventBookingDTO eventBookingDTO = bookingManager.requestBooking(event, user, additionalInformation);
 
@@ -1168,7 +1176,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Operation(summary = "Cancel the current user's booking on an event.")
     public final Response cancelBooking(@Context final HttpServletRequest request,
                                         @PathParam("event_id") final String eventId) {
-                                    return this.cancelBooking(request, eventId, null);
+        return this.cancelBooking(request, eventId, null);
     }
 
     /**
