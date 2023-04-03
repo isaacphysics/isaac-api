@@ -74,6 +74,8 @@ public class SchoolLookupServiceFacade {
      *            - find by urn.
      * @param searchQuery
      *            - query to search fields against.
+     * @param limit
+     *            - limit the number of results returned.
      * @return A response containing a list of school objects or a SegueErrorResponse.
      */
     @GET
@@ -82,7 +84,7 @@ public class SchoolLookupServiceFacade {
     @GZIP
     @Operation(summary = "List all schools matching provided criteria.")
     public Response schoolSearch(@Context final Request request, @QueryParam("query") final String searchQuery,
-            @QueryParam("urn") final String schoolURN) {
+            @QueryParam("urn") final String schoolURN, @QueryParam("limit") final Integer limit) {
 
         if ((null == searchQuery || searchQuery.isEmpty()) && (null == schoolURN || schoolURN.isEmpty())) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a search query or school URN")
@@ -110,7 +112,7 @@ public class SchoolLookupServiceFacade {
             if (schoolURN != null && !schoolURN.isEmpty()) {
                 list = Arrays.asList(schoolListReader.findSchoolById(schoolURN));
             } else {
-                list = schoolListReader.findSchoolByNameOrPostCode(searchQuery);    
+                list = schoolListReader.findSchoolByNameOrPostCode(searchQuery, limit);
             }
             
         } catch (UnableToIndexSchoolsException | SegueSearchException | IOException e) {
