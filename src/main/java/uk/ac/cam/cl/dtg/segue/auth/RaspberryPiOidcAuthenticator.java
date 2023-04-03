@@ -81,6 +81,9 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
     // Force the signup flow rather than log in/sign up
     public static final String LOGIN_OPTION_FORCE_SIGNUP = "force_signup";
 
+    public static final String BRAND_PARAM_NAME = "brand";
+    public static final String BRAND = "ada-cs";
+
     // Parameters for anti-CSRF state token
     private static final int SALT_SIZE_BITS = 130;
     private static final int SALT_RADIX = 32;
@@ -197,6 +200,7 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
                 .setRedirectUri(callbackUri)
                 .setState(antiForgeryStateToken)
                 .set(LOGIN_OPTIONS_PARAM_NAME, LOGIN_OPTION_REDIRECT_AFTER_SIGNUP)
+                .set(BRAND_PARAM_NAME, BRAND)
                 .build();
     }
 
