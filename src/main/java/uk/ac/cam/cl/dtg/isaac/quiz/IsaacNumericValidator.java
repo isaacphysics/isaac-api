@@ -25,6 +25,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Quantity;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -32,6 +33,7 @@ import java.math.RoundingMode;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
@@ -98,6 +100,10 @@ public class IsaacNumericValidator implements IValidator {
         IsaacNumericQuestion isaacNumericQuestion = (IsaacNumericQuestion) question;
         Quantity answerFromUser = (Quantity) answer;
 
+        // Extract significant figure bounds, defaulting to NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES either are missing
+        int significantFiguresMax = Objects.requireNonNullElse(isaacNumericQuestion.getSignificantFiguresMax(), NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES);
+        int significantFiguresMin = Objects.requireNonNullElse(isaacNumericQuestion.getSignificantFiguresMin(), NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES);
+
         log.debug("Starting validation of '" + answerFromUser.getValue() + " " + answerFromUser.getUnits() + "' for '"
                 + isaacNumericQuestion.getId() + "'");
 
@@ -111,14 +117,17 @@ public class IsaacNumericValidator implements IValidator {
                             false, false, new Date());
         }
 
-        if (isaacNumericQuestion.getSignificantFiguresMin() < 1 || isaacNumericQuestion.getSignificantFiguresMax() < 1
-                || isaacNumericQuestion.getSignificantFiguresMax() < isaacNumericQuestion.getSignificantFiguresMin()) {
-            log.error("Question has broken significant figure rules! " + question.getId() + " src: "
-                    + question.getCanonicalSourceFile());
+        // Only worry about broken significant figure rules if we are going to use them (i.e. if "exact match" is false)
+        if (!isaacNumericQuestion.getDisregardSignificantFigures()) {
+            if (significantFiguresMin < 1 || significantFiguresMax < 1
+                    || significantFiguresMax < significantFiguresMin) {
+                log.error("Question has broken significant figure rules! " + question.getId() + " src: "
+                        + question.getCanonicalSourceFile());
 
-            return new QuantityValidationResponse(question.getId(), answerFromUser, false,
-                            new Content("This question cannot be answered correctly."),
-                            false, false, new Date());
+                return new QuantityValidationResponse(question.getId(), answerFromUser, false,
+                        new Content("This question cannot be answered correctly."),
+                        false, false, new Date());
+            }
         }
 
         try {
@@ -168,7 +177,7 @@ public class IsaacNumericValidator implements IValidator {
 
             // Step 3 - do sig fig checking (unless specified otherwise by question):
             if (!isaacNumericQuestion.getDisregardSignificantFigures()) {
-                if (tooFewSignificantFigures(answerFromUser.getValue(), isaacNumericQuestion.getSignificantFiguresMin())) {
+                if (tooFewSignificantFigures(answerFromUser.getValue(), significantFiguresMin)) {
                     // If too few sig figs then give feedback about this.
 
                     // If we have unit information available put it in our response.
@@ -183,7 +192,7 @@ public class IsaacNumericValidator implements IValidator {
                     bestResponse = new QuantityValidationResponse(question.getId(), answerFromUser, false, sigFigResponse,
                             false, validUnits, new Date());
                 }
-                if (tooManySignificantFigures(answerFromUser.getValue(), isaacNumericQuestion.getSignificantFiguresMax())
+                if (tooManySignificantFigures(answerFromUser.getValue(), significantFiguresMax)
                         && bestResponse.isCorrect()) {
                     // If (and only if) _correct_, but to too many sig figs, give feedback about this.
 
@@ -233,8 +242,11 @@ public class IsaacNumericValidator implements IValidator {
         Integer sigFigsToValidateWith = null;
 
         if (!isaacNumericQuestion.getDisregardSignificantFigures()) {
-            sigFigsToValidateWith = numberOfSignificantFiguresToValidateWith(answerFromUser.getValue(),
-                    isaacNumericQuestion.getSignificantFiguresMin(), isaacNumericQuestion.getSignificantFiguresMax());
+            sigFigsToValidateWith = numberOfSignificantFiguresToValidateWith(
+                    answerFromUser.getValue(),
+                    isaacNumericQuestion.getSignificantFiguresMin(),
+                    isaacNumericQuestion.getSignificantFiguresMax()
+            );
         }
 
         String unitsFromUser = answerFromUser.getUnits().trim();
@@ -301,8 +313,11 @@ public class IsaacNumericValidator implements IValidator {
         Integer sigFigsToValidateWith = null;
 
         if (!isaacNumericQuestion.getDisregardSignificantFigures()) {
-            sigFigsToValidateWith = numberOfSignificantFiguresToValidateWith(answerFromUser.getValue(),
-                    isaacNumericQuestion.getSignificantFiguresMin(), isaacNumericQuestion.getSignificantFiguresMax());
+            sigFigsToValidateWith = numberOfSignificantFiguresToValidateWith(
+                    answerFromUser.getValue(),
+                    isaacNumericQuestion.getSignificantFiguresMin(),
+                    isaacNumericQuestion.getSignificantFiguresMax()
+            );
         }
 
         List<Choice> orderedChoices = getOrderedChoices(isaacNumericQuestion.getChoices());
@@ -449,8 +464,8 @@ public class IsaacNumericValidator implements IValidator {
      * @param maxAllowedSigFigs - the maximum number of significant figures the question allows
      * @return the number of significant figures that should be used when checking the question
      */
-    private int numberOfSignificantFiguresToValidateWith(final String valueToCheck, final int minAllowedSigFigs,
-                                                         final int maxAllowedSigFigs) {
+    private int numberOfSignificantFiguresToValidateWith(final String valueToCheck, final Integer minAllowedSigFigs,
+                                                         final Integer maxAllowedSigFigs) {
         log.debug("\t[numberOfSignificantFiguresToValidateWith]");
         int untrustedValueSigFigs;
         SigFigResult sigFigsFromUser = extractSignificantFigures(valueToCheck);
@@ -468,7 +483,10 @@ public class IsaacNumericValidator implements IValidator {
            acceptable range, choose the least number of sig figs the user answer allows; this is kindest to the user
            in terms of matching known wrong answers.
          */
-        return max(min(untrustedValueSigFigs, maxAllowedSigFigs), minAllowedSigFigs);
+        return max(
+                min(untrustedValueSigFigs, Objects.requireNonNullElse(maxAllowedSigFigs, NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES)),
+                Objects.requireNonNullElse(minAllowedSigFigs, NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES)
+        );
     }
 
     /**
