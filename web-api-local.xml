@@ -55,7 +55,8 @@
             uk.ac.cam.cl.dtg.isaac.configuration.exceptionMappers.UnhandledExceptionMapper,
             uk.ac.cam.cl.dtg.isaac.configuration.exceptionMappers.OptionsMethodExceptionMapper,
             uk.ac.cam.cl.dtg.isaac.configuration.exceptionMappers.MethodNotAllowedExceptionMapper,
-            uk.ac.cam.cl.dtg.segue.configuration.exceptionMappers.JacksonInvalidFormatExceptionMapper
+            uk.ac.cam.cl.dtg.segue.configuration.exceptionMappers.JacksonInvalidFormatExceptionMapper,
+            org.jboss.resteasy.plugins.interceptors.GZIPEncodingInterceptor
         </param-value>
     </context-param>
 
