@@ -1056,6 +1056,8 @@ public class EventsFacade extends AbstractIsaacFacade {
                     .toResponse();
             }
 
+            // Reservation-only events can only be booked by teachers, reserved by the group manager (teacher), or
+            // promoted from a reservation to a booking by the reserved student.
             if (EventStatus.RESERVATION_ONLY.equals(event.getEventStatus())
                     && !bookingManager.hasBookingWithStatus(eventId, user.getId(), BookingStatus.RESERVED)
                     && !isUserTeacherOrAbove(userManager, user)
