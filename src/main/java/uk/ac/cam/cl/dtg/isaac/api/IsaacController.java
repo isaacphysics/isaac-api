@@ -257,7 +257,6 @@ public class IsaacController extends AbstractIsaacFacade {
     @GET
     @Produces("*/*")
     @Path("images/{path:.*}")
-    @GZIP
     @Operation(summary = "Get a binary object from the current content version.",
                   description = "This can only be used to get images from the content database.")
     public final Response getImageByPath(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
@@ -358,7 +357,6 @@ public class IsaacController extends AbstractIsaacFacade {
     @GET
     @Produces("*/*")
     @Path("documents/{path:.*}")
-    @GZIP
     @Operation(summary = "Get a binary object from the current content version.",
                   description = "This can only be used to get PDF documents from the content database.")
     public final Response getDocumentByPath(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
@@ -434,7 +432,6 @@ public class IsaacController extends AbstractIsaacFacade {
     @GET
     @Path("users/current_user/progress")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Get progress information for the current user.")
     public final Response getCurrentUserProgressInformation(@Context final HttpServletRequest request) {
         RegisteredUserDTO user;
@@ -457,7 +454,6 @@ public class IsaacController extends AbstractIsaacFacade {
     @GET
     @Path("users/current_user/snapshot")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Get snapshot for the current user.")
     public final Response getCurrentUserSnapshot(@Context final HttpServletRequest request) {
         RegisteredUserDTO user;
@@ -496,7 +492,6 @@ public class IsaacController extends AbstractIsaacFacade {
     @GET
     @Path("users/{user_id}/progress")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Get progress information for a specified user.")
     public final Response getUserProgressInformation(@Context final HttpServletRequest request,
             @PathParam("user_id") final Long userIdOfInterest) {
