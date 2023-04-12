@@ -150,7 +150,6 @@ public class UsersFacade extends AbstractSegueFacade {
     @GET
     @Path("users/current_user")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Get information about the current user.")
     public Response getCurrentUserEndpoint(@Context final Request request,
                                            @Context final HttpServletRequest httpServletRequest,
@@ -196,7 +195,6 @@ public class UsersFacade extends AbstractSegueFacade {
     @Path("users")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Create a new user or update an existing user.")
     public Response createOrUpdateUserSettings(@Context final HttpServletRequest request,
                                                @Context final HttpServletResponse response,
@@ -312,7 +310,6 @@ public class UsersFacade extends AbstractSegueFacade {
     @POST
     @Path("users/{user_id}/resetpassword")
     @Consumes(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Request password reset for another user.")
     public Response generatePasswordResetTokenForOtherUser(@Context final Request request,
                                                            @Context final HttpServletRequest httpServletRequest,
@@ -385,7 +382,6 @@ public class UsersFacade extends AbstractSegueFacade {
     @POST
     @Path("users/resetpassword")
     @Consumes(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Request password reset for an email address.",
                   description = "The email address must be provided as a RegisteredUserDTO object, although only the 'email' field is required.")
     public Response generatePasswordResetToken(final RegisteredUserDTO userObject,
@@ -440,7 +436,6 @@ public class UsersFacade extends AbstractSegueFacade {
     @GET
     @Path("users/resetpassword/{token}")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Verify a password reset token is valid for use.")
     public Response validatePasswordResetRequest(@PathParam("token") final String token) {
         try {
@@ -473,7 +468,6 @@ public class UsersFacade extends AbstractSegueFacade {
     @POST
     @Path("users/resetpassword/{token}")
     @Consumes(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Reset an account password using a reset token.",
                   description = "The 'token' should be generated using one of the endpoints for requesting a password reset.")
     public Response resetPassword(@PathParam("token") final String token, final Map<String, String> clientResponse,
