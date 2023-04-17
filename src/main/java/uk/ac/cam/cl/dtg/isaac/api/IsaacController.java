@@ -44,7 +44,6 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.DefaultValue;
@@ -59,6 +58,8 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
@@ -136,7 +137,7 @@ public class IsaacController extends AbstractIsaacFacade {
      *            - So we can summarize search results
      */
     @Inject
-    public IsaacController(final PropertiesLoader propertiesLoader,
+    public IsaacController(final AbstractConfigLoader propertiesLoader,
                            final ILogManager logManager, final IStatisticsManager statsManager,
                            final UserAccountManager userManager, final GitContentManager contentManager,
                            final UserAssociationManager associationManager,

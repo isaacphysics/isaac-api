@@ -15,7 +15,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.util.List;
 
@@ -27,7 +27,7 @@ public class ScheduledAssignmentsEmailJob implements Job {
     private final IAssignmentPersistenceManager assignmentPersistenceManager;
     private final GameManager gameManager;
     private final PgScheduledEmailManager pgScheduledEmailManager;
-    private final PropertiesLoader properties;
+    private final AbstractConfigLoader properties;
 
     /**
      * This class is required by quartz and must be executable by any instance of the segue api relying only on the
@@ -39,7 +39,7 @@ public class ScheduledAssignmentsEmailJob implements Job {
         assignmentPersistenceManager = injector.getInstance(IAssignmentPersistenceManager.class);
         gameManager = injector.getInstance(GameManager.class);
         pgScheduledEmailManager = injector.getInstance(PgScheduledEmailManager.class);
-        properties = injector.getInstance(PropertiesLoader.class);
+        properties = injector.getInstance(AbstractConfigLoader.class);
     }
 
     private void startSingleScheduledAssignment(final AssignmentDTO assignment) {

@@ -30,7 +30,6 @@ import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.Consumes;
@@ -40,6 +39,8 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+
 import java.util.Map;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
@@ -71,8 +72,8 @@ public class LogEventFacade extends AbstractSegueFacade {
      *            - So we can attribute log events to a given user.
      */
     @Inject
-    public LogEventFacade(final PropertiesLoader properties, final ILogManager logManager,
-            final IMisuseMonitor misuseMonitor, final UserAccountManager userManager) {
+    public LogEventFacade(final AbstractConfigLoader properties, final ILogManager logManager,
+                          final IMisuseMonitor misuseMonitor, final UserAccountManager userManager) {
         super(properties, logManager);
         this.misuseMonitor = misuseMonitor;
         this.userManager = userManager;

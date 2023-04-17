@@ -31,7 +31,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.util.Collections;
 import java.util.Date;
@@ -50,7 +50,7 @@ public class QuizAssignmentManager implements IAssignmentLike.Details<QuizAssign
     private final EmailService emailService;
     private final QuizManager quizManager;
     private final GroupManager groupManager;
-    private final PropertiesLoader properties;
+    private final AbstractConfigLoader properties;
 
     /**
      * AssignmentManager.
@@ -66,7 +66,7 @@ public class QuizAssignmentManager implements IAssignmentLike.Details<QuizAssign
     @Inject
     public QuizAssignmentManager(final IQuizAssignmentPersistenceManager quizAssignmentPersistenceManager,
                                  final EmailService emailService, final QuizManager quizManager,
-                                 final GroupManager groupManager, final PropertiesLoader properties) {
+                                 final GroupManager groupManager, final AbstractConfigLoader properties) {
         this.quizAssignmentPersistenceManager = quizAssignmentPersistenceManager;
         this.quizManager = quizManager;
         this.emailService = emailService;

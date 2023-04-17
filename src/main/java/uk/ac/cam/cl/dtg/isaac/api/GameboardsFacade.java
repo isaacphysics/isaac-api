@@ -45,7 +45,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.Consumes;
@@ -117,7 +117,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
      *            - for updating badge information.
      */
     @Inject
-    public GameboardsFacade(final PropertiesLoader properties, final ILogManager logManager,
+    public GameboardsFacade(final AbstractConfigLoader properties, final ILogManager logManager,
                             final GameManager gameManager, final QuestionManager questionManager,
                             final UserAccountManager userManager, final UserAssociationManager associationManager,
                             final UserBadgeManager userBadgeManager, final FastTrackManger fastTrackManger) {

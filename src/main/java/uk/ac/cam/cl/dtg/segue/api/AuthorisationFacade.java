@@ -42,7 +42,6 @@ import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.Consumes;
@@ -56,6 +55,8 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -93,9 +94,9 @@ public class AuthorisationFacade extends AbstractSegueFacade {
      *            - so that we can prevent overuse of protected resources.
      */
     @Inject
-    public AuthorisationFacade(final PropertiesLoader properties, final UserAccountManager userManager,
-            final ILogManager logManager, final UserAssociationManager associationManager, final GroupManager groupManager,
-            final IMisuseMonitor misuseMonitor) {
+    public AuthorisationFacade(final AbstractConfigLoader properties, final UserAccountManager userManager,
+                               final ILogManager logManager, final UserAssociationManager associationManager, final GroupManager groupManager,
+                               final IMisuseMonitor misuseMonitor) {
         super(properties, logManager);
         this.userManager = userManager;
         this.associationManager = associationManager;

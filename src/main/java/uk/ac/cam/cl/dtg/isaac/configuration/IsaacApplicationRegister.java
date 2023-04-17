@@ -43,7 +43,7 @@ import uk.ac.cam.cl.dtg.segue.api.monitors.AuditMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.PerformanceMonitor;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -135,7 +135,7 @@ public class IsaacApplicationRegister extends Application {
      * Configure and setup Swagger (advertises api endpoints via app_root/swagger.json).
      */
     private void setupSwaggerApiAdvertiser(final ServletConfig servletConfig) {
-        PropertiesLoader propertiesLoader = injector.getInstance(PropertiesLoader.class);
+        AbstractConfigLoader propertiesLoader = injector.getInstance(AbstractConfigLoader.class);
         String hostName = propertiesLoader.getProperty(HOST_NAME);
         String httpScheme;
         if (hostName.contains("localhost")) {

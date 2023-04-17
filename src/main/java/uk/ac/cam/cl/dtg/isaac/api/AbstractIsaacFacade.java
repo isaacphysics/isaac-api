@@ -17,7 +17,7 @@ package uk.ac.cam.cl.dtg.isaac.api;
 
 import uk.ac.cam.cl.dtg.segue.api.AbstractSegueFacade;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 /**
  * Class that all IsaacFacades can inherit from.
@@ -32,7 +32,7 @@ public class AbstractIsaacFacade extends AbstractSegueFacade {
      * @param logManager
      *            - log manager to support logging user actions.
      */
-    public AbstractIsaacFacade(final PropertiesLoader properties, final ILogManager logManager) {
+    public AbstractIsaacFacade(final AbstractConfigLoader properties, final ILogManager logManager) {
         super(properties, logManager);
     }
 }

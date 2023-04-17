@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import com.google.inject.Inject;
 
@@ -37,7 +37,7 @@ public class SegueLoginMisuseHandler implements IMisuseHandler {
     public static final Integer HARD_THRESHOLD = 10;
     public static final Integer ACCOUNTING_INTERVAL = Constants.NUMBER_SECONDS_IN_TEN_MINUTES;
 
-    private PropertiesLoader properties;
+    private AbstractConfigLoader properties;
     private EmailManager emailManager;
 
     /**
@@ -47,7 +47,7 @@ public class SegueLoginMisuseHandler implements IMisuseHandler {
      *            - so that we can look up properties set.
      */
     @Inject
-    public SegueLoginMisuseHandler(final EmailManager emailManager, final PropertiesLoader properties) {
+    public SegueLoginMisuseHandler(final EmailManager emailManager, final AbstractConfigLoader properties) {
         this.properties = properties;
         this.emailManager = emailManager;
     }

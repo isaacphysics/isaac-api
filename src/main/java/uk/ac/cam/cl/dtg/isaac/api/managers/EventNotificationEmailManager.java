@@ -25,7 +25,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.DateRangeFilterInstruction;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.time.ZonedDateTime;
 import java.util.Arrays;
@@ -42,7 +42,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class EventNotificationEmailManager {
     private static final Logger log = LoggerFactory.getLogger(EventNotificationEmailManager.class);
 
-    private final PropertiesLoader properties;
+    private final AbstractConfigLoader properties;
     private final GitContentManager contentManager;
     private final EventBookingManager bookingManager;
     private final UserAccountManager userAccountManager;
@@ -55,7 +55,7 @@ public class EventNotificationEmailManager {
      * jobdata context provided.
      */
     @Inject
-    public EventNotificationEmailManager(final PropertiesLoader properties,
+    public EventNotificationEmailManager(final AbstractConfigLoader properties,
                                          final GitContentManager contentManager,
                                          final EventBookingManager bookingManager,
                                          final UserAccountManager userAccountManager,

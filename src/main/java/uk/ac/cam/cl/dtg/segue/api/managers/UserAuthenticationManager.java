@@ -56,7 +56,7 @@ import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 
 import jakarta.annotation.Nullable;
@@ -90,7 +90,7 @@ public class UserAuthenticationManager {
     private static final Logger log = LoggerFactory.getLogger(UserAuthenticationManager.class);
     private static final String HMAC_SHA_ALGORITHM = "HmacSHA256";
 
-    private final PropertiesLoader properties;
+    private final AbstractConfigLoader properties;
     private final IUserDataManager database;
     private final EmailManager emailManager;
     private final ObjectMapper serializationMapper;
@@ -111,7 +111,7 @@ public class UserAuthenticationManager {
      */
     @Inject
     public UserAuthenticationManager(final IUserDataManager database,
-                                     final PropertiesLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
+                                     final AbstractConfigLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
                                      final EmailManager emailQueue) {
         Validate.notNull(properties.getProperty(HMAC_SALT));
         Validate.notNull(properties.getProperty(SESSION_EXPIRY_SECONDS_DEFAULT));

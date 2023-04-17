@@ -22,7 +22,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 public class IPQuestionAttemptMisuseHandler implements IMisuseHandler {
 
@@ -32,7 +32,7 @@ public class IPQuestionAttemptMisuseHandler implements IMisuseHandler {
     private static final Integer HARD_THRESHOLD = 240;  // One every fifteen seconds for an hour; far too high!
     private static final Integer ACCOUNTING_INTERVAL = Constants.NUMBER_SECONDS_IN_ONE_HOUR;
 
-    private PropertiesLoader properties;
+    private AbstractConfigLoader properties;
     private EmailManager emailManager;
 
     /**
@@ -42,7 +42,7 @@ public class IPQuestionAttemptMisuseHandler implements IMisuseHandler {
      *            - so that we can look up properties set.
      */
     @Inject
-    public IPQuestionAttemptMisuseHandler(final EmailManager emailManager, final PropertiesLoader properties) {
+    public IPQuestionAttemptMisuseHandler(final EmailManager emailManager, final AbstractConfigLoader properties) {
         this.properties = properties;
         this.emailManager = emailManager;
     }

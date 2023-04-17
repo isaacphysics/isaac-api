@@ -45,7 +45,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.Consumes;
@@ -100,7 +100,7 @@ public class GroupsFacade extends AbstractSegueFacade {
      * @param associationsManager - so we can decide what information is allowed to be exposed.
      */
     @Inject
-    public GroupsFacade(final PropertiesLoader properties, final UserAccountManager userManager,
+    public GroupsFacade(final AbstractConfigLoader properties, final UserAccountManager userManager,
                         final ILogManager logManager, AssignmentManager assignmentManager,
                         final GameManager gameManager, final GroupManager groupManager,
                         final UserAssociationManager associationsManager,

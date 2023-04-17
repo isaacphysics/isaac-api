@@ -27,7 +27,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IPasswordDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
@@ -48,7 +48,7 @@ public class SegueLocalAuthenticatorTest {
 
     private IUserDataManager userDataManager;
     private IPasswordDataManager passwordDataManager;
-    private PropertiesLoader propertiesLoader;
+    private AbstractConfigLoader propertiesLoader;
 
     private ISegueHashingAlgorithm preferredAlgorithm = new SegueSCryptv1();
     private ISegueHashingAlgorithm oldAlgorithm1 = new SeguePBKDF2v1();
@@ -72,7 +72,7 @@ public class SegueLocalAuthenticatorTest {
 	public final void setUp() throws Exception {
 		this.userDataManager = createMock(IUserDataManager.class);
 		this.passwordDataManager = createMock(IPasswordDataManager.class);
-		this.propertiesLoader = createMock(PropertiesLoader.class);
+		this.propertiesLoader = createMock(AbstractConfigLoader.class);
 	}
 
 	/**

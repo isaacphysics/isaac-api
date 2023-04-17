@@ -29,7 +29,6 @@ import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -40,6 +39,8 @@ import jakarta.ws.rs.core.EntityTag;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -66,7 +67,7 @@ public class GlossaryFacade extends AbstractSegueFacade {
      * @param logManager     - for logging events using the logging api.
      */
     @Inject
-    public GlossaryFacade(final PropertiesLoader properties, final GitContentManager contentManager,
+    public GlossaryFacade(final AbstractConfigLoader properties, final GitContentManager contentManager,
                           @Named(CONTENT_INDEX) final String contentIndex,
                           final ILogManager logManager) {
         super(properties, logManager);

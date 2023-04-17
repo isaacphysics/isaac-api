@@ -33,65 +33,52 @@ import com.google.inject.Inject;
  * 
  * @author Stephen Cummins
  */
-public class PropertiesLoader {
+public class PropertiesLoader extends AbstractConfigLoader {
     private static final Logger log = LoggerFactory.getLogger(PropertiesLoader.class);
 
     private final Properties loadedProperties;
-    private final String propertiesFile;
     private Date lastRefreshed;
 
     /**
      * This constructor will give attempt to read the contents of the file specified and load each key value pair into
      * memory.
      * 
-     * @param propertiesFile
+     * @param configPath
      *            - the location of the properties file.
      * @throws IOException
      *             - if we cannot read the file for whatever reason.
      */
     @Inject
-    public PropertiesLoader(final String propertiesFile) throws IOException {
+    public PropertiesLoader(final String configPath) throws IOException {
+        super(configPath);
         this.loadedProperties = new Properties();
-        this.propertiesFile = propertiesFile;
-        Validate.notBlank(propertiesFile, "Properties file cannot be null");
 
-        loadProperties();
+        loadConfig();
     }
 
     /**
-     * Attempt to retrieve a property value from the registered propertiesFile.
+     * Attempt to retrieve a property value from the registered configPath.
      * 
      * @param key
      *            - that the property is listed under.
      * @return value as a String
      */
     public String getProperty(final String key) {
-        Validate.notBlank(propertiesFile, "Property key requested cannot be null");
+        Validate.notBlank(configPath, "Property key requested cannot be null");
 
         String value = loadedProperties.getProperty(key);
 
         if (null == value) {
-            log.warn("Failed to resolve requested property with key: " + key + ", " + propertiesFile);
+            log.warn("Failed to resolve requested property with key: " + key + ", " + this.configPath);
         }
 
         return value;
     }
 
-    public Set<String> stringPropertyNames() {
-        Validate.notBlank(propertiesFile, "Property file cannot be null");
+    public Set<String> getKeys() {
+        Validate.notBlank(configPath, "Property file cannot be null");
 
         return loadedProperties.stringPropertyNames();
-    }
-
-    /**
-     * triggerPropertiesRefresh.
-     * 
-     * @return
-     * @throws IOException
-     *             - if we cannot load the properties file.
-     */
-    public synchronized void triggerPropertiesRefresh() throws IOException {
-        loadProperties();
     }
 
     /**
@@ -101,15 +88,6 @@ public class PropertiesLoader {
      */
     protected Properties getLoadedProperties() {
         return loadedProperties;
-    }
-
-    /**
-     * Gets the propertiesFile.
-     * 
-     * @return the propertiesFile
-     */
-    protected String getPropertiesFile() {
-        return propertiesFile;
     }
 
     /**
@@ -125,18 +103,18 @@ public class PropertiesLoader {
      * @throws IOException
      *             if we cannot read the properties file.
      */
-    private synchronized void loadProperties() throws IOException {
+    protected synchronized void loadConfig() throws IOException {
         // check to see if this a resource or a file somewhere else
-        if (getClass().getClassLoader().getResourceAsStream(this.propertiesFile) == null) {
-            File file = new File(this.propertiesFile);
+        if (getClass().getClassLoader().getResourceAsStream(this.configPath) == null) {
+            File file = new File(this.configPath);
             try (FileInputStream ioStream = new FileInputStream(file)) {
                 // then we have to look further afield
                 loadedProperties.load(ioStream);
             }
         } else {
-            loadedProperties.load(getClass().getClassLoader().getResourceAsStream(this.propertiesFile));
+            loadedProperties.load(getClass().getClassLoader().getResourceAsStream(this.configPath));
         }
         lastRefreshed = new Date();
-        log.debug("Properties file read successfully " + propertiesFile);
+        log.debug("Properties file read successfully " + configPath);
     }
 }

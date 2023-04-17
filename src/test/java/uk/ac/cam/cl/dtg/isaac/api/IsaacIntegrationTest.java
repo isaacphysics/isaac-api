@@ -49,7 +49,6 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.GroupManagerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.InMemoryMisuseMonitor;
-import uk.ac.cam.cl.dtg.segue.api.monitors.TokenOwnerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
@@ -80,12 +79,14 @@ import uk.ac.cam.cl.dtg.segue.dao.users.PgUsers;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import uk.ac.cam.cl.dtg.util.YamlLoader;
+
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
@@ -119,7 +120,7 @@ public abstract class IsaacIntegrationTest {
     protected static HttpSession httpSession;
     protected static PostgreSQLContainer postgres;
     protected static ElasticsearchContainer elasticsearch;
-    protected static PropertiesLoader properties;
+    protected static AbstractConfigLoader properties;
     protected static Map<String, String> globalTokens;
     protected static PostgresSqlDb postgresSqlDb;
     protected static ElasticSearchProvider elasticSearchProvider;
@@ -219,7 +220,7 @@ public abstract class IsaacIntegrationTest {
         }
 
         try {
-            properties = new PropertiesLoader(configLocation);
+            properties = new YamlLoader(configLocation);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
