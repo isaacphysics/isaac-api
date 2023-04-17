@@ -149,17 +149,7 @@ public class IsaacNumericValidator implements IValidator {
 
             QuantityValidationResponse bestResponse;
 
-            // Step 1 - exact (string based) matching first - handles case where editors enter two mathematically
-            // equivalent known answers - won't check for sig figs.
-            bestResponse = this.exactStringMatch(isaacNumericQuestion, answerFromUser);
-
-            // Only return this if the answer is incorrect - as we don't know if the correct answers have always been
-            // specified in the correct # of sig figs.
-            if (bestResponse != null && !bestResponse.isCorrect()) {
-                return useDefaultFeedbackIfNecessary(isaacNumericQuestion, bestResponse);
-            }
-
-            // Step 2 - then do correct answer numeric equivalence checking.
+            // Step 1 - Do correct answer numeric equivalence checking.
             if (shouldValidateWithUnits) {
                 bestResponse = this.validateWithUnits(isaacNumericQuestion, answerFromUser);
             } else {
@@ -175,7 +165,7 @@ public class IsaacNumericValidator implements IValidator {
                 return useDefaultFeedbackIfNecessary(isaacNumericQuestion, bestResponse);
             }
 
-            // Step 3 - do sig fig checking (unless specified otherwise by question):
+            // Step 2 - do sig fig checking (unless specified otherwise by question):
             if (!isaacNumericQuestion.getDisregardSignificantFigures()) {
                 if (tooFewSignificantFigures(answerFromUser.getValue(), significantFiguresMin)) {
                     // If too few sig figs then give feedback about this.
@@ -517,50 +507,6 @@ public class IsaacNumericValidator implements IValidator {
         SigFigResult sigFigsFromUser = extractSignificantFigures(valueToCheck);
 
         return sigFigsFromUser.sigFigsMin > maxAllowedSigFigs;
-    }
-
-    /**
-     * To save validation effort, if we have string equality between the submitted value and an answer then we
-     * can be sure this match is the best possible.
-     *
-     * @param isaacNumericQuestion - question content object
-     * @param answerFromUser       - response form the user
-     * @return either a QuestionValidationResponse if there is an exact String match or null if no string match.
-     */
-    private QuantityValidationResponse exactStringMatch(final IsaacNumericQuestion isaacNumericQuestion,
-                                                        final Quantity answerFromUser) {
-
-        log.debug("\t[exactStringMatch]");
-
-        for (Choice c : isaacNumericQuestion.getChoices()) {
-            if (c instanceof Quantity) {
-                Quantity quantityFromQuestion = (Quantity) c;
-
-                StringBuilder userStringForComparison = new StringBuilder();
-                userStringForComparison.append(answerFromUser.getValue().trim());
-                if (isaacNumericQuestion.getRequireUnits()) {
-                    userStringForComparison.append(answerFromUser.getUnits());
-                }
-
-                StringBuilder questionAnswerString = new StringBuilder();
-                questionAnswerString.append(quantityFromQuestion.getValue().trim());
-                if (isaacNumericQuestion.getRequireUnits()) {
-                    questionAnswerString.append(quantityFromQuestion.getUnits());
-                }
-
-                if (questionAnswerString.toString().trim().equals(userStringForComparison.toString().trim())) {
-                    Boolean unitFeedback = null;
-                    if (isaacNumericQuestion.getRequireUnits()) {
-                        unitFeedback = quantityFromQuestion.getUnits().equals(answerFromUser.getUnits());
-                    }
-
-                    return new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
-                            quantityFromQuestion.isCorrect(), (Content) quantityFromQuestion.getExplanation(),
-                            quantityFromQuestion.isCorrect(), unitFeedback, new Date());
-                }
-            }
-        }
-        return null;
     }
 
     /**
