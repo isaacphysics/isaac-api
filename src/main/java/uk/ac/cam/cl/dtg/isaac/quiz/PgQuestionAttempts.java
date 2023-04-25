@@ -54,7 +54,7 @@ import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdF
  */
 public class PgQuestionAttempts implements IQuestionAttemptManager {
     private static final Logger log = LoggerFactory.getLogger(PgQuestionAttempts.class);
-    private static final int MAX_PAGE_IDS_TO_MATCH = 200;
+    private static final int MAX_PAGE_IDS_TO_MATCH = 100;
             
     private final PostgresSqlDb database;
     private final ObjectMapper objectMapper;
