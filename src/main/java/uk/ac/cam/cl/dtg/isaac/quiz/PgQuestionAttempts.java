@@ -325,8 +325,9 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
                 }
 
                 for (String pageId : uniquePageIds) {
-                    // Using LIKE matching on part IDs, so add wildcard to each page ID:
-                    pst.setString(index++, pageId + "%");
+                    // Using LIKE matching on part IDs; add % wildcard to end of each page ID, and ensure any underscores
+                    // in the ID are escaped and not treated as wildcard characters themselves:
+                    pst.setString(index++, pageId.replace("_", "\\_") + "%");
                 }
 
                 try (ResultSet results = pst.executeQuery()) {
