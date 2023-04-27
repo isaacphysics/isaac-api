@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.api.services;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import feign.FeignException;
+import joptsimple.internal.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
@@ -78,8 +79,11 @@ public class EmailService {
     private static final DateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yy");
 
     private boolean userInMailGunBetaList(final RegisteredUserDTO user) {
-        String[] ids = properties.getProperty(MAILGUN_EMAILS_BETA_OPT_IN).split(",");
-        return Arrays.stream(ids).anyMatch(id -> id.equals(user.getId().toString()));
+        String optInIds = properties.getProperty(MAILGUN_EMAILS_BETA_OPT_IN);
+        if (Strings.isNullOrEmpty(optInIds)) {
+            return false;
+        }
+        return Arrays.stream(optInIds.split(",")).anyMatch(id -> id.equals(user.getId().toString()));
     }
 
     public void sendAssignmentEmailToGroup(final IAssignmentLike assignment, final HasTitleOrId on, final Map<String, String> tokenToValueMapping, final String templateName) throws SegueDatabaseException {

@@ -24,6 +24,7 @@ import com.mailgun.model.message.MessageResponse;
 import com.mailgun.model.templates.TemplateRequest;
 import com.mailgun.model.templates.TemplateWithMessageResponse;
 import feign.FeignException;
+import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.common.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,7 +76,9 @@ public class MailGunEmailManager {
         }
     }
 
-    // Will throw a FeignException object if the request fails, WHICH IT WILL if a template with the given name already exists
+    // TODO currently just a proof of concept, this function is not used anywhere.
+    // Will throw a FeignException object if the request fails, WHICH IT WILL if a template with the given name
+    // already exists
     public TemplateWithMessageResponse createTemplate(final String template, final IsaacMailGunTemplate templateType,
                                                       final String description)
             throws FeignException {
@@ -132,8 +135,11 @@ public class MailGunEmailManager {
                     }
                     return false;
                 }).collect(
+                    // Produce a map from email -> user variables (variables to populate the MailGun template with)
                     Collectors.toMap(
                         RegisteredUserDTO::getEmail,
+                        // This just concatenates the user email and name onto the (possibly) existing user variables,
+                        // so that the name and email can always be referred to in MailGun email templates.
                         u -> Stream.of(
                                 ImmutableMap.of(
                                 "email", u.getEmail(),
@@ -141,26 +147,29 @@ public class MailGunEmailManager {
                                 ),
                                 userVariables.getOrDefault(u.getId(), ImmutableMap.of())
                         ).flatMap(m -> m.entrySet().stream())
+                        // Turn the above stream of (key, value) pairs (the user variables) into a map, discarding
+                        // entries with duplicate keys (that's what the third argument is for), which shouldn't happen
+                        // anyway since users have unique emails
                         .collect(Collectors.toMap(Entry::getKey, Entry::getValue, (e1, e2) -> e1))
                     )
                 );
 
-        String fromAddress = emailContentTemplate.getOverrideFromAddress();
-        if (null == fromAddress || fromAddress.isEmpty()) {
-            fromAddress = globalProperties.getProperty(Constants.MAILGUN_FROM_ADDRESS);
-        }
-        String fromName = emailContentTemplate.getOverrideFromName();
-        if (null == fromName || fromName.isEmpty()) {
-            fromName = globalProperties.getProperty(Constants.MAIL_NAME);
-        }
-        String replyToAddress = emailContentTemplate.getReplyToEmailAddress();
-        if (null == replyToAddress || replyToAddress.isEmpty()) {
-            replyToAddress = globalProperties.getProperty(Constants.REPLY_TO_ADDRESS);
-        }
-        String replyToName = emailContentTemplate.getReplyToName();
-        if (replyToName == null || replyToName.isEmpty()) {
-            replyToName = globalProperties.getProperty(Constants.MAIL_NAME);
-        }
+        String fromAddress = StringUtils.defaultIfBlank(
+                emailContentTemplate.getOverrideFromAddress(),
+                globalProperties.getProperty(Constants.MAILGUN_FROM_ADDRESS)
+        );
+        String fromName = StringUtils.defaultIfBlank(
+                emailContentTemplate.getOverrideFromName(),
+                globalProperties.getProperty(Constants.MAIL_NAME)
+        );
+        String replyToAddress = StringUtils.defaultIfBlank(
+                emailContentTemplate.getReplyToEmailAddress(),
+                globalProperties.getProperty(Constants.REPLY_TO_ADDRESS)
+        );
+        String replyToName = StringUtils.defaultIfBlank(
+                emailContentTemplate.getReplyToName(),
+                globalProperties.getProperty(Constants.MAIL_NAME)
+        );
         String replyTo = replyToName + " <" + replyToAddress + "> ";
         String from = fromName + " <" + fromAddress + "> ";
 
