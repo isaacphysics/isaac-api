@@ -46,6 +46,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingUpdateException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventDeadlineException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventGroupReservationLimitException;
+import uk.ac.cam.cl.dtg.isaac.api.managers.EventIsCancelledException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventIsFullException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventIsNotFullException;
 import uk.ac.cam.cl.dtg.isaac.dos.EventStatus;
@@ -368,7 +369,6 @@ public class EventsFacade extends AbstractIsaacFacade {
     @GET
     @Path("/{event_id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Get details about a specific event.")
     public final Response getEvent(@Context final HttpServletRequest request,
             @PathParam("event_id") final String eventId) {
@@ -399,7 +399,6 @@ public class EventsFacade extends AbstractIsaacFacade {
     @GET
     @Path("/bookings/count")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Count all event bookings.")
     public final Response getCountForAllEventBookings(@Context final HttpServletRequest request) {
         try {
@@ -430,7 +429,6 @@ public class EventsFacade extends AbstractIsaacFacade {
     @GET
     @Path("/bookings/{booking_id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Get details about an event booking.")
     public final Response getEventBookingsById(@Context final HttpServletRequest request,
                                                @PathParam("booking_id") final String bookingId) {
@@ -470,7 +468,6 @@ public class EventsFacade extends AbstractIsaacFacade {
     @POST
     @Path("{event_id}/bookings/{user_id}/promote")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Move a user from an event waiting list, reservation or cancellation to a confirmed booking.")
     public final Response promoteBooking(@Context final HttpServletRequest request,
                                          @PathParam("event_id") final String eventId,
@@ -514,6 +511,8 @@ public class EventsFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST,
                 "The user doesn't exist, so unable to book them onto an event", e)
                 .toResponse();
+        } catch (EventIsCancelledException e) {
+            return SegueErrorResponse.getBadRequestResponse("The event is cancelled, so no bookings are being accepted.");
         }
     }
 
@@ -529,7 +528,6 @@ public class EventsFacade extends AbstractIsaacFacade {
     @GET
     @Path("{event_id}/bookings")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "List event bookings for a specific event.")
     public final Response adminGetEventBookingByEventId(@Context final HttpServletRequest request,
             @PathParam("event_id") final String eventId) {
@@ -564,7 +562,6 @@ public class EventsFacade extends AbstractIsaacFacade {
     @GET
     @Path("{event_id}/bookings/for_group/{group_id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "List event bookings for a specific event and group.")
     public final Response getEventBookingForGivenGroup(@Context final HttpServletRequest request,
                                                        @PathParam("event_id") final String eventId,
@@ -620,7 +617,6 @@ public class EventsFacade extends AbstractIsaacFacade {
     @GET
     @Path("{event_id}/groups_bookings")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "List event bookings for a specific event")
     public final Response getEventBookingForAllGroups(@Context final HttpServletRequest request,
                                                        @PathParam("event_id") final String eventId) {
@@ -662,7 +658,6 @@ public class EventsFacade extends AbstractIsaacFacade {
     @GET
     @Path("{event_id}/bookings/download")
     @Produces("text/csv")
-    @GZIP
     @Operation(summary = "Download event attendance csv.")
     public Response getEventBookingCSV(@Context final HttpServletRequest request,
                                                    @PathParam("event_id") final String eventId) {
@@ -790,7 +785,6 @@ public class EventsFacade extends AbstractIsaacFacade {
     @POST
     @Path("{event_id}/bookings/{user_id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Create an event booking for a user.")
     public final Response createBookingForGivenUser(@Context final HttpServletRequest request,
                                                     @PathParam("event_id") final String eventId,
@@ -837,6 +831,8 @@ public class EventsFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST,
                 "User already booked on this event. Unable to create a duplicate booking.")
                 .toResponse();
+        } catch (EventIsCancelledException e) {
+            return SegueErrorResponse.getBadRequestResponse("The event is cancelled, so no bookings are being accepted.");
         }
     }
 
@@ -928,6 +924,8 @@ public class EventsFacade extends AbstractIsaacFacade {
                     .toResponse();
         } catch (NoUserException e) {
             return SegueErrorResponse.getResourceNotFoundResponse("Unable to locate one of the users specified.");
+        } catch (EventIsCancelledException e) {
+            return SegueErrorResponse.getBadRequestResponse("The event is cancelled, so no bookings are being accepted.");
         }
     }
 
@@ -944,7 +942,6 @@ public class EventsFacade extends AbstractIsaacFacade {
     @POST
     @Path("{event_id}/reservations/cancel")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Cancel a reservations on an event for a set of users.")
     public final Response cancelReservations(@Context final HttpServletRequest request,
                                         @PathParam("event_id") final String eventId,
@@ -1020,7 +1017,6 @@ public class EventsFacade extends AbstractIsaacFacade {
     @POST
     @Path("{event_id}/bookings")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Create an event booking for the current user.")
     public final Response createBookingForMe(@Context final HttpServletRequest request,
                                              @PathParam("event_id") final String eventId,
@@ -1034,6 +1030,11 @@ public class EventsFacade extends AbstractIsaacFacade {
                     .toResponse();
             }
 
+            if (EventStatus.CANCELLED.equals(event.getEventStatus())) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "Sorry, this event is cancelled.")
+                        .toResponse();
+            }
+
             if (EventStatus.WAITING_LIST_ONLY.equals(event.getEventStatus())) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "Sorry booking for this event is restricted. You can only be added to a waiting list.")
                         .toResponse();
@@ -1042,6 +1043,16 @@ public class EventsFacade extends AbstractIsaacFacade {
             if (bookingManager.isUserBooked(eventId, user.getId())) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "You are already booked on this event.")
                     .toResponse();
+            }
+
+            // Reservation-only events can only be booked by teachers, reserved by the group manager (teacher), or
+            // promoted from a reservation to a booking by the reserved student.
+            if (EventStatus.RESERVATION_ONLY.equals(event.getEventStatus())
+                    && !bookingManager.hasBookingWithStatus(eventId, user.getId(), BookingStatus.RESERVED)
+                    && !isUserTeacherOrAbove(userManager, user)
+            ) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "Sorry booking for this event is restricted, unless you are a teacher. You can only be reserved a place by your group manager.")
+                        .toResponse();
             }
 
             // reservedBy is null. If there is a reservation for me, it will be updated to CONFIRMED.
@@ -1077,6 +1088,8 @@ public class EventsFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST,
                 "The booking deadline for this event has passed. No more bookings are being accepted.")
                 .toResponse();
+        } catch (EventIsCancelledException e) {
+            return SegueErrorResponse.getBadRequestResponse("The event is cancelled, so no bookings are being accepted.");
         }
     }
 
@@ -1092,7 +1105,6 @@ public class EventsFacade extends AbstractIsaacFacade {
     @POST
     @Path("{event_id}/waiting_list")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Add the current user to an event waiting list.")
     public final Response addMeToWaitingList(@Context final HttpServletRequest request,
                                              @PathParam("event_id") final String eventId,
@@ -1133,6 +1145,8 @@ public class EventsFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.CONFLICT,
                 "There are spaces on this event and the deadline has not passed. Please use the request booking endpoint to book you on to it.")
                 .toResponse();
+        } catch (EventIsCancelledException e) {
+            return SegueErrorResponse.getBadRequestResponse("The event is cancelled, so no bookings are being accepted.");
         }
     }
 
@@ -1148,11 +1162,10 @@ public class EventsFacade extends AbstractIsaacFacade {
     @DELETE
     @Path("{event_id}/bookings/cancel")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Cancel the current user's booking on an event.")
     public final Response cancelBooking(@Context final HttpServletRequest request,
                                         @PathParam("event_id") final String eventId) {
-                                    return this.cancelBooking(request, eventId, null);
+        return this.cancelBooking(request, eventId, null);
     }
 
     /**
@@ -1169,7 +1182,6 @@ public class EventsFacade extends AbstractIsaacFacade {
     @DELETE
     @Path("{event_id}/bookings/{user_id}/cancel")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Cancel a user's booking on an event.")
     public final Response cancelBooking(@Context final HttpServletRequest request,
                                         @PathParam("event_id") final String eventId,
@@ -1245,7 +1257,6 @@ public class EventsFacade extends AbstractIsaacFacade {
     @POST
     @Path("{event_id}/bookings/{user_id}/resend_confirmation")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Resend an event booking confirmation to a user.")
     public final Response resendEventEmail(@Context final HttpServletRequest request,
                                            @PathParam("event_id") final String eventId,
@@ -1277,6 +1288,8 @@ public class EventsFacade extends AbstractIsaacFacade {
                     .toResponse();
         } catch (NoUserException e) {
             return SegueErrorResponse.getResourceNotFoundResponse("Unable to locate user specified.");
+        } catch (EventIsCancelledException e) {
+            return SegueErrorResponse.getBadRequestResponse("Event is cancelled, cannot resent event emails.");
         }
     }
 
@@ -1296,7 +1309,6 @@ public class EventsFacade extends AbstractIsaacFacade {
     @DELETE
     @Path("{event_id}/bookings/{user_id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Erase a user's booking on an event.",
                   description = "This method removes the booking entirely, rather than recording the booking as cancelled.")
     public final Response deleteBooking(@Context final HttpServletRequest request,
@@ -1354,7 +1366,6 @@ public class EventsFacade extends AbstractIsaacFacade {
     @POST
     @Path("{event_id}/bookings/{user_id}/record_attendance")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Update the attendance status of a user for an event.")
     public final Response recordEventAttendance(@Context final HttpServletRequest request,
                                                 @PathParam("event_id") final String eventId,
@@ -1405,6 +1416,8 @@ public class EventsFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST,
                     "The user doesn't exist, so unable to book them onto an event", e)
                     .toResponse();
+        } catch (EventIsCancelledException e) {
+            return SegueErrorResponse.getBadRequestResponse("The event is cancelled, event attendance cannot be recorded.");
         }
     }
 

@@ -994,9 +994,9 @@ public class ContentIndexer {
             }
         }
 
-        // Find quantities with values that cannot be parsed as numbers.
         if (content instanceof IsaacNumericQuestion) {
             IsaacNumericQuestion q = (IsaacNumericQuestion) content;
+            // Find quantities with values that cannot be parsed as numbers.
             for (Choice choice : q.getChoices()) {
                 if (choice instanceof Quantity) {
                     Quantity quantity = (Quantity) choice;
@@ -1022,9 +1022,29 @@ public class ContentIndexer {
                             + choice.getValue() + "). It must be deleted and a new Quantity Choice created.", indexProblemCache);
                 }
             }
+            // Give warning if we have both required and display unit set
             if (q.getRequireUnits() && (null != q.getDisplayUnit() && !q.getDisplayUnit().isEmpty())) {
                 this.registerContentProblem(content, "Numeric Question: " + q.getId() + " has a displayUnit set but also requiresUnits!"
                         + " Units will be ignored for this question!", indexProblemCache);
+            }
+            // Verify that significant figure bounds are correct
+            if (!q.getDisregardSignificantFigures()) {
+                if (null == q.getSignificantFiguresMin() ^ null == q.getSignificantFiguresMax()) {
+                    // Both bounds need to be present, or both not present
+                    this.registerContentProblem(content, "Numeric Question: " + q.getId() + " has only one "
+                            + "significant figure bound, and may be unanswerable as a result. Please add both upper "
+                            + "and lower significant figure bounds, or omit both.", indexProblemCache);
+                } else if (null != q.getSignificantFiguresMin() && null != q.getSignificantFiguresMax()) {
+                    // Upper bound must be above or equal to the lower bound, and both bounds must be more than 1
+                    // (0 significant figures makes no sense for example)
+                    if (q.getSignificantFiguresMin() < 1 || q.getSignificantFiguresMax() < 1
+                            || q.getSignificantFiguresMax() < q.getSignificantFiguresMin()) {
+                        this.registerContentProblem(content, "Numeric Question: " + q.getId() + " has broken "
+                                + "significant figure rules! The upper bound may be below the lower bound, or "
+                                + "either bound might be less than 1 - the question will be unanswerable unless "
+                                + "this is fixed.", indexProblemCache);
+                    }
+                }
             }
         }
 

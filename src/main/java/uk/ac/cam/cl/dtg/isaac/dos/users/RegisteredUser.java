@@ -37,6 +37,8 @@ public class RegisteredUser extends AbstractSegueUser {
     private Date registrationDate;
     private String schoolId;
     private String schoolOther;
+    private String countryCode;
+
     private List<UserContext> registeredContexts;
     private Date registeredContextsLastConfirmed;
 
@@ -79,9 +81,13 @@ public class RegisteredUser extends AbstractSegueUser {
      */
     @JsonCreator
     public RegisteredUser(@JsonProperty("id") final Long id,
-            @JsonProperty("givenName") final String givenName, @JsonProperty("familyName") final String familyName,
-            @JsonProperty("email") final String email, @JsonProperty("role") final Role role,
-            @JsonProperty("dateOfBirth") final Date dateOfBirth, @JsonProperty("gender") final Gender gender,
+            @JsonProperty("givenName") final String givenName,
+            @JsonProperty("familyName") final String familyName,
+            @JsonProperty("email") final String email,
+            @JsonProperty("role") final Role role,
+            @JsonProperty("dateOfBirth") final Date dateOfBirth,
+            @JsonProperty("gender") final Gender gender,
+            @JsonProperty("countryCode") final String countryCode,
             @JsonProperty("registrationDate") final Date registrationDate,
             @JsonProperty("lastUpdated") final Date lastUpdated,
             @JsonProperty("emailToVerify") final String emailToVerify,
@@ -94,6 +100,7 @@ public class RegisteredUser extends AbstractSegueUser {
         this.role = role;
         this.dateOfBirth = dateOfBirth;
         this.gender = gender;
+        this.countryCode = countryCode;
         this.registrationDate = registrationDate;
         this.lastUpdated = lastUpdated;
         this.emailToVerify = emailToVerify;
@@ -256,6 +263,25 @@ public class RegisteredUser extends AbstractSegueUser {
     public final void setGender(final Gender gender) {
         this.gender = gender;
     }
+
+    /**
+     * Gets the country code.
+     *
+     * @return The country code
+     */
+    public final String getCountryCode() {
+        return countryCode;
+    }
+
+    /**
+     * Sets the country code.
+     *
+     * @param countryCode The country code to set
+     */
+    public final void setCountryCode(final String countryCode) {
+        this.countryCode = countryCode;
+    }
+
 
     /**
      * Gets the registrationDate.

@@ -174,6 +174,11 @@ public final class Constants {
     public static final String SESSION_TOKEN = "token";
 
     /**
+     *  Constant representing the validation on email addresses of users attempting to register.
+     */
+    public static final String RESTRICTED_SIGNUP_EMAIL_REGEX = "RESTRICTED_SIGNUP_EMAIL_REGEX";
+
+    /**
      * Constant representing the key for the HMAC Salt - used in HMAC calculations.
      */
     public static final String HMAC_SALT = "HMAC_SALT";
@@ -198,6 +203,7 @@ public final class Constants {
     public static final String MAILJET_API_SECRET = "MAILJET_API_SECRET";
     public static final String MAILJET_NEWS_LIST_ID = "MAILJET_NEWS_LIST_ID";
     public static final String MAILJET_EVENTS_LIST_ID = "MAILJET_EVENTS_LIST_ID";
+    public static final String MAILJET_LEGAL_LIST_ID = "MAILJET_LEGAL_LIST_ID";
 
     public static final String EVENT_PRE_POST_EMAILS = "EVENT_PRE_POST_EMAILS";
 
@@ -271,14 +277,11 @@ public final class Constants {
      */
     public static final String LINK_ACCOUNT_PARAM_NAME = "LINK_ACCOUNT_PARAM_NAME";
 
-    /**
-     * This constant is used for matching against url params to prevent CSRF.
-     */
     public static final String STATE_PARAM_NAME = "state";
+    public static final String CLIENT_ID_PARAM_NAME = "client_id";
+    public static final String CALLBACK_URI_PARAM_NAME = "redirect_uri";
+    public static final String SCOPE_PARAM_NAME = "scope";
 
-    /**
-     * This constant is used for matching against url params to prevent CSRF.
-     */
     public static final String OAUTH_TOKEN_PARAM_NAME = "oauth_token";
 
     // Google properties
@@ -297,6 +300,13 @@ public final class Constants {
     public static final String TWITTER_SECRET = "TWITTER_SECRET";
     public static final String TWITTER_CLIENT_ID = "TWITTER_CLIENT_ID";
     public static final String TWITTER_CALLBACK_URI = "TWITTER_CALLBACK_URI";
+
+    // Raspberry Pi properties
+    public static final String RASPBERRYPI_CLIENT_ID = "RASPBERRYPI_CLIENT_ID";
+    public static final String RASPBERRYPI_CLIENT_SECRET = "RASPBERRYPI_CLIENT_SECRET";
+    public static final String RASPBERRYPI_CALLBACK_URI = "RASPBERRYPI_CALLBACK_URI";
+    public static final String RASPBERRYPI_OAUTH_SCOPES = "RASPBERRYPI_OAUTH_SCOPES";
+    public static final String RASPBERRYPI_LOCAL_IDP_METADATA_PATH = "RASPBERRYPI_LOCAL_IDP_METADATA_PATH";
 
     // Local authentication specific stuff
     public static final String LOCAL_AUTH_EMAIL_FIELDNAME = "email";
@@ -374,6 +384,7 @@ public final class Constants {
         MERGE_USER,
         PASSWORD_RESET_REQUEST_RECEIVED,
         PASSWORD_RESET_REQUEST_SUCCESSFUL,
+        PROMOTE_GROUP_MANAGER_TO_OWNER,
         QUESTION_ATTEMPT_RATE_LIMITED,
         RELEASE_USER_ASSOCIATION,
         REMOVE_USER_FROM_GROUP,
@@ -552,6 +563,9 @@ public final class Constants {
     public enum SegueUserPreferences {
         EMAIL_PREFERENCE
     }
+
+    public static final String CUSTOM_COUNTRY_CODES = "CUSTOM_COUNTRY_CODES";
+    public static final String PRIORITY_COUNTRY_CODES = "PRIORITY_COUNTRY_CODES";
 
     /**
      * Private constructor to prevent this class being created.

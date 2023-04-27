@@ -111,8 +111,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     private final UserBadgeManager userBadgeManager;
     private final AssignmentService assignmentService;
 
-    private final List<String> bookTags = ImmutableList.of("phys_book_gcse", "physics_skills_14", "chemistry_16");
-
     private final String NOT_SHARING = "NOT_SHARING";
 
     /**
@@ -304,7 +302,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Path("/assign")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @Operation(summary = "List all assignments set by the current user if no group param specified.")
+    @Operation(summary = "List all assignments set or managed by the current user if no group param specified.")
     public Response getAssigned(@Context final HttpServletRequest request,
                                 @QueryParam("group") final Long groupIdOfInterest) {
         try {
@@ -1098,16 +1096,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     this.userBadgeManager.updateBadge(currentlyLoggedInUser,
                             UserBadgeManager.Badge.TEACHER_ASSIGNMENTS_SET, assignmentWithID.getId().toString());
 
-                    tagsLoop:
-                    for (String tag : bookTags) {
-                        for (GameboardItem item : gameboard.getContents()) {
-                            if (item.getTags().contains(tag)) {
-                                this.userBadgeManager.updateBadge(currentlyLoggedInUser,
-                                        UserBadgeManager.Badge.TEACHER_BOOK_PAGES_SET, assignmentWithID.getId().toString());
-                                break tagsLoop;
-                            }
-                        }
-                    }
                     // Assigning to this group was a success
                     assigmentStatuses.add(new AssignmentStatusDTO(assignmentWithID.getGroupId(), assignmentWithID.getId()));
                 } catch (DuplicateAssignmentException e) {
@@ -1157,7 +1145,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @DELETE
     @Path("/assign/{gameboard_id}/{group_id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Delete an assignment by board ID and group ID.")
     public Response deleteAssignment(@Context final HttpServletRequest request,
                                      @PathParam("gameboard_id") final String gameboardId, @PathParam("group_id") final Long groupId) {
@@ -1186,6 +1173,14 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     !GroupManager.isInAdditionalManagerList(assigneeGroup, currentlyLoggedInUser.getId())) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You are not the owner of the group or a manager. Unable to delete it.").toResponse();
+            }
+
+            // Check if user is additional manager, and if so if they are either the creator of the assignment or additional
+            // manager privileges are enabled
+            if (!assignmentToDelete.getOwnerUserId().equals(currentlyLoggedInUser.getId())
+                    && !GroupManager.hasAdditionalManagerPrivileges(assigneeGroup, currentlyLoggedInUser.getId())) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "You do not have permission to delete this assignment. Unable to delete it.").toResponse();
             }
 
             this.assignmentManager.deleteAssignment(assignmentToDelete);

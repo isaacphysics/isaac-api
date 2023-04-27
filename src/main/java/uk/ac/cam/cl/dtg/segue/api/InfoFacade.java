@@ -45,7 +45,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Objects;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_THIRTY_DAYS;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_APP_ENVIRONMENT;
 
@@ -284,9 +283,9 @@ public class InfoFacade extends AbstractSegueFacade {
     @GET
     @Path("quartz/ping")
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Check whether Quartz job scheduler is running.")
+    @Operation(summary = "Check whether Quartz job scheduler is currently running.")
     public Response pingQuartzScheduler() {
-        if (segueJobService.isStarted()) {
+        if (segueJobService.wasStarted() && !segueJobService.isShutdown()) {
             return Response.ok(ImmutableMap.of("success", true)).build();
         } else {
             return Response.ok(ImmutableMap.of("success", false)).build();

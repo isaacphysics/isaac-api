@@ -24,8 +24,6 @@ import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
 import java.util.ArrayList;
 import java.util.List;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES;
-
 /**
  * DO for isaacNumericQuestions.
  *
@@ -69,10 +67,7 @@ public class IsaacNumericQuestion extends IsaacQuestionBase {
      * 
      * @return the number of sig figs.
      */
-    public int getSignificantFiguresMin() {
-        if (null == significantFiguresMin) {
-            return NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES;
-        }
+    public Integer getSignificantFiguresMin() {
         return significantFiguresMin;
     }
 
@@ -91,10 +86,7 @@ public class IsaacNumericQuestion extends IsaacQuestionBase {
      *
      * @return the maximum allowed number of sig figs.
      */
-    public int getSignificantFiguresMax() {
-        if (null == significantFiguresMax) {
-            return NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES;
-        }
+    public Integer getSignificantFiguresMax() {
         return significantFiguresMax;
     }
 

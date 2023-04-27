@@ -29,10 +29,13 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import com.google.inject.util.Providers;
+import jakarta.annotation.Nullable;
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.SystemUtils;
+import org.apache.commons.lang3.Validate;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.quartz.SchedulerException;
 import org.reflections.Reflections;
@@ -68,6 +71,7 @@ import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicLogicValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.PgQuestionAttempts;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.api.managers.CountryLookupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.ExternalAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.IExternalAccountManager;
@@ -88,6 +92,7 @@ import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISecondFactorAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISegueHashingAlgorithm;
+import uk.ac.cam.cl.dtg.segue.auth.RaspberryPiOidcAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v1;
 import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v2;
@@ -149,6 +154,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -189,6 +195,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static SchoolListReader schoolListReader = null;
     private static AssignmentManager assignmentManager = null;
     private static IGroupObserver groupObserver = null;
+    private static CountryLookupManager countryLookupManager = null;
 
     private static Collection<Class<? extends ServletContextListener>> contextListeners;
     private static final Map<String, Reflections> reflections = com.google.common.collect.Maps.newHashMap();
@@ -279,6 +286,10 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
         this.bindConstantToProperty(Constants.API_METRICS_EXPORT_PORT, globalProperties);
 
+        // Additional countries
+        this.bindConstantToNullableProperty(Constants.CUSTOM_COUNTRY_CODES, globalProperties);
+        this.bindConstantToNullableProperty(Constants.PRIORITY_COUNTRY_CODES, globalProperties);
+
         this.bind(String.class).toProvider(() -> {
             // Any binding to String without a matching @Named annotation will always get the empty string
             // which seems incredibly likely to cause errors and rarely to be intended behaviour,
@@ -335,6 +346,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      * Configure user security related classes.
      */
     private void configureAuthenticationProviders() {
+        MapBinder<AuthenticationProvider, IAuthenticator> mapBinder = MapBinder.newMapBinder(binder(),
+                AuthenticationProvider.class, IAuthenticator.class);
+
         this.bindConstantToProperty(Constants.HMAC_SALT, globalProperties);
 
         // Configure security providers
@@ -342,6 +356,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         this.bindConstantToProperty(Constants.GOOGLE_CLIENT_SECRET_LOCATION, globalProperties);
         this.bindConstantToProperty(Constants.GOOGLE_CALLBACK_URI, globalProperties);
         this.bindConstantToProperty(Constants.GOOGLE_OAUTH_SCOPES, globalProperties);
+        mapBinder.addBinding(AuthenticationProvider.GOOGLE).to(GoogleAuthenticator.class);
 
         // Facebook
         this.bindConstantToProperty(Constants.FACEBOOK_SECRET, globalProperties);
@@ -349,18 +364,39 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         this.bindConstantToProperty(Constants.FACEBOOK_CALLBACK_URI, globalProperties);
         this.bindConstantToProperty(Constants.FACEBOOK_OAUTH_SCOPES, globalProperties);
         this.bindConstantToProperty(Constants.FACEBOOK_USER_FIELDS, globalProperties);
+        mapBinder.addBinding(AuthenticationProvider.FACEBOOK).to(FacebookAuthenticator.class);
 
         // Twitter
         this.bindConstantToProperty(Constants.TWITTER_SECRET, globalProperties);
         this.bindConstantToProperty(Constants.TWITTER_CLIENT_ID, globalProperties);
         this.bindConstantToProperty(Constants.TWITTER_CALLBACK_URI, globalProperties);
-
-        // Register a map of security providers
-        MapBinder<AuthenticationProvider, IAuthenticator> mapBinder = MapBinder.newMapBinder(binder(),
-                AuthenticationProvider.class, IAuthenticator.class);
-        mapBinder.addBinding(AuthenticationProvider.GOOGLE).to(GoogleAuthenticator.class);
-        mapBinder.addBinding(AuthenticationProvider.FACEBOOK).to(FacebookAuthenticator.class);
         mapBinder.addBinding(AuthenticationProvider.TWITTER).to(TwitterAuthenticator.class);
+
+        // Raspberry Pi
+        try {
+            // Ensure all the required config properties are present.
+            Validate.notNull(globalProperties.getProperty(RASPBERRYPI_CLIENT_ID));
+            Validate.notNull(globalProperties.getProperty(RASPBERRYPI_CLIENT_SECRET));
+            Validate.notNull(globalProperties.getProperty(RASPBERRYPI_CALLBACK_URI));
+            Validate.notNull(globalProperties.getProperty(RASPBERRYPI_OAUTH_SCOPES));
+            Validate.notNull(globalProperties.getProperty(RASPBERRYPI_LOCAL_IDP_METADATA_PATH));
+
+            // If so, bind them to constants.
+            this.bindConstantToProperty(Constants.RASPBERRYPI_CLIENT_ID, globalProperties);
+            this.bindConstantToProperty(Constants.RASPBERRYPI_CLIENT_SECRET, globalProperties);
+            this.bindConstantToProperty(Constants.RASPBERRYPI_CALLBACK_URI, globalProperties);
+            this.bindConstantToProperty(Constants.RASPBERRYPI_OAUTH_SCOPES, globalProperties);
+            this.bindConstantToProperty(Constants.RASPBERRYPI_LOCAL_IDP_METADATA_PATH, globalProperties);
+
+            // Register the authenticator.
+            mapBinder.addBinding(AuthenticationProvider.RASPBERRYPI).to(RaspberryPiOidcAuthenticator.class);
+
+        } catch (NullPointerException e) {
+            log.error(String.format("Failed to initialise authenticator %s due to one or more absent config properties.",
+                    AuthenticationProvider.RASPBERRYPI));
+        }
+
+        // Segue local
         mapBinder.addBinding(AuthenticationProvider.SEGUE).to(SegueLocalAuthenticator.class);
     }
 
@@ -872,6 +908,34 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         return misuseMonitor;
     }
 
+    @Inject
+    @Provides
+    @Singleton
+    private CountryLookupManager getCountryLookupManager(
+            @Nullable @Named(Constants.CUSTOM_COUNTRY_CODES) final String customCountryCodes,
+            @Nullable @Named(Constants.PRIORITY_COUNTRY_CODES) final String priorityCountryCodes
+    ) {
+        if (null == countryLookupManager) {
+            Map<String, String> customCountryCodesMap = new HashMap<>();
+            List<String> priorityCountryCodesList = new ArrayList<>();
+
+            if (null != customCountryCodes) {
+                for (String country : customCountryCodes.split(",")) {
+                    String[] codeAndName = country.split(":");
+                    customCountryCodesMap.put(codeAndName[0], codeAndName[1]);
+                }
+            }
+
+            if (null != priorityCountryCodes) {
+                priorityCountryCodesList = List.of(priorityCountryCodes.split(","));
+            }
+
+            countryLookupManager = new CountryLookupManager(customCountryCodesMap, priorityCountryCodesList);
+            log.info("Creating singleton of CountryLookupManager");
+        }
+        return countryLookupManager;
+    }
+
     /**
      * Gets the instance of the dozer mapper object.
      *
@@ -1050,7 +1114,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             // are currently configured, so the constructor takes a list of jobs to remove too.
             List<SegueScheduledJob> scheduledJobsToRemove = new ArrayList<>();
 
-            if (mailjetKey != null && mailjetSecret != null) {
+            if (null != mailjetKey && null != mailjetSecret && !mailjetKey.isEmpty() && !mailjetSecret.isEmpty()) {
                 configuredScheduledJobs.add(syncMailjetUsers);
             } else {
                 scheduledJobsToRemove.add(syncMailjetUsers);
@@ -1085,7 +1149,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                 // If MailJet is configured, initialise the sync:
                 IExternalAccountDataManager externalAccountDataManager = new PgExternalAccountPersistenceManager(database);
                 MailJetApiClientWrapper mailJetApiClientWrapper = new MailJetApiClientWrapper(mailjetKey, mailjetSecret,
-                        properties.getProperty(MAILJET_NEWS_LIST_ID), properties.getProperty(MAILJET_EVENTS_LIST_ID));
+                        properties.getProperty(MAILJET_NEWS_LIST_ID), properties.getProperty(MAILJET_EVENTS_LIST_ID),
+                        properties.getProperty(MAILJET_LEGAL_LIST_ID));
 
                 log.info("Created singleton of ExternalAccountManager.");
                 externalAccountManager = new ExternalAccountManager(mailJetApiClientWrapper, externalAccountDataManager);
@@ -1246,6 +1311,22 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      */
     private void bindConstantToProperty(final String propertyLabel, final PropertiesLoader propertyLoader) {
         bindConstant().annotatedWith(Names.named(propertyLabel)).to(propertyLoader.getProperty(propertyLabel));
+    }
+
+    /**
+     * Same as {@link this.bindConstantToProperty} but it doesn't cry if the property isn't defined.
+     *
+     * @param propertyLabel
+     *            - Key for a given property
+     * @param propertyLoader
+     *            - property loader to use
+     */
+    private void bindConstantToNullableProperty(final String propertyLabel, final PropertiesLoader propertyLoader) {
+        if (null == propertyLoader.getProperty(propertyLabel)) {
+            bind(String.class).annotatedWith(Names.named(propertyLabel)).toProvider(Providers.of(null));
+        } else {
+            bindConstantToProperty(propertyLabel, propertyLoader);
+        }
     }
 
     /**

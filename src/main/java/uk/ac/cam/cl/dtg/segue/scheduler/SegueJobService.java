@@ -155,13 +155,26 @@ public class SegueJobService implements ServletContextListener {
     }
 
     /**
-     * Checks if the scheduler is already running.
+     * Checks if the scheduler has been started already.
      *
-     * @return true if scheduler already started.
+     * @return true if scheduler has already started, even if it has subsequently been shut down.
      */
-    public boolean isStarted() {
+    public boolean wasStarted() {
         try {
             return scheduler.isStarted();
+        } catch (SchedulerException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Checks if the scheduler has been shut down.
+     *
+     * @return true if scheduler shut down.
+     */
+    public boolean isShutdown() {
+        try {
+            return scheduler.isShutdown();
         } catch (SchedulerException e) {
             return false;
         }
@@ -171,12 +184,23 @@ public class SegueJobService implements ServletContextListener {
      *  Attempt to register configured jobs, remove any jobs marked for removal, then start scheduler.
      */
     public synchronized void initialiseService() throws SchedulerException {
-        if (!isStarted()) {
+        if (!wasStarted()) {
             this.registerScheduledJobs(allKnownJobs);
             this.removeScheduledJobs(jobsToRemove);
 
             scheduler.start();
             log.info("Segue Job Service started.");
+        }
+    }
+
+    /**
+     * Attempt to complete running jobs, then shut down the scheduler.
+     * @throws SchedulerException on failure to terminate.
+     */
+    public synchronized void shutdownService() throws SchedulerException {
+        if (wasStarted()) {
+            log.info("Shutting down Segue Job Service");
+            this.scheduler.shutdown(true);
         }
     }
 
