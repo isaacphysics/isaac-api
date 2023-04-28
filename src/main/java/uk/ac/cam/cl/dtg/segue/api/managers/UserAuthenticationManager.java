@@ -95,7 +95,6 @@ public class UserAuthenticationManager {
     private final EmailManager emailManager;
     private final ObjectMapper serializationMapper;
     private final boolean checkOriginHeader;
-    private final boolean setSecureCookies;
     
     private final Map<AuthenticationProvider, IAuthenticator> registeredAuthProviders;
 
@@ -126,9 +125,7 @@ public class UserAuthenticationManager {
 
         this.emailManager = emailQueue;
         this.serializationMapper = new ObjectMapper();
-        boolean isProduction = properties.getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(EnvironmentType.PROD.name());
-        this.checkOriginHeader = isProduction;
-        this.setSecureCookies = isProduction;
+        this.checkOriginHeader = properties.getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(EnvironmentType.PROD.name());
     }
 
     /**
@@ -511,10 +508,10 @@ public class UserAuthenticationManager {
             logoutCookie.setPath("/");
             logoutCookie.setMaxAge(0);  // This will lead to it being removed by the browser immediately.
             logoutCookie.setHttpOnly(true);
-            logoutCookie.setSecure(setSecureCookies);
             // TODO - set sameSite=Lax at minimum when Jetty supports this (9.4.x)
+            logoutCookie.setSecure(true);
 
-            response.addCookie(logoutCookie);  // lgtm [java/insecure-cookie]  false positive due to conditional above!
+            response.addCookie(logoutCookie);
         } catch (IllegalStateException e) {
             log.info("The session has already been invalidated. " + "Unable to logout again...", e);
         }
@@ -931,12 +928,12 @@ public class UserAuthenticationManager {
             authCookie.setMaxAge(sessionExpiryTimeInSeconds);
             authCookie.setPath("/");
             authCookie.setHttpOnly(true);
-            authCookie.setSecure(setSecureCookies);
             // TODO - set sameSite=Lax at minimum when Jetty supports this (9.4.x)
+            authCookie.setSecure(true);
 
             log.debug(String.format("Creating AuthCookie for user (%s) with value %s", userId, authCookie.getValue()));
 
-            response.addCookie(authCookie);  // lgtm [java/insecure-cookie]  false positive due to conditional above!
+            response.addCookie(authCookie);
             
         } catch (JsonProcessingException e1) {
             log.error("Unable to save cookie.", e1);
