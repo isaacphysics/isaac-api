@@ -60,4 +60,12 @@
         </param-value>
     </context-param>
 
+    <session-config>
+        <cookie-config>
+            <comment>__SAME_SITE_STRICT__</comment>
+            <http-only>true</http-only>
+            <secure>true</secure>
+        </cookie-config>
+    </session-config>
+
 </web-app>
