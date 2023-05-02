@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
+import jakarta.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.users.School;
@@ -77,23 +78,27 @@ public class SchoolListReader {
 
     /**
      * findSchoolByNameOrPostCode.
-     * 
+     *
      * @param searchQuery
      *            - school to search for - either name or postcode.
+     * @param limit
+     *            - the number of results to return.
      * @return list of schools matching the criteria or an empty list.
      * @throws UnableToIndexSchoolsException
      *             - if there is an error access the index of schools.
      */
-    public List<School> findSchoolByNameOrPostCode(final String searchQuery) throws UnableToIndexSchoolsException, SegueSearchException {
+    public List<School> findSchoolByNameOrPostCode(final String searchQuery, @Nullable final Integer limit) throws UnableToIndexSchoolsException, SegueSearchException {
         if (!this.ensureSchoolList()) {
             log.error("Unable to ensure school search cache.");
             throw new UnableToIndexSchoolsException("unable to ensure the cache has been populated");
         }
 
+        Integer queryLimit = limit == null ? DEFAULT_RESULTS_LIMIT : limit;
+
         // FIXME: for one release cycle, we need backwards compatibility and so cannot use the fieldsThatMustMatch property
         // It should be set to ImmutableMap.of("closed", ImmutableList.of("false"))
         List<String> schoolSearchResults = searchProvider.fuzzySearch(SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString(),
-                searchQuery, 0, DEFAULT_RESULTS_LIMIT, null, null, SCHOOL_URN_FIELDNAME_POJO,
+                searchQuery, 0, queryLimit, null, null, SCHOOL_URN_FIELDNAME_POJO,
                 SCHOOL_ESTABLISHMENT_NAME_FIELDNAME_POJO, SCHOOL_POSTCODE_FIELDNAME_POJO)
                 .getResults();
 
