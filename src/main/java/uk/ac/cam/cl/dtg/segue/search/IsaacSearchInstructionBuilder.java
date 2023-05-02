@@ -26,7 +26,6 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -46,11 +45,11 @@ public class IsaacSearchInstructionBuilder {
     private final boolean excludeNofilterContent;
     private boolean includePastEvents;
 
-    private final Set<String> includedContentTypes;
-    private final Set<String> priorityIncludedContentTypes;
+    private Set<String> includedContentTypes;
+    private Set<String> priorityIncludedContentTypes;
     private static final float PRIORITY_CONTENT_BOOST = 5L;
 
-    private final List<SearchInField> searchesInFields;
+    private List<SearchInField> searchesInFields;
     private static final Long FIELD_BOOST = 5L;
     private static final Long FIELD_BOOST_FUZZY = 1L;
     private static final Long WILDCARD_FIELD_BOOST = 1L;
@@ -73,12 +72,10 @@ public class IsaacSearchInstructionBuilder {
         FUZZY
     }
 
-    private final BooleanInstruction masterInstruction;
 
     /**
      * Builder for a {@code BooleanInstruction} defining a search through the content. The final instruction is structured
      * like so:
-     *
      * > Master instruction
      *     > Base instruction
      *        - Exclude any content with "deprecated" in field "tags"
@@ -109,16 +106,14 @@ public class IsaacSearchInstructionBuilder {
 
         this.searchesInFields = new ArrayList<>();
 
-        includedContentTypes = Sets.newHashSet();
-        priorityIncludedContentTypes = Sets.newHashSet();
+        this.includedContentTypes = Sets.newHashSet();
+        this.priorityIncludedContentTypes = Sets.newHashSet();
 
         this.includeOnlyPublishedContent = includeOnlyPublishedContent;
         this.excludeRegressionTestContent = excludeRegressionTestContent;
 
         this.excludeNofilterContent = excludeNofilterContent;
         this.includePastEvents = false;
-
-        this.masterInstruction = this.buildBaseInstructions(new BooleanInstruction());
     }
 
     /**
@@ -156,7 +151,7 @@ public class IsaacSearchInstructionBuilder {
      * add to the set of included content types.
      *
      * @param contentTypes A list of content types to match.
-     * @return This IsaacSearchQueryBuilder, to allow chained operations.
+     * @return This {@link IsaacSearchInstructionBuilder}, to allow chained operations.
      */
     public IsaacSearchInstructionBuilder includeContentTypes(final Set<String> contentTypes) {
         return this.includeContentTypes(contentTypes, Priority.NORMAL);
@@ -168,7 +163,7 @@ public class IsaacSearchInstructionBuilder {
      *
      * @param contentTypes A list of content types to match.
      * @param priority The priority of matches for this content type.
-     * @return This IsaacSearchQueryBuilder, to allow chained operations.
+     * @return This {@link IsaacSearchInstructionBuilder}, to allow chained operations.
      */
     public IsaacSearchInstructionBuilder includeContentTypes(final Set<String> contentTypes, final Priority priority) {
         if (priority == Priority.HIGH) {
@@ -180,13 +175,13 @@ public class IsaacSearchInstructionBuilder {
     }
 
     /**
-     * @param searchInField A {@code SearchInField} instance describing terms to look for in a particular field, and
+     * @param searchInField A {@link SearchInField} instance describing terms to look for in a particular field, and
      *                      what priority resultant matches will have in the results (in absence of any sorting applied
      *                      elsewhere). If no search terms are defined for {@code searchInField} it is ignored.
      *
-     * @return This IsaacSearchQueryBuilder, to allow chained operations.
+     * @return This IsaacSearchInstructionBuilder, to allow chained operations.
      */
-    public IsaacSearchInstructionBuilder searchFor(SearchInField searchInField) {
+    public IsaacSearchInstructionBuilder searchFor(final SearchInField searchInField) {
         if (!searchInField.getTerms().isEmpty()) {
             this.searchesInFields.add(searchInField);
         }
@@ -198,7 +193,7 @@ public class IsaacSearchInstructionBuilder {
      * effect if the event content type is excluded.
      *
      * @param includePastEvents Whether to include past events.
-     * @return This IsaacSearchQueryBuilder, to allow chained operations.
+     * @return This {@link IsaacSearchInstructionBuilder}, to allow chained operations.
      */
     public IsaacSearchInstructionBuilder includePastEvents(final boolean includePastEvents) {
         this.includePastEvents = includePastEvents;
@@ -211,6 +206,8 @@ public class IsaacSearchInstructionBuilder {
      * @return A BooleanMatchInstruction reflecting the builder's settings.
      */
     public BooleanInstruction build() {
+        BooleanInstruction masterInstruction = this.buildBaseInstructions(new BooleanInstruction());
+
         masterInstruction.setMinimumShouldMatch(1);
 
         List<String> contentTypes = Optional.ofNullable(this.includedContentTypes)
@@ -254,21 +251,26 @@ public class IsaacSearchInstructionBuilder {
                 contentInstruction.setMinimumShouldMatch(1);
             }
 
-            this.masterInstruction.should(contentInstruction);
+            masterInstruction.should(contentInstruction);
         }
-        return this.masterInstruction;
+
+        // Reset the relevant builder state so subsequent 'build' calls do not accumulate instructions unexpectedly.
+        this.searchesInFields = new ArrayList<>();
+        this.includedContentTypes = Sets.newHashSet();
+        this.priorityIncludedContentTypes = Sets.newHashSet();
+        this.includePastEvents = false;
+
+        return masterInstruction;
     }
 
     /**
      * Augments {@code instruction} with the field search instructions specified via {@code searchFor()}.
-     *
      *
      * @param instruction A BooleanMatchInstruction for a particular content type to augment with the field-search instructions.
      * @param searchesInFields A list of {@code SearchInField}s encapsulating fields and terms to search for, as well as
      *                         the strategy and priority to use for each.
      * @param contentType The content type {@code instruction} relates to, so we can decide how/whether to process certain
      *                    field searches.
-     *
      *                    (todo: Consider replacing with content-type-specific implementations of this method that process
      *                    only fields relevant to the content type. Alternatively, this class could provide
      *                    content-type-specific search builders to clients.)
@@ -324,10 +326,10 @@ public class IsaacSearchInstructionBuilder {
                 for (String term : searchInField.getTerms()) {
                     if (searchInField.getStrategy() == Strategy.DEFAULT) {
                         Long boost = searchInField.getPriority() == Priority.HIGH ? HIGH_PRIORITY_FIELD_BOOST : FIELD_BOOST;
-                        Long fuzzy_boost = searchInField.getPriority() == Priority.HIGH ? HIGH_PRIORITY_FIELD_BOOST_FUZZY : FIELD_BOOST_FUZZY;
+                        Long fuzzyBoost = searchInField.getPriority() == Priority.HIGH ? HIGH_PRIORITY_FIELD_BOOST_FUZZY : FIELD_BOOST_FUZZY;
 
                         generatedSubInstructions.add(new MatchInstruction(searchInField.getField(), term, boost, false));
-                        generatedSubInstructions.add(new MatchInstruction(searchInField.getField(), term, fuzzy_boost, true));
+                        generatedSubInstructions.add(new MatchInstruction(searchInField.getField(), term, fuzzyBoost, true));
 
                     } else if (searchInField.getStrategy() == Strategy.FUZZY) {
                         Long boost = searchInField.getPriority() == Priority.HIGH ? HIGH_PRIORITY_WILDCARD_FIELD_BOOST : WILDCARD_FIELD_BOOST;
@@ -349,8 +351,7 @@ public class IsaacSearchInstructionBuilder {
             // 'required' flag.
             if (searchInField.getRequired()) {
                 generatedSubInstructions.forEach(instruction::must);
-            }
-            else {
+            } else {
                 generatedSubInstructions.forEach(instruction::should);
             }
         }
