@@ -24,10 +24,13 @@ import org.yaml.snakeyaml.Yaml;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class YamlLoader extends AbstractConfigLoader {
 
@@ -35,8 +38,13 @@ public class YamlLoader extends AbstractConfigLoader {
 
     private Map<String, String> loadedConfig;
 
-    public YamlLoader(final String configPath) throws IOException {
-        super(configPath);
+    /**
+     * @param configPaths A comma-separated list of paths to config files. If more than one is provided, conflicted keys
+     *                    will prefer values from later configs in the list.
+     * @throws IOException If the config files at the paths provided cannot be read.
+     */
+    public YamlLoader(final String configPaths) throws IOException {
+        super(configPaths);
         this.loadedConfig = new ConcurrentHashMap<>();
         loadConfig();
     }
@@ -63,17 +71,30 @@ public class YamlLoader extends AbstractConfigLoader {
     protected synchronized void loadConfig() throws IOException {
         Yaml yaml = new Yaml();
 
-        // check to see if this a resource or a file somewhere else
-        if (getClass().getClassLoader().getResourceAsStream(this.configPath) == null) {
-            File file = new File(this.configPath);
-            try (FileInputStream ioStream = new FileInputStream(file)) {
-                // then we have to look further afield
-                this.loadedConfig = yaml.load(ioStream);
+        String[] configPaths = this.configPath.split(",");
+
+        for (String path : configPaths) {
+            Map<String, String> subConfig;
+
+            // check to see if this a resource or a file somewhere else
+            if (getClass().getClassLoader().getResourceAsStream(this.configPath) == null) {
+                File file = new File(path);
+                try (FileInputStream ioStream = new FileInputStream(file)) {
+                    // then we have to look further afield
+                    subConfig = yaml.load(ioStream);
+                }
+            } else {
+                subConfig = yaml.load(getClass().getClassLoader().getResourceAsStream(path));
             }
-        } else {
-            loadedConfig = yaml.load(getClass().getClassLoader().getResourceAsStream(this.configPath));
+
+            // Merge the just-loaded config values with those previously loaded, giving precedence to just-loaded values
+            // if there's a conflict.
+            this.loadedConfig = Stream.of(this.loadedConfig, subConfig)
+                    .flatMap(map -> map.entrySet().stream())
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (v1, v2) -> v2)
+                    );
         }
         this.lastRefreshed = new Date();
-        log.debug("YAML config file read successfully " + configPath);
+        log.debug("YAML config files read successfully: " + Arrays.toString(configPaths));
     }
 }
