@@ -75,6 +75,7 @@ public class PropertiesLoader extends AbstractConfigLoader {
         return value;
     }
 
+    @Override
     public Set<String> getKeys() {
         Validate.notBlank(configPath, "Property file cannot be null");
 
@@ -91,18 +92,10 @@ public class PropertiesLoader extends AbstractConfigLoader {
     }
 
     /**
-     * Gets the lastRefreshed.
-     * 
-     * @return the lastRefreshed
-     */
-    public Date getLastRefreshed() {
-        return lastRefreshed;
-    }
-
-    /**
      * @throws IOException
      *             if we cannot read the properties file.
      */
+    @Override
     protected synchronized void loadConfig() throws IOException {
         // check to see if this a resource or a file somewhere else
         if (getClass().getClassLoader().getResourceAsStream(this.configPath) == null) {
