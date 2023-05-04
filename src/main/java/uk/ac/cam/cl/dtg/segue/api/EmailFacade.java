@@ -134,7 +134,6 @@ public class EmailFacade extends AbstractSegueFacade {
     @GET
     @Path("/email/viewinbrowser/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Get an email by ID.",
                   description =  "The details of the current user will be used to fill in template fields.")
     public final Response getEmailInBrowserById(@Context final HttpServletRequest request,
@@ -236,7 +235,6 @@ public class EmailFacade extends AbstractSegueFacade {
     @Path("/users/verifyemail/{userid}/{token}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Verify an email verification token is valid for use.")
     public Response validateEmailVerificationRequest(@PathParam("userid") final Long userId,
                                                      @PathParam("token") final String token) {
@@ -274,7 +272,6 @@ public class EmailFacade extends AbstractSegueFacade {
     @POST
     @Path("/users/verifyemail")
     @Consumes(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Initiate an email verification request.",
                   description = "The email to verify must be provided as 'email' in the request body.")
     public Response generateEmailVerificationToken(@Context final HttpServletRequest request,
@@ -332,7 +329,6 @@ public class EmailFacade extends AbstractSegueFacade {
     @Path("/email/sendemail/{contentid}/{emailtype}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Send an email to all users of a specific role.")
     public final Response sendEmails(@Context final HttpServletRequest request,
 		    		@PathParam("contentid") final String contentId, 
@@ -417,7 +413,6 @@ public class EmailFacade extends AbstractSegueFacade {
     @Path("/email/sendemailwithuserids/{contentid}/{emailtype}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Send an email to a list of user IDs.")
     public final Response sendEmailsToUserIds(@Context final HttpServletRequest request,
             @PathParam("contentid") final String contentId, @PathParam("emailtype") final String emailTypeString,
@@ -512,7 +507,6 @@ public class EmailFacade extends AbstractSegueFacade {
     @Path("/email/sendprovidedemailwithuserids/{emailtype}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Send an email to a list of user IDs.")
     public final Response sendProvidedEmailWithUserIds(@Context final HttpServletRequest request,
                                               @PathParam("emailtype") final String emailTypeString,

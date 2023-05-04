@@ -30,7 +30,7 @@ import java.util.Map;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ID_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NESTED_FIELDS;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NESTED_QUERY_FIELDS;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
 
 public class ContentService {
@@ -72,41 +72,6 @@ public class ContentService {
         }
 
         return this.contentManager.findByFieldNames(fieldsToMatch, newStartIndex, newLimit);
-    }
-
-    /**
-     * Library method that searches the content manager for some search string and provides map of fields that must
-     * match.
-     *
-     * @param searchString        - to pass to the search engine.
-     * @param version             - of the content to search.
-     * @param fieldsThatMustMatch - a map of fieldName to list of possible matches.
-     * @param startIndex          - the start index for the search results.
-     * @param limit               - the max number of results to return.
-     * @return a response containing the search results (results wrapper) or an empty list.
-     * @throws ContentManagerException - an exception when the content is not found
-     */
-    public final ResultsWrapper<ContentDTO> segueSearch(final String searchString, @Nullable final String version,
-                                                        @Nullable final Map<String, List<String>> fieldsThatMustMatch,
-                                                        @Nullable final Integer startIndex, @Nullable final Integer limit)
-        throws ContentManagerException {
-        String newVersion = this.contentIndex;
-        int newLimit = Constants.DEFAULT_RESULTS_LIMIT;
-        int newStartIndex = 0;
-
-        if (version != null) {
-            newVersion = version;
-        }
-
-        if (limit != null) {
-            newLimit = limit;
-        }
-
-        if (startIndex != null) {
-            newStartIndex = startIndex;
-        }
-
-        return this.contentManager.searchForContent(searchString, fieldsThatMustMatch, newStartIndex, newLimit);
     }
 
     /**
@@ -152,7 +117,7 @@ public class ContentService {
                 // special case of when you want to allow more than one
                 fieldsToMatchOutput.add(new GitContentManager.BooleanSearchClause(
                         pair.getKey(), Constants.BooleanOperator.OR, pair.getValue()));
-            } else if (NESTED_FIELDS.contains(pair.getKey())) { // these should match if either are true
+            } else if (NESTED_QUERY_FIELDS.contains(pair.getKey())) { // these should match if either are true
                 fieldsToMatchOutput.add(new GitContentManager.BooleanSearchClause(
                         pair.getKey(), Constants.BooleanOperator.OR, pair.getValue()));
             } else {

@@ -72,6 +72,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -308,13 +309,13 @@ public class PagesFacade extends AbstractIsaacFacade {
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
             @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
         StringBuilder etagCodeBuilder = new StringBuilder();
-        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
+        Map<String, Set<String>> fieldsToMatch = Maps.newHashMap();
 
         if (fasttrack) {
-            fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(FAST_TRACK_QUESTION_TYPE));
+            fieldsToMatch.put(TYPE_FIELDNAME, Set.of(FAST_TRACK_QUESTION_TYPE));
             etagCodeBuilder.append(FAST_TRACK_QUESTION_TYPE);
         } else {
-            fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(QUESTION_TYPE));
+            fieldsToMatch.put(TYPE_FIELDNAME, Set.of(QUESTION_TYPE));
             etagCodeBuilder.append(QUESTION_TYPE);
         }
 
@@ -332,24 +333,26 @@ public class PagesFacade extends AbstractIsaacFacade {
         }
 
         if (ids != null && !ids.isEmpty()) {
-            List<String> idsList = Arrays.asList(ids.split(","));
+            Set<String> idsList = Set.of(ids.split(","));
             fieldsToMatch.put(ID_FIELDNAME, idsList);
             newLimit = idsList.size();
             etagCodeBuilder.append(ids);
         }
 
-        Map<String, String> fieldNameToValues = new HashMap<String, String>() {{
-            this.put(TAGS_FIELDNAME, tags);
-            this.put(LEVEL_FIELDNAME, level);
-            this.put(STAGE_FIELDNAME, stages);
-            this.put(DIFFICULTY_FIELDNAME, difficulties);
-            this.put(EXAM_BOARD_FIELDNAME, examBoards);
-        }};
+        Map<String, String> fieldNameToValues = new HashMap<>() {
+            {
+                this.put(TAGS_FIELDNAME, tags);
+                this.put(LEVEL_FIELDNAME, level);
+                this.put(STAGE_FIELDNAME, stages);
+                this.put(DIFFICULTY_FIELDNAME, difficulties);
+                this.put(EXAM_BOARD_FIELDNAME, examBoards);
+            }
+        };
         for (Map.Entry<String, String> entry : fieldNameToValues.entrySet()) {
             String fieldName = entry.getKey();
             String queryStringValue = entry.getValue();
             if (queryStringValue != null && !queryStringValue.isEmpty()) {
-                fieldsToMatch.put(fieldName, Arrays.asList(queryStringValue.split(",")));
+                fieldsToMatch.put(fieldName, Set.of(queryStringValue.split(",")));
                 etagCodeBuilder.append(queryStringValue);
             }
         }
@@ -364,26 +367,33 @@ public class PagesFacade extends AbstractIsaacFacade {
         if (cachedResponse != null) {
             return cachedResponse;
         }
+
+        String validatedSearchString = searchString.isBlank() ? null : searchString;
+
         try {
-            // Currently if you provide a search string we use a different
-            // library call. This is because the previous one does not allow fuzzy
-            // search.
-            if (searchString != null && !searchString.isEmpty()) {
-                ResultsWrapper<ContentDTO> c;
+            ResultsWrapper<ContentDTO> c;
+            c = contentManager.searchForContent(
+                    validatedSearchString,
+                    fieldsToMatch.getOrDefault(ID_FIELDNAME, Set.of()),
+                    fieldsToMatch.getOrDefault(TAGS_FIELDNAME, Set.of()),
+                    fieldsToMatch.getOrDefault(LEVEL_FIELDNAME, Set.of()),
+                    fieldsToMatch.getOrDefault(STAGE_FIELDNAME, Set.of()),
+                    fieldsToMatch.getOrDefault(DIFFICULTY_FIELDNAME, Set.of()),
+                    fieldsToMatch.getOrDefault(EXAM_BOARD_FIELDNAME, Set.of()),
+                    fieldsToMatch.getOrDefault(TYPE_FIELDNAME, Set.of(QUESTION_TYPE)),
+                    newStartIndex,
+                    newLimit,
+                    false
+            );
 
-                c = api.segueSearch(searchString, this.contentIndex, fieldsToMatch, newStartIndex, newLimit);
+            ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<>(
+                    this.extractContentSummaryFromList(c.getResults()),
+                    c.getTotalResults());
 
-                ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
-                        this.extractContentSummaryFromList(c.getResults()),
-                        c.getTotalResults());
+            return Response.ok(summarizedContent).tag(etag)
+                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
+                    .build();
 
-                return Response.ok(summarizedContent).tag(etag)
-                        .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
-                        .build();
-            } else {
-                return listContentObjects(fieldsToMatch, null, newStartIndex, newLimit).tag(etag)
-                        .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).build();
-            }
         } catch (ContentManagerException e1) {
             SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
                     "Error locating the content requested", e1);

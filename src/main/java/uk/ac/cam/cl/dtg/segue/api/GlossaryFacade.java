@@ -21,6 +21,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -86,6 +87,7 @@ public class GlossaryFacade extends AbstractSegueFacade {
     @GET
     @Path("terms")
     @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
     @Operation(summary = "Get all the glossary terms that are indexed.")
     public final Response getTerms(@QueryParam("start_index") final String startIndex,
                                    @QueryParam("limit") final String limit) {

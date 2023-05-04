@@ -116,7 +116,6 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @GET
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "List all users granted access to the current user's data.")
     public Response getUsersWithAccess(@Context final HttpServletRequest request) throws NoUserException {
         try {
@@ -141,7 +140,6 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @GET
     @Path("/{userId}")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "List all users granted access to the specified user's data.")
     public Response getUsersWithAccessSpecificUser(@Context final HttpServletRequest request, @PathParam("userId") Long userId) throws NoUserException {
         try {
@@ -185,7 +183,6 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @DELETE
     @Path("/{userId}")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Revoke a specific user's access to the current user's data.")
     public Response revokeOwnerAssociation(@Context final HttpServletRequest request,
             @PathParam("userId") final Long userIdToRevoke) {
@@ -224,7 +221,6 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @DELETE
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Revoke all users granted access to the current user's data.")
     public Response revokeAllOwnerAssociations(@Context final HttpServletRequest request) {
         try {
@@ -262,7 +258,6 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @DELETE
     @Path("release/{userId}")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Release the current user's access to another user's data.")
     public Response releaseAssociation(@Context final HttpServletRequest request,
                                        @PathParam("userId") final Long associationOwner) {
@@ -303,7 +298,6 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @DELETE
     @Path("release")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Release the current user's access to all other users's data.")
     public Response releaseAllAssociations(@Context final HttpServletRequest request) {
         try {
@@ -338,7 +332,6 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @GET
     @Path("/other_users")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "List all users the current user has been granted access by.")
     public Response getCurrentAccessRights(@Context final HttpServletRequest request) throws NoUserException {
         try {
@@ -363,7 +356,6 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @GET
     @Path("/other_users/{userId}")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "List all users the specified user has been granted access by.")
     public Response getCurrentAccessRightsForSpecificUser(@Context final HttpServletRequest request, @PathParam("userId") Long userId) throws NoUserException{
         try {
@@ -408,7 +400,6 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @GET
     @Path("/token/{groupId}")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Get the group join token for the specified group.")
     public Response getAssociationToken(@Context final HttpServletRequest request,
             @PathParam("groupId") final Long groupId) {
@@ -456,7 +447,6 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @Path("/token/{token}/owner")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "List the users a group join token will grant access to.")
     public Response getTokenOwnerUserSummary(@Context final HttpServletRequest request,
             @PathParam("token") final String token) {
@@ -517,7 +507,6 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @Path("/use_token/{token}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Use a group join token to authorise users and join a group.",
                   description = "This should be used after listing the group owners and managers and asking the user's permission to share data.")
     public Response useToken(@Context final HttpServletRequest request, @PathParam("token") final String token) {

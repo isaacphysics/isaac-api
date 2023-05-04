@@ -1145,7 +1145,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @DELETE
     @Path("/assign/{gameboard_id}/{group_id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Delete an assignment by board ID and group ID.")
     public Response deleteAssignment(@Context final HttpServletRequest request,
                                      @PathParam("gameboard_id") final String gameboardId, @PathParam("group_id") final Long groupId) {

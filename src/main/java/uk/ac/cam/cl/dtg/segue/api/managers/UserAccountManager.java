@@ -291,7 +291,7 @@ public class UserAccountManager implements IUserAccountManager {
             if (providerUserDO.getEmail() != null && !providerUserDO.getEmail().isEmpty() && this.findUserByEmail(providerUserDO.getEmail()) != null) {
                 log.warn("A user tried to use unknown provider '" + capitalizeFully(provider)
                         + "' to log in to an account with matching email (" + providerUserDO.getEmail() + ").");
-                throw new DuplicateAccountException("You do not use " + capitalizeFully(provider) + " to log on to Isaac."
+                throw new DuplicateAccountException("You do not use " + capitalizeFully(provider) + " to log in."
                 + " You may have registered using a different provider, or a username and password.");
             }
             // this must be a registration request

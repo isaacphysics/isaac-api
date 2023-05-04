@@ -62,6 +62,7 @@ import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -194,8 +195,14 @@ public class IsaacController extends AbstractIsaacFacade {
 
         // Calculate the ETag on current live version of the content
         // NOTE: Assumes that the latest version of the content is being used.
-        EntityTag etag = new EntityTag(this.contentIndex.hashCode() + searchString.hashCode()
-                + types.hashCode() + "");
+        EntityTag etag = new EntityTag(
+                this.contentIndex.hashCode()
+                        + searchString.hashCode()
+                        + types.hashCode()
+                        + startIndex.hashCode()
+                        + limit.hashCode()
+                        + ""
+        );
 
         Response cachedResponse = generateCachedResponse(request, etag);
         if (cachedResponse != null) {
@@ -204,18 +211,18 @@ public class IsaacController extends AbstractIsaacFacade {
 
         try {
             AbstractSegueUserDTO currentUser = userManager.getCurrentUser(httpServletRequest);
-            boolean showHiddenContent = false;
+            boolean showNoFilterContent = false;
             if (currentUser instanceof RegisteredUserDTO) {
-                showHiddenContent = isUserStaff(userManager, (RegisteredUserDTO) currentUser);
+                showNoFilterContent = isUserStaff(userManager, (RegisteredUserDTO) currentUser);
             }
-            List<String> documentTypes = !types.isEmpty() ? Arrays.asList(types.split(",")) : null;
+            List<String> documentTypes = !types.isEmpty() ? Arrays.asList(types.split(",")) : List.copyOf(SITE_WIDE_SEARCH_VALID_DOC_TYPES);
             // Return an error if any of the proposed document types are invalid
-            if (documentTypes != null && !SITE_WIDE_SEARCH_VALID_DOC_TYPES.containsAll(documentTypes)) {
+            if (!SITE_WIDE_SEARCH_VALID_DOC_TYPES.containsAll(documentTypes)) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid document types.").toResponse();
             }
 
             ResultsWrapper<ContentDTO> searchResults = this.contentManager.siteWideSearch(
-                    searchString, documentTypes, showHiddenContent, startIndex, limit);
+                    searchString, documentTypes, showNoFilterContent, startIndex, limit);
 
             ImmutableMap<String, String> logMap = new ImmutableMap.Builder<String, String>()
                     .put(TYPE_FIELDNAME, types)
@@ -258,7 +265,6 @@ public class IsaacController extends AbstractIsaacFacade {
     @GET
     @Produces("*/*")
     @Path("images/{path:.*}")
-    @GZIP
     @Operation(summary = "Get a binary object from the current content version.",
                   description = "This can only be used to get images from the content database.")
     public final Response getImageByPath(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
@@ -286,10 +292,16 @@ public class IsaacController extends AbstractIsaacFacade {
         // If the content version has changed, we do need to load the file to see if it has been modified:
         ByteArrayOutputStream fileContent;
         String mimeType;
+        // We cannot use the @GZIP annotation here, since it would trigger the interceptor to GZIP binary file content,
+        // which is not sensible. However, so long as Content-Encoding is set to "gzip" for images we want to try and
+        // compress, the interceptor will work even without the annotation.
+        String contentEncoding = null;
 
         switch (Files.getFileExtension(path).toLowerCase()) {
             case "svg":
                 mimeType = "image/svg+xml";
+                // These files are text-based and could benefit from GZIP encoding.
+                contentEncoding = "gzip";
                 break;
 
             case "jpg":
@@ -341,7 +353,9 @@ public class IsaacController extends AbstractIsaacFacade {
 
         // Otherwise, just return the full image to the client:
         EntityTag etag = new EntityTag(earlyCacheCheckTag + ETAG_SEPARATOR + lateCacheCheckTag);
-        return Response.ok(fileContentBytes).type(mimeType)
+        return Response.ok(fileContentBytes)
+                .type(mimeType)
+                .header("Content-Encoding", contentEncoding)
                 .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, true))
                 .tag(etag).build();
     }
@@ -359,7 +373,6 @@ public class IsaacController extends AbstractIsaacFacade {
     @GET
     @Produces("*/*")
     @Path("documents/{path:.*}")
-    @GZIP
     @Operation(summary = "Get a binary object from the current content version.",
                   description = "This can only be used to get PDF documents from the content database.")
     public final Response getDocumentByPath(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
@@ -435,7 +448,6 @@ public class IsaacController extends AbstractIsaacFacade {
     @GET
     @Path("users/current_user/progress")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Get progress information for the current user.")
     public final Response getCurrentUserProgressInformation(@Context final HttpServletRequest request) {
         RegisteredUserDTO user;
@@ -458,7 +470,6 @@ public class IsaacController extends AbstractIsaacFacade {
     @GET
     @Path("users/current_user/snapshot")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Get snapshot for the current user.")
     public final Response getCurrentUserSnapshot(@Context final HttpServletRequest request) {
         RegisteredUserDTO user;
@@ -497,7 +508,6 @@ public class IsaacController extends AbstractIsaacFacade {
     @GET
     @Path("users/{user_id}/progress")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
     @Operation(summary = "Get progress information for a specified user.")
     public final Response getUserProgressInformation(@Context final HttpServletRequest request,
             @PathParam("user_id") final Long userIdOfInterest) {
