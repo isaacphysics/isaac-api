@@ -98,7 +98,9 @@ public interface ISearchProvider {
      * @param fields
      *            - array (var args) of fields to search using the searchString
      * @return results
+     * @deprecated in favour of {@code BooleanMatchInstruction}-based searches.
      */
+    @Deprecated
     ResultsWrapper<String> fuzzySearch(
             final String indexBase, final String indexType, final String searchString,
             final Integer startIndex, final Integer limit, final Map<String, List<String>> fieldsThatMustMatch,
@@ -108,8 +110,7 @@ public interface ISearchProvider {
 
     public ResultsWrapper<String> nestedMatchSearch(
             final String indexBase, final String indexType, final Integer startIndex, final Integer limit,
-            final String searchString, @NotNull final BooleanMatchInstruction matchInstruction,
-            @Nullable final Map<String, AbstractFilterInstruction> filterInstructions
+            @NotNull final BooleanInstruction matchInstruction, @Nullable final Map<String, Constants.SortOrder> sortOrder
     ) throws SegueSearchException;
 
     /**

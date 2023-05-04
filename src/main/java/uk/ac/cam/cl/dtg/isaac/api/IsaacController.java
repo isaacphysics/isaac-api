@@ -61,6 +61,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -193,8 +194,14 @@ public class IsaacController extends AbstractIsaacFacade {
 
         // Calculate the ETag on current live version of the content
         // NOTE: Assumes that the latest version of the content is being used.
-        EntityTag etag = new EntityTag(this.contentIndex.hashCode() + searchString.hashCode()
-                + types.hashCode() + "");
+        EntityTag etag = new EntityTag(
+                this.contentIndex.hashCode()
+                        + searchString.hashCode()
+                        + types.hashCode()
+                        + startIndex.hashCode()
+                        + limit.hashCode()
+                        + ""
+        );
 
         Response cachedResponse = generateCachedResponse(request, etag);
         if (cachedResponse != null) {
@@ -203,18 +210,18 @@ public class IsaacController extends AbstractIsaacFacade {
 
         try {
             AbstractSegueUserDTO currentUser = userManager.getCurrentUser(httpServletRequest);
-            boolean showHiddenContent = false;
+            boolean showNoFilterContent = false;
             if (currentUser instanceof RegisteredUserDTO) {
-                showHiddenContent = isUserStaff(userManager, (RegisteredUserDTO) currentUser);
+                showNoFilterContent = isUserStaff(userManager, (RegisteredUserDTO) currentUser);
             }
-            List<String> documentTypes = !types.isEmpty() ? Arrays.asList(types.split(",")) : null;
+            List<String> documentTypes = !types.isEmpty() ? Arrays.asList(types.split(",")) : List.copyOf(SITE_WIDE_SEARCH_VALID_DOC_TYPES);
             // Return an error if any of the proposed document types are invalid
-            if (documentTypes != null && !SITE_WIDE_SEARCH_VALID_DOC_TYPES.containsAll(documentTypes)) {
+            if (!SITE_WIDE_SEARCH_VALID_DOC_TYPES.containsAll(documentTypes)) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid document types.").toResponse();
             }
 
             ResultsWrapper<ContentDTO> searchResults = this.contentManager.siteWideSearch(
-                    searchString, documentTypes, showHiddenContent, startIndex, limit);
+                    searchString, documentTypes, showNoFilterContent, startIndex, limit);
 
             ImmutableMap<String, String> logMap = new ImmutableMap.Builder<String, String>()
                     .put(TYPE_FIELDNAME, types)

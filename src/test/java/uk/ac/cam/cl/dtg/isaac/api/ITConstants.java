@@ -55,10 +55,19 @@ public final class ITConstants {
     public static final long DAVE_TEACHERS_BC_GROUP_ID = 2L;
     public static final long TEST_TUTORS_AB_GROUP_ID = 4L;
 
+    // Questions
+    public static final String REGRESSION_TEST_PAGE_ID = "_regression_test_";
+    public static final String ASSIGNMENT_TEST_PAGE_ID = "_assignment_test";
+
     // Gameboards
     public static final String ASSIGNMENTS_TEST_GAMEBOARD_ID = "865072ab-9223-495f-a809-5ee2b98252e4";
     public static final String ASSIGNMENTS_DATE_TEST_GAMEBOARD_ID = "5acb113a-4d8b-4a6d-9714-6992e7e3dc35";
     public static final String ADDITIONAL_MANAGER_TEST_GAMEBOARD_ID = "43c3ca6d-4d1b-49df-3ec4-4ce2b306eb45";
+
+    // Search
+    public static final String SEARCH_TEST_CONCEPT_ID = "33935571-5a6c-4d42-a243-b5c01d4293e6";
+    public static final String SEARCH_TEST_TOPIC_SUMMARY_ID = "f9714b47-dd81-48db-b509-cc25e1884474";
+    public static final String SEARCH_TEST_EVENT_ID = "dc8686cf-be3b-4c0d-8761-1e5504146867";
 
     // Quizzes/tests
     public static final String QUIZ_TEST_QUIZ_ID = "_quiz_test";

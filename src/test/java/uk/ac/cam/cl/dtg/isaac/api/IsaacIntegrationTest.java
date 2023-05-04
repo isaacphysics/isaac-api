@@ -49,7 +49,6 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.GroupManagerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.InMemoryMisuseMonitor;
-import uk.ac.cam.cl.dtg.segue.api.monitors.TokenOwnerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
@@ -125,6 +124,7 @@ public abstract class IsaacIntegrationTest {
     protected static ElasticSearchProvider elasticSearchProvider;
     protected static SchoolListReader schoolListReader;
     protected static MapperFacade mapperFacade;
+    protected static ContentSummarizerService contentSummarizerService;
     protected static IMisuseMonitor misuseMonitor;
 
     // Managers
@@ -307,6 +307,8 @@ public abstract class IsaacIntegrationTest {
         expect(httpSession.getAttribute(Constants.ANONYMOUS_USER)).andReturn(null).anyTimes();
         expect(httpSession.getId()).andReturn(someSegueAnonymousUserId).anyTimes();
         replay(httpSession);
+
+        contentSummarizerService = new ContentSummarizerService(mapperFacade, new URIManager(properties));
 
         // NOTE: The next part is commented out until we figure out a way of actually using Guice to do the heavy lifting for us..
         /*

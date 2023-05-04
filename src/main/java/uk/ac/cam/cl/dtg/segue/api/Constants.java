@@ -432,17 +432,19 @@ public final class Constants {
     public static final String SUMMARY_FIELDNAME = "summary";
     public static final String CHILDREN_FIELDNAME = "children";
     public static final String DATE_FIELDNAME = "date";
+    public static final String ADDRESS_PSEUDO_FIELDNAME = "address";
     public static final String[] ADDRESS_PATH_FIELDNAME = {"location", "address"};
     public static final String[] ADDRESS_FIELDNAMES = {"addressLine1", "addressLine2", "town", "county", "postalCode"};
     public static final String SEARCHABLE_CONTENT_FIELDNAME = "searchableContent";
     public static final String VISIBLE_TO_STUDENTS_FIELDNAME = "visibleToStudents";
     public static final String HIDDEN_FROM_ROLES_FIELDNAME = "hiddenFromRoles";
     public static final String DEPRECATED_FIELDNAME = "deprecated";
+    public static final String PUBLISHED_FIELDNAME = "published";
 
     public static final String STAGE_FIELDNAME = "audience.stage";
     public static final String DIFFICULTY_FIELDNAME = "audience.difficulty";
     public static final String EXAM_BOARD_FIELDNAME = "audience.examBoard";
-    public static final Set<String> NESTED_FIELDS =
+    public static final Set<String> NESTED_QUERY_FIELDS =
             ImmutableSet.of(STAGE_FIELDNAME, DIFFICULTY_FIELDNAME, EXAM_BOARD_FIELDNAME);
 
     public static final String USER_ID_FKEY_FIELDNAME = "userId";
