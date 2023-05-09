@@ -39,6 +39,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.annotation.Nullable;
 
+import static com.mailgun.util.Constants.EU_BASE_URL;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILGUN_DOMAIN;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILGUN_SECRET_KEY;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueUserPreferences;
@@ -72,7 +73,7 @@ public class MailGunEmailManager {
     private void createMessagesApiIfNeeded() {
         if (null == this.mailgunMessagesApi) {
             log.info("Creating singleton MailgunMessagesApi object.");
-            this.mailgunMessagesApi = MailgunClient.config(globalProperties.getProperty(MAILGUN_SECRET_KEY)).createApi(MailgunMessagesApi.class);
+            this.mailgunMessagesApi = MailgunClient.config(EU_BASE_URL, globalProperties.getProperty(MAILGUN_SECRET_KEY)).createApi(MailgunMessagesApi.class);
         }
     }
 
