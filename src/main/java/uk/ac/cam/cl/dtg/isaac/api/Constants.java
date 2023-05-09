@@ -201,6 +201,10 @@ public final class Constants {
         SUBJECT_INTEREST, BETA_FEATURE, EXAM_BOARD, PROGRAMMING_LANGUAGE, BOOLEAN_NOTATION, DISPLAY_SETTING
     }
 
+    public enum IsaacMailGunTemplate {
+        ASSIGNMENT
+    }
+
     /**
      * Private constructor to prevent this class being created.
      */
