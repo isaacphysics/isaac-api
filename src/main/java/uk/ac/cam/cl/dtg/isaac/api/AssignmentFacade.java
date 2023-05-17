@@ -52,7 +52,6 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;

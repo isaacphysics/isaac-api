@@ -21,11 +21,18 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
+import jakarta.annotation.Nullable;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.Validate;
 import org.eclipse.jetty.websocket.api.UpgradeRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
+import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
@@ -53,18 +60,11 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
-import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
-import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 
-import jakarta.annotation.Nullable;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.HttpCookie;
 import java.net.URI;
@@ -80,6 +80,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.eclipse.jetty.http.HttpCookie.SAME_SITE_LAX_COMMENT;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
@@ -512,7 +513,7 @@ public class UserAuthenticationManager {
             logoutCookie.setMaxAge(0);  // This will lead to it being removed by the browser immediately.
             logoutCookie.setHttpOnly(true);
             logoutCookie.setSecure(setSecureCookies);
-            // TODO - set sameSite=Lax at minimum when Jetty supports this (9.4.x)
+            logoutCookie.setComment(SAME_SITE_LAX_COMMENT);
 
             response.addCookie(logoutCookie);  // lgtm [java/insecure-cookie]  false positive due to conditional above!
         } catch (IllegalStateException e) {
@@ -932,7 +933,7 @@ public class UserAuthenticationManager {
             authCookie.setPath("/");
             authCookie.setHttpOnly(true);
             authCookie.setSecure(setSecureCookies);
-            // TODO - set sameSite=Lax at minimum when Jetty supports this (9.4.x)
+            authCookie.setComment(SAME_SITE_LAX_COMMENT);
 
             log.debug(String.format("Creating AuthCookie for user (%s) with value %s", userId, authCookie.getValue()));
 
