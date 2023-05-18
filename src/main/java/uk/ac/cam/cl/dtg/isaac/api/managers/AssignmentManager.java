@@ -196,7 +196,7 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
         // displaying group related stuff in the front-end)
         Map<Long, String> groupIdToName = groups.stream().collect(Collectors.toMap(UserGroupDTO::getId, UserGroupDTO::getGroupName));
         List<AssignmentDTO> assignments = this.assignmentPersistenceManager.getAssignmentsByGroupList(groupIdToName.keySet())
-                .stream().filter(a -> includeAssignmentsScheduledInFuture || (null == a.getScheduledStartDate() || a.getScheduledStartDate().before(new Date())))
+                .stream().filter(a -> includeAssignmentsScheduledInFuture || a.scheduledStartDateIsBefore(new Date()))
                 .collect(Collectors.toList());
         assignments.forEach(assignment -> assignment.setGroupName(groupIdToName.get(assignment.getGroupId())));
         return assignments;
