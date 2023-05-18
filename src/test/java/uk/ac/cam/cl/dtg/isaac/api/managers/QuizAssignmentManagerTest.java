@@ -66,7 +66,7 @@ public class QuizAssignmentManagerTest extends AbstractManagerTest {
         newAssignment = new QuizAssignmentDTO(
             null, studentQuiz.getId(),
             teacher.getId(), studentGroup.getId(),
-            somePastDate, someFutureDate,
+            somePastDate, someFutureDate, null,
             QuizFeedbackMode.OVERALL_MARK);
     }
 

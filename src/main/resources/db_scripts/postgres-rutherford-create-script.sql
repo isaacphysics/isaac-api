@@ -364,6 +364,7 @@ CREATE TABLE public.quiz_assignments (
     owner_user_id integer,
     creation_date timestamp without time zone,
     due_date timestamp with time zone,
+    scheduled_start_date timestamp with time zone,
     quiz_feedback_mode text NOT NULL,
     deleted boolean DEFAULT false NOT NULL
 );
