@@ -1475,6 +1475,12 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             RegisteredUserDTO student = this.userManager.getUserDTOById(userId);
 
+            if (!user.getId().equals(student.getId()) && assignment.getCreationDate().getTime() < QUIZ_VIEW_STUDENT_ANSWERS_RELEASE_TIMESTAMP) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "You cannot view student's answers to test assignments created before "
+                                + new Date(QUIZ_VIEW_STUDENT_ANSWERS_RELEASE_TIMESTAMP) + ".").toResponse();
+            }
+
             if (!groupManager.isUserInGroup(student, group)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                     "That student is not in the group that was assigned this test.").toResponse();
