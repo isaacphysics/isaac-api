@@ -237,6 +237,32 @@ public class PgQuizAssignmentPersistenceManager implements IQuizAssignmentPersis
         }
     }
 
+    public List<QuizAssignmentDTO> getAssignmentsScheduledForHour(final Date timestamp) throws SegueDatabaseException {
+        if (null == timestamp) {
+            throw new SegueDatabaseException("Parameter timestamp is null, cannot search for scheduled assignments!");
+        }
+        String query = "SELECT * FROM quiz_assignments WHERE scheduled_start_date IS NOT NULL AND scheduled_start_date BETWEEN ((?)::timestamp - INTERVAL '10 minute') AND ((?)::timestamp + INTERVAL '59 minute');";
+
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
+            pst.setTimestamp(1, new java.sql.Timestamp(timestamp.getTime()));
+            pst.setTimestamp(2, new java.sql.Timestamp(timestamp.getTime()));
+
+            try (ResultSet results = pst.executeQuery()) {
+                List<QuizAssignmentDTO> listOfResults = Lists.newArrayList();
+
+                while (results.next()) {
+                    listOfResults.add(this.convertToQuizAssignmentDTO(this.convertFromSQLToQuizAssignmentDO(results)));
+                }
+
+                return listOfResults;
+            }
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Unable to find scheduled assignments", e);
+        }
+    }
+
     /**
      * Convert from a QuizAssignment DO to a QuizAssignment DTO.
      *
