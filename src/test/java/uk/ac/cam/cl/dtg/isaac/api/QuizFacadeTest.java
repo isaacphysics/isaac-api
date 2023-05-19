@@ -278,6 +278,17 @@ public class QuizFacadeTest extends AbstractFacadeTest {
     @Test
     public void getQuizAssignmentAttempt() {
         QuizAttemptDTO augmentedQuiz = new QuizAttemptDTO();
+
+        // Test data for checking whether teachers can only view students attempts after a particular date (the date
+        // when we added this change to the privacy policy)
+        Date someDateBeforeQuizAnswerView = new Date(Constants.QUIZ_VIEW_STUDENT_ANSWERS_RELEASE_TIMESTAMP - 24*60*60*1000);
+        Date someDateAfterQuizAnswerView = new Date(Constants.QUIZ_VIEW_STUDENT_ANSWERS_RELEASE_TIMESTAMP + 24*60*60*1000);
+        Date someDateMuchAfterQuizAnswerView = new Date(System.currentTimeMillis() + 14*24*60*60*1000);
+        QuizAssignmentDTO studentAssignmentPreQuizAnswerChange = new QuizAssignmentDTO(studentAssignment.getId() + 1, studentQuiz.getId(), teacher.getId(), studentGroup.getId(), someDateBeforeQuizAnswerView, someDateAfterQuizAnswerView, QuizFeedbackMode.DETAILED_FEEDBACK);
+        QuizAssignmentDTO studentAssignmentPostQuizAnswerChange = new QuizAssignmentDTO(studentAssignment.getId() + 2, studentQuiz.getId(), teacher.getId(), studentGroup.getId(), someDateAfterQuizAnswerView, someDateMuchAfterQuizAnswerView, QuizFeedbackMode.DETAILED_FEEDBACK);
+        QuizAttemptDTO completedAttemptForPreQuizAnswerChange = new QuizAttemptDTO(completedAttempt.getId() + 1, student.getId(), studentQuiz.getId(), studentAssignmentPreQuizAnswerChange.getId(), somePastDate, new Date());
+        QuizAttemptDTO completedAttemptForPostQuizAnswerChange = new QuizAttemptDTO(completedAttempt.getId() + 2, student.getId(), studentQuiz.getId(), studentAssignmentPostQuizAnswerChange.getId(), somePastDate, new Date());
+
         forEndpoint(() -> quizFacade.getQuizAssignmentAttempt(httpServletRequest, studentAssignment.getId(), student.getId()),
             requiresLogin(),
             as(studentsTeachersOrAdmin(),
@@ -298,10 +309,17 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                 failsWith(Status.FORBIDDEN)
             ),
             as(studentsTeachersOrAdmin(),
-                prepare(quizAssignmentManager, m -> expect(m.getGroupForAssignment(studentAssignment)).andReturn(studentGroup)),
+                    prepare(quizAssignmentManager, m -> expect(m.getGroupForAssignment(studentAssignmentPreQuizAnswerChange)).andReturn(studentGroup)),
+                    prepare(associationManager, m -> expect(m.hasPermission(currentUser(), student)).andReturn(true)),
+                    prepare(quizAttemptManager, m -> expect(m.getByQuizAssignmentAndUser(studentAssignmentPreQuizAnswerChange, student)).andReturn(completedAttemptForPreQuizAnswerChange)),
+                    prepare(quizQuestionManager, m -> expect(m.augmentFeedbackFor(completedAttemptForPreQuizAnswerChange, studentQuiz, QuizFeedbackMode.DETAILED_FEEDBACK)).andReturn(augmentedQuiz)),
+                    failsWith(Status.FORBIDDEN)
+            ),
+            as(studentsTeachersOrAdmin(),
+                prepare(quizAssignmentManager, m -> expect(m.getGroupForAssignment(studentAssignmentPostQuizAnswerChange)).andReturn(studentGroup)),
                 prepare(associationManager, m -> expect(m.hasPermission(currentUser(), student)).andReturn(true)),
-                prepare(quizAttemptManager, m -> expect(m.getByQuizAssignmentAndUser(studentAssignment, student)).andReturn(completedAttempt)),
-                prepare(quizQuestionManager, m -> expect(m.augmentFeedbackFor(completedAttempt, studentQuiz, QuizFeedbackMode.DETAILED_FEEDBACK)).andReturn(augmentedQuiz)),
+                prepare(quizAttemptManager, m -> expect(m.getByQuizAssignmentAndUser(studentAssignmentPostQuizAnswerChange, student)).andReturn(completedAttemptForPostQuizAnswerChange)),
+                prepare(quizQuestionManager, m -> expect(m.augmentFeedbackFor(completedAttemptForPostQuizAnswerChange, studentQuiz, QuizFeedbackMode.DETAILED_FEEDBACK)).andReturn(augmentedQuiz)),
                 succeeds(),
                 check(response -> assertEquals(((QuizAttemptFeedbackDTO) response.getEntity()).getAttempt().getQuiz(), augmentedQuiz.getQuiz()))
             ),
