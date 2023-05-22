@@ -355,8 +355,7 @@ public class GitContentManager {
                 .searchFor(new SearchInField(Constants.ID_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
                 .searchFor(new SearchInField(Constants.TITLE_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
                 .searchFor(new SearchInField(Constants.TAGS_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
-                .searchFor(new SearchInField(Constants.VALUE_FIELDNAME, searchTerms).strategy(Strategy.FUZZY))
-                .searchFor(new SearchInField(Constants.CHILDREN_FIELDNAME, searchTerms).strategy(Strategy.FUZZY))
+                .searchFor(new SearchInField(Constants.SEARCHABLE_CONTENT_FIELDNAME, searchTerms).strategy(Strategy.FUZZY))
                 .build();
 
         // If no search terms were provided, sort by ascending alphabetical order of title.
