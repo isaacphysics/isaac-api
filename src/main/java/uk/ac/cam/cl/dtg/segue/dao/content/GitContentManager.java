@@ -397,19 +397,41 @@ public class GitContentManager {
             final boolean showNoFilterContent, final Integer startIndex, final Integer limit
     ) throws  ContentManagerException {
 
+        Set<String> searchTerms = Set.of();
+        if (searchString != null && !searchString.isBlank()) {
+            searchTerms = Arrays.stream(searchString.split(" ")).collect(Collectors.toSet());
+        }
+
         BooleanInstruction matchInstruction = new IsaacSearchInstructionBuilder(searchProvider,
                 this.showOnlyPublishedContent,
                 this.hideRegressionTestContent,
                 !showNoFilterContent)
+
+                // Further filtering
                 .includeContentTypes(Set.copyOf(documentTypes))
+
+                // Exact matches
+                .searchFor(new SearchInField(Constants.ID_FIELDNAME, searchTerms).priority(Priority.HIGH))
+                .searchFor(new SearchInField(Constants.TITLE_FIELDNAME, searchTerms).priority(Priority.HIGH))
+                .searchFor(new SearchInField(Constants.SUMMARY_FIELDNAME, searchTerms).priority(Priority.HIGH))
+                .searchFor(new SearchInField(Constants.TAGS_FIELDNAME, searchTerms).priority(Priority.HIGH))
+                .searchFor(new SearchInField(Constants.SEARCHABLE_CONTENT_FIELDNAME, searchTerms))
+
+                // Fuzzy matches (exact matches will match these criteria too)
+                .searchFor(new SearchInField(Constants.ID_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
+                .searchFor(new SearchInField(Constants.TITLE_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
+                .searchFor(new SearchInField(Constants.SUMMARY_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
+                .searchFor(new SearchInField(Constants.TAGS_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
+                .searchFor(new SearchInField(Constants.SEARCHABLE_CONTENT_FIELDNAME, searchTerms).strategy(Strategy.FUZZY))
+
+                // Boost topic summary pages as they are more important than concepts and questions for CS.
+                // They do not exist for Physics and so do not affect their results.
                 .includeContentTypes(Set.of(TOPIC_SUMMARY_PAGE_TYPE), Priority.HIGH)
-                .searchFor(new SearchInField(Constants.SEARCHABLE_CONTENT_FIELDNAME, Set.of(searchString)))
-                .searchFor(new SearchInField(Constants.ADDRESS_PSEUDO_FIELDNAME, Set.of(searchString)))
-                .searchFor(new SearchInField(Constants.TITLE_FIELDNAME, Set.of(searchString)).priority(Priority.HIGH))
-                .searchFor(new SearchInField(Constants.ID_FIELDNAME, Set.of(searchString)).priority(Priority.HIGH))
-                .searchFor(new SearchInField(Constants.SUMMARY_FIELDNAME, Set.of(searchString)).priority(Priority.HIGH))
-                .searchFor(new SearchInField(Constants.TAGS_FIELDNAME, Set.of(searchString)).priority(Priority.HIGH))
+
+                // Event specific queries
+                .searchFor(new SearchInField(Constants.ADDRESS_PSEUDO_FIELDNAME, searchTerms))
                 .includePastEvents(false)
+
                 .build();
 
         ResultsWrapper<String> searchHits = searchProvider.nestedMatchSearch(
