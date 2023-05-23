@@ -41,13 +41,6 @@ public class IsaacCoordinateValidator implements IValidator {
 
         IsaacCoordinateQuestion coordinateQuestion = (IsaacCoordinateQuestion) question;
         CoordinateChoice submittedChoice = (CoordinateChoice) answer;
-        // Potentially unsafe cast, but we trust the front end to have sent us the right type of items.
-        List<CoordinateItem> submittedItems = submittedChoice.getItems().stream().map(i -> (CoordinateItem) i).collect(Collectors.toList());
-
-        // Check if any coordinates are missing
-        if (submittedItems.stream().anyMatch(i -> null == i.getX() || null == i.getY())) {
-            feedback = new Content("You did not provide a complete answer.");
-        }
 
         // Extract significant figure bounds, defaulting to NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES either are missing
         int significantFiguresMax = Objects.requireNonNullElse(coordinateQuestion.getSignificantFiguresMax(), ValidationUtils.NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES);
@@ -67,7 +60,15 @@ public class IsaacCoordinateValidator implements IValidator {
             feedback = new Content("You did not provide an answer.");
         }
 
-        if (null != coordinateQuestion.getNumberOfCoordinates() && submittedChoice.getItems().size() != coordinateQuestion.getNumberOfCoordinates()) {
+        // Potentially unsafe cast, but we trust the front end to have sent us the right type of items.
+        List<CoordinateItem> submittedItems = submittedChoice.getItems().stream().map(i -> (CoordinateItem) i).collect(Collectors.toList());
+
+        // Check if any coordinates are missing
+        if (submittedItems.stream().anyMatch(i -> null == i.getX() || null == i.getY())) {
+            feedback = new Content("You did not provide a complete answer.");
+        }
+
+        if (null != coordinateQuestion.getNumberOfCoordinates() && submittedItems.size() != coordinateQuestion.getNumberOfCoordinates()) {
             feedback = new Content("You did not provide the required number of coordinates.");
         }
 
@@ -98,7 +99,7 @@ public class IsaacCoordinateValidator implements IValidator {
                 }
 
                 // ... look for a match to the submitted answer.
-                if (coordinateChoice.getItems().size() != submittedChoice.getItems().size()) {
+                if (coordinateChoice.getItems().size() != submittedItems.size()) {
                     // We know that we don't have a match if the number of items is different.
                     continue;
                 }
