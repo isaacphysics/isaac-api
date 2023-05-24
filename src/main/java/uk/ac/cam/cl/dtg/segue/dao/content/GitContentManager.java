@@ -19,7 +19,6 @@ import com.google.api.client.util.Sets;
 import com.google.common.base.Functions;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -40,12 +39,13 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
-import uk.ac.cam.cl.dtg.segue.search.BooleanMatchInstruction;
+import uk.ac.cam.cl.dtg.segue.search.BooleanInstruction;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
-import uk.ac.cam.cl.dtg.segue.search.MustMatchInstruction;
-import uk.ac.cam.cl.dtg.segue.search.RangeMatchInstruction;
+import uk.ac.cam.cl.dtg.segue.search.IsaacSearchInstructionBuilder;
+import uk.ac.cam.cl.dtg.segue.search.IsaacSearchInstructionBuilder.Priority;
+import uk.ac.cam.cl.dtg.segue.search.IsaacSearchInstructionBuilder.Strategy;
+import uk.ac.cam.cl.dtg.segue.search.SearchInField;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
-import uk.ac.cam.cl.dtg.segue.search.ShouldMatchInstruction;
 import uk.ac.cam.cl.dtg.segue.search.SimpleExclusionInstruction;
 import uk.ac.cam.cl.dtg.segue.search.SimpleFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.TermsFilterInstruction;
@@ -54,16 +54,14 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import jakarta.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -84,7 +82,7 @@ public class GitContentManager {
     private final ContentMapper mapper;
     private final ISearchProvider searchProvider;
     private final PropertiesLoader globalProperties;
-    private final boolean allowOnlyPublishedContent;
+    private final boolean showOnlyPublishedContent;
     private final boolean hideRegressionTestContent;
 
     private final Cache<Object, Object> cache;
@@ -113,9 +111,9 @@ public class GitContentManager {
         this.searchProvider = searchProvider;
         this.globalProperties = globalProperties;
 
-        this.allowOnlyPublishedContent = Boolean.parseBoolean(
+        this.showOnlyPublishedContent = Boolean.parseBoolean(
                 globalProperties.getProperty(Constants.SHOW_ONLY_PUBLISHED_CONTENT));
-        if (this.allowOnlyPublishedContent) {
+        if (this.showOnlyPublishedContent) {
             log.info("API Configured to only allow published content to be returned.");
         }
 
@@ -149,7 +147,7 @@ public class GitContentManager {
         this.mapper = contentMapper;
         this.searchProvider = searchProvider;
         this.globalProperties = null;
-        this.allowOnlyPublishedContent = false;
+        this.showOnlyPublishedContent = false;
         this.hideRegressionTestContent = false;
         this.cache = CacheBuilder.newBuilder().softValues().expireAfterAccess(1, TimeUnit.DAYS).build();
         this.contentShaCache = CacheBuilder.newBuilder().softValues().expireAfterWrite(1, TimeUnit.MINUTES).build();
@@ -331,23 +329,51 @@ public class GitContentManager {
         return (ResultsWrapper<ContentDTO>) cache.getIfPresent(k);
     }
 
-    public final ResultsWrapper<ContentDTO> searchForContent(
-            final String searchString, @Nullable final Map<String, List<String>> fieldsThatMustMatch,
-            final Integer startIndex, final Integer limit) throws ContentManagerException {
+    public final ResultsWrapper<ContentDTO> searchForContent(@Nullable final String searchString, final Set<String> ids,
+                                                             final Set<String> tags, final Set<String> levels, final Set<String> stages,
+                                                             final Set<String> difficulties, final Set<String> examBoards,
+                                                             final Set<String> contentTypes, final Integer startIndex,
+                                                             final Integer limit, final boolean showNoFilterContent)
+            throws ContentManagerException {
 
-        ResultsWrapper<String> searchHits = searchProvider.fuzzySearch(
+        Set<String> searchTerms = Set.of();
+        if (searchString != null && !searchString.isBlank()) {
+            searchTerms = Arrays.stream(searchString.split(" ")).collect(Collectors.toSet());
+        }
+
+        BooleanInstruction matchInstruction = new IsaacSearchInstructionBuilder(searchProvider,
+                this.showOnlyPublishedContent,
+                this.hideRegressionTestContent,
+                !showNoFilterContent)
+                .includeContentTypes(contentTypes)
+                .searchFor(new SearchInField(Constants.ID_FIELDNAME, ids).strategy(Strategy.SIMPLE))
+                .searchFor(new SearchInField(Constants.TAGS_FIELDNAME, tags).strategy(Strategy.SIMPLE).required(true))
+                .searchFor(new SearchInField(Constants.LEVEL_FIELDNAME, levels).strategy(Strategy.SIMPLE).required(true))
+                .searchFor(new SearchInField(Constants.STAGE_FIELDNAME, stages).strategy(Strategy.SIMPLE).required(true))
+                .searchFor(new SearchInField(Constants.DIFFICULTY_FIELDNAME, difficulties).strategy(Strategy.SIMPLE).required(true))
+                .searchFor(new SearchInField(Constants.EXAM_BOARD_FIELDNAME, examBoards).strategy(Strategy.SIMPLE).required(true))
+                .searchFor(new SearchInField(Constants.ID_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
+                .searchFor(new SearchInField(Constants.TITLE_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
+                .searchFor(new SearchInField(Constants.TAGS_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
+                .searchFor(new SearchInField(Constants.VALUE_FIELDNAME, searchTerms).strategy(Strategy.FUZZY))
+                .searchFor(new SearchInField(Constants.CHILDREN_FIELDNAME, searchTerms).strategy(Strategy.FUZZY))
+                .build();
+
+        // If no search terms were provided, sort by ascending alphabetical order of title.
+        Map<String, Constants.SortOrder> sortOrder = null;
+
+        if (searchTerms.isEmpty()) {
+            sortOrder = new HashMap<>();
+            sortOrder.put(Constants.TITLE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Constants.SortOrder.ASC);
+        }
+
+        ResultsWrapper<String> searchHits = searchProvider.nestedMatchSearch(
                 contentIndex,
                 CONTENT_TYPE,
-                searchString,
                 startIndex,
                 limit,
-                fieldsThatMustMatch,
-                this.getBaseFilters(),
-                Constants.ID_FIELDNAME,
-                Constants.TITLE_FIELDNAME,
-                Constants.TAGS_FIELDNAME,
-                Constants.VALUE_FIELDNAME,
-                Constants.CHILDREN_FIELDNAME
+                matchInstruction,
+                sortOrder
         );
 
         List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
@@ -357,86 +383,31 @@ public class GitContentManager {
 
     public final ResultsWrapper<ContentDTO> siteWideSearch(
             final String searchString, final List<String> documentTypes,
-            final boolean includeHiddenContent, final Integer startIndex, final Integer limit
+            final boolean showNoFilterContent, final Integer startIndex, final Integer limit
     ) throws  ContentManagerException {
-        String nestedFieldConnector = searchProvider.getNestedFieldConnector();
 
-        List<String> importantDocumentTypes = ImmutableList.of(TOPIC_SUMMARY_PAGE_TYPE);
-
-        List<String> importantFields = ImmutableList.of(
-                Constants.TITLE_FIELDNAME, Constants.ID_FIELDNAME, Constants.SUMMARY_FIELDNAME, Constants.TAGS_FIELDNAME
-        );
-        List<String> otherFields = ImmutableList.of(Constants.SEARCHABLE_CONTENT_FIELDNAME);
-
-        BooleanMatchInstruction matchQuery = new BooleanMatchInstruction();
-        int numberOfExpectedShouldMatches = 1;
-
-        List<String> validDocumentTypes = Optional.ofNullable(documentTypes).orElse(Collections.emptyList()).stream()
-                .filter(SITE_WIDE_SEARCH_VALID_DOC_TYPES::contains).collect(Collectors.toList());
-        if (validDocumentTypes.isEmpty()) {
-            validDocumentTypes = Lists.newArrayList(SITE_WIDE_SEARCH_VALID_DOC_TYPES);
-        }
-
-        for (String documentType : validDocumentTypes) {
-            BooleanMatchInstruction contentQuery = new BooleanMatchInstruction();
-
-            // Match document type
-            contentQuery.must(new MustMatchInstruction(Constants.TYPE_FIELDNAME, documentType));
-
-            // Generic pages must be explicitly tagged to appear in search results
-            if (documentType.equals(PAGE_TYPE)) {
-                contentQuery.must(new MustMatchInstruction(Constants.TAGS_FIELDNAME, SEARCHABLE_TAG));
-            }
-
-            // Try to match fields
-            for (String field : importantFields) {
-                contentQuery.should(new ShouldMatchInstruction(field, searchString, 10L, false));
-                contentQuery.should(new ShouldMatchInstruction(field, searchString, 3L, true));
-            }
-            for (String field : otherFields) {
-                contentQuery.should(new ShouldMatchInstruction(field, searchString, 5L, false));
-                contentQuery.should(new ShouldMatchInstruction(field, searchString, 1L, true));
-            }
-
-            // Check location.address fields on event pages
-            if (documentType.equals(EVENT_TYPE)) {
-                String addressPath = String.join(nestedFieldConnector, Constants.ADDRESS_PATH_FIELDNAME);
-                for (String addressField : Constants.ADDRESS_FIELDNAMES) {
-                    String field = addressPath + nestedFieldConnector + addressField;
-                    contentQuery.should(new ShouldMatchInstruction(field, searchString, 3L, false));
-                    contentQuery.should(new ShouldMatchInstruction(field, searchString, 1L, true));
-                }
-            }
-
-            // Only show future events
-            if (documentType.equals(EVENT_TYPE)){
-                LocalDate today = LocalDate.now();
-                long now = today.atStartOfDay(ZoneId.systemDefault()).toEpochSecond() * Constants.EVENT_DATE_EPOCH_MULTIPLIER;
-                contentQuery.must(new RangeMatchInstruction<Long>(Constants.DATE_FIELDNAME).greaterThanOrEqual(now));
-            }
-
-            contentQuery.setMinimumShouldMatch(numberOfExpectedShouldMatches);
-
-            if (importantDocumentTypes.contains(documentType)) {
-                contentQuery.setBoost(5f);
-            }
-
-            matchQuery.should(contentQuery);
-        }
-
-        if (!includeHiddenContent) {
-            // Do not include any content with a nofilter tag
-            matchQuery.mustNot(new MustMatchInstruction(Constants.TAGS_FIELDNAME, HIDE_FROM_FILTER_TAG));
-        }
+        BooleanInstruction matchInstruction = new IsaacSearchInstructionBuilder(searchProvider,
+                this.showOnlyPublishedContent,
+                this.hideRegressionTestContent,
+                !showNoFilterContent)
+                .includeContentTypes(Set.copyOf(documentTypes))
+                .includeContentTypes(Set.of(TOPIC_SUMMARY_PAGE_TYPE), Priority.HIGH)
+                .searchFor(new SearchInField(Constants.SEARCHABLE_CONTENT_FIELDNAME, Set.of(searchString)))
+                .searchFor(new SearchInField(Constants.ADDRESS_PSEUDO_FIELDNAME, Set.of(searchString)))
+                .searchFor(new SearchInField(Constants.TITLE_FIELDNAME, Set.of(searchString)).priority(Priority.HIGH))
+                .searchFor(new SearchInField(Constants.ID_FIELDNAME, Set.of(searchString)).priority(Priority.HIGH))
+                .searchFor(new SearchInField(Constants.SUMMARY_FIELDNAME, Set.of(searchString)).priority(Priority.HIGH))
+                .searchFor(new SearchInField(Constants.TAGS_FIELDNAME, Set.of(searchString)).priority(Priority.HIGH))
+                .includePastEvents(false)
+                .build();
 
         ResultsWrapper<String> searchHits = searchProvider.nestedMatchSearch(
                 contentIndex,
                 CONTENT_TYPE,
                 startIndex,
                 limit,
-                searchString,
-                matchQuery,
-                this.getBaseFilters()
+                matchInstruction,
+                null
         );
 
         List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
@@ -685,7 +656,7 @@ public class GitContentManager {
      * @return either null or a map setup with filter/exclusion instructions, based on environment properties.
      */
     private Map<String, AbstractFilterInstruction> getBaseFilters() {
-        if (!this.hideRegressionTestContent && !this.allowOnlyPublishedContent) {
+        if (!this.hideRegressionTestContent && !this.showOnlyPublishedContent) {
             return null;
         }
 
@@ -694,7 +665,7 @@ public class GitContentManager {
         if (this.hideRegressionTestContent) {
             filters.put("tags", new SimpleExclusionInstruction("regression_test"));
         }
-        if (this.allowOnlyPublishedContent) {
+        if (this.showOnlyPublishedContent) {
             filters.put("published", new SimpleFilterInstruction("true"));
         }
         return ImmutableMap.copyOf(filters);
@@ -734,6 +705,12 @@ public class GitContentManager {
         }
     }
 
+    /**
+     * An abstract representation of a search clause that can be interpreted as desired by different search providers.
+     *
+     * @deprecated in favour of {@code BooleanMatchInstruction}, as an attempt to unify approaches to searching.
+     */
+    @Deprecated
     public static class BooleanSearchClause {
         private final String field;
         private final Constants.BooleanOperator operator;

@@ -161,26 +161,22 @@ public class ElasticSearchProvider implements ISearchProvider {
         return this.executeBasicQuery(indexBase, indexType, query, startIndex, limit);
     }
 
-    @Override
+
     public ResultsWrapper<String> nestedMatchSearch(
             final String indexBase, final String indexType, final Integer startIndex, final Integer limit,
-            final String searchString, @NotNull final BooleanMatchInstruction matchInstruction,
-            @Nullable final Map<String, AbstractFilterInstruction> filterInstructions
+            @NotNull final BooleanInstruction matchInstruction, @Nullable final Map<String, Constants.SortOrder> sortOrder
     ) throws SegueSearchException {
-        if (null == indexBase || null == indexType || null == searchString) {
+        if (null == indexBase || null == indexType) {
             log.warn("A required field is missing. Unable to execute search.");
             throw new SegueSearchException("A required field is missing. Unable to execute search.");
         }
 
         BoolQueryBuilder query = (BoolQueryBuilder) this.processMatchInstructions(matchInstruction);
-        if (filterInstructions != null) {
-            query.filter(generateFilterQuery(filterInstructions));
-        }
-        query.minimumShouldMatch(1);
-        return this.executeBasicQuery(indexBase, indexType, query, startIndex, limit);
+        return this.executeBasicQuery(indexBase, indexType, query, startIndex, limit, sortOrder);
     }
 
     @Override
+    @Deprecated
     public ResultsWrapper<String> fuzzySearch(final String indexBase, final String indexType, final String searchString,
                                               final Integer startIndex, final Integer limit,
                                               @Nullable final Map<String, List<String>> fieldsThatMustMatch,
@@ -461,7 +457,10 @@ public class ElasticSearchProvider implements ISearchProvider {
      * @param fieldsToMatch
      *            - the fields that the bool query should match.
      * @return a bool query configured to match the fields to match.
+     * @deprecated as {@code AbstractMatchInstruction}-based instructions should be preferred over
+     * {@code BooleanSearchClause}, which are instead processed by {@code processMatchInstructions()}.
      */
+    @Deprecated
     private BoolQueryBuilder generateBoolMatchQuery(final List<GitContentManager.BooleanSearchClause> fieldsToMatch) {
         BoolQueryBuilder masterQuery = QueryBuilders.boolQuery();
         Map<String, BoolQueryBuilder> nestedQueriesByPath = Maps.newHashMap();
@@ -489,7 +488,7 @@ public class ElasticSearchProvider implements ISearchProvider {
                 query.minimumShouldMatch(1);
             }
 
-            if (!Constants.NESTED_FIELDS.contains(searchClause.getField())) {
+            if (!Constants.NESTED_QUERY_FIELDS.contains(searchClause.getField())) {
                 masterQuery.must(query);
             } else {
                 // Nested fields need to use a nested query which specifies the path of the nested field.
@@ -622,7 +621,11 @@ public class ElasticSearchProvider implements ISearchProvider {
      * @param fieldsThatMustMatch
      *            - the map that should be converted into a suitable map for querying.
      * @return Map where each field is using the OR boolean operator.
+     *
+     * @deprecated as {@code AbstractMatchInstruction}-based instructions should be preferred over
+     * {@code fieldsToMatch}-style instructions.
      */
+    @Deprecated
     private List<GitContentManager.BooleanSearchClause> convertToBoolMap(final Map<String, List<String>> fieldsThatMustMatch) {
         if (null == fieldsThatMustMatch) {
             return null;
@@ -638,44 +641,45 @@ public class ElasticSearchProvider implements ISearchProvider {
         return result;
     }
 
-    private QueryBuilder processMatchInstructions(final AbstractMatchInstruction matchInstruction)
+
+    /**
+     * Based on the relatively abstract {@code matchInstruction}, generates a {@code QueryBuilder} which is usable by
+     * Elasticsearch.
+     *
+     * @param matchInstruction An {@code AbstractMatchInstruction} representing a search query.
+     *
+     * @return a {@code QueryBuilder} reflecting the instructions in {@code matchInstruction}.
+     * @throws SegueSearchException
+     */
+    private QueryBuilder processMatchInstructions(final AbstractInstruction matchInstruction)
             throws SegueSearchException {
-        if (matchInstruction instanceof BooleanMatchInstruction) {
-            BooleanMatchInstruction booleanMatch = (BooleanMatchInstruction) matchInstruction;
+        if (matchInstruction instanceof BooleanInstruction) {
+            BooleanInstruction booleanMatch = (BooleanInstruction) matchInstruction;
             BoolQueryBuilder query = QueryBuilders.boolQuery();
-            for (AbstractMatchInstruction should : booleanMatch.getShoulds()){
+            for (AbstractInstruction should : booleanMatch.getShoulds()) {
                 query.should(processMatchInstructions(should));
             }
-            for (AbstractMatchInstruction must : booleanMatch.getMusts()) {
+            for (AbstractInstruction must : booleanMatch.getMusts()) {
                 query.must(processMatchInstructions(must));
             }
-            for (AbstractMatchInstruction mustNot : booleanMatch.getMustNots()) {
+            for (AbstractInstruction mustNot : booleanMatch.getMustNots()) {
                 query.mustNot(processMatchInstructions(mustNot));
             }
-            query.minimumShouldMatch(booleanMatch.getMinimumShouldMatch());
             if (booleanMatch.getBoost() != null) {
                 query.boost(booleanMatch.getBoost());
             }
+            query.minimumShouldMatch(booleanMatch.getMinimumShouldMatch());
             return query;
-        }
-
-        else if (matchInstruction instanceof ShouldMatchInstruction) {
-            ShouldMatchInstruction shouldMatch = (ShouldMatchInstruction) matchInstruction;
+        } else if (matchInstruction instanceof MatchInstruction) {
+            MatchInstruction shouldMatch = (MatchInstruction) matchInstruction;
             MatchQueryBuilder matchQuery = QueryBuilders
                     .matchQuery(shouldMatch.getField(), shouldMatch.getValue()).boost(shouldMatch.getBoost());
             if (shouldMatch.getFuzzy()) {
                 matchQuery.fuzziness(Fuzziness.AUTO);
             }
             return matchQuery;
-        }
-
-        else if (matchInstruction instanceof MustMatchInstruction) {
-            MustMatchInstruction mustMatch = (MustMatchInstruction) matchInstruction;
-            return QueryBuilders.matchQuery(mustMatch.getField(), mustMatch.getValue());
-        }
-
-        else if (matchInstruction instanceof RangeMatchInstruction) {
-            RangeMatchInstruction rangeMatch = (RangeMatchInstruction) matchInstruction;
+        } else if (matchInstruction instanceof RangeInstruction) {
+            RangeInstruction rangeMatch = (RangeInstruction) matchInstruction;
             RangeQueryBuilder rangeQuery = QueryBuilders.rangeQuery(rangeMatch.getField()).boost(rangeMatch.getBoost());
             if (rangeMatch.getGreaterThan() != null) {
                 rangeQuery.gt(rangeMatch.getGreaterThan());
@@ -690,11 +694,20 @@ public class ElasticSearchProvider implements ISearchProvider {
                 rangeQuery.gt(rangeMatch.getLessThan());
             }
             return rangeQuery;
-        }
-
-        else {
-            throw new SegueSearchException(
-                    "Processing match instruction which is not supported: " + matchInstruction.getClass());
+        } else if (matchInstruction instanceof NestedInstruction) {
+            NestedInstruction nestedMatch = (NestedInstruction) matchInstruction;
+            return QueryBuilders.nestedQuery(nestedMatch.getPath(), processMatchInstructions(nestedMatch.getInstruction()), ScoreMode.Total);
+        } else if (matchInstruction instanceof WildcardInstruction) {
+            WildcardInstruction wildcardMatch = (WildcardInstruction) matchInstruction;
+            return QueryBuilders.wildcardQuery(wildcardMatch.getField(), wildcardMatch.getValue()).boost(wildcardMatch.getBoost());
+        } else if (matchInstruction instanceof MultiMatchInstruction) {
+            MultiMatchInstruction multiMatchInstruction = (MultiMatchInstruction) matchInstruction;
+            return QueryBuilders.multiMatchQuery(multiMatchInstruction.getField(), multiMatchInstruction.getValue())
+                    .boost(multiMatchInstruction.getBoost()).type(MultiMatchQueryBuilder.Type.PHRASE_PREFIX)
+                    .prefixLength(2);
+        } else {
+                throw new SegueSearchException(
+                        "Processing match instruction which is not supported: " + matchInstruction.getClass());
         }
     }
 

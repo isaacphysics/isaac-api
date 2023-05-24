@@ -179,31 +179,6 @@ public class SegueContentFacade extends AbstractSegueFacade {
     }
 
     /**
-     * Library method that searches the content manager for some search string and provides map of fields that must
-     * match.
-     * 
-     * @param searchString
-     *            - to pass to the search engine.
-     * @param version
-     *            - of the content to search.
-     * @param fieldsThatMustMatch
-     *            - a map of fieldName to list of possible matches.
-     * @param startIndex
-     *            - the start index for the search results.
-     * @param limit
-     *            - the max number of results to return.
-     * @return a response containing the search results (results wrapper) or an empty list.
-     * @throws ContentManagerException
-     *             - an exception when the content is not found
-     */
-    public final ResultsWrapper<ContentDTO> segueSearch(final String searchString, @Nullable final String version,
-            @Nullable final Map<String, List<String>> fieldsThatMustMatch, @Nullable final Integer startIndex,
-            @Nullable final Integer limit) throws ContentManagerException {
-
-        return contentService.segueSearch(searchString, version, fieldsThatMustMatch, startIndex, limit);
-    }
-
-    /**
      * This method provides a set of all tags for the live version of the content.
      * 
      * @param request

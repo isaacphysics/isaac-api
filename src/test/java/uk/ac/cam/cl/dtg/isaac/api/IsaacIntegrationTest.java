@@ -49,7 +49,6 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.GroupManagerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.InMemoryMisuseMonitor;
-import uk.ac.cam.cl.dtg.segue.api.monitors.TokenOwnerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
@@ -67,6 +66,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
+import uk.ac.cam.cl.dtg.segue.comm.MailGunEmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.PgAssociationDataManager;
@@ -125,10 +125,12 @@ public abstract class IsaacIntegrationTest {
     protected static ElasticSearchProvider elasticSearchProvider;
     protected static SchoolListReader schoolListReader;
     protected static MapperFacade mapperFacade;
+    protected static ContentSummarizerService contentSummarizerService;
     protected static IMisuseMonitor misuseMonitor;
 
     // Managers
     protected static EmailManager emailManager;
+    protected static MailGunEmailManager mailGunEmailManager;
     protected static UserAuthenticationManager userAuthenticationManager;
     protected static UserAccountManager userAccountManager;
     protected static GameManager gameManager;
@@ -273,6 +275,7 @@ public abstract class IsaacIntegrationTest {
         userAccountManager = new UserAccountManager(pgUsers, questionManager, properties, providersToRegister, mapperFacade, emailManager, pgAnonymousUsers, logManager, userAuthenticationManager, secondFactorManager, userPreferenceManager);
 
         ObjectMapper objectMapper = new ObjectMapper();
+        mailGunEmailManager = new MailGunEmailManager(globalTokens, properties, userPreferenceManager);
         EventBookingPersistenceManager bookingPersistanceManager = new EventBookingPersistenceManager(postgresSqlDb, userAccountManager, contentManager, objectMapper);
         PgAssociationDataManager pgAssociationDataManager = new PgAssociationDataManager(postgresSqlDb);
         PgUserGroupPersistenceManager pgUserGroupPersistenceManager = new PgUserGroupPersistenceManager(postgresSqlDb);
@@ -286,12 +289,12 @@ public abstract class IsaacIntegrationTest {
         eventBookingManager = new EventBookingManager(bookingPersistanceManager, emailManager, userAssociationManager, properties, groupManager, userAccountManager, pgTransactionManager);
         userBadgeManager = createNiceMock(UserBadgeManager.class);
         replay(userBadgeManager);
-        assignmentManager = new AssignmentManager(assignmentPersistenceManager, groupManager, new EmailService(emailManager, groupManager, userAccountManager), gameManager, properties);
+        assignmentManager = new AssignmentManager(assignmentPersistenceManager, groupManager, new EmailService(properties, emailManager, groupManager, userAccountManager, mailGunEmailManager), gameManager, properties);
         schoolListReader = createNiceMock(SchoolListReader.class);
 
         quizManager = new QuizManager(properties, new ContentService(contentManager, "latest"), contentManager, new ContentSummarizerService(mapperFacade, new URIManager(properties)), contentMapper);
         quizAssignmentPersistenceManager =  new PgQuizAssignmentPersistenceManager(postgresSqlDb, mapperFacade);
-        quizAssignmentManager = new QuizAssignmentManager(quizAssignmentPersistenceManager, new EmailService(emailManager, groupManager, userAccountManager), quizManager, groupManager, properties);
+        quizAssignmentManager = new QuizAssignmentManager(quizAssignmentPersistenceManager, new EmailService(properties, emailManager, groupManager, userAccountManager, mailGunEmailManager), quizManager, groupManager, properties);
         assignmentService = new AssignmentService(userAccountManager);
         quizAttemptPersistenceManager = new PgQuizAttemptPersistenceManager(postgresSqlDb, mapperFacade);
         quizAttemptManager = new QuizAttemptManager(quizAttemptPersistenceManager);
@@ -307,6 +310,8 @@ public abstract class IsaacIntegrationTest {
         expect(httpSession.getAttribute(Constants.ANONYMOUS_USER)).andReturn(null).anyTimes();
         expect(httpSession.getId()).andReturn(someSegueAnonymousUserId).anyTimes();
         replay(httpSession);
+
+        contentSummarizerService = new ContentSummarizerService(mapperFacade, new URIManager(properties));
 
         // NOTE: The next part is commented out until we figure out a way of actually using Guice to do the heavy lifting for us..
         /*
