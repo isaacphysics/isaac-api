@@ -7,19 +7,25 @@ import java.util.List;
 
 @ValidatesWith(IsaacMultiPartQuestionValidator.class)
 public class MultiPartChoiceDTO extends ChoiceDTO {
-    private List<ContentBaseDTO> choices;
+    private List<List<ChoiceDTO>> itemCategories;
+    private List<Integer> choiceTemplate;
 
-    /**
-     * Default constructor required for mapping.
-     */
     public MultiPartChoiceDTO() {
     }
 
-    public List<ContentBaseDTO> getChoices() {
-        return choices;
+    public final List<List<ChoiceDTO>> getItemCategories() {
+        return itemCategories;
     }
 
-    public void setChoices(final List<ContentBaseDTO> choices) {
-        this.choices = choices;
+    public final void setItemCategories(final List<List<ChoiceDTO>> itemCategories) {
+        this.itemCategories = itemCategories;
+    }
+
+    public final List<Integer> getChoiceTemplate() {
+        return choiceTemplate;
+    }
+
+    public final void setChoiceTemplate(final List<Integer> choiceTemplate) {
+        this.choiceTemplate = choiceTemplate;
     }
 }

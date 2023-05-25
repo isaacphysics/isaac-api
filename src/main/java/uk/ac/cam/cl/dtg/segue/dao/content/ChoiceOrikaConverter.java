@@ -24,6 +24,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.FreeTextRule;
 import uk.ac.cam.cl.dtg.isaac.dos.content.GraphChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ItemChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LogicFormula;
+import uk.ac.cam.cl.dtg.isaac.dos.content.MultiPartAnswer;
 import uk.ac.cam.cl.dtg.isaac.dos.content.MultiPartChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ParsonsChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Quantity;
@@ -36,6 +37,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.FreeTextRuleDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.GraphChoiceDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ItemChoiceDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.LogicFormulaDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.MultiPartAnswerDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.MultiPartChoiceDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ParsonsChoiceDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuantityDTO;
@@ -87,6 +89,8 @@ public class ChoiceOrikaConverter extends AbstractPolymorphicBidirectionalConver
             return super.mapperFacade.map(source, ItemChoiceDTO.class);
         } else if (source instanceof MultiPartChoice) {
             return super.mapperFacade.map(source, MultiPartChoiceDTO.class);
+        } else if (source instanceof MultiPartAnswer) {
+            return super.mapperFacade.map(source, MultiPartAnswerDTO.class);
         } else {
             // I would have expected this to cause an infinite loop / stack
             // overflow but apparently it doesn't.
@@ -125,6 +129,8 @@ public class ChoiceOrikaConverter extends AbstractPolymorphicBidirectionalConver
             return super.mapperFacade.map(source, ItemChoice.class);
         } else if (source instanceof MultiPartChoiceDTO) {
             return super.mapperFacade.map(source, MultiPartChoice.class);
+        } else if (source instanceof MultiPartAnswerDTO) {
+            return super.mapperFacade.map(source, MultiPartAnswer.class);
         } else {
             // I would have expected this to cause an infinite loop / stack
             // overflow but apparently it doesn't.
